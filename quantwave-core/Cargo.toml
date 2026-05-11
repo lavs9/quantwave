@@ -1,0 +1,27 @@
+[package]
+name = "quantwave-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description.workspace = true
+
+[features]
+default = []
+test_utils = ["serde", "serde_json"]
+
+[dependencies]
+talib-rs = { workspace = true }
+thiserror = { workspace = true }
+approx = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+rand = { workspace = true, optional = true }
+rustfft = { workspace = true, optional = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+rand = { workspace = true }

@@ -1,0 +1,16 @@
+[package]
+name = "quantwave-plugins"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description.workspace = true
+
+[lib]
+name = "quantwave_plugins"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+quantwave-core = { path = "../quantwave-core" }
+polars = { workspace = true }
+serde = { workspace = true }

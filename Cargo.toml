@@ -1,0 +1,28 @@
+[workspace]
+members = [
+    "quantwave-core",
+    "quantwave-polars",
+    "quantwave-plugins",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/mayanklavania/quantwave"
+authors = ["Mayank Lavania"]
+description = "A high-performance, Polars-native technical analysis library for Rust."
+
+[workspace.dependencies]
+polars = { version = "0.46", features = ["lazy", "dtype-struct", "streaming"] }
+polars-core = { version = "0.46" }
+talib-rs = "0.1"
+proptest = "1.0"
+approx = "0.5"
+serde = { version = "1.0", features = ["derive"] }
+rustfft = "6"
+rand = "0.8"
+serde_json = "1.0"
+log = "0.4"
+thiserror = "1.0"
