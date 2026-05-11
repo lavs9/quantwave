@@ -1,5 +1,5 @@
 use polars::prelude::*;
-use quantwave_core::SuperTrend;
+use quantwave_core::*;
 use quantwave_core::traits::Next;
 
 pub trait QuantWaveExt {
@@ -9,14 +9,125 @@ pub trait QuantWaveExt {
 pub struct QuantWaveNamespace<'a>(&'a LazyFrame);
 
 impl<'a> QuantWaveNamespace<'a> {
+    pub fn acos(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<ACOS>(name, "acos") }
+    pub fn asin(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<ASIN>(name, "asin") }
+    pub fn atan(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<ATAN>(name, "atan") }
+    pub fn ceil(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<CEIL>(name, "ceil") }
+    pub fn cos(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<COS>(name, "cos") }
+    pub fn cosh(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<COSH>(name, "cosh") }
+    pub fn exp(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<EXP>(name, "exp") }
+    pub fn floor(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<FLOOR>(name, "floor") }
+    pub fn ln(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<LN>(name, "ln") }
+    pub fn log10(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<LOG10>(name, "log10") }
+    pub fn sin(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<SIN>(name, "sin") }
+    pub fn sinh(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<SINH>(name, "sinh") }
+    pub fn sqrt(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<SQRT>(name, "sqrt") }
+    pub fn tan(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<TAN>(name, "tan") }
+    pub fn tanh(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<TANH>(name, "tanh") }
+
+    pub fn add(self, in1: &str, in2: &str) -> LazyFrame { self.math_operator_2_in_1_out::<ADD>(in1, in2, "add") }
+    pub fn sub(self, in1: &str, in2: &str) -> LazyFrame { self.math_operator_2_in_1_out::<SUB>(in1, in2, "sub") }
+    pub fn mult(self, in1: &str, in2: &str) -> LazyFrame { self.math_operator_2_in_1_out::<MULT>(in1, in2, "mult") }
+    pub fn div(self, in1: &str, in2: &str) -> LazyFrame { self.math_operator_2_in_1_out::<DIV>(in1, in2, "div") }
+
+    pub fn max(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<MAX>(name, period, "max") }
+    pub fn maxindex(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<MAXINDEX>(name, period, "maxindex") }
+    pub fn min(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<MIN>(name, period, "min") }
+    pub fn minindex(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<MININDEX>(name, period, "minindex") }
+    pub fn sum(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<SUM>(name, period, "sum") }
+
+    fn math_transform_1_in_1_out<I>(self, name: &str, output_name: &str) -> LazyFrame
+    where
+        I: Next<f64, Output = f64> + Default + Send + Sync + 'static,
+    {
+        let name = name.to_string();
+        let output_name_str = output_name.to_string();
+        let output_name_for_closure = output_name_str.clone();
+        self.0.clone().with_columns([
+            col(&name)
+                .map(move |s| {
+                    let ca = s.f64()?;
+                    let mut indicator = I::default();
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next(val));
+                    }
+
+                    Ok(Some(Column::from(Series::new(output_name_for_closure.clone().into(), values))))
+                }, GetOutput::from_type(DataType::Float64))
+                .alias(&output_name_str)
+        ])
+    }
+
+    fn math_operator_2_in_1_out<I>(self, in1: &str, in2: &str, output_name: &str) -> LazyFrame
+    where
+        I: Next<(f64, f64), Output = f64> + Default + Send + Sync + 'static,
+    {
+        let in1_str = in1.to_string();
+        let in2_str = in2.to_string();
+        let output_name_str = output_name.to_string();
+        let output_name_for_closure = output_name_str.clone();
+        self.0.clone().with_columns([
+            as_struct(vec![col(&in1_str), col(&in2_str)])
+                .map(move |s| {
+                    let ca = s.struct_()?;
+                    let s1 = ca.field_by_name(&in1_str)?;
+                    let s2 = ca.field_by_name(&in2_str)?;
+                    
+                    let ca1 = s1.f64()?;
+                    let ca2 = s2.f64()?;
+
+                    let mut indicator = I::default();
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let v1 = ca1.get(i).unwrap_or(f64::NAN);
+                        let v2 = ca2.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next((v1, v2)));
+                    }
+
+                    Ok(Some(Column::from(Series::new(output_name_for_closure.clone().into(), values))))
+                }, GetOutput::from_type(DataType::Float64))
+                .alias(&output_name_str)
+        ])
+    }
+
+    fn math_operator_1_in_1_out_period<I>(self, name: &str, period: usize, output_name: &str) -> LazyFrame
+    where
+        I: Next<f64, Output = f64> + Send + Sync + 'static,
+        I: From<usize>,
+    {
+        let name = name.to_string();
+        let output_name_str = output_name.to_string();
+        let output_name_for_closure = output_name_str.clone();
+        self.0.clone().with_columns([
+            col(&name)
+                .map(move |s| {
+                    let ca = s.f64()?;
+                    let mut indicator = I::from(period);
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next(val));
+                    }
+
+                    Ok(Some(Column::from(Series::new(output_name_for_closure.clone().into(), values))))
+                }, GetOutput::from_type(DataType::Float64))
+                .alias(&output_name_str)
+        ])
+    }
+
     pub fn supertrend(self, period: usize, multiplier: f64) -> LazyFrame {
         self.0.clone().with_columns([
             as_struct(vec![col("high"), col("low"), col("close")])
                 .map(move |s| {
                     let ca = s.struct_()?;
-                    let s_high = ca.field_by_name("high".into())?;
-                    let s_low = ca.field_by_name("low".into())?;
-                    let s_close = ca.field_by_name("close".into())?;
+                    let s_high = ca.field_by_name("high")?;
+                    let s_low = ca.field_by_name("low")?;
+                    let s_close = ca.field_by_name("close")?;
                     
                     let high = s_high.f64()?;
                     let low = s_low.f64()?;
@@ -902,6 +1013,48 @@ mod tests {
         assert_eq!(avwap.get(1), Some(11.333333333333334));
         assert_eq!(avwap.get(2), Some(15.0));
         assert_eq!(avwap.get(3), Some(15.5));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_polars_math_transforms() -> PolarsResult<()> {
+        let df = df![
+            "val" => [0.0, 1.5707963267948966] // 0, PI/2
+        ]?;
+
+        let out = df.lazy()
+            .ta()
+            .sin("val")
+            .collect()?;
+
+        let sin = out.column("sin")?.f64()?;
+        assert!((sin.get(0).unwrap() - 0.0).abs() < 1e-10);
+        assert!((sin.get(1).unwrap() - 1.0).abs() < 1e-10);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_polars_math_operators() -> PolarsResult<()> {
+        let df = df![
+            "v1" => [10.0, 20.0],
+            "v2" => [5.0, 30.0]
+        ]?;
+
+        let out = df.lazy()
+            .ta()
+            .add("v1", "v2")
+            .ta()
+            .max("v1", 2)
+            .collect()?;
+
+        let add = out.column("add")?.f64()?;
+        assert_eq!(add.get(0), Some(15.0));
+        assert_eq!(add.get(1), Some(50.0));
+
+        let max = out.column("max")?.f64()?;
+        assert_eq!(max.get(1), Some(20.0));
 
         Ok(())
     }

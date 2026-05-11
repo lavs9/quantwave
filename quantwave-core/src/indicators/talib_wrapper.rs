@@ -21,7 +21,7 @@ macro_rules! talib_cdl {
             }
         }
 
-        impl crate::traits::Next<(f64, f64, f64, f64)> for $name {
+        impl $crate::traits::Next<(f64, f64, f64, f64)> for $name {
             type Output = f64;
 
             fn next(&mut self, (open, high, low, close): (f64, f64, f64, f64)) -> Self::Output {
@@ -58,7 +58,7 @@ macro_rules! talib_1_in_1_out_i32 {
             }
         }
 
-        impl crate::traits::Next<f64> for $name {
+        impl $crate::traits::Next<f64> for $name {
             type Output = f64;
 
             fn next(&mut self, input: f64) -> Self::Output {
@@ -68,6 +68,35 @@ macro_rules! talib_1_in_1_out_i32 {
                 } else {
                     0.0
                 }
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! talib_1_in_1_out_no_result {
+    ($name:ident, $talib_func:path) => {
+        #[derive(Debug, Clone)]
+        #[allow(non_camel_case_types)]
+        pub struct $name {
+            history: Vec<f64>,
+        }
+
+        impl $name {
+            pub fn new() -> Self {
+                Self {
+                    history: Vec::new(),
+                }
+            }
+        }
+
+        impl $crate::traits::Next<f64> for $name {
+            type Output = f64;
+
+            fn next(&mut self, input: f64) -> Self::Output {
+                self.history.push(input);
+                let res = $talib_func(&self.history);
+                *res.last().unwrap_or(&f64::NAN)
             }
         }
     };
@@ -92,7 +121,7 @@ macro_rules! talib_1_in_1_out {
             }
         }
 
-        impl crate::traits::Next<f64> for $name {
+        impl $crate::traits::Next<f64> for $name {
             type Output = f64;
 
             fn next(&mut self, input: f64) -> Self::Output {
@@ -125,7 +154,7 @@ macro_rules! talib_2_in_1_out {
             }
         }
 
-        impl crate::traits::Next<(f64, f64)> for $name {
+        impl $crate::traits::Next<(f64, f64)> for $name {
             type Output = f64;
 
             fn next(&mut self, (high, low): (f64, f64)) -> Self::Output {
@@ -157,7 +186,7 @@ macro_rules! talib_1_in_2_out {
             }
         }
 
-        impl crate::traits::Next<f64> for $name {
+        impl $crate::traits::Next<f64> for $name {
             type Output = (f64, f64);
 
             fn next(&mut self, input: f64) -> Self::Output {
@@ -191,7 +220,7 @@ macro_rules! talib_1_in_3_out {
             }
         }
 
-        impl crate::traits::Next<f64> for $name {
+        impl $crate::traits::Next<f64> for $name {
             type Output = (f64, f64, f64);
 
             fn next(&mut self, input: f64) -> Self::Output {
@@ -227,7 +256,7 @@ macro_rules! talib_2_in_2_out {
             }
         }
 
-        impl crate::traits::Next<(f64, f64)> for $name {
+        impl $crate::traits::Next<(f64, f64)> for $name {
             type Output = (f64, f64);
 
             fn next(&mut self, (in1, in2): (f64, f64)) -> Self::Output {
@@ -266,7 +295,7 @@ macro_rules! talib_3_in_1_out {
             }
         }
 
-        impl crate::traits::Next<(f64, f64, f64)> for $name {
+        impl $crate::traits::Next<(f64, f64, f64)> for $name {
             type Output = f64;
 
             fn next(&mut self, (high, low, close): (f64, f64, f64)) -> Self::Output {
@@ -303,7 +332,7 @@ macro_rules! talib_3_in_2_out {
             }
         }
 
-        impl crate::traits::Next<(f64, f64, f64)> for $name {
+        impl $crate::traits::Next<(f64, f64, f64)> for $name {
             type Output = (f64, f64);
 
             fn next(&mut self, (high, low, close): (f64, f64, f64)) -> Self::Output {
@@ -345,7 +374,7 @@ macro_rules! talib_4_in_1_out {
             }
         }
 
-        impl crate::traits::Next<(f64, f64, f64, f64)> for $name {
+        impl $crate::traits::Next<(f64, f64, f64, f64)> for $name {
             type Output = f64;
 
             fn next(&mut self, (in1, in2, in3, in4): (f64, f64, f64, f64)) -> Self::Output {

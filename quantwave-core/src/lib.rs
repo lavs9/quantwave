@@ -23,6 +23,7 @@ pub use indicators::atr_ts::ATRTrailingStop;
 pub use indicators::pivot_points::PivotPoints;
 pub use indicators::fractals::BillWilliamsFractals;
 pub use indicators::ichimoku::IchimokuCloud;
+pub use indicators::math::*;
 
 /// Re-export talib-rs for convenience
 pub use talib_rs as talib;
