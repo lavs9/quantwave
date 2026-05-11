@@ -19,6 +19,12 @@ impl SMA {
     }
 }
 
+impl From<usize> for SMA {
+    fn from(period: usize) -> Self {
+        Self::new(period)
+    }
+}
+
 impl Next<f64> for SMA {
     type Output = f64;
 
@@ -54,6 +60,12 @@ impl EMA {
     }
 }
 
+impl From<usize> for EMA {
+    fn from(period: usize) -> Self {
+        Self::new(period)
+    }
+}
+
 impl Next<f64> for EMA {
     type Output = f64;
 
@@ -85,6 +97,12 @@ impl WMA {
             period,
             window: VecDeque::with_capacity(period),
         }
+    }
+}
+
+impl From<usize> for WMA {
+    fn from(period: usize) -> Self {
+        Self::new(period)
     }
 }
 

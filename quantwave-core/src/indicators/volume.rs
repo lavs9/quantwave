@@ -1,6 +1,8 @@
 talib_4_in_1_out!(AD, talib_rs::volume::ad);
+impl Default for AD { fn default() -> Self { Self::new() } }
 talib_4_in_1_out!(ADOSC, talib_rs::volume::adosc, fastperiod: usize, slowperiod: usize);
 talib_2_in_1_out!(OBV, talib_rs::volume::obv);
+impl Default for OBV { fn default() -> Self { Self::new() } }
 
 #[cfg(test)]
 mod tests {

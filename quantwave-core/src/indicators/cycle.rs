@@ -1,8 +1,13 @@
 talib_1_in_1_out!(HT_DCPERIOD, talib_rs::cycle::ht_dcperiod);
+impl Default for HT_DCPERIOD { fn default() -> Self { Self::new() } }
 talib_1_in_2_out!(HT_PHASOR, talib_rs::cycle::ht_phasor);
+impl Default for HT_PHASOR { fn default() -> Self { Self::new() } }
 talib_1_in_1_out!(HT_DCPHASE, talib_rs::cycle::ht_dcphase);
+impl Default for HT_DCPHASE { fn default() -> Self { Self::new() } }
 talib_1_in_2_out!(HT_SINE, talib_rs::cycle::ht_sine);
+impl Default for HT_SINE { fn default() -> Self { Self::new() } }
 talib_1_in_1_out_i32!(HT_TRENDMODE, talib_rs::cycle::ht_trendmode);
+impl Default for HT_TRENDMODE { fn default() -> Self { Self::new() } }
 
 #[cfg(test)]
 mod tests {

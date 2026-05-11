@@ -4,12 +4,19 @@ use std::collections::VecDeque;
 talib_1_in_1_out!(TaSTDDEV, talib_rs::statistic::stddev, timeperiod: usize, nbdev: f64);
 talib_1_in_1_out!(TaVAR, talib_rs::statistic::var, timeperiod: usize, nbdev: f64);
 talib_2_in_1_out!(TaBETA, talib_rs::statistic::beta, timeperiod: usize);
+impl From<usize> for TaBETA { fn from(p: usize) -> Self { Self::new(p) } }
 talib_2_in_1_out!(TaCORREL, talib_rs::statistic::correl, timeperiod: usize);
+impl From<usize> for TaCORREL { fn from(p: usize) -> Self { Self::new(p) } }
 talib_1_in_1_out!(TaLINEARREG, talib_rs::statistic::linearreg, timeperiod: usize);
+impl From<usize> for TaLINEARREG { fn from(p: usize) -> Self { Self::new(p) } }
 talib_1_in_1_out!(TaLINEARREG_SLOPE, talib_rs::statistic::linearreg_slope, timeperiod: usize);
+impl From<usize> for TaLINEARREG_SLOPE { fn from(p: usize) -> Self { Self::new(p) } }
 talib_1_in_1_out!(TaLINEARREG_INTERCEPT, talib_rs::statistic::linearreg_intercept, timeperiod: usize);
+impl From<usize> for TaLINEARREG_INTERCEPT { fn from(p: usize) -> Self { Self::new(p) } }
 talib_1_in_1_out!(TaLINEARREG_ANGLE, talib_rs::statistic::linearreg_angle, timeperiod: usize);
+impl From<usize> for TaLINEARREG_ANGLE { fn from(p: usize) -> Self { Self::new(p) } }
 talib_1_in_1_out!(TaTSF, talib_rs::statistic::tsf, timeperiod: usize);
+impl From<usize> for TaTSF { fn from(p: usize) -> Self { Self::new(p) } }
 
 /// Standard Deviation (Population)
 #[derive(Debug, Clone)]
@@ -28,6 +35,12 @@ impl StandardDeviation {
             sum: 0.0,
             sum_sq: 0.0,
         }
+    }
+}
+
+impl From<usize> for StandardDeviation {
+    fn from(period: usize) -> Self {
+        Self::new(period)
     }
 }
 
@@ -83,6 +96,12 @@ impl LinearRegression {
             sum_x,
             sum_x2,
         }
+    }
+}
+
+impl From<usize> for LinearRegression {
+    fn from(period: usize) -> Self {
+        Self::new(period)
     }
 }
 

@@ -36,6 +36,449 @@ impl<'a> QuantWaveNamespace<'a> {
     pub fn minindex(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<MININDEX>(name, period, "minindex") }
     pub fn sum(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<SUM>(name, period, "sum") }
 
+    pub fn sma(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<SMA>(name, period, "sma") }
+    pub fn ema(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<EMA>(name, period, "ema") }
+    pub fn wma(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<WMA>(name, period, "wma") }
+    pub fn dema(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<DEMA>(name, period, "dema") }
+    pub fn trima(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<TRIMA>(name, period, "trima") }
+    pub fn kama(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<KAMA>(name, period, "kama") }
+    pub fn midpoint(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<MIDPOINT>(name, period, "midpoint") }
+    pub fn ht_trendline(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<HT_TRENDLINE>(name, "ht_trendline") }
+    pub fn midprice(self, high: &str, low: &str, period: usize) -> LazyFrame { self.math_operator_2_in_1_out_period::<MIDPRICE>(high, low, period, "midprice") }
+
+    pub fn rsi(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<RSI>(name, period, "rsi") }
+    pub fn mom(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<MOM>(name, period, "mom") }
+    pub fn roc(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<ROC>(name, period, "roc") }
+    pub fn rocp(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<ROCP>(name, period, "rocp") }
+    pub fn rocr(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<ROCR>(name, period, "rocr") }
+    pub fn rocr100(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<ROCR100>(name, period, "rocr100") }
+    pub fn trix(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<TRIX>(name, period, "trix") }
+    pub fn cmo(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<CMO>(name, period, "cmo") }
+
+    pub fn adx(self, high: &str, low: &str, close: &str, period: usize) -> LazyFrame { self.ta_3_in_1_out_period::<ADX>(high, low, close, period, "adx") }
+    pub fn adxr(self, high: &str, low: &str, close: &str, period: usize) -> LazyFrame { self.ta_3_in_1_out_period::<ADXR>(high, low, close, period, "adxr") }
+    pub fn cci(self, high: &str, low: &str, close: &str, period: usize) -> LazyFrame { self.ta_3_in_1_out_period::<CCI>(high, low, close, period, "cci") }
+    pub fn willr(self, high: &str, low: &str, close: &str, period: usize) -> LazyFrame { self.ta_3_in_1_out_period::<WILLR>(high, low, close, period, "willr") }
+    pub fn dx(self, high: &str, low: &str, close: &str, period: usize) -> LazyFrame { self.ta_3_in_1_out_period::<DX>(high, low, close, period, "dx") }
+    pub fn plus_di(self, high: &str, low: &str, close: &str, period: usize) -> LazyFrame { self.ta_3_in_1_out_period::<PLUS_DI>(high, low, close, period, "plus_di") }
+    pub fn minus_di(self, high: &str, low: &str, close: &str, period: usize) -> LazyFrame { self.ta_3_in_1_out_period::<MINUS_DI>(high, low, close, period, "minus_di") }
+
+    pub fn ta_atr(self, high: &str, low: &str, close: &str, period: usize) -> LazyFrame { self.ta_3_in_1_out_period::<TaATR>(high, low, close, period, "ta_atr") }
+    pub fn ta_natr(self, high: &str, low: &str, close: &str, period: usize) -> LazyFrame { self.ta_3_in_1_out_period::<TaNATR>(high, low, close, period, "ta_natr") }
+    pub fn ta_trange(self, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_3_in_1_out_default::<TaTRANGE>(high, low, close, "ta_trange") }
+
+    pub fn obv(self, close: &str, volume: &str) -> LazyFrame { self.math_operator_2_in_1_out::<OBV>(close, volume, "obv") }
+    pub fn ad(self, high: &str, low: &str, close: &str, volume: &str) -> LazyFrame { self.ta_4_in_1_out_default::<AD>(high, low, close, volume, "ad") }
+    pub fn adosc(self, high: &str, low: &str, close: &str, volume: &str, fast: usize, slow: usize) -> LazyFrame {
+        let high_str = high.to_string();
+        let low_str = low.to_string();
+        let close_str = close.to_string();
+        let volume_str = volume.to_string();
+        self.0.clone().with_columns([
+            as_struct(vec![col(&high_str), col(&low_str), col(&close_str), col(&volume_str)])
+                .map(move |s| {
+                    let ca = s.struct_()?;
+                    let s_h = ca.field_by_name(&high_str)?;
+                    let s_l = ca.field_by_name(&low_str)?;
+                    let s_c = ca.field_by_name(&close_str)?;
+                    let s_v = ca.field_by_name(&volume_str)?;
+                    
+                    let high = s_h.f64()?;
+                    let low = s_l.f64()?;
+                    let close = s_c.f64()?;
+                    let volume = s_v.f64()?;
+
+                    let mut indicator = ADOSC::new(fast, slow);
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let h = high.get(i).unwrap_or(f64::NAN);
+                        let l = low.get(i).unwrap_or(f64::NAN);
+                        let c = close.get(i).unwrap_or(f64::NAN);
+                        let v = volume.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next((h, l, c, v)));
+                    }
+
+                    Ok(Some(Column::from(Series::new("adosc".into(), values))))
+                }, GetOutput::from_type(DataType::Float64))
+                .alias("adosc")
+        ])
+    }
+
+    pub fn aroon(self, high: &str, low: &str, period: usize) -> LazyFrame {
+        let high_str = high.to_string();
+        let low_str = low.to_string();
+        self.0.clone().with_columns([
+            as_struct(vec![col(&high_str), col(&low_str)])
+                .map(move |s| {
+                    let ca = s.struct_()?;
+                    let s_h = ca.field_by_name(&high_str)?;
+                    let s_l = ca.field_by_name(&low_str)?;
+                    let high = s_h.f64()?;
+                    let low = s_l.f64()?;
+
+                    let mut indicator = AROON::new(period);
+                    let mut up_vals = Vec::with_capacity(s.len());
+                    let mut down_vals = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let h = high.get(i).unwrap_or(f64::NAN);
+                        let l = low.get(i).unwrap_or(f64::NAN);
+                        let (up, down) = indicator.next((h, l));
+                        up_vals.push(up);
+                        down_vals.push(down);
+                    }
+
+                    let s_up = Series::new("aroon_up".into(), up_vals);
+                    let s_down = Series::new("aroon_down".into(), down_vals);
+                    let struct_series = StructChunked::from_series("aroon_result".into(), s.len(), [s_up, s_down].iter())?;
+                    Ok(Some(Column::from(struct_series.into_series())))
+                }, GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("aroon_up".into(), DataType::Float64),
+                    Field::new("aroon_down".into(), DataType::Float64),
+                ])))
+                .alias("aroon")
+        ])
+    }
+
+    pub fn stoch(self, high: &str, low: &str, close: &str, fastk: usize, slowk: usize, slowk_matype: talib::MaType, slowd: usize, slowd_matype: talib::MaType) -> LazyFrame {
+        let high_str = high.to_string();
+        let low_str = low.to_string();
+        let close_str = close.to_string();
+        self.0.clone().with_columns([
+            as_struct(vec![col(&high_str), col(&low_str), col(&close_str)])
+                .map(move |s| {
+                    let ca = s.struct_()?;
+                    let s_h = ca.field_by_name(&high_str)?;
+                    let s_l = ca.field_by_name(&low_str)?;
+                    let s_c = ca.field_by_name(&close_str)?;
+                    let high = s_h.f64()?;
+                    let low = s_l.f64()?;
+                    let close = s_c.f64()?;
+
+                    let mut indicator = STOCH::new(fastk, slowk, slowk_matype, slowd, slowd_matype);
+                    let mut k_vals = Vec::with_capacity(s.len());
+                    let mut d_vals = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let h = high.get(i).unwrap_or(f64::NAN);
+                        let l = low.get(i).unwrap_or(f64::NAN);
+                        let c = close.get(i).unwrap_or(f64::NAN);
+                        let (k, d) = indicator.next((h, l, c));
+                        k_vals.push(k);
+                        d_vals.push(d);
+                    }
+
+                    let s_k = Series::new("slowk".into(), k_vals);
+                    let s_d = Series::new("slowd".into(), d_vals);
+                    let struct_series = StructChunked::from_series("stoch_result".into(), s.len(), [s_k, s_d].iter())?;
+                    Ok(Some(Column::from(struct_series.into_series())))
+                }, GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("slowk".into(), DataType::Float64),
+                    Field::new("slowd".into(), DataType::Float64),
+                ])))
+                .alias("stoch")
+        ])
+    }
+
+    pub fn avgprice(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame {
+ self.ta_4_in_1_out_default::<AVGPRICE>(open, high, low, close, "avgprice") }
+    pub fn medprice(self, high: &str, low: &str) -> LazyFrame { self.math_operator_2_in_1_out::<MEDPRICE>(high, low, "medprice") }
+    pub fn typprice(self, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_3_in_1_out_default::<TYPPRICE>(high, low, close, "typprice") }
+    pub fn wclprice(self, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_3_in_1_out_default::<WCLPRICE>(high, low, close, "wclprice") }
+
+    pub fn ht_dcperiod(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<HT_DCPERIOD>(name, "ht_dcperiod") }
+    pub fn ht_dcphase(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<HT_DCPHASE>(name, "ht_dcphase") }
+    pub fn ht_trendmode(self, name: &str) -> LazyFrame { self.math_transform_1_in_1_out::<HT_TRENDMODE>(name, "ht_trendmode") }
+
+    pub fn ta_stddev(self, name: &str, period: usize, nbdev: f64) -> LazyFrame {
+        let name_str = name.to_string();
+        self.0.clone().with_columns([
+            col(&name_str)
+                .map(move |s| {
+                    let ca = s.f64()?;
+                    let mut indicator = TaSTDDEV::new(period, nbdev);
+                    let mut values = Vec::with_capacity(s.len());
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next(val));
+                    }
+                    Ok(Some(Column::from(Series::new("ta_stddev".into(), values))))
+                }, GetOutput::from_type(DataType::Float64))
+                .alias("ta_stddev")
+        ])
+    }
+    pub fn ta_var(self, name: &str, period: usize, nbdev: f64) -> LazyFrame {
+        let name_str = name.to_string();
+        self.0.clone().with_columns([
+            col(&name_str)
+                .map(move |s| {
+                    let ca = s.f64()?;
+                    let mut indicator = TaVAR::new(period, nbdev);
+                    let mut values = Vec::with_capacity(s.len());
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next(val));
+                    }
+                    Ok(Some(Column::from(Series::new("ta_var".into(), values))))
+                }, GetOutput::from_type(DataType::Float64))
+                .alias("ta_var")
+        ])
+    }
+    pub fn ta_beta(self, in1: &str, in2: &str, period: usize) -> LazyFrame { self.math_operator_2_in_1_out_period::<TaBETA>(in1, in2, period, "ta_beta") }
+    pub fn ta_correl(self, in1: &str, in2: &str, period: usize) -> LazyFrame { self.math_operator_2_in_1_out_period::<TaCORREL>(in1, in2, period, "ta_correl") }
+    pub fn ta_linearreg(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<TaLINEARREG>(name, period, "ta_linearreg") }
+    pub fn ta_linearreg_slope(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<TaLINEARREG_SLOPE>(name, period, "ta_linearreg_slope") }
+    pub fn ta_linearreg_intercept(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<TaLINEARREG_INTERCEPT>(name, period, "ta_linearreg_intercept") }
+    pub fn ta_linearreg_angle(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<TaLINEARREG_ANGLE>(name, period, "ta_linearreg_angle") }
+    pub fn ta_tsf(self, name: &str, period: usize) -> LazyFrame { self.math_operator_1_in_1_out_period::<TaTSF>(name, period, "ta_tsf") }
+
+    pub fn cdl_2crows(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDL2CROWS>(open, high, low, close, "cdl_2crows") }
+    pub fn cdl_3blackcrows(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDL3BLACKCROWS>(open, high, low, close, "cdl_3blackcrows") }
+    pub fn cdl_3inside(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDL3INSIDE>(open, high, low, close, "cdl_3inside") }
+    pub fn cdl_3linestrike(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDL3LINESTRIKE>(open, high, low, close, "cdl_3linestrike") }
+    pub fn cdl_3outside(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDL3OUTSIDE>(open, high, low, close, "cdl_3outside") }
+    pub fn cdl_3starsinsouth(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDL3STARSINSOUTH>(open, high, low, close, "cdl_3starsinsouth") }
+    pub fn cdl_3whitesoldiers(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDL3WHITESOLDIERS>(open, high, low, close, "cdl_3whitesoldiers") }
+    pub fn cdl_abandonedbaby(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLABANDONEDBABY>(open, high, low, close, "cdl_abandonedbaby") }
+    pub fn cdl_advanceblock(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLADVANCEBLOCK>(open, high, low, close, "cdl_advanceblock") }
+    pub fn cdl_belthold(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLBELTHOLD>(open, high, low, close, "cdl_belthold") }
+    pub fn cdl_breakaway(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLBREAKAWAY>(open, high, low, close, "cdl_breakaway") }
+    pub fn cdl_closingmarubozu(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLCLOSINGMARUBOZU>(open, high, low, close, "cdl_closingmarubozu") }
+    pub fn cdl_concealbabyswall(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLCONCEALBABYSWALL>(open, high, low, close, "cdl_concealbabyswall") }
+    pub fn cdl_counterattack(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLCOUNTERATTACK>(open, high, low, close, "cdl_counterattack") }
+    pub fn cdl_darkcloudcover(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLDARKCLOUDCOVER>(open, high, low, close, "cdl_darkcloudcover") }
+    pub fn cdl_doji(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLDOJI>(open, high, low, close, "cdl_doji") }
+    pub fn cdl_dojistar(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLDOJISTAR>(open, high, low, close, "cdl_dojistar") }
+    pub fn cdl_dragonflydoji(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLDRAGONFLYDOJI>(open, high, low, close, "cdl_dragonflydoji") }
+    pub fn cdl_engulfing(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLENGULFING>(open, high, low, close, "cdl_engulfing") }
+    pub fn cdl_eveningdojistar(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLEVENINGDOJISTAR>(open, high, low, close, "cdl_eveningdojistar") }
+    pub fn cdl_eveningstar(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLEVENINGSTAR>(open, high, low, close, "cdl_eveningstar") }
+    pub fn cdl_gapsidesidewhite(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLGAPSIDESIDEWHITE>(open, high, low, close, "cdl_gapsidesidewhite") }
+    pub fn cdl_gravestonedoji(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLGRAVESTONEDOJI>(open, high, low, close, "cdl_gravestonedoji") }
+    pub fn cdl_hammer(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLHAMMER>(open, high, low, close, "cdl_hammer") }
+    pub fn cdl_hangingman(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLHANGINGMAN>(open, high, low, close, "cdl_hangingman") }
+    pub fn cdl_harami(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLHARAMI>(open, high, low, close, "cdl_harami") }
+    pub fn cdl_haramicross(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLHARAMICROSS>(open, high, low, close, "cdl_haramicross") }
+    pub fn cdl_highwave(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLHIGHWAVE>(open, high, low, close, "cdl_highwave") }
+    pub fn cdl_hikkake(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLHIKKAKE>(open, high, low, close, "cdl_hikkake") }
+    pub fn cdl_hikkakemod(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLHIKKAKEMOD>(open, high, low, close, "cdl_hikkakemod") }
+    pub fn cdl_homingpigeon(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLHOMINGPIGEON>(open, high, low, close, "cdl_homingpigeon") }
+    pub fn cdl_identical3crows(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLIDENTICAL3CROWS>(open, high, low, close, "cdl_identical3crows") }
+    pub fn cdl_inneck(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLINNECK>(open, high, low, close, "cdl_inneck") }
+    pub fn cdl_invertedhammer(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLINVERTEDHAMMER>(open, high, low, close, "cdl_invertedhammer") }
+    pub fn cdl_kicking(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLKICKING>(open, high, low, close, "cdl_kicking") }
+    pub fn cdl_kickingbylength(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLKICKINGBYLENGTH>(open, high, low, close, "cdl_kickingbylength") }
+    pub fn cdl_ladderbottom(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLLADDERBOTTOM>(open, high, low, close, "cdl_ladderbottom") }
+    pub fn cdl_longleggeddoji(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLLONGLEGGEDDOJI>(open, high, low, close, "cdl_longleggeddoji") }
+    pub fn cdl_longline(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLLONGLINE>(open, high, low, close, "cdl_longline") }
+    pub fn cdl_marubozu(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLMARUBOZU>(open, high, low, close, "cdl_marubozu") }
+    pub fn cdl_matchinglow(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLMATCHINGLOW>(open, high, low, close, "cdl_matchinglow") }
+    pub fn cdl_mathold(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLMATHOLD>(open, high, low, close, "cdl_mathold") }
+    pub fn cdl_morningdojistar(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLMORNINGDOJISTAR>(open, high, low, close, "cdl_morningdojistar") }
+    pub fn cdl_morningstar(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLMORNINGSTAR>(open, high, low, close, "cdl_morningstar") }
+    pub fn cdl_onneck(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLONNECK>(open, high, low, close, "cdl_onneck") }
+    pub fn cdl_piercing(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLPIERCING>(open, high, low, close, "cdl_piercing") }
+    pub fn cdl_rickshawman(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLRICKSHAWMAN>(open, high, low, close, "cdl_rickshawman") }
+    pub fn cdl_risefall3methods(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLRISEFALL3METHODS>(open, high, low, close, "cdl_risefall3methods") }
+    pub fn cdl_separatinglines(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLSEPARATINGLINES>(open, high, low, close, "cdl_separatinglines") }
+    pub fn cdl_shootingstar(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLSHOOTINGSTAR>(open, high, low, close, "cdl_shootingstar") }
+    pub fn cdl_shortline(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLSHORTLINE>(open, high, low, close, "cdl_shortline") }
+    pub fn cdl_spinningtop(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLSPINNINGTOP>(open, high, low, close, "cdl_spinningtop") }
+    pub fn cdl_stalledpattern(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLSTALLEDPATTERN>(open, high, low, close, "cdl_stalledpattern") }
+    pub fn cdl_sticksandwich(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLSTICKSANDWICH>(open, high, low, close, "cdl_sticksandwich") }
+    pub fn cdl_takuri(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLTAKURI>(open, high, low, close, "cdl_takuri") }
+    pub fn cdl_tasukigap(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLTASUKIGAP>(open, high, low, close, "cdl_tasukigap") }
+    pub fn cdl_thrusting(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLTHRUSTING>(open, high, low, close, "cdl_thrusting") }
+    pub fn cdl_tristar(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLTRISTAR>(open, high, low, close, "cdl_tristar") }
+    pub fn cdl_unique3river(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLUNIQUE3RIVER>(open, high, low, close, "cdl_unique3river") }
+    pub fn cdl_upsidegap2crows(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLUPSIDEGAP2CROWS>(open, high, low, close, "cdl_upsidegap2crows") }
+    pub fn cdl_xsidegap3methods(self, open: &str, high: &str, low: &str, close: &str) -> LazyFrame { self.ta_4_in_1_out_default::<CDLXSIDEGAP3METHODS>(open, high, low, close, "cdl_xsidegap3methods") }
+
+    pub fn macd(self, name: &str, fast: usize, slow: usize, signal: usize) -> LazyFrame {
+        let name_str = name.to_string();
+        self.0.clone().with_columns([
+            col(&name_str)
+                .map(move |s| {
+                    let ca = s.f64()?;
+                    let mut indicator = MACD::new(fast, slow, signal);
+                    let mut macd_vals = Vec::with_capacity(s.len());
+                    let mut signal_vals = Vec::with_capacity(s.len());
+                    let mut hist_vals = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        let (m, s_val, h) = indicator.next(val);
+                        macd_vals.push(m);
+                        signal_vals.push(s_val);
+                        hist_vals.push(h);
+                    }
+
+                    let s_macd = Series::new("macd".into(), macd_vals);
+                    let s_signal = Series::new("macd_signal".into(), signal_vals);
+                    let s_hist = Series::new("macd_hist".into(), hist_vals);
+                    
+                    let struct_series = StructChunked::from_series("macd_result".into(), s.len(), [s_macd, s_signal, s_hist].iter())?;
+                    Ok(Some(Column::from(struct_series.into_series())))
+                }, GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("macd".into(), DataType::Float64),
+                    Field::new("macd_signal".into(), DataType::Float64),
+                    Field::new("macd_hist".into(), DataType::Float64),
+                ])))
+                .alias("macd")
+        ])
+    }
+
+    pub fn bbands(self, name: &str, period: usize, nbdevup: f64, nbdevdn: f64, matype: talib::MaType) -> LazyFrame {
+        let name_str = name.to_string();
+        self.0.clone().with_columns([
+            col(&name_str)
+                .map(move |s| {
+                    let ca = s.f64()?;
+                    let mut indicator = BBANDS::new(period, nbdevup, nbdevdn, matype);
+                    let mut upper_vals = Vec::with_capacity(s.len());
+                    let mut middle_vals = Vec::with_capacity(s.len());
+                    let mut lower_vals = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        let (u, m, l) = indicator.next(val);
+                        upper_vals.push(u);
+                        middle_vals.push(m);
+                        lower_vals.push(l);
+                    }
+
+                    let s_upper = Series::new("upper".into(), upper_vals);
+                    let s_middle = Series::new("middle".into(), middle_vals);
+                    let s_lower = Series::new("lower".into(), lower_vals);
+                    
+                    let struct_series = StructChunked::from_series("bbands_result".into(), s.len(), [s_upper, s_middle, s_lower].iter())?;
+                    Ok(Some(Column::from(struct_series.into_series())))
+                }, GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("upper".into(), DataType::Float64),
+                    Field::new("middle".into(), DataType::Float64),
+                    Field::new("lower".into(), DataType::Float64),
+                ])))
+                .alias("bbands")
+        ])
+    }
+
+    fn ta_3_in_1_out_period<I>(self, in1: &str, in2: &str, in3: &str, period: usize, output_name: &str) -> LazyFrame
+    where
+        I: Next<(f64, f64, f64), Output = f64> + Send + Sync + 'static,
+        I: From<usize>,
+    {
+        let in1_str = in1.to_string();
+        let in2_str = in2.to_string();
+        let in3_str = in3.to_string();
+        let output_name_str = output_name.to_string();
+        let output_name_for_closure = output_name_str.clone();
+        self.0.clone().with_columns([
+            as_struct(vec![col(&in1_str), col(&in2_str), col(&in3_str)])
+                .map(move |s| {
+                    let ca = s.struct_()?;
+                    let s1 = ca.field_by_name(&in1_str)?;
+                    let s2 = ca.field_by_name(&in2_str)?;
+                    let s3 = ca.field_by_name(&in3_str)?;
+                    
+                    let ca1 = s1.f64()?;
+                    let ca2 = s2.f64()?;
+                    let ca3 = s3.f64()?;
+
+                    let mut indicator = I::from(period);
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let v1 = ca1.get(i).unwrap_or(f64::NAN);
+                        let v2 = ca2.get(i).unwrap_or(f64::NAN);
+                        let v3 = ca3.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next((v1, v2, v3)));
+                    }
+
+                    Ok(Some(Column::from(Series::new(output_name_for_closure.clone().into(), values))))
+                }, GetOutput::from_type(DataType::Float64))
+                .alias(&output_name_str)
+        ])
+    }
+
+    fn ta_3_in_1_out_default<I>(self, in1: &str, in2: &str, in3: &str, output_name: &str) -> LazyFrame
+    where
+        I: Next<(f64, f64, f64), Output = f64> + Default + Send + Sync + 'static,
+    {
+        let in1_str = in1.to_string();
+        let in2_str = in2.to_string();
+        let in3_str = in3.to_string();
+        let output_name_str = output_name.to_string();
+        let output_name_for_closure = output_name_str.clone();
+        self.0.clone().with_columns([
+            as_struct(vec![col(&in1_str), col(&in2_str), col(&in3_str)])
+                .map(move |s| {
+                    let ca = s.struct_()?;
+                    let s1 = ca.field_by_name(&in1_str)?;
+                    let s2 = ca.field_by_name(&in2_str)?;
+                    let s3 = ca.field_by_name(&in3_str)?;
+                    
+                    let ca1 = s1.f64()?;
+                    let ca2 = s2.f64()?;
+                    let ca3 = s3.f64()?;
+
+                    let mut indicator = I::default();
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let v1 = ca1.get(i).unwrap_or(f64::NAN);
+                        let v2 = ca2.get(i).unwrap_or(f64::NAN);
+                        let v3 = ca3.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next((v1, v2, v3)));
+                    }
+
+                    Ok(Some(Column::from(Series::new(output_name_for_closure.clone().into(), values))))
+                }, GetOutput::from_type(DataType::Float64))
+                .alias(&output_name_str)
+        ])
+    }
+
+    fn ta_4_in_1_out_default<I>(self, in1: &str, in2: &str, in3: &str, in4: &str, output_name: &str) -> LazyFrame
+    where
+        I: Next<(f64, f64, f64, f64), Output = f64> + Default + Send + Sync + 'static,
+    {
+        let in1_str = in1.to_string();
+        let in2_str = in2.to_string();
+        let in3_str = in3.to_string();
+        let in4_str = in4.to_string();
+        let output_name_str = output_name.to_string();
+        let output_name_for_closure = output_name_str.clone();
+        self.0.clone().with_columns([
+            as_struct(vec![col(&in1_str), col(&in2_str), col(&in3_str), col(&in4_str)])
+                .map(move |s| {
+                    let ca = s.struct_()?;
+                    let s1 = ca.field_by_name(&in1_str)?;
+                    let s2 = ca.field_by_name(&in2_str)?;
+                    let s3 = ca.field_by_name(&in3_str)?;
+                    let s4 = ca.field_by_name(&in4_str)?;
+                    
+                    let ca1 = s1.f64()?;
+                    let ca2 = s2.f64()?;
+                    let ca3 = s3.f64()?;
+                    let ca4 = s4.f64()?;
+
+                    let mut indicator = I::default();
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let v1 = ca1.get(i).unwrap_or(f64::NAN);
+                        let v2 = ca2.get(i).unwrap_or(f64::NAN);
+                        let v3 = ca3.get(i).unwrap_or(f64::NAN);
+                        let v4 = ca4.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next((v1, v2, v3, v4)));
+                    }
+
+                    Ok(Some(Column::from(Series::new(output_name_for_closure.clone().into(), values))))
+                }, GetOutput::from_type(DataType::Float64))
+                .alias(&output_name_str)
+        ])
+    }
+
     fn math_transform_1_in_1_out<I>(self, name: &str, output_name: &str) -> LazyFrame
     where
         I: Next<f64, Output = f64> + Default + Send + Sync + 'static,
@@ -112,6 +555,40 @@ impl<'a> QuantWaveNamespace<'a> {
                     for i in 0..s.len() {
                         let val = ca.get(i).unwrap_or(f64::NAN);
                         values.push(indicator.next(val));
+                    }
+
+                    Ok(Some(Column::from(Series::new(output_name_for_closure.clone().into(), values))))
+                }, GetOutput::from_type(DataType::Float64))
+                .alias(&output_name_str)
+        ])
+    }
+
+    fn math_operator_2_in_1_out_period<I>(self, in1: &str, in2: &str, period: usize, output_name: &str) -> LazyFrame
+    where
+        I: Next<(f64, f64), Output = f64> + Send + Sync + 'static,
+        I: From<usize>,
+    {
+        let in1_str = in1.to_string();
+        let in2_str = in2.to_string();
+        let output_name_str = output_name.to_string();
+        let output_name_for_closure = output_name_str.clone();
+        self.0.clone().with_columns([
+            as_struct(vec![col(&in1_str), col(&in2_str)])
+                .map(move |s| {
+                    let ca = s.struct_()?;
+                    let s1 = ca.field_by_name(&in1_str)?;
+                    let s2 = ca.field_by_name(&in2_str)?;
+                    
+                    let ca1 = s1.f64()?;
+                    let ca2 = s2.f64()?;
+
+                    let mut indicator = I::from(period);
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let v1 = ca1.get(i).unwrap_or(f64::NAN);
+                        let v2 = ca2.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next((v1, v2)));
                     }
 
                     Ok(Some(Column::from(Series::new(output_name_for_closure.clone().into(), values))))

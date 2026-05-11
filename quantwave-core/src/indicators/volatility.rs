@@ -2,8 +2,11 @@ use crate::traits::Next;
 use crate::indicators::smoothing::EMA;
 
 talib_3_in_1_out!(TaATR, talib_rs::volatility::atr, timeperiod: usize);
+impl From<usize> for TaATR { fn from(p: usize) -> Self { Self::new(p) } }
 talib_3_in_1_out!(TaNATR, talib_rs::volatility::natr, timeperiod: usize);
+impl From<usize> for TaNATR { fn from(p: usize) -> Self { Self::new(p) } }
 talib_3_in_1_out!(TaTRANGE, talib_rs::volatility::trange);
+impl Default for TaTRANGE { fn default() -> Self { Self::new() } }
 
 /// True Range (TR)
 #[derive(Debug, Clone, Default)]
