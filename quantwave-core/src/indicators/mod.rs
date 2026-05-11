@@ -4,3 +4,4 @@ pub mod supertrend;
 pub mod vwap;
 pub mod hma;
 pub mod keltner;
+pub mod alma;
