@@ -351,6 +351,49 @@ impl<'a> QuantWaveNamespace<'a> {
                 .alias("heikin_ashi_data")
         ])
     }
+
+    pub fn wavetrend(self, high: &str, low: &str, close: &str, n1: usize, n2: usize, n3: usize) -> LazyFrame {
+        let high = high.to_string();
+        let low = low.to_string();
+        let close = close.to_string();
+
+        self.0.clone().with_columns([
+            as_struct(vec![col(&high), col(&low), col(&close)])
+                .map(move |s| {
+                    let ca = s.struct_()?;
+                    let s_high = ca.field_by_name(&high)?;
+                    let s_low = ca.field_by_name(&low)?;
+                    let s_close = ca.field_by_name(&close)?;
+                    
+                    let high = s_high.f64()?;
+                    let low = s_low.f64()?;
+                    let close = s_close.f64()?;
+
+                    let mut wt = quantwave_core::WaveTrend::new(n1, n2, n3);
+                    let mut wt1_vals = Vec::with_capacity(s.len());
+                    let mut wt2_vals = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let h = high.get(i).unwrap_or(0.0);
+                        let l = low.get(i).unwrap_or(0.0);
+                        let c = close.get(i).unwrap_or(0.0);
+                        let (wt1, wt2) = wt.next((h, l, c));
+                        wt1_vals.push(wt1);
+                        wt2_vals.push(wt2);
+                    }
+
+                    let wt1_series = Series::new("wt1".into(), wt1_vals);
+                    let wt2_series = Series::new("wt2".into(), wt2_vals);
+                    
+                    let out = StructChunked::from_series("wavetrend_output".into(), s.len(), [wt1_series, wt2_series].iter())?;
+                    Ok(Some(Column::from(out.into_series())))
+                }, GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("wt1".into(), DataType::Float64),
+                    Field::new("wt2".into(), DataType::Float64),
+                ])))
+                .alias("wavetrend_data")
+        ])
+    }
 }
 
 #[cfg(test)]
@@ -374,6 +417,26 @@ mod tests {
         let ha = out.column("heikin_ashi_data")?.struct_()?;
         assert_eq!(ha.field_by_name("ha_open".into())?.f64()?.get(0), Some(10.5));
         assert_eq!(ha.field_by_name("ha_close".into())?.f64()?.get(0), Some(10.25));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_polars_wavetrend() -> PolarsResult<()> {
+        let df = df![
+            "high" => [10.0, 12.0, 11.0],
+            "low" => [8.0, 10.0, 9.0],
+            "close" => [9.0, 11.0, 10.0]
+        ]?;
+
+        let out = df.lazy()
+            .ta()
+            .wavetrend("high", "low", "close", 10, 21, 4)
+            .collect()?;
+
+        let wt = out.column("wavetrend_data")?.struct_()?;
+        assert!(wt.field_by_name("wt1".into())?.f64()?.get(0).is_some());
+        assert!(wt.field_by_name("wt2".into())?.f64()?.get(0).is_some());
 
         Ok(())
     }

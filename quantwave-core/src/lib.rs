@@ -17,6 +17,7 @@ pub use indicators::statistics::{StandardDeviation, LinearRegression};
 pub use indicators::ttm_squeeze::TTMSqueeze;
 pub use indicators::vortex::VortexIndicator;
 pub use indicators::heikin_ashi::HeikinAshi;
+pub use indicators::wavetrend::WaveTrend;
 
 /// Re-export talib-rs for convenience
 pub use talib_rs as talib;
