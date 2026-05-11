@@ -1,4 +1,45 @@
 #[macro_export]
+macro_rules! talib_cdl {
+    ($name:ident, $talib_func:path) => {
+        #[derive(Debug, Clone)]
+        #[allow(non_camel_case_types)]
+        pub struct $name {
+            history_open: Vec<f64>,
+            history_high: Vec<f64>,
+            history_low: Vec<f64>,
+            history_close: Vec<f64>,
+        }
+
+        impl $name {
+            pub fn new() -> Self {
+                Self {
+                    history_open: Vec::new(),
+                    history_high: Vec::new(),
+                    history_low: Vec::new(),
+                    history_close: Vec::new(),
+                }
+            }
+        }
+
+        impl crate::traits::Next<(f64, f64, f64, f64)> for $name {
+            type Output = f64;
+
+            fn next(&mut self, (open, high, low, close): (f64, f64, f64, f64)) -> Self::Output {
+                self.history_open.push(open);
+                self.history_high.push(high);
+                self.history_low.push(low);
+                self.history_close.push(close);
+                if let Ok(res) = $talib_func(&self.history_open, &self.history_high, &self.history_low, &self.history_close) {
+                    *res.last().unwrap_or(&0) as f64
+                } else {
+                    0.0
+                }
+            }
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! talib_1_in_1_out {
     ($name:ident, $talib_func:path $(, $param:ident: $ptype:ty)*) => {
         #[derive(Debug, Clone)]

@@ -3,6 +3,8 @@ pub mod talib_wrapper;
 
 pub mod overlap;
 pub mod momentum;
+pub mod volume;
+pub mod pattern;
 pub mod smoothing;
 pub mod volatility;
 pub mod supertrend;

@@ -1,6 +1,10 @@
 use crate::traits::Next;
 use crate::indicators::smoothing::EMA;
 
+talib_3_in_1_out!(TaATR, talib_rs::volatility::atr, timeperiod: usize);
+talib_3_in_1_out!(TaNATR, talib_rs::volatility::natr, timeperiod: usize);
+talib_3_in_1_out!(TaTRANGE, talib_rs::volatility::trange);
+
 /// True Range (TR)
 #[derive(Debug, Clone, Default)]
 pub struct TrueRange {
