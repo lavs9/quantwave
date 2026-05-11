@@ -477,6 +477,61 @@ impl<'a> QuantWaveNamespace<'a> {
                 .alias("atr_ts_data")
         ])
     }
+
+    pub fn pivot_points(self, high: &str, low: &str, close: &str) -> LazyFrame {
+        let high = high.to_string();
+        let low = low.to_string();
+        let close = close.to_string();
+
+        self.0.clone().with_columns([
+            as_struct(vec![col(&high), col(&low), col(&close)])
+                .map(move |s| {
+                    let ca = s.struct_()?;
+                    let s_high = ca.field_by_name(&high)?;
+                    let s_low = ca.field_by_name(&low)?;
+                    let s_close = ca.field_by_name(&close)?;
+                    
+                    let high = s_high.f64()?;
+                    let low = s_low.f64()?;
+                    let close = s_close.f64()?;
+
+                    let mut pivot = quantwave_core::PivotPoints::new();
+                    let mut p_vals = Vec::with_capacity(s.len());
+                    let mut r1_vals = Vec::with_capacity(s.len());
+                    let mut s1_vals = Vec::with_capacity(s.len());
+                    let mut r2_vals = Vec::with_capacity(s.len());
+                    let mut s2_vals = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let h = high.get(i).unwrap_or(0.0);
+                        let l = low.get(i).unwrap_or(0.0);
+                        let c = close.get(i).unwrap_or(0.0);
+                        let (p, r1, s1, r2, s2) = pivot.next((h, l, c));
+                        p_vals.push(p);
+                        r1_vals.push(r1);
+                        s1_vals.push(s1);
+                        r2_vals.push(r2);
+                        s2_vals.push(s2);
+                    }
+
+                    let p_series = Series::new("p".into(), p_vals);
+                    let r1_series = Series::new("r1".into(), r1_vals);
+                    let s1_series = Series::new("s1".into(), s1_vals);
+                    let r2_series = Series::new("r2".into(), r2_vals);
+                    let s2_series = Series::new("s2".into(), s2_vals);
+                    
+                    let out = StructChunked::from_series("pivot_output".into(), s.len(), [p_series, r1_series, s1_series, r2_series, s2_series].iter())?;
+                    Ok(Some(Column::from(out.into_series())))
+                }, GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("p".into(), DataType::Float64),
+                    Field::new("r1".into(), DataType::Float64),
+                    Field::new("s1".into(), DataType::Float64),
+                    Field::new("r2".into(), DataType::Float64),
+                    Field::new("s2".into(), DataType::Float64),
+                ])))
+                .alias("pivot_points_data")
+        ])
+    }
 }
 
 #[cfg(test)]
@@ -545,6 +600,26 @@ mod tests {
         let atr_ts = out.column("atr_ts_data")?.struct_()?;
         assert!(atr_ts.field_by_name("stop".into())?.f64()?.get(0).is_some());
         assert!(atr_ts.field_by_name("direction".into())?.f64()?.get(0).is_some());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_polars_pivot_points() -> PolarsResult<()> {
+        let df = df![
+            "high" => [10.0, 12.0, 11.0],
+            "low" => [8.0, 10.0, 9.0],
+            "close" => [9.0, 11.0, 10.0]
+        ]?;
+
+        let out = df.lazy()
+            .ta()
+            .pivot_points("high", "low", "close")
+            .collect()?;
+
+        let pivot = out.column("pivot_points_data")?.struct_()?;
+        assert!(pivot.field_by_name("p".into())?.f64()?.get(0).is_some());
+        assert!(pivot.field_by_name("r1".into())?.f64()?.get(0).is_some());
 
         Ok(())
     }
