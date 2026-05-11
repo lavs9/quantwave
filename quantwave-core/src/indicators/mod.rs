@@ -5,6 +5,8 @@ pub mod overlap;
 pub mod momentum;
 pub mod volume;
 pub mod pattern;
+pub mod price_transform;
+pub mod cycle;
 pub mod smoothing;
 pub mod volatility;
 pub mod supertrend;

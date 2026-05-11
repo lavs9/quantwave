@@ -40,6 +40,40 @@ macro_rules! talib_cdl {
 }
 
 #[macro_export]
+macro_rules! talib_1_in_1_out_i32 {
+    ($name:ident, $talib_func:path $(, $param:ident: $ptype:ty)*) => {
+        #[derive(Debug, Clone)]
+        #[allow(non_camel_case_types)]
+        pub struct $name {
+            $( pub $param: $ptype, )*
+            history: Vec<f64>,
+        }
+
+        impl $name {
+            pub fn new($( $param: $ptype ),*) -> Self {
+                Self {
+                    $( $param, )*
+                    history: Vec::new(),
+                }
+            }
+        }
+
+        impl crate::traits::Next<f64> for $name {
+            type Output = f64;
+
+            fn next(&mut self, input: f64) -> Self::Output {
+                self.history.push(input);
+                if let Ok(res) = $talib_func(&self.history, $( self.$param.clone() ),*) {
+                    *res.last().unwrap_or(&0) as f64
+                } else {
+                    0.0
+                }
+            }
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! talib_1_in_1_out {
     ($name:ident, $talib_func:path $(, $param:ident: $ptype:ty)*) => {
         #[derive(Debug, Clone)]
