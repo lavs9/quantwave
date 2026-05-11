@@ -571,6 +571,53 @@ impl<'a> QuantWaveNamespace<'a> {
                 .alias("fractals_data")
         ])
     }
+
+    pub fn ichimoku_cloud(self, high: &str, low: &str, p1: usize, p2: usize, p3: usize) -> LazyFrame {
+        let high = high.to_string();
+        let low = low.to_string();
+
+        self.0.clone().with_columns([
+            as_struct(vec![col(&high), col(&low)])
+                .map(move |s| {
+                    let ca = s.struct_()?;
+                    let s_high = ca.field_by_name(&high)?;
+                    let s_low = ca.field_by_name(&low)?;
+                    
+                    let high = s_high.f64()?;
+                    let low = s_low.f64()?;
+
+                    let mut ic = quantwave_core::IchimokuCloud::new(p1, p2, p3);
+                    let mut t_vals = Vec::with_capacity(s.len());
+                    let mut k_vals = Vec::with_capacity(s.len());
+                    let mut sa_vals = Vec::with_capacity(s.len());
+                    let mut sb_vals = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let h = high.get(i).unwrap_or(0.0);
+                        let l = low.get(i).unwrap_or(0.0);
+                        let (t, k, sa, sb) = ic.next((h, l));
+                        t_vals.push(t);
+                        k_vals.push(k);
+                        sa_vals.push(sa);
+                        sb_vals.push(sb);
+                    }
+
+                    let t_series = Series::new("tenkan".into(), t_vals);
+                    let k_series = Series::new("kijun".into(), k_vals);
+                    let sa_series = Series::new("senkou_a".into(), sa_vals);
+                    let sb_series = Series::new("senkou_b".into(), sb_vals);
+                    
+                    let out = StructChunked::from_series("ichimoku_output".into(), s.len(), [t_series, k_series, sa_series, sb_series].iter())?;
+                    Ok(Some(Column::from(out.into_series())))
+                }, GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("tenkan".into(), DataType::Float64),
+                    Field::new("kijun".into(), DataType::Float64),
+                    Field::new("senkou_a".into(), DataType::Float64),
+                    Field::new("senkou_b".into(), DataType::Float64),
+                ])))
+                .alias("ichimoku_data")
+        ])
+    }
 }
 
 #[cfg(test)]
@@ -678,6 +725,25 @@ mod tests {
         let fractals = out.column("fractals_data")?.struct_()?;
         assert!(fractals.field_by_name("bearish".into())?.bool()?.get(4).unwrap());
         assert!(fractals.field_by_name("bullish".into())?.bool()?.get(4).unwrap());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_polars_ichimoku() -> PolarsResult<()> {
+        let df = df![
+            "high" => [10.0, 11.0, 15.0, 12.0, 10.0],
+            "low" => [5.0, 6.0, 2.0, 6.0, 7.0]
+        ]?;
+
+        let out = df.lazy()
+            .ta()
+            .ichimoku_cloud("high", "low", 9, 26, 52)
+            .collect()?;
+
+        let ichimoku = out.column("ichimoku_data")?.struct_()?;
+        assert!(ichimoku.field_by_name("tenkan".into())?.f64()?.get(4).is_some());
+        assert!(ichimoku.field_by_name("kijun".into())?.f64()?.get(4).is_some());
 
         Ok(())
     }
