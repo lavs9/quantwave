@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_database": "quantwave",
+  "project_id": "660bee58-89c8-422f-a7ff-a12acba73ccd"
+}
