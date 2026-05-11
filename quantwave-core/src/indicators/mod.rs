@@ -6,3 +6,6 @@ pub mod hma;
 pub mod keltner;
 pub mod alma;
 pub mod donchian;
+pub mod statistics;
+pub mod ttm_squeeze;
+pub mod vortex;

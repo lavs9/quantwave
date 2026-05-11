@@ -13,6 +13,9 @@ pub use indicators::hma::HMA;
 pub use indicators::keltner::KeltnerChannels;
 pub use indicators::alma::ALMA;
 pub use indicators::donchian::DonchianChannels;
+pub use indicators::statistics::{StandardDeviation, LinearRegression};
+pub use indicators::ttm_squeeze::TTMSqueeze;
+pub use indicators::vortex::VortexIndicator;
 
 /// Re-export talib-rs for convenience
 pub use talib_rs as talib;

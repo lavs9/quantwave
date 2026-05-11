@@ -210,11 +210,137 @@ impl<'a> QuantWaveNamespace<'a> {
                 .alias("donchian_data")
         ])
     }
+
+    pub fn ttm_squeeze(self, high: &str, low: &str, close: &str, period: usize, multiplier_bb: f64, multiplier_kc: f64) -> LazyFrame {
+        let high = high.to_string();
+        let low = low.to_string();
+        let close = close.to_string();
+
+        self.0.clone().with_columns([
+            as_struct(vec![col(&high), col(&low), col(&close)])
+                .map(move |s| {
+                    let ca = s.struct_()?;
+                    let s_high = ca.field_by_name(&high)?;
+                    let s_low = ca.field_by_name(&low)?;
+                    let s_close = ca.field_by_name(&close)?;
+                    
+                    let high = s_high.f64()?;
+                    let low = s_low.f64()?;
+                    let close = s_close.f64()?;
+
+                    let mut ttm = quantwave_core::TTMSqueeze::new(period, multiplier_bb, multiplier_kc);
+                    let mut histograms = Vec::with_capacity(s.len());
+                    let mut squeezed = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let h = high.get(i).unwrap_or(0.0);
+                        let l = low.get(i).unwrap_or(0.0);
+                        let c = close.get(i).unwrap_or(0.0);
+                        let (hist, is_sq) = ttm.next((h, l, c));
+                        histograms.push(hist);
+                        squeezed.push(is_sq);
+                    }
+
+                    let hist_series = Series::new("histogram".into(), histograms);
+                    let squeezed_series = Series::new("is_squeezed".into(), squeezed);
+                    
+                    let out = StructChunked::from_series("ttm_squeeze_output".into(), s.len(), [hist_series, squeezed_series].iter())?;
+                    Ok(Some(Column::from(out.into_series())))
+                }, GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("histogram".into(), DataType::Float64),
+                    Field::new("is_squeezed".into(), DataType::Boolean),
+                ])))
+                .alias("ttm_squeeze_data")
+        ])
+    }
+
+    pub fn vortex_indicator(self, high: &str, low: &str, close: &str, period: usize) -> LazyFrame {
+        let high = high.to_string();
+        let low = low.to_string();
+        let close = close.to_string();
+
+        self.0.clone().with_columns([
+            as_struct(vec![col(&high), col(&low), col(&close)])
+                .map(move |s| {
+                    let ca = s.struct_()?;
+                    let s_high = ca.field_by_name(&high)?;
+                    let s_low = ca.field_by_name(&low)?;
+                    let s_close = ca.field_by_name(&close)?;
+                    
+                    let high = s_high.f64()?;
+                    let low = s_low.f64()?;
+                    let close = s_close.f64()?;
+
+                    let mut vi = quantwave_core::VortexIndicator::new(period);
+                    let mut plus_vals = Vec::with_capacity(s.len());
+                    let mut minus_vals = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let h = high.get(i).unwrap_or(0.0);
+                        let l = low.get(i).unwrap_or(0.0);
+                        let c = close.get(i).unwrap_or(0.0);
+                        let (plus, minus) = vi.next((h, l, c));
+                        plus_vals.push(plus);
+                        minus_vals.push(minus);
+                    }
+
+                    let plus_series = Series::new("vi_plus".into(), plus_vals);
+                    let minus_series = Series::new("vi_minus".into(), minus_vals);
+                    
+                    let out = StructChunked::from_series("vortex_output".into(), s.len(), [plus_series, minus_series].iter())?;
+                    Ok(Some(Column::from(out.into_series())))
+                }, GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("vi_plus".into(), DataType::Float64),
+                    Field::new("vi_minus".into(), DataType::Float64),
+                ])))
+                .alias("vortex_data")
+        ])
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_polars_vortex() -> PolarsResult<()> {
+        let df = df![
+            "high" => [10.0, 12.0, 11.0],
+            "low" => [8.0, 10.0, 9.0],
+            "close" => [9.0, 11.0, 10.0]
+        ]?;
+
+        let out = df.lazy()
+            .ta()
+            .vortex_indicator("high", "low", "close", 14)
+            .collect()?;
+
+        let vortex = out.column("vortex_data")?.struct_()?;
+        assert!(vortex.field_by_name("vi_plus".into())?.f64()?.get(0).is_some());
+        assert!(vortex.field_by_name("vi_minus".into())?.f64()?.get(0).is_some());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_polars_ttm_squeeze() -> PolarsResult<()> {
+        let df = df![
+            "high" => [11.0, 12.0, 13.0, 14.0],
+            "low" => [9.0, 10.0, 11.0, 12.0],
+            "close" => [10.0, 11.0, 12.0, 13.0]
+        ]?;
+
+        let out = df.lazy()
+            .ta()
+            .ttm_squeeze("high", "low", "close", 20, 2.0, 1.5)
+            .collect()?;
+
+        let ttm = out.column("ttm_squeeze_data")?.struct_()?;
+        assert!(ttm.field_by_name("histogram".into())?.f64()?.get(0).is_some());
+        assert!(ttm.field_by_name("is_squeezed".into())?.bool()?.get(0).is_some());
+
+        Ok(())
+    }
 
     #[test]
     fn test_polars_donchian() -> PolarsResult<()> {
