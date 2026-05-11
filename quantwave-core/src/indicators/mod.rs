@@ -11,3 +11,4 @@ pub mod ttm_squeeze;
 pub mod vortex;
 pub mod heikin_ashi;
 pub mod wavetrend;
+pub mod tema;

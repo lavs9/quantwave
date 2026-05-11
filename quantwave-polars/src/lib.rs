@@ -394,6 +394,46 @@ impl<'a> QuantWaveNamespace<'a> {
                 .alias("wavetrend_data")
         ])
     }
+
+    pub fn tema(self, name: &str, period: usize) -> LazyFrame {
+        let name = name.to_string();
+        self.0.clone().with_columns([
+            col(&name)
+                .map(move |s| {
+                    let ca = s.f64()?;
+                    let mut tema = quantwave_core::TEMA::new(period);
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(0.0);
+                        values.push(tema.next(val));
+                    }
+
+                    Ok(Some(Column::from(Series::new("tema".into(), values))))
+                }, GetOutput::from_type(DataType::Float64))
+                .alias("tema")
+        ])
+    }
+
+    pub fn zlema(self, name: &str, period: usize) -> LazyFrame {
+        let name = name.to_string();
+        self.0.clone().with_columns([
+            col(&name)
+                .map(move |s| {
+                    let ca = s.f64()?;
+                    let mut zlema = quantwave_core::ZLEMA::new(period);
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(0.0);
+                        values.push(zlema.next(val));
+                    }
+
+                    Ok(Some(Column::from(Series::new("zlema".into(), values))))
+                }, GetOutput::from_type(DataType::Float64))
+                .alias("zlema")
+        ])
+    }
 }
 
 #[cfg(test)]
@@ -417,6 +457,31 @@ mod tests {
         let ha = out.column("heikin_ashi_data")?.struct_()?;
         assert_eq!(ha.field_by_name("ha_open".into())?.f64()?.get(0), Some(10.5));
         assert_eq!(ha.field_by_name("ha_close".into())?.f64()?.get(0), Some(10.25));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_polars_tema_zlema() -> PolarsResult<()> {
+        let df = df![
+            "price" => [1.0, 2.0, 3.0, 4.0, 5.0]
+        ]?;
+
+        let out = df.clone().lazy()
+            .ta()
+            .tema("price", 3)
+            .collect()?;
+
+        let tema = out.column("tema")?.f64()?;
+        assert!(tema.get(4).is_some());
+
+        let out2 = df.lazy()
+            .ta()
+            .zlema("price", 3)
+            .collect()?;
+
+        let zlema = out2.column("zlema")?.f64()?;
+        assert!(zlema.get(4).is_some());
 
         Ok(())
     }

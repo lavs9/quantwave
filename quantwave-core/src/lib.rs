@@ -18,6 +18,7 @@ pub use indicators::ttm_squeeze::TTMSqueeze;
 pub use indicators::vortex::VortexIndicator;
 pub use indicators::heikin_ashi::HeikinAshi;
 pub use indicators::wavetrend::WaveTrend;
+pub use indicators::tema::{TEMA, ZLEMA};
 
 /// Re-export talib-rs for convenience
 pub use talib_rs as talib;

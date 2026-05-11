@@ -30,7 +30,16 @@ Every indicator must implement the `Next<Input>` trait. This single source of ma
 ### 2. Parity & Validation
 - **Streaming-Batch Parity**: Every indicator must have a `proptest` that asserts `Batch(data) == Streaming.collect(data)` using `approx` tolerances.
 - **Gold Standard**: Reference data is stored in `tests/gold_standard/*.json`. All implementations must match these industry-standard vectors.
-- SOURCE of calculation for all indicators must be recorded. IF you do not have a source do not assume, validate with the human before assuming the source. Research and give options for source. 
+- SOURCE of calculation for all indicators must be recorded. IF you do not have a source do not assume, validate with the human before assuming the source. Research and give options for source.
+
+### Indicator Formula References
+When implementing indicators, refer to the following authoritative sources for calculation logic and edge-case handling:
+- **TradingView (Pine Script):** De facto standard for retail algorithmic trading.
+- **Devexperts:** https://devexperts.com/dxcharts/kb/docs/indicators
+- **Sierra Chart:** https://www.sierrachart.com/index.php?page=doc/TechnicalStudiesReference.php
+- **QuantConnect:** https://www.quantconnect.com/docs/v2/writing-algorithms/indicators/supported-indicators/wave-trend-oscillator
+- **MQL5:** https://www.mql5.com/en/articles/indicators
+- **StockCharts:** https://chartschool.stockcharts.com/table-of-contents/overview
 
 ### 3. Depth over Breadth
 Prioritize generic, extensible components. For example, moving averages should support swappable smoothing algorithms (SMA, EMA, HMA) via the `SmoothingAlgorithm` trait.
