@@ -5,10 +5,11 @@ pub mod indicators;
 pub mod test_utils;
 
 pub use traits::{Next, SmoothingAlgorithm, IndicatorConfig};
-pub use indicators::smoothing::{SMA, EMA};
+pub use indicators::smoothing::{SMA, EMA, WMA};
 pub use indicators::volatility::{TrueRange, ATR};
 pub use indicators::supertrend::SuperTrend;
 pub use indicators::vwap::AnchoredVWAP;
+pub use indicators::hma::HMA;
 
 /// Re-export talib-rs for convenience
 pub use talib_rs as talib;

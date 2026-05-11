@@ -80,11 +80,48 @@ impl<'a> QuantWaveNamespace<'a> {
                 .alias("avwap")
         ])
     }
+
+    pub fn hma(self, name: &str, period: usize) -> LazyFrame {
+        let name = name.to_string();
+        self.0.clone().with_columns([
+            col(&name)
+                .map(move |s| {
+                    let ca = s.f64()?;
+                    let mut hma = quantwave_core::HMA::new(period);
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(0.0);
+                        values.push(hma.next(val));
+                    }
+
+                    Ok(Some(Column::from(Series::new("hma".into(), values))))
+                }, GetOutput::from_type(DataType::Float64))
+                .alias("hma")
+        ])
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_polars_hma() -> PolarsResult<()> {
+        let df = df![
+            "price" => [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        ]?;
+
+        let out = df.lazy()
+            .ta()
+            .hma("price", 4)
+            .collect()?;
+
+        let hma = out.column("hma")?.f64()?;
+        assert!(hma.get(9).is_some());
+        
+        Ok(())
+    }
 
     #[test]
     fn test_polars_anchored_vwap() -> PolarsResult<()> {
