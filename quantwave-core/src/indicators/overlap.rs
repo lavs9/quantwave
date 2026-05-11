@@ -10,3 +10,139 @@ talib_1_in_1_out!(MIDPOINT, talib_rs::overlap::midpoint, timeperiod: usize);
 talib_2_in_1_out!(MIDPRICE, talib_rs::overlap::midprice, timeperiod: usize);
 talib_2_in_1_out!(MAVP, talib_rs::overlap::mavp, minperiod: usize, maxperiod: usize, matype: talib_rs::MaType);
 talib_1_in_1_out!(HT_TRENDLINE, talib_rs::overlap::ht_trendline);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::traits::Next;
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn test_dema_parity(input in prop::collection::vec(0.1..100.0, 1..100)) {
+            let period = 10;
+            let mut dema = DEMA::new(period);
+            let streaming_results: Vec<f64> = input.iter().map(|&x| dema.next(x)).collect();
+            let batch_results = talib_rs::overlap::dema(&input, period).unwrap_or_else(|_| vec![f64::NAN; input.len()]);
+            
+            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+                if s.is_nan() {
+                    assert!(b.is_nan());
+                } else {
+                    approx::assert_relative_eq!(s, b, epsilon = 1e-6);
+                }
+            }
+        }
+
+        #[test]
+        fn test_trima_parity(input in prop::collection::vec(0.1..100.0, 1..100)) {
+            let period = 10;
+            let mut trima = TRIMA::new(period);
+            let streaming_results: Vec<f64> = input.iter().map(|&x| trima.next(x)).collect();
+            let batch_results = talib_rs::overlap::trima(&input, period).unwrap_or_else(|_| vec![f64::NAN; input.len()]);
+            
+            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+                if s.is_nan() {
+                    assert!(b.is_nan());
+                } else {
+                    approx::assert_relative_eq!(s, b, epsilon = 1e-6);
+                }
+            }
+        }
+
+        #[test]
+        fn test_kama_parity(input in prop::collection::vec(0.1..100.0, 1..100)) {
+            let period = 10;
+            let mut kama = KAMA::new(period);
+            let streaming_results: Vec<f64> = input.iter().map(|&x| kama.next(x)).collect();
+            let batch_results = talib_rs::overlap::kama(&input, period).unwrap_or_else(|_| vec![f64::NAN; input.len()]);
+            
+            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+                if s.is_nan() {
+                    assert!(b.is_nan());
+                } else {
+                    approx::assert_relative_eq!(s, b, epsilon = 1e-6);
+                }
+            }
+        }
+
+        #[test]
+        fn test_t3_parity(input in prop::collection::vec(0.1..100.0, 1..100)) {
+            let period = 10;
+            let v_factor = 0.7;
+            let mut t3 = T3::new(period, v_factor);
+            let streaming_results: Vec<f64> = input.iter().map(|&x| t3.next(x)).collect();
+            let batch_results = talib_rs::overlap::t3(&input, period, v_factor).unwrap_or_else(|_| vec![f64::NAN; input.len()]);
+            
+            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+                if s.is_nan() {
+                    assert!(b.is_nan());
+                } else {
+                    approx::assert_relative_eq!(s, b, epsilon = 1e-6);
+                }
+            }
+        }
+
+        #[test]
+        fn test_bbands_parity(input in prop::collection::vec(0.1..100.0, 1..100)) {
+            let period = 10;
+            let nbdevup = 2.0;
+            let nbdevdn = 2.0;
+            let matype = talib_rs::MaType::Sma;
+            let mut bbands = BBANDS::new(period, nbdevup, nbdevdn, matype);
+            let streaming_results: Vec<(f64, f64, f64)> = input.iter().map(|&x| bbands.next(x)).collect();
+            let (b_upper, b_middle, b_lower) = talib_rs::overlap::bbands(&input, period, nbdevup, nbdevdn, matype).unwrap_or_else(|_| {
+                (vec![f64::NAN; input.len()], vec![f64::NAN; input.len()], vec![f64::NAN; input.len()])
+            });
+            
+            for (i, (s_upper, s_middle, s_lower)) in streaming_results.into_iter().enumerate() {
+                if s_upper.is_nan() {
+                    assert!(b_upper[i].is_nan());
+                } else {
+                    approx::assert_relative_eq!(s_upper, b_upper[i], epsilon = 1e-6);
+                }
+                if s_middle.is_nan() {
+                    assert!(b_middle[i].is_nan());
+                } else {
+                    approx::assert_relative_eq!(s_middle, b_middle[i], epsilon = 1e-6);
+                }
+                if s_lower.is_nan() {
+                    assert!(b_lower[i].is_nan());
+                } else {
+                    approx::assert_relative_eq!(s_lower, b_lower[i], epsilon = 1e-6);
+                }
+            }
+        }
+
+        #[test]
+        fn test_sar_parity(
+            h in prop::collection::vec(10.0..100.0, 1..100),
+            l in prop::collection::vec(10.0..100.0, 1..100)
+        ) {
+            let len = h.len().min(l.len());
+            if len == 0 { return Ok(()); }
+            let mut high = Vec::with_capacity(len);
+            let mut low = Vec::with_capacity(len);
+            for i in 0..len {
+                let v_h: f64 = h[i];
+                let v_l: f64 = l[i];
+                high.push(v_h.max(v_l));
+                low.push(v_h.min(v_l));
+            }
+
+            let accel = 0.02;
+            let max = 0.2;
+            let mut sar = SAR::new(accel, max);
+            let streaming_results: Vec<f64> = (0..len).map(|i| sar.next((high[i], low[i]))).collect();
+            let batch_results = talib_rs::overlap::sar(&high, &low, accel, max).unwrap_or_else(|_| vec![f64::NAN; len]);
+
+            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+                if s.is_nan() {
+                    assert!(b.is_nan());
+                } else {
+                    approx::assert_relative_eq!(s, b, epsilon = 1e-6);
+                }
+            }
+        }
+    }
+}

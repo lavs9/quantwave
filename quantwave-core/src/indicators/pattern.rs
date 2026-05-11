@@ -59,3 +59,50 @@ talib_cdl!(CDLTRISTAR, talib_rs::pattern::cdl_tristar);
 talib_cdl!(CDLUNIQUE3RIVER, talib_rs::pattern::cdl_unique3river);
 talib_cdl!(CDLUPSIDEGAP2CROWS, talib_rs::pattern::cdl_upsidegap2crows);
 talib_cdl!(CDLXSIDEGAP3METHODS, talib_rs::pattern::cdl_xsidegap3methods);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::traits::Next;
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn test_cdl_doji_parity(
+            o in prop::collection::vec(10.0..100.0, 1..100),
+            h in prop::collection::vec(10.0..100.0, 1..100),
+            l in prop::collection::vec(10.0..100.0, 1..100),
+            c in prop::collection::vec(10.0..100.0, 1..100)
+        ) {
+            let len = o.len().min(h.len()).min(l.len()).min(c.len());
+            if len == 0 { return Ok(()); }
+            
+            let mut doji = CDLDOJI::new();
+            let streaming_results: Vec<f64> = (0..len).map(|i| doji.next((o[i], h[i], l[i], c[i]))).collect();
+            let batch_results = talib_rs::pattern::cdl_doji(&o[..len], &h[..len], &l[..len], &c[..len]).unwrap_or_else(|_| vec![0; len]);
+
+            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+                assert_eq!(*s as i32, *b);
+            }
+        }
+
+        #[test]
+        fn test_cdl_hammer_parity(
+            o in prop::collection::vec(10.0..100.0, 1..100),
+            h in prop::collection::vec(10.0..100.0, 1..100),
+            l in prop::collection::vec(10.0..100.0, 1..100),
+            c in prop::collection::vec(10.0..100.0, 1..100)
+        ) {
+            let len = o.len().min(h.len()).min(l.len()).min(c.len());
+            if len == 0 { return Ok(()); }
+            
+            let mut hammer = CDLHAMMER::new();
+            let streaming_results: Vec<f64> = (0..len).map(|i| hammer.next((o[i], h[i], l[i], c[i]))).collect();
+            let batch_results = talib_rs::pattern::cdl_hammer(&o[..len], &h[..len], &l[..len], &c[..len]).unwrap_or_else(|_| vec![0; len]);
+
+            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+                assert_eq!(*s as i32, *b);
+            }
+        }
+    }
+}

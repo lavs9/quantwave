@@ -30,3 +30,142 @@ talib_3_in_1_out!(PLUS_DI, talib_rs::momentum::plus_di, timeperiod: usize);
 talib_3_in_1_out!(MINUS_DI, talib_rs::momentum::minus_di, timeperiod: usize);
 talib_2_in_1_out!(PLUS_DM, talib_rs::momentum::plus_dm, timeperiod: usize);
 talib_2_in_1_out!(MINUS_DM, talib_rs::momentum::minus_dm, timeperiod: usize);
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::traits::Next;
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn test_rsi_parity(input in prop::collection::vec(0.1..100.0, 1..100)) {
+            let period = 14;
+            let mut rsi = RSI::new(period);
+            let streaming_results: Vec<f64> = input.iter().map(|&x| rsi.next(x)).collect();
+            let batch_results = talib_rs::momentum::rsi(&input, period).unwrap_or_else(|_| vec![f64::NAN; input.len()]);
+            
+            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+                if s.is_nan() {
+                    assert!(b.is_nan());
+                } else {
+                    approx::assert_relative_eq!(s, b, epsilon = 1e-6);
+                }
+            }
+        }
+
+        #[test]
+        fn test_macd_parity(input in prop::collection::vec(0.1..100.0, 1..100)) {
+            let fast = 12;
+            let slow = 26;
+            let signal = 9;
+            let mut macd = MACD::new(fast, slow, signal);
+            let streaming_results: Vec<(f64, f64, f64)> = input.iter().map(|&x| macd.next(x)).collect();
+            let (b_macd, b_signal, b_hist) = talib_rs::momentum::macd(&input, fast, slow, signal).unwrap_or_else(|_| {
+                (vec![f64::NAN; input.len()], vec![f64::NAN; input.len()], vec![f64::NAN; input.len()])
+            });
+            
+            for (i, (s_macd, s_signal, s_hist)) in streaming_results.into_iter().enumerate() {
+                if s_macd.is_nan() {
+                    assert!(b_macd[i].is_nan());
+                } else {
+                    approx::assert_relative_eq!(s_macd, b_macd[i], epsilon = 1e-6);
+                }
+                if s_signal.is_nan() {
+                    assert!(b_signal[i].is_nan());
+                } else {
+                    approx::assert_relative_eq!(s_signal, b_signal[i], epsilon = 1e-6);
+                }
+                if s_hist.is_nan() {
+                    assert!(b_hist[i].is_nan());
+                } else {
+                    approx::assert_relative_eq!(s_hist, b_hist[i], epsilon = 1e-6);
+                }
+            }
+        }
+
+        #[test]
+        fn test_stoch_parity(
+            h in prop::collection::vec(1.0..100.0, 1..100),
+            l in prop::collection::vec(1.0..100.0, 1..100),
+            c in prop::collection::vec(1.0..100.0, 1..100)
+        ) {
+            let len = h.len().min(l.len()).min(c.len());
+            if len == 0 { return Ok(()); }
+            let mut high = Vec::with_capacity(len);
+            let mut low = Vec::with_capacity(len);
+            let mut close = Vec::with_capacity(len);
+            for i in 0..len {
+                let val_h: f64 = h[i];
+                let val_l: f64 = l[i];
+                let val_c: f64 = c[i];
+                let max: f64 = val_h.max(val_l).max(val_c);
+                let min: f64 = val_h.min(val_l).min(val_c);
+                high.push(max);
+                low.push(min);
+                close.push(val_c);
+            }
+
+            let fastk = 5;
+            let slowk = 3;
+            let slowk_ma = talib_rs::MaType::Sma;
+            let slowd = 3;
+            let slowd_ma = talib_rs::MaType::Sma;
+            
+            let mut stoch = STOCH::new(fastk, slowk, slowk_ma, slowd, slowd_ma);
+            let streaming_results: Vec<(f64, f64)> = (0..len).map(|i| stoch.next((high[i], low[i], close[i]))).collect();
+            let (b_k, b_d) = talib_rs::momentum::stoch(&high, &low, &close, fastk, slowk, slowk_ma, slowd, slowd_ma).unwrap_or_else(|_| {
+                (vec![f64::NAN; len], vec![f64::NAN; len])
+            });
+
+            for (i, (s_k, s_d)) in streaming_results.into_iter().enumerate() {
+                if s_k.is_nan() {
+                    assert!(b_k[i].is_nan());
+                } else {
+                    approx::assert_relative_eq!(s_k, b_k[i], epsilon = 1e-6);
+                }
+                if s_d.is_nan() {
+                    assert!(b_d[i].is_nan());
+                } else {
+                    approx::assert_relative_eq!(s_d, b_d[i], epsilon = 1e-6);
+                }
+            }
+        }
+
+        #[test]
+        fn test_adx_parity(
+            h in prop::collection::vec(1.0..100.0, 1..100),
+            l in prop::collection::vec(1.0..100.0, 1..100),
+            c in prop::collection::vec(1.0..100.0, 1..100)
+        ) {
+            let len = h.len().min(l.len()).min(c.len());
+            if len == 0 { return Ok(()); }
+            let mut high = Vec::with_capacity(len);
+            let mut low = Vec::with_capacity(len);
+            let mut close = Vec::with_capacity(len);
+            for i in 0..len {
+                let val_h: f64 = h[i];
+                let val_l: f64 = l[i];
+                let val_c: f64 = c[i];
+                let max: f64 = val_h.max(val_l).max(val_c);
+                let min: f64 = val_h.min(val_l).min(val_c);
+                high.push(max);
+                low.push(min);
+                close.push(val_c);
+            }
+
+            let period = 14;
+            let mut adx = ADX::new(period);
+            let streaming_results: Vec<f64> = (0..len).map(|i| adx.next((high[i], low[i], close[i]))).collect();
+            let batch_results = talib_rs::momentum::adx(&high, &low, &close, period).unwrap_or_else(|_| vec![f64::NAN; len]);
+
+            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+                if s.is_nan() {
+                    assert!(b.is_nan());
+                } else {
+                    approx::assert_relative_eq!(s, b, epsilon = 1e-6);
+                }
+            }
+        }
+    }
+}

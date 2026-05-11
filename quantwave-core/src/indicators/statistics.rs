@@ -174,4 +174,40 @@ mod tests {
         let res2 = lr2.next(9.0);
         approx::assert_relative_eq!(res2, 9.0);
     }
+
+    use proptest::prelude::*;
+    proptest! {
+        #[test]
+        fn test_ta_stddev_parity(input in prop::collection::vec(0.1..100.0, 1..100)) {
+            let period = 10;
+            let nbdev = 1.0;
+            let mut ta_stddev = TaSTDDEV::new(period, nbdev);
+            let streaming_results: Vec<f64> = input.iter().map(|&x| ta_stddev.next(x)).collect();
+            let batch_results = talib_rs::statistic::stddev(&input, period, nbdev).unwrap_or_else(|_| vec![f64::NAN; input.len()]);
+            
+            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+                if s.is_nan() {
+                    assert!(b.is_nan());
+                } else {
+                    approx::assert_relative_eq!(s, b, epsilon = 1e-6);
+                }
+            }
+        }
+
+        #[test]
+        fn test_ta_linearreg_parity(input in prop::collection::vec(0.1..100.0, 1..100)) {
+            let period = 10;
+            let mut ta_lr = TaLINEARREG::new(period);
+            let streaming_results: Vec<f64> = input.iter().map(|&x| ta_lr.next(x)).collect();
+            let batch_results = talib_rs::statistic::linearreg(&input, period).unwrap_or_else(|_| vec![f64::NAN; input.len()]);
+            
+            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+                if s.is_nan() {
+                    assert!(b.is_nan());
+                } else {
+                    approx::assert_relative_eq!(s, b, epsilon = 1e-6);
+                }
+            }
+        }
+    }
 }

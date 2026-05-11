@@ -53,3 +53,48 @@ impl From<usize> for MININDEX { fn from(p: usize) -> Self { Self::new(p) } }
 
 talib_1_in_1_out!(SUM, talib_rs::math_operator::sum, timeperiod: usize);
 impl From<usize> for SUM { fn from(p: usize) -> Self { Self::new(p) } }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::traits::Next;
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn test_sqrt_parity(input in prop::collection::vec(0.1..100.0, 1..100)) {
+            let mut sqrt = SQRT::new();
+            let streaming_results: Vec<f64> = input.iter().map(|&x| sqrt.next(x)).collect();
+            let batch_results = talib_rs::math_transform::sqrt(&input);
+            
+            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+                if s.is_nan() {
+                    assert!(b.is_nan());
+                } else {
+                    approx::assert_relative_eq!(s, b, epsilon = 1e-6);
+                }
+            }
+        }
+
+        #[test]
+        fn test_add_parity(
+            in1 in prop::collection::vec(0.1..100.0, 1..100),
+            in2 in prop::collection::vec(0.1..100.0, 1..100)
+        ) {
+            let len = in1.len().min(in2.len());
+            if len == 0 { return Ok(()); }
+            
+            let mut add = ADD::new();
+            let streaming_results: Vec<f64> = (0..len).map(|i| add.next((in1[i], in2[i]))).collect();
+            let batch_results = talib_rs::math_operator::add(&in1[..len], &in2[..len]).unwrap_or_else(|_| vec![f64::NAN; len]);
+
+            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+                if s.is_nan() {
+                    assert!(b.is_nan());
+                } else {
+                    approx::assert_relative_eq!(s, b, epsilon = 1e-6);
+                }
+            }
+        }
+    }
+}
