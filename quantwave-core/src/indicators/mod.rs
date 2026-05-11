@@ -14,3 +14,4 @@ pub mod wavetrend;
 pub mod tema;
 pub mod atr_ts;
 pub mod pivot_points;
+pub mod fractals;

@@ -532,6 +532,45 @@ impl<'a> QuantWaveNamespace<'a> {
                 .alias("pivot_points_data")
         ])
     }
+
+    pub fn bill_williams_fractals(self, high: &str, low: &str) -> LazyFrame {
+        let high = high.to_string();
+        let low = low.to_string();
+
+        self.0.clone().with_columns([
+            as_struct(vec![col(&high), col(&low)])
+                .map(move |s| {
+                    let ca = s.struct_()?;
+                    let s_high = ca.field_by_name(&high)?;
+                    let s_low = ca.field_by_name(&low)?;
+                    
+                    let high = s_high.f64()?;
+                    let low = s_low.f64()?;
+
+                    let mut fractals = quantwave_core::BillWilliamsFractals::new();
+                    let mut bearish_vals = Vec::with_capacity(s.len());
+                    let mut bullish_vals = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let h = high.get(i).unwrap_or(0.0);
+                        let l = low.get(i).unwrap_or(0.0);
+                        let (bear, bull) = fractals.next((h, l));
+                        bearish_vals.push(bear);
+                        bullish_vals.push(bull);
+                    }
+
+                    let bearish_series = Series::new("bearish".into(), bearish_vals);
+                    let bullish_series = Series::new("bullish".into(), bullish_vals);
+                    
+                    let out = StructChunked::from_series("fractals_output".into(), s.len(), [bearish_series, bullish_series].iter())?;
+                    Ok(Some(Column::from(out.into_series())))
+                }, GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("bearish".into(), DataType::Boolean),
+                    Field::new("bullish".into(), DataType::Boolean),
+                ])))
+                .alias("fractals_data")
+        ])
+    }
 }
 
 #[cfg(test)]
@@ -620,6 +659,25 @@ mod tests {
         let pivot = out.column("pivot_points_data")?.struct_()?;
         assert!(pivot.field_by_name("p".into())?.f64()?.get(0).is_some());
         assert!(pivot.field_by_name("r1".into())?.f64()?.get(0).is_some());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_polars_fractals() -> PolarsResult<()> {
+        let df = df![
+            "high" => [10.0, 11.0, 15.0, 12.0, 10.0],
+            "low" => [5.0, 6.0, 2.0, 6.0, 7.0]
+        ]?;
+
+        let out = df.lazy()
+            .ta()
+            .bill_williams_fractals("high", "low")
+            .collect()?;
+
+        let fractals = out.column("fractals_data")?.struct_()?;
+        assert!(fractals.field_by_name("bearish".into())?.bool()?.get(4).unwrap());
+        assert!(fractals.field_by_name("bullish".into())?.bool()?.get(4).unwrap());
 
         Ok(())
     }

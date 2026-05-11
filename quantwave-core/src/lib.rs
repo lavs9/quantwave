@@ -21,6 +21,7 @@ pub use indicators::wavetrend::WaveTrend;
 pub use indicators::tema::{TEMA, ZLEMA};
 pub use indicators::atr_ts::ATRTrailingStop;
 pub use indicators::pivot_points::PivotPoints;
+pub use indicators::fractals::BillWilliamsFractals;
 
 /// Re-export talib-rs for convenience
 pub use talib_rs as talib;
