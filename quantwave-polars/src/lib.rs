@@ -100,11 +100,79 @@ impl<'a> QuantWaveNamespace<'a> {
                 .alias("hma")
         ])
     }
+
+    pub fn keltner_channels(self, high: &str, low: &str, close: &str, ema_period: usize, atr_period: usize, multiplier: f64) -> LazyFrame {
+        let high = high.to_string();
+        let low = low.to_string();
+        let close = close.to_string();
+
+        self.0.clone().with_columns([
+            as_struct(vec![col(&high), col(&low), col(&close)])
+                .map(move |s| {
+                    let ca = s.struct_()?;
+                    let s_high = ca.field_by_name(&high)?;
+                    let s_low = ca.field_by_name(&low)?;
+                    let s_close = ca.field_by_name(&close)?;
+                    
+                    let high = s_high.f64()?;
+                    let low = s_low.f64()?;
+                    let close = s_close.f64()?;
+
+                    let mut kc = quantwave_core::KeltnerChannels::new(ema_period, atr_period, multiplier);
+                    let mut uppers = Vec::with_capacity(s.len());
+                    let mut middles = Vec::with_capacity(s.len());
+                    let mut lowers = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let h = high.get(i).unwrap_or(0.0);
+                        let l = low.get(i).unwrap_or(0.0);
+                        let c = close.get(i).unwrap_or(0.0);
+                        let (upper, middle, lower) = kc.next((h, l, c));
+                        uppers.push(upper);
+                        middles.push(middle);
+                        lowers.push(lower);
+                    }
+
+                    let upper_series = Series::new("upper".into(), uppers);
+                    let middle_series = Series::new("middle".into(), middles);
+                    let lower_series = Series::new("lower".into(), lowers);
+                    
+                    let out = StructChunked::from_series("keltner_output".into(), s.len(), [upper_series, middle_series, lower_series].iter())?;
+                    Ok(Some(Column::from(out.into_series())))
+                }, GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("upper".into(), DataType::Float64),
+                    Field::new("middle".into(), DataType::Float64),
+                    Field::new("lower".into(), DataType::Float64),
+                ])))
+                .alias("keltner_data")
+        ])
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_polars_keltner() -> PolarsResult<()> {
+        let df = df![
+            "high" => [12.0],
+            "low" => [8.0],
+            "close" => [10.0]
+        ]?;
+
+        let out = df.lazy()
+            .ta()
+            .keltner_channels("high", "low", "close", 3, 3, 2.0)
+            .collect()?;
+
+        let keltner = out.column("keltner_data")?.struct_()?;
+        assert_eq!(keltner.field_by_name("middle".into())?.f64()?.get(0), Some(10.0));
+        assert_eq!(keltner.field_by_name("upper".into())?.f64()?.get(0), Some(18.0));
+        assert_eq!(keltner.field_by_name("lower".into())?.f64()?.get(0), Some(2.0));
+
+        Ok(())
+    }
 
     #[test]
     fn test_polars_hma() -> PolarsResult<()> {

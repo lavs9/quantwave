@@ -3,3 +3,4 @@ pub mod volatility;
 pub mod supertrend;
 pub mod vwap;
 pub mod hma;
+pub mod keltner;
