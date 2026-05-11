@@ -1,4 +1,4 @@
-
-# Dolt database files (added by bd init)
-.dolt/
-*.db
+/target
+Cargo.lock
+**/*.rs.bk
+.DS_Store

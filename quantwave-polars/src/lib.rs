@@ -47,6 +47,66 @@ impl<'a> QuantWaveNamespace<'a> {
                 .alias("supertrend_data")
         ])
     }
+
+    pub fn anchored_vwap(self, price: &str, volume: &str, anchor: &str) -> LazyFrame {
+        let price = price.to_string();
+        let volume = volume.to_string();
+        let anchor = anchor.to_string();
+
+        self.0.clone().with_columns([
+            as_struct(vec![col(&price), col(&volume), col(&anchor)])
+                .map(move |s| {
+                    let ca = s.struct_()?;
+                    let s_price = ca.field_by_name(&price)?;
+                    let s_volume = ca.field_by_name(&volume)?;
+                    let s_anchor = ca.field_by_name(&anchor)?;
+                    
+                    let price = s_price.f64()?;
+                    let volume = s_volume.f64()?;
+                    let anchor = s_anchor.bool()?;
+
+                    let mut avwap = quantwave_core::AnchoredVWAP::new();
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let p = price.get(i).unwrap_or(0.0);
+                        let v = volume.get(i).unwrap_or(0.0);
+                        let a = anchor.get(i).unwrap_or(false);
+                        values.push(avwap.next((p, v, a)));
+                    }
+
+                    Ok(Some(Column::from(Series::new("anchored_vwap".into(), values))))
+                }, GetOutput::from_type(DataType::Float64))
+                .alias("avwap")
+        ])
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_polars_anchored_vwap() -> PolarsResult<()> {
+        let df = df![
+            "price" => [10.0, 12.0, 15.0, 16.0],
+            "volume" => [100.0, 200.0, 100.0, 100.0],
+            "anchor" => [false, false, true, false]
+        ]?;
+
+        let out = df.lazy()
+            .ta()
+            .anchored_vwap("price", "volume", "anchor")
+            .collect()?;
+
+        let avwap = out.column("avwap")?.f64()?;
+        assert_eq!(avwap.get(0), Some(10.0));
+        assert_eq!(avwap.get(1), Some(11.333333333333334));
+        assert_eq!(avwap.get(2), Some(15.0));
+        assert_eq!(avwap.get(3), Some(15.5));
+
+        Ok(())
+    }
 }
 
 impl QuantWaveExt for LazyFrame {
