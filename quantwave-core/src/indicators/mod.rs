@@ -12,3 +12,4 @@ pub mod vortex;
 pub mod heikin_ashi;
 pub mod wavetrend;
 pub mod tema;
+pub mod atr_ts;

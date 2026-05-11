@@ -19,6 +19,7 @@ pub use indicators::vortex::VortexIndicator;
 pub use indicators::heikin_ashi::HeikinAshi;
 pub use indicators::wavetrend::WaveTrend;
 pub use indicators::tema::{TEMA, ZLEMA};
+pub use indicators::atr_ts::ATRTrailingStop;
 
 /// Re-export talib-rs for convenience
 pub use talib_rs as talib;
