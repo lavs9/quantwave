@@ -2,6 +2,7 @@ use crate::traits::Next;
 use crate::indicators::smoothing::EMA;
 use crate::indicators::volatility::ATR;
 
+#[derive(Debug, Clone)]
 pub struct KeltnerChannels {
     ema: EMA,
     atr: ATR,

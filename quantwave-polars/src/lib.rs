@@ -167,11 +167,75 @@ impl<'a> QuantWaveNamespace<'a> {
                 .alias("alma")
         ])
     }
+
+    pub fn donchian_channels(self, high: &str, low: &str, period: usize) -> LazyFrame {
+        let high = high.to_string();
+        let low = low.to_string();
+
+        self.0.clone().with_columns([
+            as_struct(vec![col(&high), col(&low)])
+                .map(move |s| {
+                    let ca = s.struct_()?;
+                    let s_high = ca.field_by_name(&high)?;
+                    let s_low = ca.field_by_name(&low)?;
+                    
+                    let high = s_high.f64()?;
+                    let low = s_low.f64()?;
+
+                    let mut dc = quantwave_core::DonchianChannels::new(period);
+                    let mut uppers = Vec::with_capacity(s.len());
+                    let mut middles = Vec::with_capacity(s.len());
+                    let mut lowers = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let h = high.get(i).unwrap_or(0.0);
+                        let l = low.get(i).unwrap_or(0.0);
+                        let (upper, middle, lower) = dc.next((h, l));
+                        uppers.push(upper);
+                        middles.push(middle);
+                        lowers.push(lower);
+                    }
+
+                    let upper_series = Series::new("upper".into(), uppers);
+                    let middle_series = Series::new("middle".into(), middles);
+                    let lower_series = Series::new("lower".into(), lowers);
+                    
+                    let out = StructChunked::from_series("donchian_output".into(), s.len(), [upper_series, middle_series, lower_series].iter())?;
+                    Ok(Some(Column::from(out.into_series())))
+                }, GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("upper".into(), DataType::Float64),
+                    Field::new("middle".into(), DataType::Float64),
+                    Field::new("lower".into(), DataType::Float64),
+                ])))
+                .alias("donchian_data")
+        ])
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_polars_donchian() -> PolarsResult<()> {
+        let df = df![
+            "high" => [10.0, 12.0, 11.0, 13.0, 15.0],
+            "low" => [8.0, 7.0, 9.0, 10.0, 12.0]
+        ]?;
+
+        let out = df.lazy()
+            .ta()
+            .donchian_channels("high", "low", 3)
+            .collect()?;
+
+        let donchian = out.column("donchian_data")?.struct_()?;
+        // bar 4: H=13, L=10. Window (12,7), (11,9), (13,10). Upper=13, Lower=7, Middle=10
+        assert_eq!(donchian.field_by_name("upper".into())?.f64()?.get(3), Some(13.0));
+        assert_eq!(donchian.field_by_name("middle".into())?.f64()?.get(3), Some(10.0));
+        assert_eq!(donchian.field_by_name("lower".into())?.f64()?.get(3), Some(7.0));
+
+        Ok(())
+    }
 
     #[test]
     fn test_polars_alma() -> PolarsResult<()> {

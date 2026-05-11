@@ -1,5 +1,6 @@
 use crate::traits::Next;
 
+#[derive(Debug, Clone)]
 pub struct AnchoredVWAP {
     cumulative_tp_v: f64,
     cumulative_v: f64,

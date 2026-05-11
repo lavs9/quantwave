@@ -5,3 +5,4 @@ pub mod vwap;
 pub mod hma;
 pub mod keltner;
 pub mod alma;
+pub mod donchian;

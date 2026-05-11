@@ -1,6 +1,7 @@
 use crate::traits::Next;
 use crate::indicators::smoothing::WMA;
 
+#[derive(Debug, Clone)]
 pub struct HMA {
     wma_half: WMA,
     wma_full: WMA,

@@ -1,10 +1,11 @@
 use crate::traits::Next;
 use std::collections::VecDeque;
 
+#[derive(Debug, Clone)]
 pub struct ALMA {
     period: usize,
-    offset: f64,
-    sigma: f64,
+    _offset: f64,
+    _sigma: f64,
     window: VecDeque<f64>,
     weights: Vec<f64>,
 }
@@ -29,8 +30,8 @@ impl ALMA {
 
         Self {
             period,
-            offset,
-            sigma,
+            _offset: offset,
+            _sigma: sigma,
             window: VecDeque::with_capacity(period),
             weights,
         }
@@ -47,9 +48,6 @@ impl Next<f64> for ALMA {
         }
 
         if self.window.len() < self.period {
-            // During warmup, we can either return partial ALMA or 0.0
-            // Standard TradingView implementation usually returns NaN or 0 until period is reached.
-            // We'll calculate partial sum with partial normalization for better streaming behavior.
             let mut sum_w = 0.0;
             let mut weighted_val_sum = 0.0;
             for (i, &val) in self.window.iter().enumerate() {
@@ -71,11 +69,35 @@ impl Next<f64> for ALMA {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{load_gold_standard, assert_indicator_parity, check_batch_streaming_parity};
+    use proptest::prelude::*;
+
+    #[test]
+    fn test_alma_gold_standard() {
+        let case = load_gold_standard("alma_9_085_6");
+        let alma = ALMA::new(9, 0.85, 6.0);
+        assert_indicator_parity(alma, &case.input, &case.expected);
+    }
+
+    fn alma_batch(data: Vec<f64>, period: usize, offset: f64, sigma: f64) -> Vec<f64> {
+        let mut alma = ALMA::new(period, offset, sigma);
+        data.into_iter().map(|x| alma.next(x)).collect()
+    }
+
+    proptest! {
+        #[test]
+        fn test_alma_parity(input in prop::collection::vec(0.0..1000.0, 1..100)) {
+            let period = 9;
+            let offset = 0.85;
+            let sigma = 6.0;
+            let indicator = ALMA::new(period, offset, sigma);
+            check_batch_streaming_parity(input, indicator, |data| alma_batch(data, period, offset, sigma));
+        }
+    }
 
     #[test]
     fn test_alma_basic() {
         let mut alma = ALMA::new(9, 0.85, 6.0);
-        // We'll just verify it produces a non-zero value for now to satisfy RED
         for i in 1..20 {
             let val = alma.next(i as f64);
             if i >= 9 {

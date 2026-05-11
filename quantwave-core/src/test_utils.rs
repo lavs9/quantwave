@@ -51,7 +51,7 @@ where
         streaming_results.push(indicator.next(val));
     }
 
-    for (i, (&s, &b)) in streaming_results.iter().zip(batch_results.iter()).enumerate() {
+    for (_i, (&s, &b)) in streaming_results.iter().zip(batch_results.iter()).enumerate() {
         approx::assert_relative_eq!(s, b, epsilon = 1e-6, max_relative = 1e-6);
     }
 }
