@@ -32,6 +32,59 @@ impl Next<f64> for HMA {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde::Deserialize;
+    use std::fs;
+    use std::path::Path;
+    use proptest::prelude::*;
+
+    #[derive(Debug, Deserialize)]
+    struct HMACase {
+        close: Vec<f64>,
+        expected_hma: Vec<f64>,
+    }
+
+    #[test]
+    fn test_hma_gold_standard() {
+        let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+        let manifest_path = Path::new(&manifest_dir);
+        let path = manifest_path.join("tests/gold_standard/hma_14.json");
+        let path = if path.exists() {
+            path
+        } else {
+            manifest_path.parent().unwrap().join("tests/gold_standard/hma_14.json")
+        };
+        let content = fs::read_to_string(path).unwrap();
+        let case: HMACase = serde_json::from_str(&content).unwrap();
+
+        let mut hma = HMA::new(14);
+        for i in 0..case.close.len() {
+            let res = hma.next(case.close[i]);
+            approx::assert_relative_eq!(res, case.expected_hma[i], epsilon = 1e-6);
+        }
+    }
+
+    fn hma_batch(data: Vec<f64>, period: usize) -> Vec<f64> {
+        let mut hma = HMA::new(period);
+        data.into_iter().map(|x| hma.next(x)).collect()
+    }
+
+    proptest! {
+        #[test]
+        fn test_hma_parity(input in prop::collection::vec(0.0..1000.0, 1..100)) {
+            let period = 14;
+            let mut hma = HMA::new(period);
+            let mut streaming_results = Vec::with_capacity(input.len());
+            for &val in &input {
+                streaming_results.push(hma.next(val));
+            }
+
+            let batch_results = hma_batch(input, period);
+            
+            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+                approx::assert_relative_eq!(s, b, epsilon = 1e-6);
+            }
+        }
+    }
 
     #[test]
     fn test_hma_basic() {

@@ -76,3 +76,77 @@ impl Next<(f64, f64, f64)> for SuperTrend {
         (supertrend, self.direction)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde::Deserialize;
+    use std::fs;
+    use std::path::Path;
+    use proptest::prelude::*;
+
+    #[derive(Debug, Deserialize)]
+    struct SuperTrendCase {
+        high: Vec<f64>,
+        low: Vec<f64>,
+        close: Vec<f64>,
+        expected_st: Vec<f64>,
+        expected_dir: Vec<i8>,
+    }
+
+    #[test]
+    fn test_supertrend_gold_standard() {
+        let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+        let manifest_path = Path::new(&manifest_dir);
+        let path = manifest_path.join("tests/gold_standard/supertrend_10_3.json");
+        let path = if path.exists() {
+            path
+        } else {
+            manifest_path.parent().unwrap().join("tests/gold_standard/supertrend_10_3.json")
+        };
+        let content = fs::read_to_string(path).unwrap();
+        let case: SuperTrendCase = serde_json::from_str(&content).unwrap();
+
+        let mut st = SuperTrend::new(10, 3.0);
+        for i in 0..case.high.len() {
+            let (val, dir) = st.next((case.high[i], case.low[i], case.close[i]));
+            approx::assert_relative_eq!(val, case.expected_st[i], epsilon = 1e-6);
+            assert_eq!(dir, case.expected_dir[i]);
+        }
+    }
+
+    fn supertrend_batch(data: Vec<(f64, f64, f64)>, period: usize, multiplier: f64) -> Vec<(f64, i8)> {
+        let mut st = SuperTrend::new(period, multiplier);
+        data.into_iter().map(|x| st.next(x)).collect()
+    }
+
+    proptest! {
+        #[test]
+        fn test_supertrend_parity(input in prop::collection::vec((0.0..100.0, 0.0..100.0, 0.0..100.0), 1..100)) {
+            let mut adj_input = Vec::with_capacity(input.len());
+            for (h, l, c) in input {
+                let h_f: f64 = h;
+                let l_f: f64 = l;
+                let c_f: f64 = c;
+                let high = h_f.max(l_f).max(c_f);
+                let low = l_f.min(h_f).min(c_f);
+                adj_input.push((high, low, c_f));
+            }
+            
+            let period = 10;
+            let multiplier = 3.0;
+            let mut st = SuperTrend::new(period, multiplier);
+            let mut streaming_results = Vec::with_capacity(adj_input.len());
+            for &val in &adj_input {
+                streaming_results.push(st.next(val));
+            }
+
+            let batch_results = supertrend_batch(adj_input, period, multiplier);
+            
+            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+                approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-6);
+                assert_eq!(s.1, b.1);
+            }
+        }
+    }
+}

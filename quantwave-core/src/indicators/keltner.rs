@@ -37,6 +37,79 @@ impl Next<(f64, f64, f64)> for KeltnerChannels {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde::Deserialize;
+    use std::fs;
+    use std::path::Path;
+    use proptest::prelude::*;
+
+    #[derive(Debug, Deserialize)]
+    struct KeltnerCase {
+        high: Vec<f64>,
+        low: Vec<f64>,
+        close: Vec<f64>,
+        expected_upper: Vec<f64>,
+        expected_middle: Vec<f64>,
+        expected_lower: Vec<f64>,
+    }
+
+    #[test]
+    fn test_keltner_gold_standard() {
+        let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+        let manifest_path = Path::new(&manifest_dir);
+        let path = manifest_path.join("tests/gold_standard/keltner_20_20_15.json");
+        let path = if path.exists() {
+            path
+        } else {
+            manifest_path.parent().unwrap().join("tests/gold_standard/keltner_20_20_15.json")
+        };
+        let content = fs::read_to_string(path).unwrap();
+        let case: KeltnerCase = serde_json::from_str(&content).unwrap();
+
+        let mut kc = KeltnerChannels::new(20, 20, 1.5);
+        for i in 0..case.high.len() {
+            let (u, m, l) = kc.next((case.high[i], case.low[i], case.close[i]));
+            approx::assert_relative_eq!(u, case.expected_upper[i], epsilon = 1e-6);
+            approx::assert_relative_eq!(m, case.expected_middle[i], epsilon = 1e-6);
+            approx::assert_relative_eq!(l, case.expected_lower[i], epsilon = 1e-6);
+        }
+    }
+
+    fn keltner_batch(data: Vec<(f64, f64, f64)>, ema_period: usize, atr_period: usize, multiplier: f64) -> Vec<(f64, f64, f64)> {
+        let mut kc = KeltnerChannels::new(ema_period, atr_period, multiplier);
+        data.into_iter().map(|x| kc.next(x)).collect()
+    }
+
+    proptest! {
+        #[test]
+        fn test_keltner_parity(input in prop::collection::vec((0.0..100.0, 0.0..100.0, 0.0..100.0), 1..100)) {
+            let mut adj_input = Vec::with_capacity(input.len());
+            for (h, l, c) in input {
+                let h_f: f64 = h;
+                let l_f: f64 = l;
+                let c_f: f64 = c;
+                let high = h_f.max(l_f).max(c_f);
+                let low = l_f.min(h_f).min(c_f);
+                adj_input.push((high, low, c_f));
+            }
+            
+            let ema_period = 20;
+            let atr_period = 20;
+            let multiplier = 1.5;
+            let mut kc = KeltnerChannels::new(ema_period, atr_period, multiplier);
+            let mut streaming_results = Vec::with_capacity(adj_input.len());
+            for &val in &adj_input {
+                streaming_results.push(kc.next(val));
+            }
+
+            let batch_results = keltner_batch(adj_input, ema_period, atr_period, multiplier);
+            
+            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+                approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-6);
+                approx::assert_relative_eq!(s.1, b.1, epsilon = 1e-6);
+                approx::assert_relative_eq!(s.2, b.2, epsilon = 1e-6);
+            }
+        }
+    }
 
     #[test]
     fn test_keltner_basic() {
