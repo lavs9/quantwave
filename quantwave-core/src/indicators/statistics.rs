@@ -1,6 +1,16 @@
 use crate::traits::Next;
 use std::collections::VecDeque;
 
+talib_1_in_1_out!(TaSTDDEV, talib_rs::statistic::stddev, timeperiod: usize, nbdev: f64);
+talib_1_in_1_out!(TaVAR, talib_rs::statistic::var, timeperiod: usize, nbdev: f64);
+talib_2_in_1_out!(TaBETA, talib_rs::statistic::beta, timeperiod: usize);
+talib_2_in_1_out!(TaCORREL, talib_rs::statistic::correl, timeperiod: usize);
+talib_1_in_1_out!(TaLINEARREG, talib_rs::statistic::linearreg, timeperiod: usize);
+talib_1_in_1_out!(TaLINEARREG_SLOPE, talib_rs::statistic::linearreg_slope, timeperiod: usize);
+talib_1_in_1_out!(TaLINEARREG_INTERCEPT, talib_rs::statistic::linearreg_intercept, timeperiod: usize);
+talib_1_in_1_out!(TaLINEARREG_ANGLE, talib_rs::statistic::linearreg_angle, timeperiod: usize);
+talib_1_in_1_out!(TaTSF, talib_rs::statistic::tsf, timeperiod: usize);
+
 /// Standard Deviation (Population)
 #[derive(Debug, Clone)]
 pub struct StandardDeviation {
