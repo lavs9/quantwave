@@ -26,3 +26,4 @@
         - [WaveTrend Oscillator](indicators/native/wavetrend_oscillator.md)
         - [Weighted Moving Average](indicators/native/weighted_moving_average.md)
         - [Zero Lag Exponential Moving Average](indicators/native/zero_lag_exponential_moving_average.md)
+    - [TA-Lib Wrappers](indicators/talib/README.md)

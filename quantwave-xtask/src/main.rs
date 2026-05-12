@@ -27,6 +27,7 @@ fn main() -> Result<()> {
     }
 
     let talib_list = generate_talib_docs()?;
+    summary.push_str("    - [TA-Lib Wrappers](indicators/talib/README.md)\n");
 
     let main_intro = r#"# QuantWave 🌊
 
