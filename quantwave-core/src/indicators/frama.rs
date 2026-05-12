@@ -122,6 +122,7 @@ D = \frac{\log(N_1 + N_2) - \log(N_3)}{\log(2)}
 \]
 "#,
     gold_standard_file: "frama.json",
+    category: "Ehlers DSP",
 };
 
 #[cfg(test)]

@@ -86,6 +86,7 @@ CC_t = \left(1 - \frac{\alpha}{2}\right)^2 (\text{Smooth}_t - 2\text{Smooth}_{t-
 \]
 "#,
     gold_standard_file: "cyber_cycle.json",
+    category: "Ehlers DSP",
 };
 
 #[cfg(test)]

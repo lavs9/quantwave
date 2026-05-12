@@ -13,4 +13,5 @@ pub struct IndicatorMetadata {
     pub formula_source: &'static str,
     pub formula_latex: &'static str,
     pub gold_standard_file: &'static str,
+    pub category: &'static str,
 }

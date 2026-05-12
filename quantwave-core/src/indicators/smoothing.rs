@@ -176,6 +176,7 @@ SMA = \frac{1}{n} \sum_{i=1}^{n} P_i
 \]
 "#,
     gold_standard_file: "sma.json",
+    category: "Classic",
 };
 
 
@@ -192,6 +193,7 @@ EMA = P_t \times \alpha + EMA_{t-1} \times (1 - \alpha)
 \]
 "#,
     gold_standard_file: "ema.json",
+    category: "Classic",
 };
 
 
@@ -208,4 +210,5 @@ WMA = \frac{P_1 \times n + P_2 \times (n-1) + \dots}{n + (n-1) + \dots + 1}
 \]
 "#,
     gold_standard_file: "wma.json",
+    category: "Classic",
 };

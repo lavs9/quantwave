@@ -162,4 +162,5 @@ HA_{Close} = \frac{O + H + L + C}{4} \\ HA_{Open} = \frac{HA_{Open, t-1} + HA_{C
 \]
 "#,
     gold_standard_file: "heikin_ashi.json",
+    category: "Classic",
 };

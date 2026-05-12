@@ -164,4 +164,5 @@ Stop = P_{high} - (Multiplier \times ATR)
 \]
 "#,
     gold_standard_file: "atr_ts.json",
+    category: "Classic",
 };

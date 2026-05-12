@@ -143,4 +143,5 @@ pub const ICHIMOKU_METADATA: IndicatorMetadata = IndicatorMetadata {
 \]
 "#,
     gold_standard_file: "ichimoku.json",
+    category: "Classic",
 };

@@ -20,9 +20,17 @@ fn main() -> Result<()> {
 
     let native_docs = generate_native_docs(&docs_dir)?;
     if !native_docs.is_empty() {
+        let mut categories: std::collections::BTreeMap<String, Vec<(String, String)>> = std::collections::BTreeMap::new();
+        for (name, filename, category) in native_docs {
+            categories.entry(category).or_default().push((name, filename));
+        }
+
         summary.push_str("    - [Native Indicators](indicators/native/README.md)\n");
-        for doc in native_docs {
-            summary.push_str(&format!("        - [{}](indicators/native/{}.md)\n", doc.0, doc.1));
+        for (category, indicators) in categories {
+            summary.push_str(&format!("        - [{}]()\n", if category.is_empty() { "General" } else { &category }));
+            for (name, filename) in indicators {
+                summary.push_str(&format!("            - [{}](indicators/native/{}.md)\n", name, filename));
+            }
         }
     }
 
@@ -87,7 +95,7 @@ For more information, visit the [official TA-Lib website](https://ta-lib.org/) o
     Ok(())
 }
 
-fn generate_native_docs(docs_dir: &Path) -> Result<Vec<(String, String)>> {
+fn generate_native_docs(docs_dir: &Path) -> Result<Vec<(String, String, String)>> {
     let mut generated = Vec::new();
     let indicators_dir = docs_dir.parent().unwrap().parent().unwrap().join("quantwave-core/src/indicators");
     
@@ -112,6 +120,7 @@ fn generate_native_docs(docs_dir: &Path) -> Result<Vec<(String, String)>> {
                                 let mut desc = String::new();
                                 let mut latex = String::new();
                                 let mut source = String::new();
+                                let mut category = String::new();
                                 let mut params_str = String::new();
                                 
                                 for field in &expr_struct.fields {
@@ -124,6 +133,7 @@ fn generate_native_docs(docs_dir: &Path) -> Result<Vec<(String, String)>> {
                                                     "description" => desc = lit_str.value(),
                                                     "formula_source" => source = lit_str.value(),
                                                     "formula_latex" => latex = lit_str.value(),
+                                                    "category" => category = lit_str.value(),
                                                     _ => {}
                                                 }
                                             }
@@ -181,7 +191,7 @@ fn generate_native_docs(docs_dir: &Path) -> Result<Vec<(String, String)>> {
                                 
                                 let out_path = docs_dir.join(format!("indicators/native/{}.md", filename));
                                 fs::write(&out_path, md)?;
-                                generated.push((name, filename));
+                                generated.push((name, filename, category));
                             }
                         }
                     }

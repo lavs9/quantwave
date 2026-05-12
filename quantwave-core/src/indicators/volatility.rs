@@ -147,6 +147,7 @@ TR = \max(H - L, |H - C_{t-1}|, |L - C_{t-1}|)
 \]
 "#,
     gold_standard_file: "true_range.json",
+    category: "Classic",
 };
 
 
@@ -163,4 +164,5 @@ ATR = \frac{ATR_{t-1} \times (n-1) + TR_t}{n}
 \]
 "#,
     gold_standard_file: "atr.json",
+    category: "Classic",
 };

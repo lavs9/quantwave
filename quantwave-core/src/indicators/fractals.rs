@@ -158,4 +158,5 @@ pub const FRACTALS_METADATA: IndicatorMetadata = IndicatorMetadata {
 \]
 "#,
     gold_standard_file: "fractals.json",
+    category: "Classic",
 };

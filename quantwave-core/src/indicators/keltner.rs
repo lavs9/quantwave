@@ -141,4 +141,5 @@ UC = EMA + (Multiplier \times ATR)
 \]
 "#,
     gold_standard_file: "keltner.json",
+    category: "Classic",
 };

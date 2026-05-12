@@ -157,4 +157,5 @@ WT_1 = EMA(ESA, n_2)
 \]
 "#,
     gold_standard_file: "wavetrend.json",
+    category: "Ehlers DSP",
 };

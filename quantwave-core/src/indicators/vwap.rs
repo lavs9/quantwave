@@ -83,4 +83,5 @@ VWAP = \frac{\sum (Price \times Volume)}{\sum Volume}
 \]
 "#,
     gold_standard_file: "vwap.json",
+    category: "Classic",
 };

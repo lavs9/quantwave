@@ -246,6 +246,7 @@ pub const STDDEV_METADATA: IndicatorMetadata = IndicatorMetadata {
 \]
 "#,
     gold_standard_file: "stddev.json",
+    category: "Classic",
 };
 
 
@@ -262,4 +263,5 @@ y = a + bx
 \]
 "#,
     gold_standard_file: "linreg.json",
+    category: "Classic",
 };

@@ -114,4 +114,5 @@ HMA = WMA(2 \times WMA(\frac{n}{2}) - WMA(n), \sqrt{n})
 \]
 "#,
     gold_standard_file: "hma.json",
+    category: "Classic",
 };

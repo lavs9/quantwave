@@ -161,6 +161,7 @@ TEMA = (3 \times EMA_1) - (3 \times EMA_2) + EMA_3
 \]
 "#,
     gold_standard_file: "tema.json",
+    category: "Classic",
 };
 
 
@@ -177,4 +178,5 @@ ZLEMA = EMA(Price + (Price - Price_{t - (period - 1)/2}))
 \]
 "#,
     gold_standard_file: "zlema.json",
+    category: "Classic",
 };

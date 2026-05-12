@@ -124,4 +124,5 @@ ALMA = \sum (W_i \times P_i) / \sum W_i
 \]
 "#,
     gold_standard_file: "alma.json",
+    category: "Classic",
 };

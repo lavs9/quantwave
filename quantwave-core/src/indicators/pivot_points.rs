@@ -149,4 +149,5 @@ P = \frac{H + L + C}{3}
 \]
 "#,
     gold_standard_file: "pivot_points.json",
+    category: "Classic",
 };

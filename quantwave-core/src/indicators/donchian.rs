@@ -170,4 +170,5 @@ UC = \max(H_{t-n \dots t}) \\ LC = \min(L_{t-n \dots t})
 \]
 "#,
     gold_standard_file: "donchian.json",
+    category: "Classic",
 };

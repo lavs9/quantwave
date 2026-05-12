@@ -168,4 +168,5 @@ pub const TTM_SQUEEZE_METADATA: IndicatorMetadata = IndicatorMetadata {
 \]
 "#,
     gold_standard_file: "ttm_squeeze.json",
+    category: "Classic",
 };

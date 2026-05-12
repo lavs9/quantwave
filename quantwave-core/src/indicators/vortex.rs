@@ -188,4 +188,5 @@ VI+ = \frac{\sum VM+}{\sum TR} \\ VI- = \frac{\sum VM-}{\sum TR}
 \]
 "#,
     gold_standard_file: "vortex.json",
+    category: "Classic",
 };

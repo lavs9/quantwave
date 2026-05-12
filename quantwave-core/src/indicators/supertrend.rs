@@ -19,6 +19,7 @@ pub const METADATA: IndicatorMetadata = IndicatorMetadata {
 \]
 "#,
     gold_standard_file: "supertrend_10_3.json",
+    category: "Classic",
 };
 
 /// SuperTrend Indicator
