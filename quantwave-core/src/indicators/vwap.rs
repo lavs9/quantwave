@@ -1,3 +1,4 @@
+use crate::indicators::metadata::IndicatorMetadata;
 use crate::traits::Next;
 
 #[derive(Debug, Clone)]
@@ -68,3 +69,18 @@ mod tests {
         approx::assert_relative_eq!(result4, 15.5);
     }
 }
+
+
+pub const VWAP_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Anchored VWAP",
+    description: "Volume Weighted Average Price anchored to a specific starting point.",
+    params: &[
+    ],
+    formula_source: "https://www.investopedia.com/terms/v/vwap.asp",
+    formula_latex: r#"
+\[
+VWAP = \frac{\sum (Price \times Volume)}{\sum Volume}
+\]
+"#,
+    gold_standard_file: "vwap.json",
+};

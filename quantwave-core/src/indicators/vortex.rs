@@ -1,3 +1,4 @@
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use std::collections::VecDeque;
 
@@ -172,3 +173,19 @@ mod tests {
         assert_eq!(m1, 0.0);
     }
 }
+
+
+pub const VORTEX_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Vortex Indicator",
+    description: "The Vortex Indicator helps identify the start of a new trend or the continuation of an existing one.",
+    params: &[
+        ParamDef { name: "period", default: "14", description: "Period" },
+    ],
+    formula_source: "https://www.investopedia.com/terms/v/vortex-indicator-vi.asp",
+    formula_latex: r#"
+\[
+VI+ = \frac{\sum VM+}{\sum TR} \\ VI- = \frac{\sum VM-}{\sum TR}
+\]
+"#,
+    gold_standard_file: "vortex.json",
+};

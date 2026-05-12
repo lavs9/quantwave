@@ -1,0 +1,4 @@
+# Evening Doji Star (CDLEVENINGDOJISTAR)
+
+TA-Lib `CDLEVENINGDOJISTAR` indicator.
+

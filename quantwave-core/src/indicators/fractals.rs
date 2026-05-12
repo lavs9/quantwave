@@ -1,3 +1,4 @@
+use crate::indicators::metadata::IndicatorMetadata;
 use crate::traits::Next;
 use std::collections::VecDeque;
 
@@ -143,3 +144,18 @@ mod tests {
         assert!(bull); // 2.0 < all
     }
 }
+
+
+pub const FRACTALS_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Bill Williams Fractals",
+    description: "Fractals are indicators on candlestick charts that identify reversal points in the market.",
+    params: &[
+    ],
+    formula_source: "https://www.investopedia.com/terms/f/fractal.asp",
+    formula_latex: r#"
+\[
+\text{Up Fractal} = \text{High} > \text{High}_{t-1, t-2, t+1, t+2}
+\]
+"#,
+    gold_standard_file: "fractals.json",
+};

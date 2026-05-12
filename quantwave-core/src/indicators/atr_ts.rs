@@ -1,3 +1,4 @@
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use crate::indicators::volatility::ATR;
 
@@ -147,3 +148,20 @@ mod tests {
         assert_eq!(dir1, 1);
     }
 }
+
+
+pub const ATR_TS_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "ATR Trailing Stop",
+    description: "A trailing stop based on Average True Range to keep trades in a trend.",
+    params: &[
+        ParamDef { name: "period", default: "10", description: "ATR period" },
+        ParamDef { name: "multiplier", default: "3.0", description: "ATR Multiplier" },
+    ],
+    formula_source: "https://www.tradingview.com/support/solutions/43000589105-average-true-range-atr/",
+    formula_latex: r#"
+\[
+Stop = P_{high} - (Multiplier \times ATR)
+\]
+"#,
+    gold_standard_file: "atr_ts.json",
+};

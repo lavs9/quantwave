@@ -1,3 +1,4 @@
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use crate::indicators::smoothing::WMA;
 
@@ -98,3 +99,19 @@ mod tests {
         }
     }
 }
+
+
+pub const HMA_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Hull Moving Average",
+    description: "The Hull Moving Average (HMA) aims to reduce lag while maintaining smoothness.",
+    params: &[
+        ParamDef { name: "period", default: "14", description: "Smoothing period" },
+    ],
+    formula_source: "https://alanhull.com/hull-moving-average",
+    formula_latex: r#"
+\[
+HMA = WMA(2 \times WMA(\frac{n}{2}) - WMA(n), \sqrt{n})
+\]
+"#,
+    gold_standard_file: "hma.json",
+};

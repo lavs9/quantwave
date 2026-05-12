@@ -1,0 +1,4 @@
+# Upside Gap Two Crows (CDLUPSIDEGAP2CROWS)
+
+TA-Lib `CDLUPSIDEGAP2CROWS` indicator.
+

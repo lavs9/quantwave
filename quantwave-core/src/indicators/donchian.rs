@@ -1,3 +1,4 @@
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use std::collections::VecDeque;
 
@@ -154,3 +155,19 @@ mod tests {
         }
     }
 }
+
+
+pub const DONCHIAN_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Donchian Channels",
+    description: "Donchian Channels are volatility indicators formed by taking the highest high and the lowest low of the last N periods.",
+    params: &[
+        ParamDef { name: "period", default: "20", description: "Channel period" },
+    ],
+    formula_source: "https://www.investopedia.com/terms/d/donchianchannels.asp",
+    formula_latex: r#"
+\[
+UC = \max(H_{t-n \dots t}) \\ LC = \min(L_{t-n \dots t})
+\]
+"#,
+    gold_standard_file: "donchian.json",
+};

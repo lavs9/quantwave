@@ -1,3 +1,4 @@
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use crate::indicators::smoothing::SMA;
 use crate::indicators::volatility::ATR;
@@ -149,3 +150,22 @@ mod tests {
         }
     }
 }
+
+
+pub const TTM_SQUEEZE_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "TTM Squeeze",
+    description: "TTM Squeeze measures the relationship between Bollinger Bands and Keltner Channels to identify volatility consolidations.",
+    params: &[
+        ParamDef { name: "bb_period", default: "20", description: "Bollinger Bands Period" },
+        ParamDef { name: "bb_mult", default: "2.0", description: "Bollinger Bands Multiplier" },
+        ParamDef { name: "kc_period", default: "20", description: "Keltner Channel Period" },
+        ParamDef { name: "kc_mult", default: "1.5", description: "Keltner Channel Multiplier" },
+    ],
+    formula_source: "https://www.investopedia.com/articles/active-trading/110714/intro-ttm-squeeze-indicator.asp",
+    formula_latex: r#"
+\[
+\text{Squeeze} = BB_{width} < KC_{width}
+\]
+"#,
+    gold_standard_file: "ttm_squeeze.json",
+};

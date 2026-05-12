@@ -1,3 +1,4 @@
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use std::collections::VecDeque;
 
@@ -106,3 +107,21 @@ mod tests {
         }
     }
 }
+
+
+pub const ALMA_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Arnaud Legoux Moving Average",
+    description: "ALMA is designed to reduce lag while providing high smoothness.",
+    params: &[
+        ParamDef { name: "period", default: "9", description: "Period" },
+        ParamDef { name: "offset", default: "0.85", description: "Offset" },
+        ParamDef { name: "sigma", default: "6.0", description: "Sigma" },
+    ],
+    formula_source: "https://www.prorealcode.com/prorealtime-indicators/arnaud-legoux-moving-average-alma/",
+    formula_latex: r#"
+\[
+ALMA = \sum (W_i \times P_i) / \sum W_i
+\]
+"#,
+    gold_standard_file: "alma.json",
+};

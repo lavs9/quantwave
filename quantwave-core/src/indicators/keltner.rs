@@ -1,3 +1,4 @@
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use crate::indicators::smoothing::EMA;
 use crate::indicators::volatility::ATR;
@@ -124,3 +125,20 @@ mod tests {
         approx::assert_relative_eq!(lower, 2.0);
     }
 }
+
+
+pub const KELTNER_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Keltner Channels",
+    description: "Keltner Channels are volatility-based envelopes set above and below an exponential moving average.",
+    params: &[
+        ParamDef { name: "period", default: "20", description: "EMA Period" },
+        ParamDef { name: "multiplier", default: "2.0", description: "ATR Multiplier" },
+    ],
+    formula_source: "https://www.investopedia.com/terms/k/keltnerchannel.asp",
+    formula_latex: r#"
+\[
+UC = EMA + (Multiplier \times ATR)
+\]
+"#,
+    gold_standard_file: "keltner.json",
+};

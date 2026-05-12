@@ -1,3 +1,4 @@
+use crate::indicators::metadata::IndicatorMetadata;
 use crate::traits::Next;
 
 /// Standard Pivot Points
@@ -134,3 +135,18 @@ mod tests {
         assert_eq!(s2, 6.0); // 10 - 4
     }
 }
+
+
+pub const PIVOT_POINTS_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Pivot Points",
+    description: "Pivot Points are used to determine overall trend over different time frames.",
+    params: &[
+    ],
+    formula_source: "https://www.investopedia.com/terms/p/pivotpoint.asp",
+    formula_latex: r#"
+\[
+P = \frac{H + L + C}{3}
+\]
+"#,
+    gold_standard_file: "pivot_points.json",
+};

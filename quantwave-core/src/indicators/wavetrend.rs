@@ -1,3 +1,4 @@
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use crate::indicators::smoothing::{EMA, SMA};
 
@@ -140,3 +141,20 @@ mod tests {
         }
     }
 }
+
+
+pub const WAVETREND_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "WaveTrend Oscillator",
+    description: "WaveTrend is an oscillator that helps identify overbought and oversold conditions.",
+    params: &[
+        ParamDef { name: "n1", default: "10", description: "Channel Length" },
+        ParamDef { name: "n2", default: "21", description: "Average Length" },
+    ],
+    formula_source: "https://www.tradingview.com/script/2KE8wTuF-Indicator-WaveTrend-Oscillator-WT/",
+    formula_latex: r#"
+\[
+WT_1 = EMA(ESA, n_2)
+\]
+"#,
+    gold_standard_file: "wavetrend.json",
+};

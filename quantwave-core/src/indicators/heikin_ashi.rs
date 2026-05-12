@@ -1,3 +1,4 @@
+use crate::indicators::metadata::IndicatorMetadata;
 use crate::traits::Next;
 
 /// Heikin-Ashi Candlesticks
@@ -147,3 +148,18 @@ mod tests {
         assert_eq!(c2, 11.5);
     }
 }
+
+
+pub const HEIKIN_ASHI_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Heikin-Ashi",
+    description: "Heikin-Ashi candles filter market noise to reveal the underlying trend.",
+    params: &[
+    ],
+    formula_source: "https://www.investopedia.com/trading/heikin-ashi-better-candlestick/",
+    formula_latex: r#"
+\[
+HA_{Close} = \frac{O + H + L + C}{4} \\ HA_{Open} = \frac{HA_{Open, t-1} + HA_{Close, t-1}}{2}
+\]
+"#,
+    gold_standard_file: "heikin_ashi.json",
+};

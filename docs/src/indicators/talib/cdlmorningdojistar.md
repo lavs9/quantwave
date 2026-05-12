@@ -1,0 +1,4 @@
+# Morning Doji Star (CDLMORNINGDOJISTAR)
+
+TA-Lib `CDLMORNINGDOJISTAR` indicator.
+

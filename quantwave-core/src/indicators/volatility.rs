@@ -1,3 +1,4 @@
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use crate::indicators::smoothing::EMA;
 
@@ -132,3 +133,34 @@ mod tests {
         }
     }
 }
+
+
+pub const TRUE_RANGE_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "True Range",
+    description: "True Range measures daily volatility.",
+    params: &[
+    ],
+    formula_source: "https://www.investopedia.com/terms/a/atr.asp",
+    formula_latex: r#"
+\[
+TR = \max(H - L, |H - C_{t-1}|, |L - C_{t-1}|)
+\]
+"#,
+    gold_standard_file: "true_range.json",
+};
+
+
+pub const ATR_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Average True Range",
+    description: "ATR represents the average of true ranges over a specified period.",
+    params: &[
+        ParamDef { name: "period", default: "14", description: "Smoothing period" },
+    ],
+    formula_source: "https://www.investopedia.com/terms/a/atr.asp",
+    formula_latex: r#"
+\[
+ATR = \frac{ATR_{t-1} \times (n-1) + TR_t}{n}
+\]
+"#,
+    gold_standard_file: "atr.json",
+};

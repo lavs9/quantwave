@@ -1,3 +1,4 @@
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use crate::indicators::donchian::DonchianChannels;
 
@@ -125,3 +126,21 @@ mod tests {
         assert_eq!(sb, 9.0);
     }
 }
+
+
+pub const ICHIMOKU_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Ichimoku Cloud",
+    description: "Ichimoku Kinko Hyo is a comprehensive indicator that defines support and resistance, identifies trend direction, gauges momentum and provides trading signals.",
+    params: &[
+        ParamDef { name: "tenkan_period", default: "9", description: "Tenkan-sen period" },
+        ParamDef { name: "kijun_period", default: "26", description: "Kijun-sen period" },
+        ParamDef { name: "senkou_span_b_period", default: "52", description: "Senkou Span B period" },
+    ],
+    formula_source: "https://www.investopedia.com/terms/i/ichimoku-cloud.asp",
+    formula_latex: r#"
+\[
+\text{Tenkan-sen} = \frac{\text{Highest High} + \text{Lowest Low}}{2} \text{ for past 9 periods}
+\]
+"#,
+    gold_standard_file: "ichimoku.json",
+};

@@ -1,3 +1,4 @@
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use std::collections::VecDeque;
 
@@ -230,3 +231,35 @@ mod tests {
         }
     }
 }
+
+
+pub const STDDEV_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Standard Deviation",
+    description: "Standard Deviation is a statistical measure of market volatility.",
+    params: &[
+        ParamDef { name: "period", default: "14", description: "Period" },
+    ],
+    formula_source: "https://www.investopedia.com/terms/s/standarddeviation.asp",
+    formula_latex: r#"
+\[
+\sigma = \sqrt{ \frac{\sum (x_i - \mu)^2}{N} }
+\]
+"#,
+    gold_standard_file: "stddev.json",
+};
+
+
+pub const LINREG_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Linear Regression",
+    description: "Linear Regression plots a straight line that best fits the data prices.",
+    params: &[
+        ParamDef { name: "period", default: "14", description: "Period" },
+    ],
+    formula_source: "https://www.investopedia.com/terms/l/linearregression.asp",
+    formula_latex: r#"
+\[
+y = a + bx
+\]
+"#,
+    gold_standard_file: "linreg.json",
+};

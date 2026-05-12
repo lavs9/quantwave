@@ -1,3 +1,4 @@
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use crate::indicators::smoothing::EMA;
 
@@ -145,3 +146,35 @@ mod tests {
         }
     }
 }
+
+
+pub const TEMA_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Triple Exponential Moving Average",
+    description: "TEMA reduces the lag of traditional EMAs.",
+    params: &[
+        ParamDef { name: "period", default: "14", description: "Smoothing period" },
+    ],
+    formula_source: "https://www.investopedia.com/terms/t/triple-exponential-moving-average.asp",
+    formula_latex: r#"
+\[
+TEMA = (3 \times EMA_1) - (3 \times EMA_2) + EMA_3
+\]
+"#,
+    gold_standard_file: "tema.json",
+};
+
+
+pub const ZLEMA_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Zero Lag Exponential Moving Average",
+    description: "ZLEMA attempts to eliminate the inherent lag associated with moving averages.",
+    params: &[
+        ParamDef { name: "period", default: "14", description: "Smoothing period" },
+    ],
+    formula_source: "https://en.wikipedia.org/wiki/Zero_lag_exponential_moving_average",
+    formula_latex: r#"
+\[
+ZLEMA = EMA(Price + (Price - Price_{t - (period - 1)/2}))
+\]
+"#,
+    gold_standard_file: "zlema.json",
+};

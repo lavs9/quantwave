@@ -1,3 +1,4 @@
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use std::collections::VecDeque;
 
@@ -160,3 +161,51 @@ mod tests {
         approx::assert_relative_eq!(wma.next(4.0), 3.3333333333, epsilon = 1e-6); // (2*1 + 3*2 + 4*3)/6 = (2+6+12)/6 = 20/6 = 3.333
     }
 }
+
+
+pub const SMA_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Simple Moving Average",
+    description: "The Simple Moving Average calculates the unweighted mean of the previous N data points.",
+    params: &[
+        ParamDef { name: "period", default: "14", description: "Smoothing period" },
+    ],
+    formula_source: "https://www.investopedia.com/terms/s/sma.asp",
+    formula_latex: r#"
+\[
+SMA = \frac{1}{n} \sum_{i=1}^{n} P_i
+\]
+"#,
+    gold_standard_file: "sma.json",
+};
+
+
+pub const EMA_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Exponential Moving Average",
+    description: "The Exponential Moving Average gives more weight to recent prices.",
+    params: &[
+        ParamDef { name: "period", default: "14", description: "Smoothing period" },
+    ],
+    formula_source: "https://www.investopedia.com/terms/e/ema.asp",
+    formula_latex: r#"
+\[
+EMA = P_t \times \alpha + EMA_{t-1} \times (1 - \alpha)
+\]
+"#,
+    gold_standard_file: "ema.json",
+};
+
+
+pub const WMA_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Weighted Moving Average",
+    description: "The Weighted Moving Average assigns linearly decreasing weights.",
+    params: &[
+        ParamDef { name: "period", default: "14", description: "Smoothing period" },
+    ],
+    formula_source: "https://www.investopedia.com/articles/technical/060401.asp",
+    formula_latex: r#"
+\[
+WMA = \frac{P_1 \times n + P_2 \times (n-1) + \dots}{n + (n-1) + \dots + 1}
+\]
+"#,
+    gold_standard_file: "wma.json",
+};

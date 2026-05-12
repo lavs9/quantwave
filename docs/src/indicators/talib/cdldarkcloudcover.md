@@ -1,0 +1,4 @@
+# Dark Cloud Cover (CDLDARKCLOUDCOVER)
+
+TA-Lib `CDLDARKCLOUDCOVER` indicator.
+
