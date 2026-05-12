@@ -6,3 +6,5 @@ title = "QuantWave Documentation"
 
 [output.html]
 mathjax-support = true
+git-repository-url = "https://github.com/lavs9/quantwave"
+git-repository-icon = "fa-github"
