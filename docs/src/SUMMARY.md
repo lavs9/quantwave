@@ -31,4 +31,5 @@
             - [Fractal Adaptive Moving Average](indicators/native/fractal_adaptive_moving_average.md)
             - [MESA Adaptive Moving Average](indicators/native/mesa_adaptive_moving_average.md)
             - [WaveTrend Oscillator](indicators/native/wavetrend_oscillator.md)
+            - [Zero Lag EC](indicators/native/zero_lag_ec.md)
     - [TA-Lib Wrappers](indicators/talib/README.md)

@@ -32,3 +32,4 @@ pub mod ichimoku;
 pub mod cyber_cycle;
 pub mod frama;
 pub mod mama;
+pub mod zero_lag;
