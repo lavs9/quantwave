@@ -1,0 +1,17 @@
+[package]
+name = "quantwave-xtask"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description.workspace = true
+
+[dependencies]
+anyhow = "1.0.102"
+quick-xml = { version = "0.40.0", features = ["serialize"] }
+reqwest = { version = "0.13.3", features = ["blocking"] }
+roxmltree = "0.21.1"
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+syn = { version = "2.0.117", features = ["full"] }

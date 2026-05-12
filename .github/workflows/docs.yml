@@ -1,0 +1,44 @@
+name: Documentation
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'quantwave-core/src/indicators/**'
+      - 'quantwave-xtask/**'
+      - 'docs/**'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    paths:
+      - 'quantwave-core/src/indicators/**'
+      - 'quantwave-xtask/**'
+      - 'docs/**'
+
+jobs:
+  generate-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Install mdbook
+        run: cargo install mdbook
+
+      - name: Run documentation generator (xtask)
+        run: cargo run -p quantwave-xtask
+
+      - name: Build mdBook
+        run: mdbook build docs/
+
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/book

@@ -1,5 +1,25 @@
 use crate::traits::Next;
 use crate::indicators::volatility::ATR;
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
+
+pub const METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "SuperTrend",
+    description: "Trend-following indicator that combines ATR for volatility bands to identify the primary market direction.",
+    params: &[
+        ParamDef { name: "period", default: "10", description: "ATR length" },
+        ParamDef { name: "multiplier", default: "3.0", description: "ATR multiplier" },
+    ],
+    formula_source: "https://www.tradingview.com/script/7zF0a4f8-SuperTrend-by-Mobius/",
+    formula_latex: r#"
+\[
+\text{SuperTrend} = \begin{cases}
+\text{LowerBand} & \text{if trend is up} \\
+\text{UpperBand} & \text{if trend is down}
+\end{cases}
+\]
+"#,
+    gold_standard_file: "supertrend_10_3.json",
+};
 
 /// SuperTrend Indicator
 #[derive(Debug, Clone)]

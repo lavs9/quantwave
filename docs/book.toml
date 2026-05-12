@@ -1,0 +1,10 @@
+[book]
+authors = ["Mayank Lavania"]
+language = "en"
+multilingual = false
+src = "src"
+title = "QuantWave Documentation"
+
+[output.html]
+mathjax-support = true
+additional-js = ["https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-AMS-MML_HTMLorMML"]

@@ -1,6 +1,9 @@
 #[macro_use]
 pub mod talib_wrapper;
 
+pub mod metadata;
+
+
 pub mod overlap;
 pub mod momentum;
 pub mod volume;

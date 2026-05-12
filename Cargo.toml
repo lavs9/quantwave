@@ -2,7 +2,7 @@
 members = [
     "quantwave-core",
     "quantwave-polars",
-    "quantwave-plugins",
+    "quantwave-plugins", "quantwave-xtask",
 ]
 resolver = "2"
 
