@@ -44,30 +44,110 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn generate_native_docs(_docs_dir: &Path) -> Result<Vec<(String, String)>> {
-    // Basic syn parsing implementation will go here.
-    // For now, we'll just mock the supertrend to ensure the pipeline works
+fn generate_native_docs(docs_dir: &Path) -> Result<Vec<(String, String)>> {
     let mut generated = Vec::new();
-    let supertrend_md = r#"# SuperTrend
-
-Trend-following indicator that combines ATR for volatility bands to identify the primary market direction.
-
-## Parameters
-- `period` (default: 10): ATR length
-- `multiplier` (default: 3.0): ATR multiplier
-
-## Formula
-$$
-\text{SuperTrend} = \begin{cases}
-\text{LowerBand} & \text{if trend is up} \\
-\text{UpperBand} & \text{if trend is down}
-\end{cases}
-$$
-
-[Source](https://www.tradingview.com/script/7zF0a4f8-SuperTrend-by-Mobius/)
-"#;
-    fs::write(_docs_dir.join("indicators/native/supertrend.md"), supertrend_md)?;
-    generated.push(("SuperTrend".to_string(), "supertrend".to_string()));
+    let indicators_dir = docs_dir.parent().unwrap().parent().unwrap().join("quantwave-core/src/indicators");
+    
+    for entry in fs::read_dir(indicators_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.extension().unwrap_or_default() == "rs" {
+            let content = fs::read_to_string(&path)?;
+            if let Ok(ast) = syn::parse_file(&content) {
+                for item in ast.items {
+                    if let syn::Item::Const(item_const) = item {
+                        let is_metadata = match &*item_const.ty {
+                            syn::Type::Path(type_path) => {
+                                type_path.path.segments.last().map(|s| s.ident.to_string()) == Some("IndicatorMetadata".to_string())
+                            },
+                            _ => false,
+                        };
+                        
+                        if is_metadata {
+                            if let syn::Expr::Struct(expr_struct) = &*item_const.expr {
+                                let mut name = String::new();
+                                let mut desc = String::new();
+                                let mut latex = String::new();
+                                let mut source = String::new();
+                                let mut params_str = String::new();
+                                
+                                for field in &expr_struct.fields {
+                                    if let syn::Member::Named(ident) = &field.member {
+                                        let field_name = ident.to_string();
+                                        if let syn::Expr::Lit(expr_lit) = &field.expr {
+                                            if let syn::Lit::Str(lit_str) = &expr_lit.lit {
+                                                match field_name.as_str() {
+                                                    "name" => name = lit_str.value(),
+                                                    "description" => desc = lit_str.value(),
+                                                    "formula_source" => source = lit_str.value(),
+                                                    "formula_latex" => latex = lit_str.value(),
+                                                    _ => {}
+                                                }
+                                            }
+                                        } else if field_name == "params" {
+                                            if let syn::Expr::Reference(expr_ref) = &field.expr {
+                                                if let syn::Expr::Array(expr_array) = &*expr_ref.expr {
+                                                    for elem in &expr_array.elems {
+                                                        if let syn::Expr::Struct(param_struct) = elem {
+                                                            let mut p_name = String::new();
+                                                            let mut p_def = String::new();
+                                                            let mut p_desc = String::new();
+                                                            for p_field in &param_struct.fields {
+                                                                if let syn::Member::Named(p_ident) = &p_field.member {
+                                                                    if let syn::Expr::Lit(p_expr_lit) = &p_field.expr {
+                                                                        if let syn::Lit::Str(p_lit_str) = &p_expr_lit.lit {
+                                                                            match p_ident.to_string().as_str() {
+                                                                                "name" => p_name = p_lit_str.value(),
+                                                                                "default" => p_def = p_lit_str.value(),
+                                                                                "description" => p_desc = p_lit_str.value(),
+                                                                                _ => {}
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                            params_str.push_str(&format!("- `{}` (default: {}): {}\n", p_name, p_def, p_desc));
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                let filename = name.to_lowercase().replace(" ", "_").replace("-", "_");
+                                
+                                let mut md = String::new();
+                                md.push_str(&format!("# {}\n\n", name));
+                                md.push_str(&format!("{}\n\n", desc));
+                                
+                                if !params_str.is_empty() {
+                                    md.push_str("## Parameters\n\n");
+                                    md.push_str(&params_str);
+                                    md.push_str("\n");
+                                }
+                                
+                                md.push_str("## Formula\n\n");
+                                // latex string already contains \\[ \\] formatting from python script injection
+                                md.push_str(&latex);
+                                md.push_str("\n\n");
+                                
+                                if !source.is_empty() {
+                                    md.push_str(&format!("[Source]({})\n", source));
+                                }
+                                
+                                let out_path = docs_dir.join(format!("indicators/native/{}.md", filename));
+                                fs::write(&out_path, md)?;
+                                generated.push((name, filename));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    generated.sort_by(|a, b| a.0.cmp(&b.0));
     Ok(generated)
 }
 
