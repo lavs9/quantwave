@@ -29,3 +29,4 @@ pub mod atr_ts;
 pub mod pivot_points;
 pub mod fractals;
 pub mod ichimoku;
+pub mod cyber_cycle;
