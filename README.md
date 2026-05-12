@@ -1,6 +1,6 @@
 # QuantWave 🌊
 
-[![DeepWiki](https://deepwiki.com/badge-maker?url=https%3A%2F%2Fdeepwiki.com%2Flavs9%2Fquantwave)](https://deepwiki.com/lavs9/quantwave)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/lavs9/quantwave)
 [![Rust](https://img.shields.io/badge/rust-1.80%2B-blue.svg)](https://www.rust-lang.org)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE-MIT)
 [![Documentation](https://img.shields.io/badge/docs-mdBook-blue)](https://lavs9.github.io/quantwave/)
