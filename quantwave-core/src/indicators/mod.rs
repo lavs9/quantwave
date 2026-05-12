@@ -44,3 +44,8 @@ pub mod laguerre_filter;
 pub mod laguerre_oscillator;
 pub mod ultimate_channel;
 pub mod ultimate_bands;
+pub mod dmh;
+pub mod generalized_laguerre;
+pub mod continuation_index;
+pub mod usi;
+pub mod reversion_index;
