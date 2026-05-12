@@ -34,11 +34,53 @@ fn main() -> Result<()> {
         }
     }
 
+    let main_intro = r#"# QuantWave 🌊
+
+**High-performance, Polars-native Technical Analysis for Rust.**
+
+QuantWave is a modern technical analysis library built from the ground up for the Polars ecosystem. It bridges the gap between high-speed batch backtesting and real-time streaming execution by ensuring bit-identical results across both modes.
+
+Whether you are performing quantitative research over terabytes of historical data or deploying a live trading system on a tick-by-tick stream, QuantWave delivers industry-standard accuracy and extreme performance.
+
+## Design Philosophy
+1. **Universal Indicator Pattern:** Every indicator guarantees identical results for batch and streaming.
+2. **Zero-Copy Performance:** Native Polars plugins operate directly on Arrow memory buffers.
+3. **Rigorous Validation:** Every indicator is tested against industry gold-standard data (TradingView, MetaTrader) to ensure correctness.
+
+Select an indicator from the sidebar to view its mathematical formula, parameters, and documentation.
+"#;
+
+    let indicators_intro = r#"# Indicator Suite
+
+The QuantWave indicator suite is divided into two primary categories to give you maximum flexibility and coverage:
+
+- **Native Indicators**: Highly optimized, modern indicators implemented natively in Rust. These include modern DSP suites, order flow tools, and advanced moving averages.
+- **TA-Lib Wrappers**: A comprehensive suite of 158 classic indicators wrapping the battle-tested `ta-lib` C library.
+
+Every single indicator, regardless of its category, supports both live streaming (`Next` trait) and batch Polars processing (`.ta()` namespace).
+"#;
+
+    let native_intro = r#"# Native Indicators
+
+Native indicators in QuantWave are written entirely in safe, zero-cost Rust.
+
+These algorithms are compiled as native Polars Expressions, allowing them to benefit from vectorized execution, multi-threading, and query optimization without serialization overhead.
+
+Here you will find our implementations of algorithms like `SuperTrend`, `WaveTrend`, `ALMA`, and more.
+"#;
+
+    let talib_intro = r#"# TA-Lib Wrappers
+
+QuantWave seamlessly integrates with the industry standard TA-Lib via `talib-rs`.
+
+We have wrapped all 158 technical analysis functions provided by TA-Lib so that they adhere to the QuantWave Universal Indicator pattern. This means you can use classic indicators like RSI, MACD, and Bollinger Bands natively within your Polars dataframes.
+"#;
+
     fs::write(docs_dir.join("SUMMARY.md"), summary)?;
-    fs::write(docs_dir.join("README.md"), "# QuantWave Documentation\n\nWelcome to QuantWave.")?;
-    fs::write(docs_dir.join("indicators/README.md"), "# Indicators\n\nOverview of all indicators.")?;
-    fs::write(docs_dir.join("indicators/native/README.md"), "# Native Indicators\n\nHigh-performance native implementations.")?;
-    fs::write(docs_dir.join("indicators/talib/README.md"), "# TA-Lib Wrappers\n\nWrappers around standard TA-Lib functions.")?;
+    fs::write(docs_dir.join("README.md"), main_intro)?;
+    fs::write(docs_dir.join("indicators/README.md"), indicators_intro)?;
+    fs::write(docs_dir.join("indicators/native/README.md"), native_intro)?;
+    fs::write(docs_dir.join("indicators/talib/README.md"), talib_intro)?;
 
     println!("Documentation generation complete.");
     Ok(())
