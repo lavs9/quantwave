@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine.">
+<meta name="description" content="This month: Adaptive Exponential Moving Average by Vitali Apirine. Contributions from: TradeStation; Wealth-Lab; NinjaTrader; Quantacula; Neuroshell Trader; AIQ; TradersStudio; eSignal; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - APRIL 2019</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="https://traders.com/CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">APRIL 2019</h1>
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div> <img src="images/TT-Apirine.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+  <p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Vitali Apirine&rsquo;s article in this issue, &ldquo;Adaptive Exponential Moving Average.&rdquo; Here, we present the April 2019 Traders&rsquo; Tips code with possible implementations in various software.</p>
+  <p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p>
+  <!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+  <p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+  <br class="clearfloat">
+</div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TRADESTATION: APRIL 2019</a></li>
+  <li><a href="#item2">WEALTH-LAB: APRIL 2019</a></li>
+  <li><a href="#item3">NINJATRADER: APRIL 2019</a></li>
+  <li><a href="#item4">QUANTACULA: APRIL 2019</a></li>
+  <li><a href="#item5">NEUROSHELL APRIL: April 2019</a></li>
+  <li><a href="#item6">AIQ: APRIL 2019</a></li>
+  <li><a href="#item7">TRADERSSTUDIO: APRIL 2019</a></li>
+  <li><a href="#item8"><span style="text-transform:lowercase;">e</span>SIGNAL: APRIL 2019</a></li>
+  <li><a href="#item9">MICROSOFT EXCEL: APRIL 2019</a></li>
+  <li><a href="#item10">AMIBROKER: APRIL 2019</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-New.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> TRADESTATION: APRIL 2019</h3>
+</div>
+<p>In &ldquo;Adaptive Exponential Moving Average&rdquo; in this issue, author Vitali Apirine introduces a new adaptive moving average (AEMA) technique that when combined with a standard exponential moving average gives traders another tool to help identify overall trends. In addition, the author describes a method for using this new indicator to help identify turning points.</p>
+<p>Here, we are providing the TradeStation EasyLanguage code for an indicator and a strategy based on the author&rsquo;s work. We have also included the code for an AEMA function so that you can easily include the AEMA in your own EasyLanguage code.</p>
+<pre>
+Indicator: Adaptive Exponential Moving Average
+// Adaptive EMA Indicator
+// TASC APR 2018
+// Vitali Apirine
+inputs:
+	Period( 10 ),
+	PDS( 10 ) ;
+	
+variables:
+	AEMA( 0 ) ;
+	
+AEMA = _AEMA( Period, PDS ) ;		
+
+Plot1( AEMA, &quot;AEMA&quot; ) ;
+
+
+Strategy: Adaptive Exponential Moving Average
+// Adaptive EMA Strategy
+// TASC APR 2018
+// Vitali Apirine
+
+inputs:
+	Period( 10 ),
+	PDS( 10 ),
+	EMALength( 10 ) ;
+	
+variables:
+	AEMA( 0 ),
+	EMA( 0 ) ;
+	
+AEMA = _AEMA( Period, PDS ) ;		
+EMA = XAverage( Close, EMALength ) ;
+
+if AEMA crosses over EMA then
+	Buy next bar at Market
+else if EMA crosses over AEMA then
+	SellShort next bar at Market ;
+
+Function: _AEMA
+// Adaptive EMA Function
+// TASC APR 2018
+// Vitali Apirine
+inputs:
+	Periods( numericsimple ),
+	PDS( numericsimple ) ;
+	
+variables:
+	MLTP1( 2 / ( Periods + 1 ) ),
+	MLTP2( 0 ),
+	Rate( 0 ) ;	
+	
+MLTP2 = AbsValue( ( Close - Lowest( Low, PDS ) ) 
+	- ( Highest( High, PDS ) - Close )) / ( Highest( High, PDS ) 
+	- Lowest( Low, PDS ) ) ;	
+
+Rate = MLTP1 * ( 1 + MLTP2 ) ;
+	
+if CurrentBar &lt;= Periods then
+	_AEMA = Average( Close, Periods ) 
+else
+	_AEMA = _AEMA[1] + Rate * ( Close - _AEMA[1] ) ;
+
+</pre>
+<p>To download the EasyLanguage code, please visit our TradeStation and EasyLanguage support forum. The files for this article can be found here: <a href="https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=156727" target="_parent">https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=156727</a>. The filename is &ldquo;TASC_APR2019.ZIP.&rdquo;</p>
+<p>For more information about EasyLanguage in general, please see <a href="https://www.tradestation.com/EL-FAQ" target="_parent">https://www.tradestation.com/EL-FAQ</a>.</p>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder"> <img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This shows a five-minute chart of Apple (AAPL) with the adaptive exponential moving average indicator and strategy applied. </p>
+</div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips"> &mdash;Doug McCrary<br>
+  TradeStation Securities, Inc.<br>
+  <a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> WEALTH-LAB: APRIL 2019</h3>
+</div>
+<p>The AEMA is a new adaptive moving average presented by Vitali Apirine in his article in this issue, &ldquo;Adaptive Exponential Moving Average.&rdquo; </p>
+<p>With the look and feel of an EMA (exponential moving average), AEMAs with different lengths can be used to create a trading system based on double crossovers. In a few easy steps, we&rsquo;ll show how to set up an AEMA-based trading system in Wealth-Lab without coding. </p>
+<p><em><strong>Step 1.</strong></em> Install (or update) the TASCIndicators library to its most-recent version from our website, wealth-lab.com, or using the built-in Extension Manager. Once you see the AEMA listed under the &ldquo;TASC Magazine Indicators&rdquo; group, it&rsquo;s ready for use.</p>
+<p><em><strong>Step 2.</strong></em> Now add some entry and exit blocks, then drag and drop &ldquo;indicator crosses above (below) indicator&rdquo; from <em>general indicators</em> under the <em>conditions</em> tab on top of each one (respectively).</p>
+<p><em><strong>Step 3.</strong></em> For each entry and exit, choose a faster AEMA (10,10) for &ldquo;indicator1&rdquo; and a slower (50,50) for &ldquo;indicator2&rdquo; where prompted.</p>
+<p>Figure 2 shows an example of setting up a strategy in Wealth-Lab from rules by simple drag &amp; drop.</p>
+<div class="figBorder"> <img src="images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 2: WEALTH-LAB. Here is an example of creating a strategy that&rsquo;s based on an adaptive exponential moving average (AEMA) using rules in Wealth-Lab. </p>
+</div>
+<p>If everything is set up correctly, your trading system will generate trades such as the ones shown in Figure 3.</p>
+<div class="figBorder"> <img src="images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 3: WEALTH-LAB. Here&rsquo;s an example trading system applied to a daily chart of QQQ (data provided by Yahoo). </p>
+</div>
+<p>But the rules doesn&rsquo;t have to be symmetric. Here&rsquo;s a twist if you like to let profits ride: Choose a pair of slower AEMA periods for the exits&mdash;say, AEMA(20,20) and AEMA(100,100).</p>
+<p>The bottom line is that in a couple of minutes you&rsquo;ve prototyped a trading system without having to write any code.</p>
+<p class="authorTips"> &mdash;Gene (Eugene) Geren, Wealth-Lab team<br>
+  MS123, LLC<br>
+  <a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> NINJATRADER: APRIL 2019 </h3>
+</div>
+<p>An AEMA indicator, as discussed by Vitali Apirine in his article in this issue, &ldquo;Adaptive Exponential Moving Average,&rdquo; is available for download at the following links for NinjaTrader 8 and NinjaTrader 7:</p>
+<ul style="list-style: none">
+  <li><strong>NinjaTrader 8:</strong> <a href="https://www.ninjatrader.com/SC/April2019SCNT8.zip" target="_parent">www.ninjatrader.com/SC/April2019SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7:</strong> <a href="https://www.ninjatrader.com/SC/April2019SCNT7.zip" target="_parent">www.ninjatrader.com/SC/April2019SCNT7.zip</a></li>
+</ul>
+<p>Once the file has been downloaded, you can import the indicator into NinjaTader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import into NinjaTrader 7, from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator&rsquo;s source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control center window and selecting the AEMA file. You can review the indicator&rsquo;s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the control center window and selecting the AEMA file.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, which provides you with the highest performance possible.</p>
+<p>A sample chart implementing the strategy is shown in Figure 4.</p>
+<div class="figBorder"> <img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 4: NINJATRADER. AEMAs of lengths 50,50 and 10,10 are seen here plotted on a daily chart of the S&amp;P 500 index between May 2012 and March 2013. </p>
+</div>
+<p class="authorTips"> &mdash;Raymond Deux &amp; Jim Dooms<br>
+  NinjaTrader, LLC<br>
+  <a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a> </p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Quantacula.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> QUANTACULA: APRIL 2019</h3>
+</div>
+<p>The adaptive exponential moving average (AEMA) indicator described by Vitali Apirine in his article in this issue is available as part of the TASC Extension that comes bundled with Quantacula Studio. It is also available for models built and backtested on the Quantacula.com website.</p>
+<p>We decided to compare the AEMA with the EMA by running a five-year backtest on the stocks of the Nasdaq 100. We used the QPremium Nasdaq 100 data set that correctly accounts for symbols that move into and out of the index over time, eliminating the problem of survivorship bias. We implemented a straightforward moving average crossover model with periods of 10 and 50, as described in the article. We backtested with 1% of equity per position to ensure we get all simulated trades filled. No commission was applied to these backtests since we simply want to compare the raw performance of the indicators.</p>
+<p>The chart on the left in Figure 5 shows the equity curve of the EMA model, and the chart on the right shows the AEMA result. In this basic backtest, using the AEMA in a crossover situation handily outperformed the EMA. It resulted in a net profit of 126.71% over five years, while the EMA model yielded only 21.73%.</p>
+<div class="figBorder"> <img src="images/TT-Quantacula.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 5: QUANTACULA STUDIO. The chart on the left shows the equity curve of the EMA model, and the chart on the right shows the AEMA result. </p>
+</div>
+<p class="authorTips"> &mdash;Dion Kurczek, Quantacula LLC<br>
+  <a href="mailto:info@quantacula.com">info@quantacula.com</a><br>
+  <a href="https://www.quantacula.com" target="_parent">www.quantacula.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">NEUROSHELL TRADER: APRIL2019</h3>
+</div>
+<p>An adaptive exponential moving average (AEMA) indicator such as the one described by Vitali Apirine in his article in this issue, &ldquo;Adaptive Exponential Moving Average,&rdquo; can be easily implemented in NeuroShell Trader using NeuroShell Trader&rsquo;s ability to call external dynamic linked libraries. Dynamic linked libraries can be written in C, C++ and Power Basic.</p>
+<p>After moving the MetaStock code given in Apirine&rsquo;s article to your preferred compiler and creating a DLL, you can insert the resulting indicator into NeuroShell as follows:</p>
+<ol>
+  <li>Select &ldquo;new indicator&rdquo; from the <em>insert</em> menu.</li>
+  <li>Choose the &ldquo;external program &amp; library calls&rdquo; 
+    category.</li>
+  <li>Select the appropriate &ldquo;external DLL call&rdquo; indicator.</li>
+  <li>Set up the parameters to match your DLL.</li>
+  <li>Select the <em>finished</em> button.</li>
+</ol>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any of previous Traders&rsquo; Tips.</p>
+<p>A sample chart is shown in Figure 6.</p>
+<div class="figBorder"> <img src="images/TT-Neurshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 6: NEUROSHELL TRADER. This NeuroShell Trader chart shows adaptive exponential moving averages on a chart of the Russell 2000 Index.</p>
+</div>
+<p class="authorTips"> &mdash;Marge Sherald,<br>
+  Ward Systems Group, Inc.<br>
+  301 662-7950, <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+  <a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/AIQ.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">AIQ: APRIL 2019</h3>
+</div>
+<p>The importable AIQ EDS file based on Vitali Apirine&rsquo;s article in this issue, &ldquo;Adaptive Exponential Moving Average,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also shown below.</p>
+<pre>
+!ADAPTIVE EXPONENTIAL MOVING AVERAGE
+!Author: Vitali Apirine, TASC April 2019
+!Coded by: Richard Denning 2/17/2019
+!www.TradersEdgeSystems.com
+
+!INPUTS:
+AvgLen is 30.
+Len is 30.
+C is [close].
+L is [low].
+H is [high].
+HH is highresult(H,Len).
+LL is lowresult(L,Len).
+
+MLTP1 is (2/ (AvgLen + 1)).
+MLTP2 is  ABS((C - LL) - (HH - C)) / (HH - LL).
+Rate is MLTP1*(1+MLTP2).
+
+! To stop the recursion we just return the value of Sma after we have looped 240 times into this routine.
+DaysInto is ReportDate() - RuleDate().
+Stop if DaysInto &gt; 240.
+stopAema is iff(stop,Sma, myAema).
+myAema is valresult(stopAema,1)+Rate*(C-valresult(stopAema,1)).
+
+!For comparison, exponential
+Ema is expavg(C,AvgLen).
+Sma is simpleavg(C,AvgLen).
+
+ShowValures if 1.
+</pre>
+<p>Figure 7 shows the AEMA(30,30) indicator on a chart of Apple Inc. compared to an exponential moving average EMA(30).</p>
+<div class="figBorder"> <img src="images/TT-Aiq.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 7: AIQ. This shows an example of the AEMA(30,30) and EMA(30) on a chart of Apple Inc (AAPL).</p>
+</div>
+<p class="authorTips"> &mdash;Richard Denning<br>
+  <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+  for AIQ Systems</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item7"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">TRADERSSTUDIO: APRIL 2019</h3>
+</div>
+<p>The importable TradersStudio file based on Vitali Apirine&rsquo;s article in this issue, &ldquo;Adaptive Exponential Moving Average,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code listing is also shown below.</p>
+<pre>
+'ADAPTIVE EXPONENTIAL MOVING AVERAGE
+'Author: Vitali Apirine, TASC April 2019
+'Coded by: Richard Denning 2/17/2019
+'www.TradersEdgeSystems.com
+
+Function AEMA(AvgLen,LBlen)
+'AvgLen = 30 
+'LBlen = 30 
+Dim HH,LL,MLTP1,MLTP2,Rate
+Dim myAEMA As BarArray
+
+HH = Highest(H,LBlen) 
+LL = Lowest(L,LBlen) 
+
+MLTP1 = 2/(AvgLen + 1) 
+MLTP2 =  Abs((C - LL) - (HH - C)) / (HH - LL) 
+Rate = MLTP1*(1+MLTP2) 
+
+myAEMA = IFF(BarNumber+1&lt;=AvgLen,Average(C,AvgLen),myAEMA[1]+Rate*(C-myAEMA[1]))
+AEMA = myAEMA
+End Function
+'-------------------------------------------------------------------------------
+'Code to plot indicator:
+sub AEMA_IND(AvgLen,LBlen)
+Dim myAEMA As BarArray
+myAEMA = AEMA(AvgLen,LBlen)
+plot1(myAEMA)
+End Sub
+
+	</pre>
+<p>Figure 8 shows the AEMA(30,30) indicator on a chart of Apple Inc. compared to an exponential moving average EMA(30).</p>
+<div class="figBorder"> <img src="images/TT-Tradersstudio.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 8: TRADERSSTUDIO. The AEMA(30,30) and EMA(30) are shown on a chart of Apple Inc. (AAPL). </p>
+</div>
+<p class="authorTips"> &mdash;Richard Denning<br>
+  <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+  for TradersStudio</p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item8"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">eSIGNAL: APRIL 2019</h3>
+</div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;ve provided the study AEMA.efs based on the article in this issue by Vitali Apirine, &ldquo;Adaptive Exponential Moving Average.&rdquo; This study can be used to help determine the overall trend of the market.</p>
+<p>The studies contain formula parameters that may be configured through the <em>edit chart</em> window (right-click on the chart and select &ldquo;edit chart&rdquo;). A sample chart is shown in Figure 9.</p>
+<div class="figBorder"> <img src="images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 9: ESIGNAL. Here is an example of the study plotted on a daily chart of $SPX.</p>
+</div>
+<p>To discuss this study or download a complete copy of the formula code, please visit the EFS library discussion board forum under the <em>forums</em> link from the support menu at www.esignal.com or visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs/" target="_parent">https://www.esignal.com/support/kb/efs/</a>.</p>
+<p class="authorTips">&mdash;Eric Lippert<br>
+  eSignal, an Interactive Data company<br>
+  800 779-6555, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+  <h3 class="newsTitle grey_blue">MICROSOFT EXCEL: APRIL 2019</h3>
+</div>
+<p>In &ldquo;Adaptive Exponential Moving Average&rdquo; in this issue, author Vitali Apirine presents a simple approach to making an exponential moving average (EMA) a bit more reactive than the standard EMA when the current prices are near the highest or lowest prices of the recent past.</p>
+<p>The resulting AEMA is able to track closer to significant price movements than a standard EMA, a feature that can assist in detecting turning points a bit earlier that the standard EMA may.</p>
+<p>The calculations are quite simple. In the article, Apirine holds the periods and PDS values equal for the main and secondary calculations. </p>
+<p>As for the sensitivity of the AEMA calculation, I found it instructive to shuffle things a bit, such as giving the <em>period</em> a value of 50 and giving the PDS a value of 20, and then I did the flip side of that and made the <em>period</em> value 20 and gave the PDS a value of 50.</p>
+<p>Note: To avoid a bit of visual confusion, you should try to display the moving averages that correspond to the crossover combination you have selected.</p>
+<p>Figure 10 presents a chart demonstrating the EMA(10) and AEMA(10,10) with crossovers. Figure 11 also shows the EMA(50) and AEMA(50,50), but this time from a longer-term perspective, showing fewer reversals.</p>
+<div class="figBorder"> <img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 10: EXCEL. This chart shows an example of the EMA(10) and AEMA(10,10) with crossovers.</p>
+</div>
+<div class="figBorder"> <img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 11: EXCEL. This also shows the EMA(50) and AEMA(50,50) but this time from a longer-term perspective, showing fewer reversals.</p>
+</div>
+<p>The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2019/04/images/code/AdaptiveEMA.xlsm">here</a>. To successfully download it, follow these steps: </p>
+<ul>
+  <li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2019/04/images/code/AdaptiveEMA.xlsm">Excel file link</a>, then</li>
+  <li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li>
+</ul>
+<p class="authorTips">&mdash;Ron McAllister<br>
+  Excel and VBA programmer<br>
+  <a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Amibroker.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">AMIBROKER: APRIL 2019</h3></div>
+<p>In his article &ldquo;Adaptive Exponential Moving Average&rdquo; Vitali Apirine presents an adaptive exponential moving average that changes its smoothing factor based on volatility to react faster to large price movements. Ready-to-use code is provided below.</p>
+<pre>
+function AEMA( input, per1, per2 ) 
+{ 
+    mltp1 = 2 / ( per1 + 1 ); 
+    
+    ll = LLV( L, per2 ); 
+    hh = HHV( H, per2 ); 
+    
+    mltp2 = abs( ( ( C - ll ) - ( hh - C ) ) / ( hh - ll ) ); 
+    
+    rate = mltp1 * ( 1 + mltp2 ); 
+    
+    return AMA( input, rate );   
+} 
+
+Plot( C, &quot;Close&quot;, colorDefault, styleBar | styleThick ); 
+
+per1 = Param(&quot;period1&quot;, 30, 2, 100 ); 
+per2 = Param(&quot;period2&quot;, 30, 2, 100 ); 
+
+Plot( AEMA( Close, per1, per2 ), &quot;AEMA&quot;+ _PARAM_VALUES(), colorBlue, styleThick ); 
+
+Plot( EMA( Close, per1 ), &quot;EMA&quot; + per1, colorRed ); 
+</pre>
+	<div class="figBorder">
+<img src="images/TT-Amibroker.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 12: AMIBROKER</p></div>
+	<p class="authorTips">&mdash;Tomasz Janeczko, AmiBroker.com<br>
+<a href="https://www.amibroker.com" target="_parent">www.amibroker.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the April 2019 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2019, Technical Analysis, Inc.</p>
+</body>
+</html>

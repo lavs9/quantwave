@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine.">
+<meta name="description" content="This month: A Technical Description Of Market Data For Traders by John F. Ehlers. Contributions from: TradeStation; thinkorswim; Wealth-Lab.com; NinjaTrader; Neuroshell Trader; Optuma; The Zorro Project; eSignal; AIQ; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - MAY 2021</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">May 2021</h1>
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2021/05/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+  <p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John F. Ehlers&rsquo; article in this issue, &ldquo;A Technical Description Of Market Data For Traders.&rdquo; Here, we present the May 2021 Traders&rsquo; Tips code with possible implementations in various software.</p>
+  <p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p>
+  <!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+  <p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+  <br class="clearfloat">
+</div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList" style="text-transform: uppercase;">
+  <li><a href="#item1">TRADESTATION: MAY 2021</a></li>
+  <li><a href="#item2">THINKORSWIM: MAY 2021</a></li>
+  <li><a href="#item3">WEALTH-LAB.COM: MAY 2021</a></li>
+  <li><a href="#item4">NINJATRADER: MAY 2021</a></li>
+  <li><a href="#item5">NEUROSHELL TRADER: MAY 2021</a></li>
+  <li><a href="#item6">OPTUMA: MAY 2021</a></li>
+  <li><a href="#item7">THE ZORRO PROJECT: MAY 2021</a></li>
+  <li><a href="#item8"><span style="text-transform:lowercase;">e</span>SIGNAL: MAY 2021</a></li>
+  <li><a href="#item9">AIQ: MAY 2021</a></li>
+  <li><a href="#item10">MICROSOFT EXCEL: MAY 2021</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">TRADESTATION: MAY 2021</h3>
+</div>
+<p>In his article in this issue, &ldquo;A Technical Description Of Market Data For Traders,&rdquo; John Ehlers introduces the use of AM and FM modulation to determine the volatility and cycles of market data. The author also proposes that noise in market data does not necessarily mean chaos and that pink noise in the data implies memory in the data.</p>
+<p>Shown here is EasyLanguage code for a function that calculates the FM demodulator value, an indicator for the AM detector, an indicator for the FM demodulator, and a sample strategy for demonstration purposes.</p>
+<pre>
+Function:  _TASC_MAY_2021_FM_Demodulator
+// TASC MAY 2021
+// A Technical Description Of Market Data For Traders
+// John F. Ehlers (C) 2020-2021 
+// FM Demodulator
+
+inputs:
+    Period( numericsimple );
+
+variables:
+    Deriv( 0 ), 
+    HL( 0 ),
+    a1( 0 ), 
+    b1( 0 ), 
+    c1( 0 ), 
+    c2( 0 ), 
+    c3( 0 ), 
+    SS( 0 );
+
+{
+derivative to establish zero mean (basically the 
+same as Close - Close[1], but removes intraday gap 
+openings)
+}
+Deriv = Close - Open;
+
+// hard limiter to remove AM noise
+HL = 10 * Deriv;
+if HL &gt; 1 then 
+    HL = 1;
+
+if HL &lt; -1 then 
+    HL = -1;
+
+// integrate with a SuperSmoother
+a1 = ExpValue( -1.414 * 3.14159 / Period );
+b1 = 2 * a1 * Cosine( 1.414 * 180 / Period );
+c2 = b1;
+c3 = -a1 * a1;
+c1 = 1 - c2 - c3;
+SS = c1 * ( HL + HL[1] ) /2 + c2 * SS[1] + c3 * SS[2];
+
+if CurrentBar &lt; 3 then 
+    SS = Deriv;
+
+_TASC_MAY_2021_FM_Demodultor = SS;
+
+Indicator:  TASC MAY 2021 FM Demodulator
+// TASC MAY 2021
+// A Technical Description Of Market Data For Traders
+// John F. Ehlers (C) 2020-2021 
+// FM Demodulator
+
+inputs:
+    Period( 30 );
+
+variables:
+    SS( 0 );
+    
+SS = _TASC_MAY_2021_FM_Demodultor( Period );
+
+Plot1( SS );
+Plot2( 0 );
+
+Indicator: TASC MAY 2021 AM Detector
+// TASC MAY 2021
+// A Technical Description Of Market Data For Traders
+// John F. Ehlers (C) 2020-2021 
+// AM Detector
+
+variables:
+    Deriv( 0 ),
+    Envel( 0 ),
+    Volatil( 0 );
+    
+Deriv = Close - Open;
+Envel = Highest( AbsValue( Deriv ), 4 );
+Volatil = Average( Envel, 8 );
+
+Plot1( Volatil );
+Plot2( 0 );
+
+
+Strategy:  TASC MAY 2021 Strategy
+// TASC MAY 2021
+// A Technical Description Of Market Data For Traders
+// John F. Ehlers (C) 2020-2021 
+// FM Demodulator
+
+// sample strategy for illustrative purposes only
+
+[IntrabarOrderGeneration=false]
+
+inputs:
+    Period( 30 );
+
+variables:
+    SS( 0 );
+    
+SS = _TASC_MAY_2021_FM_Demodultor( Period );
+
+if SS crosses above 0 then
+    Buy ( &quot;LE FM Mod&quot; ) next bar market
+else if SS crosses below 0 then
+    SellShort ( &quot;SE FM Mod&quot; ) next bar market;
+</pre>
+<p>To download the EasyLanguage code for TradeStation 10, please visit our TradeStation and EasyLanguage support forum. The files for this article can be found here: <a href="https://community.tradestation.com/discussions/Topic.aspx?Topic_ID=190289" target="_parent">https://community.tradestation.com/discussions/Topic.aspx?Topic_ID=190289</a>.</p>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder"> <img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 1: TRADESTATION. On this TradeStation daily chart of SPY, the indicators are applied in the subgraph, and the strategy is inserted.</p>
+</div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;Chris Imhof<br>
+  TradeStation Securities, Inc.<br>
+  <a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Thinkorswim.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">THINKORSWIM: MAY 2021</h3>
+</div>
+<p>We have put together a pair of studies based on the article in this issue by John Ehlers, &ldquo;A Technical Description Of Market Data For Traders.&rdquo; We built the studies referenced by using our proprietary scripting language, thinkscript. To ease the loading process, simply click on <a href="https://tos.mx/9mLcPM9" target="_parent">https://tos.mx/9mLcPM9</a> or enter it into the address into <em>setup&rarr;open shared item</em> from within thinkorswim then choose <em>view thinkScript study</em> and name it &ldquo;AM Detector&rdquo; or whatever you like and can identify. Do the same with <a href="https://tos.mx/vOxBTfM" target="_parent">https://tos.mx/vOxBTfM</a> and name it &ldquo;FM Demodulator.&rdquo; Then you can then add the studies to your charts from the <em>edit studies</em> menu from within the <em>charts</em>tab.</p>
+<p>Figure 2 shows the pair of studies on a two-year, one-day chart of SPY. Please see John Ehlers&rsquo; article for more information on how these studies are to be utilized.</p>
+<div class="figBorder"> <img src="images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 2: THINKORSWIM. The pair of studies are shown on a two-year, one-day chart of SPY.</p>
+</div>
+<p class="authorTips">&mdash;thinkorswim<br>
+  A division of TD Ameritrade, Inc.<br>
+  <a href="https://www.thinkorswim.com" target="_parent">www.thinkorswim.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">WEALTH-LAB.COM: MAY 2021</h3>
+</div>
+<p>In &ldquo;A Technical Description Of Market Data For Traders&rdquo; in this issue, John Ehlers discusses cycle components of market data and presents a way to detect and demodulate the AM and FM components of cycles. According to the author, peaks and valleys of the FM demodulator indicator that he presents in the article can be correlated with major swings of the price. The FM demodulator indicator (FMD) ranges from -1.0 to 1.0. To see if it&rsquo;s accurate for market timing, we added an overlay of peaks and values based on its reversals of 0.25 points and more. You can see it as a red zigzag line on the indicator&rsquo;s pane in Figure 3.</p>
+<div class="figBorder"> <img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 3: WEALTH-LAB. In this example Wealth-Lab chart, the new indicator is accompanied by John Ehlers&rsquo; dominant cycle plot. Sample trades on a chart of SPY are taken at higher troughs.</p>
+</div>
+<p>There is a natural delay in the detection of peaks and troughs, as we need to wait while the indicator has moved by a certain amount. The example system buys as soon as a new <em>higher</em> trough has been confirmed. All entries are marked with bluish triangles on the price chart.</p>
+<p>The code is available for copying &amp; pasting here:</p>
+<pre>
+using System;
+using WealthLab.Indicators;
+using System.Collections;
+using System.Drawing;
+using WealthLab.Backtest;
+using WealthLab.Core;
+using WealthLab.TASC;
+
+namespace WealthScript1
+{
+    public class May2021 : UserStrategyBase
+    {
+        public May2021() : base()
+        {
+            AddParameter(&quot;Reversal&quot;, ParameterTypes.Double, 0.25, 0.25, 1.0, 0.25);
+        }
+
+        public override void Initialize(BarHistory bars)
+        {
+            reversal = Parameters[0].AsDouble;
+            fmd = FMDemodulator.Series(bars, 30);
+            amd = AMDetector.Series(bars, 4, 8);
+            ptc = new PeakTroughCalculator( fmd, reversal, PeakTroughReversalTypes.Point);
+
+            PlotTimeSeries( fmd, &quot;FM Demodulator&quot;, &quot;FMD&quot;, Color.BlueViolet);
+            PlotTimeSeries( amd, &quot;AM Detector&quot;, &quot;AMD&quot;, Color.Violet);
+            RenderPeakTroughs(ptc, Color.Red, &quot;FMD&quot;);
+
+            /* Dominant Cycle */
+            TimeSeries dc;
+            DominantCycle(bars, bars.AveragePriceHL, out dc);
+        }
+
+        /* execute the strategy rules here, this is executed once for each bar in the backtest history*/
+        public override void Execute(BarHistory bars, int idx)
+        {
+            if (ptc.TroughState(idx) == 1 &amp;&amp; ptc.TroughState(idx - 1) != 1)
+            {
+                PlaceTrade( bars, TransactionType.Buy, OrderType.Market);
+            }
+        }
+
+        /* render peaks and troughs in a pane */
+        private void RenderPeakTroughs(PeakTroughCalculator ptc, Color color, string paneTag)
+        {
+            if (ptc.PeakTroughs.Count &lt; 2)
+                return;
+
+            for (int n = 1; n &lt; ptc.PeakTroughs.Count; n++)
+            {
+                int x1 = ptc.PeakTroughs[n - 1].PeakTroughIndex;
+                double y1 = ptc.PeakTroughs[n - 1].Value;
+                int x2 = ptc.PeakTroughs[n].PeakTroughIndex;
+                double y2 = ptc.PeakTroughs[n].Value;
+                DrawLine( x1, y1, x2, y2, Color.Red, 2, LineStyles.Solid, paneTag);
+            }
+        }
+
+        FMDemodulator fmd;
+        AMDetector amd;
+        PeakTroughCalculator ptc;
+        double reversal;
+        const double twoPi = 2 * Math.PI;
+        const double fourPi = 4 * Math.PI;
+
+        public class ArrayHolder
+        {   /* current, old, older */
+            internal double I, I2, I3;
+            internal double Q, Q2, Q3;
+            internal double R, R2, R3;
+            internal double Im, Im2, Im3;
+            internal double A;
+            internal double dB, dB2;
+        }
+
+        public void DominantCycle(BarHistory bars, TimeSeries ds, out TimeSeries domCycMdn)
+        {
+            /* Initialize arrays */
+            ArrayHolder[] ah = new ArrayHolder[52];
+            for (int n = 12; n &lt; 52; n++)
+                ah[n] = new ArrayHolder();
+
+            double domCycle = 0d;
+            string s = ds.Description + &quot;)&quot;;
+            TimeSeries[] DB = new TimeSeries[52];
+            TimeSeries domCyc = new TimeSeries(ds.DateTimes, 0); domCyc.Description = &quot;DC(&quot; + s;
+            domCycMdn = new TimeSeries(ds.DateTimes, 0); domCycMdn.Description = &quot;DomCyc(&quot; + s;
+
+            /* Create and plot the decibel series - change the colors later */
+            for ( int n = 12; n &lt; 52; n++)
+            {
+                double d = n / 2.0;
+                DB[n] = domCyc + d;
+                DB[n].Description = &quot;Cycle.&quot; + d.ToString();
+                PlotTimeSeriesLine( DB[n], &quot;&quot;, &quot;dbPane&quot;, Color.Black, 4, LineStyles.Solid, true);
+            }
+
+            /* Convert decibels to RGB color for display */
+            Color[] color = new Color[21];
+            for (int n = 0; n &lt;= 10; n++)       /* yellow to red: 0 to 10 dB */
+                color[n] = Color.FromArgb(255, (int)(255 - (255 * n / 10)), 0);
+            for (int n = 11; n &lt;= 20; n++)      /* red to black: 11 to 20 db */
+                color[n] = Color.FromArgb((int)(255 * (20 - n) / 10), 0, 0);
+
+            /* Detrend data by High Pass Filtering with a 40 Period cutoff */
+            TimeSeries HP = domCyc;
+            double alpha = (1 - Math.Sin(twoPi / 30)) / Math.Cos(twoPi / 30);
+            for (int bar = 1; bar &lt; ds.Count; bar++)
+                HP[bar] = 0.5 * (1 + alpha) * Momentum.Series(ds, 1)[bar] + alpha * HP[bar - 1];
+            FIRSmoother smoothHP = new FIRSmoother(HP);  //FIR.Series(HP, &quot;1,2,3,3,2,1&quot;);
+
+            ArrayList fifoList = new ArrayList(51);
+            ArrayList fifoPsn = new ArrayList(21);
+
+            for (int bar = 51; bar &lt; ds.Count; bar++)
+            {
+                double maxAmpl = 0d;
+                double delta = -0.015 * bar + 0.5;
+                delta = delta &lt; 0.1 ? 0.1 : delta;
+                for (int n = 12; n &lt; 52; n++)
+                {
+                    double beta = Math.Cos(fourPi / n);
+                    double g = 1 / Math.Cos(2 * fourPi * delta / n);
+                    double a = g - Math.Sqrt(g * g - 1);
+                    ah[n].Q = Momentum.Series(smoothHP, 1)[bar] * n / fourPi;
+                    ah[n].I = smoothHP[bar];
+                    ah[n].R = 0.5 * (1 - a) * (ah[n].I - ah[n].I3) + beta * (1 + a) * ah[n].R2 - a * ah[n].R3;
+                    ah[n].Im = 0.5 * (1 - a) * (ah[n].Q - ah[n].Q3) + beta * (1 + a) * ah[n].Im2 - a * ah[n].Im3;
+                    ah[n].A = ah[n].R * ah[n].R + ah[n].Im * ah[n].Im;
+                    maxAmpl = ah[n].A &gt; maxAmpl ? ah[n].A : maxAmpl;
+                }
+
+                double num = 0; double den = 0;
+                for (int n = 12; n &lt; 52; n++)
+                {
+                    ah[n].I3 = ah[n].I2;
+                    ah[n].I2 = ah[n].I;
+                    ah[n].Q3 = ah[n].Q2;
+                    ah[n].Q2 = ah[n].Q;
+                    ah[n].R3 = ah[n].R2;
+                    ah[n].R2 = ah[n].R;
+                    ah[n].Im3 = ah[n].Im2;
+                    ah[n].Im2 = ah[n].Im;
+                    ah[n].dB2 = ah[n].dB;
+
+                    if (maxAmpl != 0 &amp;&amp; ah[n].A / maxAmpl &gt; 0)
+                        ah[n].dB = 10 * Math.Log10((1 - 0.99 * ah[n].A / maxAmpl) / 0.01);
+                    ah[n].dB = 0.33 * ah[n].dB + 0.67 * ah[n].dB2;
+                    ah[n].dB = ah[n].dB &gt; 20 ? 20 : ah[n].dB;
+                    SetSeriesBarColor( DB[n], bar, color[(int)Math.Round(ah[n].dB)]);
+
+                    if (ah[n].dB &lt;= 6)
+                    {
+                        num += n * (20 - ah[n].dB);
+                        den += (20 - ah[n].dB);
+                    }
+                    if (den != 0) domCycle = 0.5 * num / den;
+                }
+                domCycMdn[bar] = Median.Value(bar, domCyc, 5);
+                domCycMdn[bar] = domCycle &lt; 6 ? 6 : domCycle;
+            }
+        }
+    }
+}
+</pre>
+<p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+  Wealth-Lab team<br>
+  <a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">NINJATRADER: MAY 2021</h3>
+</div>
+<p>The AMDetector and FMDemodulator indicators, as discussed in John Ehlers&rsquo; article in this issue, &ldquo;A Technical Description Of Market Data For Traders,&rdquo; are available for download at the following links for NinjaTrader 8 and for NinjaTrader 7:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8:</strong> <a href="https://www.ninjatrader.com/SC/May2021SCNT8.zip" target="_blank">www.ninjatrader.com/SC/May2021SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7:</strong> <a href="https://www.ninjatrader.com/SC/May2021SCNT7.zip">www.ninjatrader.com/SC/May2021SCNT7.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTader 8 from within the control Center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import in NinjaTrader 7 from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator&rsquo;s source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control center window and selecting the AMDetector or FMDemodulator file. You can review the indicator&rsquo;s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the control center window and selecting the AMDetector or FMDemodulator file.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide the highest performance possible.</p>
+<p>A sample chart displaying the indicators is shown in Figure 4.</p>
+<div class="figBorder"> <img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 4: NINJATRADER. On this example daily chart of the SPDR S&P 500 ETF (SPY), the FMDemodulator is shown in the middle pane and the AMDetector is shown in the bottom pane from August 2018 to November 2020.</p>
+</div>
+<p class="authorTips">&mdash;Brandon Haulk<br>
+  NinjaTrader, LLC<br>
+  <a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">NEUROSHELL TRADER: MAY 2021</h3>
+</div>
+<p>The AM detector and FM demodulator indicators introduced in John Ehlers&rsquo; article in this issue, &ldquo;A Technical Description Of Market Data For Traders,&rdquo; can be easily implemented by combining a few of NeuroShell Trader&rsquo;s 800+ indicators and using NeuroShell Trader&rsquo;s ability to call external dynamic linked libraries.</p>
+<p>Ehlers&rsquo; SuperSmoother used in the article can be implemented using NeuroShell Trader&rsquo;s ability to call external dynamic linked libraries. Dynamic linked libraries can be written in C, C++ and Power Basic. After moving the SuperSmoother code given in the article to your preferred compiler and creating a DLL, you can insert the resulting indicator as follows:</p>
+<ol>
+  <li>Select &ldquo;New indicator&rdquo; from the <em>insert</em> menu</li>
+  <li>Choose the <em>external program &amp; library calls</em> category</li>
+  <li>Select the appropriate external <em>DLL call</em> indicator</li>
+  <li>Set up the parameters to match your DLL</li>
+  <li>Select the <em>finished</em> button</li>
+</ol>
+<p>Once the SuperSmoother indicator has been created, the AM detector and FM demodulator indicators are created by simply selecting <em>new indicator</em> from the <em>insert</em> menu and using the indicator wizard to create the following indicators:</p>
+<pre>
+    AM	Avg( Max ( Abs( Sub(Close, Open) ), 4 ), 8 )
+    FM	SuperSmoother ( Max2 ( -1, Min2( Mult2( 10, Sub(Close, Open) ), 1 ) ), 30 
+    </pre>
+<div class="figBorder"> <img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 5: NEUROSHELL TRADER. This NeuroShell Trader chart shows the AM detector and FM demodulator indicators on a daily SPY chart.</p>
+</div>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p class="authorTips">&mdash;Marge Sherald, Ward Systems Group, Inc.<br>
+  301 662-7950, <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+  <a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Optuma.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">OPTUMA: MAY 2021</h3>
+</div>
+<p>Here are the formulas for Optuma for implementing the two indicators presented in John Ehlers&rsquo; article in this issue, &ldquo;A Technical Description Of Market Data For Traders.&rdquo;</p>
+<p>Ehlers&rsquo;s SuperSmoother, which is used in the creation of the indicators, is available as a standard tool in Optuma, making the FM demodulator a bit easier to create. </p>
+<pre>
+<strong>AM Detector</strong>
+Deriv = ABS(CLOSE() - OPEN());
+Envel = HIGHESTHIGH(Deriv, BARS=4);
+MA(Envel, BARS=8, CALC=Close)
+ 
+<strong>FM Demodulator</strong>
+Deriv = 10*(CLOSE() - OPEN());
+// calculate the hard limit
+HL =  IF(Deriv&gt;1, 1, IF(Deriv&lt;-1, -1, Deriv));
+// output using the Ehlers SuperSmoother function
+EHLSS(HL, PERIOD=30)
+</pre>
+<p>An example chart displaying the indicators is shown in Figure 6. Figure 7 provides an example of the FM demodulator when it is negative, as indicated by the shading.</p>
+<div class="figBorder"> <img src="images/TT-Optuma1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 6: OPTUMA. This sample chart displays John Ehlers&rsquo; AM detector and FM demodulator indicators.</p>
+</div>
+<div class="figBorder"> <img src="images/TT-Optuma2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 7: OPTUMA. This sample chart provides an example of the FM demodulator when it is negative, as indicated by the shading.</p>
+</div>
+<p class="authorTips">&mdash;<a href="mailto:support@optuma.com">support@optuma.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item7"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">THE ZORRO PROJECT: MAY 2021</h3>
+</div>
+<p>Price curves consist of much noise and little signal. For separating the latter from the former, John Ehlers proposes in his article in this issue, &ldquo;A Technical Description Of Market Data For Traders,&rdquo; an unusual approach: Treat the price curve like a radio wave and apply AM and FM demodulating technology.</p>
+<p>A very simple AM radio is just an antenna, a rectifier, and a capacitor. In programming, a rectifier produces the absolute value and a capacitor produces the envelope of a wave. For the envelope, we&rsquo;re using the maximum of the last four values and we&rsquo;re smoothing it with a moving average. Here is the indicator equivalent of an AM radio in C for Zorro:</p>
+<pre>
+var AM(var Signal, int Period)
+{
+  var Envelope = MaxVal(series(abs(Signal)),4);
+  return SMA(series(Envelope),Period); 
+}
+</pre>
+<p>For making an FM radio, we take a frequency signal with constant amplitude that we then integrate with a lowpass filter. We will clamp the amplitude to +/-1 and integrate with Ehlers&rsquo; SuperSmoother, which fortunately already exists in Zorro&rsquo;s indicator library. The code:</p>
+<pre>
+var FM(var Signal, int Period)
+{
+  var HL = clamp(10*Signal,-1,1);
+  return Smooth(series(HL),Period);
+}
+</pre>
+<p>Ehlers uses the derivative of the price curve for the signal. The derivative is equivalent to the daily price change. We can now write the script for reproducing Ehlers&rsquo; FM and AM charts of the SPY price curve:</p>
+<pre>
+void run() 
+{
+   BarPeriod = 1440;
+   StartDate = 20180701;
+   EndDate = 20201201;
+
+   assetAdd(&quot;SPY&quot;,&quot;STOOQ:*&quot;); // load price history from Stooq
+   asset(&quot;SPY&quot;);
+
+   var Deriv = priceClose()-priceOpen();
+   plot(&quot;Deriv&quot;,Deriv,NEW,BLACK);
+   plot(&quot;AM&quot;,AM(Deriv,8),NEW,RED);
+   plot(&quot;FM&quot;,FM(Deriv,30),NEW,BLUE);
+}
+</pre>
+<p>The resulting chart shows the derivative and the AM (red) and FM (blue) decoded signals (Figure 8).</p>
+<div class="figBorder"> <img src="images/TT-Zorro.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 8: ZORRO PROJECT. The example chart shows the derivative and the AM (red) and FM (blue) decoded signals on the SPY.</p>
+</div>
+<p>We see in the chart that the AM signal is a proxy of volatility and the FM signal measures the rate of price variations. Maybe Ehlers will show in a future article how to use that in a trading system?</p>
+<p>The AM and FM indicators and the script can be downloaded from the 2021 script repository on <a href="https://financial-hacker.com" target="_parent">https://financial-hacker.com</a>. The Zorro platform can be downloaded from <a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a>.</p>
+<p class="authorTips">&mdash;Petra Volkova<br>
+  The Zorro Project by oP group Germany<br>
+  <a href="https://www.zorro-project.com" target="_parent">www.zorro-project.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item8"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">eSIGNAL: MAY 2021</h3>
+</div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;ve provided the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/05/images/code/FMDemodulatorIndicator.efs" target="_blank">FM Demodulator Indicator.efs</a> study and <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/05/images/code/AMDetector.efs" target="_blank">AM Detector.efs</a> based on the article by John Ehlers, &ldquo;A Technical Description Of  Market Data For Traders.&rdquo; The studies help in creating more accurate cycle-based indicators.</p>
+<p>The studies contain formula parameters that may be configured through the <em>edit chart</em> window (right-click on the chart and select &ldquo;edit chart&rdquo;). A sample chart is shown in Figure 9.</p>
+<div class="figBorder"> <img src="images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 9: eSIGNAL. Here is an example of the study plotted on a daily chart of SPY.</p>
+</div>
+<p>To discuss this study or download a complete copy of the formula code, please visit the EFS Library Discussion Board forum under the <em>forums</em> link from the support menu at <a href="https://www.esignal.com" target="_parent">www.esignal.com</a> or visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs" target="_parent">https://www.esignal.com/support/kb/efs</a>. The eSignal formula scripts (EFS) are also available for copying &amp; pasting here:</p>
+<pre>
+/**********************************
+Provided By:  
+Copyright 2019 Intercontinental Exchange, Inc. All Rights Reserved. 
+eSignal is a service mark and/or a registered service mark of Intercontinental Exchange, Inc. 
+in the United States and/or other countries. This sample eSignal Formula Script (EFS) 
+is for educational purposes only. 
+Intercontinental Exchange, Inc. reserves the right to modify and overwrite this EFS file with each new release. 
+
+Description:      
+    A Technical Description Of Market Data For Traders
+    FM DEMODULATOR
+    by John F. Ehlers
+    
+
+Version:            1.00  03/12/2021
+
+Formula Parameters:                    Default:
+Period                                 30
+
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+var fpArray = new Array();
+var bInit = false;
+
+function preMain() {
+    setStudyTitle(&quot;FM Demodulator Indicator&quot;);
+    setCursorLabelName(&quot;FM DEMODULATOR&quot;, 0);
+    setPriceStudy(false);
+    setDefaultBarFgColor(Color.RGB(0x00,0x94,0xFF), 0);
+    setPlotType( PLOTTYPE_LINE , 0 );
+    
+    var x=0;
+    fpArray[x] = new FunctionParameter(&quot;Period&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1);
+        setDefault(30);
+    }
+}
+
+var bVersion = null;
+var xClose = null;
+var xOpen = null;
+var xDeriv = null;
+var xHL = null;
+var a1 = null;
+var b1 = null;
+var c1 = null;
+var c2 = null;
+var c3 = null;
+var SS = null;
+var SS_1 = null;
+var SS_2 = null;
+
+
+function main(Period) {
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return; 
+    
+    if ( bInit == false ) { 
+        xClose = close();  
+        xOpen = open();
+        xDeriv = efsInternal(&quot;Calc_Deriv&quot;, xClose, xOpen);
+        addBand( 0, PS_DASH, 1, Color.grey); 
+        xHL = efsInternal(&quot;Calc_HL&quot;, xDeriv);
+        a1 = Math.exp(-1.414 * Math.PI / Period);
+        b1 = 2 * a1 * Math.cos(1.414 * Math.PI / Period);
+        c2 = b1;
+        c3 = -a1 * a1;
+        c1 = 1 - c2 - c3;
+        SS = 0;
+        SS_1 = 0;
+        SS_2 = 0;
+
+        bInit = true; 
+    }      
+    if (getCurrentBarCount() &lt; Period - 3) return;
+    if (getBarState() == BARSTATE_NEWBAR) {
+        SS_2 = SS_1;
+        SS_1 = SS;
+    } 
+
+    SS = c1 * (xHL.getValue(0) + xHL.getValue(1)) / 2 + c2 * SS_1 + c3 * SS_2;
+    if (getCurrentBarCount() &lt; 3) SS = xDeriv.getValue(0);
+    
+    return SS;
+}
+
+
+function Calc_HL(xDeriv){
+    var ret = 0;
+    ret = 10 * xDeriv.getValue(0);
+    if (ret &gt; 1) ret = 1
+    if (ret &lt; -1) ret = -1;
+    return ret;
+}
+
+function Calc_Deriv(xClose, xOpen){
+    var ret = 0;
+    ret = xClose.getValue(0) - xOpen.getValue(0);
+    return ret;
+}
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+ </pre>
+<pre>
+/**********************************
+Provided By:  
+Copyright 2019 Intercontinental Exchange, Inc. All Rights Reserved. 
+eSignal is a service mark and/or a registered service mark of Intercontinental Exchange, Inc. 
+in the United States and/or other countries. This sample eSignal Formula Script (EFS) 
+is for educational purposes only. 
+Intercontinental Exchange, Inc. reserves the right to modify and overwrite this EFS file with each new release. 
+
+Description:      
+    A Technical Description Of Market Data For Traders
+    AM Detector
+    by John F. Ehlers
+    
+
+Version:            1.00  03/12/2021
+
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+var fpArray = new Array();
+var bInit = false;
+
+function preMain() {
+    setStudyTitle(&quot;AM Detector&quot;);
+    setCursorLabelName(&quot;AM Detector&quot;, 0);
+    setPriceStudy(false);
+    setDefaultBarFgColor(Color.RGB(0x00,0x94,0xFF), 0);
+    setPlotType( PLOTTYPE_LINE , 0 );
+}
+
+var bVersion = null;
+var xClose = null;
+var xOpen = null;
+var xDeriv = null;
+var xAbsDeriv = null;
+var xEnvel = null;
+var xVolatil = null;
+
+function main(Period) {
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return; 
+    
+    if ( bInit == false ) { 
+        xClose = close();  
+        xOpen = open();
+        xDeriv = efsInternal(&quot;Calc_Deriv&quot;, xClose, xOpen);
+        xAbsDeriv = efsInternal(&quot;Calc_AbsDeriv&quot;, xDeriv);
+        xEnvel = efsInternal(&quot;Calc_Envel&quot;, xAbsDeriv);
+        xVolatil = sma(8, xEnvel);
+        addBand( 0, PS_DASH, 1, Color.grey); 
+        
+        bInit = true; 
+    }      
+
+    if (getCurrentBarCount() &lt; 8) return;
+    return xVolatil.getValue(0);
+}
+
+function Calc_Envel(xAbsDeriv){
+    var ret = 0;
+    ret = highest(4, xAbsDeriv);    
+    return ret;
+}
+
+function Calc_AbsDeriv(xDeriv){
+    var ret = 0;
+    ret = Math.abs(xDeriv.getValue(0));
+    return ret;
+}
+
+function Calc_Deriv(xClose, xOpen){
+    var ret = 0;
+    ret = xClose.getValue(0) - xOpen.getValue(0);
+    return ret;
+}
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+ </pre>
+<p class="authorTips">&mdash;Eric Lippert<br>
+  eSignal, an Interactive Data company<br>
+  800 779-6555, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item9"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">AIQ: MAY 2021</h3>
+</div>
+<p>The AIQ EDS file for John Ehlers&rsquo; article, &ldquo;Technical Description of Market Data for Traders,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also shown here:</p>
+<pre>
+! Technical Description of Market Data for Traders
+! Author: John F. Ehlers, TASC May 2021
+! Coded by: Richard Denning 3/17/2021
+
+! AM Detector Indicator    
+! (C) 2020-2021   John F. Ehlers
+
+!FORMULAS:
+
+Deriv is [Close] - [Open].
+Envel is Highresult(Abs(Deriv), 4).
+Volatil is Simpleavg(Envel, 8).
+</pre>
+<p>Code for the AM indicator is set up in the AIQ EDS code file. Figure 10 shows the AM indicator on a chart of S&P 500 SPDR TR (SPY). I was unable to get the FM indicator to work in AIQ.</p>
+<div class="figBorder"> <img src="images/TT-Aiq.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 10: AIQ. AM indicator on a chart of SPDR TR (SPY).</p>
+</div>
+<p class="authorTips">&mdash;Richard Denning<br>
+  <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+  for AIQ Systems</p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+  <h3 class="newsTitle grey_blue">MICROSOFT EXCEL: MAY 2021</h3>
+</div>
+<p>In his article in this issue, &ldquo;A Technical Description Of Market Data For Traders,&rdquo; John Ehlers walks us through some amazingly simple mathematical jujitsu to analyze the amplitude modulated and frequency modulated components found in market data.</p>
+<p>Figure 11 shows the &ldquo;whitened&rdquo; price data (that is, the spectrum is effectively made white noise) and the amplitude modulation (AM) detector. In Figure 12, amplitude information is stripped from the whitened noise signal by way of a hard limit, and the result is integrated via Ehlers&rsquo; SuperSmoother to produce the demodulated FM signal. Peaks and valleys in the FM value correlate to major swings in the price. In Figure 13, the AM and FM information are displayed together.</p>
+<div class="figBorder"> <img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 11: AM (AMPLITUDE MODULATION) DETECTOR. Whitened price and the amplitude modulation detector are shown. Larger AM values suggest increased volatility.</p>
+</div>
+<div class="figBorder"> <img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 12: DEMODULATED FM SIGNAL. Amplitude information is stripped from the whitened noise signal by way of a hard limit and the result is integrated via Ehlers&rsquo; SuperSmoother to produce the demodulated FM signal. Peaks and valleys in the FM value correlate to major swings in the price.</p>
+</div>
+<div class="figBorder"> <img src="images/TT-Excel3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 13: AM &amp; FM INFORMATION JUXTAPOSED. Here, the AM and FM information are put next to each other.</p>
+</div>
+<p>Buttons to the right of the charts allow you to explore the progression of indicator pieces and parts in detail and in several pairings.</p>
+<p><em><strong>To download this spreadsheet:</strong></em> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/05/images/code/AM-FM.xlsm">here</a>. To successfully download it, follow these steps:</p>
+<ul>
+  <li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/05/images/code/AM-FM.xlsm">Excel file link</a>, then</li>
+  <li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li>
+</ul>
+<p class="authorTips">&mdash;Ron McAllister<br>
+  Excel and VBA programmer<br>
+  <a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the May 2021 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2021, Technical Analysis, Inc.</p>
+</body>
+</html>

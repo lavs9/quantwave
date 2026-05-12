@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - SEPTEMBER 2017</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">September 2017</h1>
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2017/09/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+  <p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John Ehlers&rsquo; article
+    in this issue, &ldquo;The Reverse EMA Indicator.&rdquo; Here, we present
+    the September 2017 Traders&rsquo; Tips code with possible implementations
+    in various software.</p>
+  <!--<p>Code in ZZZZZZZZZZZZ is already provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Subscriber Area of our website <a target="_parent" href="https://technical.traders.com/sub/sublogin.asp">here</a>.</p>-->
+  <p>The Traders&rsquo; Tips section is provided to help the reader implement
+    a selected technique from an article in this issue or another recent issue.
+    The entries here are contributed by software developers or programmers for
+    software that is capable of customization.</p>
+  <br class="clearfloat">
+</div>
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: September 2017</a></li>
+  <li><a href="#item2">MetaStock: September 2017</a></li>
+  <li><a href="#item3"><span style="text-transform:lowercase;">e</span>SIGNAL:
+      September 2017</a></li>
+  <li><a href="#item4">Wealth-Lab: September 2017</a></li>
+  <li><a href="#item5">AmiBroker: September 2017</a></li>
+  <li><a href="#item6">NeuroShell Trader: September 2017</a></li>
+  <li><a href="#item7">TradersStudio: September 2017</a></li>
+  <li><a href="#item8">Updata: September 2017</a></li>
+  <li><a href="#item9">Trade Navigator: September 2017</a></li>
+  <li><a href="#item10">NinjaTrader: September 2017</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> TRADESTATION: SEPTEMBER 2017</h3>
+</div>
+<p>In &ldquo;The Reverse EMA Indicator&rdquo; in this issue, author John Ehlers presents
+  a causal forward and backward EMA indicator that can be used in real trading.
+  It has double smoothing at the high end of the spectrum to reduce aliased components
+  and is able to mitigate the impact of spectral dilation at the low end. The
+  author describes the indicator as having unique flexibility in that it can
+  display trend or cycle information by varying the alpha parameter and do this
+  with very low lag.</p>
+<p>Here, we are providing a function for calculating the reverse EMA that you
+  can use in your own code. In addition, we have provided an example strategy
+  and a demonstration indicator.</p>
+<pre>
+<strong>Function: _ReverseEMA</strong>
+
+{
+Adapted from
+Reverse EMA Indicator
+(C) 2017 John F. Ehlers
+TASC Sep 2017
+}
+
+Inputs:
+	AA( numericsimple ) ;
+Vars:
+	CC( 0 ),EMA( 0 ),RE1( 0 ),RE2( 0 ),
+	RE3( 0 ),RE4( 0 ),RE5( 0 ),RE6( 0 ),
+	RE7( 0 ),RE8( 0 ),Wave( 0 ) ;
+
+//Classic EMA
+CC = 1 - AA ;
+EMA = AA * Close + CC * EMA[1] ;
+
+//Compute Reverse EMA
+RE1 = CC * EMA + EMA[1] ;
+RE2 = Power( CC, 2 ) * RE1 + RE1[1] ;
+RE3 = Power( CC, 4 ) * RE2 + RE2[1] ;
+RE4 = Power( CC, 8 ) * RE3 + RE3[1] ;
+RE5 = Power( CC, 16 ) * RE4 + RE4[1] ;
+RE6 = Power( CC, 32 ) * RE5 + RE5[1] ;
+RE7 = Power( CC, 64 ) * RE6 + RE6[1] ;
+RE8 = Power( CC, 128 ) * RE7 + RE7[1] ;
+//Indicator as difference
+Wave = EMA - AA * RE8 ;
+
+_ReverseEMA = Wave ;
+
+
+
+<strong>Strategy: ReverseEMA</strong>
+
+{
+Reverse EMA Strategy
+(C) 2017 John F. Ehlers
+TASC Sep 2017
+}
+
+inputs:
+	Trend( .05 ),
+	Cycle( .3 ) ;
+variables:	
+	CycleRevEMA( 0 ),
+	TrendRevEMA( 0 ) ;	
+
+TrendRevEMA = _ReverseEMA( Trend ) ;
+CycleRevEMA = _ReverseEMA( Cycle ) ;
+
+if TrendRevEMA &gt; 0 and 
+	CycleRevEMA crosses over 0 then
+	Buy next bar at Market ;
+
+if TrendRevEMA crosses under 0 or 
+	CycleRevEMA crosses under 0 then
+	Sell next bar at market ;
+
+if TrendRevEMA &lt; 0 and 
+	CycleRevEMA crosses under 0 then
+	Sell Short next bar at Market ;
+
+if TrendRevEMA crosses over 0 
+	or CycleRevEMA crosses over 0 then
+	Buy to cover next bar at market ;	
+	
+
+<strong>Indicator: ReverseEMA</strong>
+
+{
+Reverse EMA Indicator
+(C) 2017 John F. Ehlers
+TASC Sep 2017
+}
+
+inputs:
+	Trend( .05 ),
+	Cycle( .3 ) ;
+variables:	
+	CycleRevEMA( 0 ),
+	TrendRevEMA( 0 ),
+	AvgTrend( 0 ) ;	
+
+TrendRevEMA = _ReverseEMA( Trend ) ;
+CycleRevEMA = _ReverseEMA( Cycle ) ;
+
+AvgTrend = Average( TrendRevEMA, 10 ) ;
+
+
+Plot1( TrendRevEMA, &quot;Trend&quot;, Green ) ;
+Plot2( CycleRevEMA, &quot;Cycle&quot;, Red ) ;
+Plot3( 0, &quot;ZL&quot;, Blue ) ;
+</pre>
+<p>To download the EasyLanguage code, please visit our TradeStation and EasyLanguage
+  support forum. The files for this article can be found at <a href="https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=142776" target="_parent">https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=142776</a>.
+  The filename is &ldquo;TASC_SEP2017.ZIP.&rdquo;</p>
+<p>For more information about EasyLanguage in general, please see <a href="https://www.tradestation.com/EL-FAQ" target="_parent">https://www.tradestation.com/EL-FAQ</a>.</p>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2017/09/images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This shows
+    a TradeStation daily chart of GLD with the reverse EMA strategy and indicator
+    applied.</p>
+</div>
+<p><em>This article is for informational purposes. No type of trading or investment
+    recommendation, advice, or strategy is being made, given, or in any manner
+    provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;Doug McCrary<br>
+  TradeStation Securities, Inc.<br>
+  <a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Metastock.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> METASTOCK: SEPTEMBER 2017</h3>
+</div>
+<p>In &ldquo;The Reverse EMA Indicator&rdquo; in this issue, John Ehlers presents an oscillator
+  to identify cycles, momentum, or trend activity. The MetaStock formula for
+  implementing this indicator is shown here:</p>
+<pre>
+alpha:= 0.1;
+ca:= 1-alpha;
+ma:= (alpha * C) + (ca*PREV);
+re1:= ca*ma + Ref(ma, -1);
+re2:= Power(ca,2)*re1 + Ref(re1,-1);
+re3:= Power(ca,4)*re2 + Ref(re2,-1);
+re4:= Power(ca,8)*re3 + Ref(re3,-1);
+re5:= Power(ca,16)*re4 + Ref(re4,-1);
+re6:= Power(ca,32)*re5 + Ref(re5,-1);
+re7:= Power(ca,64)*re6 + Ref(re6,-1);
+re8:= Power(ca,128)*re7 + Ref(re7,-1);
+ma - (alpha*re8);
+0
+</pre>
+<p class="authorTips">&mdash;William Golson<br>
+  MetaStock Technical Support<br>
+  <a href="https://www.metastock.com" target="_parent">www.metastock.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> ESIGNAL: SEPTEMBER 2017</h3>
+</div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;ve provided the study <a href="https://www.traders.com/Documentation/FEEDbk_docs/2017/09/images/code/Reverse_EMA.efs" target="_blank">Reverse_EMA.efs</a> based
+  on the formula described in John Ehlers&rsquo; article in this issue, &ldquo;The Reverse
+  EMA Indicator.&rdquo; In the article, Ehlers presents an indicator based on the exponential
+  moving average (EMA) that minimizes lag inherent in the conventional version
+  of the indicator.</p>
+<p>The study contains formula parameters that may be configured through the <em>edit
+    chart</em> window (right-click on the chart and select <em>edit chart</em>).
+    A sample chart is shown in Figure 2.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2017/09/images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 2: eSIGNAL. Here is an example
+    of the study plotted on a daily chart of SPY. </p>
+</div>
+<p>To discuss this study or download a complete copy of the formula code, please
+  visit the EFS library discussion board forum under the forums link from the
+  support menu at <a href="https://www.esignal.com" target="_parent">www.esignal.com</a> or
+  visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs/" target="_parent">https://www.esignal.com/support/kb/efs/</a>.
+  The eSignal formula script (EFS) is shown below.</p>
+<pre>
+/*********************************
+Provided By:  
+eSignal (Copyright c eSignal), a division of Interactive Data 
+Corporation. 2016. All rights reserved. This sample eSignal 
+Formula Script (EFS) is for educational purposes only and may be 
+modified and saved under a new file name.  eSignal is not responsible
+for the functionality once modified.  eSignal reserves the right 
+to modify and overwrite this EFS file with each new release.
+
+Description:        
+    The Reverse EMA Indicator by John F. Ehlers
+
+Version:            1.00  07/12/2017
+
+Formula Parameters:                     Default:
+Alpha                                   0.1
+
+
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+
+var fpArray = new Array();
+
+function preMain(){
+    setPriceStudy(false);
+
+    var x=0;
+    fpArray[x] = new FunctionParameter(&quot;Alpha&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setName(&quot;Alpha Value&quot;);
+        setDefault(0.1);
+        setLowerLimit(0);
+        }
+}
+
+var bInit = false;
+var bVersion = null;
+
+var xClose = null;
+
+var xEMA = null;
+var xRevEMA = null;
+
+function main (Alpha){
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return;
+    
+    var nLength = ((2 / Alpha) - 1) * 3;
+    
+    if (getCurrentBarCount() &lt; nLength) return;
+    
+    if (getBarState() == BARSTATE_ALLBARS){
+        bInit = false;
+    }
+    
+    if (!bInit){
+        xClose = close();
+
+        xEMA = efsInternal(&quot;calc_EMA&quot;, Alpha, xClose);
+        xRevEMA = efsInternal(&quot;calc_RevEMA&quot;, (1 - Alpha), 1, xEMA);
+        
+        var power = 2;
+        
+        for (var i = 0; i &lt; 7; i++){
+            xRevEMA = efsInternal(&quot;calc_RevEMA&quot;, (1 - Alpha), power, xRevEMA);
+            power *= 2;
+            
+        }
+        
+        addBand(0, PS_DASH, 1, Color.grey, 1);
+    
+        bInit = true;
+    }
+
+    if (xRevEMA.getValue(0) != null){
+        return (xEMA.getValue(0) - 0.1 * xRevEMA.getValue(0));
+    }
+}
+
+function calc_EMA(nAA, xSeries){
+    var nEMA_1 = ref(-1);
+    if (nEMA_1 == null) nEMA_1 = 0;
+    var nEMA = ((xSeries.getValue(0) - nEMA_1) * nAA) + nEMA_1;
+    
+    if (nEMA != null) return nEMA;
+}
+
+function calc_RevEMA(nCC, power, xSeries){
+    if (xSeries.getValue(-1) == null) return;
+    var nRevEMA = Math.pow(nCC, power) * xSeries.getValue(0) + xSeries.getValue(-1);
+    
+    if (nRevEMA != null) return nRevEMA;
+}
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+</pre>
+<p class="authorTips">&mdash;Eric Lippert<br>
+  eSignal, an Interactive Data company<br>
+  800 779-6555, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> WEALTH-LAB: SEPTEMBER 2017</h3>
+</div>
+<p>Once again, John Ehlers, in his article in this issue, shares an universal
+  oscillator with features such as minimum lag and a single-input parameter that
+  lets it highlight cycle, momentum, and trend components.</p>
+<p>To use the ReverseEMA indicator, first update your TASCIndicators library
+  to v2017.08 or later and then look under the TASC Magazine Indicators group.
+  You can plot the indicator on a chart or use it as an entry or exit condition
+  in a rule-based strategy without having to program any code yourself.</p>
+<p>Get the companion strategy&rsquo;s C# code by downloading it right from Wealth-Lab&rsquo;s <em>open
+    strategy</em> dialog:</p>
+<pre>
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Drawing;
+using WealthLab;
+using WealthLab.Indicators;
+using TASCIndicators;
+
+namespace WealthLab.Strategies
+{
+	public class TASC201709 : WealthScript
+	{
+		private StrategyParameter paramAlpha;
+
+		public TASC201709()
+		{
+			paramAlpha = CreateParameter(&quot;Alpha&quot;, 0.1, 0.05, 0.5, 0.05);
+		}
+		
+		protected override void Execute()
+		{
+			var re = ReverseEMA.Series(Close, paramAlpha.Value);
+			ChartPane rePane = CreatePane( 30,false,false );
+			HideVolume();
+			PlotSeries( rePane, re, Color.Red, LineStyle.Solid, 2);
+			
+			//RoofingFilter for comparison
+			var rf = RoofingFilter.Series(Close);
+			ChartPane rfPane = CreatePane( 25,false,false);
+			PlotSeries( rfPane,rf,Color.DarkBlue,LineStyle.Solid,1);
+		}
+	}
+}
+</pre>
+<p>A sample chart is shown in Figure 3.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2017/09/images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 3: WEALTH-LAB. Here, we
+    show application of the indicator to SPY in comparison to Ehlers&rsquo; RoofingFilter.</p>
+</div>
+<p class="authorTips">&mdash;Eugene (Gene Geren), Wealth-Lab team<br>
+  MS123, LLC<br>
+  <a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Amibroker.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> AMIBROKER: SEPTEMBER 2017</h3>
+</div>
+<p>In &ldquo;The Reverse EMA Indicator&rdquo; in this issue, author John Ehlers presents
+  very interesting filtering technique based on a Z-transform of the exponential
+  moving average.</p>
+<p>A ready-to-use AmiBroker formula that implements the reverse EMA algorithm
+  is given here. To use it, enter the formula in the formula editor and press <em>apply
+  indicator</em> to create a chart such as the one shown in Figure 4, which replicates
+  a chart from Ehlers&rsquo; article. You can adjust the smoothing factor using the <em>parameter</em> window.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2017/09/images/TT-Amibroker.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 4: AMIBROKER. This daily
+    SPY chart (upper pane) with the reverse EMA in the lower pane replicates
+    a chart from John Ehlers&rsquo; article in this issue. The reverse EMA reflects
+    price turning points with little lag.</p>
+</div>
+<h4>Amibroker Code</h4>
+<pre>
+_SECTION_BEGIN(&quot;ReverseEMA&quot;); 
+
+function ReverseEMA( alpha ) 
+{ 
+    beta = 1 - alpha; 
+    re = eema = AMA( C, alpha ); 
+
+    for( i = 1, p = 1; i &lt;= 8; i++, p *= 2 ) 
+       re = re * ( beta ^ p )  +   Ref( re, -1 ); 
+
+    return eema - alpha * re; 
+} 
+
+alpha = Param(&quot;alpha&quot;, 0.1, 0.01, 0.99, 0.01 ); 
+Plot( ReverseEMA( alpha ) , _DEFAULT_NAME(), colorRed ); 
+Plot( 0, &quot;&quot;, colorBlue, styleNoLabel ); 
+
+_SECTION_END();
+</pre>
+<p class="authorTips">&mdash;Tomasz Janeczko, AmiBroker.com<br>
+  <a href="https://www.amibroker.com" target="_parent">www.amibroker.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> NEUROSHELL TRADER: SEPTEMBER 2017</h3>
+</div>
+<p>The reverse EMA indicator discussed in John Ehlers&rsquo; article in this issue,
+  &ldquo;The Reverse EMA Indicator,&rdquo; can be easily implemented in NeuroShell Trader
+  using NeuroShell Trader&rsquo;s ability to call external dynamic linked libraries. <em>Dynamic
+  linked libraries</em> can be written in C, C++, and Power Basic.</p>
+<p>After moving the EasyLanguage code given in Ehlers&rsquo; article to your preferred
+  compiler and creating a DLL, you can insert the resulting indicators as follows:</p>
+<ol>
+  <li>Select <em>new indicator</em> from the <em>insert</em> menu</li>
+  <li>Choose the External Program &amp; Library Calls category</li>
+  <li>Select the appropriate External DLL Call indicator</li>
+  <li>Set up the parameters to match your DLL</li>
+  <li>Select the <em>finished</em> button.</li>
+</ol>
+<p>Similar filter-based and cycle-based strategies can also be created using
+  indicators found in John Ehlers&rsquo; <em>Cybernetic</em> and <em>MESA91</em> NeuroShell
+  Trader Add-ons.</p>
+<p>Users of NeuroShell Trader can go to the STOCKS &amp; COMMODITIES section
+  of the NeuroShell Trader free technical support website to download a copy
+  of this or any previous Traders&rsquo; Tips.</p>
+<p>A sample chart is shown in Figure 5.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2017/09/images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 5: NEUROSHELL TRADER. This
+    sample NeuroShell Trader chart shows the reverse EMA indicator.</p>
+</div>
+<p class="authorTips">&mdash;Marge Sherald, Ward Systems Group, Inc.<br>
+  301 662-7950, <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+  <a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item7"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> TRADERSSTUDIO: SEPTEMBER 2017</h3>
+</div>
+<p>The TradersStudio code I am presenting here is based on John Ehlers&rsquo; article
+  in this issue, &ldquo;The Reverse EMA Indicator.&rdquo;</p>
+<p>The code will be available at <a href="https://www.TradersEdgeSystems.com/traderstips.htm" target="_parent">www.TradersEdgeSystems.com/traderstips.htm</a> and
+  is also shown here:</p>
+<pre>
+'THE REVERSE EMA INDICATOR, TASC Sept 2017
+'Author: John Ehlers
+'Coded by: Richard Denning, 7/12/17
+'www.TradersEdgeSystems.ocm
+
+Function EHLERS_REVERSE_EMA(AA)
+ 'AA = .1
+    Dim CC
+    Dim EMA As BarArray
+    Dim RE1 As BarArray
+    Dim RE2 As BarArray
+    Dim RE3 As BarArray
+    Dim RE4 As BarArray
+    Dim RE5 As BarArray
+    Dim RE6 As BarArray
+    Dim RE7 As BarArray
+    Dim RE8
+    Dim Wave
+
+    CC = 1 - AA
+    EMA = AA*Close + CC*EMA[1]
+    RE1 = CC*EMA + EMA[1]
+    RE2 = (CC^2)*RE1 + RE1[1]
+    RE3 = (CC^4)*RE2 + RE2[1]
+    RE4 = (CC^8)*RE3 + RE3[1]
+    RE5 = (CC^16)*RE4 + RE4[1]
+    RE6 = (CC^32)*RE5 + RE5[1]
+    RE7 = (CC^64)*RE6 + RE6[1]
+    RE8 = (CC^128)*RE7 + RE7[1]
+    Wave = EMA - AA*RE8
+    EHLERS_REVERSE_EMA = Wave
+End Function
+</pre>
+<p>The following code files are included in the download:</p>
+<ul>
+  <li>Function EHLERS_REVERSE_EMA: A function that returns the values of the
+    reverse EMA indicator</li>
+  <li>Indicator plot EHLERS_REVERSE_EMA_IND: An indicator plot that creates the
+    custom indicator.</li>
+</ul>
+<p>Figure 6 shows the indicator on a chart of Apple Inc. for part of 2013 and
+  2014.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2017/09/images/TT-Tradersstudio.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 6: TRADERSSTUDIO. Shown
+    here is the reverse EMA indicator plotted on a chart of Apple Inc. for part
+    of 2013 and 2014.</p>
+</div>
+<p class="authorTips">&mdash;Richard Denning<br>
+  <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+  for TradersStudio</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item8"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Updata.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> UPDATA: SEPTEMBER 2017</h3>
+</div>
+<p>The Traders&rsquo; Tip for this month is based on the article in this issue by John
+  Ehlers, &ldquo;The Reverse EMA Indicator.&rdquo; In the article, Ehlers proposes some refinements
+  to the classic exponential moving average (EMA), reverse-engineering the formula
+  to remove any lag, to create a causal forward and backward indicator that can
+  be used on real-time data.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2017/09/images/TT-Updata.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 7: UPDATA. Here is the reverse-engineered
+    exponential moving average as applied to the SPY ETF in daily resolution
+    data.</p>
+</div>
+<p>The Updata code for this article is in the Updata library and may be downloaded
+  by clicking the <em>custom</em> menu and <em>indicator library</em>. Those
+  who cannot access the library due to a firewall may paste the code shown here
+  into the Updata custom editor and save it.</p>
+<pre>
+PARAMETER &quot;AA&quot; &#64;AA=0.1 
+NAME &quot;&quot; &quot;&quot;
+&#64;CC=0
+&#64;EMA=0
+&#64;RE1=0
+&#64;RE2=0 
+&#64;RE3=0
+&#64;RE4=0
+&#64;RE5=0
+&#64;RE6=0
+&#64;RE7=0 
+&#64;RE8=0 
+&#64;WAVE=0
+ 
+FOR #CURDATE=0 TO #LASTDATE
+   &#64;CC=1-&#64;AA
+   &#64;EMA=(&#64;AA*CLOSE)+(&#64;CC*HIST(&#64;EMA,1))   
+   'COMPUTE REVERSE
+   &#64;RE1=(&#64;CC*&#64;EMA)+HIST(&#64;EMA,1)
+   &#64;RE2=EXPBASE(&#64;CC,2)*&#64;RE1+HIST(&#64;RE1,1)  
+   &#64;RE3=EXPBASE(&#64;CC,4)*&#64;RE2+HIST(&#64;RE2,1)
+   &#64;RE4=EXPBASE(&#64;CC,8)*&#64;RE3+HIST(&#64;RE3,1)
+   &#64;RE5=EXPBASE(&#64;CC,16)*&#64;RE4+HIST(&#64;RE4,1)  
+   &#64;RE6=EXPBASE(&#64;CC,32)*&#64;RE5+HIST(&#64;RE5,1)
+   &#64;RE7=EXPBASE(&#64;CC,64)*&#64;RE6+HIST(&#64;RE6,1) 
+   &#64;RE8=EXPBASE(&#64;CC,128)*&#64;RE7+HIST(&#64;RE7,1)  
+   'INDICATOR AS DIFFERENCE
+   &#64;WAVE=&#64;EMA-&#64;AA*&#64;RE8
+   &#64;PLOT=&#64;WAVE
+NEXT
+</pre>
+<p class="authorTips">&mdash;Updata support team<br>
+  <a href="mailto:support@updata.co.uk">support@updata.co.uk</a><br>
+  <a href="https://www.updata.co.uk" target="_parent">www.updata.co.uk</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item9"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Genesis.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> TRADE NAVIGATOR: SEPTEMBER 2017</h3>
+</div>
+<p>We&rsquo;re making available a special file for download in the Trade Navigator
+  library to make it easy for users to implement the strategy discussed in &ldquo;The
+  Reverse EMA Indicator&rdquo; by John Ehlers in this issue. The filename is &ldquo;SC201709.&rdquo;</p>
+<p>To download it, click on Trade Navigator&rsquo;s blue telephone button, select download
+  special file, and replace the word &ldquo;upgrade&rdquo; with &ldquo;SC201709&rdquo; (without the quotes).
+  Then click the start button. When prompted to upgrade, click the yes button.
+  If prompted to close all software, click on the continue button. Your library
+  will now download. This library contains an indicator named &ldquo;Reverse EMA.&rdquo;</p>
+<p>If you would like to recreate these indicators manually, click on the <em>edit</em> dropdown
+  menu, open the trader&rsquo;s toolbox (or use CTRL + T) and click on the <em>functions</em> tab.
+  Next, click on the <em>new</em> button, and a <em>new function</em> dialog
+  window will open. In its text box, input the code for the highlight bar. Ensure
+  that there are no extra spaces at the end of each line. When completed, click
+  on the <em>verify</em> button. You may be presented with an <em>add inputs</em> pop-up
+  message if there are variables in the code. If so, click the <em>yes</em> button,
+  then enter a value in the <em>default value</em> column. If all is well, when
+  you click on the <em>function</em> tab, the code you entered will convert to
+  italic font. Click on the <em>save</em> button, and type a name for the indicator.</p>
+<p>Once complete, you can insert these indicators onto your chart by opening
+  the <em>charting</em> dropdown menu, selecting the <em>add to chart</em> command,
+  then on the <em>indicators</em> tab, finding your named indicator, selecting
+  it, then clicking on the <em>add</em> button. Repeat this procedure for additional
+  indicators as well if you wish.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2017/09/images/TT-Tradenav1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 8: TRADE NAVIGATOR. TradeSense
+    code for the indicator is shown.</p>
+</div>
+<p>The TradeSense code for the indicator is shown in Figure 8. A sample chart
+  is shown in Figure 9.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2017/09/images/TT-Tradenav2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 9: TRADE NAVIGATOR. Here,
+    the reverse EMA indicator is plotted on a daily chart.</p>
+</div>
+<p>Users may contact our technical support staff by phone or by live chat if
+  any assistance is needed in using the indicators or strategy.</p>
+<p class="authorTips">&mdash;Genesis Financial Technologies<br>
+  Tech support 719 884-0245<br>
+  <a href="https://www.TradeNavigator.com" target="_parent">www.TradeNavigator.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item10"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> NINJATRADER: SEPTEMBER 2017</h3>
+</div>
+<p>The reverse EMA indicator, as discussed in &ldquo;The Reverse EMA Indicator&rdquo; in
+  this issue by John Ehlers, is available for download from the following links
+  for NinjaTrader 8 and for NinjaTrader 7:</p>
+<ul style="list-style:none;">
+  <li><strong>NinjaTrader 8:</strong> <a href="https://www.ninjatrader.com/SC/September2017SCNT8.zip" target="_parent">www.ninjatrader.com/SC/September2017SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7:</strong> <a href="https://www.ninjatrader.com/SC/September2017SCNT7.zip" target="_parent">www.ninjatrader.com/SC/September2017SCNT7.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTader
+  8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript
+  Add-On and then selecting the downloaded file for NinjaTrader 8. To import
+  into NinjaTrader 7, from within the control center window, select the menu
+  File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator&rsquo;s source code in NinjaTrader 8 by selecting the
+  menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control
+  center window and selecting the REMA file. You can review the indicator&rsquo;s source
+  code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator
+  from within the control center window and selecting the REMA file.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, which provides
+  you with the highest performance possible.</p>
+<p>A sample chart implementing the strategy is shown in Figure 10.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2017/09/images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 10: NINJATRADER. Here is
+    an example of the reverse EMA indicator on a daily SPY chart between June
+    2016 and July 2017 as displayed in Figure 1 of John Ehlers&rsquo; article in this
+    issue, &ldquo;The Reverse EMA Indicator.&rdquo;</p>
+</div>
+<p class="authorTips">&mdash;Raymond Deux &amp; Jim Dooms<br>
+  NinjaTrader, LLC<br>
+  <a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the September 2017 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2017, Technical Analysis, Inc.</p>
+</body>
+</html>

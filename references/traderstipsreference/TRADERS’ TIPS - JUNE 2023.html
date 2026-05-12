@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: The Stochastic Distance Oscillator by Vitali Apirine. Contributions from: MetaQuotes; TradeStation; thinkorswim; Wealth-Lab.com; NinjaTrader; TradingView; Neuroshell Trader; Optuma; The Zorro Project; Aiq; Trade Navigator; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - JUNE 2023</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">June 2023</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2023/06/images/TT-Apirine.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Vitali Apirine&rsquo;s article in this issue, &ldquo;The Stochastic Distance Oscillator.&rdquo; Here, we present the June 2023 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">MetaQuotes: June 2023</a></li>
+  <li><a href="#item2">TradeStation: June 2023</a></li>
+  <li><a href="#item3">thinkorswim: June 2023</a></li>
+  <li><a href="#item4">Wealth-Lab.com: June 2023</a></li>
+  <li><a href="#item5">NinjaTrader: June 2023</a></li>
+  <li><a href="#item6">TradingView: June 2023</a></li>
+  <li><a href="#item7">Neuroshell Trader: June 2023</a></li>
+  <li><a href="#item8">Optuma: June 2023</a></li>
+  <li><a href="#item9">The Zorro Project: June 2023</a></li>
+  <li><a href="#item10">Aiq: June 2023</a></li>
+  <li><a href="#item11">Trade Navigator: June 2023</a></li>
+  <li><a href="#item12">Microsoft Excel: June 2023</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">MetaQuotes: June 2023</h3></div>
+<p>In his article in this issue, Vitali Apirine introduces the stochastic distance oscillator (SDO). Here is coding for that indicator and for a function for use on the MetaQuotes platform. Figure 1 applies the SDO on a daily chart of EURUSD.</p>
+<pre>
+//+------------------------------------------------------------------+
+//|                               Stochastic Distance Oscillator.mq5 |
+//|                                    Copyright &copy; 2023, Shaun Bosch |
+//|                                              shadavbos&#64;gmail.com |
+//+------------------------------------------------------------------+
+#property copyright &quot;Copyright &copy; 2023, Shaun Bosch&quot;
+#property link      &quot;shadavbos&#64;gmail.com&quot;
+#property version   &quot;1.00&quot;
+#property indicator_separate_window
+#property indicator_maximum 110
+#property indicator_minimum -110
+#property indicator_buffers 3
+#property indicator_plots   1
+//--- plot SDO
+#property indicator_label1  &quot;SDO&quot;
+#property indicator_type1   DRAW_LINE
+#property indicator_color1  clrRed
+#property indicator_style1  STYLE_SOLID
+#property indicator_width1  1
+//--- input parameters
+input int      inp_lookback_period     = 200;      // Lookback Period
+input int      inp_n_periods           = 12;       // n Periods
+input int      inp_ema_length          = 3;        // EMA Length
+//--- indicator buffers
+double         SDOPlot[];
+double         calc1[], calc2[];
+//--- indicator variables
+int            lookback_period;
+int            n_periods;
+int            ema_length;
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+  {
+//--- check input parameters
+   lookback_period = inp_lookback_period &lt; 1 ? 1 : inp_lookback_period;
+   n_periods = inp_n_periods &lt; 1 ? 1 : inp_n_periods;
+   ema_length = inp_ema_length &lt; 1 ? 1 : inp_ema_length;
+//--- indicator buffers mapping
+   SetIndexBuffer(0, SDOPlot, INDICATOR_DATA);
+   SetIndexBuffer(1, calc1, INDICATOR_CALCULATIONS);
+   SetIndexBuffer(2, calc2, INDICATOR_CALCULATIONS);
+//--- set indicator accuracy
+   IndicatorSetInteger(INDICATOR_DIGITS, 2);
+//--- set indicator name display
+   string short_name = &quot;SDO (&quot; + IntegerToString(lookback_period) + &quot;, &quot; + IntegerToString(n_periods) + &quot;, &quot; + IntegerToString(ema_length) + &quot;)&quot;;
+   IndicatorSetString(INDICATOR_SHORTNAME, short_name);
+//--- sets drawing lines to empty value
+   PlotIndexSetDouble(0, PLOT_EMPTY_VALUE, EMPTY_VALUE);
+//--- set level values
+   IndicatorSetInteger(INDICATOR_LEVELS, 3);
+   IndicatorSetDouble(INDICATOR_LEVELVALUE, 0, 40.0);
+   IndicatorSetDouble(INDICATOR_LEVELVALUE, 1, 0.0);
+   IndicatorSetDouble(INDICATOR_LEVELVALUE, 2, -40.0);
+//--- set level colors
+   IndicatorSetInteger(INDICATOR_LEVELCOLOR, 0, clrDarkSlateGray);
+   IndicatorSetInteger(INDICATOR_LEVELCOLOR, 1, clrDarkSlateGray);
+   IndicatorSetInteger(INDICATOR_LEVELCOLOR, 2, clrDarkSlateGray);
+//--- set level styles
+   IndicatorSetInteger(INDICATOR_LEVELSTYLE, 0, STYLE_SOLID);
+   IndicatorSetInteger(INDICATOR_LEVELSTYLE, 1, STYLE_DASHDOT);
+   IndicatorSetInteger(INDICATOR_LEVELSTYLE, 2, STYLE_SOLID);   
+//--- initialization succeeded
+   return(INIT_SUCCEEDED);
+  }
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const int begin,
+                const double &amp;price[])
+  {
+//--- bar index start
+   int bar_index;
+   if(prev_calculated == 0)
+      bar_index = 0;
+   else
+      bar_index = prev_calculated - 1;
+//--- main loop
+   for(int i = bar_index; i &lt; rates_total &amp;&amp; !_StopFlag; i++)
+      SDOPlot[i] = in_SDO(lookback_period, n_periods, ema_length, price, calc1, calc2, i);
+//--- return value of prev_calculated for next call
+   return(rates_total);
+  }
+//+------------------------------------------------------------------+
+//| Stochastic Distance Oscillator (SDO)                             |
+//+------------------------------------------------------------------+
+double in_SDO(const int length_1, // Lookback Period - min val: 1; step val: 1; default val: 200
+              const int length_2, // n Periods - min val: 1; step val: 1; default val: 12
+              const int length_3, // EMA length - min val: 1; step val: 1; default val: 3
+              const double &amp;source[],
+              double &amp;calc_distance[], // External Dynamic Array 1
+              double &amp;calc_ema[], // External Dynamic Array 2
+              const int bar)
+  {
+   double result = EMPTY_VALUE;
+   calc_distance[bar] = 0.0;
+   calc_ema[bar] = 0.0;
+   if(bar &gt;= length_1 + length_2 &amp;&amp; length_1 &gt; 0 &amp;&amp; length_2 &gt; 0 &amp;&amp; length_3)
+     {
+      calc_distance[bar] = fabs(source[bar] - (MathIsValidNumber(source[bar - length_2]) ? source[bar - length_2] : 0.0));
+      double hh = -DBL_MAX, ll = DBL_MAX;
+      for(int i = 0; i &lt; length_1; i++)
+        {
+         hh = (MathIsValidNumber(calc_distance[bar - i]) ? calc_distance[bar - i] : 0.0) &gt; hh ? (MathIsValidNumber(calc_distance[bar - i]) ? calc_distance[bar - i] : 0.0) : hh;
+         ll = (MathIsValidNumber(calc_distance[bar - i]) ? calc_distance[bar - i] : 0.0) &lt; ll ? (MathIsValidNumber(calc_distance[bar - i]) ? calc_distance[bar - i] : 0.0) : ll;
+        }
+      double perc_d = source[bar] &gt; (MathIsValidNumber(source[bar - length_2]) ? source[bar - length_2] : 0.0) ? ((hh - ll) != 0.0 ? (calc_distance[bar] - ll) / (hh - ll) : 0.0) : source[bar] &lt; (MathIsValidNumber(source[bar - length_2]) ? source[bar - length_2] : 0.0) ? ((hh - ll) != 0.0 ? -1.0 * ((calc_distance[bar] - ll) / (hh - ll)) : 0.0) : 0.0;
+      double alpha = 2.0 / (1.0 + double(length_3));
+      calc_ema[bar] = perc_d * alpha + (MathIsValidNumber(calc_ema[bar - 1]) ? calc_ema[bar - 1] : 0.0) * (1.0 - alpha);
+      result = calc_ema[bar] * 100.0;
+     }
+   return(result);
+  }
+//+------------------------------------------------------------------+
+</pre>
+
+<pre>
+//+------------------------------------------------------------------+
+//| Stochastic Distance Oscillator (SDO)                             |
+//+------------------------------------------------------------------+
+double in_SDO(const int length_1, // Lookback Period - min val: 1; step val: 1; default val: 200
+              const int length_2, // n Periods - min val: 1; step val: 1; default val: 12
+              const int length_3, // EMA length - min val: 1; step val: 1; default val: 3
+              const double &amp;source[],
+              double &amp;calc_distance[], // External Dynamic Array 1
+              double &amp;calc_ema[], // External Dynamic Array 2
+              const int bar)
+  {
+   double result = EMPTY_VALUE;
+   calc_distance[bar] = 0.0;
+   calc_ema[bar] = 0.0;
+   if(bar &gt;= length_1 + length_2 &amp;&amp; length_1 &gt; 0 &amp;&amp; length_2 &gt; 0 &amp;&amp; length_3)
+     {
+      calc_distance[bar] = fabs(source[bar] - (MathIsValidNumber(source[bar - length_2]) ? source[bar - length_2] : 0.0));
+      double hh = -DBL_MAX, ll = DBL_MAX;
+      for(int i = 0; i &lt; length_1; i++)
+        {
+         hh = (MathIsValidNumber(calc_distance[bar - i]) ? calc_distance[bar - i] : 0.0) &gt; hh ? (MathIsValidNumber(calc_distance[bar - i]) ? calc_distance[bar - i] : 0.0) : hh;
+         ll = (MathIsValidNumber(calc_distance[bar - i]) ? calc_distance[bar - i] : 0.0) &lt; ll ? (MathIsValidNumber(calc_distance[bar - i]) ? calc_distance[bar - i] : 0.0) : ll;
+        }
+      double perc_d = source[bar] &gt; (MathIsValidNumber(source[bar - length_2]) ? source[bar - length_2] : 0.0) ? ((hh - ll) != 0.0 ? (calc_distance[bar] - ll) / (hh - ll) : 0.0) : source[bar] &lt; (MathIsValidNumber(source[bar - length_2]) ? source[bar - length_2] : 0.0) ? ((hh - ll) != 0.0 ? -1.0 * ((calc_distance[bar] - ll) / (hh - ll)) : 0.0) : 0.0;
+      double alpha = 2.0 / (1.0 + double(length_3));
+      calc_ema[bar] = perc_d * alpha + (MathIsValidNumber(calc_ema[bar - 1]) ? calc_ema[bar - 1] : 0.0) * (1.0 - alpha);
+      result = calc_ema[bar] * 100.0;
+     }
+   return(result);
+  }
+  </pre>
+<div class="figBorder">
+<img src="images/TT-Metaquotes.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: METAQUOTES. This demonstrates the stochastic distance oscillator (SDO) on a daily chart of EURUSD.</p></div>
+<p class="authorTips">&mdash;Shaun Bosch<br>
+<a href="mailto:shadavbos@gmail.com">shadavbos@gmail.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: June 2023</h3></div>
+<p>In his article in this issue, &ldquo;The Stochastic Distance Oscillator&rdquo; author Vitali Apirine offers a new variation on the classic stochastic oscillator, which he calls the stochastic distance oscillator (SDO). The SDO is a momentum study that shows the magnitude of the current distance relative to the maximum&ndash;minimum distance range over a set period. The study can be used with securities or indexes that trend but is also suitable for trading ranges. Overbought and oversold levels can help identify bull and bear trend changes.</p>
+<pre>
+Indicator: SDO
+
+// TASC JUNE 2023
+// The Stochastic Distance Oscillator (SDO)
+//
+// Vitali Apirine
+
+inputs:
+	LBPeriod( 200 ),
+	Period( 12 ),
+	Pds( 3 ),
+	OverBought( 40 ),
+	OverSold( -40 ),
+	ShowZeroLine( true );
+
+variables:
+	DVal( 0 ),
+	DDVal( 0 ),
+	Dist( 0 ),
+	SDOVal( 0 );
+
+Dist = AbsValue(Close - Close[Period]);
+DVal = (Dist - Lowest(Dist, Period))
+ /(Highest(Dist, LBPeriod) - Lowest(Dist, LBPeriod));
+
+if Close &gt; Close[Period] then
+	DDVal = DVal
+else if Close &lt; Close[Period] then
+	DDVal = -DVal
+else
+	DDVal = 0;
+
+SDOVal = XAverage(DDVal, Pds) * 100;
+
+Plot1( SDOVal, &quot;SDO&quot; );
+Plot2( OverBought, &quot;OverBought&quot; );
+Plot3( OverSold, &quot;OverSold&quot; );
+Plot4( 0, &quot;Zero Line&quot; ); 
+</pre>
+<p>A sample chart is shown in Figure 2.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: TRADESTATION. This demonstrates the stochastic distance oscillator (SDO) on a daily chart of the S&amp;P 500 ETF SPY on a portion of 2022 and 2023.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="mailto:www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Thinkorswim.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">thinkorswim: June 2023</h3></div>
+<p>We put together a study based on the article by Vitali Apirine in this issue titled &ldquo;The Stochastic Distance Oscillator.&rdquo; We built the study referenced by using our proprietary scripting language, thinkscript. To ease the loading process, simply click <a href="https://tos.mx/kOU0lCw" target="_parent">https://tos.mx/kOU0lCw</a> or enter it into the address via <em>setup &rarr; open shared item</em> from within thinkorswim, then choose <em>view thinkScript study</em> and name it &ldquo;StochasticDistanceOscillator&rdquo; or whatever you like and can identify. You can then add the study to your charts from the <em>edit studies</em> menu from within the <em>charts</em> tab and then selecting <em>studies</em>.</p>
+<p>Figure 3 shows our version of the study on a daily chart of the Russel 2000 index. Please see Vitali Apirine&rsquo;s article in this issue for how to interpret the indicator.</p>
+<div class="figBorder">
+<img src="images/TT-tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: THINKORSWIM. This chart demonstrates an implementation of the study on a daily chart of the Russel 2000 index.</p></div>
+<p class="authorTips">&mdash;thinkorswim<br>
+A division of TD Ameritrade, Inc.<br>
+<a href="https://www.thinkorswim.com" target="_parent">www.thinkorswim.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: June 2023</h3></div>
+<p>In his article in this issue, &ldquo;The Stochastic Distance Oscillator,&rdquo; author Vitali Apirine offers an interesting take on the traditional stochastic oscillator that is based on price extremes over a range of bars. In addition to its ability to signal bull and bear trend changes, like its predecessor, it can naturally also be used in sideways trading.</p>
+<p>Wealth-Lab 8 includes the stochastic distance oscillator (SDO) in its latest build. This indicator can be used universally throughout our program features, including in our Building Blocks feature (which offers users an easy way to create trading strategies without having to code them), our Indicator Profiler (which tells how much of an edge an indicator provides), and our Strategy Optimization feature.</p>
+<p>Prototyping a trading system, including complex ideas, doesn&rsquo;t take much effort with our point-and-click Building Blocks feature. The sample trading strategy we will present here, which can be created with the Building Blocks feature (Figure 4), is based on SDO crossing above and below its thresholds, with an extra rule: The price has to trade below the medium-term EMA to make an entry. See Figure 5 for a demonstration of this sample trading strategy based on the stochastic distance oscillator.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: WEALTH-LAB. Here&rsquo;s an example of prototyping or setting up a trading strategy by using the Building Blocks feature in Wealth-Lab. The trading strategy demonstrated is based on the stochastic distance oscillator (SDO).</p></div>
+<div class="figBorder">
+<img src="images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: WEALTH-LAB. This demonstrates a sample trading strategy based on the stochastic distance oscillator thresholds as applied to the SPY on the daily chart. Here, you see sample trade signals during some recent sideways movement in SPY. Data provided by Wealth-Data.</p></div>
+<p>For those not familiar with Wealth-Lab, our <strong>web-based backtesting engine</strong> is free to use. Users can design a trading system in a user-friendly interface and run backtests of your strategy right in the browser. As a natural next step, your strategy will become instantly available in the Wealth-Lab desktop application for in-depth use. And if you find that your strategy works well, you can opt to publish it for the benefit of other users in the Wealth-Lab community.</p>
+<p>This sample strategy based on the SDO indicator can be downloaded from our &ldquo;published strategies&rdquo; listing at: <a href="https://www.wealth-lab.com/Strategy/PublishedStrategies" target="_parent">https://www.wealth-lab.com/Strategy/PublishedStrategies</a>.</p>
+<p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>       
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: June 2023</h3></div>
+<p>The stochastic distance oscillator, which is introduced in &ldquo;The Stochastic Distance Oscillator&rdquo; in this issue by Vitali Apirine, is available for download at the following link for NinjaTrader 8:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/June2023SCNT8.zip" target="_blank">www.ninjatrader.com/SC/June2023SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the SDO file.</p>
+<p>A sample chart displaying the indicator is shown in Figure 6.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: NINJATRADER. Here you see the SDO (200, 40, 3) indicator displayed in the upper panel with a daily SPY chart from May 2005 to February 2007 in the lower panel.</p></div>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">&mdash;Emily Christoph<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: June 2023</h3></div>
+<p>Here is TradingView Pine Script code implementing Vitali Apirine&rsquo;s stochastic distance oscillator, which is a momentum indicator based on the classic stochastic oscillator.</p>
+<pre>
+//  TASC Issue: June 2023 - Vol. 41, Issue 7
+//     Article: The Stochastic Distance Oscillator
+//  Article By: Vitali Apirine
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//&#64;version=5
+string title = 'TASC 2023.06 Stochastic Distance Oscillator'
+string stitle = 'SDO'
+indicator(title, stitle, false)
+
+
+// &#64;function Stochastic Distance Oscillator (SDO)
+// &#64;param lookbackLength    int   . Lookback period.
+// &#64;param length            int   . Indicator Period.
+// &#64;param smoothingLength   int   . Smoothing period.
+// &#64;param source       float . Source data, default=`close`.
+// &#64;returns float. Smoothed series data.
+stochDistanceOsc(
+int   lookbackLength  = 200   ,
+int   length          = 12    ,
+int   smoothingLength = 3     ,
+float source          = close) =&gt;
+   float distance = math.abs(source - nz(source[length]))
+   float lld      = ta.lowest(distance, lookbackLength)
+   float hhd      = ta.highest(distance, lookbackLength)
+   float ddo      = nz((distance - lld) / (hhd - lld), 0)
+   float sd       = source &gt; nz(source[length]) ? ddo :
+                    source &lt; nz(source[length]) ? -ddo : 0
+   float result   = ta.ema(sd, smoothingLength) * 100
+   result
+
+
+string is0 = 'Lookback period'
+string is1 = 'N periods'
+string is2 = 'Smoothing EMA length'
+string is3 = 'Threshold'
+
+
+int lookbackLength  = input.int(200, is0, 1)
+int length          = input.int(12,  is1, 1)
+int smoothingLength = input.int(3,   is2, 1)
+int level           = input.int(40,  is3, 1)
+float sdo = stochDistanceOsc(
+            lookbackLength, length, smoothingLength)
+
+
+plot(sdo, 'SDO', #f43a3a, 2)
+hline( level)
+hline(-level)
+hline(0, '', #0000002f)
+hline( 100,'',#00000000)
+hline(-100,'',#00000000)
+</pre>
+<p>The code is available on TradingView in the PineCodersTASC account: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_parent">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart is shown in Figure 7.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: TRADINGVIEW. This shows an example of Vitali Apirine&rsquo;s stochastic distance oscillator applied to a chart of the S&amp;P 500 index.</p></div>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="https://www.TradingView.com" target="_parent">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>     
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: June 2023</h3></div>
+<p>The stochastic distance oscillator introduced by Vitali Apirine in his article in this issue can be easily implemented in NeuroShell Trader by selecting <em>new indicator</em> from the <em>insert</em> menu and using the indicator wizard to set up the following indicators:</p>
+<pre>
+Change	Momentum(Close,12)
+Stoch	SimpleStoch%K(Abs(Change), 200)
+SDO	ExpAvg( IfThenElseIfThen(A&gt;B(Change,0), Stoch,A&lt;B(Change,0), Neg(Stoch), 0) )
+</pre>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips. The DynamicExpAvg is a dynamic rate exponential moving average (EMA) custom indicator available for download on the free technical support website along with the Traders&rsquo; Tip.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: NEUROSHELL TRADER. This NeuroShell Trader chart shows the stochastic distance oscillator applied to the SPY.</p></div>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Optuma.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Optuma: June 2023</h3></div>
+<p>Here is an Optuma script formula for Vitali Apirine&rsquo;s article in this issue, &ldquo;Stochastic Distance Oscillator.&rdquo;</p>
+<pre>
+$LBPeriod=200;
+
+$Period=40;
+
+$Pds=3;
+
+Dist1 = ABS(CLOSE()-CLOSE(OFFSET=$Period));
+
+D1=(Dist1-LOWESTLOW(Dist1, BARS=$LBPeriod)) / (HIGHESTHIGH(Dist1, BARS=$LBPeriod) - LOWESTLOW(Dist1, BARS=$LBPeriod));
+
+DD1=IF(CLOSE()&gt;CLOSE(OFFSET=$Period),D1, IF(CLOSE()&lt;CLOSE(OFFSET=$Period),D1*-1,0));
+
+MA(DD1, STYLE=Exponential, BARS=$Pds)*100
+</pre>
+<p>See Figure 9 for a plot of the stochastic distance oscillator on the SPY. The chart has been colored to highlight the trend: green when the SDO crosses above 40, turning to red when it crosses below &minus;40.</p>
+<div class="figBorder">
+<img src="images/TT-Optuma.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: OPTUMA. This sample chart displays the stochastic distance oscillator. The chart has been colored to highlight the trend: green when the SDO crosses above 40, turning to red when it crosses below &minus;40.</p></div>
+<p class="authorTips">&mdash;<a href="mailto:support@optuma.com">support@optuma.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" style="width: 100px;" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: June 2023</h3></div>
+<p>In his article in this issue, &ldquo;Stochastic Distance Oscillator,&rdquo; Vitali Apirine presents a variation on the classic stochastic oscillator. His stochastic distance oscillator (SDO) compares short-term momentum with a long-term price range, and then filters the result with an EMA. Here is coding for the indicator in C:</p>
+    <pre>var SDO(int LBPeriod,int Period,int Pds)
+{
+  var Dist = priceC(0)-priceC(Period);
+  vars Dists = series(abs(Dist));
+  var D = (Dists[0]-MinVal(Dists,LBPeriod))/fix0(MaxVal(Dists,LBPeriod)-MinVal(Dists,LBPeriod));
+  return EMA(series(sign(Dist)*D),Pds)*100;
+}</pre>
+<p>Figure 10 replicates one of the author&rsquo;s charts from his article. It demonstrates on the Zorro platform the SDO(200,40,3) applied to SPY from 2004&ndash;2007. The author assumes overbought or oversold conditions where the SDO crosses the &minus;40 / +40 threshold lines.</p>
+<div class="figBorder">
+<img src="images/TT-Zorro.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 10: ZORRO PROJECT. Here is the SDO(200,40,3) applied to SPY from 2004&ndash;2007. The &minus;40/+40 threshold lines are the SDO&rsquo;s indications of overbought/oversold conditions.</p></div>
+<p>The SDO indicator can be downloaded from the 2023 script repository on <a href="https://financial-hacker.com" target="_parent">https://financial-hacker.com</a>. The Zorro software can be downloaded from <a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a>.</p>
+<p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Aiq: June 2023</h3></div>
+<p>The importable AIQ EDS file based on Vitali Apirine&rsquo;s article in this issue, &ldquo;The Stochastic Distance Oscillator,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>.</p>
+    <p>Code for the author&rsquo;s indicator is set up in the AIQ EDS code file. The code is also shown below. Figure 11 shows a chart of the NASDAQ 100 index (NDX) with the SDO[200,12,3] indicator (green jagged line).</p>
+<pre>
+!The Stochastic Distance Oscillator
+!Author: Vitali Apirine, TASC June 2023
+!Coded by: Richard Denning, 4/15/2023
+
+LBPeriod is 200.
+Period is 12.
+Pds is 3.
+C is [close].
+Dist is abs(C-valresult(C,period)).
+D is (Dist - lowresult(Dist,LBPeriod))/
+       (highresult(Dist,LBPeriod)-lowresult(Dist,LBPeriod)).
+DD is iff(C&gt;valresult(C,Period),D,iff(C&lt;valresult(C,Period),-D,0)).
+SDO is expavg(DD,Pds)*100.
+</pre>
+<div class="figBorder">
+<img src="images/TT-Aiq.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 11: AIQ. Here, the stochastic distance oscillator (SDO) indicator is shown on a chart of the NASDAQ 100 index (NDX). The SDO[200,12,3] indicator is the green jagged line.</p></div>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:rdencpa@gmail.com">rdencpa@gmail.com</a><br>
+for AIQ Systems</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>       
+<p class="rules"></p>
+<div class="logoBorder" id="item11">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Genesis.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Trade Navigator: June 2023</h3></div>
+<p>We have created a special file to make it easy to download the library in Trade Navigator that is based on the article in this issue, &ldquo;Stochastic Distance Oscillator&rdquo; by Vitali Apirine.</p>
+<p>The file name is &ldquo;SC202306.&rdquo; To download this library, click on Trade Navigator&rsquo;s <em>file</em> dropdown menu, then select <em>update data</em>. Next, select <em>download special file</em>, then erase the word &ldquo;upgrade&rdquo; and type in &ldquo;SC202306.&rdquo; Then click the <em>start</em> button. When prompted to upgrade, click the <em>yes</em> button. If prompted to close all software, click on the <em>continue</em> button. Your library will now download. This library contains the indicator named the &ldquo;stochastic distance oscillator.&rdquo;</p>
+<p>To add the indicator to your chart in Trade Navigator: Open the <em>charting</em> dropdown menu, select the <em>add to chart</em> command, then on the <em>indicators</em> tab, find your named indicator, select it, then click the <em>add</em> button. Repeat this procedure for additional indicators if you wish.</p>
+<p>If you need assistance with adding or using the indicator in Trade Navigator, our friendly technical support staff will be happy to help via phone at 719 284-1616 or via the live chat feature at our website.</p>
+<p class="authorTips">&mdash;Genesis Financial Data<br>
+Tech support 719 284-1616<br>
+<a href="https://www.TradeNavigator.com" target="_parent">www.TradeNavigator.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>     
+<p class="rules"></p>
+<div class="logoBorder" id="item12">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: June 2023</h3></div>
+<p>In his article in this issue, &ldquo;Stochastic Distance Oscillator,&rdquo; Vitali Apirine presents an indicator of price momentum. The indicator is based on the classic stochastic oscillator.</p>
+<p>Calculating the stochastic distance oscillator is simple and direct. The base element is &ldquo;distance,&rdquo; defined as the absolute difference between the close of the current bar and the close &ldquo;x&rdquo; bars in the past.</p>
+<p><strong><em>Step 1:</em></strong> Take the standard stochastic oscillator formulation and replace &ldquo;closing price&rdquo; everywhere it appears with &ldquo;distance&rdquo; as defined above. You wind up with a value that ranges from 0 to 100</p>
+<p><strong><em>Step 2:</em></strong> We need to take into account that the difference between the close of the current bar and the close &ldquo;x&rdquo; bars in the past (before taking the absolute value) could have been positive (an upward slope) or negative (a downward slope). We use this to set the sign of our current &ldquo;distance&rdquo; stochastic value.</p>
+<p>The result is an indicator that can range from &minus;100 to +100.</p>
+<p>Plus and minus 40 are suggested as the thresholds for oversold and overbought levels, comparable to the 20 and 80 typically used with the standard stochastic oscillator.</p>
+<p>Figure 12 shows a 12-bar <em>distance</em> with the min and max of <em>distance</em> over the preceding 200 bars. Figure 13 plots the stochastic distance oscillator (SDO), a momentum indicator.</p>
+<div class="figBorder">
+<img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 12: EXCEL. This demonstrates a 12-bar &ldquo;distance&rdquo; with the min and max of distance over the preceding 200 bars.</p></div>
+<div class="figBorder">
+<img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 13: EXCEL. This shows an example of the stochastic distance oscillator (SDO), a momentum indicator.</p></div>
+<p><strong><em>To download this spreadsheet:</em></strong> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2023/06/images/code/StochasticDistanceOscillator.xlsm">here</a>. To successfully download it, follow these steps:</p>
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2023/06/images/code/StochasticDistanceOscillator.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+    
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the June 2023 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2023, Technical Analysis, Inc.</p>
+
+</body>
+</html>

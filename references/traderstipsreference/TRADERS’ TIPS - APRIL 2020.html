@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine.">
+<meta name="description" content="This month: OBVM by Vitali Apirine. Contributions from: TradeStation; eSignal; Wealth-Lab; NeuroShell Trader; AIQ; TradersStudio; NinjaTrader; TradeNavigator; The Zorro Project; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - APRIL 2020</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">April 2020</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Apirine.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Vitali Apirine&rsquo;s article in this issue,  &ldquo;On-Balance Volume Modified (OBVM).&rdquo; Here, we present the April 2020 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+
+<!--REMOVE NEXT MONTH-->
+<p class="red"><strong><em>New contributor this month:</em></strong> The Zorro Project</p>
+
+
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TRADESTATION: APRIL 2020</a></li>
+  <li><a href="#item2"><span style="text-transform:lowercase;">e</span>SIGNAL: APRIL 2020</a></li>
+  <li><a href="#item3">WEALTH-LAB: APRIL 2020</a></li>
+  <li><a href="#item4">NEUROSHELL TRADER: APRIL 2020</a></li>
+  <li><a href="#item5">AIQ: APRIL 2020</a></li>
+  <li><a href="#item6">TRADERSSTUDIO: APRIL 2020</a></li>
+  <li><a href="#item7">NINJATRADER: APRIL 2020</a></li>
+  <li><a href="#item8">TRADENAVIGATOR: APRIL 2020</a></li>
+  <li><a href="#item9">THE ZORRO PROJECT: APRIL 2020</a></li>
+  <li><a href="#item10">MICROSOFT EXCEL: APRIL 2020</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+TRADESTATION: APRIL 2020</h3></div>
+<p>In &ldquo;On-Balance Volume Modified (OBVM)&rdquo; in this issue, author Vitali Apirine presents a new indicator called OBVM that is based on the classic on-balance volume indicator originally developed by Joe Granville. The author has smoothed the OBV calculation and has added a signal line to help the trader identify entry and exit points. Apirine also notes that the OBVM indicator is useful in helping to identify divergences. Here, we are providing TradeStation EasyLanguage code for an indicator and strategy based on the author&rsquo;s work.</p>
+<pre>
+Indicator: OBVM
+
+// On-Balance Volume Modified
+// Vitali Apirine
+// TASC April 2020
+
+inputs:
+	OBVMLength( 7 ),
+	SignalLineLength( 10 ) ;
+
+variables:
+	OBVValue( 0 ),
+	OBVMValue( 0 ),
+	SignalLineValue( 0 ) ;
+
+OBVValue = OBV ;
+OBVMValue = XAverage( OBVValue, 
+	OBVMLength ) ;
+SignalLineValue = XAverage( OBVMValue, 
+	SignalLineLength ) ;
+
+Plot1( OBVMValue, &quot;OBVM&quot; ) ;
+Plot2( SignalLineValue, &quot;Signal Line&quot; ) ;
+
+
+Strategy: OBVM
+
+// On-Balance Volume Modified
+// Vitali Apirine
+// TASC April 2020
+
+inputs:
+	OBVMLength( 7 ),
+	SignalLineLength( 10 ) ;
+
+variables:
+	OBVValue( 0 ),
+	OBVMValue( 0 ),
+	SignalLineValue( 0 ) ;
+
+OBVValue = OBV ;
+OBVMValue = XAverage( OBVValue, 
+	OBVMLength ) ;
+SignalLineValue = XAverage( OBVMValue, 
+	SignalLineLength ) ;
+
+if OBVMValue crosses over 
+	SignalLineValue then
+	Buy next bar at Market
+else if OBVMValue crosses under 
+	SignalLineValue then
+	SellShort next bar at Market ;
+</pre>
+<p>To download the EasyLanguage code, please visit our TradeStation and EasyLanguage support forum. The files based on this article can be found here: <a href="https://community.trade­station.com/Discussions/Topic.aspx?Topic_ID=168100" target="_parent">https://community.trade­station.com/Discussions/Topic.aspx?Topic_ID=168100</a>. The filename is &ldquo;TASC_APR2020.ZIP.&rdquo; For more information about EasyLanguage in general, please see: <a href="https://www.tradestation.com/EL-FAQ" target="_parent">https://www.tradestation.com/EL-FAQ</a>.</p>
+<p>A sample chart is shown in Figure 1.</p> 
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. The OBVM strategy and indicator are shown on a daily TradeStation chart of the Dow Jones Industrial Average.</p></div>
+
+<p><em>This article is for infor-mational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;Doug McCrary<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+eSIGNAL: APRIL 2020</h3></div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;re providing the study &ldquo;<a href="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/code/On-Balance Volume Modified.efs" target="_blank">On-balance volume modified.efs</a>&rdquo; based on the article in this issue by Vitali Apirine. The study smooths the classic on-balance volume indicator by Joe Granville and adds a signal line.</p>
+<p>The study contains formula parameters that may be configured through the <em>edit chart</em> window (right-click on the chart and select &ldquo;edit chart&rdquo;). A sample chart implementing the indicator is shown in Figure 2.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: eSIGNAL. Here is an example of the study plotted on a daily chart of IBM.</p></div>
+
+<p>To discuss this study or download a complete copy of the formula code, please visit the EFS Library Discussion Board forum under the <em>forums</em> link from the support menu at <a href="https://www.esignal.com" target="_parent">www.esignal.com</a> or visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs/" target="_parent">https://www.esignal.com/support/kb/efs/</a>. The eSignal formula script (EFS) is also available for copying &amp; pasting below.</p>
+<pre>
+/**********************************
+Provided By:  
+Copyright 2019 Intercontinental Exchange, Inc. All Rights Reserved. 
+eSignal is a service mark and/or a registered service mark of Intercontinental Exchange, Inc. 
+in the United States and/or other countries. This sample eSignal Formula Script (EFS) 
+is for educational purposes only. 
+Intercontinental Exchange, Inc. reserves the right to modify and overwrite this EFS file with each new release. 
+
+Description:        
+   On-Balance Volume Modified (OBVM)
+   by Vitali Apirine
+    
+
+Version:            1.00  02/06/2020
+
+Formula Parameters:                     Default:
+Period_1                                7
+Period_2                                10
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+var fpArray = new Array();
+var bInit = false;
+
+function preMain() {
+    setStudyTitle(&quot;On-Balance Volume Modified (OBVM)&quot;);
+    setCursorLabelName(&quot;OBVM&quot;, 0);
+    setCursorLabelName(&quot;Signal line&quot;, 1);
+    setPriceStudy(false);
+    setDefaultBarFgColor(Color.RGB(0x00,0x94,0xFF), 0);
+    setDefaultBarFgColor(Color.RGB(0xFE,0x69,0x00), 1);
+    setPlotType( PLOTTYPE_LINE , 0 );
+    setPlotType( PLOTTYPE_LINE , 1 );
+    
+    
+    var x=0;
+    fpArray[x] = new FunctionParameter(&quot;Period_1&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1);		
+        setDefault(7);
+    }
+    fpArray[x] = new FunctionParameter(&quot;Period_2&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1);		
+        setDefault(10);
+    }
+        
+}
+
+var bVersion = null;
+var xOBVM = null; 
+var Sigline = null;
+var xOBV = null; 
+
+
+function main(Period_1,Period_2) {
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return; 
+    
+    if ( bInit == false ) { 
+        xOBV = obv();
+        xOBVM = ema(Period_1, xOBV);
+        Sigline = ema(Period_2, xOBVM);
+        bInit = true; 
+    }      
+
+    return [xOBVM.getValue(0), Sigline.getValue(0)]
+}
+ 
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+ </pre>
+<p class="authorTips">&mdash;Eric Lippert, eSignal,<br>
+an Interactive Data company<br>
+800 779-6555,<br>
+<a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">WEALTH-LAB: APRIL 2020
+</h3></div>
+<p>Long-time readers of this Traders&rsquo; Tips section may have noticed a tradition of our showing readers how trading ideas can get done without coding. Since the topic this month is a simple one, which is an EMA applied to OBV, it makes this month&rsquo;s OBVM indicator a natural target for another codeless exercise. Wealth-Lab&rsquo;s <em>strategy from rules selection</em> allows users to produce a complete trading strategy from the building blocks known as <em>rules</em>.</p>
+<p>Realizing that the original OBV&rsquo;s character is pretty wiggly, the creators of Wealth-Lab have for some time provided its nonprogramming users with a set of <em>smoothed OBV</em> rules. To make possible the OBVM signal line crossovers as per Apirine&rsquo;s article, we added respective conditions to our Community.Rules project, a library aimed at expanding the capabilities for nonprogrammers.</p>
+<p>After installing or updating the library, start by choosing <em>new strategy from rules</em>. Then drag and drop an entry rule and an exit rule (for example, &ldquo;buy(sell) at market&rdquo;). Now it&rsquo;s time to add OBVM conditions. Pair the &ldquo;OBVM crosses above (below) signal line&rdquo; condition (from the on-balance volume group) with the entry (exit) condition by dragging and dropping onto it.</p>
+<p>And as suggested by Apirine, you might want to combine OBVM with other conditions because OBVM isn&rsquo;t considered a standalone indicator.</p>
+<p>The default lookback periods are 7 for OBVM and 10 for its signal line. As a final step, click the icon next to the lookback period to expose it as a &ldquo;slider&rdquo; at the bottom left. Then, as you drag it to change the indicator&rsquo;s period, the chart will dynamically reflect the change, and so will your trading system&rsquo;s backtest performance.</p>
+<p>A sample chart is shown in Figure 3.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: WEALTH-LAB. The &ldquo;strategy from rules&rdquo; window in Wealth-Lab 6 illustrates the process of dragging and dropping OBVM conditions to arrive at a plain-vanilla trading system. Here, we demonstrate choosing the rules for crossover of the OBVM with its signal line.</p></div>
+
+<p class="authorTips">&mdash;Gene (Eugene) Geren, Wealth-Lab team<br>
+MS123, LLC<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+NEUROSHELL TRADER: APRIL 2020</h3></div>
+<p>The on-balance volume modified (OBVM) indicator described by Vitali Apirine in his article in this issue can be easily implemented in NeuroShell Trader by combining two of NeuroShell Trader&rsquo;s 800+ indicators. To implement the indicators, select <em>new indicator</em> from the <em>insert</em> menu and use the indicator wizard to set up the following indicators:</p>
+<pre>
+OBVM:	ExpAvg( CumSum( OBV( Close, Volume, 1), 0), 7)
+
+OBVM Signal:	ExpAvg( OBVM, 10)
+</pre>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p>A sample chart is shown in Figure 4.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: NEUROSHELL TRADER. This NeuroShell Trader chart shows the on-balance volume modified (OBVM) indicator applied to the Dow Jones Industrial Average.</p></div>
+
+<p class="authorTips">&mdash;Marge Sherald, Ward Systems Group, Inc.<br>
+301 662-7950, <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+AIQ: APRIL 2020</h3></div>
+<p>The importable AIQ EDS file based on Vitali Apirine&rsquo;s article in this issue, &ldquo;On-Balance Volume Modified,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also available below.</p>
+<p>I coded the indicator described by the author and also coded a simple buy-sell on crossovers of the indicator. I tested the long side in the AIQ EDS module. Figure 5 shows the backtest results over the last 10 years using the Nasdaq 100 list of stocks.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Aiq.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: AIQ. Sample backtest results are shown for the last 10 years using the Nasdaq 100 list of stocks.</p></div>
+<pre>
+!ON-BALANCE VOUUME MODIFIED (OBVM)
+!Author: Vitali Apirine, TASC Apr 2020
+!Coded by: Richard Denning 2/9/20
+!www.TradersEdgeSystems.com
+
+!ON BALANCE VOLUME:
+C	is [close].
+C1	is val([close],1).
+
+!OBV THAT HAS SAME SHAPE AS BUILT-IN OBV INDICATOR
+DaySum	is hasdatafor(2000).
+F 	is iff(C &gt; C1,1,iff(C &lt; C1,-1,0)).
+VolSum1 	is Sum([volume] / 1000 * F, DaySum).
+VolSum2 	is 1000 + VolSum1.
+OBVv1 	is iff(FirstDataDate() &gt;= Reportdate(),1000,VolSum2).
+
+!ON BALANCE VOLUME MODIFIED:
+!Hard coded version:
+len1 is 7.
+len2 is 10.
+VVV is expavg(OBVv1,len1).
+SigVVV is expavg(VVV,len2).
+
+!ON BALANCE VOULUME MODIFIED (***preferred version***):
+!Using built-in OBV indicator (runs much faster)
+pd1 is 7.
+pd2 is 10.
+OBVM is expavg([OBV],pd1).
+sigOBVM is expavg(OBVM,pd2).
+</pre>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for AIQ Systems</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+TRADERSSTUDIO: APRIL 2020</h3></div>
+<p>The importable TradersStudio files based on Vitali Apirine&rsquo;s article in this issue, &ldquo;On-Balance Volume Modified (OBVM),&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also available below.</p>
+<pre>
+'ON-BALANCE VOUUME MODIFIED (OBVM)
+'Author: Vitali Apirine, TASC Apr 2020
+'Coded by: Richard Denning 2/9/20
+'www.TradersEdgeSystems.com
+
+'FUNCTION RETURNS OBVM AND sigOBVM:
+Function OBVM(len1, len2, ByRef sigOBVM)
+Dim daySum, F, volSum1, volSum2, OBV
+daySum = 500 
+F = IIF(C &gt; C[1],1,IIF(C &lt; C[1],-1,0)) 
+volSum1 = Summation(V / 1000 * F, daySum) 
+volSum2 = 1000 + volSum1 
+OBV = IIF(CurrentBar = FirstBar,1000,volSum2) 
+OBVM = XAverage(OBV,len1)
+sigOBVM = XAverage(OBVM,len2)
+End Function
+'---------------------------------------------
+'INDICATOR PLOT:
+Sub OBVM_IND(len1,len2)
+'default len1=7, len2=10
+Dim theOBVM As BarArray
+Dim sigOBVM As BarArray
+If BarNumber = FirstBar Then sigOBVM = 0 
+theOBVM = OBVM(len1,len2,sigOBVM)
+plot1(theOBVM)
+plot2(sigOBVM)
+End Sub
+'----------------------------------------------
+SIMPLE CROSSOVER TRADING SYSTEM THAT USES OBVM:
+Sub OBVM_sys(len1,len2)
+Dim theOBVM As BarArray
+Dim sigOBVM As BarArray
+If BarNumber = FirstBar Then
+ sigOBVM = 0 
+ theOBVM = 0
+End If
+theOBVM = OBVM(len1,len2,sigOBVM)
+If CrossesOver(theOBVM,sigOBVM) Then 
+ Buy(&quot;LE&quot;,1,0,Market,Day)
+End If
+If CrossesUnder(theOBVM,sigOBVM) Then 
+ ExitLong(&quot;LX&quot;,&quot;&quot;,1,0,Market,Day)
+End If
+End Sub
+'----------------------------------------------
+</pre>
+
+<p>I coded the indicator described by the author. Figure 6 shows the OMVM indicator using the default lengths of 7 and 10 bars on a chart of Yahoo! (YHOO) with trading signals. I am also providing a simple trading system that goes long on cross-ups of the OBVM over the signal line and exits the long on cross-downs. Figure 7 shows the equity curve trading 100 shares per trade of the Nasdaq 100 stocks.
+</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Tradersstudio1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: TRADERSSTUDIO. This shows the OBVM indicator on chart of YHOO with trading system signals.</p></div>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Tradersstudio2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: TRADERSSTUDIO. Displayed here is the sample equity curve trading 100 shares per trade of the NASDAQ 100 stocks. </p></div>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for TradersStudio</p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">NINJATRADER: APRIL 2020
+</h3></div>
+<p>The OBVM indicator, as discussed by Vitali Apirine in his article in this issue, &ldquo;On-Balance Volume Modified (OBVM),&rdquo; is available for download at the following links for NinjaTrader&nbsp;8 and for NinjaTrader&nbsp;7:</p>
+<ul style="list-style:none;">
+<li><strong>NinjaTrader 8:</strong> <a href="https://www.ninjatrader.com/SC/April2020SCNT8.zip" target="_parent">www.ninjatrader.com/SC/April2020SCNT8.zip</a></li>
+<li><strong>NinjaTrader 7:</strong> <a href="https://www.ninjatrader.com/SC/April2020SCNT7.zip" target="_parent">www.ninjatrader.com/SC/April2020SCNT7.zip</a>
+</li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import into NinjaTrader 7, from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control center window and selecting the OBVM file. You can review the indicator source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the control center window and selecting the OBVM file.</p> 
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p>A sample chart implementing the indicator is shown in Figure 8.</p> 
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: NINJATRADER. The OBVM indicator is shown running on daily chart of the Dow Jones Industrial Average emini futures from April 16, 2019 to February 14, 2020.</p></div>
+<p class="authorTips">&mdash;Raymond Deux &amp; Chris Lauber<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Genesis.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+TRADENAVIGATOR: APRIL 2020</h3></div>
+<p>We&rsquo;re making available a file for download within the Trade Navigator library to make it easy for users to implement the on-balance volume modified (OBVM) indicator, as discussed in the article in this issue by Vitali Apirine.</p>
+<p>The file name is &ldquo;SC202004&rdquo;. To download it, click on Trade Navigator&rsquo;s blue telephone button, select <em>download special file</em>, and replace the word &ldquo;upgrade&rdquo; with &ldquo;SC202004&rdquo; (without the quotes). Then click the <em>start</em> button. When prompted to upgrade, click the <em>yes</em> button. If prompted to close all software, click on the <em>continue</em> button. Your library will now download.</p> 
+<p>This library contains four functions, named &ldquo;OBVM,&rdquo; &ldquo;OBVM signal line,&rdquo; &ldquo;OBVM above,&rdquo; and &ldquo;OBVM below.&rdquo; It also contains two studies named &ldquo;OBVM&rdquo; and &ldquo;OBVM crosses.&rdquo;</p> 
+<p><strong><em>Manually creating indicators</em></strong><br>
+If you would like to create these indicators manually, click on the <em>edit</em> dropdown menu and open the <em>trader&rsquo;s toolbox</em> (or use CTRL+T) and click on the <em>functions</em> tab. Click the <em>new</em> button and a <em>new function</em> dialog window will open. In its text box, type in the code. Ensure that there are no extra spaces at the end of each line. When completed, click on the <em>verify</em> button. You may be presented with an <em>add inputs</em> pop-up message if there are variables in the code. If so, click the <em>yes</em> button, then enter a value in the <em>default value</em> column. If all is well, when you click on the <em>function</em> tab, the code you entered will convert to italic font. Now click on the <em>save</em> button and type a name for the function.</p> 
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Tradenav1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: TRADE NAVIGATOR. Here, the code is shown for the indicator OBVM.</p></div>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Tradenav2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 10: TRADE NAVIGATOR. Here, the code is shown for the indicator &ldquo;OBVM signal line.&rdquo;</p></div>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Tradenav3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 11: TRADE NAVIGATOR. Here, the code is shown for the indicator named &ldquo;OBVM above.&rdquo;</p></div>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Tradenav4.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 12: TRADE NAVIGATOR. Here, the code is shown for the indicator named &ldquo;OBVM below.&rdquo;</p></div>
+<p><strong><em>Adding to your chart</em></strong><br>
+Once complete, you can insert these tools onto your chart by opening the <em>charting</em> dropdown menu, selecting the <em>add to chart</em> command, then on the <em>indicators</em> or <em>studies</em> tab, find your named tool, select it, and click on the <em>add</em> button. Repeat this procedure to add additional tools as well if you wish.</p>
+<p>If you have any difficulties creating or using the indicators and/or studies, our friendly technical support staff is happy to help either by phone or by live chat. Happy trading!</p>
+<p class="authorTips">&mdash;Genesis Financial Technologies<br>
+Tech support 719 884-0245<br>
+<a href="https://www.TradeNavigator.com" target="_parent">www.TradeNavigator.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">THE ZORRO PROJECT: APRIL 2020
+</h3></div>
+<p>In his article in this issue, Vitali Apirine proposes a modified on-balance volume indicator (OBVM) by smoothing the original OBV with a 7-day EMA, and applying another 10-day EMA for generating a signal line. According to the author, crossovers and divergences can be used for trade signals. Let&rsquo;s put that to the test.</p>
+<p>Here is the OBVM code in C for the Zorro platform:</p>
+<pre>var OBVM(vars Prices, int Period) 
+{
+ 	vars OBVData = series(OBV(Prices, marketVol()));
+return EMA(OBVData, Period);
+}
+
+var OBVMSignal(vars OBVMData, int Period)
+{
+return EMA(OBVMData, Period);
+}</pre>
+<p>The resulting OBVM and signal curves for the S&amp;P 500 are shown in Figure 13.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Zorro1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 13: ZORRO. Example OBVM and signal curves for the S&amp;P 500 are shown.</p></div>
+<p>Since the OBV follows the sign of price changes, it is strongly correlated to the price curve. We will now test the OBVM&rsquo;s usefulness for trade signals. Following the author&rsquo;s suggestions, we&rsquo;ll use a crossover of the OBVM and the OBVM signal for entering a short or long SPY position. Of course, it&rsquo;s no problem to manually tweak the indicator and signal periods (7 and 10 were used in the example chart) until they produce great results. But that would not work in live trading, so we optimize them with walk-forward analysis. Here is the C script for Zorro that trades SPY on SPX-OBVM crossovers:</p>
+<pre>function run() 
+{
+	BarPeriod = 1440; // daily bars
+
+	assetAdd(&quot;SPX&quot;,&quot;STOOQ:^SPX&quot;); // S&amp;P 500 index, from Stooq
+	assetAdd(&quot;SPY&quot;,&quot;STOOQ:SPY.US&quot;);
+	asset(&quot;SPY&quot;);
+
+	NumWFOCycles = 5; // activate walk forward analysis
+	set(PARAMETERS); // do a parameter optimization
+	int ShortPeriod = optimize(7,3,20);  // optimize periods
+	int LongPeriod = ShortPeriod*optimize(1.3, 1.1, 2.0);
+	
+	asset(&quot;SPX&quot;);
+	vars Prices = series(priceClose());
+	vars OBVMData = series(OBVM(Prices,ShortPeriod));
+	vars OBVMSignals = series(OBVMSignal(OBVMData,LongPeriod));
+
+	asset(&quot;SPY&quot;);
+	if(crossOver(OBVMData,OBVMSignals))
+		enterLong();
+	else if(crossUnder(OBVMData,OBVMSignals))
+		enterShort();
+
+	plot(&quot;OBVM (Mio)&quot;,OBVMData[0]/1000000,NEW|LINE,BLUE);
+	plot(&quot;OBVMSignal&quot;,OBVMSignals[0]/1000000,LINE,RED);
+}</pre>
+<p>The system produces a positive result (a 20% annual return), but the equity curve (the blue bars) is not really convincing (Figure 14).</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Zorro2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 14: ZORRO. The equity curve (blue bars).</p></div>
+<p>We can see that the smoothed OBV crossover system is not superior to a simple SPY buy-and-hold strategy. But the indicator can likely be improved with different signal generation, a better smoothing function than the EMA, and/or adding an anti-whipsaw or trend-detection filter.</p>
+<p>The script for the OBVM indicator and the OBVM trading system can be downloaded from <a href="https://financial-hacker.com/scripts2020.zip" target="_parent">https://financial-hacker.com/scripts2020.zip</a>. The Zorro platform can be downloaded from <a href="https://zorro-project.com/download.php" target="_parent">https://zorro-project.com/download.php</a>.</p>
+<p class="authorTips">&mdash;Petra Volkova<br>
+Zorro Project by oP Group<br>
+<a href="https://www.zorro-project.com" target="_parent">www.zorro-project.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+ <h3 class="newsTitle grey_blue">MICROSOFT EXCEL: APRIL 2020
+</h3></div>
+<p>In his article in this issue, Vitali Apirine takes us on a spin of Joe Granville&rsquo;s on-balance volume (OBV) indicator. Apirine first suggests a look at how well the classic OBV correlates to the price action of a given symbol (Figure 15). This serves as a confidence-building step prior to looking at his modified version of the indicator (OBVM).</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 15: EXCEL, OBV. Here is a look at the correlation between a 20-day classic on-balance volume (OBV) to price action using the example stock symbol NVDA.</p></div>
+<p>OBV calculations can start at any time in the past. The resulting values will change with the starting point and are not particularly important. Our interest lies in the shapes and trends of the OBV plot as a reflection of buying and selling pressures.</p>
+<p>Next, take a look at Apirine&rsquo;s use of OBVM (Figure 16). In this chart, I plot OBVM(7) and use a 10-bar EMA of OBVM as a signal line. Both of these parameters can be altered in the user controls area. In his article, Apirine demonstrates a few variations on these settings.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 16: EXCEL, OBVM(7,10) BULL AND BEAR SIGNALS. Plotted here is an OBVM(7) and a 10-bar EMA of OBVM as a signal line. OBVM crossing above the signal line suggests a bullish change (green) and a cross below is considered a bearish change (red).</p></div>
+<p>OBVM crossing above the signal line suggests a bullish change (green) and a cross below is considered a bearish change (red).</p>
+<p>I find it easier to evaluate these signals and the price action that follows by shading the background for the regions between signals (Figure 17). In a complete trading system with full exit and stop logic, I would terminate the shading at these exit points.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Excel3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 17: EXCEL, OBVM. Using shading in Excel creates the bullish and bearish banding seen here.</p></div>
+<p>Lacking proper exit constructs here, I have allowed the shading run until the next crossover signal.</p>
+<p>Tesla (TSLA) is currently getting attention in the market news (Figure 18). TSLA is a clear example of the trend of OBVM being more important than the actual value of OBVM.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Excel4.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 18: EXCEL. An upward OMBV trend, even in negative territory, is a good sign. The example stock symbol used here is TSLA.</p></div>
+<p>These chart displays can be adjusted by way of the buttons in the clutter control area to the right of the charts. This includes the ability to see the correlation and the OBVM charts at the same time (Figure 19).</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/TT-Excel5.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 19: EXCEL. You can view both the correlation and the OBVM onscreen at the same time by using the buttons in the &ldquo;clutter control&rdquo; area to the right of the chart.</p></div>
+<p>The spreadsheet file can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/code/ObvModified.xlsm" target="_blank">here</a>.To successfully download it, follow these steps:</p>
+
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2020/04/images/code/ObvModified.xlsm">Excel file link</a>, then</li> 
+<li>Select  &ldquo;save as&rdquo; (or  &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+
+<p><strong>POSTSCIPT: &ldquo;ERROR 9&rdquo; IN EXCEL</strong><br>
+On or about January 29, 2020, Yahoo Finance changed the format of the split factor expression used in their historical data downloads. The split expression went from using a slash (/) as in &ldquo;new share number/old share number&rdquo; to using a full colon (:) as in &ldquo;new share number:old share number.&rdquo;</p>
+<p>This caused the then-current version of my VBA code to fail with a &ldquo;Runtime Error 9: subscript out of range&rdquo; message.</p>
+<p><strong><em>Fix for &ldquo;Error 9&rdquo;</em></strong><br>
+For spreadsheets from the September 2018 issue up to the present (<strong><em>note:</em></strong> it&rsquo;s already fixed in this month&rsquo;s spreadsheet), perform the following actions:
+</p>
+<p>Select the <em>debug</em> option to take you into the VBA at the line of code that causes the failure:</p>
+
+<pre>CellArray(C_A_RowNdx, C_A_ColNdx + 1) = SplitFactors(1)</pre>
+
+<p>Two lines above the failing VBA line is a line that reads:</p>
+
+<pre>SplitFactors = Split(CsvColumns(CsvColNdx), &quot;/&quot;)</pre>
+
+<p>In that line, change the slash (/) to a full colon (:). The corrected line should now read:</p>
+
+<pre>SplitFactors = Split(CsvColumns(CsvColNdx), &quot;:&quot;)</pre>
+
+<p>If you are fixing several spreadsheets and do not want to use a failure to find the fix location, you can use VBA&rsquo;s FIND dialog (CTRL-F) to look for the following substring:</p> 
+
+<pre>SplitFactors =</pre>
+
+<p>Do include one space and the equal sign in your FIND string. Then select the &ldquo;current project&rdquo; option. There should only be one instance.</p> 
+<p>Spreadsheets prior to the September 2018 issue do not hard fail for this change; they just get weird results in the split columns of the <em>input price data</em> tab (in other words, it&rsquo;s a soft fail). The reason is that these older spreadsheets used different data retrieval and formatting logic.</p>
+<p>To fix the older spreadsheets, perform the following steps:</p>
+
+<p>In the VBA editor, use FIND (CTRL-F). Select the &ldquo;current project&rdquo; option, and search for the following:</p>
+
+<pre>OtherChar:=&quot;/&quot;</pre>
+
+<p>You are looking for a hit in a line that reads:</p>
+
+<pre>Other:=True, OtherChar:=&quot;/&quot;, _</pre>
+
+<p>This line is part of a multiline block of code starting with a line that reads:</p>
+
+<pre>SplitRange.Offset(0, 1).Resize(SpRows, 1).TextToColumns</pre>
+
+<p>Change the slash to a colon so that the line reads:</p> 
+
+<pre>Other:=True, OtherChar:=&quot;:&quot;, _</pre>
+
+<p class="authorTips">&mdash;Ron McAllister</p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the April 2020 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2020, Technical Analysis, Inc.</p>
+
+</body>
+</html>

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: ETF Rotation Strategy by Markos Katsanos. Contributions from: TradeStation; Wealth-Lab.com; NinjaTrader; Neuroshell Trader; TradingView.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - DECEMBER 2023</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">December 2023</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2023/12/images/TT-Katsanos.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Markos Katsanos&rsquo; article in this issue, &ldquo;Growth Or Value?&rdquo; Here, we present the December 2023 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: December 2023</a></li>
+    <li><a href="#item6" style="color: #FF0029">EasyLanguage Addendum by Markos Katsanos</a></li>
+  <li><a href="#item2">Wealth-Lab.com: December 2023</a></li>
+  <li><a href="#item3">NinjaTrader: December 2023</a></li>
+  <li><a href="#item4">Neuroshell Trader: December 2023</a></li>
+  <li><a href="#item5">TradingView: December 2023</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/TradeStation-New.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: December 2023</h3></div>
+<p>Since market conditions continually change and may favor either growth or value stocks, investors often find themselves at a crossroads. In response to this dilemma, author Markos Katsanos introduces a momentum trading system designed to rotate between these two strategies. He begins by outlining the distinctions between growth and value investing and subsequently presents a system for switching between the two using Vanguard&rsquo;s value and growth ETFs. Since the strategy defaults to use a lookback period of 90 bars, the <em>maximum number of bars study will reference</em> (MaxBarsBack) setting must be increased within the <em>general</em> tab of the <em>strategy properties for all</em> window.</p>
+<pre>
+<b>Strategy: ETF Rotation</b>
+
+// TASC DEC 2023
+// Markos Katsanos
+// &quot;Growth or Value?&quot; 
+// ETF Rotation Strategy
+// Set up weekly chart with 3 data series:
+// Data1 = VUG or VTV 
+// Data2 = VTV or VUG
+// Data3 = SPY
+
+inputs:
+	Coef( 0.2 ),
+	VCoef( 2.5 ),
+	VPeriod( 30 ),
+	RSBARS( 90 ),
+	MARSBARS( 20 ),
+	MAXLOSSPERC( 7 );
+
+constants:
+	VUG( &quot;VUG&quot; ),
+	VTV( &quot;VTV&quot; );
+
+variables:
+	MyVol( 0 ),
+	Inter( 0 ),
+	VInter( 0 ),
+	CutOff( 0 ),
+	VAve( 0 ),
+	VMax( 0 ),
+	MF( 0 ),
+	VC( 0 ),
+	DirectionalVolume( 0 ),
+	VFI( 0 ),
+	Ratio1( 0 ),
+	Ratio2( 0 ),
+	Diff1( 0 ),
+	Diff2( 0 ),    
+	RSMK1( 0 ),
+	RSMK2( 0 ),
+	BUY1( false ),
+	BUY2( false ),
+	SELL1( false ),
+	SELL2( false ),
+	SELL3( false );
+
+if Symbol = VUG then
+begin
+	Ratio1 = Close / Close of Data3;
+	Ratio2 = Close of Data2 / Close of Data3;
+end
+else if Symbol = VTV then
+begin
+	Ratio1 = Close of Data2 / Close of Data3;
+	Ratio2 = Close / Close of Data3;
+end;
+
+if Ratio1[RSBARS] &gt; 0 
+ and Ratio2[RSBARS] &gt; 0 then
+begin 
+	MyVol = IFF( BarType &gt;= 2 and BarType &lt; 5,
+	 Volume, Ticks );
+	Inter = Log(TypicalPrice) - Log(TypicalPrice[1]);
+	VInter = StdDev(Inter, 30);
+	CutOff = Coef * VInter * Close;
+	VAve = Average(MyVol, VPeriod)[1];
+	VMax = VAve * VCoef;
+	VC = MinList(MyVol, VMax);
+	MF = AvgPrice - AvgPrice[1];
+	
+	if MF &gt; CutOff then
+		DirectionalVolume = VC
+	else if MF &lt; -CutOff then
+		DirectionalVolume = -VC
+	else
+		DirectionalVolume = 0;
+    
+	if VAve &lt;&gt; 0 then 
+		VFI = Summation(DirectionalVolume, VPeriod) / VAve;
+	VFI = XAverage(VFI, 2);
+
+	Diff1 = Log(Ratio1) - Log(Ratio1[RSBARS]);
+	Diff2 = Log(Ratio2) - Log(Ratio2[RSBars]);
+	RSMK1 = XAverage(Diff1, 2) * 100;
+	RSMK2 = XAverage(Diff2, 2) * 100;
+
+	BUY1 = Symbol = VUG and RSMK1 &gt; RSMK2 
+ 	 and RSMK1 &gt; Average(RSMK1, MARSBARS);
+	
+	BUY2 = Symbol = VTV and RSMK2 &gt; RSMK1
+	 and RSMK2 &gt; Average(RSMK2, MARSBARS);
+	
+	if (BUY1 OR BUY2) and VFI &gt; 0 then
+		Buy this bar at close;
+
+	SELL1 = Symbol = VUG and RSMK1 &lt; RSMK2 and
+ 	 RSMK1 &lt; Average(RSMK1,MARSBARS) and RSMK1 &lt; RSMK2[1];
+	
+	SELL2 = Symbol = VTV and RSMK2 &lt; RSMK1 and
+	 RSMK2 &lt; Average(RSMK2, MARSBARS) and RSMK2 &lt; RSMK1[1];
+	
+	SELL3 = Close &lt; Average(Close, 50) and 
+ 	 Close &lt; (1 - MAXLOSSPERC / 100) * Close[1];
+ 	 
+ 	if SELL1 or SELL2 or SELL3 then
+		Sell this bar at close;
+end;
+</pre>
+<p>A sample chart is shown in Figure 1.</p> 
+ <div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This TradeStation weekly chart demonstrates the strategy applied to the Vanguard ETF VUG. Data2 is VTV and Data3 is SPY.</p></div>   
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_blank">www.TradeStation.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">EasyLanguage Addendum by Markos Katsanos</h3></div>
+<p>To replicate the trades in the article you should run the strategy on both VUG and VTV and eliminate overlapping trades manually by taking trades on VUG only if there is no open VTV position or vice versa.</p>
+
+<pre>
+{*******************************************************************
+GROWTH OR VALUE? WEEKLY STRATEGY 
+Provided By	: MARKOS KATSANOS 2023
+********************************************************************}
+{For more information see Markos Katsanos's articles in the 
+December 2023 issues of Technical Analysis of Stocks &amp; Commodities magazine.
+The strategy should be applied on VUG or VTV.
+To run the strategy set up a weekly chart with 3 data series:
+Data1 = VUG or VTV 
+Data2 = VTV or VUG
+Data3 = SPY
+Max bars study will reference= 60 
+To replicate the trades in the article you should run the strategy on both VUG and VTV and eliminate overlapping trades manually by taking trades on VUG only if there is no open VTV position or vice versa 
+}
+
+inputs:
+Coef( 0.2 ),VCoef( 2.5 ),VPeriod( 30 ), //VFI VARIABLES
+RSBARS( 15 ),MARSBARS( 20 ), //RELATIVE STRENGTH PERIOD AND MA
+MAXLOSSPERC( 7 ); //STOP LOSS %
+variables:
+MyVol( 0 ),Inter( 0 ),VInter( 0 ),CutOff( 0 ),VAve( 0 ),VMax( 0 ),MF( 0 ),VC( 0 ),DirectionalVolume( 0 ),VFI1( 0 ),
+Ratio1( 0 ),Ratio2( 0 ),Diff1( 0 ),Diff2( 0 ), RSMK1( 0 ),RSMK2( 0 ),BUY1( false ),BUY2( false ),SELL1( false ), STP(FALSE),
+SELL2( false ),SELL3( false ),SYMBOL1( &quot;VUG&quot; ),SYMBOL2( &quot;VTV&quot; );
+if Symbol = SYMBOL1 then begin
+Ratio1 = Close / Close of Data3;
+Ratio2 = Close of Data2 / Close of Data3;end
+else if Symbol = SYMBOL2 then begin
+Ratio1 = Close of Data2 / Close of Data3;
+Ratio2 = Close / Close of Data3;end;
+if Ratio1[RSBARS] &gt; 0  and Ratio2[RSBARS] &gt; 0 then begin 
+//VFI
+MyVol = IFF( BarType &gt;= 2 and BarType &lt; 5, Volume, Ticks );
+Inter = Log(TypicalPrice) - Log(TypicalPrice[1]);
+VInter = StdDev(Inter, 30);
+CutOff = Coef * VInter * Close;
+VAve = Average(MyVol, VPeriod)[1];
+VMax = VAve * VCoef;
+VC = MinList(MyVol, VMax);
+MF = TypicalPrice-TypicalPrice[1];
+if MF &gt; CutOff then
+ DirectionalVolume = VC
+else if MF &lt; -CutOff then DirectionalVolume = -VC
+else
+ DirectionalVolume = 0;
+if VAve &lt;&gt; 0 then 
+VFI1 = Summation(DirectionalVolume, VPeriod) / VAve;
+VFI1 = WAverage(VFI1, 2);
+// RSMK Indicator
+Diff1 = Log(Ratio1) - Log(Ratio1[RSBARS]);
+Diff2 = Log(Ratio2) - Log(Ratio2[RSBars]);
+RSMK1 = XAverage(Diff1, 2) * 100;
+RSMK2 = XAverage(Diff2, 2) * 100;
+STP=Close &lt; Average(Close, 50) and Close &lt;(1-MAXLOSSPERC/100)*Close[1];
+// BUY
+BUY1 = Symbol = SYMBOL1 and RSMK1 &gt; RSMK2 and RSMK1&gt; Average(RSMK1,MARSBARS);
+BUY2 = Symbol = SYMBOL2 and RSMK2 &gt; RSMK1
+ and RSMK2 &gt; Average(RSMK2, MARSBARS);
+if (BUY1 ) and VFI1 &gt; 0 AND STP=FALSE then begin
+ Buy (&quot;BUY1&quot;) this bar at close;END;
+ if (BUY2) and VFI1 &gt; 0 AND STP=FALSE then 
+ Buy (&quot;BUY2&quot;) this bar at close;
+//SELL
+IF Symbol = SYMBOL1 and RSMK1 &lt; RSMK2 and  RSMK1 &lt; Average(RSMK1,MARSBARS) and RSMK1 &lt; RSMK2[1]
+then SELL (&quot;SELL1&quot;) THIS BAR AT CLOSE; 
+IF Symbol = SYMBOL2 and RSMK2 &lt; RSMK1 and  RSMK2 &lt; Average(RSMK2, MARSBARS) and RSMK2 &lt; RSMK1[1]
+then SELL (&quot;SELL2&quot;) THIS BAR AT CLOSE; 
+IF Close &lt; Average(Close, 50) and  Close &lt; (1 - MAXLOSSPERC / 100) * Close[1] 
+THEN Sell (&quot;STOP&quot;) this bar at close;
+end;
+
+
+
+</pre>
+
+<p class="authorTips">Markos Katsanos<br>
+<a href="mailto:markos.katsanos@gmail.com">markos.katsanos@gmail.com</a><br>
+<a href="https://mkatsanos.com" target="_blank">https://mkatsanos.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/WealthLab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: December 2023</h3></div>
+<p>In his article in this issue, &ldquo;Growth Or Value?&rdquo;, author Markos Katsanos once again explores his intermarket edge with a rotation-like system that switches between two growth and value ETFs according to market conditions. To assist his trading decisions, he uses two indicators of his own construction to measure relative strength and detect bear markets.</p>
+<p>Fortunately, Wealth-Lab has long included the indicators developed by Markos Katsanos: both the custom <em>relative strength indicator</em> (RSMK) and the <em>volume flow indicator</em> (VFI). As usual, this means that they can be used universally throughout our program features. These include the Building Blocks feature (which offer an easy way to create trading strategies without having to code them), the indicator profiler (which tells how much of an edge an indicator provides), a strategy optimization tool, and many more.</p>
+<p>The chart in Figure 2 demonstrates implementing the trading system on a weekly chart of VUG.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: WEALTH-LAB. This chart shows sample trades signaled by the trading system on a weekly chart of VUG. Data provided by Yahoo! Finance.</p></div>
+<p>Coding in C# for use in Wealth-Lab 8 is shown here:</p>
+<pre>
+using WealthLab.Backtest;
+using System;
+using WealthLab.Core;
+using WealthLab.Data;
+using WealthLab.Indicators;
+using System.Collections.Generic;
+using WealthLab.TASC;
+
+namespace WealthScript1 
+{
+    public class GrowthOrValue : UserStrategyBase
+    {
+		string symbol1 = &quot;VUG&quot;, symbol2 = &quot;VTV&quot;, indexSymbol = &quot;SPY&quot;;
+		BarHistory etf1, etf2, index;
+		RSMK rsmk1, rsmk2;
+		SMA ma1, ma2, etfMA1, etfMA2;
+		VFI vfi1, vfi2;
+		double pctMaxLoss;
+
+		public GrowthOrValue()
+		{
+			AddParameter(&quot;VFI Period&quot;, ParameterType.Int32, 30, 26, 30, 4);
+			AddParameter(&quot;Rel. Strength Bars&quot;, ParameterType.Int32, 15, 13, 15, 2);
+			AddParameter(&quot;Rel. Strength MA Bars&quot;, ParameterType.Int32, 20, 15, 25, 5);
+			AddParameter(&quot;MA Period&quot;, ParameterType.Int32, 30, 20, 100, 10);
+			AddParameter(&quot;Stop Loss&quot;, ParameterType.Int32, 7, 5, 9, 2);
+		}
+		
+		public override void Initialize(BarHistory bars)
+        {
+			int vfiPeriod = Parameters[0].AsInt;
+			int rsBars = Parameters[1].AsInt;
+			int maRSBars = Parameters[2].AsInt;
+			int maPeriod = Parameters[3].AsInt;
+			double Coef = 0.2;
+			pctMaxLoss = (1.0 - Parameters[4].AsInt / 100d);
+				
+			etf1 = GetHistory(bars, symbol1);
+			etf2 = GetHistory(bars, symbol2);
+			index = GetHistory(bars, indexSymbol);
+			etfMA1 = SMA.Series(etf1.Close, 50);
+			etfMA2 = SMA.Series(etf2.Close, 50);
+
+			rsmk1 = RSMK.Series(etf1, indexSymbol, rsBars);
+			rsmk2 = RSMK.Series(etf2, indexSymbol, rsBars);
+			ma1 = SMA.Series(rsmk1, maRSBars);
+			ma2 = SMA.Series(rsmk2, maRSBars);
+
+			vfi1 = VFI.Series(etf1, vfiPeriod, maPeriod, cutoff: default, curtailCoeff: Coef);
+			vfi2 = VFI.Series(etf2, vfiPeriod, maPeriod, cutoff: default, curtailCoeff: Coef);
+
+			PlotBarHistory(etf1, &quot;etf1&quot;);
+			PlotBarHistory(etf2, &quot;etf2&quot;);
+
+			PlotIndicatorLine(rsmk1);
+			PlotIndicatorLine(rsmk2);
+			PlotIndicatorLine(ma1);
+			PlotIndicatorLine(ma2);			
+			PlotIndicatorLine(vfi1);
+			PlotIndicatorLine(vfi2);
+		}
+
+        public override void Execute(BarHistory bars, int idx)
+        {
+            if (!HasOpenPosition(bars, PositionType.Long))
+            {
+				var buy1 = (rsmk1[idx] &gt; rsmk2[idx]) &amp;&amp; (rsmk1[idx] &gt; ma1[idx]) &amp;&amp; (vfi1[idx] &gt; 0);
+				var buy2 = (rsmk2[idx] &gt; rsmk1[idx]) &amp;&amp; (rsmk2[idx] &gt; ma2[idx]) &amp;&amp; (vfi2[idx] &gt; 0);
+				var Buy = (buy1 || buy2);
+				if(Buy)
+					PlaceTrade(buy1 ? etf1 : buy2 ? etf2 : null, TransactionType.Buy, OrderType.Market);
+            }
+            else
+            {
+				/* first ETF's exits */
+				if ((rsmk1[idx] &lt; rsmk2[idx]) &amp;&amp; (rsmk1[idx] &lt; ma1[idx]) &amp;&amp; (rsmk1[idx] &lt; rsmk2[idx - 1]))
+					PlaceTrade(etf1, TransactionType.Sell, OrderType.Market);
+
+				if(etf1.Close[idx] &lt; etfMA1[idx])
+					PlaceTrade(etf1, TransactionType.Sell, OrderType.Stop, etf1.Close[idx - 1] * pctMaxLoss);
+
+	            /* second ETF's exits */
+				if ((rsmk2[idx] &lt; rsmk1[idx]) &amp;&amp; (rsmk2[idx] &lt; ma2[idx]) &amp;&amp; (rsmk2[idx] &lt; rsmk1[idx - 1]))
+					PlaceTrade(etf2, TransactionType.Sell, OrderType.Market);
+
+				if(etf2.Close[idx] &lt; etfMA2[idx])
+					PlaceTrade(etf2, TransactionType.Sell, OrderType.Stop, etf2.Close[idx - 1] * pctMaxLoss);
+            }
+        }
+	}
+}
+</pre>
+<p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_blank">www.wealth-lab.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+ <p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: December 2023</h3></div>
+<p>The RSMK indicator and ETF switching system presented in the article &ldquo;Growth Or Value?&rdquo; in this issue by Markos Katsanos is available for download at the following link for NinjaTrader 8:</p>
+
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/December2023SCNT8.zip" target="_blank">www.ninjatrader.com/SC/December2023SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the file.</p>
+<p>A sample chart displaying the indicators and switching system is shown in Figure 3. Note that the exit logic used affects when entry orders are placed, and therefore affects the trade signals. In this example chart implementation, more trades are signaled compared with the trades shown in the article.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: NINJATRADER. This sample chart displays the RSMK indicators and switching system. The exit logic used affects when entry orders are placed, and in this example chart implementation, more trades are signaled than in the article.</p></div>
+<p class="authorTips">&mdash;NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_blank">www.ninjatrader.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: December 2023</h3></div>
+<p>The ETF rotation strategy described by Markos Katsanos in his article in this issue, titled &ldquo;Growth Or Value?&rdquo;can be easily implemented in NeuroShell Trader. Select &ldquo;new indicator&rdquo; from the <em>insert</em> menu and use the indicator wizard to create the following indicators:</p>
+<pre>
+Relative Strength Indicator:
+RSMK:      	Mul2( ExpAvg( Momentum( Ln( Divide( Close, S&amp;P500 Close) ), 90), 3), 100)
+
+Volume Flow Indicator:
+TYPICAL:	Avg3 ( High, Low, Close)
+CUTOFF:	Multiply3 ( 0.2, StndDev ( Momentum (Ln (TYPICAL),1), 30 ), Close )
+VAVE:	LagAvg ( Volume, 1, 130 )
+VC:	Min2 ( Volume, Multiply2 ( 2.5, VAVE ) )
+MF :	Momentum (TYPICAL, 1 )
+VFI:	Divide ( Sum( IfThenIfThenElse ( A&gt;B(MF,CUTOFF), VC, A&lt;B(MF, Negative(CUTOFF)), Negative(VC), 0 ), 130 ), VAVE )
+
+</pre>
+<p>To create a rotation trading system on a chart with a chart page for each of the two ETFs, select &ldquo;new trading strategy&rdquo; from the <em>insert</em> menu and enter the following in the appropriate locations of the trading strategy wizard:</p>
+<pre>
+BUY LONG CONDITIONS (All of which must be true):
+	RSMK = ChartPageMax ( RSMK )
+	A&gt;B ( RSMK, MovAvg( RSMK, 20 )
+	A&gt;B ( VFI, 0 )
+
+SELL LONG CONDITIONS (1 of which must be true): 
+	AND4 ( A=B ( RSMK, ChartPageMin ( RSMK ) )
+		A&lt;B ( RSMK, MovAvg( RSMK, 20 )
+A&lt;B ( RSMK, Lag( ChartPageMin ( RSMK ) ), 1 )
+A&gt;B ( VFI, 0 ) )
+	AND2 ( A&lt;B( Close, MovAvg(Close,50 ), 
+		A&lt;B ( Close, Multiply( 0.97, Lag(Close,1) )
+</pre>
+<p>After entering the system conditions, you can also choose whether or not the parameters should be optimized. After backtesting the trading strategy, use the <em>detailed analysis</em> button to view the backtest and trade-by-trade statistics for the system.</p>
+    <div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: NEUROSHELL TRADER. This NeuroShell Trader chart shows the RSMK indicator and trading system.</p></div>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_blank">www.neuroshell.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+ <p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/TradingView.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: December 2023</h3></div>
+<p>Here is TradingView Pine Script code implementing the rotation strategy for trading value and growth ETFs, as presented in Markos Katsanos&rsquo; article in this issue titled &ldquo;Growth or Value?&rdquo;</p>
+<pre>
+//  TASC Issue: December 2023 - Vol. 41, Issue 13
+//     Article: Growth or Value?
+//  Article By: Markos Katsanos
+//    Language: TradingView's Pine Script® v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//&#64;version=5
+string it = 'TASC 2023.12 Growth and Value Switching System'
+string st = 'GoV'
+indicator(it, st, true)
+
+
+// --- Constants ---
+string it0  = 'Growth Equity'
+string it1  = 'Value Equity'
+string it2  = 'RS Reference Index'
+string it3  = 'RS Period'
+string it4  = 'RS MA Period'
+string it5  = 'VFI Period'
+string it6  = 'Stop-loss, %'
+color  ic1  = #C5D7F8
+color  ic2  = #324B76
+color  ic3  = #8BB0F2
+color  ic4  = #D8E5FA
+color  ic5  = #F1F5FD
+
+
+// --- Inputs ---
+string iSym1    = input.symbol('VUG', it0)
+string iSym2    = input.symbol('VTV', it1)
+string iSymI    = input.symbol('SPY', it2)
+int iRSBars     = input.int(15,       it3)
+int iMABars     = input.int(20,       it4)
+int iPeriod     = input.int(30,       it5)
+float iMaxLossP = input.float(7.0,    it6)
+
+
+// --- Functions ---
+// &#64;function Custom Relative Strength Indicator (RSMK)
+// &#64;param base     Input time series
+// &#64;param im       Reference time series
+// &#64;param bars     N bars for RS calculation
+// &#64;param sk       Smoothing constant
+// &#64;returns        Relative Strength
+RS (float base, float im, int bars, int sk=2) =&gt;
+    float r12 = base / im
+    float rs1 = math.log(r12) - math.log(nz(r12[bars], 0.0))
+    ta.ema(rs1, sk) * 100.0
+
+
+// &#64;function Custom Volume Flow Indicator (VFI)
+// &#64;param avg        Input time series (hlc3)
+// &#64;param vol        Input time series (volume)
+// &#64;param period     N bars for VFI calculation
+// &#64;param Coef       VFI coefficient
+// &#64;param VCoef      Volume cutoff 
+// &#64;returns          Volume Flow Indicator
+VFI (float avg, float vol, int period, 
+     float Coef=0.2, float VCoef=2.5, int smooth=2) =&gt;
+    //
+    float inter   = math.log(avg) - math.log(nz(avg[1]))
+    float Cuttoff = Coef * ta.stdev(inter, 30) * close
+    float Vave    = nz(ta.sma(volume, period)[1], 1.0)
+    float Vc      = math.min(volume, Vave * VCoef)
+    float MF      = ta.change(avg)
+    float VCP = switch
+        MF &gt; Cuttoff    =&gt;  Vc
+        MF &lt; -Cuttoff   =&gt; -Vc 
+        =&gt;                  0.0
+    float vfi1 = math.sum(VCP, period) / Vave
+    ta.wma(vfi1, smooth)
+
+
+// --- Calculations ---
+float ci = request.security(iSymI, timeframe.period, close)
+float c1 = request.security(iSym1, timeframe.period, close)
+float h1 = request.security(iSym1, timeframe.period, hlc3)
+float v1 = request.security(iSym1, timeframe.period, volume)
+float c2 = request.security(iSym2, timeframe.period, close)
+float h2 = request.security(iSym2, timeframe.period, hlc3)
+float v2 = request.security(iSym2, timeframe.period, volume)
+
+
+float rsmk1 = RS(c1, ci, iRSBars, 2)
+float rsmk2 = RS(c2, ci, iRSBars, 2)
+float vfi   = VFI(h1, v1, iPeriod, 0.2, 2.5)
+float mars1 = ta.sma(rsmk1, iMABars)
+float mars2 = ta.sma(rsmk2, iMABars)
+float dist = 2.0 * ta.atr(10)
+
+
+// --- Trade Signals ---
+var string opPos = ''
+// Long: 
+bool long1 = opPos == ''    and rsmk1 &gt; rsmk2 and 
+             rsmk1 &gt; mars1  and vfi &gt; 0.0
+bool long2 = opPos == ''    and rsmk2 &gt; rsmk1 and 
+             rsmk2 &gt; mars2  and vfi &gt; 0.0
+bool long  = long1 or long2
+// Exit:
+bool exit1 = opPos == iSym1 and rsmk1 &lt; rsmk2 and 
+             rsmk1 &lt; mars1  and rsmk1 &lt; rsmk2[1]
+bool exit2 = opPos == iSym2 and rsmk2 &lt; rsmk1 and 
+             rsmk2 &lt; mars2  and rsmk2 &lt; rsmk1[1]
+bool SL1   = opPos == iSym1 and 
+             c1 &lt; ta.sma(c1, 50) and 
+             c1 &lt; ((1.0 - iMaxLossP/100) * c1[1])
+bool SL2   = opPos == iSym2 and 
+             c2 &lt; ta.sma(c2, 50) and 
+             c2 &lt; ((1.0 - iMaxLossP/100) * c2[1])
+bool exit  = exit1 or exit2 or SL1 or SL2
+
+
+// Update open position
+opPos := switch 
+    long1 =&gt; iSym1
+    long2 =&gt; iSym2
+    exit  =&gt; ''
+    =&gt;       opPos[1]
+
+
+// Plot
+plotshape(long1, 'L1', shape.triangleup,  location.belowbar, 
+     color.purple, text = 'long Growth',size=size.small)
+plotshape(long2, 'L2', shape.triangleup,  location.belowbar, 
+     color.green,  text = 'long Value', size=size.small)
+plotshape(exit1 or SL1, 'E1',shape.xcross,location.abovebar, 
+     color.purple, text = 'exit Growth',size=size.tiny)
+plotshape(exit2 or SL2, 'E2',shape.xcross,location.abovebar, 
+     color.green,  text = 'exit Value', size=size.tiny)
+
+
+// --- Exploration ----
+var table T = table.new(position.bottom_right,2,8,ic1)
+T.cell(0, 0, 'G&amp;V Switching System', 
+     text_color = #FFFFFF, bgcolor = ic2)
+T.merge_cells(0, 0, 1, 0)
+T.cell(0, 1, 'Created by Markos Katsanos', 
+     bgcolor = ic3)
+T.merge_cells(0, 1, 1, 1)
+T.cell(0, 2, 'Growth Equity:',        bgcolor = ic5)
+T.cell(1, 2, iSym1,                   bgcolor = ic5)
+T.cell(0, 3, 'Value Equity:',         bgcolor = ic5)
+T.cell(1, 3, iSym2,                   bgcolor = ic5)
+T.cell(0, 4, 'RS Growth:')
+T.cell(1, 4, str.format('{0}', rsmk1),bgcolor = ic4)
+T.cell(0, 5, 'RS Value:')
+T.cell(1, 5, str.format('{0}', rsmk2),bgcolor = ic4)
+T.cell(0, 6, 'VFI Growth:')
+T.cell(1, 6, str.format('{0}', vfi),  bgcolor = ic4)
+T.cell(0, 7, 'Current Position:')
+T.cell(1, 7, opPos,                   bgcolor = ic4)
+</pre>
+<p>The indicator is available on TradingView from the PineCodersTASC account:</p>
+
+<p><a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a></p>
+
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: TRADINGVIEW. This demonstrates the growth and value switching system on a chart of the Vanguard Growth ETF.</p></div>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="https://www.TradingView.com" target="_blank">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the December 2023 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2023, Technical Analysis, Inc.</p>
+</body>
+</html>

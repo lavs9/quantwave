@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: One Percent A Week: A High-Probability Weekly Trading Strategy For TQQQ by Dion Kurczek. Contributions from: TradeStation; MetaStock; RealTest; TradingView; NeuroShell Trader; AIQ; NinjaTrader.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - MARCH 2026</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">March 2026</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2026/03/images/TT-Kurczek.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Dion Kurczek&rsquo;s article in this issue, &ldquo;One Percent A Week: A High-Probability Weekly Trading Strategy For TQQQ.&rdquo; Here, we present the March 2026 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><p>Wealth-Lab code is provided by Dion Kurczek in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: March 2026</a></li>
+  <li><a href="#item2">MetaStock: March 2026</a></li>
+  <li><a href="#item3">RealTest: March 2026</a></li>
+  <li><a href="#item4">TradingView: March 2026</a></li>
+  <li><a href="#item5">NeuroShell Trader: March 2026</a></li>
+  <li><a href="#item6">AIQ: March 2026</a></li>
+  <li><a href="#item7">NinjaTrader: March 2026</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: March 2026</h3></div>
+ <p>In the article &ldquo;One Percent A Week: A High-Probability Weekly Trading Strategy For TQQQ, Part 1&rdquo; in this issue, Dion Kurczek introduces a rules-based strategy designed to capture rebounds in TQQQ after early-week pullbacks. The strategy waits for a 1% dip below the week&rsquo;s open, enters with a limit order, and exits either at a 1% profit, breakeven after a 0.5% drawdown, or at the end of the week.</p>
+<p>The EasyLanguage implementation shown here closely mirrors the Wealth-Lab strategy, using weekday comparisons to detect the start of the week and assuming Friday as the final trading day by exiting at the close if neither the target nor breakeven has been reached. This simplifies the logic but does not account for holiday-shortened weeks, where Friday may not be the actual last trading session. To more accurately track intraday price movements, the strategy has been applied to a 1-minute chart.</p>
+<pre>
+<strong>Strategy: Reversion Index</strong>
+{
+	TASC MAR 2026
+	One Percent A Week: A HighProbability Weekly Trading
+	Strategy For TQQQ
+	Dion Kurczek
+}
+
+inputs:
+	EntryMult( 0.99 ),
+	TargetMult( 1.01 ),      
+	BETriggerMult( 0.995 );  
+       
+variables:
+	WeekStartTrades( 0 ),
+	WeekStartDate( 0 ),
+	EntPrice( 0 ),
+	OpenOfWeek( 0 ),
+	TargetPrice( 0 ),
+	BETrigger( 0 ),
+	IsBEActive( false );
+
+if DayOfWeek( Date ) &lt; DayOfWeek( Date[1] ) 
+ and Date &lt;&gt; WeekStartDate then
+begin
+	WeekStartDate = Date;
+	WeekStartTrades = TotalTrades;
+	OpenOfWeek = Open;
+	EntPrice = OpenOfWeek * EntryMult;
+	TargetPrice = EntPrice * TargetMult;
+	BETrigger = EntPrice * BETriggerMult;
+	IsBEActive = false;
+end;
+
+if Date &gt;= WeekStartDate and WeekStartTrades = TotalTrades 
+ and MarketPosition = 0 then
+begin
+	Buy (&quot;1% Dip&quot;) next bar at EntPrice limit;
+end
+else if MarketPosition = 1 then
+begin
+	if Low &lt;= BETrigger then
+		IsBEActive = true;
+
+	if IsBEActive then
+		Sell (&quot;BrkEven&quot;) next bar at EntPrice limit
+	else
+		Sell (&quot;Target&quot;) next bar at TargetPrice limit;
+
+	if DayOfWeek( Date ) = 5 then
+		SetExitOnClose;
+end;
+</pre>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. Shown is an example TradeStation 1-minute chart of TQQQ from June 30, 2025, illustrating the strategy in action with an entry on a 1% pullback from the weekly open and an exit at the 1% target.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="http://www.TradeStation.com" target="_blank">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Metastock.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">MetaStock: March 2026</h3></div>
+ <p>Dion Kurczek&rsquo;s article in this issue, &ldquo;One Percent A Week: A High-Probability Weekly Trading Strategy For TQQQ,&rdquo; introduces a trading strategy for TQQQ. Here are some entry and exit signal formulas to create an expert advisor in MetaStock based on this strategy:</p>
+<pre>
+<b>Buy Signal:</b>
+{buy}
+nw:=ROC(DayOfWeek(),1,$)&lt;0;
+Omon:= ValueWhen(1, nw, O);
+ePrice:= Int(100*(Omon * 0.99))/100; {truncates price to 2 decimal places}
+sPrice:= ePrice * 0.995;
+tPrice:= ePrice * If(LowestSince(1,nw, L)&lt;sPrice, 1, 1.01);
+hExit:= DayOfWeek() = 5 AND Hour()= 16; {hard exit on Friday Close}
+
+Track:= 
+If(nw, 0, {reset tracking for the start of a new week}
+If(PREV =0, {only look for trades if not already in one}
+If((L&lt;=ePrice) AND (hExit=0), 1, 0 ), {initiates a trade if the entry price is hit}
+If(H &gt;= tPrice, -1,
+If(hExit, -2, PREV))));
+Cross( track, 0.5)
+
+
+<b>Exit Signal:</b>
+{exitl}
+nw:=ROC(DayOfWeek(),1,$)&lt;0;
+Omon:= ValueWhen(1, nw, O);
+ePrice:= Int(100*(Omon * 0.99))/100; {truncates price to 2 decimal places}
+sPrice:= ePrice * 0.995;
+tPrice:= ePrice * If(LowestSince(1,nw, L)&lt;sPrice, 1, 1.01);
+hExit:= DayOfWeek() = 5 AND Hour()= 16; {hard exit on Friday Close}
+
+Track:= 
+If(nw, 0, {reset tracking for the start of a new week}
+If(PREV =0, {only look for trades if not already in one}
+If((L&lt;=ePrice) AND (hExit=0), 1, 0 ), {initiates a trade if the entry price is hit}
+If(H &gt;= tPrice, -1,
+If(hExit, -2, PREV))));
+Cross( 0, track )
+</pre>
+<p class="authorTips">&mdash;William Golson<br>
+MetaStock Technical Support<br>
+<a href="http://www.MetaStock.com" target="_blank">www.MetaStock.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Realtest.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">RealTest: March 2026</h3></div>
+ <p>Following is coding for use in the RealTest platform based on Dion Kurczek&rsquo;s article in this issue, &ldquo;One Percent A Week: A High-Probability Weekly Trading Strategy For TQQQ.&rdquo;</p>
+<pre>
+Notes:
+	Dion Kurczek &quot;One Percent A Week: A HighProbability Weekly Trading Strategy For TQQQ (part 1)&quot;
+	TASC March 2026
+	
+Import:
+	DataSource:	Norgate
+	IncludeList:	TQQQ, SPY
+	StartDate:	2010-02-11 // first day of TQQQ
+	EndDate:	Latest
+	SaveAs:	TQQQ.rtd
+	
+Settings:
+	DataFile:	TQQQ.rtd
+	StartDate:	Earliest
+	EndDate:	2025-11-30 // to match author's results
+	BarSize:	Daily
+	AccountSize:	100000
+
+Strategy: TQQQ_ONE_PCT
+	Side:	Long
+	EntrySetup:	Symbol = $TQQQ and not thisWeekEntry
+	EntryLimit:	0.99 * thisWeekOpen
+	ExitLimit:	Select(BarsHeld = 0, 0, // no exit limit on entry day
+			C &gt; 0.995 * FillPrice, Reason(1.01 * FillPrice, &quot;1% profit&quot;), // 1% target when near break even
+			Reason(FillPrice, &quot;breakeven&quot;)) // else breakeven target
+	ExitRule:	Select(EndOfWeek, &quot;end of week&quot;)
+	ExitTime:	ThisClose // hard exit at close of last trading day of week if no ExitLimit fills
+	
+TestData:
+	thisWeekOpen:	if(EndOfWeek, NextOpen, thisWeekOpen[1]) // look ahead to open for Monday's order or use Monday's open
+	thisWeekEntry:	if(EndOfWeek, 0, thisWeekEntry[1] or Extern(&#64;TQQQ_ONE_PCT, Shares &gt; 0)) // enforce only one entry per week
+		
+Benchmark: SPY
+	Side:	Long
+	EntrySetup:	Symbol = $SPY
+	
+Charts:
+	thisWeekOpen:	thisWeekOpen[1]
+	</pre>
+<div class="figBorder">
+<img src="images/TT-Realtest.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: REALTEST. This example chart demonstrates an implementation of the &ldquo;one percent a week&rdquo; strategy on TQQQ. </p></div>
+<p class="authorTips">&mdash;Marsten Parker<br>
+MHP Trading<br>
+<a href="mailto:mhp@mhptrading.com">mhp@mhptrading.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: March 2026</h3></div>
+ <p>The TradingView Pine Script code presented here implements the &ldquo;one percent a week&rdquo; trading strategy for TQQQ as described by Dion Kurczek in his article in this issue, &ldquo;One Percent A Week: A High-Probability Weekly Trading Strategy For TQQQ.&rdquo; </p>
+<pre>
+//  TASC Issue: March 2026
+//     Article: Trading Snapbacks In A Leveraged ETF
+//              One Percent A Week: A High-Probability 
+//              Weekly Trading Strategy For TQQQ - Part 1
+//  Article By: Dion Kurczek
+//    Language: TradingView's Pine Script® v6
+// Provided By: PineCoders, for tradingview.com
+
+//&#64;version=6
+strategy(&quot;TASC 2026.03 One Percent A Week&quot;, &quot;1%/W&quot;, overlay = true, 
+  initial_capital = 1000, 
+  default_qty_type = strategy.percent_of_equity, 
+  default_qty_value = 10)
+
+
+//#region 1. Observe Weekly open price on monday.
+var float wOpen = na
+var float pt = na
+
+bool newSession = 
+  dayofweek == dayofweek.monday and session.isfirstbar_regular
+
+if newSession
+    wOpen := open
+    log.info(&quot;\nNew Week\n Open Price: &quot; + str.tostring(open))
+
+
+//#endregion
+
+//#region 2. Set limit buy at a 1% dip from Monday open.
+
+down1 = wOpen * 0.99
+
+if newSession
+    strategy.entry(&quot;buy&quot;, 
+    strategy.long, 
+    limit = down1)
+    log.info(&quot;\nLimit Buy set: &quot; + str.tostring(down1))
+    pt := na
+
+//#endregion
+
+//#region 3. Once filled, set a 1% target on the next day.
+
+newFill = ta.change(strategy.position_size) != 0
+var sendPT = false
+var beSent = false
+
+if strategy.position_size &gt; 0 and newFill
+    sendPT := true
+    beSent := false
+    log.info(&quot;\nOrder Filled &#64; &quot; + str.tostring(
+      strategy.opentrades.entry_price(0)))
+
+if sendPT == true and session.isfirstbar_regular and not beSent
+    strategy.exit(&quot;profit&quot;, 
+      &quot;buy&quot;, 
+      limit = strategy.position_avg_price*1.01, 
+      oca_name = &quot;Order&quot;,
+      comment = &quot;Profit&quot;)
+    
+    pt := strategy.position_avg_price*1.01
+    sendPT := false
+    log.info(&quot;\nNext Day \nLimit Exit set: &quot; + str.tostring(pt))
+
+//#endregion
+
+//#region 4. Risk management: Exit at breakeven after a -0.5%.
+
+bet = strategy.position_avg_price*0.995 // Break Even Trigger
+
+if low &lt; bet and not beSent
+    strategy.exit(&quot;profit&quot;,
+      &quot;buy&quot;, 
+      limit = strategy.position_avg_price, 
+      oca_name = &quot;Order&quot;,
+      comment = &quot;Break Even&quot;)
+    
+    beSent := true
+    pt := strategy.position_avg_price
+    log.info(&quot;\nBreak Even Triggered&quot;)
+    
+//#endregion
+
+//#region 5. Hard Exit at Friday close.
+
+if dayofweek == dayofweek.friday and 
+      strategy.position_size &gt; 0 and 
+      session.islastbar_regular and barstate.isconfirmed
+    
+    strategy.close_all(&quot;End Of Week&quot;, immediately = true)
+    log.info(&quot;\nEnd of Week Closing Out&quot;)
+
+//#endregion
+
+//#region Exit Fill Logs
+
+if newFill and strategy.position_size == 0
+    switch
+        beSent =&gt; log.info(&quot;\nBreak Even Filled &#64; &quot; + 
+          str.tostring(strategy.closedtrades.exit_price(
+          strategy.closedtrades-1)))
+        =&gt; log.info(&quot;\nProfit Target Filled &#64; &quot; + 
+          str.tostring(strategy.closedtrades.exit_price(
+          strategy.closedtrades-1)))
+
+//#endregion
+
+//#region Plots
+
+plot(newSession?na:wOpen, 
+  &quot;Weehly Open&quot;, 
+  color.yellow, 
+  style = plot.style_linebr)
+
+plot(newSession?na:down1,
+  &quot;Weekly 1% Dip&quot;, 
+  color.blue, 
+  style = plot.style_linebr, 
+  linestyle = plot.linestyle_dashed)
+
+plot(strategy.position_size &gt; 0?bet:na,
+  &quot;0.5% Drawdown&quot;, 
+  color.rgb(255,0,0),
+  style = plot.style_linebr, 
+  linestyle = plot.linestyle_dashed)
+
+plot(strategy.position_size &gt; 0?pt:na, 
+  &quot;Profit Target&quot;, 
+  color.rgb(0,255,0), 
+  style = plot.style_linebr, 
+  linestyle = plot.linestyle_solid)
+
+//#endregion
+</pre>
+<p>An example implementation and output are shown in Figure 3.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: TRADINGVIEW. This shows an example of the strategy on TQQQ.</p></div>
+<p>The code is available on TradingView from the PineCodersTASC account at: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p> 
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="http://www.TradingView.com" target="_blank">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NeuroShell Trader: March 2026</h3></div>
+ <p>The &ldquo;one percent a week&rdquo; strategy described in Dion Kurczek&rsquo;s article in this issue, &ldquo;One Percent A Week: A High-Probability Weekly Trading Strategy For TQQQ,&rdquo; can be easily implemented in NeuroShell Trader on an intraday chart. Select &ldquo;New indicator …&rdquo; from the insert menu and use the indicator wizard to create the following indicators:</p>
+<pre>
+MOPEN:	SelectiveLag( Open, And2(Monday Flag(Date), Not( Lag(Monday Flag(Date), 1))	
+MLIMIT:	CrossBelow( Close, Mul2(0.99, MOPEN))
+MCOUNT:	CumSum( MLIMIT, 0 )
+MCOUNT2:	Sub( MCOUNT,SelectiveLag(MCOUNT, MOPEN , 1) )
+</pre>
+<p>To create the &ldquo;one percent a week&rdquo; trading system, select <em>New trading strategy</em> … from the <em>insert</em> menu and enter the following in the appropriate locations of the trading strategy wizard:</p>
+<pre>
+BUY LONG CONDITIONS: [All of which must be true]
+     MLIMIT
+     A&lt;=B( MCOUNT2, 1 )
+
+SELL LONG CONDITIONS: [1 of which must be true]
+     PriceTarget%(Trading Strategy,1)
+     IfThenElse( A&lt;B(MinValEntryFill(Trading Strategy,Close,1), Mul2(0.995,EntryPrice(0))), 
+CrossAbove(Close,EntryPrice(0)), 0)
+     And2(Friday Flag(Date),Time&gt;=X(Date,3:50:00 PM))
+</pre>
+<p>After entering the system conditions, you can also choose whether the parameters should be optimized. After backtesting the trading strategy, use the <em>detailed analysis</em> button to view the backtest and trade-by-trade statistics for the system.</p>
+<p>An example chart is shown in Figure 4.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: NEUROSHELL TRADER. This example chart demonstrates the &ldquo;one percent a week&rdquo; trading system and a sample equity curve.</p></div>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_blank">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">AIQ: March 2026</h3></div>
+ <p>AIQ code based on Dion Kurczek&rsquo;s article in this issue, &ldquo;One Percent A Week: A High-Probability Weekly Trading Strategy For TQQQ,&rdquo; for trading TQQQ is provided in the code file below. Note that the code provided does not implement the breakeven exit, so once a trade is entered, it is held until it hits the profit target or Friday&rsquo;s close if the profit target is never hit.</p>
+<pre>
+! One Percent A Week (TQQQ)
+! Author: Dion KUrczek, TASC March 2026
+! Coded by Richard Denning, 1/16/26
+
+!*********BREAK EVEN EXIT NOT IMPLEMENTED*********
+
+! Abbreviations:
+O is [open].
+L is [low].
+H is [high].
+C is [close].
+OSD is offsettodate(month(),day(),year()).
+
+! Return values for DayOfWeek() function:
+Mon if DayOfWeek()  = 0.   
+Tues if DayOfWeek()  = 1.
+Wed if DayOfWeek()  = 2.
+Thur if DayOfWeek()  = 3.
+Fri if DayOfWeek()  = 4.   
+
+! Get the open on Monday:
+Mon_os is scanany( DayOfWeek()  = 0, 5) then OSD.
+O_Mon is valresult(O,^Mon_os).
+
+! Get the close on Friday:
+Fri_os is scanany( DayOfWeek()   = 4, 5) then OSD.
+C_Fri is valresult(C, ^Fri_os).
+
+! Limit and profit targets:
+LimEnt is O_Mon * 0.99.    ! Enter at Limit
+PT is LimEnt * 1.01.           ! Exit at profit target
+
+ExitPrice is iff(Mon and H&gt;=PT,PT,
+	iff(Tues and H&gt;=PT,PT,
+	iff(Wed and H&gt;=PT,PT,
+	iff(Thur and H&gt;=PT,PT,
+	iff(Fri and H&gt;=PT,PT,^C_Fri))))).
+
+CountEntries is countof(L &lt;= LimEnt, DayOfWeek() + 1). 
+CountExits is countof(H &gt;= PT, DayOfWeek()  + 1).
+
+ ! Limit trades to one per week:
+Buy if L &lt;= LimEnt and CountEntries = 1 and CountExits &lt;= 1. 
+
+!Exit at profit target or Friday's close:
+Sell if H &gt;= PT or DayOfWeek()=4.
+
+ShowValues if 1.
+</pre>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:rdencpa@gmail.com">rdencpa@gmail.com</a><br>
+for AIQ Systems</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: March 2026</h3></div>
+<p>The following NinjaTrader link provides a downloadable file to help implement some ideas from Dion Kurczek&rsquo;s article in this issue, &ldquo;One Percent A Week: A High-Probability Weekly Trading Strategy For TQQQ&rdquo;:</p> 
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/March2026SCNT8.zip" target="_blank">www.ninjatrader.com/SC/March2026SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import it into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the source code in NinjaTrader by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the file.
+</p>
+<p>A sample chart is shown in Figure 5.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: NINJATRADER. The trading system discussed is demonstrated on a chart of TQQQ.</p></div>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">&mdash;NinjaTrader_Helom<br>
+NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_blank">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the March 2026 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+All rights reserved. &copy;&nbsp;Copyright&nbsp;2026, Technical Analysis, Inc.</p>
+
+</body>
+</html>

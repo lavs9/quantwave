@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: Recurring Phase Of Cycle Analysis by John Ehlers. Contributions from: TradeStation; Wealth-Lab.com; NinjaTrader; TradingView; Neuroshell Trader; The Zorro Project; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - NOVEMBER 2020</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">November 2022</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2022/11/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John Ehlers&rsquo; article in the October issue, &ldquo;Recurring Phase Of Cycle Analysis.&rdquo; Here, we present the November 2022 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: November 2022</a></li>
+  <li><a href="#item2">Wealth-Lab.com: November 2022</a></li>
+  <li><a href="#item3">NinjaTrader: November 2022</a></li>
+  <li><a href="#item4">TradingView: November 2022</a></li>
+  <li><a href="#item5">Neuroshell Trader: November 2022</a></li>
+  <li><a href="#item6">The Zorro Project: November 2022</a></li>
+  <li><a href="#item7">Microsoft Excel: November 2022</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-New.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: November 2022</h3></div>
+<p>In his article in the October 2022 issue of S&C, &ldquo;Recurring Phase Of Cycle Analysis,&rdquo; author John Ehlers explains how cycle analysis for technical analysis has advanced a long way over the years. In earlier years, cycle analysis was primitive and limited. In his October 2022 article, Ehlers illustrates a phasor as a two-dimensional vector, pinned at the origin, as a means for cycle analysis. (An animated graphic depicting a phasor and its angle as it progresses can be seen on the author&rsquo;s website.) In the course of a cycle, rotation starts at −180 degrees and advances to +180 degrees. Buy and sell signals can be observed when the phase angle crosses −90 and +90 degrees. Note that the study contains commented-out code if one wishes to observe the &ldquo;frequency derived from rate change of phase&rdquo; or the &ldquo;trend state variable.&rdquo; In that case, the phasor indicator plots should be commented out before uncommenting either section.</p>
+<pre>
+<strong>Indicator: Phasor Analysis</strong>
+// TASC NOV 2022
+// Phasor Analysis
+// (C) 2013-2022 John F. Ehlers
+
+inputs:
+	Period(28);
+	
+variables:
+	Signal(0),
+	Count(0), 
+	Sx(0),
+	Sy(0),
+	Sxx(0),
+	Sxy(0),
+	Syy(0),
+	X(0),
+	Y(0),
+	Real(0),
+	Imag(0),
+	Angle(0),
+	DerivedPeriod(0);
+
+Signal = Close;
+//Correlate with Cosine wave having a fixed period
+Sx = 0; 
+Sy = 0; 
+Sxx = 0; 
+Sxy = 0; 
+Syy = 0;
+	
+for Count = 1 to Period 
+begin
+	X = Signal[count - 1];
+	Y = Cosine(360*(count - 1) / Period);
+	Sx = Sx + X;
+	Sy = Sy + Y;
+	Sxx = Sxx + X*X;
+	Sxy = Sxy + X*Y;
+	Syy = Syy + Y*Y;
+end;
+
+if (Period*Sxx - Sx*Sx &gt; 0) 
+ and (Period*Syy - Sy*Sy &gt; 0) then 
+	Real = (Period*Sxy - Sx*Sy) / SquareRoot(
+	(Period*Sxx - Sx*Sx)*(Period*Syy - Sy*Sy));
+
+// Correlate with a Negative Sine wave having a 
+// fixed period 
+Sx = 0; 
+Sy = 0; 
+Sxx = 0; 
+Sxy = 0; 
+Syy = 0;
+
+for count = 1 to Period 
+begin
+	X = Signal[count - 1];
+	Y = -Sine(360*(count - 1) / Period);
+	Sx = Sx + X;
+	Sy = Sy + Y;
+	Sxx = Sxx + X*X;
+	Sxy = Sxy + X*Y;
+	Syy = Syy + Y*Y;
+end;
+
+if (Period*Sxx - Sx*Sx &gt; 0) 
+ and (Period*Syy - Sy*Sy &gt; 0) then 
+
+Imag = (Period*Sxy - Sx*Sy) / 
+ SquareRoot((Period*Sxx - Sx*Sx)*(Period*Syy - Sy*Sy));
+
+// Compute the angle as an arctangent function and 
+// resolve ambiguity
+if Real &lt;&gt; 0 then 
+	Angle = 90 - Arctangent(Imag / Real);
+	
+if Real &lt; 0 then 
+	Angle = Angle - 180;
+	
+// Compensate for angle wraparound
+If AbsValue(Angle[1]) - AbsValue(Angle - 360) &lt; Angle - 
+ Angle[1] and Angle &gt; 90 and Angle[1] &lt; -90 then 
+ 	Angle = Angle - 360;
+
+// Angle cannot go backwards
+if Angle &lt; Angle[1] and ((Angle &gt; -135 and Angle[1] &lt; 
+ 135) or (Angle &lt; -90 and Angle[1] &lt; -90)) then 
+ 	Angle = Angle[1];
+
+// Phasor Indicator
+Plot1(Angle, &quot;Angle&quot;);
+Plot2(0, &quot;Ref&quot;);
+Plot4(90, &quot;90&quot;);
+Plot8(-90, &quot;-90&quot;);
+
+{
+//Frequency derived from rate-change of phase
+Vars: DeltaAngle(0), AvgPeriod(0);
+DeltaAngle = Angle - Angle[1];
+If DeltaAngle &lt;= 0 Then DeltaAngle = DeltaAngle[1]; 
+If DeltaAngle &lt;&gt; 0 Then DerivedPeriod = 360 / DeltaAngle;
+If DerivedPeriod &gt; 60 Then DerivedPeriod = 60;
+Plot9(DerivedPeriod, &quot;&quot;, red, 4, 4);
+}
+{
+//Trend State Variable
+Vars: State(0);
+State = 0;
+If Angle - Angle[1] &lt;= 6 Then Begin
+If Angle &gt;= 90 or Angle &lt;= -90 Then State = 1; 
+If Angle &gt; -90 and Angle &lt; 90 Then State = -1;
+End;
+Plot10(State, &quot;&quot;, red, 4, 4);
+}
+</pre>
+<p>A sample chart is shown in Figure 1.</p> 
+ <div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This shows a TradeStation daily chart of Raytheon Technologies (symbol RTX) with the indicator applied.</p></div>   
+    
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: November 2022</h3></div>
+<p>The group of phasor indicators from John Ehlers&rsquo; article in the October 2022 issue of S&amp;C, &ldquo;Recurring Phase Of Cycle Analysis,&rdquo; has now been added to Wealth-Lab 8, making them available to any tools and extensions automatically. With the phasor trend indicator, creating a trading system by using Wealth-Lab&rsquo;s building blocks feature is hands-down the easiest way to set it up. Thus, we are not providing any code here. A simple rule that could be used in a system is a cross above or below the TrendState indicator. This rule is demonstrated in Figure 2 on a sample chart.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: WEALTH-LAB. This chart demonstrates example trades taken by the sample trading system, applied to a chart of Raytheon stock (RTX) in Wealth-Lab 8.</p></div>
+    <p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: November 2022</h3></div>
+<p>The phasor analysis indicator as presented in John Ehlers&rsquo; article in the October 2022 issue of S&amp;C, &ldquo;Recurring Phase Of Cycle Analysis,&rdquo; is available for download at the following links for NinjaTrader 8 and NinjaTrader 7:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://ninjatrader.com/SC/November2022SCNT8.zip" target="_blank">ninjatrader.com/SC/November2022SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7: </strong><a href="https://ninjatrader.com/SC/November2022SCNT7.zip">ninjatrader.com/SC/November2022SCNT7.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import into NinjaTrader 7, from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the PhasorAnalysis file. You can review the indicator&rsquo;s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the control center window and selecting the PhasorAnalysis file.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, which provides you with the highest performance possible.</p>
+<p>A sample chart displaying the indicator is shown in Figure 3.</p> 
+  <div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: NINJATRADER. The phasor analysis(28) indicator set to the &ldquo;phasor&rdquo; plot type displayed on a daily Raytheon (RTX) chart from April 2021 to March 2022.</p></div>  
+<p class="authorTips">&mdash;Emily Christoph<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: November 2022</h3></div>
+<p>Here is the TradingView Pine Script code implementing the phasor analysis technique described in John Ehlers&rsquo; article in the October 2022 issue of S&amp;C, &ldquo;Recurring Phase Of Cycle Analysis.&rdquo;</p>
+<pre>
+//  TASC Issue: November 2022 - Vol. 40, Issue 12
+//     Article: Recurring Phase Of Cycle Analysis
+//              Using Phasor Analysis To Identify Market Trend
+//  Article By: John Ehlers
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+// As representatives of TradingView members, we sincerely
+// congratulate John Ehlers on his &quot;100th TASC article&quot;. The 
+// immense amount of contributed technical wisdom that Ehlers
+// has graciously provided to so many TASC readers has, is,
+// and will continue to be a treasured mathemagical blessing.
+//
+//                                      WE HONOR &amp; THANK YOU,
+//                                          &quot;PineCoders&quot;
+
+//&#64;version=5
+indicator(title='TASC 2022.11 Phasor Analysis', overlay=false)
+ 
+Phasor (float Signal = close, int Period = 28) =&gt;
+    var float angFreq = 2.0 * math.pi / Period
+    float  Sx  = 0.0,  float  Sxx = 0.0
+    float rSxy = 0.0,  float iSxy = 0.0
+    float rSyy = 0.0,  float iSyy = 0.0
+    float rSy  = 0.0,  float iSy  = 0.0
+    for i=0 to Period-1
+        float tmp = angFreq * i
+        float X   =    Signal[i]
+        float Yr  =  math.cos(tmp)
+        float Yi  = -math.sin(tmp)
+        Sx   += X,         Sxx += X  * X
+        rSxy += X  * Yr,  iSxy += X  * Yi
+        rSyy += Yr * Yr,  iSyy += Yi * Yi
+        rSy  += Yr,       iSy  += Yi
+    float varianceX     = Period *  Sxx -  Sx *  Sx
+    float varianceYr    = Period * rSyy - rSy * rSy
+    float varianceYi    = Period * iSyy - iSy * iSy
+    float covarianceXYr = Period * rSxy -  Sx * rSy
+    float covarianceXYi = Period * iSxy -  Sx * iSy
+    float rDenominator  = varianceX * varianceYr
+    float iDenominator  = varianceX * varianceYi
+    float real = nz(covarianceXYr / math.sqrt(rDenominator))
+    float imag = nz(covarianceXYi / math.sqrt(iDenominator))
+    float angle     = 0.0
+    float prevAngle = nz(angle[1])
+    angle := if real == 0.0
+        prevAngle
+    else
+        90.0 - math.todegrees(math.atan(imag / real))
+    if real &lt; 0.0
+        angle -= 180.0
+    float temp = math.abs(prevAngle) - math.abs(angle - 360.0)
+    if  -90.0 &gt; prevAngle
+     and temp &lt; angle - prevAngle
+     and 90.0 &lt; angle
+        angle -= 360.0
+    if     angle &lt; prevAngle
+     and ((angle &gt; -135.0 and prevAngle &lt;  135)
+     or   (angle &lt; -90.0  and prevAngle &lt; -90.0))
+        angle := prevAngle
+    angle
+
+Analysis (float Angle) =&gt;
+    float deltaAngle = Angle - nz(Angle[1])
+    if deltaAngle &lt;= 0.0
+        deltaAngle := nz(deltaAngle[1])
+    float derivedPeriod = if deltaAngle == 0.0
+        0.0
+    else
+        math.min(60.0, 360.0 / deltaAngle)
+    int state = 0
+    if deltaAngle &lt;= 6.0
+        state := Angle &gt; -90.0 and Angle &lt; 90.0 ? -1 : 1
+    [derivedPeriod, state]
+
+string grp1 = 'Angle Parameters'
+string grp2 = 'Indicator Choices'
+Signal = input.source(close, 'Source', group=grp1)
+Period = input.int   (28,    'Period', group=grp1, minval=5)
+ThresholdUpper = input.int( 90, 'Upper Threshold',    1, 179)
+ThresholdLower = input.int(-90, 'Lower Threshold', -179,  -1)
+
+Indy =   input.string('Angle', 'Indicator Mode', group=grp2,
+                         options=['Angle','Period','State'])
+ChangeRate = input.int(6, 'Change Rate (degrees)', minval=2,
+ tooltip='Intended for use with the State mode', group=grp2)
+
+float phAngle    = Phasor(Signal, Period)
+[dPeriod, Trend] = Analysis(phAngle)
+
+// Phasor Color Wizardry
+var seventeenTwelfths = 17.0 / 12.0
+var seventeenSixths   = 17.0 /  6.0
+colorValue =  phAngle * seventeenSixths
+colorAngle = color.rgb(phAngle &gt; 90.0 ? 255 : phAngle &lt;-90.0 ? 
+   0.0 : seventeenTwelfths * phAngle + 127.5, phAngle &lt;  0.0 ?
+  phAngle &gt; -90.0 ? 255 : colorValue +  510 : phAngle &gt; 90.0 ?
+      0.0 : 255 - colorValue, phAngle &gt; 0.0 ? phAngle &lt; 90.0 ?
+ 0.0 : colorValue - 255 : phAngle &lt; -90.0 ? 255 : -colorValue)
+
+plot(Indy=='Angle'  ? phAngle : na, 'Angle', colorAngle, 3)
+plot(Indy=='Period' ? dPeriod : na, 'DerivPeriod', #FFFF00)
+plot(Indy=='State'  ? Trend   : na, 'TrendState', linewidth=2,
+  color = Trend &gt; 0 ? #00FF00 : Trend &lt; 0 ? #FF0000 : #888800)
+
+hline(  0, 'ZeroLine', #FFFFFF)
+hline(Indy=='Angle' ? ThresholdUpper : na, 'Upper Threshold',
+                              #FF00FF, hline.style_dotted, 2)
+hline(Indy=='Angle' ? ThresholdLower : na, 'Lower Threshold',
+                              #0055FF, hline.style_dotted, 2)
+
+</pre>
+
+<p>The indicator is available on TradingView in the PineCodersTASC account at
+<a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_parent">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart is shown in Figure 4.</p>
+    <div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: TRADINGVIEW. The chart shows John Ehlers&rsquo; phasor analysis trend indicator on a chart of the S&amp;P 500 index.</p></div>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="https://www.TradingView.com" target="_parent">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>  
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: November 2022</h3></div>
+<p>The cycle analysis technique presented in John Ehlers&rsquo; article in the October 2022 issue of S&C, &ldquo;Recurring Phase Of Cycle Analysis,&rdquo; can be easily implemented in NeuroShell Trader using NeuroShell Trader&rsquo;s ability to call external dynamic linked libraries (DLLs). DLLs can be written in C, C++, or Power Basic.</p>
+<p>After moving the code given in the article to your preferred compiler and creating a DLL, you can insert the resulting indicator as follows:</p>
+<ol>
+    <li>Select <em>new indicator</em> from the <em>insert</em> menu.</li> 
+    <li>Choose the <em>External Program &amp; Library Calls</em> category.</li>
+    <li>Select the appropriate <em>External DLL Call</em> indicator.</li>   
+    <li>Set up the parameters to match your DLL.</li>    
+    <li>Select the <em>finished</em> button.</li>       
+</ol>
+
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p> 
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: NEUROSHELL TRADER. This NeuroShell Trader chart demonstrates the phasor indicator, cycle periods and trend state.</p></div>
+    <p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: November 2022</h3></div>
+<p>In his article in the October 2022 issue, titled &ldquo;Recurring Phase Of Cycle Analysis,&rdquo; John Ehlers presents a function for cycle analysis of price curves.</p>
+<p>Zorro platform already contains several cycle analysis functions that are also based on algorithms by Ehlers; however, they are slightly different. For comparing the functions, users can simply replace the phasor function in this code given here with Zorro&rsquo;s native DominantPhase function.</p>
+<p>The function provided here is a straightforward conversion of Ehlers&rsquo; EasyLanguage code from his October 2022 article to the C language:</p>
+<pre>
+var Angle, State, DerivedPeriod;
+
+var phasor(vars Signals,int Period)
+{
+//Correlate with Cosine wave having a fixed period
+  var Sx = 0, Sy = 0, Sxx = 0, Sxy = 0, Syy = 0;
+  int count;
+  for(count = 1; count &lt;= Period; count++) {
+    var X = Signals[count - 1];
+    var Y = cos(2*PI*(count - 1) / Period);
+    Sx += X; Sy += Y;
+    Sxx += X*X; Sxy += X*Y; Syy += Y*Y;
+  }
+  var Real = 0, Imag = 0;
+  if((Period*Sxx - Sx*Sx &gt; 0) &amp;&amp; (Period*Syy - Sy*Sy &gt; 0))
+    Real = (Period*Sxy - Sx*Sy) / sqrt((Period*Sxx - Sx*Sx)*(Period*Syy - Sy*Sy));
+//Correlate with a Negative Sine wave having a fixed period
+  Sx = Sy = Sxx = Sxy = Syy = 0;
+  for(count = 1; count &lt;= Period; count++) {
+    var X = Signals[count - 1];
+    var Y = -sin(2*PI*(count - 1) / Period);
+    Sx += X; Sy += Y;
+    Sxx += X*X; Sxy += X*Y; Syy += Y*Y;
+  }
+  if((Period*Sxx - Sx*Sx &gt; 0) &amp;&amp; (Period*Syy - Sy*Sy &gt; 0))
+    Imag = (Period*Sxy - Sx*Sy) / sqrt((Period*Sxx - Sx*Sx)*(Period*Syy - Sy*Sy));
+//Compute the angle as an arctangent function and resolve ambiguity
+  Angle = 0;
+  if(Real != 0) Angle = 90 - 180/PI*atan(Imag/Real);
+  if(Real &lt; 0) Angle -= 180;
+//compensate for angle wraparound
+  vars Angles = series(Angle,2);
+  if(abs(Angles[1]) - abs(Angle - 360) &lt; Angle - Angles[1] &amp;&amp; Angle &gt; 90 &amp;&amp; Angles[1] &lt; -90)
+    Angle -= 360;
+//angle cannot go backwards
+  if(Angle &lt; Angles[1] &amp;&amp; ((Angle &gt; -135 &amp;&amp; Angles[1] &lt; 135) || (Angle &lt; -90 &amp;&amp; Angles[1] &lt; -9)))
+    Angle = Angles[1];
+  Angles[0] = Angle;
+//Frequency derived from rate-change of phase
+  DerivedPeriod = 0;
+  vars DeltaAngles = series(Angle - Angles[1],2);
+  if(DeltaAngles[0] &lt;= 0) DeltaAngles[0] = DeltaAngles[1];
+  if(DeltaAngles[0] != 0) DerivedPeriod = 360 / DeltaAngles[0];
+  if(DerivedPeriod &gt; 60) DerivedPeriod = 60;
+//Trend State Variable
+  State = 0;
+  if(Angle - Angles[1] &lt;= 6) {
+    if(Angle &gt;= 90 || Angle &lt;= -90) State = 1;
+    if(Angle &gt; -90 &amp;&amp; Angle &lt; 90) State = -1;
+  }
+  return Angle;
+}
+</pre>
+<p>The phasor function returns its parameters in the three global variables angle, state, and DerivedPeriod.</p> 
+<p>For reproducing Ehlers&rsquo; chart from his article, we can apply the function to a chart of Raytheon (symbol RTX) from April 2021 to July 2022 as follows:</p>
+<pre>
+void run() 
+{
+  set(PLOTNOW,LOGFILE);
+  BarPeriod = 1440;
+  StartDate = 20210401;
+  EndDate = 20220701;
+  assetAdd(&quot;RTX&quot;,&quot;YAHOO:RTX&quot;);
+  asset(&quot;RTX&quot;);
+  phasor(seriesC(),28);
+  plot(&quot;Phase&quot;,Angle,NEW,RED);
+  plot(&quot;DerivedPeriod&quot;,DerivedPeriod,NEW,RED);
+  plot(&quot;State&quot;,State,NEW,RED);
+}
+</pre>
+<p>The chart in Figure 6 replicates the chart of RTX shown in Ehlers&rsquo; October 2022 article.</p>
+  <div class="figBorder">
+<img src="images/TT-Zorro.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: ZORRO PROJECT. This replicates the chart of RTX shown in Ehlers&rsquo; October 2022 article.</p></div>  
+<p>The phasor indicator can be downloaded from the 2022 script repository on <a href="https://financial-hacker.com" target="_parent">https://financial-hacker.com</a>. The Zorro software can be downloaded from <a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a>.</p> 
+<p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: November 2022</h3></div>
+<p>In his article in the October 2022 issue of S&amp;C, &ldquo;Recurring Phase Of Cycle Analysis,&rdquo; John Ehlers reviews the evolution of the study of market cycles. Then he presents a simple approach to phasor analysis of price action. The code in the article&rsquo;s sidebar computes the correlation of price action relative to a 28-bar cycle and translates that into an instantaneous phase angle for each price bar.</p>
+<p>With that instantaneous angle in hand, we can compute an instantaneous cycle period (frequency).</p>
+<p>And finally, using the phase angle, we derive a trend indicator that can show us periods when we should be long (+1), short or out (−1), or cycling (0).</p>
+<p>It is worth your time to play with the correlation period in the user controls.</p>
+    <div class="figBorder">
+<img src="images/TT-Excel.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: EXCEL. This chart implements the trend indicator described in John Ehlers&rsquo; article in the October 2022 issue of S&amp;C. The indicator suggests long (+1), short or out (−1), or cycling (0). Settings can be adjusted in the user controls.</p></div>
+    
+    
+<p><strong><em>To download this spreadsheet:</em></strong> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2022/11/images/code/PhasorAnalysis.xlsm">here</a>. To successfully download it, follow these steps:</p>
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2022/11/images/code/PhasorAnalysis.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the November 2022 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2021, Technical Analysis, Inc.</p>
+
+</body>
+</html>

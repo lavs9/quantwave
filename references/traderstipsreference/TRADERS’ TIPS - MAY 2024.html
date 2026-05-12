@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: Ultimate Channels And Ultimate Bands by John F. Ehlers. Contributions from: TradeStation; Wealth-Lab.com; NinjaTrader; TradingView; Neuroshell Trader; RealTest; The Zorro Project; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - MAY 2024</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">May 2024</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2024/05/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John F. Ehlers&rsquo; article in this issue, &ldquo;Ultimate Channels And Ultimate Bands.&rdquo; Here, we present the May 2024 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: May 2024</a></li>
+  <li><a href="#item2">Wealth-Lab.com: May 2024</a></li>
+  <li><a href="#item3">NinjaTrader: May 2024</a></li>
+  <li><a href="#item4">TradingView: May 2024</a></li>
+  <li><a href="#item5">Neuroshell Trader: May 2024</a></li>
+  <li><a href="#item6">RealTest: May 2024</a></li>
+  <li><a href="#item7">The Zorro Project: May 2024</a></li>
+  <li><a href="#item8">Microsoft Excel: May 2024</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: May 2024</h3></div>
+<p>In his article in this issue, &ldquo;Ultimate Channels And Ultimate Bands,&rdquo; John Ehlers builds on his prior work of the Ultimate Smoother, this time demonstrating its practical application to create two new indicators. The first example draws upon Keltner channels, while the second draws upon Bollinger Bands. In both instances, he showcases the replacement of the conventional moving average with the UltimateSmoother.</p>
+<p>The two indicators, along with the $UltimateSmoother function, are shown here:</p>
+<pre>
+<b>Indicator: Ultimate Channel</b>
+
+{
+	TASC MAY 2024
+	Ultimate Channel
+	(c) 2024 John F. Ehlers
+}
+
+inputs:
+	STRLength( 20 ),
+	Length( 20 ),
+	NumSTRs( 1 );
+	
+variables:
+	TH( 0 ),
+	TL( 0 ),
+	ROC( 0 ),
+	STR( 0 ),
+	UpperChnl( 0 ),
+	LowerChnl( 0 );
+
+if Close[1] &gt; High then 
+	TH = Close[1] 
+else 
+	TH = High;
+
+if Close[1] &lt; Low then 
+	TL = Close[1] 
+else 
+	TL = Low;
+	
+STR = $UltimateSmoother(TH - TL, STRLength);
+
+UpperChnl = $UltimateSmoother(Close, Length) 
+ + NumSTRs * STR;
+
+LowerChnl = $UltimateSmoother(Close, Length) 
+ - NumSTRs * STR;
+
+Plot1(UpperChnl, &quot;Upper Channel&quot;);
+Plot2(LowerChnl, &quot;Lower Channel&quot;);
+
+<b>Indicator: Ultimate Bands</b>
+
+{
+	TASC MAY 2024
+	Ultimate Bands
+	(c) 2024 John F. Ehlers
+}
+
+inputs:
+	Length( 20 ),
+	NumSDs( 1 );
+	
+variables:
+	Smooth( 0 ),
+	Sum( 0 ),
+	Count( 0 ),
+	SD( 0 ),
+	UpperBand( 0 ),
+	LowerBand( 0 );
+	
+Smooth = $UltimateSmoother(Close, Length);
+Sum = 0;
+	
+for Count = 0 to Length - 1 
+begin
+	Sum = Sum + (Close[Count] 
+	 - Smooth[Count]) * (Close[Count] - Smooth[Count]);
+end;
+
+if Sum &lt;&gt; 0 then 
+	SD = SquareRoot(Sum / Length);
+
+UpperBand = Smooth + NumSDs * SD;
+LowerBand = Smooth - NumSDs * SD;
+
+Plot1(UpperBand, &quot;Upper Band&quot;);
+Plot2(LowerBand, &quot;Lower Band&quot;);
+
+Function: $UltimateSmoother
+
+{
+	TASC APR 2024
+	UltimateSmoother Function
+	(C) 2004-2024 John F. Ehlers
+}
+
+inputs:
+	Price( numericseries ),
+	Period( numericsimple );
+	
+variables:
+	a1( 0 ),
+	b1( 0 ),
+	c1( 0 ),
+	c2( 0 ),
+	c3( 0 ),
+	US( 0 );
+	
+a1 = ExpValue(-1.414*3.14159 / Period);
+b1 = 2 * a1 * Cosine(1.414*180 / Period);
+c2 = b1;
+c3 = -a1 * a1;
+c1 = (1 + c2 - c3) / 4;
+
+if CurrentBar &gt;= 4 then 
+ US = (1 - c1)*Price + (2 * c1 - c2) * Price[1] 
+ - (c1 + c3) * Price[2] + c2*US[1] + c3 * US[2];
+ 
+if CurrentBar &lt; 4 then 
+	US = Price;
+
+$UltimateSmoother = US;
+</pre>
+<p>Sample charts are shown in Figures 1 &amp; 2.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This TradeStation daily chart of the continuous emini S&amp;P (&#64;ES) demonstrates the ultimate channel indicator applied.</p></div>
+<div class="figBorder">
+<img src="images/TT-Tradestation2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: TRADESTATION. This TradeStation daily chart of the continuous emini S&amp;P (&#64;ES) demonstrates the ultimate bands indicator applied.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="http://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: May 2024</h3></div>
+<p>I must say, I was a little reluctant to include these ultimate indicators, since by being &ldquo;ultimate&rdquo; they may finally signify the end of John Ehlers&rsquo; two-decade effort in the coding of technical indicators! But then, I realized that even software applications that purport to be bug-free can somehow still have remarkably long change logs ... so hopefully, we will continue to enjoy more work from Ehlers.</p>
+<p>In his article in this issue, titled &ldquo;Ultimate Channels And Ultimate Bands,&rdquo; Ehlers offers two examples of implementing his UltimateSmoother indicator, an indicator that was introduced in his article last month in this magazine.</p>
+<p>These newly implemented indicators are now available to any of the various tools across Wealth-Lab.</p>
+<p>Therefore, we can implement and test the trend-following trading strategy that Ehlers mentions as an example in his article. Its rules are to &ldquo;hold a position in the direction of the UltimateSmoother and exit that position when the price pops outside the channel or band in the opposite direction.&rdquo;</p>
+<p>With the building blocks feature of Wealth-Lab 8, trading system development is almost as effortless as asking an AI-powered language model to do it. The proposed idea comes down to the outline of the process you see in Figure 3:</p>
+<ul><li><strong>Entry.</strong> Buy at market next bar when high crosses above UltimateSmoother (Close,20).</li><li><strong>Exit.</strong> Sell at market next bar either low crosses below UltimateBandLower (Close,20,2.0) or Close crosses under UltimateChannelLower(20,20,2.0).</li></ul>
+<div class="figBorder">
+<img src="images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: WEALTH-LAB. The example trading system&rsquo;s two exit rules implement an automatic following stop.</p></div>
+<p>In Figure 4, you can see some sample trades using the emini S&amp;P 500 futures market as an example.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: WEALTH-LAB. Here you can see some sample trades taken by the system applied to a daily chart of ES=F (emini S&amp;P 500 continuous futures contract). Data provided by Yahoo! Finance.</p></div>
+<p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="http://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: May 2024</h3></div>
+<p>The ultimate channel and ultimate bands indicators, which are described in the article &ldquo;Ultimate Channels And Ultimate Bands&rdquo; in this issue by John Ehlers, are available for download at the following link for NinjaTrader 8:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/MAY2024SCNT8.zip" target="_blank"> www.ninjatrader.com/SC/MAY2024SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the file.</p>
+<p>Sample charts demonstrating the two indicators are shown in Figures 5 and 6.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: NINJATRADER. This chart demonstrates the ultimate channel indicator on a chart of the continuous emini S&amp;P 500 futures contract.</p></div>
+<div class="figBorder">
+<img src="images/TT-Ninja2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: NINJATRADER. This chart demonstrates the ultimate bands indicator on a chart of the continuous emini S&amp;P 500 futures contract.</p></div>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">&mdash;NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: May 2024</h3></div>
+<p>The TradingView Pine Script code provided here implements indicators based on the concepts of Keltner channels and Bollinger Bands, as discussed in John Ehlers&rsquo; article in this issue, titled &ldquo;Ultimate Channels And Ultimate Bands.&rdquo; In the article, he replaces the traditional moving averages with his UltimateSmoother to mitigate lag in the indicators.</p>
+<p>The UltimateSmoother function was introduced in Ehlers&rsquo; April 2024 article in this magazine.</p>
+<p>The TradingView Pine Script code implementing the two example indicators, <em>ultimate channels</em> and <em>ultimate bands</em>, is as follows. Example charts showing the ultimate channels and ultimate bands indicators are shown in Figure 7.</p>
+<pre>
+//  TASC Issue: May 2024 - Vol. 42, Issue 5
+//     Article: Ultimate Channels And Ultimate Bands
+//              Getting The Lag Out Of Two Classic Indicators
+//  Article By: John F. Ehlers
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//&#64;version=5
+title  = 'TASC 2024.05 Ultimate Channels and Ultimate Bands'
+stitle = 'UCUB'
+indicator(title, stitle, true)
+
+
+// --- Inputs ---
+string M00  = 'Channel'
+string M01  = 'Bands'
+string mode       = input.string(M00, 'Mode:', [M00, M01]) 
+int    length0    = input.int(20,     'Length:')
+int    length1    = input.int(20,     'STR Length:')
+float  multiplier = input.float(1.0,  'Width Multiplier:')
+
+
+// --- Functions ---
+// &#64;function Applies the UltimateSmoother filter.
+// &#64;param    src        Source series.
+// &#64;param    period     Critical period.
+// &#64;returns  us         Smoothed series.
+UltimateSmoother (float src, int period) =&gt;
+    float a1 = math.exp(-1.414 * math.pi / period)
+    float c2 = 2.0 * a1 * math.cos(1.414 * math.pi / period)
+    float c3 = -a1 * a1
+    float c1 = (1.0 + c2 - c3) / 4.0
+    float us = src
+    if bar_index &gt;= 4
+        us := (1.0 - c1) * src + 
+              (2.0 * c1 - c2) * src[1] - 
+              (c1 + c3) * src[2] + 
+              c2 * nz(us[1]) + c3 * nz(us[2])
+    us
+
+
+// &#64;function Uses the UltimateSmoother to calculate
+//           the center of the channel and the smooth
+//           true range (STR) that defines the width.
+// &#64;param    length     Critical period for the center.
+// &#64;param    lengthSTR  Critical period for the STR.
+// &#64;param    mult       STR multiplier.
+// &#64;returns  tuple      Upper and lower channel series.
+UltimateChannel(int length, int lengthSTR, float mult) =&gt;
+    float mid = UltimateSmoother(close, length)
+    float str = UltimateSmoother(ta.tr,lengthSTR) * mult
+    [mid + str, mid - str]
+
+
+// &#64;function Uses the UltimateSmoother to calculate
+//           the center of the band.
+// &#64;param    length     Critical period.
+// &#64;param    mult       Standard deviation multiplier.
+// &#64;returns  tuple      Upper and lower band series.
+UltimateBands(float src, int length, float mult) =&gt;
+    float mid = UltimateSmoother(src, length)
+    float sd  = ta.stdev(src - mid, length) * mult
+    [mid + sd, mid - sd]
+
+
+// --- Calculations ---
+[uc, lc] = if mode == M00
+    UltimateChannel(length0, length1, multiplier)
+else
+    UltimateBands(close, length0, multiplier)
+
+
+// --- Plotting ---
+u = plot(uc, 'Upper', color.rgb(30, 150, 250), 2)
+l = plot(lc, 'Lower', color.rgb(30, 150, 250), 2)
+fill(u, l,  color.rgb(30, 150, 250, 95))
+</pre>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: TRADINGVIEW. The ultimate channel indicator (top) and band indicator (bottom) is applied here to a daily chart of the emini S&amp;P 500 futures contract.</p></div>
+<p>The indicators are available on TradingView from the PineCodersTASC account: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_parent">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a></p>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="http://www.TradingView.com" target="_parent">www.TradingView.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: May 2024</h3></div>
+<p>The ultimate channel and ultimate band indicators, as described in John Ehlers&rsquo; article in this issue titled &ldquo;Ultimate Channels And Ultimate Bands,&rdquo; can be easily implemented using a few of NeuroShell Trader&rsquo;s 800+ indicators. Simply select &ldquo;new indicator...&rdquo; from the <em>insert</em> menu and use the indicator wizard to create the following indicators:</p>
+	<pre>STR:	UltimateSmoother(Sub(Max2(Lag(Close,1),High),Min2(Lag(Close,1),Low)),20)
+UpperChannel:  	Add2(UltimateSmoother(Close,20), Mul2(1, STR))
+LowerChannel:  	Subtract(UltimateSmoother(Close,20), Mul2(1, STR))
+
+SD: 	SqrRt(Avg(Pow(Sub(Close,UltimateSmoother
+(Close,20)),2),20))
+UpperBand:	Add2(UltimateSmoother(Close,20), Mul2(1,SD))
+LowerBand:	Subtract(UltimateSmoother(Close,20), Mul2(1,SD))
+</pre>
+<p>Note that the UltimateSmoother used here is from Ehlers&rsquo; article in the April 2024 issue and found in our Traders&rsquo; Tip from that issue.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: NEUROSHELL TRADER. This sample NeuroShell Trader chart demonstrates the ultimate channel and ultimate band indicators.</p></div>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Realtest.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">RealTest: May 2024</h3></div>
+<p>In the article &ldquo;Ultimate Channels And Ultimate Bands&rdquo; in this issue, John Ehlers follows up his article last month that presented an ultimate smoothing function. This time, he offers two examples of using his UltimateSmoother in indicators. The first example is based on Keltner channels and the second example is based on the Bollinger Bands concept. In both examples, he replaces the traditional moving average with the UltimateSmoother.</p>
+<p>The following is coding in text format for use in RealTest (<a href="http://mhptrading.com" target="_parent">mhptrading.com</a>) to implement the author&rsquo;s technique.</p>
+<pre>
+Import:
+
+	DataSource:	Norgate
+
+	IncludeList:	&amp;ES_CCB
+
+	StartDate:	2/1/23
+
+	EndDate:	2/1/24
+
+	SaveAs:	es.rtd
+
+	
+
+Settings:
+
+	DataFile:	es.rtd
+
+	BarSize:	Daily
+
+
+
+Parameters:
+
+	Len:	20
+
+	NumSTRs:	1
+
+	NumSDs:	1
+
+	
+
+Data:
+
+	// General calculations (independent of item being smoothed)
+
+	a1:	exp(-1.414*3.14159 / Len)
+
+	b1:	2 * a1 * Cosine(1.414*180 / Len)
+
+	c2:	b1
+
+	c3:	-a1 * a1
+
+	c1:	1 - c2 - c3
+
+	c4:	(1 + c2 - c3) / 4
+
+
+
+	// UltimateSmoother of Close
+
+	ult_sm_close:	if(BarNum &gt;= 4, (1 - c4) * Close + (2 * c4 - c2) * Close[1] - (c4 + c3) * Close[2] + c2 * ult_sm_close[1] + c3 * ult_sm_close[2], Close)
+
+	
+
+	// UltimateSmoother of True Range
+
+	ult_sm_tr:	if(BarNum &gt;= 4, (1 - c4) * TR + (2 * c4 - c2) * TR[1] - (c4 + c3) * TR[2] + c2 * ult_sm_tr[1] + c3 * ult_sm_tr[2], TR)
+
+	
+
+	// Ultimate Channel (pseudo Keltner channel)
+
+	ult_kc_upper:	ult_sm_close + NumSTRs * ult_sm_tr
+
+	ult_kc_lower:	ult_sm_close - NumSTRs * ult_sm_tr
+
+	
+
+	// Ultimate Band (pseudo Bollinger bands)
+
+	ult_bb_upper:	ult_sm_close + NumSDs * StdDev(ult_sm_close, Len)
+
+	ult_bb_lower:	ult_sm_close - NumSDs * StdDev(ult_sm_close, Len)
+
+	
+
+Charts:
+
+	// Ultimate Channel
+
+	ult_kc_upper:	ult_kc_upper
+
+	ult_kc_lower:	ult_kc_lower
+
+
+
+	// Ultimaate Band
+
+	ult_bb_upper:	ult_bb_upper
+
+	ult_bb_lower:	ult_bb_lower
+
+</pre>
+<div class="figBorder">
+<img src="images/TT-Realtest1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: REALTEST. This example chart from RealTest software demonstrates John Ehlers&rsquo; ultimate bands indicator, which is based on the Bollinger Bands concept but replaces the traditional moving average with Ehlers&rsquo; UltimateSmoother.</p></div>
+<div class="figBorder">
+<img src="images/TT-Realtest2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 10: REALTEST. This example chart from RealTest software demonstrates John Ehlers&rsquo; ultimate channel indicator, which is based on the Keltner channel concept but replaces the traditional moving average with Ehlers&rsquo; UltimateSmoother.</p></div>
+<p class="authorTips">&mdash;Marsten Parker<br>
+MHP Trading, <a href="http://mhptrading.com" target="_parent">Mhptrading.com</a><br>
+<a href="mailto:mhp@mhptrading.com">mhp@mhptrading.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" style="width: 90px" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: May 2024</h3></div>
+<p>In his article in this issue, &ldquo;Ultimate Channels And Ultimate Bands,&rdquo; John Ehlers follows up his article last month that presented an ultimate smoothing function. In this month&rsquo;s article, he presents two different band indicators that uses his UltimateSmoother.</p>
+<p>Band indicators can be used to trigger long or short positions when the price hits the upper or lower band. The first band indicator, the <em>ultimate channel</em> indicator, is a straightforward conversion to the C language from Ehlers&rsquo; EasyLanguage code:</p>
+<pre>
+var UltimateChannel(int Length,int STRLength,int NumSTRs)
+{
+  var TH = max(priceC(1),priceH());
+  var TL = min(priceC(1),priceL());
+  var STR = UltimateSmoother(series(TH-TL),STRLength);
+  var Center = UltimateSmoother(seriesC(),Length);
+  rRealUpperBand = Center + NumSTRs*STR;
+  rRealLowerBand = Center - NumSTRs*STR;
+  return Center; 
+}
+</pre>
+<p><strong>rRealUpperBand</strong> and <strong>rRealLowerBand</strong> are predefined global variables that are used by band indicators in the indicator library of the Zorro platform. For testing the new indicator, we can apply it to an ES chart:</p>
+<pre>
+void run() 
+{
+  BarPeriod = 1440;
+  StartDate = 20230301;
+  EndDate = 20240201;
+  assetAdd(&quot;ES&quot;,&quot;YAHOO:ES=F&quot;);
+  asset(&quot;ES&quot;);
+  UltimateChannel(20,20,1);
+  plot(&quot;UltChannel1&quot;,rRealUpperBand,BAND1,BLUE);
+  plot(&quot;UltChannel2&quot;,rRealLowerBand,BAND2,BLUE|TRANSP); 
+}
+</pre>
+<p>The resulting chart (Figure 11) replicates the chart of the S&P 500 emini futures market (ES) shown in Ehlers&rsquo; article.</p>
+<div class="figBorder">
+<img src="images/TT-Zorro1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 11: ZORRO. This demonstrates the ultimate channel indicator on a chart or S&amp;P 500 emini futures market (ES), implemented in Zorro.</p></div>
+<p>The second band indicator, ultimate bands, requires less code than Ehlers&rsquo; implementation, since lite-C can apply functions to a whole data series:</p>
+<pre>var UltimateBands(int Length,int NumSDs)
+{
+  var Center = UltimateSmoother(seriesC(),Length);
+  vars Diffs = series(priceC()-Center);
+  var SD = sqrt(SumSq(Diffs,Length)/Length);
+  rRealUpperBand = Center + NumSDs*SD;
+  rRealLowerBand = Center - NumSDs*SD;  return Center; 
+}</pre>
+<p>Again, we can apply it to an ES chart (Figure 12):</p>
+<pre>void run() 
+{
+  BarPeriod = 1440;
+  StartDate = 20230301;
+  EndDate = 20240201;
+  assetAdd(&quot;ES&quot;,&quot;YAHOO:ES=F&quot;);
+  asset(&quot;ES&quot;);
+  UltimateBands(20,1);
+  plot(&quot;UltBands1&quot;,rRealUpperBand,BAND1,BLUE);
+  plot(&quot;UltBands2&quot;,rRealLowerBand,BAND2,BLUE|TRANSP);
+}</pre>	
+<div class="figBorder">
+<img src="images/TT-Zorro2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 12: ZORRO. This demonstrates the ultimate bands indicator on a chart or S&amp;P 500 emini futures market (ES), implemented in Zorro. </p></div>	
+<p>We can see that both indicators produce relatively similar bands with low lag.</p>	
+<p>The code can be downloaded from the 2024 script repository on <a href="https://financial-hacker.com" target="_parent">https://financial-hacker.com</a>. The Zorro platform can be downloaded from <a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a>.</p>	
+<p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a></p>	
+	
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: May 2024</h3></div>
+<p>In his article in this issue, &ldquo;Ultimate Channels And Ultimate Bands,&rdquo; John Ehlers shows us how his UltimateSmoother (which was introduced last month in his April 2024 article) may be used to improve on two well-known indicators.</p>
+<p>First, he derives an <em>ultimate channel</em> indicator (Figure 13) by replacing the two EMAs used in the derivation of Keltner channels with the UltimateSmoother. Once he substitutes his UltimateSmoother for the standard EMA when calculating the smoothed close, it becomes the channel&rsquo;s logical centerline (not plotted here). Then he calculates the ATR component, which becomes the STR (perhaps this stands for &ldquo;smoothed TR&rdquo;). STR substitutes for ATR as the plus and minus channel plot offset from the centerline.</p>
+<div class="figBorder">
+<img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 13: EXCEL. This chart demonstrates John Ehlers&rsquo; ultimate channel indicator.</p></div>
+<p>Next, he derives an <em>ultimate bands</em> indicator (Figure 14). Here, Ehlers replaces the EMA of the close, which is typically used in the derivation of Bollinger Bands, with an UltimateSmoother of the close. This becomes the logical centerline of the bands.</p>
+<div class="figBorder">
+<img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 14: EXCEL. This chart demonstrates John Ehlers&rsquo; ultimate bands indicator.</p></div>
+<p>Step 2 creates an interesting variation on the standard deviation calculation, wherein the bar-by-bar value of the ultimate-smoothed close stands in as the bar-by-bar &ldquo;mean of the sample.&rdquo; So, bar by bar, we take the difference between the close and the smoothed close for that bar. We square and sum those differences for the specified number of preceding bars, then divide by the length and take the square root to arrive at our thus-modified deviation.</p>
+<p>This modified deviation becomes the plus and minus band plot offset from the centerline.</p>
+<p><strong><em>To download this spreadsheet:</em></strong> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="http://www.traders.com/Documentation/FEEDbk_docs/2024/05/images/code/EhlersUltimateChannelsAndBands.xlsm">here</a>. To successfully download it, follow these steps:</p>
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2024/05/images/code/EhlersUltimateChannelsAndBands.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+	
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the May 2024 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2024, Technical Analysis, Inc.</p>
+
+</body>
+</html>

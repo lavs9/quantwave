@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: The Weekly Factor Pattern by Andrea Unger. Contributions from: TradeStation; MetaQuotes; Wealth-Lab.com; NinjaTrader; TradingView; Neuroshell Trader; AIQ; The Zorro Project; Optuma.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - SEPTEMBER 2023</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">September 2023</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2023/09/images/TT-Unger.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Andrea Unger&rsquo;s article in the August 2023 issue, &ldquo;The Weekly Factor Pattern.&rdquo; Here, we present the September 2023 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: September 2023</a></li>
+  <li><a href="#item2">MetaQuotes: September 2023</a></li>
+  <li><a href="#item3">Wealth-Lab.com: September 2023</a></li>
+  <li><a href="#item4">NinjaTrader: September 2023</a></li>
+  <li><a href="#item5">TradingView: September 2023</a></li>
+  <li><a href="#item6">Neuroshell Trader: September 2023</a></li>
+  <li><a href="#item7">AIQ: September 2023</a></li>
+  <li><a href="#item8">The Zorro Project: September 2023</a></li>
+  <li><a href="#item9">Optuma: September 2023</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: September 2023</h3></div>
+<p>In the August 2023 article &ldquo;The Weekly Factor Pattern,&rdquo; author Andrea Unger discusses trade entry filtering as a means to improve trade selection quality. The weekly factor aims to mark areas in the market where compressed price periods may lead to price expansion, such as a breakout.</p>
+<p>Coding for the strategy given here is an adaptation of the strategy given in Unger&rsquo;s article and is intended to be educational only to allow for further exploration of the ideas discussed in the article.</p>
+<p>The RangeFilter input can be optimized as a percentage of the previous five-session range.</p>
+<pre>
+Strategy: The Weekly Factor
+
+// TASC SEPTEMBER 2023
+// The Weekly Factor
+//
+// Andrea Unger
+
+inputs:
+	RangeFilter( 1 ); // 1 = 100%
+
+variables:
+	CS( 0 ),
+	BarCount ( 0 ),
+	DayCount( 0 ),
+	SessionListHigh( 0 ),
+	SessionListLow( 0 ),
+	WeeklyFactor( false );
+	
+CS = CurrentSession( 0 );
+
+SessionListHigh = MaxList( HighSession(0, 1),
+ HighSession(0, 2),
+ HighSession(0, 3),
+ HighSession(0, 4),
+ HighSession(0, 5) );
+
+SessionListLow = MinList( LowSession(0, 1),
+ LowSession(0, 2),
+ LowSession(0, 3),
+ LowSession(0, 4),
+ LowSession(0, 5) );
+
+WeeklyFactor = AbsValue(OpenSession(0, 5) - CloseSession(0, 1))
+ &lt; RangeFilter * (SessionListHigh - SessionListLow);
+
+if CS &lt;&gt; CS[1] then
+	BarCount = 1
+else
+	BarCount += 1;
+
+if WeeklyFactor and BarCount &gt; 1 and BarCount &lt; 91 then
+begin
+	Buy (&quot;BrkOut_LE&quot;) next bar at HighSession(0, 1) stop;
+	Sellshort (&quot;BrkOut_SE&quot;) next bar at LowSession(0, 1) stop;
+end;
+
+SetExitOnClose;
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. Here, a TradeStation 15-minute chart of the crude oil continuous contract showing a portion of 2023 demonstrates the strategy applied with a RangeFilter of 0.8.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_blank">www.TradeStation.com</a></p>
+
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">MetaQuotes: September 2023</h3></div>
+<p>In the August 2023 issue, Andrea Unger presented &ldquo;The Weekly Factor Pattern.&rdquo; I&rsquo;ve converted the author&rsquo;s idea into an indicator I call the <em>five-period range filter</em>, for the simple reason that it will only be a weekly factor on the daily timeframe.</p>
+<p>The indicator is displayed as a series of gray and gold dots, gray indicating a period of consolidation or, as per the author, a period of indecision, and gold for a period of trending or, as per the author, a period of expansion.</p>
+<p>For linking this indicator to an expert advisor (EA), the buffer number to be used is 1. Buffer number 1 gives information about the color of the indicator. A result of 0 indicates the gray (consolidation) and a result of 1 is the gold (trending). Figure 2 shows the <em>input</em> tab when setting up the five-period range filter. Figure 3 shows the <em>common</em> tab.</p>
+<div class="figBorder">
+<img src="images/TT-Metaquotes1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: METAQUOTES INPUTS TAB</p></div>
+<div class="figBorder">
+<img src="images/TT-Metaquotes2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: METAQUOTES COMMON TAB</p></div>
+<p>This is a nondirectional indicator, hence perfect for a confirmation indicator to your algo.</p>
+<p>Figure 4 displays an example of the range filter on a chart of EURUSD.</p>
+<div class="figBorder">
+<img src="images/TT-Metaquotes3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: METAQUOTES. The five-period range filter is demonstrated here on a daily chart of EURUSD. In the lower pane, gray dots indicate a period of consolidation, and gold dots represent a period of trending.</p></div>
+<p>The &ldquo;.mq5&rdquo; file I am providing can be opened in a normal document viewer.</p>
+<pre>
+//+------------------------------------------------------------------+
+//|                                     Five-Period Range Filter.mq5 |
+//|                          Copyright &copy; September 2023, Shaun Bosch |
+//|                                              shadavbos&#64;gmail.com |
+//+------------------------------------------------------------------+
+#property copyright &quot;Copyright &copy; September 2023, Shaun Bosch&quot;
+#property link      &quot;shadavbos&#64;gmail.com&quot;
+#property version   &quot;1.00&quot;
+#property description &quot;Based on: 'The Weekly Factor Pattern' by Andrea Unger TASC Magazine September 2023&quot;
+#property indicator_separate_window
+#property indicator_buffers 2
+#property indicator_plots   1
+#property indicator_maximum 0.1
+#property indicator_minimum -0.1
+//--- plot settings
+#property indicator_type1   DRAW_COLOR_ARROW
+#property indicator_color1  clrDimGray,clrGold
+#property indicator_style1  STYLE_SOLID
+#property indicator_width1  1
+//--- input parameters
+input int      inp_range_filter     = 50;       // Range Percentage Factor (min val: 1, max val: 100)
+//--- indicator buffers
+double         wf_value[];
+double         wf_colors[];
+//--- indicator variables
+int            range_filter;
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+  {
+//--- check input parameters
+   range_filter = inp_range_filter &lt; 1 ? 1 : inp_range_filter &gt; 100 ? 100 : inp_range_filter;
+//--- indicator buffers mapping
+   SetIndexBuffer(0, wf_value, INDICATOR_DATA);
+   SetIndexBuffer(1, wf_colors, INDICATOR_COLOR_INDEX);
+//--- setting a code from the Wingdings charset as the property of PLOT_ARROW
+   PlotIndexSetInteger(0, PLOT_ARROW, 159);
+//--- accuracy of drawing of indicator values
+   IndicatorSetInteger(INDICATOR_DIGITS, 0);
+//--- set indicator name display
+   string short_name = &quot;RANGE FILTER (&quot; + IntegerToString(range_filter) + &quot;%&quot; + &quot;)&quot;;
+   IndicatorSetString(INDICATOR_SHORTNAME, short_name);
+//--- an empty value for plotting, for which there is no drawing
+   PlotIndexSetDouble(0, PLOT_EMPTY_VALUE, EMPTY_VALUE);
+//--- successful initialization
+   return(INIT_SUCCEEDED);
+  }
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const datetime &amp;time[],
+                const double &amp;open[],
+                const double &amp;high[],
+                const double &amp;low[],
+                const double &amp;close[],
+                const long &amp;tick_volume[],
+                const long &amp;volume[],
+                const int &amp;spread[])
+  {
+//--- populate weekly factor color buffer
+   wi_WF(rates_total, prev_calculated, range_filter, open, high, low, close, wf_colors);
+//--- bar index start
+   int bar_index;
+   if(prev_calculated == 0)
+      bar_index = 0;
+   else
+      bar_index = prev_calculated - 1;
+//--- main loop
+   for(int i = bar_index; i &lt; rates_total &amp;&amp; !_StopFlag; i++)
+     {
+      if(i &lt; 5)
+         wf_value[i] = EMPTY_VALUE;
+      else
+         wf_value[i] = 0.0;
+     }
+//--- return value of prev_calculated for next call
+   return(rates_total);
+  }
+//+------------------------------------------------------------------+
+//| Five-Period Range Filter / Weekly Factor (WF)                    |
+//+------------------------------------------------------------------+
+//--- by Andrea Unger TASC Magazine September 2023
+//        //--- System bar_index references:
+int wi_WF(const int rates_total,
+          const int prev_calculated,
+          //--- Input variables and arrays:
+          const int rng_flt, // Range Percentage Filter (min val: 1, max val: 100, default val: 50)
+          const double &amp;open[], // Open Price
+          const double &amp;high[], // High Price
+          const double &amp;low[], // Low Price
+          const double &amp;close[], // Close Price
+          //--- Output arrays:
+          double &amp;res[])
+  {
+//--- bar index start
+   int bar_index;
+   if(prev_calculated == 0)
+      bar_index = 0;
+   else
+      bar_index = prev_calculated - 1;
+//--- main loop
+   for(int i = bar_index; i &lt; rates_total &amp;&amp; !_StopFlag; i++)
+     {
+      if(i &lt; 5)
+         res[i] = EMPTY_VALUE;
+      else
+         res[i] = fabs(open[i - 5] - close[i - 1]) &lt; (double(rng_flt) / 100.0) * (fmax(high[i - 1], fmax(high[i - 2], fmax(high[i - 3], fmax(high[i - 4], high[i - 5])))) - fmin(low[i - 1], fmin(low[i - 2], fmin(low[i - 3], fmin(low[i - 4], low[i - 5]))))) ? 0.0 : 1.0;
+      //--- res[i] = 0.0 is compression / ranging
+      //--- res[i] = 1.0 is expansion / trending
+     }
+   return(rates_total);
+  }
+//+------------------------------------------------------------------+
+</pre>
+<p class="authorTips">&mdash;Shaun Bosch<br>
+<a href="mailto:shadavbos@gmail.com">shadavbos@gmail.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: September 2023</h3></div>
+<p>The article &ldquo;The Weekly Factor Pattern&rdquo; in the August 2023 issue by Andrea Unger uses the notion of a 5-day trading week in determining the &ldquo;weekly factor.&rdquo; While this is usually not an issue for futures markets, which the article caters to, in stock markets, incomplete trading weeks tend to occur several times a year, with some countries enjoying market holidays more often than others. A recent example is the July 4th US holiday, which is the week I happen to be writing this. Considering the holiday, the Wealth-Lab C# code presented here compresses data into the true weekly scale even while applied to an intraday chart. We hope that taking partial weeks into account by using the trading range of 3 or 4 days&mdash;when required due to shortened trading weeks&mdash;will benefit stock traders interested in applying the &ldquo;weekly factor&rdquo; filter to their own systems.</p>
+<p>Figure 5 shows a handful of long trades made by the simple breakout system given in Unger&rsquo;s article applied to an intraday chart of Brent oil. The factor value is configurable through a parameter slider. On the bottom pane you can see the synthetic weekly bar compressed from the 60-minute data of the week before. The bluish background indicates that the system is in an active state (the weekly factor = 0.4 and the pattern has triggered), ready to issue new signals during trading day. And as does the author&rsquo;s code in the article, this code for Wealth-Lab will exit on the last bar of the day.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: WEALTH-LAB. The weekly factor filter is demonstrated here in a breakout system applied to an intraday chart of Brent oil.</p></div>
+<pre>
+using WealthLab.Backtest;
+using System;
+using WealthLab.Core;
+using WealthLab.Data;
+using WealthLab.Indicators;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace WealthScript
+{
+	public class WeeklyFactor : UserStrategyBase
+	{
+		public WeeklyFactor()
+		{
+			AddParameter(&quot;Range Factor&quot;, ParameterType.Double, 0.5, 0.1, 1.0, 0.1);
+		}
+		
+        public override void Initialize(BarHistory bars)
+        {
+			rangeFactor = Parameters[0].AsDouble;
+			StartIndex = 5;
+
+			weekly = BarHistoryCompressor.ToWeeklyStartDate( bars, DayOfWeek.Monday);
+			weekly = BarHistorySynchronizer.Synchronize( weekly, bars);
+			PlotBarHistory(weekly, &quot;weekly&quot;);
+		}
+
+        public override void Execute(BarHistory bars, int idx)
+        {
+			bool WeeklyFactor = Math.Abs(weekly.Open[idx] - weekly.Close[idx]) &lt; rangeFactor * (weekly.High[idx] - weekly.Low[idx]);
+			if (WeeklyFactor)
+			{
+				SetBackgroundColor(weekly, idx, WLColor.FromArgb( 20, WLColor.Blue), &quot;weekly&quot;);
+
+				if (!HasOpenPosition(bars, PositionType.Long))
+					PlaceTrade( bars, TransactionType.Buy, OrderType.Stop, weekly.High[idx]);
+				else if (!HasOpenPosition(bars, PositionType.Short))
+					PlaceTrade( bars, TransactionType.Short, OrderType.Stop, weekly.Low[idx]);
+			}				
+
+			/* close everything before end of day */
+			if (bars.IsLastBarOfDay(idx + 1) &amp;&amp; bars.Market.IsOpenMarketTime(bars.DateTimes[idx]))
+				ClosePosition( LastPosition, OrderType.Market, 0, &quot;Exit before market close&quot;);
+        }
+
+		double rangeFactor;
+		BarHistory weekly;
+    }
+}
+</pre>
+<p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_blank">www.wealth-lab.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+ <p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: September 2023</h3></div>
+<p>The weekly factor pattern, introduced by Andrea Unger in the August 2023 issue, is available for download at the following link for NinjaTrader 8:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/September2023SCNT8.zip" target="_blank">www.ninjatrader.com/SC/September2023SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the weekly factor file.</p>
+<p>A sample chart displaying the weekly factor is shown in Figure 6.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: NINJATRADER. This demonstrates using the example strategy that is based on the weekly factor on a 15-minute chart of the gold futures contract (GC).</p></div>
+<p class="authorTips">&mdash;NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_blank">www.ninjatrader.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+  <p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: September 2023</h3></div>
+<p>Here is TradingView Pine Script code implementing the sample trading strategy given in the August 2023 article &ldquo;The Weekly Factor Pattern&rdquo; by Andrea Unger. The strategy, intended for educational purposes only, demonstrates how the equity curve can be improved by filtering trade entries using the weekly factor metric.</p>
+<pre>
+//  TASC Issue: September 2023 - Vol. 41, Issue 10
+//     Article: Finding Compression And Expansion
+//              The Weekly Factor Pattern
+//  Article By: Andrea Unger
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//&#64;version=5
+string title = 'TASC 2023.09 The Weekly Factor'
+string stitle = 'TWF'
+strategy(title, stitle, true)
+if not (timeframe.isminutes and timeframe.period == '15')
+    runtime.error('This strategy is designed for a bar' +
+     'period of 15 minutes')
+
+
+//#region Inputs:
+string rangeFilterTooltip = 'Limiting ratio of the 5-day' +
+     'body versus the 5-day high-low range.'          +
+     'A lower range filter reduces the number of trades.'
+float rangeFilter = input.float(0.5, 'Range Filter:',
+     0.0, 1.0, 0.1, tooltip=rangeFilterTooltip)
+//#endregion
+
+
+//#region Week and Session properties:
+// &#64;type Holds the Session/Week OHLC value.
+type OHLC
+    float o
+    float h
+    float l
+    float c
+
+
+method isNewSession (OHLC s) =&gt;
+    s.c != s.c[1]
+
+
+method calcBody (OHLC s) =&gt;
+    math.abs(s.o - s.c)
+
+
+method calcFactor (OHLC s, float rangeFilter=1.0) =&gt;
+    s.calcBody() &lt; rangeFilter*(s.h - s.l)
+
+
+getOHLCValues (int length = 5) =&gt;
+    float _o = open[length-1]
+    float _h = ta.highest(length)
+    float _l = ta.lowest(length)
+    float _c = close
+    OHLC  _s = request.security(
+     symbol     = syminfo.tickerid ,
+     timeframe  = 'D' ,
+     expression = OHLC.new(_o, _h, _l, _c) )
+
+
+// Weekly OHLC and Weekly Factor (WF)
+OHLC    W = getOHLCValues(5)
+bool   WF = W.calcFactor(rangeFilter)
+
+
+LB__  = plot.style_linebr
+lineO = plot(W.o, 'Five-day Open' , color.aqua, 1, LB__)
+lineH = plot(W.h, 'Five-day High' , color.blue, 1, LB__)
+lineL = plot(W.l, 'Five-day Low' , color.blue, 1, LB__)
+lineC = plot(W.c, 'Five-day Close', color.navy, 1, LB__)
+fill(lineO, lineC, color.new(color.aqua, 90))
+//#endregion
+
+
+//#region Strategy
+OHLC S            = getOHLCValues(1)
+bool isNewSession = S.isNewSession()
+
+
+plotshape(isNewSession and WF ? S.c : na, 'WF',
+ shape.diamond, location.absolute, color.aqua,
+ size=size.small)
+
+
+var int BarCounter = 0
+var int DayCounter = 0
+
+
+if isNewSession
+    // exit any previous trades
+    strategy.close_all()
+    BarCounter := 1
+else
+    BarCounter += 1
+
+
+if WF
+    if BarCounter &gt; 1 and BarCounter &lt; 91 // day 1?
+        if close &gt; S.h
+            strategy.entry('long', strategy.long)
+        if close &lt; S.l
+            strategy.entry('short', strategy.short)
+
+
+float MP = strategy.position_size
+bool isNewPosition = ta.change(MP) != 0.0 and MP != 0.0
+
+
+if isNewPosition
+    DayCounter := 0
+if isNewSession
+    DayCounter += 1
+if DayCounter &gt; 1 and strategy.openprofit &gt; 0
+    strategy.close_all()
+//#endregion
+</pre>   
+ <p>The code is available at TradingView in the PineCodersTASC account: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a></p>   
+ <p>An example chart is shown in Figure 7.</p>   
+ <div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: TRADINGVIEW. This shows the sample trading system on a chart of a CFD (contract for difference) on gold.</p></div>   
+ <p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="https://www.TradingView.com" target="_blank">www.TradingView.com</a></p>   
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>  
+    
+ <p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: September 2023</h3></div>
+<p>The weekly factor pattern discussed by Andrea Unger in his article in the August 2023 issue, &ldquo;The Weekly Factor Pattern,&rdquo; can be easily implemented in NeuroShell Trader. Simply select <em>new indicator</em> from the <em>insert</em> menu and use the indicator wizard to create the following indicator:
+</p>
+<pre>
+A&lt;B( Abs(Sub(Lag(Open,5),Close)), Mul2(0.7,PriceRange(High,Low,5)) )
+</pre>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: NEUROSHELL TRADER. This demonstrates creating the weekly factor using NeuroShell Trader&rsquo;s indicator wizard. </p></div>
+
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_blank">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+ <p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">AIQ: September 2023</h3></div>
+<p>The importable AIQ EDS file based on Andrea Unger&rsquo;s article in the August 2023 issue, &ldquo;The Weekly Factor Pattern,&rdquo; can be obtained on request via rdencpa@gmail.com. The code is also shown below.</p>
+<p>Code for the author&rsquo;s indicator is set up in the AIQ EDS code file.</p>
+<pre>
+!The Weekly Factor Pattern
+!Author: Andrea Unger, TASC Sep 2023
+!Coded by: Richard Denning, 7/18/2023
+
+!INPUTS:
+RangeFilter is 1.
+
+O is [open].
+O5 is valresult(O,5).
+C is [close].
+C1 is  valresult(C,1).
+H is [high].
+L is [low].
+
+MaxH5os1 is highresult(H,4,1).
+MinL5os1 is lowresult(L,4,1).
+
+WeeklyFactor if abs(O5 - C1) &lt; RangeFilter * (MaxH5os1 - MinL5os1). 
+
+!To use WeeklyFactor as a trade filter just add it to the Buy rule, e.g.
+! Buy if WeeklyFactor and ....your other systme buy rules.
+</pre>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:rdencpa@gmail.com">rdencpa@gmail.com</a><br>
+for AIQ Systems</p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+  <p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" width="100px" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: September 2023</h3></div>
+<p>Andrea Unger proposed a filter for determining the market&rsquo;s decision (or indecision). The MultiCharts code is a single line that directly converts to C.</p>
+<p>Multicharts:</p> 
+<pre>
+WeeklyFactor = AbsValue(OpenS(5) - CloseS(1)) &lt; RangeFilter * (maxlist(highS(1), highS(2), highS(3), highS(4), highS(5)) - minlist(lowS(1), lowS(2), lowS(3), lowS(4), lowS(5)));
+</pre>
+
+<p>C equivalent:</p> 
+<pre>
+WeeklyFactor = abs (priceO (5) – priceC(1)) &lt; RangeFilter * (HH(5,0) – LL(5,0));
+</pre>
+<p>The code can be downloaded from the 2023 script repository on <a href="https://financial-hacker.com" target="_blank">https://financial-hacker.com</a>. The Zorro platform for C/C++ algo trading can be downloaded from <a href="https://zorro-project.com" target="_blank">https://zorro-project.com</a>.</p>
+<p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_blank">https://zorro-project.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>  
+    
+ <p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Optuma.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Optuma: September 2023</h3></div>
+<p>The following formula, based on Andrea Unger&rsquo;s article in the August 2023 issue, &ldquo;The Weekly Factor Pattern,&rdquo; calculates the 5-day open/close and high/low ranges, and uses a "weekly factor" of 0.7:</p>
+<pre>
+//Calculate 5 day Open/Close and High/low ranges;
+
+OC_Range=ABS(OPEN()[4] - CLOSE());
+
+HL_Range=HIGHESTHIGH(BARS=5, INCBAR=True) - LOWESTLOW(BARS=5, INCBAR=True);
+
+//Filter using Weekly Factor of 0.7;
+
+WF=VARTOLIST(VAL=0.7);
+
+OC_Range &lt; WF * HL_RANGE
+</pre>
+<p class="authorTips">&mdash;<a href="mailto:support@optuma.com">support@optuma.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+     
+    <!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the September 2023 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2023, Technical Analysis, Inc.</p>
+
+</body>
+</html>

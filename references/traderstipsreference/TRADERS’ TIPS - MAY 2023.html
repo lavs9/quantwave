@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: An Adaptive Moving Average For Swing Trading by Scott Cong. Contributions from: TradeStation; thinkorswim; Wealth-Lab.com; MetaStock; NinjaTrader; TradingView; NeuroShell Trader; AIQ; The Zorro Project; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - MAY 2023</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">May 2023</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2023/05/images/TT-Cong.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Scott Cong&rsquo;s article in the March issue, &ldquo;An Adaptive Moving Average For Swing Trading.&rdquo; Here, we present the May 2023 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: May 2023</a></li>
+  <li><a href="#item2">thinkorswim: May 2023</a></li>
+  <li><a href="#item3">Wealth-Lab.com: May 2023</a></li>
+  <li><a href="#item4">MetaStock: May 2023</a></li>
+  <li><a href="#item5">NinjaTrader: May 2023</a></li>
+  <li><a href="#item6">TradingView: May 2023</a></li>
+  <li><a href="#item7">NeuroShell Trader: May 2023</a></li>
+  <li><a href="#item8">AIQ: May 2023</a></li>
+  <li><a href="#item9">The Zorro Project: May 2023</a></li>
+  <li><a href="#item10">Microsoft Excel: May 2023</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: May 2023</h3></div>
+<p>In &ldquo;An Adaptive Moving Average For Swing Trading&rdquo; in the March 2023 issue, author Scott Cong presents a new adaptive moving average designed to be responsive, smooth, and robust. He starts with a discussion of Perry Kaufman&rsquo;s adaptive moving average, explaining how an AMA can self-adjust to different market environments. He later explains his methods of adjustments and alteration of the smoothing factor.</p>
+<p>Here is EasyLanguage for implementing Cong&rsquo;s technique in TradeStation.</p>
+<pre>
+Function: MACongAdaptive
+
+{
+	TASC MAY 2023
+	Function: Scott Cong&rsquo;s Adaptive Moving Average 
+	Scott Cong
+}
+
+inputs:
+	Price( numericseries ), 
+	Length( numericsimple );
+
+variables:
+	HH( 0 ),
+	LL( 0 ),
+	Result( 0 ), 
+	Effort( 0 ), 
+	AlphaValue( 0 );
+
+if CurrentBar = 1 then
+	MACongAdaptive = Price
+else
+begin
+	HH = Highest(High, Length);
+	LL = Lowest(Low, Length);
+	Result = HH - LL;
+	Effort = Summation(TrueRange, Length);
+	
+	if Effort &lt;&gt; 0 then
+		AlphaValue = Result / Effort 
+	else
+		AlphaValue = 1;
+
+	if AlphaValue = 1 then
+		MACongAdaptive = Price
+	else
+		MACongAdaptive = AlphaValue * Price 
+		 + (1 - AlphaValue) * _MACongAdaptive[1];
+end; 
+
+Indicator: Adaptive AMA Swing Trading
+
+{
+	TASC MAY 2023
+	An Adaptive Moving Average For Swing Trading
+	Scott Cong
+}
+
+inputs:
+	Length( 20 ),
+	Price( Close );
+
+variables:
+	AMA( 0 );
+
+AMA = MACongAdaptive( Close, Length );
+
+Plot1( AMA, &quot;Adaptive AMA&quot; );
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This TradeStation daily chart of the S&amp;P 500 ETF SPY shows a portion of 2022 and 2023 with Scott Cong&rsquo;s adaptive moving average indicator applied, compared with an EMA and SMA of similar lengths (30).</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/thinkorswim.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">thinkorswim: May 2023</h3></div>
+<p>We put together a study based on the article &ldquo;An Adaptive Moving Average For Swing Trading&rdquo; by Scott Cong, which appeared in the March 2023 issue of S&amp;C. We built the study referenced by using our proprietary scripting language, thinkscript. To ease the loading process, simply click <a href="https://tos.mx/n9SXDUV" target="_parent">https://tos.mx/n9SXDUV</a> or enter this URL into the address in <em>setup &rarr; open shared item</em> from within thinkorswim, then choose <em>view thinkScript study</em> and name it &ldquo;CongAdaptiveMovingAVG&rdquo; or whatever you like and can identify. You can then add the study to your charts from the <em>edit studies</em> menu from within the <em>charts</em> tab and then selecting <em>studies</em>.</p>
+<p>The chart in Figure 2 shows our version of the study on a one-year daily chart of SPX. Please refer to Cong&rsquo;s article in the March 2023 issue for how to interpret the indicator.</p>
+<div class="figBorder">
+<img src="images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: THINKORSWIM. This shows the study, an adaptive moving average, on a one-year daily chart of SPX.</p></div>
+<p class="authorTips">&mdash;thinkorswim<br>
+A division of TD Ameritrade, Inc.<br>
+<a href="https://www.thinkorswim.com" target="_parent">www.thinkorswim.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: May 2023</h3></div>
+<p>In the March 2023 issue, Scott Cong introduced an adaptive moving average in his article titled &ldquo;An Adaptive Moving Average For Swing Trading.&rdquo; The latest build of Wealth-Lab 8 now comes with the Cong adaptive moving average (CAMA) integrated.</p>
+<p>As usual, all the Wealth-Lab tools can instantly get powered up with the new indicator, be it <em>building blocks</em> (to build trading strategies without having to write any code), our <em>indicator profiler</em> (which tells how much of an edge an indicator provides), or our <em>strategy optimization</em> tool.</p>
+<p>We &ldquo;paired&rdquo; CAMA with its slower same-period predecessor KAMA to prototype a no-code trading strategy based on moving average crossovers. You can see the result on Figure 3. To expand your choice of adaptive moving averages, install the &ldquo;Advanced Smoothers&rdquo; package in Wealth-Lab 8.</p>
+    <div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: WEALTH-LAB. This shows a 30-period CAMA crossing above and below a 30/30-period KAMA on a daily chart of the SPY ETF with the trading signals it produces. Data provided by Yahoo! Finance.</p></div>
+<p>Prototyping a trading system, including complex ideas, doesn&rsquo;t take much effort with our building blocks feature. If you&rsquo;re not familiar with Wealth-Lab, our web-based backtesting engine is free to use. You can create a system (for example, choosing Cong&rsquo;s AMA in one of the indicator blocks) in its user-friendly interface and run backtests of your strategy right in the browser. As a natural next step, your strategy becomes instantly available in the Wealth-Lab desktop application for your in-depth use. And if the strategy turns out to be good, you could publish it for the benefit of other Wealth-Lab community members.</p>
+<p>Here is the URL to visit published strategies in Wealth-Lab: <a href="https://www.wealth-lab.com/Strategy/PublishedStrategies" target="_parent">https://www.wealth-lab.com/Strategy/PublishedStrategies</a>.</p>
+<p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Metastock.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">MetaStock: May 2023</h3></div>
+<p>In the March 2023 issue of S&amp;C, Scott Cong&rsquo;s article &ldquo;An Adaptive Moving Average For Swing Trading&rdquo; introduced a new way to calculate an adaptive moving average. Coding for the MetaStock version of the indicator is shown here.</p>
+<pre>
+<strong>Formula:</strong>
+m:= Input(&quot;Method &lt;1= Price Displacement / 2= Max Range&gt;&quot;, 1, 2, 1);
+tp:= Input(&quot;Periods&quot;, 1, 500, 20);
+m1:= Abs(C - Ref(C, -tp));
+m2:= HHV(H, tp) - LLV(L, tp);
+denom:= Sum(ATR(1), tp);
+a:= If(m=1, m1, m2)/denom;
+(a * C) + ((1-a) * If(Cum(1)=tp, Ref(C, -1), PREV))
+</pre>
+<p class="authorTips">&mdash;William Golson<br>
+MetaStock Technical Support<br>
+<a href="https://MetaStock.com" target="_parent">MetaStock.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: May 2023</h3></div>
+<p>The indicator introduced in Scott Cong&rsquo;s article in the March 2023 issue titled &ldquo;An Adaptive Moving Average For Swing Trading&rdquo; is available for download from the following link for NinjaTrader 8:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/May2023SCNT8.zip" target="_blank">www.ninjatrader.com/SC/May2023SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the indicator&rsquo;s source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control center window and selecting the file you wish to examine.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, which provides you with the highest performance possible.</p>
+<p>A sample chart displaying the Cong adaptive moving average (CAMA) on a one-minute chart of the S&amp;P 500 emini (ES) is shown in Figure 4.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: NINJATRADER. This one-minute chart of the S&amp;P 500 emini (ES) displays the Cong adaptive moving average (CAMA).</p></div>
+<p class="authorTips">&mdash;Chelsea Bell<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: May 2023</h3></div>
+<p>Provided here is TradingView Pine Script code implementing the adaptive moving average indicator described in the March 2023 article by Scott Cong titled &ldquo;An Adaptive Moving Average For Swing Trading.&rdquo;</p>
+<pre>
+//  TASC Issue: May 2023 - Vol. 41, Issue 6
+//     Article: Result Vs. Effort
+//              An Adaptive Moving Average For Swing Trading.
+//  Article By: Scott Cong
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//&#64;version=5
+string title = 'TASC 2023.05 Cong Adaptive Moving Average'
+string stitle = 'AMA'
+indicator(title, stitle, true)
+
+
+// &#64;function Wilder's True Range
+// &#64;param sClose float . Source data, default=`close`.
+// &#64;param sHigh  float . Source data, default=`high`.
+// &#64;param sLow   float . Source data, default=`low`.
+wTR (
+float sClose = close ,
+float sHigh  = high  ,
+float sLow   = low   ) =&gt;
+   if bar_index &lt; 1
+       sHigh - sLow
+   else
+       math.max(
+        sHigh - sLow      ,
+        sHigh - sClose[1] ,
+        sLow  - sClose[1] )
+
+
+// &#64;function Cong Adaptive Moving Average (CAMA)
+// &#64;param length       int   . Lookback period.
+// &#64;param sClose float . Source data, default=`close`.
+// &#64;param sHigh  float . Source data, default=`high`.
+// &#64;param sLow   float . Source data, default=`low`.
+// &#64;returns float. Smoothed series data.
+maCongAdaptive (
+int   length = 10 ,
+float sClose = close ,
+float sHigh  = high  ,
+float sLow   = low   ) =&gt;
+   float result_cama = sClose
+   float hh  = ta.highest(sHigh, length)
+   float ll  = ta.lowest( sLow , length)
+   float wTR = wTR(sClose, sHigh, sLow)
+   float effort = math.sum(wTR, length)
+   float result = hh - ll
+   float alpha  = result / effort
+   if bar_index &gt; length
+       float d = (1.0 - alpha) * result_cama[1]
+       result_cama := alpha * sClose + d
+   result_cama
+
+
+int lookback = input.int(10, 'Lookback period', 1)
+float cama = maCongAdaptive(lookback)
+plot(cama, 'AMA', #4997fc,2)
+</pre>
+<p>The indicator is available on TradingView from the PineCodersTASC account: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_parent">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart is shown in Figure 5.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: TRADINGVIEW. This example TradingView chart demonstrates the Cong adaptive moving average (CAMA) on the SPY.</p></div>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="https://www.TradingView.com" target="_parent">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NeuroShell Trader: May 2023</h3></div>
+<p>The indicator introduced in Scott Cong&rsquo;s article in the March 2023 issue of S&amp;C, titled &ldquo;An Adaptive Moving Average For Swing Trading,&rdquo; can be easily implemented in NeuroShell Trader by combining some of NeuroShell Trader&rsquo;s 800+ indicators. To implement the indicators, select <em>new indicator</em> from the <em>insert</em> menu and use the indicator wizard to create the following indicators:</p>
+<pre>
+ALPHA:	Divide( PriceRange(High,Low,30), Sum( True Range(High,Low,Close), 30) )
+AMA:	DynamicExpAvg (Close, ALPHA 
+</pre>
+    <p>Figure 6 shows the adaptive exponential moving average applied to SPY.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: NEUROSHELL TRADER. This NeuroShell Trader chart demonstrates the adaptive exponential moving average applied to SPY.</p></div>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips. The <em>true range</em> indicator is available in the Advanced Indicator Set 1 Add-On, while the <em>DynamicExpAvg</em>, a dynamic rate exponential moving average custom indicator, is available for download on the free technical support website along with the Traders&rsquo; Tip.</p>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">AIQ: May 2023</h3></div>
+<p>The importable AIQ EDS file based on Scott Cong&rsquo;s article in the March 2023 issue, &ldquo;An Adaptive Moving Average For Swing Trading,&rdquo; can be obtained on request via <a href="mailto:rdencpa@gmail.com">rdencpa@gmail.com</a>. The code is also available below.</p>
+<p>Code for the author&rsquo;s indicator as shown below is set up in the downloadable AIQ EDS code file.</p>
+<pre>
+!ADAPTIVE MOVING AVERAGE FOR SWING TRADING
+!Author: Scott Cong, TASC May 2023
+!Coded by: Richard Denning, 03/14/2023
+
+!INPUTS:
+Len is 20.
+
+!CODING ABREVIATIONS:
+H is [high].
+L is [low].
+C is [close].
+C1 is val([close],1).
+
+TR  is Max(H-L,max(abs(C1-L),abs(C1-H))).
+Effort is sum(TR,Len).
+Result is highresult(H,Len) - lowresult(L,Len).
+alpha is Result / Effort.
+beta is 1 - alpha.
+
+DaysInto is ReportDate() - RuleDate().
+Stop if DaysInto &gt; Len*2.
+stopAMA is iff(stop,C, AMA).
+AMA is alpha * [close] + beta * valresult( stopAMA, 1).
+ESA is expavg(C,Len).
+</pre>
+<p>Figure 7 shows a chart of Broadcom (AVGO) along with the AMA[20] indicator (the red jagged line) and an exponential moving average indicator [20] (the green smooth line).</p>
+<div class="figBorder">
+<img src="images/TT-Aiq.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: AIQ. This shows a chart of Broadcom (AVGO) with the AMA[20] indicator (the red jagged line) and an exponential moving average indicator [20] (the green smooth line).</p></div>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:rdencpa@gmail.com">rdencpa@gmail.com</a><br>
+for AIQ Systems</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" style="width: 100px;" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: May 2023</h3></div>
+<p>Trend-following systems are usually a compromise between too many whipsaws and too much lag. In Scott Cong&rsquo;s March 2023 article &ldquo;An Adaptive Moving Average For Swing Trading,&rdquo; he proposes a solution for this dilemma with an adaptive moving average (AMA). It&rsquo;s an EMA (exponential moving average) with a variable smoothing factors, derived from the ratio of price result and price effort. Here is code for his indicator written in C:</p>
+<pre>
+var AMA(int Period)
+{
+	var Effort = 0;
+	int i;
+	for(i=0; i&lt;Period; i++)
+		Effort += TR(i);
+	var Result = HH(Period) - LL(Period);
+	return EMA(priceC(0),Result/fix0(Effort));
+}}
+</pre>
+<p>The <em>Effort</em> variable in the above code is the sum of all TrueRanges (TR) within the period. The <em>fix0</em> function is a convenience function for fixing possible division-by-zero errors by flat price lines.</p>
+<p>A comparison of the AMA (in blue) and the EMA (in red) applied to SPY is shown in the chart in Figure 8. We can see that the AMA (blue line) follows the price more closely than the EMA (red line) does, due to the fact that the AMA period is often smaller.</p>
+<div class="figBorder">
+<img src="images/TT-Zorro1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: ZORRO PROJECT. Here you see both the adaptive moving average (AMA), in blue, along with the exponential moving average (EMA), in red, applied to SPY for comparison.</p></div>
+<p>We wrote a simple SPY system that concurrently trades using both the AMA and EMA to put the indicators into action. A long position is entered when an AMA or EMA valley indicates the start of an uptend. Likewise, a short position is entered when a peak indicates the start of a downtrend. For not comparing apples with oranges, we optimize both time periods and test with walk-forward analysis. The code for this sample trading system in C follows. You can use it to experiment with the AMA.</p>
+<pre>
+void run()
+{
+	BarPeriod = 1440; 
+	LookBack = 200;
+	StartDate = 2005; 
+	EndDate = 2023;
+	asset(&quot;SPY&quot;);
+// walk-forward optimization setup
+	set(PARAMETERS,TESTNOW,PLOTNOW); 
+	NumWFOCycles = 8;
+// run a loop over the two algos
+	while(algo(loop(&quot;AMA&quot;,&quot;EMA&quot;))) {
+		vars Signals;
+		int Color;
+		int Period = optimize(20,5,100,5);
+		if(Algo == &quot;AMA&quot;) {
+			Signals = series(AMA(Period));
+			Color = BLUE;
+		} else if(Algo == &quot;EMA&quot;) {
+			Signals = series(EMA(seriesC(),Period));
+			Color = GREY;
+		}
+		if(valley(Signals)) enterLong();
+		if(peak(Signals)) enterShort();
+// plot equity curve
+		plot(Algo,ProfitOpen+ProfitClosed,LINE+AXIS2,Color);
+	}
+}
+</pre>
+<p>In the above code, the fast and slow periods are optimized separately for both algorithms. The system is trained by clicking the [Train] button on the Zorro panel, then a backtest is automatically started. Training and testing takes a few seconds. The resulting equity curve is plotted in a blue line for the AMA algo and a gray line for the standard EMA algo (Figure 9).</p>
+<div class="figBorder">
+<img src="images/TT-Zorro2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: ZORRO PROJECT. This shows the equity curves for the example simple trading system. The blue line is the equity curve for the trading system using the AMA algo and the gray line is the equity curve for the trading system that uses the EMA algo.</p></div>
+<p>In our simple system test, we can see that the AMA and EMA were head to head most of the time but the AMA beat the EMA at the end where the SPY became more volatile.</p>
+<p>The AMA indicator and the EMA/AMA trading system can be downloaded from the 2023 script repository on <a href="https://financial-hacker.com" target="_parent">https://financial-hacker.com</a>. The Zorro software for C/C++ algo trading can be downloaded from <a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a>.</p>
+    <p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: May 2023</h3></div>
+<p>In his article in the March 2023 issue, &ldquo;An Adaptive Moving Average For Swing Trading,&rdquo; Scott Cong presents an adaptive moving average and discusses his reasoning for the development of it. He works through the steps, leading him from Perry Kaufman&rsquo;s earlier adaptive moving average, which uses the concept of direction over volatility to calculate an <em>efficiency ratio</em> smoothing coefficient, to his adaptive moving average, which uses the concept of <em>result over effort</em>.</p>
+<p>The author defines &ldquo;effort&rdquo; in his article as the summation of Wilder&rsquo;s &ldquo;true range&rdquo; for each of the bars in the lookback interval.</p>
+<p>In his article, Cong shows us two possible ways to calculate a value for &ldquo;result.&rdquo; His first suggestion for <em>result</em> is &ldquo;price displacement,&rdquo; the absolute value of the difference between the price now and the price lookback bars in the past.</p>
+<p>His second suggestion for <em>result</em> is the &ldquo;maximum range&rdquo; over the lookback interval, that is, the maximum high minus the maximum low.</p>
+<p>Figure 10 replicates the first chart in Cong&rsquo;s article comparing the results using a price displacement efficiency ratio to the maximum displacement ratio.</p>
+<div class="figBorder">
+<img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 10: EXCEL. This shows comparing the CAMA using 30-bar price displacement with CAMA using 30-bar maximum range.</p></div>
+<p>Figures 11, 12, and 13 replicate the corresponding figures from the article where Cong makes comparisons between the price displacement efficiency ratio AMA and the traditional EMA and SMAs of similar lookback periods.</p>
+<div class="figBorder">
+<img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 11: EXCEL. This shows comparing a 30-bar price displacement CAMA to a 30-bar SMA and a 30-bar AMA.</p></div>
+<div class="figBorder">
+<img src="images/TT-Excel3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 12: EXCEL. This shows a 30-bar CAMA compared to 10- and 20-bar EMAs. You can change the lookback settings at the left of the chart and the changes will automatically be reflected in the series selection headings to the right of the chart and in the legend entries on the chart.</p></div>
+<div class="figBorder">
+<img src="images/TT-Excel4.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 13: EXCEL. This shows comparing three lookback periods using price displacement CAMAs.</p></div>
+<p>You can mix and match the series displayed on the chart at any given time by toggling (clicking) the checkboxes under &ldquo;lookback periods&rdquo; to the right of the chart. When you arrive at a combination of choice, click the &ldquo;show selected series&rdquo; button to update the chart display.</p>
+ <p><strong><em>To download this spreadsheet:</em></strong> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2023/05/images/code/CongAdaptiveMovingAverage.xlsm">here</a>. To successfully download it, follow these steps:</p>
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2023/05/images/code/CongAdaptiveMovingAverage.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>   
+    <p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the May 2023 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2023, Technical Analysis, Inc.</p>
+</body>
+</html>

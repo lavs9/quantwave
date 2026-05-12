@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: The DMH: An Improved Directional Movement Indicator by John F. Ehlers. Contributions from: Thinkorswim by TDAmeritrade; TradingView; eSignal; Wealth-Lab.com; NinjaTrader; Neuroshell Trader; Optuma; TradersStudio; The Zorro Project; TradeStation; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - DECEMBER 2021</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">December 2021</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2021/12/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John Ehlers&rsquo; article in this issue, &ldquo;The DMH: An Improved Directional Movement Indicator.&rdquo; Here, we present the December 2021 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList" style="text-transform: uppercase;">
+  <li><a href="#item1">Thinkorswim: December 2021</a></li>
+  <li><a href="#item2">TradingView: December 2021</a></li>
+  <li><a href="#item3"><span style="text-transform:lowercase;">e</span>SIGNAL: December 2021</a></li>
+  <li><a href="#item4">Wealth-Lab.com: December 2021</a></li>
+  <li><a href="#item5">NinjaTrader: December 2021</a></li>
+  <li><a href="#item6">Neuroshell Trader: December 2021</a></li>
+  <li><a href="#item7">Optuma: December 2021</a></li>
+  <li><a href="#item8">TradersStudio: December 2021</a></li>
+  <li><a href="#item9">The Zorro Project: December 2021</a></li>
+  <li><a href="#item10">TradeStation: December 2021</a></li>
+  <li><a href="#item11">Microsoft Excel: December 2021</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Thinkorswim.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Thinkorswim: December 2021</h3></div>
+<p>We put together a study based on the article by John Ehlers in this issue titled &ldquo;The DMH: An Improved Directional Movement Indicator.&rdquo; We built the strategy referenced by using our proprietary scripting language, thinkscript. To ease the loading process, simply click on <a href="https://tos.mx/B1kwmEN" target="_parent">https://tos.mx/B1kwmEN</a> or enter it into the address into <em>setup&rarr;open shared item</em> from within thinkorswim then choose <em>view thinkScript study</em> and name it &ldquo;DMH&rdquo; or whatever you like and can identify. You can then add the strategy to your charts from the <em>edit studies</em> menu from within the <em>charts</em> tab and then select <em>studies</em>.</p>
+<p>Figure 1 shows the study added to a two-year daily chart of the emini S&amp;P 500 futures. Please see John Ehlers&rsquo; article for more information on how to utilize the study.</p>
+  <div class="figBorder">
+<img src="images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 1: THINKORSWIM. This sample chart shows the study added to a two-year daily chart of the emini S&amp;P 500 futures.</p></div>  
+<p class="authorTips">&mdash;thinkorswim<br>
+A division of TD Ameritrade, Inc.<br>
+<a href="https://www.thinkorswim.com" target="_parent">www.thinkorswim.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+ 
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: December 2021</h3></div>
+<p>Here is the TradingView Pine code for implementing the DMH indicator, based on John Ehlers&rsquo; article in this issue, &ldquo;The DMH: An Improved Directional Movement Indicator.&rdquo;</p>
+<p>The Pine Script code given here uses the recently launched version 5 of the language.</p>
+<p>The calculation starts with the classic definition of PlusDM and MinusDM. These directional movements are summed in an exponential moving average (EMA). Then, this EMA is further smoothed in a finite impulse response (FIR) filter using Hann window coefficients over the calculation period:</p>
+<pre>
+//  TASC Issue: December 2021 - Vol. 39, Issue 13
+//     Article: &quot;The DMH: An Improved
+//               Directional Movement Indicator&quot;
+//  Article By: John F. Ehlers
+//    Language: TradingView's Pine Script v5
+// Provided By: PineCoders, for TradingView.com
+
+//&#64;version=5
+indicator(&quot;TASC 2021.12 Directional Movement w/Hann&quot;, &quot;DMH&quot;)
+
+lengthInput = input.int(10,     &quot;Length:&quot;, minval = 2)
+lWidthInput = input.int( 2, &quot;Line Width:&quot;, minval = 1)
+
+hann(src, period) =&gt; // Hann FIR Filter
+    var PIx2 = 2.0 * math.pi / (period + 1)
+    sum4Hann  = 0.0, sumCoefs = 0.0
+    for count= 1 to period
+        coef      =  1.0 - math.cos(count * PIx2)
+        sum4Hann += coef * src[count - 1]
+        sumCoefs += coef
+    nz(sum4Hann / sumCoefs)
+
+dmh(period) =&gt; // Directional Movement w/Hann
+    upMove = high - high[1]
+    dnMove = -low +  low[1]
+    pDM = upMove &gt; dnMove and upMove &gt; 0 ? upMove : 0.0
+    mDM = dnMove &gt; upMove and dnMove &gt; 0 ? dnMove : 0.0
+    hann(ta.rma(pDM - mDM, period), period)
+
+signal = dmh(lengthInput)
+
+plotColor = signal &gt; 0.0 ? #FFCC00   : #0055FF
+areaColor = signal &gt; 0.0 ? #FFCC0055 : #0055FF55
+
+plot(signal, &quot;Area&quot;, areaColor, style = plot.style_area)
+plot(signal,  &quot;DMH&quot;, plotColor, lWidthInput)
+hline(0, &quot;Zero&quot;, color.gray)
+</pre>
+<p>The indicator is available on TradingView from the PineCodersTASC account: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_parent">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+ <div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 2: TRADINGVIEW. The DMH (directional movement indicator using Hann windowing coefficients) is shown on a chart of SPX.</p></div>   
+<p class="authorTips">&mdash;Pinecoders, for TradingView<br>
+<a href="https://www.tradingview.com" target="_parent">https://www.tradingview.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;"><span style="text-transform:lowercase;">e</span>SIGNAL: December 2021</h3></div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;ve provided the study &ldquo;<a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/12/images/code/DirectionalMovementusingHannWindowing.efs" target="_blank">Directional Movement using Hann Windowing.efs</a>&rdquo; based on the article in this issue by John Ehlers titled &ldquo;The DMH: An Improved Directional Movement Indicator.&rdquo; This study offers an improvement over the classic directional movement indicator developed by J. Welles Wilder by applying a finite impulse response (FIR) filter using Hann window coefficients.</p>
+<p>The study contains formula parameters that may be configured through the <em>edit chart</em> window (right-click on the chart and select &ldquo;edit chart&rdquo;). A sample chart is shown in Figure 3.</p>
+<div class="figBorder">
+<img src="images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 3: eSIGNAL. Here is an example of the study plotted on a daily chart of SPY.</p></div>
+
+<p>To discuss this study or download a complete copy of the formula code, please visit the EFS library discussion board forum under the <em>forums</em> link from the support menu at <a href="https://www.esignal.com" target="_parent">www.esignal.com</a> or visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs" target="_parent">https://www.esignal.com/support/kb/efs</a>. The eSignal formula script (EFS)
+is also available for copying &amp; pasting below.</p>
+    <pre>
+/**********************************
+Provided By:  
+Copyright 2019 Intercontinental Exchange, Inc. All Rights Reserved. 
+eSignal is a service mark and/or a registered service mark of Intercontinental Exchange, Inc. 
+in the United States and/or other countries. This sample eSignal Formula Script (EFS) 
+is for educational purposes only. 
+Intercontinental Exchange, Inc. reserves the right to modify and overwrite this EFS file with each new release. 
+
+Description:      
+    Directional Movement using Hann Windowing
+    by John F. Ehlers
+    
+
+Version:            1.00  10/07/2021
+
+Formula Parameters:                    Default:
+Length                                 14
+ 
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+var fpArray = new Array();
+var bInit = false;
+
+function preMain() {
+    setStudyTitle(&quot;Directional Movement using Hann Windowing&quot;);
+    setCursorLabelName(&quot;DMH&quot;, 0);
+    setPriceStudy(false);
+    setDefaultBarFgColor(Color.RGB(0x00,0x94,0xFF), 0);
+    setPlotType( PLOTTYPE_LINE , 0 );
+    
+    
+    var x=0;
+    fpArray[x] = new FunctionParameter(&quot;Length&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1);  
+        setDefault(14);
+    }    
+}
+
+var bVersion = null;
+var xClose = null;
+var xDMH = null;
+var SF = null;
+var xUpperMove = null;
+var xLowerMove = null;
+var PlusDM = null;
+var MinusDM = null;
+var xEMA = [];
+var coef = null;
+
+
+
+
+function main(Length) {
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return; 
+    
+    if ( bInit == false ) { 
+        xClose = close(); 
+        xHigh = high();
+        xLow = low();
+        addBand(0, PS_DASH, 1, Color.grey, 1);
+        SF = 1 / Length;
+        xUpperMove = efsInternal('Calc_xUpperMove', xHigh);
+        xLowerMove = efsInternal('Calc_xLowerMove', xLow);
+        for (var i = 0; i &lt; Length; i++){
+            xEMA[i] = 0;
+        }                    
+        
+        bInit = true; 
+    }      
+    
+    if (getCurrentBarCount() &lt; Length) return;
+    
+    
+    PlusDM = 0 ;
+    MinusDM = 0 ;
+    if (xUpperMove.getValue(0) &gt; xLowerMove.getValue(0) &amp; xUpperMove.getValue(0) &gt; 0) {
+        PlusDM = xUpperMove.getValue(0)
+    }
+    else if (xLowerMove.getValue(0) &gt; xUpperMove.getValue(0) &amp; xLowerMove.getValue(0) &gt; 0) {
+        MinusDM = xLowerMove.getValue(0)
+    }
+    
+    vEMA = SF * (PlusDM - MinusDM) + (1 - SF)* xEMA[0];
+    
+    if (getBarState() == BARSTATE_NEWBAR){
+        xEMA.unshift(vEMA);
+        xEMA.pop();
+    }
+    else {
+        xEMA[0] = vEMA
+    }
+
+    xDMH = Calc_DMH(xEMA, Length);
+
+    return xDMH;        
+}
+
+function Calc_DMH(xEMA, Length){
+    DMSum = 0;
+    coef = 0;
+
+    for (var i = 1; i &lt;= Length; i++){
+        DMSum = DMSum + (1 - Math.cos(2 * Math.PI * i / (Length + 1))) * xEMA[i - 1];
+        coef = coef + (1 - Math.cos(2 * Math.PI * i / (Length + 1))) 
+    }
+    if (coef != 0) {
+     DMH = DMSum / coef;
+    }
+
+    return DMH;    
+}
+
+function Calc_xLowerMove(xLow){
+    return (xLow.getValue(-1) - xLow.getValue(0));
+}
+
+function Calc_xUpperMove(xHigh){
+    return (xHigh.getValue(0) - xHigh.getValue(-1));
+}
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+ </pre>
+<p class="authorTips">&mdash;Eric Lippert<br>
+eSignal, an Interactive Data company<br>
+800 779-6555, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: December 2021</h3></div>
+<p>In his article in this issue, &ldquo;The DMH: An Improved Directional Movement Indicator,&rdquo; John Ehlers presents his improved version of the classic directional movement indicator (DMI or ADX), which was originally developed by J. Welles Wilder.</p>
+<p>It&rsquo;s possible to apply Ehlers&rsquo; DMH indicator in diverse ways. As one way, Ehlers suggests using the rate of change of DMH crossing over zero for a trough (and a cross under for a peak). In our test, an ROC of DMH appears jiggy, producing quite sporadic signals.</p>
+<p>In another approach, we made a sample system signal a buy if the DMH turns up, increasing after a decline, and vice versa for a sell, i.e., when it decreases following an advance.</p>
+<p>For this strategy we decided to go with the zero line crossings. The rules are a piece of cake to implement in Wealth-Lab 7 thanks to its &ldquo;building blocks&rdquo; feature that eliminates the need to program complex ideas. In a quick test on SPY, this strategy seems to beat the turn up/down approach.</p>
+    <div class="figBorder">
+<img src="images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 4: WEALTH-LAB. Setting up a DMH system in Wealth-Lab is quick and easy by using Wealth-Lab&rsquo;s building blocks feature, which eliminates the need to produce code.</p></div>
+<p><em>System rules:</em></p>
+<ul><li>Buy if the DMH crosses over zero</li>
+<li>Sell when it crosses below zero.</li></ul>
+<p>A promising idea may be to track the peaks and troughs of the DMH. A peak/trough is a move of a certain amount above/below a previous trough/peak value, expressed as indicator points or a percentage.</p>
+<p>It&rsquo;s up to the trader to determine through testing which rule or rules result in more robust signal generation.</p>
+<p>Figure 5 illustrates application of the DMH to a chart of SPY.</p>
+    <div class="figBorder">
+<img src="images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 5: WEALTH-LAB. This chart shows an example of trade signals produced by the system if applied to a daily chart of SPY.</p></div>
+<p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: December 2021</h3></div>
+<p>The DMH indicator, as introduced by John Ehlers in his article in this issue, &ldquo;The DMH: An Improved Directional Movement Indicator,&rdquo; is available for download at the following links for NinjaTrader 8 and NinjaTrader 7:</p>
+
+
+    <ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://ninjatrader.com/SC/December2021SCNT8.zip" target="_blank">ninjatrader.com/SC/December2021SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7: </strong><a href="https://ninjatrader.com/SC/December2021SCNT7.zip">ninjatrader.com/SC/December2021SCNT7.zip</a></li>
+</ul>
+
+<p>Once the file is downloaded, you can import the indicator in NinjaTader 8 from within the Control Center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import in NinjaTrader 7 from within the Control Center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator&rsquo;s source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the Control Center window and selecting the DMH file. You can review the indicator&rsquo;s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the control center window and selecting the DMH file.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, which provides you with the highest performance possible.</p>
+<p>A sample chart displaying the indicator is shown in Figure 6.</p> 
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 6: NINJATRADER. In this example, the DMH indicator is applied to the emini S&amp;P 500 continuous futures contract from October 2019 to July 2021.</p></div>
+    
+    <p class="authorTips">&mdash;Brandon Haulk<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: December 2021</h3></div>
+<p>The DMH indicator, as presented in John Ehlers&rsquo; article in this issue, &ldquo;The DMH: An Improved Directional Movement Indicator,&rdquo; can be easily implemented in NeuroShell Trader using NeuroShell Trader&rsquo;s ability to call external dynamic linked libraries. Dynamic linked libraries can be written in C, C++, or Power Basic.</p> 
+<p>After moving the code given in the article to your preferred compiler and creating a DLL, you can insert the resulting indicator as follows:</p>
+
+<ol><li>Select &ldquo;New indicator …&rdquo; from the <em>insert</em> menu.</li>
+<li>Choose the <em>external program &amp; library calls</em> category.</li>
+<li>Select the appropriate <em>external DLL call</em> indicator.</li>
+<li>Set up the parameters to match your DLL.</li>
+<li>Select the <em>finished</em> button.</li></ol>
+
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 7: NEUROSHELL TRADER. This NeuroShell Trader chart shows the DMH indicator applied to SPY.</p></div>
+<p>NeuroShell Trader users can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p> 
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Optuma.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Optuma: December 2021</h3></div>
+<p>In his article in this issue, &ldquo;The DMH: An Improved Directional Movement Indicator,&rdquo; John Ehlers introduces his directional movement with Hann windowing indicator.</p>
+<p>Here is the Optuma code for implementing this indicator, using the finite impulse response (FIR) filter available with our set of Ehlers tools (optuma.com/ehlers):</p>
+<pre>
+//Ehlers DMH Indicator;
+#$Length = 14;
+PlusDM = ADX(DEFAULT=DMPlus, BARS=1);
+MinusDM = ADX(DEFAULT=DMMinus, BARS=1);
+DM1 = PlusDM - MinusDM;
+EMA = MA(DM1, STYLE=Exponential, CALC=Close, BARS=$Length);
+//Use the Finite Impulse Response function to calculate the Hann Window;
+FIR(EMA, BARS=$Length, SMOOTHSTYLE=Hann)
+</pre>
+<div class="figBorder">
+<img src="images/TT-Optuma.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 8: OPTUMA. This sample chart displays the DMH.</p></div>
+<p class="authorTips">&mdash;<a href="mailto:support@optuma.com">support@optuma.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradersStudio: December 2021</h3></div>
+<p>The importable TradersStudio files based on John Ehlers&rsquo; article in this issue, &ldquo;The DMH: An Improved Directional Movement Indicator,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also shown below.</p>
+  <p>Code for the author&rsquo;s indicator is provided in the following files:</p>
+<ul><li>Function EHLERS_DMH: Computes DMH indicator</li>
+<li>Indicator plot EHLERS_DMH_IND: Plots the DMH indicator on a chart</li></ul> 
+    
+    
+<pre>
+'The DMH: An Improved Directional Movement Indicator
+'Author: John F. Ehlers, TASC Dec 2021
+'Coded by: Richard Denning, 10/10/2021
+
+Function EHLERS_DMH(Len1)
+    'Len1 = 14
+    Dim SF As BarArray
+    Dim PlusDM As BarArray
+    Dim MinusDM As BarArray
+    Dim UpperMove As BarArray
+    Dim LowerMove As BarArray
+    Dim theEMA As BarArray
+    Dim DMSum As BarArray
+    Dim coef As BarArray
+    Dim count
+    Dim DMH As BarArray
+
+    If BarNumber=FirstBar Then
+        'Len1 = 14
+        SF = 0
+        PlusDM = 0
+        MinusDM = 0
+        UpperMove = 0
+        LowerMove = 0
+        theEMA = 0
+        DMSum = 0
+        coef = 0
+        count = 0
+        DMH = 0
+    End If
+
+    SF = 1 / Len1
+    UpperMove = High - High[1]
+    LowerMove = Low[1] - Low 
+    PlusDM = 0
+    MinusDM = 0
+    If UpperMove &gt; LowerMove And UpperMove &gt; 0 Then
+        PlusDM = UpperMove
+    Else
+        If LowerMove &gt; UpperMove And LowerMove &gt; 0 Then
+            MinusDM = LowerMove
+        End If
+    End If
+    theEMA = SF*(PlusDM - MinusDM) + (1 - SF)* theEMA[1]
+    
+'Smooth Directional Movements with Hann Windowed FIR filter
+    DMSum = 0
+    coef = 0
+    For count = 1 To Len1
+        DMSum = DMSum + (1 - TStation_Cosine(360*count / (Len1 + 1)))*theEMA[count - 1]
+        coef = coef + (1 - TStation_Cosine(360*count / (Len1 + 1)))
+    Next
+    If coef &lt;&gt; 0 Then
+        DMH = DMSum / coef
+    End If
+    EHLERS_DMH = DMH
+End Function
+'------------------------------------------------------------
+'INDICATOR PLOT:
+Sub EHLERS_DMH_IND(Len1)
+  Dim DMH As BarArray
+  DMH = EHLERS_DMH(Len1)
+  plot1(DMH)
+  plot2(0)
+End Sub
+'-------------------------------------------------------------
+</pre>
+
+<p>Figure 9 shows the indicator on a chart of Microsoft Inc. (MSFT) during 2012 and 2013.</p>
+<div class="figBorder">
+<img src="images/TT-Tradersstudio.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 9: Tradersstudio. The DMH indicator on a chart of Microsoft Inc (MSFT) during 2012 and 2013. </p></div>
+<p class="authorTips">
+&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for TradersStudio</p>
+    <!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: December 2021</h3></div>
+<p>In this issue, John Ehlers describes a new usage for the Hann window in his article, &ldquo;The DMH: An Improved Directional Movement Indicator.&rdquo; His DMH indicator is based on J. Welles Wilder&rsquo;s PlusDM and MinusDM indicators. A Hann window is applied to the output of the indicator. The code in C for Zorro follows:</p>
+<pre>
+var DMH(int Length)
+{
+  var SF = 1./Length;
+  vars EMAs = series(0,Length);
+  EMAs[0] = SF*(PlusDM(1)-MinusDM(1))+(1.-SF)*EMAs[1];
+  return Sum(hann(EMAs,Length),Length);
+}
+</pre>
+<p>The Hann() function is the same that we already used in several previous articles:</p>
+<pre>
+vars hann(vars Data,int Length)
+{
+   vars Out = series(0,Length);
+   int i;
+  for(i=0; i&lt;Length; i++)
+    Out[i] = Data[i] * (1-cos(2*PI*(i+1)/(Length+1)));
+  return Out;
+}
+</pre>
+<p>We do not normalize the output since its absolute value is not relevant here. For normalization, the Hann function can be simply applied to a series of 1s, and the reciprocal of the sum is then the normalization factor.</p>
+<p>Here is the script for replicating Ehlers&rsquo; chart in his article with an SPY price curve. The resulting chart is shown in Figure 10.</p>
+<pre>
+void run()
+{
+  StartDate = 20190901; 
+  EndDate = 20210701;
+  BarPeriod = 1440; 
+  
+  asset(&quot;SPY&quot;);
+  plot(&quot;DMH&quot;,DMH(14),NEW|LINE,RED);
+}
+</pre>
+<div class="figBorder">
+<img src="images/TT-Zorro.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 10: ZORRO PROJECT. This shows an example of the DMH indicator applied to SPY data.</p></div>
+<p>The DMH indicator and test script can be downloaded from the 2021 script repository on <a href="https://financial-hacker.com" target="_parent">https://financial-hacker.com</a>. The Zorro platform can be downloaded from <a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a>.</p> 
+<p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a></p><br>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+  
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: December 2021</h3></div>
+<p>In the article &ldquo;The DMH: An Improved Directional Movement Indicator&rdquo; in this issue, John Ehlers explores a method of modernizing directional movement with Hann windowing. Directional movement has been a mainstay in technical analysis and has been an examined concept by traders for decades. When the original directional movement indicator was created by J. Welles Wilder, technology did not easily allow for complex calculations. Ehlers proposes it is time for an upgrade. While the DMH indicator defaults to using Wilder&rsquo;s 14 bars, Ehlers suggests the length should be at the discretion of the trader or can be determined by optimization if the DMH is used in a strategy.</p>
+<pre>
+Indicator:  TASC DEC 2021 DMH
+// TASC DEC 2021
+// DMH - Directional Movement using Hann windowing
+// (C) 2021 John F. Ehlers
+
+inputs:
+	Length(14);
+
+variables:
+	SF(0), PlusDM(0), MinusDM(0),
+	UpperMove(0), LowerMove(0), EMA(0),
+	DMSum(0), coef(0), count(0), DMH(0);
+
+SF = 1 / Length;
+UpperMove = High - High[1];
+LowerMove = Low[1] - Low;
+PlusDM = 0 ;
+MinusDM = 0 ;
+
+if UpperMove &gt; LowerMove and UpperMove &gt; 0 then
+	PlusDM = UpperMove
+else if LowerMove &gt; UpperMove and LowerMove &gt; 0 then
+	MinusDM = LowerMove;
+
+EMA = SF*(PlusDM - MinusDM) + (1 - SF)* EMA[1];
+//Smooth Directional Movements with Hann Windowed FIR filter
+
+DMSum = 0;
+coef = 0;
+
+for count = 1 to Length
+begin
+	DMSum = DMSum + (1 - Cosine(360*count / (Length +
+	 1)))*EMA[count - 1];
+	coef = coef + (1 - Cosine(360*count / (Length + 1)));
+end;
+
+if coef &lt;&gt; 0 then DMH = DMSum / coef;
+
+Plot1(DMH, &quot;DMH&quot;);
+Plot2(0, &quot;Zero&quot;);
+</pre>
+<p>A sample chart is shown in Figure 11.</p> 
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 11: TRADESTATION. This shows a TradeStation daily chart of the continuous emini S&amp;P 500 with the indicator applied.</p></div>
+    
+    <p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item11">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: December 2021</h3></div>
+<p>In his article in this issue, &ldquo;The DMH: An Improved Directional Movement Indicator,&rdquo; John Ehlers presents a modification to the classic directional movement indicator by using Hann windowing coefficients.</p> 
+<p>Use your Mark 1 Eyeball (as they say in military parlance) on Figure 12. Quite an improvement. You can observe that the moves of the DMH echo both the strength and local direction of the trends on our chart. The relatively smooth ROC (rate of change) crossovers pinpoint the DMH trend reversals and thus potential trading entries.</p>
+<div class="figBorder">
+<img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 12: EXCEL, DMH WITH RATE OF CHANGE. The relatively smooth ROC (rate of change) crossovers pinpoint the DMH.</p></div>
+<p>In an effort to reduce the potential for whipsaws, we should probably filter DMH signals with an overall trend indicator. One possibility would be 9- and 15-bar EMAs of the close. Take the long DMH signals when the 9 bar is above the 15 bar and take short DMH signals when the 9 bar is below the 15 bar.</p>
+<p>For comparison, in Figure 13 we have the starting point of Ehlers&rsquo; discussion, the DMI (a.k.a. the ADX) plotted above the DMH. The DMI (ADX) is a strength-of-trend indicator. By itself, DMI tells us nothing about direction of a trend. The DMI will show high values for either strong uptrends or strong downtrends and low values for generally sideways movements.</p>
+<div class="figBorder">
+<img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 13: EXCEL, COMPARING DMI AND DMH. The directional movement indicator (DMI; also known as the ADX) is plotted here above the DMH.</p></div>
+<p>As with other charts, the ROC of DMI will still indicate reversals of strength. But as we can see, for DMI, ROC is plenty choppy.</p>
+<p>To add directionality to a DMI (ADX) chart, we add two components of the DMI calculation, the +DI and the &ndash;DI lines (see Figure 14). When the +DI line is above the &ndash;DI line, the trend is rising and when the &ndash;DI line is above the +DI line, the trend is falling.</p>
+<div class="figBorder">
+<img src="images/TT-Excel3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 14: EXCEL. DMI (ADX) with +DI and -DI. To add directionality to a DMI (ADX) chart, two components of the DMI calculation, the +DI and the &ndash;DI lines, are added. When the +DI line is above the &ndash;DI line, the trend is rising and when the &ndash;DI line is above the +DI line, the trend is falling.</p></div>
+<p>DMH does a reasonable job of taking us from needing to mentally combine three pieces of information to looking at a single indicator to get an idea of both local trend direction and local trend strength.</p>
+    <p><strong><em>To download this spreadsheet:</em></strong> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/12/images/code/DMH.xlsm">here</a>. To successfully download it, follow these steps:</p>
+    <ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/12/images/code/DMH.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+
+    <p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p><!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the December 2021 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2021, Technical Analysis, Inc.</p>
+
+</body>
+</html>

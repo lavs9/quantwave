@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine.">
+<meta name="description" content="This month: Backtesting A Mean-Reversion Strategy In Python by Anthony Garner. Contributions from: TradeStation, Wealth-Lab, MetaStock, thinkorswim, NinjaTrader, Neuroshell Trader, Trade Navigator, AIQ, TradersStudio, Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - MAY 2019</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="https://traders.com/CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">May 2019</h1>
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div> <img src="images/TT-Garner.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+  <p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Anthony Garner&rsquo;s article in this issue, &ldquo;Backtesting A Mean-Reversion Strategy In Python.&rdquo; Here, we present the May 2019 Traders&rsquo; Tips code with possible implementations in various software.</p>
+  <p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p>
+  <p>Python code is also provided by Garner in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>
+  <p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+  <br class="clearfloat">
+</div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TRADESTATION: MAY 2019</a></li>
+  <li><a href="#item2">WEALTH-LAB: MAY 2019</a></li>
+  <li><a href="#item3">METASTOCK: MAY 2019</a></li>
+  <li><a href="#item4">THINKORSWIM: MAY 2019</a></li>
+  <li><a href="#item5">NINJATRADER: MAY 2019</a></li>
+  <li><a href="#item6">NEUROSHELL TRADER: MAY 2019</a></li>
+  <li><a href="#item7">TRADE NAVIGATOR: MAY 2019</a></li>
+  <li><a href="#item8">AIQ: MAY 2019</a></li>
+  <li><a href="#item9">TRADERSSTUDIO: MAY 2019</a></li>
+  <li><a href="#item10">MICROSOFT EXCEL: MAY 2019</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-New.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">TRADESTATION: MAY 2019</h3>
+</div>
+<p>In &ldquo;Backtesting A Mean-Reversion Strategy In Python&rdquo; in this issue, author Anthony Garner introduces a strategy based on the concept of buying an oversold asset and selling an overbought asset. To quantify this, he uses the classic z-score calculation. In addition, he adds a component to evaluate the existing trend as well as position sizing to allow for reinvestment.</p>
+<p>Here is TradeStation EasyLanguage code for an indicator and strategy based on the author&rsquo;s concepts. We also included a function for calculating the z-score that can be used in your own code.</p>
+<pre>
+Indicator: Z Score
+// TASC May 2019
+// Mean-Reversion Strategy
+// Anthony Garner
+
+inputs:
+	Price( Close ),
+	ZScoreLength( 10 ),
+	EntryLevel( 1 ),
+	ExitLevel( .5 ) ;
+	
+variables:
+	ZS( 0 ) ;
+
+ZS = ZScore( Price, ZScoreLength ) ;		
+
+Plot1( ZS, &quot;Z Score&quot; ) ;
+Plot2( EntryLevel, &quot;Sell Level&quot; ) ;
+Plot3( -EntryLevel, &quot;Buy Level&quot; ) ;
+Plot4( ExitLevel, &quot;Exit Short&quot; ) ;
+Plot5( -ExitLevel, &quot;Exit Long&quot; ) ;
+
+	
+Strategy: Z Score Mean-Reversion
+// TASC May 2019
+// Mean-Reversion Strategy
+// Anthony Garner
+
+inputs:
+	Price( Close ),
+	ZScoreLength( 10 ),
+	FastAvgLength( 10 ),
+	SlowAvgLength( 100 ),
+	EntryLevel( 1 ),
+	ExitLevel( .5 ),
+	InitialCapital( 10000 ),
+	LeverageToUse( 2 ),
+	MinTradeSize( 100 ),
+	MaxTradeSize( 1000 ) ;
+	
+variables:
+	ZS( 0 ),
+	FastAvgValue( 0 ),
+	SlowAvgValue( 0 ),
+	AccountEquity( 0 ),
+	TradeSize( 0 ) ;
+	
+ZS = ZScore( Price, ZScoreLength ) ;		
+FastAvgValue = Average( Close, FastAvgLength ) ;
+SlowAvgValue = Average( Close, SlowAvgLength ) ;
+
+AccountEquity = InitialCapital 
+	+ NetProfit + OpenPositionProfit ;
+TradeSize = MinList( MaxList( 
+	Floor( AccountEquity * LeverageToUse / Close ), 
+	MinTradeSize ), MaxTradeSize ) ;
+
+if ZS crosses above EntryLevel and
+	FastAvgValue &lt; SlowAvgValue then
+	SellShort ( &quot;ZS SE&quot; ) TradeSize shares 
+		next bar at Market
+else if ZS crosses below -EntryLevel and
+	FastAvgValue &gt; SlowAvgValue then
+	Buy ( &quot;ZS LE&quot; ) TradeSize shares 
+		next bar at Market ;
+
+if FastAvgValue crosses over SlowAvgValue then
+	Buy to Cover ( &quot;Trend Chg SX&quot; ) next bar at Market
+else if FastAvgValue crosses under SlowAvgValue then 
+	Sell ( &quot;Trend Chg LX&quot; ) next bar at Market ;	
+	
+if ZS crosses under ExitLevel then	
+	Buy to Cover ( &quot;ZS SX&quot; ) next bar at Market	
+else if ZS crosses over -ExitLevel then
+	Sell ( &quot;ZS LX&quot; ) next bar at Market ;
+
+
+Function: Z Score
+// Function Name: ZScore
+// Return Type: Double
+// Storage: Simple
+
+inputs:
+	Price( NumericSeries ),
+ 	AvgLen( NumericSimple ) ;
+
+ZScore = (Price - Average( Price, AvgLen ) )
+ / StandardDev( Price, AvgLen, 1 ) ;
+ </pre>
+<p>To download the EasyLanguage code, please visit our TradeStation and EasyLanguage support forum. The files for this article can be found here: <a href="https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=156727" target="_parent">https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=156727</a>. The filename is &ldquo;TASC_MAY2019.ZIP.&rdquo; For more information about EasyLanguage in general, please see <a href="https://www.tradestation.com/EL-FAQ" target="_parent">https://www.tradestation.com/EL-FAQ</a>.</p>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder"> <img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This example TradeStation chart shows the daily SPY with the mean-reversion strategy and indicator applied.</p>
+</div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips"> &mdash;Doug McCrary<br>
+  TradeStation Securities, Inc.<br>
+  <a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">WEALTH-LAB: MAY 2019</h3>
+</div>
+<p>Wealth-Lab owes to C# the power of extensibility and ability to express trading rules of any complexity. However, its strong point is also that no programming may be required to &ldquo;wire-frame&rdquo; a trading system idea.</p>
+<p>The Strategy Builder in Wealth-Lab lets us throw building blocks known as <em>rules</em> onto a &ldquo;drawing board,&rdquo; group them together, or divide them into separate chunks. To put together a strategy based on the concepts presented in Anthony Garner&rsquo;s article in this issue, &ldquo;Backtesting A Mean-Reversion Strategy In Python,&rdquo; you could take actions such as the following:</p>
+<ol>
+  <li>Add a few entry buy/sell rules (or short/cover if you prefer).</li>
+  <li>Drag and drop some selections of <em>Indicator crosses below (above) a value</em> and pick &ldquo;ZScore&rdquo; from the Community Indicators group (requires the Community Indicators library v2019.04 or greater).</li>
+  <li>Do the same for <em>fast moving average is above (below) slow moving average</em> to take trades only if the long-term trend is in your favor.</li>
+  <li>For the exit, repeat step 2 with an opposite z-score value.</li>
+</ol>
+<p>There&rsquo;s one more exit rule in the Python code that Garner provides in his article, which liquidates positions if the z-score flips from positive to negative or vice versa without going through the neutral zone. As shown in Figure 2, implementing it is a matter of dropping an &ldquo;OR&rdquo; divider with a couple of extra conditions below it.</p>
+<div class="figBorder"> <img src="images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 2: WEALTH-LAB. Here is an example of creating a mean-reversion strategy using the rules wizard.</p>
+</div>
+<p>If everything&rsquo;s done right, your trading system will generate trades similar to those shown in Figure 3. Those of you who prefer C# to take complete control will find a sample strategy code listing here. (This will also be available in the Traders&rsquo; Tips section at Traders.com.)</p>
+<div class="figBorder"> <img src="images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 3: WEALTH-LAB. Here are some characteristic trades on a daily chart of Coca-Cola (data provided by Yahoo). </p>
+</div>
+<p>Bottom line: The advantage of Wealth-Lab over software packages that require coding is that we can come up with a mean-reversion system like the one presented by Garner&rsquo;s article in just a few minutes&rsquo; time.</p>
+<pre>
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Drawing;
+using WealthLab;
+using WealthLab.Indicators;
+using Community.Indicators;
+
+namespace WealthLab.Strategies
+{
+	public class MeanReversion : WealthScript
+	{
+		private StrategyParameter paramPeriod;
+      
+		public MeanReversion()
+		{
+			paramPeriod = CreateParameter(&quot;Period&quot;, 10, 5, 30, 5);
+		}
+      
+		protected override void Execute()
+		{
+			int period = paramPeriod.ValueInt;
+			int lmaPeriod = period * 10;
+			
+			SMA sma = SMA.Series( Close, period );
+			SMA lma = SMA.Series( Close, lmaPeriod );
+			DataSeries zscore = ZScore.Series( Close, period, StdDevCalculation.Sample );
+			PlotSeries( PricePane, sma, Color.Red, LineStyle.Solid, 1 );
+			PlotSeries( PricePane, lma, Color.Blue, LineStyle.Solid, 2 );
+         
+			ChartPane zPane = CreatePane( 30, true, true );
+			PlotSeries( zPane, zscore, Color.DarkViolet, LineStyle.Histogram, 3 );
+			DrawHorzLine( zPane, 1.0, Color.Red, LineStyle.Dashed, 1 );
+			DrawHorzLine( zPane, -1.0, Color.Blue, LineStyle.Dashed, 1 );
+			
+			/* The trigger is a move up or down by more than one standard deviation from the 10-day average price:
+			a z-score of over +1 triggers a sell and a z-score of less than -1 triggers a buy. */
+			
+			for(int bar = GetTradingLoopStartBar(1); bar &lt; Bars.Count; bar++)
+			{
+				if ( IsLastPositionActive )
+				{					
+					/* exit all positions if zscore flips from positive to negative or vice versa
+					without going through the neutral zone */
+					if( (zscore[bar - 1] &lt; -0.5 &amp;&amp; zscore[bar] &gt; 0.5) ||						
+						// Clear positions if the z-score between -.5 and .5
+						Math.Abs(zscore[bar]) &lt; 0.5 )
+						SellAtMarket( bar+1, LastPosition );
+				}
+				else
+				{
+					/* Buy long if the z-score is &lt; -2 and the longer term trend is positive */
+					if( zscore[bar] &lt; -2 &amp;&amp; sma[bar] &gt; lma[bar])
+						BuyAtMarket( bar+1 );
+				}
+			}
+		}
+	}
+}
+</pre>
+<p class="authorTips"> &mdash;Gene (Eugene) Geren), Wealth-Lab team<br>
+  MS123, LLC<br>
+  <a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Metastock.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">METASTOCK: MAY 2019</h3>
+</div>
+<p>Anthony Garner&rsquo;s article in this issue, &ldquo;Backtesting A Mean-Reversion Strategy In Python,&rdquo; presents a trading system and the code to backtest it using the Python language. The code to test the system in MetaStock is provided here. </p>
+<pre>
+General tab:
+Name: Mean-Reversion Strategy
+Notes: 
+Based on code provided by Anthony Garner
+Buy Order tab:
+Formula:
+length:= 10;
+sma:= mov(c,length, S);
+lma:= mov(c, length*10, s);
+dev:= std(c, length);
+z:= (C - sma)/dev;
+(z &lt; -1) AND (sma &gt; lma)
+
+Sell Order tab:
+Formula:
+length:= 10;
+sma:= mov(c,length, S);
+lma:= mov(c, length*10, s);
+dev:= std(c, length);
+z:= (C - sma)/dev;
+z &gt; -0.5
+
+Sell Short Order tab:
+Formula:
+length:= 10;
+sma:= mov(c,length, S);
+lma:= mov(c, length*10, s);
+dev:= std(c, length);
+z:= (C - sma)/dev;
+(z &gt; 1) AND (sma &lt; lma)
+</pre>
+<p class="authorTips"> &mdash;William Golson<br>
+  MetaStock Technical Support<br>
+  <a href="https://www.metastock.com" target="_parent">www.metastock.com</a> </p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Thinkorswim.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">THINKORSWIM: MAY 2019</h3>
+</div>
+<p>We have put together a strategy for thinkorswim based on Anthony Garner&rsquo;s article &ldquo;Backtesting A Mean-Reversion Strategy In Python.&rdquo; The strategy is built using our proprietary scripting language, thinkscript, as opposed to Python. To ease the loading process, simply click on <a href="https://tos.mx/rIy6Qv" target="_parent">https://tos.mx/rIy6Qv</a> or enter the address into a web browser and then click <em>open shared item</em> from within thinkorswim. Choose <em>view thinkscript</em> and name it &ldquo;SimpleMeanReversion.&rdquo; This can then be added to your chart.</p>
+<p>A sample chart is shown in Figure 4.</p>
+<div class="figBorder"> <img src="images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 4: THINKORSWIM. This shows the strategy added to a daily chart of SPY for the timeframe beginning in 1993 until the middle of March 2019.</p>
+</div>
+<p class="authorTips"> &mdash;thinkorswim<br>
+  A division of TD Ameritrade, Inc.<br>
+  <a href="https://www.thinkorswim.com" target="_parent">www.thinkorswim.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">NINJATRADER: MAY 2019</h3>
+</div>
+<p>The MeanReversal strategy that is discussed in &ldquo;Backtesting A Mean-Reversion Strategy In Python&rdquo; in this issue by Anthony Garner is available for download at the following links for NinjaTrader 8 and NinjaTrader 7:</p>
+<ul style="list-style: none;">
+  <li><strong>NinjaTrader 8:</strong> <a href="https://www.ninjatrader.com/SC/May2019SCNT8.zip" target="_parent">www.ninjatrader.com/SC/May2019SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7:</strong> <a href="https://www.ninjatrader.com/SC/May2019SCNT7.zip" target="_parent">www.ninjatrader.com/SC/May2019SCNT7.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the strategy in NinjaTader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import into NinjaTrader 7, from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the strategy&rsquo;s source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Strategies from within the control center window and selecting the MeanReversal file. You can review the strategy&rsquo;s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Strategy from within the control center window and selecting the MeanReversal file.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p>A sample chart implementing the strategy is shown in Figure 5.</p>
+<div class="figBorder"> <img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 5: NINJATRADER. Here, the MeanReversal shows some successful long trades in the NinjaTrader 8 Strategy Analyzer between August 2017 and October 2017 on SPY.</p>
+</div>
+<p class="authorTips">&mdash;Raymond Deux & Jim Dooms<br>
+  NinjaTrader, LLC<br>
+  <a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">NEUROSHELL TRADER: MAY 2019</h3>
+</div>
+<p>The mean-reversion strategy described by Anthony Garner in his article in this issue, &ldquo;Backtesting A Mean-Reversion Strategy In Python,&rdquo; can be easily implemented in NeuroShell Trader by combining a few of NeuroShell Trader&rsquo;s 800+ indicators.  Simply select &ldquo;New trading strategy&rdquo; from the <em>insert</em> menu and enter the following in the appropriate locations of the trading strategy wizard:</p>
+<pre>
+BUY LONG CONDITIONS: [All of which must be true]
+     CrossBelow(StndNormZScore(Close,10),-1)
+     A&gt;B(Avg(Close,10),Avg(Close,100))
+     A&lt;B(Lag(StndNormZScore(Close,10),1),0.5)
+
+SELL LONG CONDITIONS: [All of which must be true]
+     CrossAbove(StndNormZScore(Close,10),0.5)
+
+SELL SHORT CONDITIONS: [All of which must be true]
+     CrossAbove(StndNormZScore(Close,10),1)
+     A&lt;B(Avg(Close,10),Avg(Close,100))
+     A&gt;B(Lag(StndNormZScore(Close,10),1),-0.5)
+
+COVER SHORT CONDITIONS: [All of which must be true]
+     CrossBelow(StndNormZScore(Close,10),0.5)
+
+POSITION SIZING METHOD:
+     Percent of Account
+          100.00% of account balance
+</pre>
+<p>If you choose to use pyramiding or slippage, those can be set up in the trading parameters dialog as well. After entering the system conditions, you can also choose whether the parameters should be genetically optimized. After backtesting the trading strategy, use the <em>detailed analysis</em> button to view the backtest and trade-by-trade statistics for the system.</p>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p>A sample chart is shown in Figure 6.</p>
+<div class="figBorder"> <img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 6: NEUROSHELL TRADER. This NeuroShell Trader chart displays the mean-reversion strategy applied to SPY.</p>
+</div>
+<p class="authorTips"> &mdash;Marge Sherald, Ward Systems Group, Inc.<br>
+  301 662-7950, <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+  <a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item7"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Genesis.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">TRADE NAVIGATOR: MAY 2019</h3>
+</div>
+<p>To make it easy to implement the concepts presented in &ldquo;Backtesting A Mean-Reversion Strategy In Python&rdquo; by Anthony Garner in this issue, we&rsquo;ve created a special file that can be downloaded in Trade Navigator.</p>
+<p>The file name for this library is &ldquo;SC201905.&rdquo; To download it, click on Trade Navigator&rsquo;s blue telephone button, select download special file, and replace the word &ldquo;upgrade&rdquo; with &ldquo;SC201905&rdquo; (without the quotes). Then click the start button. When prompted to upgrade, click the yes button. If prompted to close all software, click on the continue button. Your library will now download.</p>
+<p>The library contains a prebuilt strategy called &ldquo;mean-reversion strategy&rdquo; based on the article. This prebuilt strategy can be overlaid onto your chart by opening the <em>charting</em> dropdown menu, selecting the <em>add to chart</em> command, then selecting the <em>strategies</em> tab.</p>
+<p>If you have any difficulty importing the library or using the strategy, users may contact our technical support staff by phone or by live chat. The live chat tool is located under Trade Navigator&rsquo;s help menu, or near the top of the homepage. Support hours are M-F 8am-8pm US Eastern Time.  Happy Trading!</p>
+<p class="authorTips"> &mdash;Genesis Financial Technologies<br>
+  Tech support 719 884-0245<br>
+  <a href="https://www.TradeNavigator.com" target="_parent">www.TradeNavigator.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item8"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">AIQ: MAY 2019</h3>
+</div>
+<p>The importable AIQ EDS file based on Anthony Garner&rsquo;s article in this issue, &ldquo;Backtesting A Mean-Reversion Strategy In Python,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also shown below.</p>
+<p>I backtested the author&rsquo;s mean-reversion system (MeanRev.eds) using both the EDS module, which tests every trade on a one-share basis, and also via the Portfolio Manager, which performs a trading simulation. The short side strategy showed a loss overall in the EDS test so I tested only the long side in the Portfolio Manager. I selected trades using the z-score, taking the lowest values. For capitalization, I used max of three trades per day with a max total of 10 open trades at one time, 10% allocated to each position. I did not deduct slippage but did deduct commissions. I used a recent list of the NASDAQ 100 stocks to run the test. The equity curve and account statistics report are shown in Figure 7.</p>
+<div class="figBorder"> <img src="images/TT-Aiq.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 7: AIQ. This shows the equity curve (blue line) from long-only trading the NASDAQ 100 list of stocks from 1999 to March 15, 2019. The red line is the NDX index.</p>
+</div>
+<pre>
+!Backtesting a Mean-Reversion Strategy In Python
+!Author: Anthony Garner, TASC May 2019
+!Coded by: Richard Denning 3/14/19
+!www.TradersEdgeSystems.com
+
+!ABBREVIATIONS:
+C is [close].
+
+!INPUTS:
+meanLen is 10.
+longZmult is -1.
+shortZmult is 1.
+meanMult is 10.
+
+!FORMULAS:
+SMA is simpleavg(C,meanLen).
+LMA is simpleavg(C,meanLen*meanMult).
+STD is sqrt(variance(C,meanLen)).
+zScore is (C - SMA) / STD.
+ 
+!TRADING SIGNALS &amp; EXITS:
+buyLong if zScore &lt; longZmult and SMA &gt; LMA.
+sellShort if zScore &gt; shortZmult and SMA &lt; LMA.
+exitLong if valresult(zScore,1) &lt; -0.5 and zScore &gt; 0.5.
+exitShort if valresult(zScore,1) &gt; 0.5 and zScore &lt; -0.5.
+
+showValues if 1.
+</pre>
+<p class="authorTips"> &mdash;Richard Denning<br>
+  <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+  for AIQ Systems </p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item9"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/TradersStudio.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">TRADERSSTUDIO: MAY 2019</h3>
+</div>
+<p>The importable TradersStudio file based on Anthony Garner&rsquo;s article in this issue, &ldquo;Backtesting A Mean-Reversion Strategy In Python,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also shown below.</p>
+<p>After coding the system given in the article in TradersStudio, I ran a quick optimization trading the Nasdaq 100 list of stocks. The results showed the short moving average parameter should be changed to 20 from 10, with the other parameters staying the same. Figures 8 and 9 show the results of trading a constant 200 shares of each stock with parameters (20,-1,10) trading the long-only side. I did not code or test the short side.</p>
+<pre>
+'Backtesting a Mean-Reversion Strategy In Python
+'Author: Anthony Garner, TASC May 2019
+'Coded by: Richard Denning 3/14/19
+'www.TradersEdgeSystems.com
+
+sub MEAN_REV(meanLen,longZmult,meanMult)
+
+'INPUTS:
+'meanLen = 20,longZmult = -1,meanMult = 10 
+
+Dim SMA As BarArray
+Dim LMA As BarArray
+Dim STD As BarArray
+Dim zScore As BarArray
+
+'FORMULAS:
+SMA = Average(C,meanLen) 
+LMA = Average(C,meanLen*meanMult) 
+STD = StdDevS(C,meanLen)
+zScore = (C - SMA) / STD 
+ 
+'TRADING SIGNALS &amp; EXITS:
+If zScore &lt; longZmult And SMA &gt; LMA Then Buy(&quot;LE&quot;,1,0,Market,Day)  
+If zScore[1] &lt; -0.5 And zScore &gt; 0.5 Then ExitLong(&quot;LX&quot;,&quot;&quot;,1,0,Market,Day) 
+ 
+End Sub
+</pre>
+<div class="figBorder"> <img src="images/TT-Tradersstudio1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 8: TRADERSSTUDIO. This shows the equity curve for MEAN_REV_ses (20,-1,10), long-only trading 200 shares of each of the stocks in the NASDAQ 100 for the period 1999 to 2014.</p>
+</div>
+<div class="figBorder"> <img src="images/TT-Tradersstudio2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 9: TRADERSSTUDIO. This shows the summary report for MEAN_REV_ses (20,-1,10), long-only trading 200 shares of each of the stocks in the NASDAQ 100 for the period 1999 to 2014.</p>
+</div>
+<p class="authorTips"> &mdash;Richard Denning<br>
+  <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+  for TradersStudio </p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+  <h3 class="newsTitle grey_blue">MICROSOFT EXCEL: MAY 2019</h3>
+</div>
+<p>In &ldquo;Backtesting A Mean-Reversion Strategy In Python&rdquo; in this issue, Anthony Garner outlines a simple mean-reversion strategy and the logic to test it.</p>
+<div class="figBorder"> <img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 10: EXCEL. Price action is shown with z-score decision boundaries highlighted. </p>
+</div>
+<p>He includes a number of settings that can be used to customize the results. which I have implemented in Excel (Figure 10). Some of the controls need a bit of explaining:</p>
+<p>The % of equity actually controls the number of shares in a given transaction, as it is the main driver in the calculation of fixed fraction, which is the number of shares you can buy with that percentage of your current equity.</p>
+<p>Max position (Figure 11) sets a &ldquo;soft&rdquo; high-water mark in that once you have more shares (long or short) than this number, you will not add any more. But your first purchase or short sale may have exceeded this max by quite a bit.</p>
+<div class="figBorder"> <img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 11: EXCEL. Here, the equity with max position control is set to 1. </p>
+</div>
+<p>You can play with the user controls. Enjoy!</p>
+<p>The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2019/05/images/code/MeanReversionBacktest.xlsm">here</a>. To successfully download it, follow these steps:</p>
+<ul>
+  <li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2019/05/images/code/MeanReversionBacktest.xlsm">Excel file link</a>, then</li>
+  <li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li>
+</ul>
+<p class="authorTips"> &mdash;Ron McAllister<br>
+  Excel and VBA programmer<br>
+  <a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a> </p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the May 2019 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2019, Technical Analysis, Inc.</p>
+</body>
+</html>

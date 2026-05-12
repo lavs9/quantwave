@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: RODC Indicator by Richard Poster. Contributions from: TradeStation; Wealth-Lab.com; NinjaTrader; TradingView; Neuroshell Trader; RealTest.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - MARCH 2024</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">March 2024</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2024/03/images/TT-Poster.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Richard Poster&rsquo;s article in this issue, &ldquo;Taming The Effects Of Whipsaw.&rdquo; Here, we present the March 2024 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p>
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: March 2024</a></li>
+  <li><a href="#item2">Wealth-Lab.com: March 2024</a></li>
+  <li><a href="#item3">NinjaTrader: March 2024</a></li>
+  <li><a href="#item4">TradingView: March 2024</a></li>
+  <li><a href="#item5">Neuroshell Trader: March 2024</a></li>
+  <li><a href="#item6">RealTest: March 2024</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: March 2024</h3></div>
+<p>In the article &ldquo;Taming The Effects Of Whipsaw&rdquo; in this issue, author Richard Poster explains the process of utilizing a whipsaw filter to identify and manage whipsaw data, thereby diminishing the likelihood of false entry signals in a strategy centered on trend following. The number of alternating up and down zigzag segments within a window is tracked to create a rate of directional change (RODC) that is smoothed over a specified period. The RODC declines in trending environments and increases with whipsaw movements.</p>
+<pre>
+<b>Indicator: Rate of Directional Change (RODC) </b>
+
+// TASC MAR 2024
+// Rate of Directional Change (RODC)
+// RODC based on zigzag
+// Copyright 2023–2024, Richard Poster 
+
+inputs:
+	int BkData( 30 ),   // Window
+	double Lamda( 15.0 ),   // Zigzag Threshold
+	int PerSmth( 3 );   // Smooth Period
+    
+variables:
+		int NumUp( 0 ),
+		int NumDn( 0 ),
+		int NumUD( 0 ),
+		int Idx( 0 ),
+		bool ModeUp( false ),
+		double Digits( 0 ),
+		double ExtZigzag( 0 ),
+		double OneTick( 0 ),
+		double LamUp( 0.0 ),
+		double LamDn( 0.0 ),
+		double MULT( 0 ),
+		double Smoothed( 0 ),
+		double Xcls( 0 ),
+		double Xext( 0 );
+		
+once
+begin
+	OneTick = MinMove / PriceScale;
+	Digits = NumDecimals(PriceScale);
+	MULT = Iff(Digits = 5 or Digits = 3, 10, 1);
+	LamUp = Lamda;
+	LamDn = Lamda;
+end;
+
+NumUp = 1; // Assume starting in mode up
+NumDn = 0;
+NumUD = 1;
+ModeUp = true; // Starting value
+Xext = Close[BkData];
+
+for Idx = 1 to BkData - 1
+begin
+    Xcls = Close[Idx];
+
+    if ModeUp = false then
+    begin
+        if Xext &gt; Xcls then // Still mode down
+        begin
+            Xext = Xcls;
+        end
+        else if (Xcls - Xext) 
+         / (MULT * OneTick) &gt;= LamDn then
+        begin
+        	// New mode
+            ModeUp = true;
+            Xext = Xcls;
+            NumUp += 1; // Increment up mode counter 
+            NumUD += 1; // Increment mode counter
+        end;
+    end
+    else
+    begin
+        if Xext &lt; Xcls then // Still mode up
+        begin
+            Xext = Xcls;
+        end
+        else if (Xcls - Xext) 
+         / (MULT * OneTick) &lt;= -LamUp then
+        begin
+        	// New mode
+ 			ModeUp = false;
+ 			Xext = Xcls;
+ 			NumDn += 1; // Increment down mode counter
+ 			NumUD += 1; // Increment mode counter
+ 		end;
+ 	end;
+end;
+
+if NumUD = 0 then // Trend length &gt; window size
+	ExtZigzag = 100 / BkData
+else
+	ExtZigzag = 100 * NumUD / BkData;
+
+Smoothed = Average( ExtZigzag, PerSmth );
+Plot1( Smoothed, &quot;RODC&quot; );
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. A TradeStation 60-minute chart of EURUSD shows a portion of December 2023 with the study applied.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by Trade­Station Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="http://www.TradeStation.com" target="_blank">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: March 2024</h3></div>
+<p>A large part of the coding for the <em>rate of directional change indicator</em> (RODC), discussed in Richard Poster&rsquo;s article in this issue titled &ldquo;Taming The Effects Of Whipsaw,&rdquo; is natively encapsulated in WealthLab&rsquo;s PeakTroughCalculator class. We simply created a SegmentCount routine the navigates and counts the segments in the PeakTrough list generated by calculator, storing the result in a TimeSeries that becomes the RODC indicator after applying simple moving average smoothing.</p>
+<p>Here, you&rsquo;ll find the code to mock up an RODC indicator in Wealth-Lab. We didn&rsquo;t apply the RODC to a trading strategy, but you can use the sliders to see how changing parameters affect the indicator. The reversal parameter is set up for forex pips. You&rsquo;ll need much larger values to produce a zigzag for stocks or futures contracts.</p>
+<p>A sample chart is in Figure 2 showing the rate of directional change (RODC) indicator plotted with a close-to-close ZigZig.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: WEALTH-LAB. Here you see an example of the rate of directional change (RODC) indicator plotted with a close-to-close ZigZig.</p></div>
+<pre>
+using WealthLab.Backtest;
+using System;
+using WealthLab.Core;
+using WealthLab.Data;
+using WealthLab.Indicators;
+using System.Collections.Generic;
+
+namespace WealthScript2023 
+{
+	public class TASCMarch2024 : UserStrategyBase
+	{
+		TimeSeries _rodc;
+		PeakTroughCalculator _ptc;
+		
+		public TASCMarch2024()
+		{
+			AddParameter(&quot;Reversal Pips&quot;, ParameterType.Int32, 15, 10, 50, 5);
+			AddParameter(&quot;Window Bars&quot;, ParameterType.Int32, 30, 20, 50, 5);
+			AddParameter(&quot;Smoothing Bars&quot;, ParameterType.Int32, 3, 1, 10, 1);
+		}
+
+		public override void Initialize(BarHistory bars)
+		{
+			double reversal = Parameters[0].AsInt / 10000d;
+			int window = Parameters[1].AsInt;
+			int smooth = Parameters[2].AsInt;
+			DrawHeaderText($&quot;Reversal: {reversal:N4} pts&quot;, WLColor.Gold, 14);
+
+			// show the zigzag
+			ZigZag zz = ZigZag.Series(bars.Close, reversal, PeakTroughReversalType.Point, false);
+			PlotIndicator(zz, WLColor.Gold, PlotStyle.ZigZag);
+			
+			// _rodc indicator
+			_ptc = new PeakTroughCalculator(bars.Close, reversal, PeakTroughReversalType.Point);			
+			_rodc = new TimeSeries(bars.DateTimes, 0);
+
+			for (int n = window; n &lt; bars.Count; n++)
+				_rodc[n] = SegmentCount(n, _ptc, window);
+		
+			_rodc = 100 * _rodc / window;
+			_rodc = SMA.Series(_rodc, smooth);	// smoothing
+
+			PlotTimeSeries(_rodc, $&quot;RODC({window}, {smooth})&quot;, &quot;_rodc&quot;, WLColor.NeonGreen);			
+		}
+
+		int SegmentCount(int bar, PeakTroughCalculator ptc, int lookback)
+		{
+			int count = 0;	// author's code initializes &quot;nUD&quot; count to 1
+			PeakTrough pt = ptc.GetPeakTrough(bar);
+			
+			while (pt != null &amp;&amp; bar - pt.DetectedAtIndex &lt; lookback)
+			{
+				count++;
+				pt = ptc.GetPrevPeakTrough(pt);
+			}
+			return count;
+		}
+
+		public override void Execute(BarHistory bars, int idx)
+		{
+			// use _rodc in your trading rules here 
+		}
+	}
+}
+</pre>
+<p class="authorTips">&mdash;Robert Sucher<br>
+Wealth-Lab team<br>
+<a href="http://www.wealth-lab.com" target="_blank">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: March 2024</h3></div>
+<p>The smoothed rate of directional change indicator discussed in the article &ldquo;Taming The Effects Of Whipsaw&rdquo; by Richard Poster in this issue is available for download at the following link for NinjaTrader 8:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/March2024SCNT8.zip" target="_blank">www.ninjatrader.com/SC/March2024SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the file.</p>
+<p>A sample chart displaying the indicator is shown in Figure 3.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: NINJATRADER. The smoothed rate of directional change indicator is plotted here on a 60-minute chart of EURUSD. </p></div>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">&mdash;NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_blank">www.ninjatrader.com</a></p>
+
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: March 2024</h3></div>
+<p>This TradingView Pine Script code implements the rate of directional change (RODC) indicator discussed in &ldquo;Taming The Effects Of Whipsaw&rdquo; in this issue by Richard Poster.</p>
+<pre>
+//  TASC Issue: March 2024 - Vol. 42, Issue 3
+//     Article: Taming The Effects Of Whipsaw.
+//              Improve Trading Performance With 
+// 				A Whipsaw Filter.
+//  Article By: Richard Poster
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//&#64;version=5
+string title = 'TASC 2024.03 Rate of Directional Change'
+string stitle = 'RODC'
+indicator(title, stitle, false)
+
+
+// --- Global ---
+DIGITS = syminfo.pricescale
+float MULT = 1.0
+float _point = syminfo.mintick
+float lamUp = 1.0
+float lamDn = 1.0
+
+
+// --- Inputs ---
+int  bkData = input.int(30, &quot;Window&quot;)
+float lamda = input.float(15.0, &quot;Zigzag Threshold&quot;)
+int perSmth = input.int(3, &quot;Smooth Period&quot;) 
+
+
+// --- Indicator initialization ---
+if(DIGITS == 100000 or DIGITS == 1000)
+    MULT  := 10.0
+    lamUp := lamda
+    lamDn := lamda
+
+
+// --- Main loop ---
+// Initialize for each bar, assuming mode up
+bool modeUp = true
+int     nUp = 1    // up mode counter
+int     nDn = 0    // down mode counter
+int     nUD = 1    // node counter for new mode
+// Iterate over bars within lookback window
+int   limit = bkData + perSmth + 1
+if bar_index &gt; limit
+    float xext = close[bkData]
+    for jj = bkData - 1 to 0 
+        float xcls = close[jj]
+        if not modeUp
+            if xext &gt; xcls 
+                // still mode down
+                xext := xcls
+            else
+                if ((xcls-xext)/(MULT*_point)) &gt;= lamDn 
+                    // reversal to mode up
+                    modeUp := true
+                    nUp    += 1
+                    nUD    += 1
+                    xext   := xcls
+        else
+            if modeUp
+                if xext &lt; xcls 
+                    // still mode up
+                    xext := xcls
+                else
+                    if ((xcls-xext)/(MULT*_point)) &lt;= -lamUp 
+                        // reversal to mode down
+                        modeUp := false
+                        nDn    += 1
+                        nUD    += 1
+                        xext   := xcls
+// Calculate RDOC indicator
+float RDOC = nUD==0?(100.0/bkData):(100.0*(nUD/bkData))
+// Calculate smoothed RDOC
+float smaRDOC = ta.sma(RDOC, perSmth)
+
+
+// --- Plotting ---
+plot(smaRDOC, 'RDOC Smoothed', color.blue, 2)
+</pre>
+<p>The indicator is available on TradingView from the PineCodersTASC account: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart displaying the indicator in TradingView is shown in Figure 4.</p>
+
+    <div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: TRADINGVIEW. The rate of directional change indicator (RODC 30/15/3) is plotted here on a 60-minute chart of EURUSD.</p></div><p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="http://www.TradingView.com" target="_blank">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: March 2024</h3></div>
+<p>To implement the rate of direction change (RODC) indicator in NeuroShell Trader, simply select &ldquo;New indicator…&rdquo; from the insert menu and use the indicator wizard to create the following indicator:</p>
+<pre>
+NumSegments:	Sum(A&lt;B(Momentum(TPbars(High,Low,Close,3,1,0),1),0), BARS)
+RODC: 		Mul2(100,Divide(NumSegments, BARS))
+</pre>
+<p>To calculate the average zigzag duration during analysis and modeling of whipsaws, simply create the indicator shown here:</p>
+<pre>
+AvgDuration:	Avg2(PVmeanbars(High,Low,3, BARS),VPmeanbars(High,Low,3, BARS))
+</pre>
+<p>The TPbars, PVmeanbars and VPmeanbars indicators can be found in Turning Points add-on.</p>
+<p>A sample chart is in Figure 5 showing the RODC and AvgDuration for EUR/USD.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: NEUROSHELL TRADER. This NeuroShell Trader chart shows the RODC and AvgDuration for EUR/USD.</p></div>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_blank">www.neuroshell.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Realtest.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">RealTest: March 2024</h3></div>
+<p>In &ldquo;Taming The Effects Of Whipsaw&rdquo; in this issue, Richard Poster introduces a filter based on the rate of directional change (RODC) indicator and the principles of zigzag.</p>
+<p>Here is coding in text format for use in RealTest (mhptrading.com) that implements the author&rsquo;s technique:</p>
+<pre>
+Parameters:   
+    lookback:    30
+    pips:    60 // produces about as many flips in 150 days as 15 does in 150 hours
+    smoothing:    3
+    
+Data:
+    // zigzag is calculated as a self-referential data array
+    // abs(zigzag) is latest peak or trough price
+    // sign(zigzag) is the direction flag
+
+    zigzag:    if(barnum = 1, c,
+            if(zigzag[1] &lt; 0,
+                if(c &gt; -zigzag[1] * (1 + pips/10000), c, -min(-zigzag[1], c)),
+            // else
+                if(c &lt; zigzag[1] * (1 - pips/10000), -c, max(zigzag[1], c))))
+
+    flip:     sign(zigzag) &lt;&gt; sign(zigzag[1])
+
+    flips:    100 * Sum(flip, lookback) / lookback
+
+    RDOC:    Avg(flips, smoothing)
+    
+Charts:
+    zigzag:    abs(zigzag)
+    flip:    if(flip, sign(zigzag), 0) {^}
+    RDOC:    rdoc {|}
+    </pre>
+<p>Figure 6 shows a ReatTest chart with RODC (lower pane) calculated for 150 daily bars of EURUSD.</p>
+<div class="figBorder">
+<img src="images/TT-Realtest.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: REALTEST. This example chart shows the rate of directional change (RODC) in the lower pane, calculated for 150 daily bars of EURUSD. The upper pane shows where the flips occur, and the zigzag peak or trough price line is plotted on the price bars.</p></div>
+<p>Note that the example chart in Poster&rsquo;s article shows 150 hourly bars. Since RealTest does not have hourly data, we adjusted the pips parameter to produce the equivalent number of zigzag flips in 150 days as the author showed for 150 hours.</p>
+<p>The upper pane shows where the flips occur, and the zigzag peak or trough price line is plotted on the price bars.</p>
+<p class="authorTips">&mdash;Marsten Parker<br>
+MHP Trading, <a href="https://Mhptrading.com" target="_blank">Mhptrading.com</a><br>
+<a href="mailto:mhp@mhptrading.com">mhp@mhptrading.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+        
+    <!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the March 2024 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2024, Technical Analysis, Inc.</p>
+
+</body>
+</html>

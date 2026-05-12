@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: Data Sample Testing by John F. Ehlers. Contributions from: TradeStation; TradingView; thinkorswim; Wealth-Lab.com; NinjaTrader; Neuroshell Trader; AIQ; Trade Navigator; The Zorro Project.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - MARCH 2023</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">March 2023</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2023/03/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John F. Ehlers&rsquo; article in this issue, &ldquo;Every Little Bit Helps.&rdquo; Here, we present the March 2023 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: March 2023</a></li>
+  <li><a href="#item2">TradingView: March 2023</a></li>
+  <li><a href="#item3">thinkorswim: March 2023</a></li>
+  <li><a href="#item4">Wealth-Lab.com: March 2023</a></li>
+  <li><a href="#item5">NinjaTrader: March 2023</a></li>
+  <li><a href="#item6">Neuroshell Trader: March 2023</a></li>
+  <li><a href="#item7">AIQ: March 2023</a></li>
+  <li><a href="#item8">Trade Navigator: March 2023</a></li>
+  <li><a href="#item9">The Zorro Project: March 2023</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-New.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: March 2023</h3></div>
+<p>In his article in this issue, &ldquo;Every Little Bit Helps,&rdquo; author John Ehlers proposes that noise can be reduced merely by averaging the open and close of a bar instead of only using the closing price. The data sampling example presented in the article compares the traditional RSI using close data to one calculated using the average of the open and the close.</p>
+<p>Several built-in TradeStation indicators allow a price to be specified as an input used for calculations. For example, the built-in Mov Avg 1 Line indicator&rsquo;s price input can be changed from close to (close + open) / 2. In fact, the built-in RSI indicator itself has a price input that can similarly be changed.</p>
+<pre>
+<b>Indicator: Data Sampling Test</b>
+// TASC MAR 2022
+// Data Sampling Test
+// (C) John F. Ehlers
+
+variables:
+	CTest( 0 ),
+	OCTest( 0 );
+
+CTest = RSI(Close, 14);
+OCTest = RSI((Open + Close) / 2, 14);
+
+Plot1(CTest, &quot;W/O Sampling&quot;);
+Plot2(OCTest, &quot;W/ Sampling&quot;);
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This shows a TradeStation 15-minute chart of the continuous emini S&amp;P 500 contract (symbol &#64;ES.D) with the indicator applied. Shown in red is the sampling using closing prices. Shown in blue is the sampling using the average of the open and close.</p></div>
+<p>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_blank">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: March 2023</h3></div>
+<p>Here is TradingView Pine Script code implementing the numerical example from John Ehlers&rsquo; article in this issue, &ldquo;Every Little Bit Helps.&rdquo; Taking the RSI as a test indicator, the author demonstrates the noise reduction in the data by using the average of the open and close instead of using just the closing price.</p>
+<p>The Pine Script code provided here implements this technique, and also uses a color scheme that highlights both the RSI value and the difference between the two RSI data streams.</p>
+<pre>
+// TASC Issue: March 2023 - Vol. 41, Issue 3
+// Article: Every Little Bit Helps
+// Article By: John F. Ehlers
+// Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+ 
+//&#64;version=5
+indicator(&quot;TASC 2023.03 Every Little Bit Helps&quot;, &quot;ELBH&quot;,
+    explicit_plot_zorder = true)
+ 
+// External libraries:
+import kaigouthro/hsvColor/15 as h
+ 
+// Constant variables:
+color NTRL = #888888
+ 
+// Input panel groups, titles and inline references:
+string g0  = 'RSI Options:'
+string g1  = 'Color and Gradient Options:'
+string it0 = 'RSI Length'
+string it1 = 'Hue High'
+string it2 = 'Hue Low'
+string it3 = 'Background Opacity'
+string it4 = 'RSI Threshold Value'
+string t0  = 'Hue varies from 0 to 360, with red at 0 '+
+            'and 360, green at 120, blue at 240.'
+string t1  = 'Specifies the sensitivity of the gradient '+
+            'to the RSI value.'
+ 
+// Input options:
+int len  = input.int(14, it0,1,1000,1,'','',g0)
+int hue1 = input.int(150,it1,0,360, 15,t0,'',g1)
+int hue2 = input.int(0 , it2,0,360, 15,'','',g1)
+int op   = input.int(90, it3,0,100, 1, '','',g1)
+int hbot = input.int(10, it4,5,40,  1, t1,'',g1)
+ 
+// Indicators:
+float rsiC  =  ta.rsi(close,  len)
+float oc2   =  math.avg(open, close)
+float rsiOC =  ta.rsi(oc2,    len)
+ 
+// Color and gradient related calculations:
+int   htop = 100 - hbot
+int   span = htop - hbot
+float smR  = (rsiOC/100) * span
+float pt1  = smR + hbot
+float pt2  = (pt1+100)/3
+float br   = h.bright(chart.bg_color) &lt; .7 ?.9:.5
+float ez   = h.easeOut(math.abs((rsiOC-pt2)/span-1))
+float fh   = math.max(rsiOC, rsiC, hbot)
+float fl   = math.min(rsiOC, rsiC, htop)
+o(col, o)  =&gt; color.new(col, o)
+color c1   = h.hsv(h.stepHue(-smR, hue2, 1/ez,2),1,br, 1)
+color c2   = h.hsv(h.stepHue( smR, hue1, 1/ez,2),1,br, 1)
+color fade = h.hsv_gradient (rsiOC,  hbot, htop,  c1, c2)
+color hc   = h.stepGradient (rsiOC, -pt1, br, fade, c1)
+color lc   = h.stepGradient (rsiOC,  pt1, br, c2,  fade)
+ 
+// Plots:
+p0   = plot(rsiOC, 'rsi(OC)', o(fade,10), 1 )
+p1   = plot(rsiC,  'rsi(C)',  na)
+mid  = plot(50,    '50',   o(NTRL, 90), 2)
+zero = plot(0,     '0',    o(c1, op), 1)
+hund = plot(100,   '100',  o(c2, op), 1)
+fill(p1, hund, rsiC, 150 , o(fade,op), o(hc,br*90))
+fill(p0, zero, rsiC, -50 , o(fade,op), o(lc,br*90))
+fill(p0, p1, fh,fl, o(fade, 60), o(fade,70))
+</pre>
+<p>The indicator is available on TradingView from the PineCodersTASC account: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a></p>
+<p>An example chart is shown in Figure 2.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: TRADINGVIEW. In this example TradingView chart, the color scheme highlights both the RSI value and the difference between the two RSI data streams, so you can more easily compare. One RSI datastream uses close data only while the other datastream uses an average of the open and the close as calculated by the Pine Script code provided.</p></div>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="https://www.TradingView.com" target="_blank">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Thinkorswim.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">thinkorswim: March 2023</h3></div>
+<p>We have put together a study based on the article by John Ehlers in this issue, &ldquo;Every Little Bit Helps: Averaging The Open And Close To Reduce Noise.&rdquo; We built the study referenced by using our proprietary scripting language, thinkscript. To ease the loading process, simply click <a href="https://tos.mx/Wqoyzmb" target="_blank">https://tos.mx/Wqoyzmb</a> or enter the URL in <em>setup &rarr; open shared item</em> from within thinkorswim, then choose <em>view thinkScript study</em> and name it &ldquo;RSI_DataSamplingComparison&rdquo; or whatever name you prefer and can identify. You can then add the study to your charts from the <em>edit studies</em> menu from within the <em>charts</em> tab and then select <em>studies</em>.</p>
+<p>Figure 3 shows our version of the study on a two-day 15-minute chart of the S&amp;P emini futures contract. Please see Ehlers&rsquo; article in this issue for how to interpret the indicator.</p>
+<div class="figBorder">
+<img src="images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: THINKORSWIM. Here, the data sampling comparison study is demonstrated on a two-day 15-minute chart of the S&amp;P emini futures contract.</p></div>
+<p class="authorTips">&mdash;thinkorswim<br>
+A division of TD Ameritrade, Inc.<br>
+<a href="https://www.thinkorswim.com" target="_blank">www.thinkorswim.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: March 2023</h3></div>
+<p>In &ldquo;Every Little Bit Helps&rdquo; in this issue, John Ehlers suggests a simple method to reduce data noise by using an average of the open and close instead of using just the closing price.</p>
+<p>Techniques such as this come off-the-shelf in Wealth-Lab 8. With any indicator (not just the RSI) that allows customization of time series, traders can pick many flavors of the average price without having to program anything. In addition to OHLCV, here are possible choices ranging from conventional to exotic:</p>
+<ol>
+    <li>(Open+Close)/2 [This choice is demonstrated on the chart in Figure 4 as &ldquo;AveragePriceOC&rdquo;
+</li>
+    <li>(H+L)/2</li>
+    <li>(H+L+C)/3</li>
+    <li>(O+H+L+C)/4</li>
+    <li>(H+L+C+C)/4 [an average price with double-weight closing price]</li>
+    </ol>
+
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: WEALTH-LAB. This demonstrates creating an RSI based on the open and close average prices, plotted on a daily chart of S&amp;P 500 SPDR ETF (SPY).</p></div>
+<p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_blank">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: March 2023</h3></div>
+<p>The example RSI indicator discussed in John Ehlers&rsquo; article in this issue, &ldquo;Every Little Bit Helps: Averaging The Open And Close To Reduce Noise,&rdquo; is available for download from the following links for NinjaTrader 8 and for NinjaTrader 7:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/March2023SCNT8.zip" target="_blank">www.ninjatrader.com/SC/March2023SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7: </strong><a href="https://www.ninjatrader.com/SC/March2023SCNT7.zip">www.ninjatrader.com/SC/March2023SCNT7.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import into NinjaTrader 7, from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator&rsquo;s source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control center window and selecting the file you wish to examine. You can review the indicator&rsquo;s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the control center window and selecting the file to examine.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, which provides you with the highest performance possible.</p>
+<p>A sample chart displaying both the original RSI based on close-only data and the RSI based on averaged data is shown in Figure 5.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: NINJATRADER. This 15-minute chart of the Nasdaq 100 emini displays both the RSI based on close-only data and an RSI based on averaged data.</p></div>
+<p class="authorTips">&mdash;Chelsea Bell<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_blank">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: March 2023</h3></div>
+<p>In &ldquo;Every Little Bit Helps&rdquo; in this issue, John Ehlers proposes averaging the open and close as inputs to some indicators to help reduce noise, instead of using only the close. This technique can be easily implemented in Neuro­Shell Trader. To implement a comparison between the RSI and the open-close-averaged RSI, select &ldquo;new indicator&rdquo; from the <em>insert</em> menu, and use the indicator wizard to create the indicators as follows:</p>
+    <pre>RSI( Close, 14)
+RSI( Avg2(Open,Close), 14)</pre>
+<p>Figure 6 shows both the RSI and the open-close-averaged RSI on a chart for comparison.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: NEUROSHELL TRADER. This NeuroShell Trader chart shows a comparison between the RSI and the open-close-averaged RSI for SPY.</p></div>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_blank">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">AIQ: March 2023</h3></div>
+<p>The importable AIQ EDS file based on John Ehlers&rsquo; article in this issue, &ldquo;Every Little Bit Helps,&rdquo; can be obtained on request via <a href="mailto:rdencpa@gmail.com">rdencpa@gmail.com</a>. The code is also available below.</p>
+<pre>
+!Every Little Bit Helps
+!Author: John F. Ehlers, TASC Mar 2023
+!Coded by: Richard Denning, 1/12/2023
+
+!Data Sampling Test
+!(c) John Ehlers 2022
+
+!INPUTS:
+W1 is 14. !Wilder RSI length
+W2 is 14. !Ehlers RSI length
+
+!RSI Wilder code:
+U is [close]-val([close],1).
+D is val([close],1)-[close].
+L1 is 2 * W1 - 1.
+AvgU is ExpAvg(iff(U&gt;0,U,0),L1).
+AvgD is ExpAvg(iff(D&gt;=0,D,0),L1).
+RSIwilder is 100-(100/(1+(AvgU/AvgD))).
+
+!Ehlers RSI code:
+OCavg is ([open] + [close])/2.
+Uoc is  OCavg-valresult(OCavg,1).
+Doc is valresult(OCavg,1)-OCavg.
+L2 is 2 * W2 - 1.
+AvgU2 is ExpAvg(iff(Uoc&gt;0,Uoc,0),L2).
+AvgD2 is ExpAvg(iff(Doc&gt;=0,Doc,0),L2).
+RSIoc is 100-(100/(1+(AvgU2/AvgD2))).
+
+!CTest is RSIwilder.
+!OCTest is RSIoc.
+
+BuyRSIwilder if RSIwilder &lt; 20 and valrule(RSIwilder &gt;= 20,1).
+ExitRSIwilder if RSIwilder &gt; 80 or {Position days}&gt;=20.
+
+BuyRSIoc if RSIoc &lt; 20 and valrule(RSIoc &gt;= 20,1).
+ExitRSIoc if RSIoc &gt; 80 or {Position days}&gt;=20.
+</pre>
+<p>Code for the author&rsquo;s indicators are set up in the AIQ EDS code file. Figure 7 shows the EDS module backtest results using the RSI original indicator. Figure 8 shows the EDS module backtest results using the modified version of the RSI indicator over a 10-year period using NASDAQ 100 stocks. The comparison suggests that some of the metrics improve using the modified version and a few are worse.</p>
+<p>The system rules are:</p>
+
+<ul><li>Buy when the RSI crosses down below 20</li>
+<li>Sell when the RSI is crosses above 80 or after 20 trading days</li></ul>
+<div class="figBorder">
+<img src="images/TT-Aiq1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: AIQ. This shows example backtest results for classic RSI trading system rules, based on closing data, over a 10-year period using NASDAQ 100 stocks.</p></div>
+<div class="figBorder">
+<img src="images/TT-Aiq2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: AIQ. This shows example backtest results for the RSI trading system rules, this time based on data that averages the open and close instead of using just the closing price data, over a 10-year period using NASDAQ 100 stocks.</p></div>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:rdencpa@gmail.com">rdencpa@gmail.com</a><br>
+for AIQ Systems</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Genesis.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Trade Navigator: March 2023</h3></div>
+<p>In &ldquo;Every Little Bit Helps: Averaging the Open and Close to Reduce Noise&rdquo; in this issue, John Ehlers suggests using an average of the open and close data instead of just close data in your indicators to slightly reduce noise in the data.</p>
+<p>We have created a special file to make it easy to download a library into Trade Navigator that is based on this article. The file name is &ldquo;SC202303.&rdquo;</p>
+<p>To install this new library into Trade Navigator, click on Trade Navigator&rsquo;s file dropdown menu, then select &ldquo;update data.&rdquo; Next, select <em>download special file</em>, then erase the word &ldquo;upgrade&rdquo; and type in &ldquo;SC202303&rdquo; (without the quotes), then click the <em>start</em> button. When prompted to upgrade, click <em>yes</em>. If prompted to close all software, click <em>continue</em>. Your library will now download.</p>
+<p>This library contains a template named &ldquo;S&amp;C March 2023,&rdquo; a study named &ldquo;data sampling,&rdquo; and two indicators named &ldquo;CTest&rdquo; and &ldquo;OCTest.&rdquo;</p>
+<p>The template allows you to modify your chart with a prebuilt indicator package and settings. To use it, open the <em>charting</em> pulldown menu, select the <em>templates</em> command, then on the submenu that opens, select the &ldquo;S&amp;C March 2023&rdquo; template. If you are prompted to save the current chart settings as a template, your answer will depend on whether you have made any changes to your current chart template that you would like to keep. If you choose &ldquo;yes,&rdquo; changes will be saved in the prior template before switching to the new &ldquo;S&amp;C March 2023&rdquo; template.</p>
+<p>You can insert indicators onto your chart by opening the <em>charting</em> dropdown menu, select the <em>add to chart</em> command, then on the <em>indicators</em> tab, find your named indicator, select it, then click on the <em>add</em> button. Repeat this procedure for additional indicators if you wish.</p>
+<p>You can apply the &ldquo;data sampling&rdquo; study to your chart by opening the <em>charting</em> menu, select the <em>add to chart</em> command, and click on the <em>studies</em> tab. Here you will find the study in question. Select it by clicking on it, then clicking on the <em>add</em> button.</p>
+<p>If you need any assistance, our friendly technical support staff will be happy to help via phone or via live chat through our website.</p>
+<p class="authorTips">&mdash;Genesis Financial Data<br>
+Tech support 719 884-0245<br>
+<a href="https://www.TradeNavigator.com" target="_blank">www.TradeNavigator.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" alt="logo" width="120" height="120">
+<h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: March 2023</h3></div>
+<p>In his article in this issue, John Ehlers proposes to use the average of the open and close, rather than the close price, for technical indicators. The advantage could be a certain amount of noise reduction.</p> 
+<p>On intraday bars, the open-close average is similar to a two-day simple moving average (SMA2). It makes the data a bit smoother, but at the cost of additional lag by half a bar.</p> 
+<p>The script given here, in C for the Zorro platform, compares the standard RSI with the open-close average RSI on the S&amp;P 500 index with 15-minute bars.</p> 
+
+<pre>
+void run()
+{
+  BarPeriod = 15;
+  StartDate = 20220629;
+  EndDate = 20220712;
+  asset(&quot;SPX500&quot;);
+
+  vars OC = series((priceO()+priceC())/2);
+  plot(&quot;RSI(Close)&quot;,RSI(seriesC(),14),NEW,RED);
+  plot(&quot;RSI(OC)&quot;,RSI(OC,14),0,BLUE);
+}
+</pre>
+
+<p>We can indeed see some noise reduction in the resulting chart, shown in Figure 9.</p>
+    <div class="figBorder">
+<img src="images/TT-Zorro.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: ZORRO PROJECT. This shows the SPX with two RSIs in the bottom pane: one that is based only on close data and one based on using averaged data (averaging the open and close).</p></div>
+<p>If the user would like to investigate whether the smoother curve compensates for the half bar of additional lag, the user can add the following five lines to the script:</p> 
+
+<pre>
+vars RSIs = series(RSI(OC,14));
+if(crossUnder(RSIs,70))
+  enterShort();
+if(crossOver(RSIs,30))
+  enterLong();
+</pre>    
+
+<p>This code implements a simple RSI trading system, which enters a short position when the RSI crosses below 70, and enters a long position when it crosses above 30; a position is closed when an opposite position is opened. Using this simple system, the user could compare the RSI version using the open-close average data with the version of the RSI using only close data. And if you&rsquo;re developing an indicator-based trading system, it would certainly be worth trying the alternative version of the indicator to be used, and comparing the results.</p>
+<p>The script can be downloaded from the 2023 script repository on <a href="https://financial-hacker.com" target="_blank">https://financial-hacker.com</a>. The Zorro platform can be downloaded from <a href="https://zorro-project.com" target="_blank">https://zorro-project.com</a>.</p>
+<p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_blank">https://zorro-project.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the March 2023 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2023, Technical Analysis, Inc.</p>
+
+</body>
+</html>

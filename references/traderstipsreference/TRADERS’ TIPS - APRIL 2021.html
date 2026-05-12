@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine.">
+<meta name="description" content="This month: Detecting High-Volume Breakouts by Markos Katsanos. Contributions from: TradeStation; MetaStock; eSignal; thinkorswim; Wealth-Lab.com; NinjaTrader; Neuroshell Trader; Optuma; TradersStudio; AIQ; The Zorro Project; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - APRIL 2021</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">April 2021</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2021/04/images/TT-Katsanos.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Markos Katsanos&rsquo; article in this issue, &ldquo;Detecting High-Volume Breakouts.&rdquo; Here, we present the April 2021 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList" style="text-transform: uppercase;">
+  <li><a href="#item1">TRADESTATION: APRIL 2021</a></li>
+  <li><a href="#item2">METASTOCK: APRIL 2021</a></li>
+  <li><a href="#item3"><span style="text-transform:lowercase;">e</span>SIGNAL: APRIL 2021</a></li>
+  <li><a href="#item4">THINKORSWIM: APRIL 2021</a></li>
+  <li><a href="#item5">WEALTH-LAB.COM: APRIL 2021</a></li>
+  <li><a href="#item6">NINJATRADER: APRIL 2021</a></li>
+  <li><a href="#item7">NEUROSHELL TRADER: APRIL 2021</a></li>
+  <li><a href="#item8">OPTUMA: APRIL 2021</a></li>
+  <li><a href="#item9">TRADERSSTUDIO: APRIL 2021</a></li>
+  <li><a href="#item10">AIQ: APRIL 2021</a></li>
+  <li><a href="#item11">THE ZORRO PROJECT: APRIL 2021</a></li>
+  <li><a href="#item12">MICROSOFT EXCEL: APRIL 2021</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">TRADESTATION: APRIL 2021</h3></div>
+<p>In his article in this issue, &ldquo;Detecting High-Volume Breakouts,&rdquo; author Markos Katsanos introduces an indicator called volume positive negative (VPN) that attempts to minimize entries in false breakouts. The indicator compares volume on &ldquo;up&rdquo; days versus the volume on &ldquo;down&rdquo; days and is normalized to oscillate between 100 and -100. Shown here is EasyLanguage code for a function, the indicator described in the article, and a sample strategy for educational purposes.</p>
+    <pre>
+<b>Function:  _TASC_2021_APR_Fx</b>
+// TASC APR 2021
+// Detecting High-Volume Breakouts
+// Markos Katsanos
+
+inputs:
+    Period( numericsimple );
+
+variables:
+    MAV( 0 ),
+    VP( 0 ),
+    VN( 0 ),
+    VPN( 0 );
+
+switch ( BarType )
+begin
+    case 2,3,4: { Daily, Weekly, or Monthly bars }
+        MAV = Average( Volume, Period );
+        VP = SummationIf( TypicalPrice - 
+         TypicalPrice[1] &gt; 0.1 * 
+          AvgTrueRange( Period ), 
+         Volume , Period );
+        VN = SummationIf( TypicalPrice - 
+         TypicalPrice[1] &lt; -0.1 * 
+          AvgTrueRange( Period ),  
+         Ticks , Period );
+        
+    default: { all other bars }
+        MAV = Average( Ticks, Period );
+        VP = SummationIf( TypicalPrice - 
+         TypicalPrice[1] &gt; 0.1 * 
+          AvgTrueRange( Period ), 
+         Ticks , Period );
+        VN = SummationIf( TypicalPrice - 
+         TypicalPrice[1] &lt; -0.1 * 
+          AvgTrueRange( Period ),  
+         Ticks , Period );
+end;
+
+if MAV &lt;= 0 then
+    MAV = 1;
+
+if Period &lt;&gt; 0 then
+    VPN = ( VP - VN ) / MAV / Period * 100;
+
+_TASC_2021_APR_Fx = VPN;
+
+<b>Indicator: TASC APR 2021</b>
+// TASC APR 2021
+// Detecting High-Volume Breakouts
+// Markos Katsanos
+
+inputs:
+    Period( 30 ),
+    Smooth( 3 ),
+    VPNCrit( 10 ),
+    MAB( 30 );
+    
+variables:
+    VPN( 0 ),
+    MAVPN( 0 );
+
+VPN = XAverage( _TASC_2021_APR_Fx( Period ), Smooth );
+MAVPN = Average( VPN, MAB );
+
+if VPN &gt;= VPNCrit then
+    SetPlotColor[1]( 1, Green )
+else
+    SetPlotColor[1]( 1, Red );
+
+Plot1( VPN, &quot;VPN&quot; );
+Plot2( MAVPN, &quot;MA&quot;, Green );
+Plot3( VPNCrit, &quot;CRIT&quot;, Blue );
+
+
+<b>Strategy:  TASC APR 2021 Strategy</b>
+// TASC APR 2021
+// Detecting High-Volume Breakouts
+// Markos Katsanos
+
+inputs:
+    Period( 30 ),
+    Smooth( 3 ),
+    VPNCrit( 10 ),
+    MAB( 30 ),
+    RSILen( 5 ),
+    MinC( 1 ),
+    MinVol( 100000 ),
+    MinVolAvgLen( 5 ),
+    VolAvgLen( 50 ),
+    MinVC( 0.5 ),
+    BarToExitOn( 15 ),
+    VolDivisor( 1000000 ),
+    RSIMaxVal( 90 );
+    
+variables:
+    VPN( 0 ),
+    MAVPN( 0 ),
+    RSIVal( 0 ),
+    LQD( false ),
+    BuyCond1( false );
+
+VPN = XAverage( _TASC_2021_APR_Fx( Period ), Smooth );
+MAVPN = Average( VPN, MAB );
+RSIVal = RSI( Close, RSILen );
+
+switch ( BarType )
+begin
+    case 2,3,4: { Daily, Weekly, or Monthly bars }
+        // Price, Volume and Liquidity Filter
+        LQD = Close &gt; MinC 
+         and Average( Volume, MinVolAvgLen ) &gt; MinVol 
+         and Average( Close * Volume, MinVolAvgLen ) 
+          / VolDivisor &gt; MinVC;
+         
+        // buy conditions
+        BuyCond1 = LQD and 
+         Average( Volume, VolAvgLen ) &gt; 
+          Average( Volume, VolAvgLen )[50];
+       
+    default: { all other bars }
+        // Price, Volume and Liquidity Filter
+        LQD = Close &gt; MinC 
+         and Average( Ticks, MinVolAvgLen ) &gt; MinVol 
+         and Average( Close * Ticks, MinVolAvgLen )
+          / VolDivisor &gt; MinVC;
+         
+        // buy conditions
+        BuyCond1 = LQD and 
+         Average( Ticks, VolAvgLen ) &gt; 
+          Average( Ticks, VolAvgLen )[50];
+end;
+
+// buy
+if BuyCond1 
+    and VPN crosses above VPNCrit
+    and RSIVal &lt; RSIMaxVal 
+    and Close &gt; Average( Close, Period ) then
+begin
+    Buy next bar market;
+end;
+
+// sell
+if VPN crosses under MAVPN
+    and Close &lt; Highest( Close, 5 ) 
+     - 3 * AvgTrueRange( Period ) then
+begin
+    Sell next bar at market;
+end;
+
+// time exit
+if BarsSinceEntry = BarToExitOn then
+    Sell ( &quot;Time LX&quot; ) next bar at market;
+    </pre>
+<p>To download the EasyLanguage code for TradeStation 10, please visit our TradeStation and EasyLanguage support forum. The files for this article can be found here: <a href="https://community.tradestation.com/discussions/Topic.aspx?Topic_ID=190289" target="_parent">https://community.tradestation.com/discussions/Topic.aspx?Topic_ID=190289</a>.</p> 
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 1: TRADESTATION. A TradeStation daily chart of Walmart Inc. (WMT) displays the indicator applied in the subgraph and the strategy inserted. </p></div>    
+    
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;Chris Imhof<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/MetaStock.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">METASTOCK: APRIL 2021</h3></div>
+<p>Markos Katsanos&rsquo; article in this issue, &ldquo;Detecting High-Volume Breakouts,&rdquo; introduces his volume positive negative (VPN) indicator. Here is the formula to add that indicator to MetaStock.</p>
+<pre>
+<b>Volume Positive Negative:</b>
+
+pds:= Input( &quot;Periods&quot;, 5, 100, 30);
+apr:= Typical();
+at:= ATR(pds) * 0.1;
+vpd:= If( apr &gt;= Ref(apr, -1) + at, V, 0);
+vnd:= If( apr &lt;= Ref(apr, -1) - at, V, 0);
+VP:= Sum(vpd, pds);
+VN:= Sum(vnd, pds);
+VPN:= (((VP - VN)/Mov(V, pds, S))/pds) * 100;
+VPN;
+Mov(VPN, 3, E)
+</pre>
+    <p class="authorTips">&mdash;William Golson<br>
+MetaStock Technical Support<br>
+<a href="https://www.MetaStock.com" target="_parent">www.MetaStock.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+ <p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">eSIGNAL: APRIL 2021</h3></div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we are providing the &ldquo;<a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/04/images/code/VolumePositiveNegativeIndicator.efs" target="_blank">Volume Positive Negative Indicator.efs</a>&rdquo; study based on the article in this issue by Markos Katsanos, &ldquo;Detecting High-Volume Breakouts.&rdquo; The author has designed the indicator to help identify high-volume breakout patterns.</p> 
+<p>The study contains formula parameters that may be configured through the edit chart window (right-click on the chart and select &ldquo;edit chart&rdquo;). A sample chart displaying the indicator is shown in Figure 2.
+</p>
+  <div class="figBorder">
+<img src="images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 2: eSIGNAL. Here is an example of the study plotted on a daily chart of AAPL.</p></div>  
+    
+<p>To discuss this study or download a complete copy of the formula code, please visit the EFS library discussion board forum under the forums link from the support menu at w<a href="https://www.esignal.com" target="_parent">ww.esignal.com</a> or visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs/" target="_parent">https://www.esignal.com/support/kb/efs</a>. The eSignal formula script (EFS) is also available for copying & pasting below.
+</p>
+<pre>
+/**********************************
+Provided By:  
+Copyright 2019 Intercontinental Exchange, Inc. All Rights Reserved. 
+eSignal is a service mark and/or a registered service mark of Intercontinental Exchange, Inc. 
+in the United States and/or other countries. This sample eSignal Formula Script (EFS) 
+is for educational purposes only. 
+Intercontinental Exchange, Inc. reserves the right to modify and overwrite this EFS file with each new release. 
+
+Description:      
+    The Volume Positive Negative (VPN) Indicator
+    Detecting High-Volume Breakouts
+    by Markos Katsanos
+    
+
+Version:            1.00  02/11/2021
+
+Formula Parameters:                    Default:
+VPPeriod                               30
+SMOOTH                                 3
+VPNCRIT                                10 
+MAB                                    30
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+var fpArray = new Array();
+var bInit = false;
+
+function preMain() {
+    setStudyTitle(&quot;Volume Positive Negative Indicator&quot;);
+    setCursorLabelName(&quot;VPN&quot;, 0);
+    setCursorLabelName(&quot;MA&quot;, 1);
+    setPriceStudy(false);
+    setDefaultBarFgColor(Color.RGB(0x00,0x94,0xFF), 0);
+    setDefaultBarFgColor(Color.green, 1);
+    setPlotType( PLOTTYPE_LINE , 0 );
+    setPlotType( PLOTTYPE_LINE , 1 );
+    setDefaultBarStyle(PS_DASH, 1);
+    
+    
+    var x=0;
+    fpArray[x] = new FunctionParameter(&quot;VPPeriod&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(5);
+        setUpperLimit(100);    
+        setDefault(30);
+    }
+    fpArray[x] = new FunctionParameter(&quot;SMOOTH&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1);
+        setUpperLimit(10);    
+        setDefault(3);            
+    }
+    fpArray[x] = new FunctionParameter(&quot;VPNCRIT&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(0);
+        setUpperLimit(40); 
+        setDefault(10);            
+    }
+    fpArray[x] = new FunctionParameter(&quot;MABARS&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(10);
+        setUpperLimit(200); 
+        setDefault(30);            
+    }
+        
+}
+
+var bVersion = null;
+var xROCDEV = null;
+var xMAROC = null; 
+var xROC = null; 
+var xClose = null;
+
+
+
+function main(VPPeriod, SMOOTH, VPNCRIT, MABARS) {
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return; 
+    
+    if ( bInit == false ) { 
+        xClose = close();  
+        xHigh = high();
+        xLow = low();
+        xVolume = volume();
+        xMA = efsInternal(&quot;Calc_MA&quot;, xVolume, VPPeriod);
+        xAVG =  efsInternal(&quot;Calc_AVG&quot;, xClose, xHigh, xLow);
+        xMF =  efsInternal(&quot;Calc_MF&quot;, xAVG);
+        MC = efsInternal(&quot;Calc_MC&quot;, VPPeriod);                                    
+        xVMP = efsInternal(&quot;Calc_VMP&quot;, xMF, MC, xVolume);
+        xVP = efsInternal(&quot;Calc_VP&quot;, xVMP, VPPeriod);
+        xVMN = efsInternal(&quot;Calc_VMN&quot;, xMF, MC, xVolume);
+        xVN = efsInternal(&quot;Calc_VP&quot;, xVMN, VPPeriod);
+        xVPN = efsInternal(&quot;Calc_VPN&quot;, xVP, xVN, xMA, VPPeriod);
+        VPN = ema(SMOOTH, xVPN);
+        xMAVPN = sma(MABARS, VPN);
+        addBand( VPNCRIT, PS_DASH, 1, Color.blue); 
+        
+        bInit = true; 
+    }      
+
+    if (getCurrentBarCount() &lt;= VPPeriod) return;
+    if (VPN.getValue(0) &gt;= VPNCRIT) setBarFgColor(Color.green, 0);
+    else setBarFgColor(Color.red, 0);
+    
+    return [VPN.getValue(0), xMAVPN.getValue(0)]
+}
+
+function Calc_MC(VPPeriod){
+    var ret = 0;
+    ret = 0.1 * atr(VPPeriod);
+    return ret;
+}
+
+function Calc_VPN(xVP, xVN, xMA, VPPeriod){
+    var ret = 0;
+    ret = (xVP.getValue(0) - xVN.getValue(0)) / xMA.getValue(0) / VPPeriod * 100;
+    return ret;
+}
+
+function Calc_VMN(xMF, MC, xVolume){
+    var ret = 0;
+    if (xMF.getValue(0) &lt; -MC.getValue(0)) return xVolume.getValue(0);
+    return 0;
+}
+
+function Calc_VP(xVMP, VPPeriod){
+    var ret = 0;
+    for (var i = 0; i &lt; VPPeriod; i++){
+        ret = ret + xVMP.getValue(-i);
+    }
+    return ret;
+}
+
+function Calc_VMP(xMF, MC, xVolume){
+    var ret = 0;
+    if (xMF.getValue(0) &gt; MC.getValue(0)) return xVolume.getValue(0);
+    return 0;
+}
+
+function Calc_MF(xAVG){
+    var ret = 0;
+    ret = xAVG.getValue(0) - xAVG.getValue(-1);
+    return ret;
+}
+
+function Calc_MA(xVolume, VPPeriod){
+    var Sum = 0;
+    for (var i = 0; i &lt; VPPeriod; i++){
+        if (xVolume.getValue(-i) == null || xVolume.getValue(-i) == 0) {
+            Sum = Sum + 1
+        }
+        else Sum = Sum + xVolume.getValue(-i)
+    }
+    var ret = Sum / VPPeriod;
+    if (ret &gt; 0) return ret;  
+    return 1;
+}
+
+function Calc_AVG(xClose, xHigh, xLow){
+    var ret = 0;
+    ret = (xClose.getValue(0) + xHigh.getValue(0) + xLow.getValue(0)) / 3; 
+    return ret;
+}
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+</pre>     
+<p class="authorTips">&mdash;Eric Lippert<br>
+eSignal, an Interactive Data company<br>
+800 779-6555, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/thinkorswim.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">THINKORSWIM: APRIL 2021</h3></div>
+<p>We have put together a study based on the article by Markos Katsanos in this issue titled &ldquo;Detecting High-Volume Breakouts,&rdquo; which introduces the volume positive negative (VPN) indicator. We built the study referenced by using our proprietary scripting language, thinkscript. To ease the loading process, simply click on <a href="https://tos.mx/eFC5Tjn" target="_parent">https://tos.mx/eFC5Tjn</a> or enter it into the address into <em>setup&rarr;open shared item</em> from within thinkorswim then choose <em>view thinkScript study</em> and name it &ldquo;VPN_indicator&rdquo; or whatever you like and can identify. You can then add the study to your charts from the <em>edit studies</em> menu from within the <em>charts</em> tab.</p>
+<p>The example chart in Figure 3 shows the study on a chart of IDEX over a period from June 2019 till November 2020. Please see Markos Katsanos&rsquo; article in this issue for more details on how to utilize the indicator.</p>
+ <div class="figBorder">
+<img src="images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: THINKORSWIM. The study is shown plotted on a chart of IDEX from June 2019 till November 2020.</p></div>   
+    
+<p class="authorTips">&mdash;thinkorswim<br>
+A division of TD Ameritrade, Inc.<br>
+<a href="https://www.thinkorswim.com" target="_parent">www.thinkorswim.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+    
+ <p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">WEALTH-LAB.COM: APRIL 2021</h3></div>
+<p>We added the VPN oscillator based on Markos Katsanos&rsquo;s article in this issue to the TASCIndicators library (built-in Wealth-Lab 7). To execute the trading system, paste the code below into a new C# strategy window.</p> 
+<p>The code is available for copying and pasting here:</p>
+    <pre>
+using WealthLab.Backtest;
+using System;
+using WealthLab.Core;
+using WealthLab.Indicators;
+using WealthLab.TASC;
+using System.Drawing;
+using System.Collections.Generic;
+
+namespace WealthScript1 
+{
+    public class VPNStrategy : UserStrategyBase
+    {
+		public VPNStrategy()
+		{
+			AddParameter(&quot;VPN Period&quot;, ParameterTypes.Int32, 30, 5, 100, 10);
+			AddParameter(&quot;Smoothing Period&quot;, ParameterTypes.Int32, 3, 1, 10, 1);
+		}
+		
+        public override void Initialize( BarHistory bars)
+        {
+			period = Parameters.FindName(&quot;VPN Period&quot;).AsInt;
+			smoothPeriod = Parameters.FindName(&quot;Smoothing Period&quot;).AsInt;
+			vpn = VPN.Series(bars, period, smoothPeriod);
+			maVPN = SMA.Series(vpn, period);
+			maVolume = SMA.Series(bars.Volume, 50);
+			rsi = RSI.Series(bars.Close, 5);
+			maPrice = SMA.Series(bars.Close, period);
+			atr = ATR.Series(bars, 14);
+
+			PlotTimeSeries( vpn, &quot;VPN&quot;, &quot;VPN&quot;, Color.Black);
+			PlotIndicatorLine( maVPN as IndicatorBase, Color.Blue, 1);
+			DrawHorzLine( 80, Color.Green, 1, default, &quot;VPN&quot;);
+			DrawHorzLine(-80, Color.Red, 1, default, &quot;VPN&quot;);
+
+			for (int i = 0; i &lt; bars.Count; i++)
+			{
+				SetSeriesBarColor( vpn, i, vpn[i] &gt; 0 ? Color.Green : Color.Red);
+			}
+
+			index = GetHistory( bars, &quot;IWM&quot;);
+			indexRoc = ROC.Series(index.Close, 10);
+			indexMA = SMA.Series(index.Close, 150);
+			
+			PlotBarHistory( index, &quot;IWM&quot;);
+			PlotTimeSeries( vpn, &quot;VPN&quot;, &quot;VPN&quot;, Color.Black);
+			PlotTimeSeries( indexMA, &quot;Index MA&quot;, &quot;IWM&quot;, Color.Black);
+			
+			StartIndex = 150;
+        }
+
+        public override void Execute(BarHistory bars, int bar)
+        {
+            if (!HasOpenPosition(bars, PositionType.Long))
+            {
+	            if(vpn.CrossesOver(10,bar))				
+	            	if(maVolume[bar] &gt; maVolume[bar-50])
+	            		if(rsi[bar] &lt; 90)
+					if(bars.Close[bar] &gt; maPrice[bar])
+						PlaceTrade( bars, TransactionType.Buy, OrderType.Market);		
+            }
+            else
+            {
+	            if(bar &gt; LastPosition.EntryBar + 15)
+					ClosePosition( LastPosition, OrderType.Market, 0, &quot;Time-based&quot;);
+				else
+				{
+					if(vpn.CrossesUnder(SMA.Series(vpn,smoothPeriod), bar) &amp;&amp; bars.Close[bar] &lt; Highest.Value( bar,bars.High,5)+atr[bar]*3.0)							if(indexRoc[bar] &lt; -15 &amp;&amp; index[bar] &lt; indexMA[bar])
+							ClosePosition( LastPosition, OrderType.Market, 0, &quot;Normal exit&quot;);
+				}
+			}
+        }
+
+		TimeSeries vpn, maVPN, maPrice, maVolume, rsi, atr, indexRoc, indexMA;
+		int period, smoothPeriod;
+		BarHistory index;
+	}
+}
+</pre>
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: WEALTH-LAB. Sample trade signals are shown on a chart of AMC Entertainment (AMC) based on the VPN indicator.</p></div>
+    
+    <p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a>
+</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">NINJATRADER: APRIL 2021</h3></div>
+<p>The VPN indicator and VPNSystem strategy based on Markos Katsanos&rsquo; article in this issue are available for download at the following links for NinjaTrader 8 and NinjaTrader 7:</p>
+
+    
+    <ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8:</strong> <a href="https://www.ninjatrader.com/SC/April2021SCNT8.zip" target="_blank">ninjatrader.com/SC/April2021SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7:</strong> <a href="https://www.ninjatrader.com/SC/April2021SCNT7.zip">ninjatrader.com/SC/April2021SCNT7.zip</a></li>
+</ul>
+   
+
+<p>Once the file is downloaded, you can import the indicator/strategy into NinjaTader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import into NinjaTrader 7, from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator and strategy source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators or Strategies folder from within the control center window and selecting the VPN or VPNSystem file. You can review the indicator&rsquo;s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator or Strategy from within the control center window and selecting the VPN or VPNSystem file.
+</p>
+<p>A NinjaTrader chart giving an example of the indicator and strategy are shown in Figure 5.</p>
+  <div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: NINJATRADER. The VPN indicator and strategy are displayed on a daily WMT chart from February 2020 to September 2020.</p></div>  
+    
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">&mdash;Chris Lauber<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+    
+ <p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">NEUROSHELL TRADER: APRIL 2021</h3></div>
+<p>The volume positive negative (VPN) indicator described by Markos Katsanos in his article in this issue can be easily implemented with a few of NeuroShell Trader&rsquo;s 800+ indicators. Simply select <em>new indicator</em> from the <em>insert</em> menu and use the indicator wizard to create the following indicators:
+</p>
+<pre>
+MF	Momentum( Avg3( High, Low, Close ), 1)
+MC	Mul2( 0.1, ATR( High, Low, Close, 30 ) )
+VP	Sum( IfThenElse( A&gt;B( MF,  MC ), Volume, 0 ), 30 )
+VN	Sum( IfThenElse( A&lt;B( MF, Neg(MC) ), Volume, 0), 30 )
+VPN	ExpAvg( Mul2( Divide( Divide( Sub( VP, VN ), Avg( Volume, 30 ) ), 30), 100 ), 3 )
+MAVPN	Avg( VPN, 30 )
+</pre>
+<p>To implement the volume positive negative trading system, select <em>new trading strategy</em> from the <em>insert</em> menu and enter the following in the appropriate locations of the trading strategy wizard:</p>    
+  <pre>
+BUY LONG CONDITIONS: [All of which must be true]
+     CrossAbove(VPN(High,Low,Close,Volume,30,3),10)
+     A&gt;B(Momentum(Avg(Volume,50),50),0)
+     A&lt;B(RSI(Close,5),90)
+     A&gt;B(Close,Avg(Close,30))
+
+SELL LONG CONDITIONS: [1 of which must be true]
+     And2(CrossBelow(VPN(High,Low,Close,Volume,30,3), Avg(VPN(High,Low,Close,Volume,30,3),30)),
+                A&lt;B(Close, Sub(Max(High,5),Mul2(3,ATR(High,Low,Close,30)))))
+     And2(A&lt;B(Russell 2000 Close, Avg(Russell 2000 Close,50)), 
+                A&lt;B(%Change(Russell 2000 Close,10),-15))
+     BarsSinceFill&gt;=X(Trading Strategy,15)
+</pre>
+    <p>NeuroShell Trader users can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+ <div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: NEUROSHELL TRADER. This NeuroShell Trader chart displays the volume positive negative indicator and trading system.</p></div>   
+    
+    
+<p class="authorTips">&mdash;Marge Sherald, Ward Systems Group, Inc.<br>
+301 662-7950, <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+
+ <!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Optuma.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">OPTUMA: APRIL 2021</h3></div>
+<p>Here&rsquo;s a formula for implementing in Optuma the volume positive negative (VPN) indicator as described in Markos Katsanos&rsquo; article in this issue, &ldquo;Detecting High-Volume Breakouts.&rdquo; The formula is for VPN(30):</p>
+   <pre>
+$PERIOD=30;
+P1 = MA(BARS=1, CALC=HLC);
+MC = ATR(MULT=0.10, BARS=1);
+MAV = MA(VOLUME(), BARS=$PERIOD);
+//Positive Volume;
+VMP = IF(P1 &gt; P1[1]+MC, VOLUME(),0);
+VP= ACC(VMP, RANGE=Look Back Period, BARS=$PERIOD);
+//Negative Volume;
+VMN = IF(P1 &lt; P1[1]-MC, VOLUME(),0);
+VN= ACC(VMN, RANGE=Look Back Period, BARS=$PERIOD);
+//Calc Smooth VPN;
+VPN = (VP-VN)/MAV/30*100;
+MA(VPN, BARS=3, STYLE=Exponential, CALC=Close)
+</pre> 
+  <p>The bar/volume colors for positive, negative, and neutral (black) volume are based on the rules given in the article. Blue vertical lines are when VPN crosses above 10. A sample chart is shown in Figure 7.</p>
+
+    <div class="figBorder">
+<img src="images/TT-Optuma.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: OPTUMA. This sample chart displays the volume positive negative (VPN) indicator on XLC (SPDR Communications Services Select Sector ETF).</p></div>
+    
+    <p class="authorTips">&mdash;<a href="mailto:support@optuma.com">support@optuma.com</a>, <a href="https://Optuma.com" target="_parent">Optuma.com</a></p>  
+    
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">TRADERSSTUDIO: APRIL 2021</h3></div>
+<p>The importable TradersStudio file based on Markos Katsanos&rsquo;s article in this issue, &ldquo;Detecting High-Volume Breakouts,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also available here:</p>
+<pre>
+'Detecting High-Volume Breakouts
+'Author: Markos Katsanos, TASC April 2021
+'Coded by: Richard Denning, 02/18/2021
+
+function VPN(period,smoLen)
+'INPUTS:
+'period = 30 
+'smoLen = 3 
+'vpnCrit = 10 
+'maLen = 30 
+Dim Price As BarArray
+Dim MAVol As BarArray
+Dim MAV As BarArray
+Dim MF As BarArray
+Dim TR As BarArray
+Dim ATR As BarArray
+Dim MC As BarArray
+Dim VMP As BarArray
+Dim VP As BarArray
+Dim VMN As BarArray
+Dim VN As BarArray
+
+'FORMULAS:
+MAVol = Average(V,period) 
+MAV = IFF(MAVol&gt;0,MAVol,1) 
+Price = ( High + Low + Close )/3 
+MF = Price - Price[1] 
+TR = max(H-L,max(C[1]-L,H-C[1]))
+ATR = Average(TR,period)
+MC = 0.1*ATR 
+VMP = IFF(MF &gt; MC, V, 0) 
+VP = summation(VMP,period) 
+VMN = IFF(MF &lt; -MC, V, 0) 
+VN = summation(VMN,period) 
+VPN = (XAverage(((VP-VN)/MAV/period),smoLen))*100 
+'------------------------------------------------
+Sub VPN_IND(period,smoLen,vpnCrit,maLen)
+'INPUT DEFAULTS:
+'period = 30 
+'smoLen = 3 
+'vpnCrit = 10 
+'maLen = 30 
+Dim theVPN As BarArray
+Dim maVPN As BarArray
+theVPN = VPN(period,smoLen)
+maVPN = Average(theVPN,maLen)
+plot1(theVPN)
+plot2(maVPN)
+plot3(vpnCrit)
+End Sub
+'------------------------------------------------
+</pre>
+  <p>Code for the VPN indicator is provided in the function &ldquo;VPN&rdquo; along with the plot indicator &ldquo;VPN_IND.&rdquo; Figure 8 shows the indicator on a chart of Apple Inc. (AAPL).</p>  
+   <div class="figBorder">
+<img src="images/TT-Tradersstudio.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: TRADERSSTUDIO. The VPN indicator is shown on a chart of Apple Inc. (AAPL).</p></div> 
+   <p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for TradersStudio
+</p> 
+    
+      
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p> 
+    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">AIQ: APRIL 2021</h3></div>
+<p>The importable AIQ EDS file based on Markos Katsanos&rsquo; article in this issue, &ldquo;Detecting High-Volume Breakouts,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also available here:</p>
+<pre>
+!Detecting High-Volume Breakouts
+!Author: Markos Katsanos, TASC April 2021
+!Coded by: Richard Denning, 02/18/2021
+
+!INPUTS:
+period is 30.
+smoLen is 3.
+vpnCrit is 10.
+maLen is 30.
+V is [volume].
+
+!FORMULAS:
+MAVol is simpleavg(V,period).
+MAV is iff(MAVol&gt;0,MAVol,1).
+Avg is ([High]+[Low]+[Close])/3.
+MF is Avg - valresult(Avg,1).
+ATR is simpleavg(max( [high]-[low],
+    max(val([close],1)-[low],
+    [high]-val([close],1))),period).
+MC is 0.1*ATR.
+VMP is iff(MF &gt; MC, V, 0).
+VP is sum(VMP,period).
+VMN is iff(MF &lt; -MC, V, 0).
+VN is sum(VMN,period).
+VPN is (expavg(((VP - VN) / MAV / period),smoLen))*100.
+MAVPN is simpleavg(VPN,maLen).
+</pre>
+<p>Code for the VPN indicator is set up in the AIQ code file. Figure 9 shows the indicator on a chart of Tesla Motors Inc (TSLA).</p>    
+  <div class="figBorder">
+<img src="images/TT-Aiq.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: AIQ. The VPN indicator is shown on a chart of Tesla Motors Inc. (TSLA).</p></div>  
+    
+  <p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for AIQ Systems</p>
+   
+    
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item11">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">THE ZORRO PROJECT: APRIL 2021</h3></div>
+<p>It is estimated that about 6,000 different technical indicators have been developed over the years. However, few of them are based on volume. In this issue, Markos Katsanos proposes a new indicator for detecting high-volume breakouts, and he tests it with a trading system based on the Russell 2000 index.</p>
+<p>The volume positive negative (VPN) indicator calculates the difference of up day volume and down day volume, divided by the total volume. A day is an up day when its typical price&mdash;the average of high, low, and close&mdash;is higher than yesterday&rsquo;s typical price plus 1/10 ATR. The opposite is true for down days. The result is multiplied by 100 and smoothed with a 3-day EMA. The C code for this indicator is:</p>
+    <pre>
+var VPN(vars Volumes,int Period)
+{
+  var Dist = 0.1*ATR(Period);
+  vars TypPrices = series(TypPrice());
+  var Vp=0,Vn=0,Vtotal=0; int i;
+  for(i=0; i&lt;Period; i++) {
+    if(TypPrices[i] &gt; TypPrices[i+1] + Dist)
+      Vp += Volumes[i];
+    else if(TypPrices[i] &lt; TypPrices[i+1] - Dist)
+      Vn += Volumes[i];
+    Vtotal += Volumes[i];
+  }
+  return EMA(100*(Vp-Vn)/Vtotal,3);
+}
+</pre>
+    
+  <p>In his article, the author shows a chart with the VPN applied to Ideanomics Inc. (IDEX), a supplier to electric vehicles. Here is the code for replicating his chart:</p>  
+    
+    <pre>
+void run() 
+{
+   BarPeriod = 1440;
+   StartDate = 20190501;
+   EndDate = 20201231;
+
+   assetAdd(&quot;IDEX&quot;,&quot;STOOQ:IDEX.US&quot;);
+   asset(&quot;IDEX&quot;);
+   vars Volumes = series(marketVol());
+   plot(&quot;TPR&quot;,VPN(Volumes,30),NEW,RED);	
+   plot(&quot;Threshold&quot;,10,0,BLACK);	
+}
+</pre>
+    
+<p>The resulting chart is displayed with a threshold line at 10% (Figure 10). The VPN crossing this line is designed to be a buy signal. We can see that the signals are valid, but a bit late. They catch only the top of the price peaks. It&rsquo;s possible that it would be better to smooth the indicator not with an EMA but with a filter with less lag, such as a two-pole lowpass filter or one of John Ehlers&rsquo; zero-lag filters.</p>    
+ 
+   <div class="figBorder">
+<img src="images/TT-Zorro1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 10: ZORRO PROJECT. Here, the VPN indicator is applied to a chart of Ideanomics Inc. (IDEX), a supplier to electric vehicles. </p></div> 
+ <p>In our replication of his test we&rsquo;ll use walk-forward optimization. As in the article, we invest 10,000 per stock and allow a maximum of 10 open positions. For comparison with a benchmark, we invest the same amount in a Russell 2000 ETF (IWM). The C code for the trading system is as follows:
+</p>   
+  <pre>
+void run() 
+{
+  setf(TrainMode,SETFACTORS); // skip OptimalF calculation
+  setf(PlotMode,PL_ALL|PL_BENCHMARK);
+  set(PARAMETERS);
+  NumWFOCycles = 5;
+  NumCores = -2;
+  BarPeriod = 1440;
+  StartDate = 2011;
+  EndDate = 2021;
+  LookBack = 150;
+  UpdateDays = 5; // don't download all again every day
+
+  assetList(&quot;AssetsRussell2000&quot;);
+  assetAdd(&quot;IWM&quot;,&quot;STOOQ:IWM.US&quot;); // Russell2000 index ETF
+
+  int Period = optimize(30,30,40,10);
+  var Threshold = optimize(10,10,20,10);
+
+// Sell after 15 days,
+// or when a Russell2000 15% drop and a value below the 150-day SMA indicates meltdown.
+  LifeTime = optimize(15,5,70,5);
+  asset(&quot;IWM&quot;);
+  int Meltdown = ROC(seriesC(),10) &lt; -15 &amp;&amp; priceClose() &lt; SMA(seriesC(),150);
+
+// Use Russell2000 index (IWM) as benchmark
+  static var StartPrice;
+  if(is(LOOKBACK)) StartPrice = priceClose();
+  var Benchmark = 10*10000/priceClose() * (priceClose()-StartPrice);
+  plot(&quot;Russell2000&quot;,Benchmark,AXIS2,PURPLE);
+
+  for(listed_assets)
+  {
+    asset(Asset);
+    if(Asset == &quot;IWM&quot;) continue; // don't trsde the index
+    vars Volumes = series(marketVol(0),100);
+    vars Prices = series(priceClose(),30);
+    vars Signals = series(VPN(Volumes,Period),2);
+
+// Filter out when price was below 1
+// or 5-day average volume below 100000
+// or the 5-day average product of price and volume below 500000.
+    bool Filter = Prices[0] &lt; 1
+      || SMA(Volumes,5) &lt; 100000
+      || SMA(series(Volumes[0]*Prices[0],5),5) &lt; 500000;
+
+// buy when the VPN crosses over 10%
+// and its 50-day volume average is above its previous 50-day average,
+// its 5-day RSI is below 90, and the price is above its 30-day SMA.
+    bool Buy = crossOver(Signals,Threshold)
+      &amp;&amp; SMA(Volumes,50) &gt; SMA(Volumes+50,50)
+      &amp;&amp; RSI(Prices,5) &lt; 90
+      &amp;&amp; Prices[0] &gt; SMA(Prices,30);
+
+// Sell when the VPN crosses below 30-day SMA while price is more than 3 ATR below 5-day high,
+// or when a market meltdown is immiment
+    bool Sell = (crossUnder(Signals,SMA(Signals,30))
+      &amp;&amp; Prices[0] &lt; HH(5) - 3*ATR(5)) || Meltdown;
+
+    if(!Filter &amp;&amp; Buy &amp;&amp; !Sell &amp;&amp; (Train || NumLongTotal &lt; 10))
+      enterLong(10000/Prices[0]);
+    else if(Sell)
+      exitLong();
+  }
+}
+</pre>  
+<p>We have added code comments for the various buy, sell, and filter conditions. The first start of this system will be slow because the histories of all 2000 stocks are downloaded. The Russell 2000 asset list is set up to load them from Yahoo. Subsequent starts are faster. The profit curves are plotted in the chart in Figure 11, blue for the trading system and purple for the benchmark. 
+</p>
+    
+    <div class="figBorder">
+<img src="images/TT-Zorro2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 11: ZORRO PROJECT. Here is a sample equity curve for the system against a benchmark.</p></div>
+    
+<p>We used 10 years of history, but the backtest started only in 2017 due to the preceding WFO training periods. 
+</p>
+<p>The VPN indicator and the trading system can be downloaded from the 2021 script repository on <a href="https://financial-hacker.com" target="_parent">https://financial-hacker.com</a>. The Zorro platform can be downloaded from <a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a>. 
+</p>
+    
+    
+    <p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a></p> 
+
+      
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item12">
+
+ <h3 class="newsTitle grey_blue">MICROSOFT EXCEL: APRIL 2021</h3></div>
+<p>In his article in this issue, &ldquo;Detecting High-Volume Breakouts,&rdquo; Markos Katsanos presents an indicator that looks at the balance of up and down volume as the first step in identifying a breakout trading opportunity.</p>
+<p>Figures 12 and 13 show a sample chart of the indicator based on the formula.</p>
+    
+    <div class="figBorder">
+<img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 12: EXCEL. Green bars mark where the VPN crosses above the user-specified VPNCrit threshold marking possible breakouts.</p></div>
+  <div class="figBorder">
+<img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 13: EXCEL. Here, the chart uses full-on shading while the VPN is above or below the VPNCrit value.</p></div>  
+    <p>A spreadsheet implementing the formula given in the article can be found <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/04/images/code/HighVolumeBreakouts.xlsm">here</a>. To download the spreadsheet, please follow these steps:</p>
+    
+    
+    <ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/04/images/code/HighVolumeBreakouts.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+    
+    
+    <p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the April 2021 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2021, Technical Analysis, Inc.</p>
+
+</body>
+</html>

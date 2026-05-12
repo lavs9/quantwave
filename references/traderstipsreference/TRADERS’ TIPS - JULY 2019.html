@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine.">
+<meta name="description" content="This month: Exponential Deviation Bands by Vitali Apirine. Contributions from: TRADESTATION, QUANTACULA, ESIGNAL, WEALTH-LAB, NINJATRADER, NEUROSHELL TRADER, AIQ, TRADE NAVIGATOR, AMIBROKER, TRADERSSTUDIO,THINKORSWIM.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - JULY 2019</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="https://traders.com/CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">July 2019</h1>
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div> <img src="images/TT-Apirine.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+  <p> The focus of Traders&rsquo; Tips this month is Vitali Apirine&rsquo;s article in this issue, &ldquo;Exponential Deviation Bands.&rdquo; Here, we present the July 2019 Traders&rsquo; Tips code with possible implementations in various software.</p>
+  <p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p>
+  <!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+  <p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+  <br class="clearfloat">
+</div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TRADESTATION: JULY 2019</a></li>
+  <li><a href="#item2">QUANTACULA: JULY 2019</a></li>
+  <li><a href="#item3"><span style="text-transform:lowercase;">e</span>SIGNAL: JULY 2019</a></li>
+  <li><a href="#item4">WEALTH-LAB: JULY 2019</a></li>
+  <li><a href="#item5">NINJATRADER: JULY 2019</a></li>
+  <li><a href="#item6">NEUROSHELL TRADER: JULY 2019</a></li>
+  <li><a href="#item7">AIQ: JULY 2019</a></li>
+  <li><a href="#item8">TRADE NAVIGATOR: JULY 2019</a></li>
+  <li><a href="#item9">AMIBROKER: JULY 2019</a></li>
+  <li><a href="#item10">TRADERSSTUDIO: JULY 2019</a></li>
+  <li><a href="#item11">THINKORSWIM: JULY 2019</a></li>
+</ul>
+<!--TIPS START HERE-->
+
+<p class="rules"></p>
+<div class="logoBorder" id="item1"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">TRADESTATION: JULY 2019</h3>
+</div>
+<p>In &ldquo;Exponential Deviation Bands&rdquo; in this issue, author Vitali Apirine introduces a price band indicator based on exponential deviation rather than the more traditional standard deviation, such as is used in the well-known Bollinger Bands. As compared to standard deviation bands, the author&rsquo;s exponential deviation bands apply more weight to recent data and generate fewer breakouts. Apirine describes using the bands as a tool to assist in identifying trends.</p>
+<p>Here, we are providing TradeStation EasyLanguage code for an indicator based on Apirine&rsquo;s concepts. This code can be downloaded by visiting our TradeStation and EasyLanguage support forum at <a href="https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=156727" target="_parent">https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=156727</a>. The filename is &ldquo;TASC_JUL2019.ZIP.&rdquo;</p>
+<p>For more information about EasyLanguage in general, please see <a href="https://www.tradestation.com/EL-FAQ" target="_parent">https://www.tradestation.com/EL-FAQ</a>.</p>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder"> <img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This shows a daily chart of the NYSE Composite Index with the exponential deviation bands indicator applied. </p>
+</div>
+<pre>Indicator: Exponential Deviation Bands
+
+// TASC JUL 2019
+// Exponential Deviation Bands
+// Vitali Apirine
+
+
+inputs:
+	Periods( 20 ),
+	DevMult( 2 ),
+	UseSMA( false ) ;
+	
+variables:
+	XAvgValue( 0 ),	
+	SAvgValue( 0 ),
+	AvgVAlue( 0 ),
+	ED( 0 ),
+	PD( 0 ),
+	MLTP( 0 ),
+	UpperBand( 0 ),
+	LowerBand( 0 ) ;
+
+once
+begin
+	MLTP = 2 / ( Periods + 1 ) ;
+end ;
+
+XAvgValue = XAverage( Close, Periods ) ;
+SAvgValue = Average( Close, Periods ) ;
+
+if UseSMA then
+begin
+	AvgValue = SAvgValue ;	
+end
+else
+	AvgValue = XAvgValue ;
+
+PD = AbsValue( AvgValue - Close ) ;
+ED = PD * MLTP + ED[1] * ( 1 - MLTP ) ;
+UpperBand = AvgValue + ED * DevMult ;
+LowerBAnd = AvgValue - ED * DevMult ;
+
+if CurrentBar &gt; Periods  then
+begin
+	Plot1( AvgVAlue, &quot;Avg&quot; ) ;
+	Plot2( UpperBand, &quot;Upper ExDev Band&quot; ) ;
+	Plot3( LowerBand, &quot;Lower ExDev Band&quot; ) ;
+end ;
+</pre>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips"> &mdash;Doug McCrary<br>
+  TradeStation Securities, Inc.<br>
+  <a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a> </p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Quantacula.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">QUANTACULA: JULY 2019</h3>
+</div>
+<p>We&rsquo;ve added the exponential deviation bands that are described by Vitali Apirine in his article in this issue to the TASC Extensions for Quantacula. That way, the bands are available as built-in indicators on Quantacula.com and in Quantacula Studio.</p>
+<p>We quickly mocked up a drag & drop model using these bands, which appeared to consistently work to identify profitable entries and exits. We used the following rules:</p>
+<ul>
+  <li>Buy next bar at market if closing price crosses below the lower ExpDevBandLower</li>
+  <li>Sell at limit price equal to the current value of the ExpDevBandUpper.</li>
+</ul>
+<p>Figure 2 shows a representative chart of the model on MSFT showing three trades occurring as the stock oscillates. Figure 3 shows the model mocked up in the drag & drop model builder.</p>
+<div class="figBorder"> <img src="images/TT-Quantacula1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 2: QUANTACULA STUDIO. This sample chart demonstrates three profitable trades in a sideways market using exponential deviation bands. </p>
+</div>
+<div class="figBorder"> <img src="images/TT-Quantacula2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 3: QUANTACULA STUDIO. This demonstrates building the exponential deviation bands model in Quantacula Studio&rsquo;s drag & drop model builder. </p>
+</div>
+<p class="authorTips"> &mdash;Dion Kurczek, Quantacula LLC<br>
+  <a href="mailto:info@quantacula.com">info@quantacula.com</a><br>
+  <a href="https://www.quantacula.com" target="_parent">www.quantacula.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">eSIGNAL: JULY 2019</h3>
+</div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;ve provided the study <a href="https://www.traders.com/Documentation/FEEDbk_docs/2019/07/images/code/Exponential_Deviation_Bands.efs" target="_blank">Exponential_Deviation_Bands.efs</a> based on the article by Vatali Apirine in this issue, &ldquo;Exponential Deviation Bands.&rdquo; This study can be used to help identify the underlying trend.</p>
+<p>The study contains formula parameters that may be configured through the <em>edit chart</em> window (right-click on the chart and select &ldquo;edit chart&rdquo;). A sample chart is shown in Figure 4.</p>
+<div class="figBorder"> <img src="images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 4: eSIGNAL. Here is an example of the study plotted on a daily chart of $NYA. </p>
+</div>
+<p>To discuss this study or download a complete copy of the formula code, please visit the EFS library discussion board forum under the forums link from the support menu at <a href="https://www.esignal.com" target="_parent">www.esignal.com</a> or visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs/" target="_parent">www.esignal.com/support/kb/efs/</a>. The eSignal formula script (EFS) is shown below.</p>
+<pre>/**********************************
+Provided By:  
+Copyright 2019 Intercontinental Exchange, Inc. All Rights Reserved. 
+eSignal is a service mark and/or a registered service mark of Intercontinental Exchange, Inc. 
+in the United States and/or other countries. This sample eSignal Formula Script (EFS) 
+is for educational purposes only. 
+Intercontinental Exchange, Inc. reserves the right to modify and overwrite this EFS file with each new release. 
+
+Description:        
+   Exponential Deviation Bands
+   by Vitali Apirine
+    
+
+Version:            1.00  05/13/2019
+
+Formula Parameters:                     Default:
+Periods                                 20
+Type                                    Simple
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+
+
+
+var fpArray = new Array();
+
+function preMain(){
+    setPriceStudy(true);
+    setStudyTitle(&quot;Exponential Deviation Bands&quot;);
+    setCursorLabelName(&quot;Upper&quot;, 0);
+    setCursorLabelName(&quot;Basis&quot;, 1);
+    setCursorLabelName(&quot;Lower&quot;, 2);
+    setPlotType(PLOTTYPE_LINE);
+    setDefaultBarFgColor(Color.RGB(0x00,0x94,0xFF),0);
+    setDefaultBarFgColor(Color.RGB(0xFE,0x69,0x00),1);
+    setDefaultBarFgColor(Color.RGB(0x00,0x94,0xFF),2);
+    
+    
+    var x = 0;
+    fpArray[x] = new FunctionParameter(&quot;Periods&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setName(&quot;Periods&quot;);
+        setLowerLimit(1);
+        setDefault(20);        
+        }
+    fpArray[x] = new FunctionParameter(&quot;Type&quot;, FunctionParameter.STRING);
+	with(fpArray[x++]){
+        setName(&quot;Type&quot;);
+        addOption(&quot;Simple&quot;);
+        addOption(&quot;Exponential&quot;)    
+        setDefault(&quot;Simple&quot;);        
+        }
+    
+}
+
+var bInit = false;
+var bVersion = null;
+var xClose = null;
+var xMA = null;
+var vRate = null;
+var vDev = null;
+var vED = null;
+var vED_1 = null;
+var vMDev = null;
+
+function main(Periods, Type){
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return;
+        
+    if (getBarState() == BARSTATE_ALLBARS){
+        bInit = false;
+    }
+
+    if (getCurrentBarCount() &lt; Periods) return;
+    
+    if (!bInit){
+        
+        xClose = close();
+        vRate = 2 / ( Periods + 1 );
+        vED_1 = 0;
+        vED = 0;
+        
+        switch (Type) {
+            case &quot;Simple&quot;:
+                xMA = sma(Periods);
+                break;
+            case &quot;Exponential&quot;:
+                xMA = ema(Periods);
+                break;
+        }
+        bInit = true;
+    }    
+
+    if (getBarState() == BARSTATE_NEWBAR)   {
+        vED_1 = vED;
+        vED = 0;
+    }  
+    if (xMA.getValue(0) == null) return;
+    vDev = Math.abs(xMA.getValue(0) - xClose.getValue(0)); 
+    vMDev = 0;   
+    for (var i = 0; i &lt; Periods; i++) {        
+        vMDev = vMDev + (Math.abs(xMA.getValue(0) - xClose.getValue(-i))); 
+    }
+    vMDev = vMDev / Periods;
+    
+    if (vED_1 == 0  ){
+        vED_1 = vMDev;
+        vED = vMDev;
+    }
+    else vED = vDev * vRate + vED_1 * (1 - vRate);
+    
+    return [xMA.getValue(0) + (2 * vED),xMA.getValue(0), xMA.getValue(0) - (2 * vED)]
+}
+ 
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}</pre>
+<p class="authorTips"> &mdash;Eric Lippert<br>
+  eSignal, an Interactive Data company<br>
+  800 779-6555, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">WEALTH-LAB: JULY 2019</h3>
+</div>
+<p>Although author Vitali Apirine hasn&rsquo;t provided a trading system in his article &ldquo;Exponential Deviation Bands&rdquo; this time, the exponential deviation bands he presents are similar in application to other bands like Bollinger Bands, yet are more responsive to price action.</p>
+<p>One of the possible approaches to trading with them is during a rangebound market. Our simple system&rsquo;s concept is based on the ADX indicator&rsquo;s trait. A declining ADX indicates a less directional market, which may be approached with a swing trading system. In the flat market, an entry can be made when the lower band is violated&mdash;and with an upsurge in the ADX ending that trade.</p>
+<p><strong><em>Entry rules:</em></strong></p>
+<ul>
+  <li>Buy at limit at the lower exponential deviation band if ADX is less than it was 10 bars ago.</li>
+</ul>
+<p><strong><em>Exit rules:</em></strong></p>
+<ul>
+  <li>Sell on the open after 10 bars in the trade.</li>
+  <li>Sell on the open if the ADX rises above its value 10 bars ago.</li>
+</ul>
+<p>As you can see in the sample chart shown in Figure 5, Walmart was trading in ranges during our in-sample period from 1/1/2000 to 1/1/2010 (at the bottom). The system was able to beat the market (see equity in the top half of the chart). In Figure 6, both good and bad example trades are shown on a daily chart of WMT.</p>
+<div class="figBorder"> <img src="images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 5: WEALTH-LAB. Walmart was trading in ranges during our in-sample period from 1/1/2000 to 1/1/2010 (at the bottom). The system was able to beat the market (see equity in the top half of the chart). </p>
+</div>
+<div class="figBorder"> <img src="images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 6: WEALTH-LAB. Here, both good and bad example trades are shown on a daily chart of WMT (data provided by Yahoo). </p>
+</div>
+<p>To use these bands, install (or update) the TASCIndicators library to its most-recent version from our website or using the built-in extension manager. Once you see &ldquo;ExpDevBandLower&rdquo; and &ldquo;ExpDevBandUpper&rdquo; listed under the <em>TASC Magazine Indicators</em> group, they&rsquo;re ready for use in Wealth-Lab.</p>
+<pre><strong>C# Code</strong>
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Drawing;
+using WealthLab;
+using WealthLab.Indicators;
+using TASCIndicators;
+
+namespace WealthLab.Strategies
+{
+	public class TASCJuly2019 : WealthScript
+	{
+		private StrategyParameter paramPeriod;
+		private StrategyParameter paramDev;
+		private StrategyParameter paramExit;
+
+		public TASCJuly2019()
+		{
+			paramPeriod = CreateParameter(&quot;Period&quot;,20,10,100,10);
+			paramDev = CreateParameter(&quot;Deviations&quot;,2,0.5,4,0.5);
+			paramExit = CreateParameter(&quot;Exit after&quot;,10,2,40,2);
+		}
+		
+		protected override void Execute()
+		{
+			var period = paramPeriod.ValueInt;
+			var dev = paramDev.Value;
+			int exitAfter = paramExit.ValueInt;
+
+			var adx = ADX.Series( Bars, period);
+			var ma = SMA.Series( Close, period);
+			var ebu = ExpDevBandUpper.Series( Close, period,dev,false);
+			var ebl = ExpDevBandLower.Series( Close, period,dev,false);
+
+			ChartPane adxPane = CreatePane( 20, false, true);
+			PlotSeries( adxPane, adx, Color.Black, LineStyle.Solid, 1);
+			PlotSeriesFillBand( PricePane, ebl,ebu,Color.Red,Color.Transparent,LineStyle.Solid,1);
+			PlotSeries( PricePane, ma, Color.Red, LineStyle.Solid, 1 );
+			HideVolume();
+
+			for(int bar = GetTradingLoopStartBar(1); bar &lt; Bars.Count; bar++)
+			{
+				if (IsLastPositionActive)
+				{
+					Position p = LastPosition;
+
+					if (bar+1 - p.EntryBar &gt;= exitAfter)
+						SellAtMarket( bar+1, p, &quot;Timed exit&quot;); 
+					else
+						if(adx[bar] &gt; adx[bar - 10] )
+							ExitAtMarket( bar+1, p, &quot;Trend alert&quot;);
+				}
+				else
+				{				
+					if(adx[bar] &lt; adx[bar - period])
+						BuyAtLimit( bar+1, ebl[bar]);
+				}
+			}
+		}
+	}
+}
+</pre>
+<p class="authorTips"> &mdash;Eugene (Gene Geren), Wealth-Lab team<br>
+  MS123, LLC<br>
+  <a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a><br>
+</p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">NINJATRADER: JULY 2019</h3>
+</div>
+<p>The exponential deviation bands indicator, as discussed in the article by Vitali Apirine in this issue, is available for download at the following links for NinjaTrader 8 and NinjaTrader 7:</p>
+<ul style="list-style: none">
+  <li><strong>NinjaTrader 8:</strong> <a href="https://ninjatrader.com/SC/July2019SCNT8.zip" target="_blank">ninjatrader.com/SC/July2019SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7:</strong> <a href="https://ninjatrader.com/SC/July2019SCNT7.zip">ninjatrader.com/SC/July2019SCNT7.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import into NinjaTrader 7, from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator&rsquo;s source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control center window and selecting the &ldquo;exponential deviation bands&rdquo; file. You can review the indicator&rsquo;s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the control center window and selecting the &ldquo;exponential deviation bands&rdquo; file.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, which provides you with the highest performance possible.</p>
+<p>A sample chart implementing the strategy is shown in Figure 7.</p>
+<div class="figBorder"> <img src="images/TT-Ninjatrader.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 7: NINJATRADER. The exponential deviation bands indicator using an SMA is displayed here on a one-day NYSE composite chart from January 2018 to February 2018. </p>
+</div>
+<p class="authorTips"> &mdash;Raymond Deux &amp; Chris Lauber<br>
+  NinjaTrader, LLC<br>
+  <a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">NEUROSHELL TRADER: JULY 2019</h3>
+</div>
+<p>The exponential deviation bands described by Vitali Apirine in his article in this issue can be easily implemented in NeuroShell Trader by combining two of NeuroShell Trader&rsquo;s 800+ indicators. To implement the indicators, select &ldquo;new indicator&rdquo; from the <em>insert</em> menu and use the indicator wizard to set up the following indicators:</p>
+<pre>Upper band:	Add2(Avg(Close,20),Mul2(2,ExpAvg(Abs(Sub(Avg(Close,20),Close)),20)))
+
+Middle band:	Avg(Close,20)
+
+Lower band:	Sub(Avg(Close,20),Mul2(2,ExpAvg(Abs(Sub(Avg(Close,20),Close)),20)))</pre>
+<p>Users of NeuroShell Trader can go to the Stocks & Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p>A sample chart is shown in Figure 8.</p>
+<div class="figBorder"> <img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 8: NEUROSHELL TRADER. This NeuroShell Trader chart shows exponential deviation bands applied to the Dow Jones Industrial Average. </p>
+</div>
+<p class="authorTips">&mdash;Marge Sherald, Ward Systems Group, Inc.<br>
+  301 662-7950, <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+  <a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item7"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">AIQ: JULY 2019</h3>
+</div>
+<p>The importable AIQ EDS file based on Vitali Apirine&rsquo;s article in this issue, &ldquo;Exponential Deviation Bands,&rdquo; and a recreated Excel spreadsheet similar to the one shown in the article can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also shown here:</p>
+<pre>!EXPONENTIAL DEVIATION BANDS
+!Author: Vitali Apirine, TASC July 2019
+!Coded by: Richard Denning, 5/15/2019
+!www.TradersEdgeSystems.com
+
+C is [close].
+Periods is 20. 
+
+MA20 is simpleavg(C,Periods).   !expavg(C,Periods).  !or simpleavg(C,Periods). 
+MDev20 is (Abs(MA20-C)+Abs(MA20-valresult(C,1))+Abs(MA20-valresult(C,2))+Abs(MA20-valresult(C,3))
+      +Abs(MA20-valresult(C,4))+Abs(MA20-valresult(C,5))+Abs(MA20-valresult(C,6))+Abs(MA20-valresult(C,7))
+     +Abs(MA20-valresult(C,8))+Abs(MA20- valresult(C,9))+Abs(MA20- valresult(C,10))+Abs(MA20- valresult(C,11))
+     +Abs(MA20- valresult(C,12))+Abs(MA20- valresult(C,13))+Abs(MA20- valresult(C,14))+Abs(MA20- valresult(C,15))
+      +Abs(MA20- valresult(C,16)) +Abs(MA20- valresult(C,17))+Abs(MA20- valresult(C,18))+Abs(MA20- valresult(C,19)))/20.
+
+Dev is Abs(MA20-C).  
+Rate is 2/( Periods +1).  
+
+DaysInto is ReportDate() - RuleDate().
+Stop if DaysInto &gt;= 200.
+stopEXD is iff(Stop,Mdev20, EXD).
+EXD is Dev*Rate + valresult(stopEXD,1)*(1-Rate).
+
+UpperExp is MA20+2*EXD.  
+MidExp is MA20.  
+LowerExp is MA20-2*EXD. 
+
+ShowValues if 1.
+</pre>
+<p>Figure 9 shows the exponential deviation bands centered on a 20-bar simple moving average on a chart of the New York Composite Index (NYA).</p>
+<div class="figBorder"> <img src="images/TT-Aiq.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 9: AIQ. Here are exponential deviation bands centered on a 20-bar simple moving average on a chart of the New York Composite Index (NYA). </p>
+</div>
+<p class="authorTips"> &mdash;Richard Denning<br>
+  <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+  for AIQ Systems </p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item8"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Genesis.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">TRADE NAVIGATOR: JULY 2019</h3>
+</div>
+<p>We have created a special file to make it easy to download the library based on the article in this issue by Vitali Apirine, &ldquo;Exponential Deviation Bands.&rdquo;</p>
+<p>The file name is &ldquo;SC201907.&rdquo; To download it, click on Trade Navigator&rsquo;s blue telephone button, select &ldquo;download special file,&rdquo; then erase the word &ldquo;upgrade&rdquo; and type in &ldquo;SC201907&rdquo; (without the quotes), then click the start button. When prompted to upgrade, click the <em>yes</em> button. If prompted to close all software, click on the <em>continue</em> button. Your library will now download. This library contains three indicators: &ldquo;ED upper band,&rdquo; &ldquo;ED lower band,&rdquo; and &ldquo;ExpDev.&rdquo; The library also includes a prebuilt study named &ldquo;exponential deviation study.&rdquo;</p>
+<p>Once installed, you can insert these indicators onto your chart by opening the <em>charting</em> dropdown menu, selecting the <em>add to chart</em> command, then on the <em>indicators</em> tab, find your named indicator, select it, then click on the <em>add</em> button. Repeat this procedure for additional indicators as well if you wish. To add the study, on the <em>add to chart</em> dialogue box&rsquo;s &ldquo;studies&rdquo; tab, please select &ldquo;exponential deviation study,&rdquo; then click the <em>add</em> button.</p>
+<p>If you have any difficulty creating or using the indicators and/or template, feel free to contact our technical support or use our live chat.</p>
+<p class="authorTips"> &mdash;Genesis Financial Technologies<br>
+  Tech support (719) 884-0245<br>
+  <a href="https://www.TradeNavigator.com" target="_parent">www.TradeNavigator.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item9"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Amibroker.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">AMIBROKER: JULY 2019</h3>
+</div>
+<p>In &ldquo;Exponential Deviation Bands&rdquo; in this issue, author Vitali Apirine presents deviation bands that are based on exponential moving average as opposed to classic bands centered around simple moving average.</p>
+<p>Ready-to-use code for AmiBroker is provided below. A sample chart is shown in Figure 10.</p>
+<pre>AmiBroker code:
+
+Periods = Param(&quot;Periods&quot;, 20, 2, 100 ); 
+Width = Param(&quot;Width&quot;, 2, 1, 3, 0.01 ); 
+MA20 = EMA(C,Periods); 
+
+Dev = MDev = abs(MA20-C); 
+for( i = 1; i &lt; Periods; i++ ) 
+   MDev += abs( MA20 - Ref( C, -i ) ); 
+
+MDev /= Periods; 
+
+EXD = EMA( MDev, Periods ); 
+// uncomment line below if you need a chart 
+// that exactly matches article 
+// EXD = EMA( Dev, Periods ); 
+up = MA20+Width*EXD; 
+dn = MA20-Width*EXD; 
+
+Plot( C, &quot;Price&quot;, colorDefault, styleCandle ); 
+
+Plot( MA20, &quot;ExpDevBands&quot;+_PARAM_VALUES(), colorRed ); 
+Plot( up, &quot;&quot;, colorBlue ); 
+Plot( dn, &quot;&quot;, colorBlue ); 
+//PlotOHLC( up, up, dn, dn, &quot;&quot;, ColorBlend( colorWhite, GetChartBkColor() ), styleCloud ); 
+</pre>
+<div class="figBorder"> <img src="images/TT-AmiBroker.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 10: AMIBROKER. Here is a daily chart of the Nasdaq 100 with exponential deviation bands, replicating a chart from Vitali Apirine&rsquo;s article in this issue. </p>
+</div>
+	<p class="authorTips">
+—Tomasz Janeczko, AmiBroker.com<br>
+
+		<a href="https://www.amibroker.com" target="_parent">www.amibroker.com</a></p>
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item10"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">TRADERSSTUDIO: JULY 2019</h3>
+</div>
+<p>The importable TradersStudio code file for Vitali Apirine&rsquo;s article in this issue, &ldquo;Exponential Deviation Bands,&rdquo; and a recreated Excel spreadsheet similar to the one shown in the article can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also shown here:</p>
+<pre>'EXPONENTIAL DEVIATION BANDS
+'Author: Vitali Apirine, TASC July 2019
+'Coded by: Richard Denning, 5/15/2019
+'www.TradersEdgeSystems.com
+
+Function EXD(Periods,ByRef UpperExp,ByRef LowerExp) As BarArray
+  'Periods = 20
+  Dim Dev, Rate
+  Dim theEXD As BarArray
+  Dim MA As BarArray
+  MA = Average(C,Periods)  
+  Dev = Abs(MA-C)   
+  Rate = 2/(Periods +1)   
+  theEXD = Dev*Rate + EXD[1]*(1-Rate) 
+  UpperExp = MA+2*theEXD      
+  LowerExp = MA-2*theEXD  
+  EXD = theEXD
+End Function
+'---------------------------------------------------------------
+'INDICATOR PLOT:
+Sub EDEV_BANDS(Periods)
+  Dim theEXD As BarArray
+  Dim MA As BarArray
+  Dim UpperExp As BarArray
+  Dim LowerExp As BarArray
+  MA = Average(C,Periods)
+  theEXD = EXD(Periods,UpperExp,LowerExp)
+End Sub</pre>
+<p>Figure 11 shows the exponential deviation bands centered on a 20-bar simple moving average on a chart of Apple Inc. (AAPL) during 2012.</p>
+<div class="figBorder"> <img src="images/TT-Tradersstudio.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 11: TRADERSSTUDIO. Here are exponential deviation bands centered on a 20-bar simple moving average on a chart of Apple Inc. (AAPL). </p>
+</div>
+<p class="authorTips"> &mdash;Richard Denning<br>
+  <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+  for TradersStudio</p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item11"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/thinkorswim.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">THINKORSWIM: JULY 2019</h3>
+</div>
+<p>We have put together a study for thinkorswim based on the article &ldquo;Exponential Deviation Bands&rdquo; by Vitali Apirine in this issue. We built the study by using our proprietary scripting language, thinkScript. To ease the loading process, simply click on <a href="https://tos.mx/l9qPdW" target="_parent">https://tos.mx/l9qPdW</a> or enter it into setup&mdash;open shared item from within thinkorswim, then choose view thinkScript study and name it exponentialdevbands. This can then be added to your chart from the edit study and strategies menu within thinkorswim.</p>
+<p>In Figure 12, the study can be seen on a one-year daily chart set of NYA. See Apirine&rsquo;s article in this issue for more details on how to interpret the study. Please note that we used a different method for our code than described in the original code (prefetch vs. initialization) in order to more reliably generate values as well as for performance. We also added the ability to adjust the average types as well as the band multipliers for the study.</p>
+<div class="figBorder"> <img src="images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 12: THINKORSWIM. The study is shown on a one-year daily chart set of NYA. </p>
+</div>
+<p class="authorTips"> &mdash;thinkorswim<br>
+  A division of TD Ameritrade, Inc.<br>
+  <a href="https://www.thinkorswim.com" target="_parent">www.thinkorswim.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the July 2019 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2019, Technical Analysis, Inc.</p>
+</body>
+</html>

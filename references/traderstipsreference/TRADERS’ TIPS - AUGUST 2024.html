@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: Volume Confirmation For A Trend System by Buff Pelz Dormeier. Contributions from: TradingView; RealTest; Wealth-Lab.com; Neuroshell Trader; Microsoft Excel; AIQ.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - AUGUST 2024</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">August 2024</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2024/08/images/TT-Dormeier.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Buff Pelz Dormeier&rsquo;s article in this issue, &ldquo;Volume Confirmation For A Trend System.&rdquo; Here, we present the August 2024 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradingView: August 2024</a></li>
+  <li><a href="#item2">RealTest: August 2024</a></li>
+  <li><a href="#item3">Wealth-Lab.com: August 2024</a></li>
+  <li><a href="#item4">Neuroshell Trader: August 2024</a></li>
+  <li><a href="#item5">Microsoft Excel: August 2024</a></li>
+  <li><a href="#item6">AIQ: August 2024</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: August 2024</h3></div>
+<p>The following Pine Script code for TradingView implements the ADX, the trend thrust indicator (TTI), and the volume price confirmation indicator (VPCI) that constitutes the trend-following trading system described in Buff Dormeier&rsquo;s article in this issue, &ldquo;Volume Confirmation For A Trend System.&rdquo;</p>
+<pre>
+//  TASC Issue: August 2024 - Vol. 42
+//     Article: Volume Confirmation For A Trend System.
+//              The Trend Thrust Indicator And
+//              Volume Price Confirmation Indicator.
+//  Article By: Buff Pelz Dormeier
+//    Language: TradingView's Pine Scriptª v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//&#64;version=5
+string title = 'TASC 2024.08 Volume Confirmation For A Trend System'
+string stitle = 'VCTS'
+strategy(title, stitle, false)
+
+
+// Input
+lenADX  = input.int(14, 'ADX Length', 1)
+smt     = input.int(14, 'ADX Smoothing', 1, 50)
+fastTTI = input.int(13, 'TTI Fast Average', 1)
+slowTTI = input.int(26, 'TTI Slow Average', 1)
+smtTTI  = input.int(9,  'TTI Signal Length', 1)
+shortVP = input.int(5,  'VPCI Short-Term Average', 1)
+longVP  = input.int(25, 'VPCI Long-Term Average', 1)
+
+
+// ADX
+upDM =  ta.change(high)
+dwDM = -ta.change(low)
+pDM  = na(upDM) ? na : upDM &gt; dwDM and upDM &gt; 0 ? upDM : 0
+mDM  = na(dwDM) ? na : dwDM &gt; upDM and dwDM &gt; 0 ? dwDM : 0
+ATR  = ta.atr(lenADX)
+pDI  = fixnan(100 * ta.rma(pDM, lenADX) / ATR)
+mDI  = fixnan(100 * ta.rma(mDM, lenADX) / ATR)
+ADX  = 100*ta.rma(math.abs((pDI - mDI) / (pDI + mDI)), smt)
+
+
+// TTI
+// ref: https://www.tradingview.com/script/B6a7HzVn/
+fastVWMA = ta.vwma(close, fastTTI)  
+slowVWMA = ta.vwma(close, slowTTI)  
+VWMACD   = fastVWMA - slowVWMA 
+volMult  = math.pow((fastVWMA / slowVWMA), 2) 
+VEFA     = fastVWMA * volMult 
+VESA     = slowVWMA / volMult
+TTI      = VEFA - VESA
+signal   = ta.sma(TTI, smtTTI)
+
+
+// VPCI
+// ref: https://www.tradingview.com/script/n8puJoAS/
+VPC      = ta.vwma(close, longVP) - ta.sma(close, longVP)
+VPR      = ta.vwma(close, shortVP) / ta.sma(close, shortVP)
+VM       = ta.sma(volume, shortVP) / ta.sma(volume, longVP)
+VPCI     = VPC * VPR * VM
+
+
+// Plot
+col1  = #4daf4a50
+col2  = #e41a1c20
+col0  = #ffffff00
+adxL1 = plot(ADX,    &quot;ADX&quot;, #984ea3)
+adxL0 = plot(30,     &quot;ADX Threshold&quot;, #984ea350)
+ttiL1 = plot(TTI,    &quot;TTI&quot;, #ff7f00)
+ttiL0 = plot(signal, &quot;TTI Signal&quot;, #ff7f0050)
+vpcL1 = plot(VPCI*10,&quot;VPCI&quot;, #377eb8)
+vpcL0 = plot(0,      &quot;VPCI Zero&quot;, #377eb850)
+fill(adxL1, adxL0, ADX &gt; 30 ? col1 : col0)
+fill(ttiL1, ttiL0, TTI &gt; signal ? col1 : col0)
+fill(vpcL1, vpcL0, VPCI &gt; 0 ? col1 : col2)
+
+
+// Strategy entry/exit rules 
+if ADX &gt; 30
+    if TTI &gt; signal
+        if VPCI &gt; 0
+            strategy.entry(&quot;entry&quot;, strategy.long)
+if VPCI &lt; 0
+    strategy.close_all('exit')
+</pre>
+<p>The script is available on TradingView from the PineCodersTASC account: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart is shown in Figure 1.</p>
+	<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADINGVIEW. This demonstrates the trend-following trading system using the ADX, the trend thrust indicator (TTI), and the volume price confirmation indicator (VPCI).</p></div>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="http://www.TradingView.com" target="_blank">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Realtest.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">RealTest: August 2024</h3></div>
+<p>In &ldquo;Volume Confirmation For A Trend System&rdquo; in this issue, Buff Dormeier discusses several indicators and discusses his development of a trend-following system based on the indicators. Provided here is a RealTest script that implements the indicators and backtests. There are some notes in the script itself providing some additional details about the script.</p>
+<pre>
+Notes:
+	Buff Pelz Dormeier &quot;Volume Confirmation For A Trend System&quot;, TASC, August 2024.
+	Implements all the indicators mentioned in the article and used in the research.
+	Shows how to run the sequence of backtests the author describes.
+	This example uses Norgate data with historical index constituency series.
+
+Import:
+	DataSource:	Norgate
+	IncludeList:	.S&amp;P 500 Current &amp; Past
+	IncludeList:	SPY
+	StartDate:	1993-01-01
+	EndDate:	Latest
+	SaveAs:	spx.rtd
+	
+Settings:
+	DataFile:	spx.rtd
+	StartDate:	Earliest
+	EndDate:	Latest
+	BarSize:	Daily
+	AccountSize:	100000	// 100k	
+	// generates a meaningful test name when looping over the methods
+	TestName:	Item(&quot;name{#}&quot;, method)
+
+Library:
+	// names for test loop output
+	name1:	&quot;MACD only&quot;
+	name2:	&quot;MACD and OBV&quot;
+	name3:	&quot;MACD and VPCI&quot;
+	name4:	&quot;TTI and VPCI&quot;
+	
+Parameters:
+	// trend signal methods tested by the author
+	method:	from 1 to 4 // loop over test types
+	// indicator parameters
+	len_macd_fast:	12
+	len_macd_slow:	26
+	len_macd_smooth:	9
+	len_obv_smooth:	8
+	len_vpci_fast:	7
+	len_vpci_slow:	28
+	len_vpci_smooth:	9
+	len_tti_fast:	12
+	len_tti_slow:	26
+	len_tti_smooth:	9
+	len_adx:	7
+
+Data:
+	// --- Indicator Calculations ---
+	
+	// MACD
+	macd_line:	MACD(len_macd_fast, len_macd_slow)
+	macd_signal:	MACDS(len_macd_fast, len_macd_slow, len_macd_smooth)
+	macd_buy:	Cross(macd_line, macd_signal)
+	macd_sell:	macd_line &lt; macd_signal
+	
+	// OBV
+	obv_line:	nonan(obv_line[1]) + V * sign(C - C[1])
+	obv_signal:	MA(obv_line, len_obv_smooth)
+	obv_confirm:	obv_line &gt; obv_signal
+	obv_sell:	obv_line &lt; obv_signal
+	
+	// VPCI (charts match author's examples)
+	vpci_fast_avg:	VWMA(C, len_vpci_fast)
+	vpci_slow_avg:	VWMA(C, len_vpci_slow)
+	vpci_vpc:	vpci_slow_avg - MA(C, len_vpci_slow)
+	vpci_vpr:	vpci_fast_avg / MA(C, len_vpci_fast)
+	vol_ratio:	MA(V, len_vpci_fast) / MA(V, len_vpci_slow)
+	vpci_line:	vpci_vpc * vpci_vpr * vol_ratio
+	vpci_signal:	MA(vpci_line, len_vpci_smooth)
+	vpci_confirm:	vpci_line &gt; vpci_signal
+	vpci_sell:	vpci_line &lt; vpci_signal
+	
+	// TTI (chart matches IBM example on Optuma website)
+	// translated from TS code in author's Oct-2011 letter to the magazine
+	tti_fast_avg:	VWMA(C, len_tti_fast)
+	tti_slow_avg:	VWMA(C, len_tti_slow)
+	tti_ema_diff:	EMA(C, len_tti_fast) - EMA(C, len_tti_slow)
+	tti_v_factor:	VWMA(V, len_tti_fast) / EMA(V, len_tti_slow) * 10
+	tti_iv_factor:	VWMA(V, len_tti_slow) / EMA(V, len_tti_fast) * 10
+	tti_fast:	tti_fast_avg / (tti_v_factor / tti_iv_factor)
+	tti_slow:	(tti_iv_factor / tti_v_factor) * tti_slow_avg
+	tti_spread:	tti_fast - tti_slow
+	tti_v_avg:	VWMA(tti_v_factor, len_tti_fast) / EMA(tti_iv_factor, tti_slow) * len_tti_smooth
+	tti_avg_spread:	Round(VWMA(tti_spread, tti_v_avg), 0.001)
+	tti_line:	tti_spread
+	tti_signal:	tti_avg_spread
+	tti_buy:	Cross(tti_line, tti_signal)
+	
+	// ADX
+	adx_value:	ADX(len_adx)
+	adx_buy:	adx_value &gt; 30
+	
+	// --- Trading Signals for each method tested ---
+	
+	// MACD only
+	buy1:	adx_buy and macd_buy
+	sell1:	macd_sell
+	
+	// MACD and OBV
+	buy2:	adx_buy and macd_buy and obv_confirm
+	sell2:	obv_sell
+	
+	// MACD and VPCI
+	buy3:	adx_buy and macd_buy and vpci_confirm
+	sell3:	vpci_sell
+
+	// TTI and VPCI
+	buy4:	adx_buy and tti_buy and vpci_confirm
+	sell4:	vpci_sell
+
+	// Method-specific signal selection
+	buy:	Item(&quot;buy{#}&quot;, method) 
+	sell:	Item(&quot;sell{#}&quot;, method)
+	
+Strategy: spx_stocks 
+	Side:	Long
+	Quantity:	5
+	QtyType:	Percent
+	MaxExposure:	100
+	// the author does not say how he ranked setups when there were too many
+	// here the ADX value is used
+	SetupScore:	adx_value
+	EntrySetup:	buy and InSPX // was historical constituent on that date
+	ExitRule:	sell
+
+Benchmark: spy_index_hold
+	Side:	Long
+	EntrySetup:	Symbol=$SPY
+
+Charts:
+	// {^} means upper pane, {|} means lower pane
+	// comment indicators in/out as desired
+	// (realtest only supports two non-bar panes and one scale per pane)
+	
+	// MACD
+//	macd_line:	macd_line {|}
+//	macd_signal:	macd_signal {|}
+	// OBV
+//	obv_line:	obv_line {^}
+//	obv_signal:	obv_signal {^}
+	// VPCI
+	vpci_line:	vpci_line {^}
+	vpci_signal:	vpci_signal {^}
+	// TTI
+	tti_line:	tti_line {|}
+	tti_signal:	tti_signal {|}
+</pre>
+<p>Figure 2 shows an example trade from the backtest with the VPCI and TTI plotted in the upper and lower panes.</p>
+<div class="figBorder">
+<img src="images/TT-Realtest.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: REALTEST. This shows an example trade signal from a backtest of the trend system. The VPCI and TTI are plotted in the upper and lower panes, respectively.</p></div>
+<p class="authorTips">&mdash;Marsten Parker<br>
+MHP Trading, <a href="http://Mhptrading.com" target="_blank">Mhptrading.com</a><br>
+<a href="mailto:mhp@mhptrading.com">mhp@mhptrading.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: August 2024</h3></div>
+<p>In &ldquo;Volume Confirmation For A Trend System&rdquo; in this issue, Buff Dormeier discusses his development of a trend-following system based on several indicators, including the ADX, TTI, and VPCI.</p>
+<p>Since the exact rules of the trading system aren&rsquo;t given in the article, we used his description of his earlier version of the model and we modified those rules to suit his latest additions to the system, as follows:</p>
+<ul><li>Assign 5% equity to a position</li><li>ADX greater than 30</li><li>TTI indicator crosses above its signal line</li><li>VPCI turns up for trend confirmation</li></ul>
+<p>Figure 3 demonstrates using Wealth-Lab&rsquo;s Building Blocks feature to express the trading system&rsquo;s rules without having to use code or without having to code the rules yourself.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: WEALTH-LAB. This screenshot shows the rules for the trend-following system as expressed in the Building Blocks feature, which lets the user build a system without code.</p></div>
+<p>The resulting system requires you to install two Wealth-Lab Extensions to function properly:</p>
+<ul><li>the latest build of Advanced Smoothers (to use the TTI indicator)</li><li>PowerPack (to use the VPCI indicator)</li></ul>
+<p>As for exit rules, you could make up an exit block to mirror the VPCI condition, that is, change it to &ldquo;VPCI turns down&rdquo; to reflect contradicting behavior.</p>
+<p>Figure 4 shows an example of the indicator combo in action, showing the TTI with its signal line and VPCI and ADX in plots at the bottom.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: WEALTH-LAB. This demonstrates a sample trade signal from the trend-following system in SPY. The TTI is shown with its signal line and the VPCI and ADX are plotted in the lower panes.</p></div>
+<p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="http://www.wealth-lab.com" target="_blank">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: August 2024</h3></div>
+<p>The volume price confirmation indicator (VPCI) can be easily implemented in NeuroShell Trader by combining a few of NeuroShell Trader&rsquo;s 800+ indicators. To implement the VPCI, select &ldquo;New indicator ...&rdquo; from the insert menu and use the indicator wizard to create the following indicators:</p>
+	<pre>VWMA:
+     VolWgtMovAvg ( Close, Volume, 50 )
+
+<strong>VPC:</strong>
+     Subtract (VolWgtMovAvg ( Close, Volume, 50 ), MovAvg ( Close, 50 ) )
+
+<strong>VPR:</strong>
+     Divide (VolWgtMovAvg ( Close, Volume, 10 ), MovAvg ( Close, 10 )
+
+<strong>VM:</strong>
+     Divide ( MovAvg (Volume, 10 ), MovAvg (Volume, 10 ) )
+
+<strong>VPCI:</strong>
+     Multiply3 ( VPC, VPR, VM )
+</pre>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: NEUROSHELL TRADER. This example chart plots the volume price confirmation indicator (VPCI).</p></div>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_blank">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: August 2024</h3></div>
+<p>In the article &ldquo;Volume Confirmation For A Trend System&rdquo; in this issue, Buff Dormeier recounts his earlier development of his volume price confirmation indicator (VPCI) and his trend thrust indicator (TTI) along with a discussion of the testing process he used over the years to validate his conclusions along the way.</p>
+<p>The spreadsheet <a href="https://www.traders.com/Documentation/FEEDbk_docs/2024/08/images/code/VPCI_and_TTI.xlsm" target="_blank">provided here</a> demonstrates each of these as standalone indicators (Figure 6).</p>
+<div class="figBorder">
+<img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: EXCEL. The spreadsheet displays the VPCI and TTI indicators.</p></div>
+	
+<p>Due to time constraints, I was not able to incorporate a trading system using either indicator, so I leave that up to the reader to do.</p> 
+<p>Instead, I recently have spent a good deal of time building a repair for a problem that began to occur when I tried to use my past spreadsheets, due to a change at the data source.</p>
+	<h4>A fix for the &ldquo;Who moved my cheese&rdquo; historical data retrieval failure</h4>
+<p>On or just before April 15, 2024, all my Excel spreadsheets that I prepared and created for the Traders&rsquo; Tips section of this magazine began to fail (see Figure 7) when retrieving historical data.</p>
+<div class="figBorder">
+<img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: EXCEL. On or just before April 15, 2024, my past Excel spreadsheets began to give error messages when retrieving historical data from Yahoo Finance.</p></div>
+<p>The spreadsheet I am providing for this issue, the August 2024 issue, is the first that has been &ldquo;adjusted&rdquo; to correct the April 15, 2024 data retrieval failure caused by Yahoo Finance changing their Stock Summary web page.</p>
+<p>The changes to Yahoo Finance&rsquo;s Stock Summary web page took effect on, or slightly before, April 15, 2024. (And yes, it is their web page after all, so they can certainly make a change to it as they please!)</p>
+<p>It took me a while to figure out what changed in their Stock Summary feature and how to once again <em>reliably</em> locate the information I use in these Traders&rsquo; Tips.</p>
+<p>The result is a complete rewrite (410 VBA code and comment lines) of my data retrieval logic as it applies to the information I need from the Yahoo Finance Stock Summary web page.</p>
+<p>Unfortunately, there is no quick, simple fix to one or two VBA code lines, for those of you might wish to restore older Traders&rsquo; Tips to service.</p>
+<p>To make the necessary repairs manageable, I have included in this month&rsquo;s Traders&rsquo; Tips spreadsheet the capability to &ldquo;fix&rdquo; older spreadsheets by replacing the appropriate section of VBA code, plus a couple of code tweaks elsewhere, using the fully functional code contained in this August 2024 spreadsheet as my template.</p>
+<p>The automation is a case of VBA code modifying VBA code and will require just a bit of intervention on your part to set the Excel application permissions to allow VBA to alter other VBA on the fly.</p>
+<p>See the tab labeled &ldquo;April 15 Repairs&rdquo; (Figure 8) in this month&rsquo;s spreadsheet for step-by-step instructions to get Excel permissions set correctly and then begin the process of repairing your older spreadsheets.</p>	
+<div class="figBorder">
+<img src="images/TT-Excel3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: EXCEL. A tab labeled &ldquo;April 15 Repairs&rdquo; in this month&rsquo;s spreadsheet gives step-by-step instructions to get Excel permissions set correctly and then begin the process of repairing older spreadsheets provided in the Traders&rsquo; Tips feature of this magazine.</p></div>	
+<p>See the <em>notes</em> tab for a bit more discussion of the problem that began on April 15, 2024 and the solution.</p>	
+<p>This Automated Repair mechanism should be able to repair any Traders&rsquo; Tips spreadsheets from <strong>May 2021</strong> (RateOfChangeWithBands.xlsm) to <strong>May 2024</strong> (EhlersUltimateChannelsAndBands.xlsm).</p>	
+<p>Attempting to use older spreadsheets without the fix will most likely fail, with any of a number of possible error messages and error codes.</p>	
+<p><strong><em>To download this spreadsheet:</em></strong> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="http://www.traders.com/Documentation/FEEDbk_docs/2024/08/images/code/VPCI_and_TTI.xlsm">here</a>. To successfully download it, follow these steps:</p>
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2024/08/images/code/VPCI_and_TTI.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>	
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">AIQ: August 2024</h3></div>
+<p>The AIQ code for VPCI and related indicators is given below. This code can be used to develop trading systems, or the indicator can be used as a filter for existing systems. I tried different plotted indicator displays and decided that two smoothed VPCI indicators plotted as a historigram, which shows the difference between the two smoothed indicators, would give the most useful display. The indicator plot shown in Figure 9 uses parameters of 50 and 10 days to compute the VPCI, then takes two simple averages of this VPCI using 5 days and 10 days. The difference between these two smoothed indictors is then plotted as a historigram.</p>
+<pre>
+!! CONNECITON &amp; AFFINITY BETWEEN PRICE &amp; VOLUME
+! Author: Buff Dormeier, TASC July 2007
+! Coded by: Richard Denning 5/11/07
+
+! PARAMETERS
+Price 	is [close].
+LT	is 50.
+ST	is 10.
+S	is 5.
+SS	is 10.
+
+! SIMPLE MOVING AVERAGE OF PRICE (SMA)
+SMA_L 	is sum(Price,LT) / LT.
+SMA_S	is sum(Price,ST) / ST.
+V	is [volume].
+
+! VOLUME-WEIGHTED MOVING AVERAGE (VWMA)
+VTOT_L 	is sum(V,LT).
+VWMA_L	is sum(Price * (V / ^VTOT_L),LT).
+
+VTOT_S	is sum(V,ST).
+VWMA_S	 is sum(Price * (V / ^VTOT_S),ST).
+
+! VOLUME-PRICE CONTRADICITION/CONFIRMATION (VPC + / - )
+VPC	is VWMA_L - SMA_L.
+
+! VOLUME PRICE RATIO (VPR)
+VPR 	is  VWMA_S / SMA_S.
+
+! VOLUME MULTIPLIER (VM)
+VMA_S	is sum(V,ST) / ST.
+VMA_L	is sum(V,LT) / LT.
+VM	is VMA_S / VMA_L.
+
+! VOLUME-PRICE CONFIRMATION INDICATOR (VPCI)
+VPCI	is VPC * VPR * VM.
+
+! SMOOTHED VOLUME-PRICE CONFIRMATION INDICATOR(sVPCI)
+sVPCI	is sum(VPCI,S) / S.
+ssVPCI	is sum(VPCI,SS) / SS.
+
+! INDICATOR FOR HISTORIGRAM PLOTTING. 
+dsVPCIss is sVPCI - ssVPCI.
+</pre>
+
+<div class="figBorder">
+<img src="images/TT-Aiq.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: AIQ. SPY shown with 50-day VWMA  (red), 10-day VWMA (yellow) and sVPCI, ssVPCI (50,10,5,10) historigram (lower indictor plot in white).</p></div>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:rdencpa@gmail.com">rdencpa@gmail.com</a><br>
+for AIQ Systems</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the August 2024 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2024, Technical Analysis, Inc.</p>
+
+</body>
+</html>

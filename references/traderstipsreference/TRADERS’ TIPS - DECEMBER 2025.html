@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: The One Euro Filter by John F. Ehlers. Contributions from: Tradestation; Ninjatrader; The Zorro Project; Tradingview; Wealth-Lab.com; Neuroshell Trader; Python.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - DECEMBER 2025</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">December 2025</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2025/12/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John F. Ehlers&rsquo; article in this issue, &ldquo;The One Euro Filter.&rdquo; Here, we present the December 2025 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">Tradestation: December 2025</a></li>
+  <li><a href="#item2">Ninjatrader: December 2025</a></li>
+  <li><a href="#item3">The Zorro Project: December 2025</a></li>
+  <li><a href="#item4">Tradingview: December 2025</a></li>
+  <li><a href="#item5">Wealth-Lab.com: December 2025</a></li>
+  <li><a href="#item6">Neuroshell Trader: December 2025</a></li>
+  <li><a href="#item7">Python: December 2025</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Tradestation: December 2025</h3></div>
+ <p>In &ldquo;The One Euro Filter&rdquo; in this issue, John Ehlers presents the one euro filter indicator, originally developed by Georges Casiez, Nicolas Roussel, and Daniel Vogel. Unlike a conventional exponential moving average (EMA) that relies on a fixed smoothing constant, this indicator dynamically adjusts its coefficient in response to the rate of change in the input signal.</p>
+<pre>
+Indicator: One Euro Filter
+{
+	TASC DEC 2025
+	One Euro Filter Indicator
+	From &quot;1€ Filter: A Simple Speed-Based Low-Pass Filter
+	For Noisy Input In Interactive Systems&quot; (CHI 2012)
+	By Georges Casiez, Nicolas Roussel, and Daniel Vogel
+	(C) 2025 John F. Ehlers
+}
+
+inputs:
+	PeriodMin( 10 ), // Minimum cutoff frequency
+	BetaVal( 0.2 ); // Responsiveness factor
+
+variables:
+	Price( 0 ),
+	PeriodDX( 10 ),
+	AlphaDX( 0 ),
+	SmoothedDX( 0 ),
+	Cutoff( 0 ),
+	Alpha3( 0 ),
+	Smoothed( 0 );
+
+Price = Close;
+AlphaDX = 2 * 3.14159 / (4 * 3.14159 + PeriodDX);
+
+// Initialize
+if CurrentBar = 1 then 
+begin
+	SmoothedDX = 0;
+	Smoothed = Price;
+end;
+
+// EMA the Delta Price
+SmoothedDX = AlphaDX * (Price - Price[1]) + (1 -
+ AlphaDX) * SmoothedDX[1];
+// Adjust cutoff period based on fraction of the rate of 
+// change
+Cutoff = PeriodMin + BetaVal * AbsValue(SmoothedDX);
+// Compute adaptive alpha
+Alpha3 = 2*3.14159 / (4 * 3.14159 + Cutoff);
+//Adaptive smoothing
+Smoothed = Alpha3 * Price + (1 - Alpha3) * Smoothed[1];
+//Plot
+Plot1( Smoothed );
+</pre>
+<p>A sample chart plotting the indicator is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This demonstrates a daily chart of the continuous emini S&amp;P 500 contract (ES) showing a portion of 2025 with the indicator applied.</p></div>
+<p>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="http://www.TradeStation.com" target="_blank">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Ninjatrader: December 2025</h3></div>
+ <p>In &ldquo;The One Euro Filter&rdquo; in this issue, John Ehlers discussed the <em>one euro filter</em>. The indicator is available for download at the following link for NinjaTrader 8:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/December2025SCNT8.zip" target="_blank">www.ninjatrader.com/SC/December2025SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the file.</p>
+<p>A sample chart is shown in Figure 2.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: NINJATRADER. The OneEuroFilter is demonstrated on a 5-minute chart of the emini S&amp;P 500 (ES).</p></div>
+<p class="authorTips">&mdash;Jesse N.<br>
+NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_blank">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" style="width: 70px;" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: December 2025</h3></div>
+<p>You know what happens when John Ehlers writes about an indicator in an article in this magazine? I crack it open and wire it straight into C for the Zorro platform. Although these days, I let ChatGPT do most of the work. The <em>one euro filter</em> is a minimalistic yet surprisingly effective low-latency smoother that reacts instantly to volatility with less lag than the usual adaptive averages tend to have. This is achieved by dynamically adapting its time period.</p>
+<p>Here is the <strong>OneEurFilter</strong> function in C, converted straight from Ehlers&rsquo; EasyLanguage code given in his article, with the comments left in place:</p>
+<pre>
+var OneEurFilter(vars Data, int PeriodMin, var Factor)
+{
+  vars SmoothedDX = series(Data[0],2), Smoothed = series(Data[0],2);
+  var Alpha = 2*PI/(4*PI + 10);
+//EMA the Delta Price
+  SmoothedDX[0] = Alpha*(Data[0]-Data[1]) + (1.-Alpha)*SmoothedDX[1];
+//Adjust cutoff period based on a fraction of the rate of change
+  var Cutoff = PeriodMin + Factor*abs(SmoothedDX[0]);
+//Compute adaptive alpha
+  Alpha = 2*PI/(4*PI + Cutoff);
+//Adaptive smoothing
+  return Smoothed[0] = Alpha*Data[0] + (1.-Alpha)*Smoothed[1];
+}
+</pre>
+<p>Figure 3 shows an example of the OneEurFilter applied on an ES chart. It reproduces perfectly the chart in Ehlers&rsquo; article. Cheap, efficient, low-latency&mdash;I&rsquo;d say it&rsquo;s one euro well spent.</p>
+<div class="figBorder">
+<img src="images/TT-Zorro.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: ZORRO. The OneEurFilter is applied to a daily price chart of ES.</p></div>
+<p>The code can be downloaded from the 2025 script repository on <a href="https://financial-hacker.com" target="_blank">https://financial-hacker.com</a>. The Zorro platform can be downloaded from <a href="https://zorro-project.com" target="_blank">https://zorro-project.com</a>.</p>
+<p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_blank">https://zorro-project.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Tradingview: December 2025</h3></div>
+<p>The TradingView Pine Script code given here implements the one euro filter that is discussed by John Ehlers in his article in this issue, &ldquo;The One Euro Filter.&rdquo;</p> 
+<p>A sample chart is shown in Figure 4.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: TRADINGVIEW. Here you an example of the one euro filter plotted on a price chart of the daily ES. The relative strength index is plotted in the bottom pane.</p></div>
+<pre>
+//  TASC Issue: December 2025
+//     Article: Low-Latency Smoothing
+//              The One Euro Filter
+//  Article By: John F. Ehlers
+//    Language: TradingView's Pine Script® v6
+// Provided By: PineCoders, for tradingview.com
+
+//&#64;version=6
+indicator(&quot;&quot;, &quot;TASC&quot;, false)
+
+//#region Constants
+
+const float PI = math.pi
+
+//#endregion
+
+//#region Inputs
+
+enum OM
+    HP = &quot;High Pass Filter&quot;
+    RSI = &quot;Relative Strength Index&quot;
+    BBW = &quot;Bollingers Band Width %&quot;
+    CCI = &quot;Commodity Channel Index&quot;
+    ST = &quot;Stochastic&quot;
+    CMO = &quot;Chande Momentum Oscillator&quot;
+    ATR = &quot;Average True Range&quot;
+    MFI = &quot;Money Flow Index&quot;
+    MOM = &quot;Momentum&quot;
+
+float src = input.source(close, &quot;Source:&quot;)
+int period = input.int(10, &quot;Period:&quot;)
+int minPeriod = input.int(10, &quot;Min. Period:&quot;)
+float beta = input.float(0.2, &quot;Beta:&quot;)
+OM oscMethod = input.enum(OM.HP, &quot;Osc. Method:&quot;, inline = &quot;osc&quot;)
+int oscPeriod = input.int(20, &quot;Osc. Period:&quot;)
+
+//#endregion
+
+
+//#region Functions
+
+// &#64;function High Pass Filter.
+HP (float Source, int Period) =&gt;
+    float a0 = PI * math.sqrt(2.0) / Period
+    float a1 = math.exp(-a0)
+    float c2 = 2.0 * a1 * math.cos(a0)
+    float c3 = -a1 * a1
+    float c1 = (1.0 + c2 - c3) * 0.25
+    float hp = 0.0
+    if bar_index &gt;= 4
+        hp := c1 * (Source - 2.0 * Source[1] + Source[2]) + 
+              c2 * nz(hp[1]) + c3 * nz(hp[2])
+    hp
+
+// &#64;function One Euro Filter.
+one_euro (float src=close,
+ int period=10, int minPeriod=10, float beta=0.2) =&gt;
+    float _a = 2.0 * PI / (4.0 * PI + period)
+    float _sm = src , float _sdx = 0.0
+    _sdx := _a * (src - src[1]) + (1.0 - _a) * nz(_sdx[1])
+    // Adjust cutoff period based on fraction of the ROC.
+    float _cutoff = minPeriod + beta * math.abs(_sdx)
+    // Compute adaptive alpha
+    float _a3 = 2.0 * PI / (4.0 * PI + _cutoff)
+    // Adaptive smoothing
+    _sm := _a3 * src + (1.0 - _a3) * nz(_sm[1])
+    _sm
+
+//#endregion
+
+//#region Calculations
+
+float oeFilter = one_euro(src, period, minPeriod, beta)
+
+float osc = switch oscMethod
+    OM.HP =&gt; HP(src, oscPeriod)
+    OM.RSI =&gt; ta.rsi(src, oscPeriod)
+    OM.BBW =&gt; ta.bbw(src, oscPeriod, 2.0)
+    OM.CCI =&gt; ta.cci(src, oscPeriod)
+    OM.ST =&gt; ta.stoch(src, src, src, oscPeriod)
+    OM.CMO =&gt; ta.cmo(src, oscPeriod)
+    OM.ATR =&gt; ta.atr(oscPeriod)
+    OM.MFI =&gt; ta.mfi(src, oscPeriod)
+    OM.MOM =&gt; ta.mom(src, oscPeriod)
+    =&gt; 0.0
+
+float oscFilter = one_euro(osc, period, minPeriod, beta)
+
+//#endregion
+
+//#region Display
+
+plot(oeFilter, force_overlay=true)
+
+plot(osc)
+plot(oscFilter, &quot;&quot;, color.red)
+
+//#endregion
+</pre>
+<p>The indicator is available on TradingView from the PineCodersTASC account at <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="http://www.TradingView.com" target="_blank">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: December 2025</h3></div>
+<p>We have added the <em>one euro filter</em> to our &ldquo;TASC Indicators&rdquo; library in the latest release of the Wealth Lab 8 backtesting platform. Figure 5 shows an example of the one euro filter plotted on a chart of SPY. In the bottom pane, we applied the one euro filter to a highpass indicator with a period of 54 to turn it into an oscillator, as John Ehlers describes in his article in this issue (&ldquo;The One Euro Filter&rdquo;). For that, we used Wealth Lab&rsquo;s <strong>IndOnInd</strong> indicator, which allows the user to apply one indicator to another, the perfect use case for this type of operation.</p> 
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: WEALTH-LAB. The one euro filter is plotted on a daily price chart of SPY. In the bottom pane, an oscillator created from the one euro filter is plotted.</p></div>
+<p class="authorTips">&mdash;Dion Kurczek<br>
+Wealth-Lab team<br>
+<a href="http://www.wealth-lab.com" target="_blank">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: December 2025</h3></div>
+<p>The <em>one euro filter</em> and <em>one euro oscillator</em>, which are discussed in John Ehlers&rsquo; article in this issue, &ldquo;The One Euro Filter,&rdquo; can be easily implemented in NeuroShell Trader using NeuroShell Trader&rsquo;s ability to call external dynamic linked libraries. Dynamic linked libraries (DLLs) can be written in C, C++, or Power Basic.</p> 
+<p>After moving the code given in Ehlers&rsquo; article to your preferred compiler and creating a DLL, you can insert the resulting indicator(s) as follows:</p>
+<ol>
+	<li>Select ‘<strong>New Indicator...</strong>&rsquo; from the insert menu.</li>
+	<li>Choose the <strong>External Program &amp; Library Calls</strong> category.</li>
+	<li>Select the appropriate <strong>External DLL Call</strong> indicator.</li>
+	<li>Setup the parameters to match your DLL.</li>
+	<li>Select the <em>finished</em> button.</li>
+</ol>
+
+	<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: NEUROSHELL TRADER. This example NeuroShell Trader chart displays the one euro filter on a daily price chart of ES, with the one euro oscillator displayed in the bottom pane.</p></div>
+	<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_blank">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Python: December 2025</h3></div>
+<p>In his article in this issue, &ldquo;The One Euro Filter,&rdquo; John Ehlers discusses the <em>one euro filter</em>, which was originally developed and written about by Georges Casiez, Nicolas Roussel, and Daniel Vogel in 2012. In his article in this issue, Ehlers demonstrates how to plot this smoothing filter, discusses its effectiveness, and also discusses how this smoothing filter can be converted into an oscillator</p> 
+<p>Following is a Python code implementation based on the EasyLanguage code provided in Ehlers&rsquo; article for the one euro filter and oscillator.</p>
+<pre>
+&quot;&quot;&quot;
+# import required python libraries
+
+import pandas as pd
+import numpy as np
+import yfinance as yf
+import math
+import datetime as dt
+import matplotlib.pyplot as plt
+import mplfinance as mpf
+
+print(yf.__version__)
+
+# three helper functions to 1) run one euro filter calculations 2) run 
+# oscillator calculations and to 3) plot the close vs one euro filter output 
+# on one subplot and the oscillator on a second subplot using built-in 
+# matplotlib capabilities.
+
+def calc_one_euro_filter(close, period_min=10, beta=0.2):
+    &quot;&quot;&quot;
+    One Euro Filter Indicator
+    Adapted from Georges Casiez et al. (CHI 2012)
+    Converted from EasyLanguage to Python 
+    
+    Args:
+        close (array-like): List or NumPy array of closing prices
+        period_min (float): Minimum cutoff period (default=10)
+        beta (float): Responsiveness factor (default=0.2)
+        
+    Returns:
+        np.ndarray: Smoothed signal
+    &quot;&quot;&quot;
+    close = np.asarray(close)
+    n = len(close)
+    
+    # Initialize arrays
+    smoothed = np.zeros(n)
+    smoothed_dx = np.zeros(n)
+    
+    period_dx = 10.0
+    alpha_dx = 2 * np.pi / (4 * np.pi + period_dx)
+    
+    # Initialization
+    smoothed[0] = close[0]
+    smoothed_dx[0] = 0.0
+    
+    for i in range(1, n):
+        # Delta smoothing (EMA of price change)
+        smoothed_dx[i] = alpha_dx * (close[i] - close[i - 1]) + (1 - alpha_dx) * smoothed_dx[i - 1]
+        
+        # Adjust cutoff based on rate of change
+        cutoff = period_min + beta * abs(smoothed_dx[i])
+        
+        # Compute adaptive alpha
+        alpha3 = 2 * np.pi / (4 * np.pi + cutoff)
+        
+        # Adaptive smoothing
+        smoothed[i] = alpha3 * close[i] + (1 - alpha3) * smoothed[i - 1]
+    
+    return smoothed
+
+
+def calc_highpass(price, period):
+    &quot;&quot;&quot;
+    Two-pole high-pass filter (John Ehlers style)
+    
+    Args:
+        price (array-like): Sequence of prices
+        period (float): Filter period
+    
+    Returns:
+        np.ndarray: High-pass filtered values
+    &quot;&quot;&quot;
+    price = np.asarray(price, dtype=float)
+    n = len(price)
+    out = np.zeros(n)
+
+    # Filter coefficients
+    a1 = np.exp(-1.414 * np.pi / period)
+    b1 = 2 * a1 * np.cos(math.radians(1.414 * 180 / period))
+    c2 = b1
+    c3 = -a1 ** 2
+    c1 = (1 + c2 - c3)/4
+
+    # Main filter loop
+    for i in range(2, n):
+        out[i] = (
+            c1 * (price[i] - 2 * price[i - 1] + price[i - 2])
+            + c2 * out[i - 1]
+            + c3 * out[i - 2]
+        )
+
+    # Initialize first values (pass-through)
+    out[0:2] = price[0:2]
+
+    return out
+
+
+def plot_one_euro_filter(df):
+    
+    ax = df[['Close', 'OEF']].plot(grid=True, title=f&quot;Ticker={symbol}, Close vs One Euro Filter&quot;, figsize=(9,4), marker='.')
+    ax.set_xlabel('')
+
+    ax = df[['Osc']].plot(grid=True, title=f&quot;One Euro Filter Oscilator&quot;, figsize=(9,2))
+    ax.set_xlabel('')
+
+
+ 
+
+# Use Yahoo Finance python package to obtain OHLCV data for desired symbol
+
+symbol = '^GSPC'
+start = &quot;1990-01-01&quot;
+end = dt.datetime.now().strftime('%Y-%m-%d') 
+
+ohlcv = yf.download(
+    symbol, 
+    start, 
+    end,
+    group_by=&quot;Ticker&quot;,  
+    auto_adjust=False
+)
+ohlcv = ohlcv[symbol]
+
+
+
+# call helper functions to calculate the One Euro Filter output (named OEF) and the 
+# Oscillaor output (named Osc) and then plot close, OEF and Ocs values.
+
+df['OEF'] = calc_one_euro_filter(df['Close'], period_min=10, beta=0.2)
+df['Osc'] = calc_highpass(df['Close'], period=54)
+plot_one_euro_filter(df['2025':])
+</pre>
+<p>An example chart is provided in Figure 7.</p>
+<div class="figBorder">
+<img src="images/TT-Python.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: PYTHON. The one euro filter (OEF) is plotted on a chart of the S&amp;P 500 index (GSPC) using data from Yahoo Finance, from January 2025. The one euro oscillator is plotted in the bottom pane.</p></div>
+<p class="authorTips">&mdash;Rajeev Jain<br>
+<a href="mailto:jainraje@yahoo.com">jainraje@yahoo.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the December 2025 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+All rights reserved. &copy;&nbsp;Copyright&nbsp;2025, Technical Analysis, Inc.</p>
+
+</body>
+</html>

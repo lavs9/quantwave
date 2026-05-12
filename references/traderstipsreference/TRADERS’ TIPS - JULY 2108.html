@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine.">
+<meta name="description" content="This month: The Deviation-Scaled Moving Average by John Ehlers. Contributions from: TradeStation, MetaStock, eSignal, Wealth-Lab.com, NinjaTrader, Neuroshell Trader, AmiBroker, JuicyCharts.com, TradersStudio, thinkorswim by TDAmeritrade, Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - JULY 2108</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">July 2018</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/07/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John Ehlers&rsquo; article in this issue, &ldquo;The Deviation-Scaled Moving Average.&rdquo; Here, we present the July 2018 Traders&rsquo; Tips code with possible implementations in various software. New this month is code from <strong>JuicyCharts.com</strong>.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TRADESTATION: JULY 2018</a></li>
+  <li><a href="#item2">METASTOCK: JULY 2018</a></li>
+  <li><a href="#item3"><span style="text-transform:lowercase;">e</span>SIGNAL: JULY 2018</a></li>
+  <li><a href="#item4">WEALTH-LAB: JULY 2018</a></li>
+  <li><a href="#item5">NINJATRADER: JULY 2018</a></li>
+  <li><a href="#item6">NEUROSHELL TRADER: JULY 2018</a></li>
+  <li><a href="#item7">AMIBROKER: JULY 2018</a></li>
+  <li><a href="#item8">JUICYCHARTS.COM: JULY 2018</a></li>
+  <li><a href="#item9">TRADERSSTUDIO: JULY 2018</a></li>
+  <li><a href="#item10">THINKORSWIM: JULY 2018</a></li>
+  <li><a href="#item11">MICROSOFT EXCEL: JULY 2018</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-New.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+TRADESTATION: JULY 2018</h3></div>
+<p>In &ldquo;The Deviation-Scaled Moving Average&rdquo; in this issue, author John Ehlers introduces a new adaptive moving average that has the ability to rapidly adapt to volatility in price movement. The author explains that due to its design, it has minimal lag yet is able to provide considerable smoothing.</p>
+<p>We&rsquo;re providing the EasyLanguage code for a function to calculate the DSMA that you can easily integrate into your own code. We have also provided a demonstration indicator as well as a strategy. A sample chart is shown in Figure 1</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/07/images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This shows a daily chart of AAPL with the DSMA indicator and strategy.</p></div>
+<p>To download the EasyLanguage code, please visit our TradeStation and EasyLanguage support forum. The files for this article can be found here: <a href="https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=152631" target="_parent">https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=152631</a>. The filename is &ldquo;TASC_JUL2018.ZIP.&rdquo;</p>
+<pre>
+Function: EhlersDSMA
+// Deviation Scaled Moving Average (DSMA)
+// (c) 2013 - 2018 John F. Ehlers
+// TASC JUL 2018
+// EhlersDSMA function
+using elsystem ;
+
+inputs:
+    Period( numericsimple ) ;
+    
+variables:
+    a1( 0 ),
+    b1( 0 ),
+    c1( 0 ),
+    c2( 0 ),
+    c3( 0 ),
+    Zeros( 0 ),
+    Filt( 0 ),
+    ScaledFilt( 0 ),
+    RMS( 0 ),
+    count( 0 ),
+    alpha1( 0 ),
+    DSMA( 0 ) ;
+    
+once
+begin    
+	if Period &lt;= 0 then
+		throw Exception.Create( &quot;The 'Period' input to the &quot; + 
+		&quot;EhlersDSMA function must be greater than 0.&quot; ) ;
+
+    //Smooth with a Super Smoother 
+    a1 = ExpValue( -1.414 * 3.14159 / ( .5 * Period ) ) ;
+    b1 = 2 * a1 * Cosine( 1.414 * 180 / ( .5 * Period ) ) ;
+    c2 = b1 ;
+    c3 = -a1 * a1 ;
+    c1 = 1 - c2 - c3 ;
+end ;
+
+//Produce Nominal zero mean with zeros in the transfer 
+//response at DC and Nyquist with no spectral distortion
+//Nominally whitens the spectrum because of 6 dB 
+//per octave rolloff
+Zeros = Close - Close[2] ;
+
+//SuperSmoother Filter
+Filt = c1 * ( Zeros + Zeros[1] ) / 2 + c2 * Filt[1] + c3 * Filt[2] ;
+
+//Compute Standard Deviation    
+RMS = 0;
+For count = 0 to Period - 1 
+begin
+    RMS = RMS + Filt[count] * Filt[count] ; 
+end ;
+RMS = SquareRoot( RMS / Period ) ;
+
+//Rescale Filt in terms of Standard Deviations
+If RMS &lt;&gt; 0 then 
+	ScaledFilt = Filt / RMS ;
+
+alpha1 = AbsValue( ScaledFilt ) * 5 / Period ;
+DSMA = alpha1 * Close + ( 1 - alpha1 ) * DSMA[1] ;
+
+EhlersDSMA = DSMA ;
+
+
+Indicator: DSMA
+// TASC JUL 2018
+// Ehlers DSMA
+inputs:
+	Period( 40 ) ;
+	
+variables:
+	DSMAValue( 0 ) ;
+	
+DSMAValue = EhlersDSMA( Period ) ;
+
+Plot1( DSMAValue, &quot;DSMA&quot; ) ;		
+
+if AlertEnabled  then 
+begin
+	if Close crosses over DSMAValue then
+		Alert( &quot;Price crossing over DSMA&quot; ) 
+	else if Close crosses under DSMAValue then
+		Alert( &quot;Price crossing under DSMA&quot; ) ;
+end ;
+	
+
+Strategy: DSMA
+// TASC JUL 2018
+// Ehlers DSMA
+inputs:
+	FastPeriod( 40 ),
+	SlowPeriod( 100 ) ;
+	
+variables:
+	FastDSMAValue( 0 ),
+	SlowDSMAValue( 0 ) ;
+	
+FastDSMAValue = EhlersDSMA( FastPeriod ) ;
+SlowDSMAValue = EhlersDSMA( SlowPeriod ) ;
+
+if FastDSMAValue crosses above SlowDSMAValue then
+	Buy next bar at Market
+else if FastDSMAValue crosses below SlowDSMAValue then
+	SellShort next bar at Market ;	
+</pre>
+
+
+<p>For more information about EasyLanguage in general, please see <a href="https://www.tradestation.com/EL-FAQ" target="_parent">https://www.tradestation.com/EL-FAQ</a>.</p> 
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;Doug McCrary<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Metastock.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+METASTOCK: JULY 2018</h3></div>
+<p>John Ehlers&rsquo; article in this issue, &ldquo;The Deviation-Scaled Moving Average,&rdquo; introduces a moving average of the same name. The MetaStock formula for this moving average is provided here.</p>
+<pre>
+tp:= Input(&quot;time periods&quot;,2, 200, 40);
+a1:= Exp(-1.414 * 3.14159 / (tp/2));
+b1:= 2*a1 * Cos(1.414*180 /(tp/2));
+c2:= b1;
+c3:= -a1 * a1;
+c1:= 1 - c2 - c3;
+zeros:= C-Ref(C,-2);
+filt:= c1 * (zeros + Ref(zeros, -1))/2 + c2*PREV + c3*Ref(PREV,-1);
+ScaledFilt:= filt/Std(filt,tp);
+a2:= Abs(ScaledFilt*5)/tp;
+If(Cum(1)&lt;=tp+4, C, a2*C + ((1-a2)*PREV))
+</pre>
+<p class="authorTips">&mdash;William Golson<br>
+MetaStock Technical Support<br>
+<a href="https://www.metastock.com" target="_parent">www.metastock.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+eSIGNAL: JULY 2018</h3></div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;ve provided the study <a href="https://www.traders.com/Documentation/FEEDbk_docs/2018/07/images/code/DSMA.efs" target="_blank">DSMA.efs</a>, based on the article in this issue by John Ehlers, &ldquo;The Deviation-Scaled Moving Average.&rdquo; This study is an adaptive moving average.</p>
+<p>The study contains formula parameters that may be configured through the <em>edit chart</em> window (right-click on the chart and select &ldquo;edit chart&rdquo;). A sample chart is shown in Figure 2.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/07/images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: eSIGNAL. Here is an example of the study plotted on a daily chart of SPY.</p></div>
+
+<p>To discuss this study or download a complete copy of the formula code, please visit the EFS library discussion board forum under the <em>forums</em> link from the support menu at <a href="https://www.esignal.com" target="_parent">www.esignal.com</a> or visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs/" target="_parent">www.esignal.com/support/kb/efs/</a>. The eSignal formula script (EFS) is also shown below.</p>
+<pre>
+/*********************************
+Provided By:  
+eSignal (Copyright c eSignal), a division of Interactive Data 
+Corporation. 2016. All rights reserved. This sample eSignal 
+Formula Script (EFS) is for educational purposes only and may be 
+modified and saved under a new file name.  eSignal is not responsible
+for the functionality once modified.  eSignal reserves the right 
+to modify and overwrite this EFS file with each new release.
+
+Description:        
+    The Deviation-Scaled Moving Average by John F. Ehlers
+
+Version:            1.00  5/14/2018
+
+Formula Parameters:                     Default:
+Period                                  40
+
+
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+
+var fpArray = new Array();
+
+function preMain(){
+    setPriceStudy(true);
+    setStudyTitle(&quot;DSMA&quot;);
+    
+    var x = 0;
+    fpArray[x] = new FunctionParameter(&quot;Period&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setName(&quot;Period&quot;);
+        setLowerLimit(1);
+        setDefault(40);
+    }
+}
+
+var bInit = false;
+var bVersion = null;
+var xClose = null;
+var xRMS = null;
+var nDSMA_1 = 0;
+var nDSMA = 0;
+
+function main(Period){
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return;
+    
+    if (getCurrentBarCount() &lt; Period) return;
+    
+    if (getBarState() == BARSTATE_ALLBARS){
+        bInit = false;
+    }
+    
+    if (getBarState() == BARSTATE_NEWBAR){
+        nDSMA_1 = nDSMA;
+    }
+
+    
+    if (!bInit){
+        var a1 = Math.exp(-Math.SQRT2 * Math.PI /(0.5 * Period));
+        var b1 = 2 * a1* Math.cos(Math.PI * Math.SQRT2 / (0.5 * Period));
+        var c2 = b1;
+        var c3 = - a1 * a1;
+        var c1 = 1 - c2 - c3;
+        nDSMA_1 = 0;
+        nDSMA = 0;
+        
+        xClose = close();
+        var xZeros = efsInternal(&quot;calc_Zeros&quot;, xClose);
+        var xSSFilter = efsInternal(&quot;calc_SSFilter&quot;, xZeros, c1, c2, c3);
+        xRMS = efsInternal(&quot;calc_RMS&quot;, Period, xSSFilter);
+                
+        bInit = true;
+    }
+
+    var alpha1 = Math.abs(xRMS.getValue(0)) * 5 / Period;
+
+    if (getCurrentBarCount() == Period){
+        nDSMA_1 = xClose.getValue(-1);
+    }
+
+    nDSMA = alpha1 * xClose.getValue(0) + (1 - alpha1) * nDSMA_1
+    return nDSMA;
+}
+
+
+
+function calc_Zeros (xClose){
+    if (xClose.getValue(-2) != null)
+        return xClose.getValue(0) - xClose.getValue(-2);
+}
+
+var nSSFilter = 0;
+var nSSFilter_1 = 0;
+var nSSFilter_2 = 0;
+
+function calc_SSFilter(xZeros, c1, c2, c3){
+    if (xZeros.getValue(-1) == null) return;
+    
+    if (getBarState() == BARSTATE_NEWBAR){
+        nSSFilter_2 = nSSFilter_1;
+        nSSFilter_1 = nSSFilter;
+    }
+
+    if (getBarState() == BARSTATE_ALLBARS){
+        nSSFilter = 0;
+        nSSFilter_1 = 0;
+        nSSFilter_2 = 0;
+    }
+        
+    nSSFilter = c1 * (xZeros.getValue(0) + xZeros.getValue(-1)) 
+                    / 2 + c2 * nSSFilter_1 + c3 * nSSFilter_2;
+    
+    return nSSFilter;
+}
+
+function calc_RMS(Period, xSSFilter){     
+    if (xSSFilter.getValue(-Period) == null) return;
+    
+    var nRMS = 0;
+    
+    for (var i = 0; i &lt; Period; i++){
+        nRMS += Math.pow(xSSFilter.getValue(-i), 2);
+    }
+    
+    nRMS = Math.sqrt(nRMS / Period);
+
+    var nRMSScaled = xSSFilter.getValue(0) / nRMS;
+    
+    return nRMSScaled;
+}
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+</pre>
+<p class="authorTips">&mdash;Eric Lippert<br>
+eSignal, an Interactive Data company<br>
+800 779-6555, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+WEALTH-LAB: JULY 2018</h3></div>
+<p>The DSMA described by John Ehlers in his article in this issue, &ldquo;The Deviation-Scaled Moving Average,&rdquo; is an adaptive moving average that rapidly adapts to volatility in price movement. We&rsquo;re going to illustrate in few easy steps how to set up a DSMA-based trading system in Wealth-Lab without coding.</p>
+<p>Before anything else, install (or update) the TASCIndicators library from our website, Wealth-Lab.com. Figure 3 demonstrates how to choose the indicator from the library.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/07/images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: WEALTH-LAB. This shows how to choose DSMA as the indicator.</p></div>
+
+<p>Although the indicator is best suited for trend-following, for kicks, let&rsquo;s make our entry and exit countertrend. The idea is to buy at next open when today&rsquo;s closing price has crossed a percentage below the 40-period DSMA. The opposite applies to exits but the percentage can of course be asymmetric.</p>
+<ul style="list-style:none;"><li><strong>Step 1:</strong> As groundwork, open a new rule-based strategy and drag &ldquo;buy at market&rdquo; and &ldquo;sell at market&rdquo; from the <em>entries</em> and <em>exits</em> tab.</li>
+<li><strong>Step 2:</strong> From the <em>conditions</em> tab, expand the <em>general indicators</em> group. Drag &ldquo;price crosses X% below indicator&rdquo; and drop it on your entry rule created in step 1. Do the same for &ldquo;price crosses X% above indicator&rdquo; and the exit.</li>
+<li><strong>Step 3:</strong> Notice the <em>parameters</em> block below your added rules. You can change rule parameters from here. Click on <em>indicator</em> and choose &ldquo;DSMA&rdquo; for both the entry and exit rules.</li></ul> 
+<p>You also have the option to click on the icon that appears next to the indicator to expose its parameter slider. This makes it possible to change, for example, DSMA&rsquo;s responsiveness by varying its lookback period. As you keep dragging the slider at the bottom-left of the screen, the changes in the trading system are executed automatically.</p>
+<p>Figure 4 is a chart implementing the indicator with example trades.</p> 
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/07/images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: WEALTH-LAB. This chart shows some example trades on AAPL (Apple Inc.) using the DSMA.</p></div>
+
+<p class="authorTips">&mdash;Gene Geren (Eugene), Wealth-Lab team<br>
+MS123, LLC<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+NINJATRADER: JULY 2018</h3></div>
+<p>The DSMA, as discussed by John Ehlers in his article in this issue, &ldquo;The Deviation-Scaled Moving Average,&rdquo; is available for download at the following links for NinjaTrader 8 and NinjaTrader 7:</p>
+
+<ul style="list-style:none;"><li><strong>NinjaTrader 8:</strong> <a href="https://www.ninjatrader.com/SC/July2018SCNT8.zip" target="_parent">www.ninjatrader.com/SC/July2018SCNT8.zip</a></li>
+<li><strong>NinjaTrader 7:</strong> <a href="https://www.ninjatrader.com/SC/July2018SCNT7.zip" target="_parent">www.ninjatrader.com/SC/July2018SCNT7.zip</a></li></ul>
+
+<p>Once the file is downloaded, you can import the indicator into NinjaTader 8 from within the Control Center by selecting <em>Tools &rarr; Import &rarr; NinjaScript Add-On</em> and then selecting the downloaded file for NinjaTrader 8. To import into NinjaTrader 7, from within the Control Center window, select the menu <em>File &rarr; Utilities &rarr; Import NinjaScript</em> and select the downloaded file.</p>
+<p>You can review the indicator&rsquo;s source code in NinjaTrader 8 by selecting the menu <em>New &rarr; NinjaScript Editor &rarr; Indicators</em> from within the Control Center window and selecting the DSMA file. You can review the indicator&rsquo;s source code in NinjaTrader 7 by selecting the menu <em>Tools &rarr; Edit NinjaScript &rarr; Indicator</em> from within the Control Center window and selecting the DSMA file.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, which provides you with the highest possible performance.</p>
+<p>A sample chart implementing the indicator is shown in Figure 5.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/07/images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: NINJATRADER. The DSMA indicator is shown on SPY from July 3, 2017 to December 29, 2017.</p></div>
+
+<p class="authorTips">&mdash;Raymond Deux &amp; Jim Dooms<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+NEUROSHELL TRADER: JULY 2018</h3></div>
+<p>The deviation-scaled moving average described by John Ehlers in his article in this issue can be easily implemented in NeuroShell Trader using NeuroShell Trader&rsquo;s ability to call external dynamic linked libraries. Dynamic linked libraries can be written in C, C++, or Power Basic.</p>
+<p>After moving the code given in the article to your preferred compiler and creating a DLL, you can insert the resulting indicators as follows:</p>
+
+<ol><li>Select &ldquo;New indicator&rdquo; from the <em>insert</em> menu.</li>
+<li>Choose the <em>external program &amp; library calls</em> category.</li>
+<li>Select the appropriate <em>external DLL call</em> indicator.</li>
+<li>Set up the parameters to match your DLL.</li>
+<li>Select the <em>finished</em> button.</li></ol>
+
+<p>Similar filter-based and cycle-based strategies may also be created using indicators found in <strong>John Ehlers&rsquo; Cybernetic and MESA91</strong> NeuroShell Trader Add-ons.</p>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p>A sample NeuroShell Trader chart is shown in Figure 6.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/07/images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: NEUROSHELL TRADER. This sample NeuroShell Trader chart displays the deviation-scaled moving average.</p></div>
+
+<p class="authorTips">&mdash;Marge Sherald, Ward Systems Group, Inc.<br>
+301 662-7950, <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Amibroker.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+AMIBROKER: JULY 2018</h3></div>
+<p>In &ldquo;The Deviation-Scaled Moving Average&rdquo; in this issue, author John Ehlers presents a variable-period (adaptive) exponential moving average. The code listing shown here contains a ready-to-use formula for the DSMA. To adjust parameters for the indicator, right-click on the chart and select <em>parameters</em> from the context menu. A sample chart is shown in Figure 7.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/07/images/TT-Amibroker.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: AMIBROKER. Here is a daily chart of the SPY with the deviation-scaled moving average (blue line), replicating the chart from John Ehlers&rsquo; article in this issue.</p></div>
+<pre>
+// Deviation Scaled Moving Average (DSMA) 
+// TASC Traders Tips July 2018 
+Period = Param( &quot;Period&quot;, 40, 2, 100, 1 ); 
+
+PI = 3.1415926; 
+
+a1 = exp( -1.414 * PI / ( 0.5 * Period ) ); 
+b1 = 2 * a1 * cos( 1.414 * PI / ( 0.5 * Period ) ); 
+c2 = b1; 
+c3 = -a1 * a1; 
+c1 = 1 - c2 - c3; 
+
+Zeros = Close - Ref( Close, -2 ); 
+
+// SuperSmoother Filter 
+Filt = IIR( Zeros, c1 * 0.5, c2, c1 * 0.5, c3 ); 
+
+// Compute Standard Deviation 
+RMS = Sum( Filt * Filt, Period ); 
+RMS = sqrt( RMS / Period ); 
+
+// Rescale Filt in terms of Standard Deviations 
+ScaledFilt = Filt / RMS; 
+alpha1 = abs( ScaledFilt ) * 5 / Period; 
+
+DSMA = AMA( Close, alpha1 ); 
+
+Plot( DSMA, &quot;DSMA&quot;+ Period, colorBlue, styleThick ); 
+
+Plot( C, &quot;Price&quot;, colorDefault, styleCandle );
+</pre>
+
+<p class="authorTips">&mdash;Tomasz Janeczko, AmiBroker.com<br>
+<a href="https://www.amibroker.com" target="_parent">www.amibroker.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Juicy.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+JUICYCHARTS.COM: JULY 2018</h3></div>
+<p>We implemented the deviation-scaled moving average described in John Ehlers&rsquo; article in this issue using JuicyChart.com&rsquo;s Javascript coding feature. To see the indicator on an interactive chart, see the following link:</p>
+
+<ul style="list-style:none;"><li><a href="https://www.juicycharts.com/Main/ViewCommentary/18" target="_blank">https://www.juicycharts.com/Main/ViewCommentary/18</a></li></ul>
+
+<p>In the interactive chart shown in the above link, note the slider above the chart. You can manipulate the slider to change the DSMA period value. Either drag the slider or click on the labels flanking it to make single point adjustments. As you change the slider value, your change is reflected in the chart immediately (Figure 8).</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/07/images/TT-Juicy1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: JUICYCHARTS. The DSMA indicator is shown here on a chart from JuicyCharts.com. The slider allows you to manipulate the period.</p></div>
+<p>Below the chart, you can examine the Javascript code that produced the indicator (Figure 9). If you want to explore further, including applying the indicator to different stock or cryptocurrency symbols, use the link below the code to open it in a new chart window. Note that you must be logged in with a JuicyCharts account, which is free, to use this feature.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/07/images/TT-Juicy2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: JUICYCHARTS. The Javascript code for the indicator appears below the chart. </p></div>
+<pre>
+var MyModel = {};
+
+//create parameter for period
+MyModel.createParameters = function() {
+  this.addParameter(&quot;DSMA Period&quot;, ParameterTypes.Int, 30, 3, 200);
+};
+
+//this function gets called once, prior to entering the main loop
+MyModel.initialize = function(bars) { 
+    var period = this.parameters[0].value;
+    var source = bars.close;
+  
+    var prev = source[period - 1];
+    var a1 = Math.exp(-1.414 * 3.14159 / (0.5 * period)); 
+    var term = 1.414 * 180 / (0.5 * period);
+    var radians = term * Math.PI / 180;
+    var b1 = 2 * a1 * Math.cos(radians); 
+    var c2 = b1; 
+    var c3 = -a1 * a1; 
+    var c1 = 1 - c2 - c3;
+    var zeroes = new Array(source.length);
+    zeroes.fill(0);
+    var filt = new Array(source.length);
+    filt.fill(1);
+    var result = new Array(source.length);
+    result.fill(Number.NaN);
+    for(var n = 2; n &lt; source.length; n++) {
+      zeroes[n] = source[n] - source[n - 2];
+      filt[n] = c1 * (zeroes[n] + zeroes[n - 1]) / 2 + c2 * filt[n - 1] + c3 * filt[n - 2];
+      if (n &lt; period) {
+        continue;
+      }
+      var RMS = 0; 
+      for(var count = 0; count &lt; period; count++) {
+        RMS = RMS + filt[n - count] * filt[n - count];
+      }
+      RMS = Math.sqrt(RMS / period);
+      var ScaledFilt = filt[n] / RMS; 
+      var alpha1 = Math.abs(ScaledFilt) * 5 / period; 
+      result[n] = alpha1 * source[n] + (1 - alpha1) * prev;
+      prev = result[n];
+  };
+  this.plot(result, &quot;DSMA&quot;, &quot;orange&quot;, 3);
+};
+  
+//this function gets called once for every bar of data in the chart
+MyModel.execute = function(bars, idx) {
+};
+return MyModel;
+</pre>
+<p class="authorTips">&mdash;Dion Kurczek<br>
+Founder of Quantacula and <a href="https://JuicyCharts.com" target="_parent">JuicyCharts.com</a><br>
+<a href="mailto:info@quantacula.com">info@quantacula.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+TRADERSSTUDIO: JULY 2018</h3></div>
+<p>The TradersStudio code based on John Ehlers&rsquo; article in this issue, &ldquo;The Deviation-Scaled Moving Average,&rdquo; is provided at <a href="https://www.TradersEdgeSystems.com/traderstips.htm" target="_parent">www.TradersEdgeSystems.com/traderstips.htm</a>.</p> 
+<p>Figure 10 shows the DSMA indicator (white line) on a chart of Yahoo (YHOO) during part of 2006.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/07/images/TT-Traderstudio.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 10: TRADERSSTUDIO. This chart shows the DSMA indicator (white line) on a chart of Yahoo during part of 2006.</p></div>
+<p>The TradersStudio code is shown here:</p>
+<pre>
+'DEVIATION SCALED MOVING AVERAGE (DSMA)
+'Author: John F. Ehlers, TASC July 2018 
+'Coded by: Richard Denning 5/9/18
+'www.TradersEdgeSystems.com
+
+Function DSMA(Period) As BarArray
+Dim  a1, b1, c1, c2, c3, Zeros As BarArray, Filt As BarArray, ScaledFilt, RMS, count, alpha1
+    If CurrentBar = 1 Then
+'Smooth with a Super Smoother
+        a1 = Exp(-1.414*3.14159 / (0.5*Period))
+        b1 = 2*a1*Cos(DegToRad(1.414*180 / (0.5*Period)))
+        c2 = b1
+        c3 = -a1*a1
+        c1 = 1 - c2 - c3
+    End If
+    Zeros = Close - Close[2]
+'SuperSmoother Filter
+    Filt = c1*(Zeros + Zeros[1]) / 2 + c2*Filt[1] + c3*Filt[2]
+'Compute Standard Deviation
+    RMS = 0
+    For count = 0 To Period - 1
+        RMS = RMS + Filt[count]*Filt[count]
+    Next
+    If Period &lt;&gt; 0 Then RMS = Sqr(RMS / Period)
+'Rescale Filt in terms of Standard Deviations
+    If RMS &lt;&gt; 0 Then ScaledFilt = Filt / RMS
+    If Period &lt;&gt; 0 Then alpha1 = Abs(ScaledFilt)*5 / Period
+    DSMA = alpha1*Close + (1 - alpha1)*DSMA[1]
+End Function
+'-----------------------------------------------------------
+Sub EHLERS_DSMA_IND(dsmaLen)
+Dim theDSMA As BarArray
+theDSMA = DSMA(dsmaLen)
+plot1(theDSMA)
+End Sub
+'-----------------------------------------------------------
+</pre>
+
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for TradersStudio</p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Thinkorswim.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+THINKORSWIM: JULY 2018</h3></div>
+<p>We have put together a study for thinkorswim based on the article &ldquo;The Deviation-Scaled Moving Average&rdquo; by John Ehlers in this issue.</p> 
+<p>We built the study using our proprietary scripting language, thinkscript. We have made the loading process extremely easy; simply go to <a href="https://tos.mx/yPg8au" target="_parent">https://tos.mx/yPg8au</a>, then choose to view the thinkScript study, and name it &ldquo;DeviationScaledMovingAverage.&rdquo;</p>
+<p>Overlaid on the daily chart of symbol HP in Figure 11 is the DeviationScaledMovingAverage. See Ehlers&rsquo; article for more details on the interpretation of the study.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/07/images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 11: THINKORSWIM. Overlaid on a daily chart of symbol HP is the DeviationScaledMovingAverage.</p></div>
+
+<p class="authorTips">&mdash;Brad Nave, thinkorswim<br>
+A division of TD Ameritrade, Inc.<br>
+<a href="https://www.thinkorswim.com" target="_parent">www.thinkorswim.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item11">
+ <h3 class="newsTitle grey_blue">
+MICROSOFT EXCEL: JULY 2018</h3></div>
+<p>In his article in this issue, &ldquo;The Deviation-Scaled Moving Average,&rdquo; John Ehlers gives us a variation on the exponential moving average that scales its sensitivity using a moving standard deviation as a measure of the volatility of the data being averaged. This allows the resulting moving average to rapidly adapt to volatility in the data (Figure 12).</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/07/images/TT-Excel.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 12: EXCEL. This sample chart shows the deviation-scaled moving average on the SPY.</p></div>
+
+<p>The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2018/07/images/code/DeviationScaledMA.xlsm">here</a>. To successfully download it, follow these steps:</p>
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2018/07/images/code/DeviationScaledMA.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+
+<p style="text-align:center; color:#FFF; background-color:#F00; padding:1em;"><a style="color:#fff;" href="https://traders.com/files/Tips-ExcelFix.html" target="_parent"><strong>A fix for previous Excel spreadsheets, required due to Yahoo modifications, can be found here: https://traders.com/files/Tips-ExcelFix.html</strong></a></p>
+
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+rpmac_xltt@sprynet.com</p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the July 2018 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2018, Technical Analysis, Inc.</p>
+
+</body>
+</html>

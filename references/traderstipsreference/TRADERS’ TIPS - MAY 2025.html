@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: PJK Channels by Perry Kaufman. Contributions from: TradeStation; Wealth-Lab.com; NinjaTrader; RealTest; TradingView; NeuroShell Trader; The Zorro Project; AIQ; Python; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - MAY 2025</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">May 2025</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2025/05/images/TT-Kaufman.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Perry J. Kaufman&rsquo;s article in this issue, &ldquo;Trading The Channel.&rdquo; Here, we present the May 2025 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: May 2025</a></li>
+  <li><a href="#item2">Wealth-Lab.com: May 2025</a></li>
+  <li><a href="#item3">NinjaTrader: May 2025</a></li>
+  <li><a href="#item4">RealTest: May 2025</a></li>
+  <li><a href="#item5">TradingView: May 2025</a></li>
+  <li><a href="#item6">NeuroShell Trader: May 2025</a></li>
+  <li><a href="#item7">The Zorro Project: May 2025</a></li>
+  <li><a href="#item8">AIQ: May 2025</a></li>
+  <li><a href="#item9">Python: May 2025</a></li>
+  <li><a href="#item10">Microsoft Excel: May 2025</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: May 2025</h3></div>
+<p>In &ldquo;Trading The Channel&rdquo; in this issue, Perry Kaufman explores trading bands (channels), covering three approaches: trend trading, breakout trading, and shorter-term trades within the channel. The EasyLanguage strategy code we are providing utilizes Kaufman&rsquo;s &ldquo;PJK channels&rdquo; code provided in his article accompanied by two functions. The <em>rule</em> input determines which approach to use. It can be set to 1, 2, or 3. See the code comments for details on how its value affects the logic.</p>
+<pre>
+Strategy: PJK Channels
+[LegacyColorValue = true];
+{ 
+	TASC MAY 2024
+	PJK Channels
+	Copyright 2024&ndash;2025, P.J. Kaufman. 
+	All rights reserved. 
+}
+{ period = calculation period
+Rule = 0,1 use slope for trend only
+	 = 2, create bands, exit on break of band
+ 		band based on high-low deviation
+	 = 3, enter on lower band, exit at top band
+		need % zone
+DataOption  = 1, use close
+			= 2, use (high + low + close)/3
+ 			= 3, use (high + low)/2
+}
+
+inputs: 
+	Rule( 1 ), 
+	Period( 40 ), 
+	Zone( 0.20 ), 
+	DataOption( 1 ),
+	UseFutures( false ),
+	LongOnly( false ), 
+	PrintDetail( false ),
+	DetailFile( &quot;&quot; );
+
+variables: 
+	signal( 0 ), 
+	slope( 0 ), 
+	intercept( 0 ), 
+	size( 0 ), 
+	highdev( 0 ),
+	lowdev( 0 ),
+	linevalue( 0 ), 
+	deviation( 0 ), 
+	upperband( 0 ), 
+	lowerband( 0 ),
+	price( 0 ), 
+	ix( 0 ),
+	pricetarget( 0 ), 
+	stockinvestment( 100000 ), 
+	futuresinvestment( 25000 ),
+	equity( 0 ), 
+	longprofit( 0 ), 
+	shortprofit( 0 ), 
+	adate( &quot; &quot; ),
+	optimizing( GetAppInfo( aiOptimizing ) = 1 );
+
+if DataOption = 1 then
+    Price = Close
+else if DataOption = 2 then
+    Price = (High + Low + Close) / 3
+else if DataOption = 3 then
+    Price = (High + Low) / 2;
+
+// Linear regression slope
+slope = TSMLRslope(Price, Period);
+Print( &quot;Slope: &quot;, Slope );
+
+if slope &gt; 0 then 
+    signal = 1
+else if slope &lt; 0 then 
+    signal = -1;
+
+// for new positions
+if UseFutures then
+    size = futuresinvestment 
+     / (AvgTrueRange( 20 ) * BigPointValue)
+else 
+    size = stockinvestment / Close;
+ print( &quot;Slope: &quot;, Slope );   
+// rule 0/1 trend only using slope
+if Rule &lt;= 1 and signal &lt;&gt; signal[1] then 
+begin
+    if MarketPosition &lt;= 0 and signal = 1 then 
+    begin
+        Buy to Cover all contracts this bar on Close;
+        if UseFutures then
+            Buy size contracts This Bar on Close
+        else 
+            Buy size shares next bar on Open;
+    end
+    else if MarketPosition &gt;= 0 and signal = -1 then
+    begin
+        Sell all contracts this bar on Close;
+        if LongOnly = false then
+            Sell Short size contracts This Bar on Close;
+    end;
+end;
+
+// if rule &gt; 1 create bands over period
+intercept = TSMLRintercept(price, Period);
+// find the highest and lowest deviation from the 
+// trend line
+highdev = 0;
+lowdev = 0;
+for ix = 1 to Period 
+begin
+    linevalue = intercept + slope * ix;
+    deviation = Close[ix] - linevalue;
+    highdev = MaxList(highdev, deviation);
+    lowdev = MinList(lowdev, deviation);
+end;
+// value of bands today is last value in the loop above
+upperband = linevalue + highdev;
+lowerband = linevalue + lowdev;
+
+// Rule 2, Buyon upwards band penetration of downward slope
+if Rule = 2 then 
+begin
+    // exit current position
+    if MarketPosition &gt; 0 and close &lt; lowerband then 
+    begin
+        if UseFutures then
+            Sell (&quot;XupBfut&quot;) all contracts 
+             this bar on Close
+        else
+            Sell (&quot;XupBeq&quot;) all contracts 
+             next bar on Open;
+    end
+    else if MarketPosition &lt; 0 and Close &gt; upperband then 
+    begin
+        if UseFutures then
+            Buy to Cover (&quot;XdnBfut&quot;) all contracts 
+             this bar on Close
+        else
+            Buy to Cover (&quot;XdnBeq&quot;) all contracts 
+             next bar on Open;
+    end;
+    // set new position rule 2
+    if MarketPosition &lt;= 0 and Close &gt; upperband then
+    begin
+        if UseFutures then
+            Buy(&quot;BuyUBfut&quot;) size contracts 
+             this bar on Close
+        else 
+            Buy(&quot;BuyUBstk&quot;) size shares 
+             next bar on Open;
+    end;
+    if MarketPosition &gt;= 0 and close &lt; lowerband then 
+    begin
+        if UseFutures then 
+        begin
+            Sell all contracts this bar on Close;
+            if LongOnly = false then
+                Sell short (&quot;SellLBfut&quot;) size contracts 
+                 this bar on Close;
+        end
+        else 
+        begin
+            Sell all shares next bar on Open;
+            if LongOnly = false then
+                Sell Short (&quot;SellLBstk&quot;) size shares 
+                 next bar on Open;
+        end;
+    end;
+end; {Rule 2}
+
+// Rule 3: Trade within the bands
+if Rule = 3 then 
+begin
+    // exits first (should be intraday exit)
+    if MarketPosition &gt; 0 then 
+    begin
+        pricetarget = upperband - Zone 
+         * (upperband - lowerband);
+        if close &gt;= pricetarget or slope &lt; 0 then
+            Sell (&quot;L3exit&quot;) all contracts 
+             this bar on Close;
+    end
+    else if MarketPosition &lt; 0 then 
+    begin
+        pricetarget = lowerband + Zone 
+         * (upperband - lowerband);
+        if close &lt;= pricetarget or slope &gt; 0 then
+            Buy to Cover (&quot;S3exit&quot;) all contracts 
+             this bar on Close;
+    end;
+    // new positions - trade in direction of slope
+    if MarketPosition &lt;= 0 and slope &gt; 0 then 
+    begin
+        Buy to Cover all contracts this bar on Close;
+        pricetarget = lowerband + Zone 
+         * (upperband - lowerband);
+        if Close &lt;= pricetarget then
+            Buy(&quot;L3entry&quot;) size contracts 
+             this bar on Close;
+    end
+    else if MarketPosition &gt;= 0 and slope &lt; 0 then 
+    begin
+        Sell all contracts this bar on close;
+        if longonly = false then 
+        begin
+            pricetarget = upperband - Zone 
+             * (upperband - lowerband);
+            if close &gt;= pricetarget then 
+            begin
+                Sell Short (&quot;S3entry&quot;) size contracts 
+                 this bar on Close;
+            end;
+        end;
+    end;
+end; {end rule 3}
+
+equity = NetProfit + OpenPositionProfit;
+
+if MarketPosition &gt; 0 then
+    longprofit = longprofit + equity - equity[1]
+else if MarketPosition &lt; 0 then
+    shortprofit = shortprofit + equity - equity[1];
+
+adate = ELdatetostring( date );
+
+if PrintDetail and optimizing = false then 
+begin
+    if Currentbar = 1 then 
+    	print( file( &quot;C:\TradeStation\PJK_Channel_Detail.csv&quot; ), 
+     &quot;Date,Open,High,Low,Close,Slope,Inter&quot;,
+     &quot;Lastvalue,HighDev,LowDev,UpBand,LowBand&quot;,
+     &quot;Signal,Shares,TodayPL,LongPL,ShortPL,TotalPL&quot;);
+   
+    print( file( &quot;C:\TradeStation\PJK_Channel_Detail.csv&quot; ), 
+     adate, &quot;,&quot;, open:6:4, &quot;,&quot;, high:6:4, &quot;,&quot;, low:6:4, &quot;,&quot;, 
+     close:6:4, &quot;,&quot;, slope:6:4, &quot;,&quot;, intercept:6:4, &quot;,&quot;, 
+     linevalue:6:4, &quot;,&quot;, highdev:6:4, &quot;,&quot;, lowdev:6:4, &quot;,&quot;, 
+     upperband:6:4, &quot;,&quot;, lowerband:6:4, &quot;,&quot;, signal:5:0, &quot;,&quot;, 
+     currentcontracts:5:0, &quot;,&quot;, equity-equity[1]:8:2, &quot;,&quot;, 
+     longprofit:8:2, &quot;,&quot;, shortprofit:8:2, &quot;,&quot;, equity:8:2);
+end;
+
+
+Function: TSMLRIntercept
+{ 
+	TASC MAY 2025
+	TSMLRintercept : Linear regression intercept
+ 	Copyright 1994-1999, 2021&ndash;2025 P.J. Kaufman. 
+ 	All rights reserved.
+ 	Method of least squares to calculate slope 
+ }
+{ 
+	price = input series
+ 	period = length of calculation 
+}
+ 
+ inputs: 
+ 	price( numericseries ), 
+ 	period( numericsimple );
+ 
+ variables: 
+	sumx( 0 ), 
+	sumx2( 0 ), 
+	sumy( 0 ), 
+	sumxy( 0 ), 
+	n( 0 ), 
+	k( 0 ), 
+	top( 0 ),
+	bot( 0 ),
+ 	slope( 0 ), 
+ 	yint( 0 );
+ 	
+{ time = x, the independent variable, e.g., 1, 2, 3, ...
+ price = y, the dependent variable }
+{ standard sum of integer series }
+sumx = period * (period + 1) / 2;
+sumx2 = period * (period + 1) * (2 * period + 1) / 6;
+sumy = Summation(price, period);
+sumxy = 0;
+n = period;
+
+for k = 0 to period-1 
+begin
+	sumxy = sumxy + n*price[k];
+	n = n - 1;
+end;
+
+top = period*sumxy - sumx*sumy;
+bot = period*sumx2 - sumx*sumx;
+if bot &lt;&gt; 0 then
+	slope = top / bot
+else
+	slope = 0;
+	
+TSMLRintercept = (sumy - slope*sumx) / period;
+
+
+Function: TSMLRSlope
+[LegacyColorValue = true];
+{ 
+	TASC MAY 2025
+TSMLRslope : Linear regression slope
+ Copyright 1994-2025, P.J. Kaufman. All rights reserved.
+ Method of least squares to calculate slope }
+{ price = input series
+ period = length of calculation }
+ inputs: 
+ 	price(numericseries), 
+ 	period(numericsimple);
+ 	
+ variables: 
+ 	sumx(0), 
+ 	sumx2(0), 
+ 	sumy(0), 
+ 	sumxy(0), 
+ 	n(0), 
+ 	k(0), 
+ 	top(0),
+	bot(0),
+	slope(0), 
+	yint(0);
+{ time = x, the independent variable, e.g., 1, 2, 3, ...
+ price = y, the dependent variable }
+{ standard sum of integer series }
+ sumx = period * (period + 1) / 2;
+ sumx2 = period * (period + 1) * (2 * period + 1) / 6;
+ sumy = Summation(price, period);
+ sumxy = 0;
+ n = period;
+ for k = 0 to period-1 begin
+ sumxy = sumxy + n*price[k];
+ n = n - 1;
+ end;
+ top = period*sumxy - sumx*sumy;
+ bot = period*sumx2 - sumx*sumx;
+ if bot &lt;&gt; 0 then
+ slope = top / bot
+ else
+ slope = 0;
+{ yint = (sumy - slope*sumx) / period; }
+ TSMLRslope = slope;
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This demonstrates a daily chart of NVDA showing a portion of 2024 with the strategy applied.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by Trade­Station Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="http://www.TradeStation.com" target="_blank">www.TradeStation.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: May 2025</h3></div>
+<p>We&rsquo;re providing code below based on Perry Kaufman&rsquo;s article in this issue, &ldquo;Trading The Channel.&rdquo; Using the first strategy parameter, WealthLab&rsquo;s code switches between two of the strategies from Kaufman&rsquo;s article&mdash;channel breakout and in-channel trading. For simplicity, we used all market orders, while the author&rsquo;s code had logic that switched between market orders and at-the-close orders. In Figure 2, you&rsquo;ll see the straight-line linear regression (LR) and channel lines plotted (another strategy parameter option) when a trade is triggered.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: WEALTH-LAB. Here you see a straight-line linear regression (LR) and channel lines plotted on a daily chart of ProShares Ultra QQQ ETF (QLD). The endpoints of the linear regression line and channel lines form the LR series (in fuchsia) and bands.</p></div>
+<pre>
+using System;
+using WealthLab.Backtest;
+using WealthLab.Core;
+using WealthLab.Data;
+using WealthLab.Indicators;
+using System.Collections.Generic;
+
+namespace WealthScript3
+{
+	public class TASC202505 : UserStrategyBase
+	{	
+		Parameter _strategy, _length, _chPct, _channelPlot;
+		TimeSeries _source, _upperChnl, _lowerChnl;
+		LR _linreg;
+		LRSlope _lrSlope;
+
+		public TASC202505()
+		{
+			_strategy = AddParameter(&quot;Strategy (hint)&quot;, ParameterType.Int32, 1, 0, 1);
+			_strategy.Hint = &quot;0 = In-Channel trading; 1 = Breakout&quot;;
+			_length = AddParameter(&quot;LR Length&quot;, ParameterType.Int32, 20, 20, 150, 10);			
+			_chPct = AddParameter(&quot;Channel Width %&quot;, ParameterType.Double, 5, 0, 50, 5);
+			_channelPlot = AddParameter(&quot;Plot Channels&quot;, ParameterType.Int32, 0, 0, 1);
+		}
+
+		public override void Initialize(BarHistory bars)
+		{
+			//Create and plot the LR line and channel
+			NewWFOInterval(bars);
+			string st = _strategy.AsInt == 1 ? &quot;Breakout&quot; : $&quot;In-Channel ({_chPct.AsDouble:N1}%)&quot;;
+			DrawHeaderText($&quot;Strategy: {st}\nLength: {_length.AsInt}&quot;, WLColor.Gold, 14);
+			PlotIndicatorLine(_linreg, WLColor.Fuchsia, 1);
+			PlotTimeSeriesBands(_upperChnl, _lowerChnl, &quot;LRChannel&quot;, &quot;Price&quot;, WLColor.CadetBlue, 1, 15);
+		}
+
+		public override void NewWFOInterval(BarHistory bars)
+		{
+			int len = _length.AsInt;
+			StartIndex = len; 
+			_source = _strategy.AsInt == 0 ? bars.AveragePriceHLC : bars.AveragePriceHL;
+			_linreg = LR.Series(_source, len);
+			_lrSlope = LRSlope.Series(_source, len);
+			_upperChnl = new TimeSeries(bars.DateTimes);
+			_lowerChnl = new TimeSeries(bars.DateTimes);
+			
+			//calculate channel band
+			for (int bar = len; bar &lt; bars.Count; bar++)
+			{
+				var lr = LinReg(bars.Close, bar, len);
+				LRChannel(bars, bar, len, lr, out double U, out double L);
+				_upperChnl[bar] = _linreg[bar] + U;
+				_lowerChnl[bar] = _linreg[bar] + L;
+			}
+		}
+
+		LinearRegression LinReg(TimeSeries ts, int bar, int length)
+		{
+			int bar0 = bar - length + 1;
+			if (bar0 &lt; 0 || length &lt; 2)
+				return null;
+
+			List&lt;double&gt; data = new List&lt;double&gt;();
+			for (int n = bar0; n &lt;= bar; n++)
+				data.Add(ts[n]);
+			return new LinearRegression(data);
+		}
+
+		void LRChannel(BarHistory bars, int bar, int length, LinearRegression lr, out double U, out double L)
+		{
+			U = 0; L = 0;
+			for (int i = 0; i &lt; length - 1; i++)
+			{
+				double LRvalue = lr.PredictValue(length - i - 1);
+				double d = bars.High[bar - i] - LRvalue;
+				if (d &gt; U) U = d;
+				d = bars.Low[bar - i] - LRvalue;
+				if (d &lt; L) L = d;
+			}
+		}
+
+		void PlotChannelLines(BarHistory bars, int bar)
+		{
+			int len = _length.AsInt;
+			var lr = LinReg(_source, bar, len);
+			int x = bar - _length.AsInt + 1;
+			double U = _upperChnl[bar] - _linreg[bar];
+			double L = _lowerChnl[bar] - _linreg[bar];
+			DrawLine(x, lr.PredictValue(0), bar, lr.PredictValue(len - 1), WLColor.Fuchsia, 2, LineStyle.Dashed);
+			DrawLine(x, lr.PredictValue(0) + U, bar, lr.PredictValue(len - 1) + U, WLColor.White, 1, LineStyle.Dashed);
+			DrawLine(x, lr.PredictValue(0) + L, bar, lr.PredictValue(len - 1) + L, WLColor.White, 1, LineStyle.Dashed);
+		}
+
+		//strategy rules
+		public override void Execute(BarHistory bars, int idx)
+		{
+			if (_strategy.AsInt == 1) // breakout strategy; long only
+			{
+				if (!HasOpenPosition(bars, PositionType.Long))
+				{
+					if (_lrSlope[idx] &lt; 0 &amp;&amp; bars.Close.CrossesOver(_upperChnl &gt;&gt; 1, idx))
+						EnterAtMarket(bars, idx, TransactionType.Buy);
+				}
+				else
+				{
+					Position p = LastPosition;
+					if (bars.Close.CrossesUnder(_lowerChnl &gt;&gt; 1, idx))
+						ClosePosition(p, OrderType.Market);
+				}
+			}
+			else // in channel strategy; long/short
+			{
+				double w = (_upperChnl[idx] - _lowerChnl[idx]) * _chPct.AsDouble / 100d;
+				Position p = LastPosition;
+				
+				if (p == null || !p.IsOpen)
+				{
+					if (_lrSlope[idx] &gt; 0) // long if trend (slope) is up
+					{
+						 if (bars.Close[idx] &lt; _lowerChnl[idx] + w)							
+							EnterAtMarket(bars, idx, TransactionType.Buy);
+					}
+					else if (bars.Close[idx] &gt; _upperChnl[idx] - w)
+						EnterAtMarket(bars, idx, TransactionType.Short);
+				}
+				else  // exit, reverse only if trend direction changed
+				{
+					if (p.PositionType == PositionType.Long)
+					{
+						if (bars.Close[idx] &gt; _upperChnl[idx] - w)
+						{
+							ClosePosition(p, OrderType.Market);
+							if (_lrSlope[idx] &lt; 0)
+								EnterAtMarket(bars, idx, TransactionType.Short);
+						}
+					}
+					else if (bars.Close[idx] &lt; _lowerChnl[idx] + w)
+					{
+						ClosePosition(p, OrderType.Market);
+						if (_lrSlope[idx] &gt; 0)
+							EnterAtMarket(bars, idx, TransactionType.Buy);
+					}						
+				}
+			}
+			
+			Transaction EnterAtMarket(BarHistory bars, int bar, TransactionType tt)
+			{
+				if (_channelPlot.AsInt == 1)
+					PlotChannelLines(bars, bar - _strategy.AsInt);
+				return PlaceTrade(bars, tt, OrderType.Market);
+			}
+		}
+	}
+}
+</pre>
+<p class="authorTips">&mdash;Robert Sucher<br>
+Wealth-Lab team<br>
+<a href="http://www.wealth-lab.com" target="_blank">www.wealth-lab.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: May 2025</h3></div>
+<p>In &ldquo;Trading The Channel&rdquo; in this issue, Perry Kaufman discusses several approaches to trading with a channel (trading bands). The technique discussed in the article is available for download at the following link for NinjaTrader 8:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/May2025SCNT8.zip" target="_blank">www.ninjatrader.com/SC/May2025SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the file into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the file.</p>
+<p>A sample chart is shown in Figure 3.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: NINJATRADER. The author&rsquo;s channel methods are demonstrated here on a daily chart of SPY.</p></div>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">&mdash;Jesse N.<br>
+NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_blank">www.ninjatrader.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Realtest.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">RealTest: May 2025</h3></div>
+<p>Provided here is coding for use in the RealTest platform to implement concepts described in Perry Kaufman&rsquo;s article in this issue, &ldquo;Trading The Channel.&rdquo;</p>
+<pre>
+Notes:
+	Perry Kaufman &quot;Trading The Channel&quot;, TASC, May 2025
+	
+Import:
+	DataSource:	Norgate
+	IncludeList:	SPY, AAPL, NVDA {&quot;stocks&quot;}
+	IncludeList:	&amp;ZN_CCB, &amp;CL_CCB {&quot;futures&quot;}
+	StartDate:	1/1/10
+	EndDate:	Latest
+	SaveAs:	tasc_may_25.rtd
+	
+Settings:
+	DataFile:	tasc_may_25.rtd
+	StartDate:	Earliest
+	EndDate:	Latest
+	BarSize:	Daily
+	AccountSize:	100000
+	SkipTestIf:	rule &lt;&gt; 3 and zone &lt;&gt; 0.4 // skip redundant tests for rules that don't use zone
+
+Parameters:
+	rule:	from 1 to 3 def 3
+	dataOption:	from 1 to 3 def 1 // 1 = use close, 2 = (high+low+close)/3, 3 = (high+low)/2
+	period:	from 20 to 150 step 10 def 80
+	zone:	from 0.05 to 0.5 step 0.05 def 0.4 // only relevant for rule 3
+
+Data:
+	// basic values
+	stock:	InList(&quot;stocks&quot;)
+	futures:	InList(&quot;futures&quot;)
+	price:	Select(dataOption = 1, close, dataOption = 2, (high + low + close) / 3, dataOption = 3, (high + low) / 2)
+	
+	// linear regression
+	lrSlope:	Slope(price, period)
+	lrIntercept:	YInt(price, period)
+
+	// high/low deviation calculation as described in the article text (different from code)
+	// this subtracts each close from the corresponding LR point and calculates min and max deviations
+//	highdev:	Highest(close - This(lrIntercept + funbar * lrSlope), period)
+//	lowdev:	Lowest(close - This(lrIntercept + funbar * lrSlope), period)
+
+	// high/low deviation calculation as implemented in article code (the &quot;for ix = 1 to period&quot; loop)
+	// this subtracts oldest LR point from newest close (ignoring today), second-oldest LR from second-newest close, etc.
+	// this surprising logic seems to produce better results than the above
+	highdev:	Highest(close[1] - This(lrIntercept + (period - funbar) * lrSlope), period)
+	lowdev:	Lowest(close[1] - This(lrIntercept + (period - funbar) * lrSlope), period)
+
+	// slope signal (rules 1 and 3)
+	signal:	sign(lrSlope)
+	
+	// deviation bands (rules 2 and 3)
+	lrLine:	lrIntercept + lrSlope * period
+	upperBand:	lrLine + highDev
+	lowerBand:	lrLine + lowDev
+	
+	// band zones (rule 3)
+	zoneWidth:	zone * (upperBand - lowerBand)
+	priceTargetShort:	lowerBand + zoneWidth
+	priceTargetLong:	upperBand - zoneWidth
+
+// indicator plotting
+	
+Charts:
+	// plot in price pane
+	lrLine:	lrLine	
+	upperBand:	upperBand	
+	lowerBand:	lowerBand
+	longTarget:	priceTargetLong
+	shortTarget:	priceTargetShort
+	
+	// plot in lower pane
+	lrSlope:	lrSlope {|}
+
+// common strategy elements
+
+Template: stocks
+	Side:	Long
+	Quantity:	100000
+	QtyType:	Value
+	EntryTime:	NextOpen
+	ExitTime:	NextOpen
+
+Template: futures
+	Side:	Both
+	Quantity:	signal * 25000 / (ATR(20) * PointValue)
+	QtyType:	Shares // i.e. contracts
+	EntryTime:	ThisClose
+	ExitTime:	ThisClose
+
+// strategy definitions
+
+Strategy: pjk_rule1_stocks
+	Using:	stocks
+	EntrySetup:	rule = 1 and stock and lrSlope &gt; 0
+	ExitRule:	lrSlope &lt; 0
+	
+Strategy: pjk_rule1_futures
+	Using:	futures
+	EntrySetup:	rule = 1 and futures and signal &lt;&gt; signal[1]
+	ExitRule:	signal &lt;&gt; signal[1]
+
+Strategy: pjk_rule2_stocks
+	Using:	stocks
+	EntrySetup:	rule = 2 and stock and close &gt; upperBand
+	ExitRule:	close &lt; lowerBand
+	
+Strategy: pjk_rule2_futures
+	Using:	futures
+	EntrySetup:	rule = 2 and futures and (close &gt; upperBand or close &lt; lowerBand)
+	ExitRule:	(side &gt; 0 and close &lt; lowerBand) or (side &lt; 0 and close &gt; upperBand)
+
+// the author's code does not differentiate stocks vs. futures in rule3 but I did so here as per the other rules
+
+Strategy: pjk_rule3_stocks
+	Using:	stocks
+	EntrySetup:	rule = 3 and stock and signal &gt; 0 and close &lt;= priceTargetShort // enter on pullback
+	ExitRule:	signal &lt; 0 or close &gt;= priceTargetLong
+	
+Strategy: pjk_rule3_futures
+	Using:	futures
+	EntrySetup:	rule = 3 and futures and ((signal &gt; 0 and close &lt;= priceTargetShort) or ((signal &lt; 0 and close &gt;= priceTargetLong)))
+	ExitRule:	signal &lt;&gt; side or (side &gt; 0 and close &gt;= priceTargetLong) or (side &lt; 0 and close &lt;= priceTargetLong)
+</pre>
+<p class="authorTips">&mdash;Marsten Parker<br>
+MHP Trading<br>
+<a href="mailto:mhp@mhptrading.com">mhp@mhptrading.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: May 2025</h3></div>
+<p>The Pine Script code for TradingView presented here enables traders to choose between the three approaches to trading channels discussed in Perry Kaufman&rsquo;s article in this issue, &ldquo;Trading The Channel.&rdquo; The three approaches are: following the trend, trading breakouts, or trading within the channel. The author also uses a linear regression line.</p>
+<pre>
+//  TASC Issue: May 2025
+// 	Article: A Test Of Three Approaches
+//          	Trading The Channel
+//  Article By: Perry J. Kaufman
+//	Language: TradingView's Pine Script® v6
+// Provided By: PineCoders, for tradingview.com
+ 
+//&#64;version=6
+title ='TASC 2025.05 Trading The Channel'
+stitle = 'Trading The Channel'
+qtyt = strategy.fixed
+strategy(title, stitle, false, default_qty_type=qtyt)
+ 
+//&#64;enum Trade Rules.
+enum RULE
+	T1 = 'Trade the trend.'
+	T2 = 'Trade a channel breakout.'
+	T3 = 'Trade within the channel.'
+ 
+string TT1  = 'Recommended use of `close`, `hlc3` or `hl2`.'
+string TT2  = 'Percent of Bands to use as trading zones.'
+string TT3  = 'When &quot;Trade within the channel.&quot;\n
+ -&gt; Only long when trend is up\n -&gt; Only short when trend is down'
+ 
+RULE rule   = input.enum(RULE.T1, 'Select Trade rule:')
+int period  = input.int(40, 'Period:')
+float price = input.source(close, 'Source:', tooltip=TT1)
+float zone  = input.float(0.2, 'Zone %:', tooltip=TT2)
+bool longonly = input.bool(false, 'Long Only?')
+bool filter = input.bool(false, 'Extra filter &quot;Trade within the channel.&quot;', tooltip=TT3)
+ 
+// LRISS : Linear regression intercept, slope and signal
+// &#64;function Method of least squares to calculate
+// linear regression intercept and slope.
+// &#64;param price Data Series Source.
+// &#64;param period Data window.
+LRISS(float src, simple int length) =&gt;
+	var float sx  = length * (length + 1) / 2
+	var float sxx = length * (length + 1) * (2 * length + 1) / 6
+	var float sxy = 0.0
+	float 	sy  = math.sum(src, length)
+	float 	syy = math.sum(src * src, length)
+	float  linreg = ta.linreg(price, period, 0)   
+	float  oldSrc = src[length]
+ 
+	sxy += switch
+    	bar_index &lt;= length - 1 =&gt; (length - bar_index) * src
+    	=&gt;                     	sy - length * oldSrc
+	float slope = -(length * sxy - sx * sy) / (length * sxx - sx * sx)
+ 
+	intercept = linreg - slope * period
+	signal = math.sign(slope)
+ 
+	[linreg, intercept, slope, signal]
+
+
+ 
+// LRISS() function call
+[linreg, intercept, slope, signal] = LRISS(price, period)
+change = ta.change(signal)
+
+
+ 
+float t = 0, float b = 0, int n = bar_index, int x1 = n - period
+float y1 = linreg - period * slope, float band_range = na
+float buy_zone = na, float sell_zone = na
+ 
+// Channel straight lines
+// &#64;variable linreg line
+var lI = line.new(na, na, na, na, force_overlay=true)
+// &#64;variable channel top line
+var lT = line.new(na, na, na, na, force_overlay=true
+   	, color=color.red)
+// &#64;variable channel top line last bar
+var lT_= line.new(na, na, na, na, force_overlay=true
+   	, color=#ce0e0e80)
+// &#64;variable channel bottom line
+var lB = line.new(na, na, na, na, force_overlay=true
+   	, color=color.lime)
+// &#64;variable channel bottom line last bar
+var lB_= line.new(na, na, na, na, force_overlay=true
+   	, color=#0ece4b80)
+ 
+// &#64;variable Initial Capital
+float icap = strategy.initial_capital
+//&#64;variable Value of Contract in cash.
+float vcon = 100000.0
+//&#64;variable Units per Contract.
+float ucon = vcon / close
+// &#64;variable fraction of capital in contracts.
+int ncon = math.floor((icap * 0.8 / close) / ucon)
+// &#64;variable max contracts
+int mcon = math.floor((strategy.equity / close) / ucon)
+// &#64;variable Number of contracts to trade.
+float size = math.min(ncon, mcon)
+//&#64;variable position size
+float POSITION = strategy.position_size
+//&#64;variable named constant for display
+DSP = display.all - display.status_line
+ 
+for i = 0 to period
+	b := math.max(b, linreg - (i * slope) - low[i])
+	t := math.max(t, high[i] - (linreg - (i * slope)))
+ 
+float upperband = linreg + t + slope
+float lowerband = linreg - b + slope
+ 
+if rule != RULE.T1 and last_bar_index - n &lt; 300
+	lI .set_xy1(x1,   y1	), lI .set_xy2(n+1, linreg + slope)
+	lT .set_xy1(x1,   y1 + t), lT .set_xy2(n+1, upperband)
+	lT_.set_xy1(n, upperband), lT_.set_xy2(n+1, upperband)
+	lB .set_xy1(x1,   y1 - b), lB .set_xy2(n+1, lowerband)
+	lB_.set_xy1(n, lowerband), lB_.set_xy2(n+1, lowerband)
+ 
+ 
+// for new positions
+// Position sizes for equities will be a $10,000 investment
+// divided by the closing price. For futures it will be a $25,000
+// investment using volatility parity - the investment divided
+// by the product of the 20-day average true range and the
+// big point value.
+ 
+// Rule 1: Trade the Channel.
+if rule == RULE.T1 and signal != signal[1]
+	if POSITION &lt;= 0 and signal == 1
+    	// cover all shorts
+    	strategy.close_all('R1X')
+    	strategy.entry('R1L', strategy.long)
+	else if POSITION &gt;= 0 and signal == -1
+    	strategy.close_all('R1X')
+    	if not longonly
+        	// sell short contract this bar on close
+        	strategy.entry('R1S', strategy.short)
+ 
+// Rule 2: Trade a Channel Breakout.
+// We do not use the direction of the slope as a filter.
+if rule == RULE.T2
+	// Exit current position
+	if POSITION &gt; 0 and close &lt; lowerband
+    	// sell all contracts
+    	strategy.close_all('R2X')
+    	if not longonly
+        	strategy.entry('R2S', strategy.short)
+	else if POSITION &lt; 0 and close &gt; upperband
+    	//buy to cover
+    	strategy.entry('R2L', strategy.long)
+	else if POSITION &lt;= 0 and close &gt; upperband
+    	strategy.entry('R2L', strategy.long)
+	else if POSITION &gt;= 0 and close &lt; lowerband
+    	strategy.close_all('R2X')
+    	if not longonly
+        	strategy.entry('R2S', strategy.short)
+ 
+// Rule 3: Trade within the channel.
+// We can filter it with the direction of the trendline
+if rule == RULE.T3
+	band_range := upperband - lowerband
+	buy_zone  := lowerband + zone * band_range
+	sell_zone := upperband - zone * band_range
+ 
+	// Exit when in the zone or slope reverses direction
+	// Long Exit
+	if POSITION &gt; 0
+    	if close &gt;= sell_zone or slope &lt;= 0
+        	strategy.close_all('L3 Exit')
+	// Short Exit
+	if POSITION &lt; 0
+    	if close &lt;= buy_zone or slope &gt;= 0
+        	strategy.close_all('S3 Exit')
+ 
+	// Long Entry
+	if POSITION &lt;= 0
+ 	and (filter ? slope &gt; 0 : true)
+ 	and close &lt;= buy_zone
+    	strategy.entry('L3 Entry', strategy.long)
+	// Short Entry (optional)
+	if not longonly and POSITION &gt;= 0
+ 	and (filter ? slope &lt; 0 : true)
+ 	and close &gt;= sell_zone
+    	strategy.entry('S3 Entry', strategy.short)
+ 
+ 
+sma = ta.sma(close, period)
+dir = ta.change(sma)
+plot(slope, color= slope &gt; 0 ? #ed7722 : #0e46be
+ , display = DSP, linewidth = 2)
+plot(rule == RULE.T1 ? sma : na, 'SMA compare'
+ , color = dir &gt; 0 ? #ed7722 : #0e46be
+ , force_overlay=true, display = DSP)
+ 
+plotshape(rule == RULE.T1 and change != 0 and signal &gt; 0 ?
+ 0 : na, '', shape.triangleup, location.absolute
+ , size = size.tiny, color = color.lime, display = DSP)
+plotshape(rule == RULE.T1 and change != 0 and signal &lt; 0 ?
+ 0 : na, '', shape.triangledown, location.absolute
+ , size = size.tiny, color = color.red, display = DSP)
+ 
+pT  = plot(rule != RULE.T1 ? upperband : na, 'upper'
+ , color.rgb(206, 14, 14, rule == RULE.T2 ? 40 : 100)
+ , force_overlay=true , display = DSP)
+pB  = plot(rule != RULE.T1 ? lowerband : na, 'lower'
+ , color.rgb(14, 206, 75, rule == RULE.T2 ? 40 : 100)
+ , force_overlay=true , display = DSP)
+pT_ = plot(rule == RULE.T3 ? sell_zone : na, 'upper'
+ , #ff990000, force_overlay=true, display = DSP)
+pB_ = plot(rule == RULE.T3 ? buy_zone  : na, 'lower'
+ , #ff990000, force_overlay=true, display = DSP)
+ 
+fill(pT, pT_, upperband, sell_zone
+ 	, #ce0e0e4f, #ce0e0e10, &quot;Upperband&quot;)
+fill(pB, pB_, lowerband, buy_zone
+ 	, #0ece4b4f, #0ece4b10, &quot;Upperband&quot;)
+ 
+hline(0)
+</pre>
+<p>The script is available on TradingView from the PineCodersTASC account: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart is shown in Figure 4.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: TRADINGVIEW. This shows an example implementation of channel-based trading on a daily chart of the emini S&amp;P 500 continuous futures contract.</p></div>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="http://www.TradingView.com" target="_blank">www.TradingView.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NeuroShell Trader: May 2025</h3></div>
+<p>The linear regression slope and upper/lower band trading systems discussed in Perry Kaufman&rsquo;s article in this issue, &ldquo;Trading The Channel,&rdquo; can be easily implemented in NeuroShell Trader by combining some of NeuroShell Trader&rsquo;s over 800 indicators. To implement the linear regression slope and upper/lower bands, select &ldquo;New indicator&rdquo; from the insert menu and use the indicator wizard to create the following indicators:</p>
+<pre>
+Slope:	LinTimeReg Slope(Close,20)
+Center:	LinTimeReg PredValue(Close,20,0)
+Upper band:	Add2(Center Line, Max(Sub(Close, Center Line),20))
+Lower band:	Add2(Center Line, Min(Sub(Center Line),20))
+</pre>
+<p>To implement the slope and channel trading systems, select &ldquo;New strategy&rdquo; from the <em>insert</em> menu and use the trading strategy wizard to create the following three strategies:</p>
+<pre>
+Slope Trading System:
+BUY LONG CONDITIONS: 
+     A&gt;B(Slope, 0)
+SELL SHORT CONDITIONS: 
+     A&lt;B(Slope, 0)
+
+Band Breakout Trading System:
+BUY LONG CONDITIONS: 
+     A&gt;B(High, Upper Band)
+SELL SHORT CONDITIONS: 
+     A&lt;B(Low, Lower Band)
+
+	Inside Bands Trading System:
+BUY LONG CONDITIONS: 
+     A&lt;B(Close, Add2(Lower Band,Mul2(0.2,Sub(Upper Band, Lower Band))))
+SELL SHORT CONDITIONS: 
+     A&gt;B(Close, Sub(Upper Band, Mul2(0.2,Sub(Upper Band, Lower Band))))
+</pre>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: NEUROSHELL TRADER. This NeuroShell Trader chart demonstrates the different linear regression slope and band trading systems on a daily chart of AAPL.</p></div>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_blank">www.neuroshell.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" style="width: 90px;" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: May 2025</h3></div>
+<p>The simplest form of trend trading opens positions when the price crosses its moving average. In this issue, Perry Kaufman, in his article &ldquo;Trading The Channel,&rdquo; suggests an alternative using a linear regression line with an upper and lower band. Such a band indicator can be used to trigger long or short positions when the price crosses the upper or lower band, or when it gets close.</p>
+<p>Let&rsquo;s first code the bands. They have the same slope as the regression line and move through the highest and lowest price deviations from that line. Here&rsquo;s the piece of code in C:</p>
+<pre>
+var Slope = LinearRegSlope(seriesC(),N);
+var Intercept = LinearRegIntercept(seriesC(),N);
+var LinVal, HighDev = 0, LowDev = 0;
+for(i=N; i&gt;0; i--) {
+  LinVal = Intercept + Slope*(N-i);
+  HighDev = max(HighDev,priceC(i)-LinVal);
+  LowDev = min(LowDev,priceC(i)-LinVal);
+}
+</pre>
+<p>A regression line has the formula <em>y = b + m*x</em>, where <em>b</em> is the intercept and <em>m</em> the slope. The code generates both for the previous <em>N</em> bars, then calculates in the loop the maximum and minimum deviations (HighDev, LowDev). The regression value (LinVal) is calculated from the intercept and slope with the above formula. Since the bar offset <em>i</em> runs backwards from the current bar, the bar number that&rsquo;s multiplied with the slope runs from <em>N</em> down to 0.</p>
+<p>Figure 6 shows an example result when the code is applied to a chart of SPY from 2025.</p>
+<div class="figBorder">
+<img src="images/TT-Zorro1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: ZORRO. Here is an example of the regression line calculated and plotted on a daily chart of SPY for a portion of 2025, along with an upper and lower trading band. The regression value is calculated from the intercept and slope.</p></div>
+<p>The candles can exceed the upper and lower bands because only the close price is used for them. It would probably improve the system, at least in theory, if we used the high and low prices instead.</p>
+<p>Kaufman suggests several methods of trading with these bands; here, we&rsquo;re using the &ldquo;inside channel&rdquo; method since it tends to be, according to Kaufman, the most profitable. We open a long position when the price comes within a zone around the lower band, and we close the position (or open a short position) when the price comes within a zone around the upper band.</p>
+<p>Here is the trading system in C for Zorro, using the above code to calculate the bands:</p>
+<pre>
+void run() 
+{
+  BarPeriod = 1440; 
+  StartDate = 20100101; 
+  LookBack = 150;
+  assetList(&quot;AssetsIB&quot;);
+  asset(&quot;SPY&quot;);
+  if(is(LOOKBACK)) return;
+
+  int i, N = 40;
+  var Factor = 0.2;
+  var Slope = LinearRegSlope(seriesC(),N);
+  var Intercept = LinearRegIntercept(seriesC(),N);
+  var LinVal, HighDev = 0, LowDev = 0;
+  for(i=N; i&gt;0; i--) { 
+    LinVal = Intercept + Slope*(N-i);
+    HighDev = max(HighDev,priceC(i)-LinVal);
+    LowDev = min(LowDev,priceC(i)-LinVal);
+  }
+  var Zone = Factor*(HighDev+LowDev);
+  if(!NumOpenLong &amp;&amp; priceC(0) &lt; LinVal+LowDev+Zone)
+    enterLong();
+  if(!NumOpenShort &amp;&amp; priceC(0) &gt; LinVal+HighDev-Zone)
+    exitLong();
+}
+</pre>
+<p>We&rsquo;ve selected the <strong>AssetsIB</strong> asset list, which contains the margins, commissions, and other parameters from a U.S. brokerage. So the backtest simulates trading with that brokerage. The resulting equity curve with the default parameters, <strong>N = 40</strong> and <strong>zone = 20%</strong>, already shows promise with a 2.8 profit factor (Figure 7.)</p>
+<div class="figBorder">
+<img src="images/TT-Zorro2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: ZORRO. Here is an example equity curve from a backtest on data 2010&ndash;2024 plus a portion of 2025 to test a strategy based on trading inside the trading bands, where a long position is opened when price reaches or nears the lower band and exits when the price reaches or nears the upper band. </p></div>	
+<p>However, Kaufman mentions that he tested N values from 20 to 150, and zones from 5% to 50%. We&rsquo;ll do the same by optimizing these parameters. Of course, a backtest with the best optimization result would be meaningless due to bias (see <a href="https://zorro-project.com/backtest.php" target="_blank">https://zorro-project.com/backtest.php</a>). Therefore, we&rsquo;re using walk-forward optimization for an out-of-sample backtest. Since anything with Zorro is done in code, we&rsquo;ll insert some C code for the optimization:</p>	
+<pre>
+set(PARAMETERS);
+NumWFOCycles = 5;
+N = optimize(40,20,150,10);
+Factor = optimize(0.2,0.05,0.5,0.05);
+</pre>	
+<p>We also changed the trading from only long positions to both long and short by replacing <strong>exitLong</strong> with <strong>enterShort</strong>. By default, entering a short position automatically exits the long one, and vice versa. So the system is always in the market with 1 share, either long or short. The walk-forward optimization takes about 3 seconds. A resulting equity curve is shown in Figure 8. The profit factor rose to 7, with a 76% win rate.</p>	
+<div class="figBorder">
+<img src="images/TT-Zorro3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: ZORRO. Here is an example equity curve from a backtest of the same inside channel trading strategy as in Figure 7, this time with the <em>N</em> parameter optimized using walk-forward, out-of-sample optimization. The profit factor here is higher.</p></div>	
+<p>The code provided here can be downloaded from the 2025 script repository on <a href="https://financial-hacker.com" target="_blank">https://financial-hacker.com</a>. The Zorro platform can be downloaded from <a href="https://zorro-project.com" target="_blank">https://zorro-project.com</a>.</p>	
+<p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_blank">https://zorro-project.com</a></p>	
+	
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">AIQ: May 2025</h3></div>
+<p>AIQ code based on Perry Kaufman&rsquo;s article in this issue, &ldquo;Trading The Channel,&rdquo; is shown here and also provided in a downloadable code file. This encodes the system that the author describes as a linear regression slope trading system, which goes long when the linear regression slope goes above the zero line and exits when the linear regression slope drops below the zero line.</p>
+<pre>
+! TRADING THE CHANNEL
+! Author: Perry J Kaufman, TASC May 2025
+! Coded by: Richard Denning, 3/15/2025
+
+! Example of trading the linear regression slope:
+Len is 20.
+C is [close].
+LRslope is Slope2(C,Len).
+Signal is iff(LRslope &gt; 0,1,-1).
+
+Buy if Signal = 1 and valresult(Signal,1) = -1.
+ExitLong if Signal = -1.
+</pre>
+<p>Figure 9 shows an example of the linear regression slope line plotted on a daily chart of QQQ (Nasdaq-100 ETF).</p>
+<div class="figBorder">
+<img src="images/TT-Aiq.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: AIQ. The linear regression slope indicator is displayed on a daily chart of the Nasdaq-100 ETF (QQQ) during 2024 and into the first part of 2025. </p></div>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:rdencpa@gmail.com">rdencpa@gmail.com</a><br>
+for AIQ Systems</p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+
+<h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Python: May 2025</h3></div>
+<p>Here, I am presenting some Python code to implement some of the concepts described in Perry Kaufman&rsquo;s article in this issue, &ldquo;Trading The Channel.&rdquo; In the article, Kaufman discusses three approaches to trading with trading bands and also a linear regression line. Python programming language can be used to calculate and plot these elements on a chosen ticker symbol, and here, I will combine the calculations into one callable function after demonstrating the steps.</p>
+<p>Figure 10 shows an example of plotting a regression line using Python, and Figure 11 shows an example of plotting trading bands with the regression line and target lines.</p>
+<div class="figBorder">
+<img src="images/TT-Python3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 10: PYTHON. A linear regression line is plotted on a chart of SPY by using the built-in plotting function from the Panda data analysis library. The linear regression line is calculated from slope and y-intercept values calculated by the Python coding.</p></div>
+<div class="figBorder">
+<img src="images/TT-Python4.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 11: PYTHON. The upper and lower trading band lines, the upper and lower target lines, the linear regression line, and closing price line are plotted on a chart of SPY using calculations from a single callable function.</p></div>
+<pre>
+#
+# import required python libraries
+#
+%matplotlib inline
+import pandas as pd
+import numpy as np
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import yfinance as yf
+import math
+import datetime as dt
+
+#
+# Retrieve SPY daily price data from Yahoo Finance
+# 
+#symbol = '^GSPC'
+symbol = 'SPY'
+end = dt.datetime.now().strftime('%Y-%m-%d') 
+ohlcv = yf.download(symbol, start=&quot;2019-01-01&quot;, end=&quot;2025-03-20&quot;, group_by=&quot;Ticker&quot;, auto_adjust=True)
+ohlcv = ohlcv[symbol]
+
+#
+# Use pandas built in plot function to see simple price chart 
+#
+ax = ohlcv['Close'].plot(
+    figsize=(9,6), 
+    grid=True, 
+    title=f'{symbol}', 
+    #marker='.')
+    
+#
+# the following python code snippets include the various calculation used to build the 
+# linear regression line
+# 
+
+# use slicing techiques to extract desired set of close values based on end date and 
+# the linear regression window (aka _num_samples)
+end_date = '2024-06-13'
+num_samples = 32
+samples = ohlcv['Close'][:end_date][-num_samples:].values.round(4)
+
+# create x_values to corresend with num_samples
+x_values = np.arange(len(samples))+1
+
+# use numpy's polyfit to obtain slope, and y intercept
+m, b = np.polyfit(x_values, samples, 1)
+
+print(f'Slope={m}, Y-intercept={b}')
+
+# calculate regression line values using m and b
+line_values = m*x_values + b
+
+# load the dataframe with desired values
+df = pd.DataFrame()
+df['X'] = x_values
+df['Y'] = samples
+df['Line Values'] = line_values
+df
+
+#
+# Plot closing price and the linear regression line using built-in pandas plot
+# function (aka using MatplotLib)
+#
+def simple_plot1(df):
+    
+    cols = ['Y', 'Line Values']
+    ax = df[cols].plot(
+        figsize=(9,6), 
+        grid=True, 
+        marker='.', 
+        title=f'Example of a regression line using ticker={symbol}'
+    )
+
+simple_plot1(df)
+
+#
+# combine all calculation from article into a single callable function
+#
+def run_daily_calculations(ohlcv, period, zone, verbose=False):
+  
+    df = ohlcv[-period:][['Close']].copy()
+    # create x_values to corresend with num_samples
+    x_values = np.arange(len(df))+1
+    samples = df['Close'].values
+    
+    # use numpy's polyfit to obtain slope, and y intercept
+    m, b = np.polyfit(x_values, samples, 1)
+
+    if verbose:
+        print(f'Slope={m}, Y-intercept={b}')
+        
+    df['X'] = x_values
+    df['Slope'] = m
+    df['Y-intercept'] = b
+    df['Line values'] = m*x_values + b
+
+    # calculations for upper and lower channels as per article
+    df['Diff'] = df['Close'] - df['Line values']
+    df['Upper line'] = df['Line values'] + df['Diff'][:-1].max()
+    df['Lower line'] = df['Line values'] + df['Diff'][:-1].min()
+
+    # calculations for upper and lower price targets as per article
+    df['Upper Target'] = df['Upper line'] - zone *(df['Upper line']-df['Lower line'])
+    df['Lower Target'] = df['Lower line'] + zone *(df['Upper line']-df['Lower line'])
+    
+    return df
+
+def simple_plot2(df, usedates=False):
+
+    import matplotlib.pyplot as plt
+
+    if usedates is not True:
+        df.set_index('X', inplace=True)
+
+    cols = ['Close', 'Line values', 'Upper line', 'Lower line', 'Upper Target', 'Lower Target']
+    ax = df[cols].plot(
+        figsize=(9,6), 
+        grid=True, 
+        marker='.', 
+        title=f'Ticker={symbol}'
+    )
+
+##
+# change the input parameters as desired and inspect resulting plot. The lines presented are 
+# calculated # based on the period. Inspect the far right of the plots (aka end_date) to look for 
+# price action to match your signal requirements.
+#
+
+#-------- INPUT PARAMETERS -------------
+end_date = '2025'
+period = 140
+zone = 0.20
+num_days_to_plot = 63
+#---------------------------------------
+
+df = run_daily_calculations(ohlcv[:], period, zone)
+simple_plot2(df[-num_days_to_plot:], usedates=True)
+</pre>
+<p class="authorTips">&mdash;Rajeev Jain, <a href="mailto:jainraje@yahoo.com">jainraje@yahoo.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+
+<h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: May 2025</h3></div>
+<p>Perry Kaufman, in his article in this issue, &ldquo;Trading The Channel,&rdquo; describes three different trading rule sets that are based on the instantaneous slope and band width calculated for each bar, as has been done for the right-most bar in Figure 12. Playing with the values in cell A11 and/or cell A23 will demonstrate the dynamics of this computation.</p>
+<div class="figBorder">
+<img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 12: EXCEL. Perry Kaufman&rsquo;s article in this issue discusses channel-based trading methods based on the instantaneous slope and band width calculated for each bar. You see here the 30-bar best fine line through the right-most bar. The two touch points mark the close that is the farthest above and below the line and establish the upper and lower channel lines.</p></div>
+<p>In Figure 13, the lower chart tracks the slope calculated in this way for each bar and assigns a plus or minus &ldquo;trend&rdquo; for a positive or negative slope. Figure 2 also displays the local results for long trades using the author&rsquo;s <em>rule 1</em>, which only trades when the <em>trend</em> is positive. You may also select for a display of short trades.</p>
+<div class="figBorder">
+<img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 13: EXCEL. The lower chart tracks the slope for each bar and assigns a plus or minus &ldquo;trend&rdquo; for a positive or negative slope. Local results are displayed for long trades using the author&rsquo;s first rule set, which only trades when the trend is positive. (You can also use this spreadsheet to display short trades.) The blue X marks the close price that begins and ends a trade. Green is a winning trade, red is a losing trade.</p></div>
+<p>Figure 14 plots the bar-by-bar calculated upper and lower band values (orange), and the percentage-of-spread zone values (green). The <em>touch point</em> mess occurs when a bar close meets or exceeds, in the <em>rule 3 case</em>, the bar zone value. A bar touch point, combined with the bar trend, determines the beginning and end of a long or short trade.</p>
+<div class="figBorder">
+<img src="images/TT-Excel3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 14: EXCEL. This example chart using NVDA plots the bar-by-bar calculated upper and lower band values (orange) and the percentage-of-spread zone values (green). When the bar close meets or exceeds the zones, a touch point is potentially triggered, in the case of one of the possible rule sets given by the article&rsquo;s author.</p></div>
+<p><em>Rule 2</em> uses touches of the bands (orange) instead of touches of the zones (green).</p>
+<p>Figure 15 shows some trading results for <em>rule 1</em>. While Kaufman did not include short trades for stocks in his article, I went ahead and added shorts, based on his use of futures shorts, as a separate set of columns, as a test. In my small window of testing time, I can see why he did not include the shorts. Under these three rule sets, shorts appear to consistently lose money.</p>
+<div class="figBorder">
+<img src="images/TT-Excel4.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 15: EXCEL. Here you see some example results from the trading rule in Figure 3. In the spreadsheet, each of the author&rsquo;s three rule sets gets its own trade computations page with a results summary block for long and short trades. Values from these &ldquo;rules&rdquo; pages are pulled in to build the chart using the button combinations next to the charts.</p></div>
+<p><em>Note:</em> This month&rsquo;s spreadsheet is a busy one! There will be a lot of computing involved if you change something and there is a lot of stuff hidden in the charts that only shows up when you select the correct combinations of &ldquo;charting options&rdquo; and &ldquo;display of trades&rdquo; using the buttons located to the right of the charts. Consequently, the spreadsheet and the charts will be a bit slow to react.</p>
+<p><em>P.S.</em> This spreadsheet also contains an updated repairs mechanism. See the &ldquo;Traders Tips Repairs&rdquo; tab in the spreadsheet for details.</p>
+<p><strong><em>To download this spreadsheet:</em></strong> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="http://www.traders.com/Documentation/FEEDbk_docs/2025/05/images/code/TradingTheChannel.xlsm">here</a>. To successfully download it, follow these steps:</p>
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2025/05/images/code/TradingTheChannel.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the May 2025 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+All rights reserved. &copy;&nbsp;Copyright&nbsp;2025, Technical Analysis, Inc.</p>
+
+</body>
+</html>

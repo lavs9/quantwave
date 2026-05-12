@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: Cycle/Trend Analytics And The MAD Indicator by John F. Ehlers. Contributions from: TradingView; eSignal; Wealth-Lab.com; Neuroshell Trader; NinjaTrader; Optuma; Aiq; TradersStudio; The Zorro Project; Microsoft Excel; TradeStation.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - OCTOBER 2021</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">October 2021</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2021/10/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John F. Ehlers&rsquo; article in this issue, &ldquo;Cycle/Trend Analytics And The MAD Indicator.&rdquo; Here, we present the October 2021 Traders&rsquo; Tips code with possible implementations in various software.</p>
+    <!--REMOVE NEXT MONTH-->
+<p class="red"><strong><em>New contributor this month:</em></strong> TradingView (Pine code)</p>
+
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradingView: October 2021</a></li>
+  <li><a href="#item2"><span style="text-transform:lowercase;">e</span>Signal: October 2021</a></li>
+  <li><a href="#item3">Wealth-Lab.com: October 2021</a></li>
+  <li><a href="#item4">Neuroshell Trader: October 2021</a></li>
+  <li><a href="#item5">NinjaTrader: October 2021</a></li>
+  <li><a href="#item6">Optuma: October 2021</a></li>
+  <li><a href="#item7">Aiq: October 2021</a></li>
+  <li><a href="#item8">TradersStudio: October 2021</a></li>
+  <li><a href="#item9">The Zorro Project: October 2021</a></li>
+  <li><a href="#item10">Microsoft Excel: October 2021</a></li>
+  <li><a href="#item11">TradeStation: October 2021</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: October 2021</h3></div>
+<p>The TradingView Pine code for the cycle/trend analytics indicator presented by John Ehlers in his article in this issue, &ldquo;Cycle/Trend Analytics And The MAD Indicator,&rdquo; is as follows:</p>
+<pre>
+// (C) 2021 John F. Ehlers
+// Translation from EasyLanguage to TradingView's Pine Script by Ricardo Santos, for PineCoders.
+//&#64;version=4
+study(&quot;TASC 2021.10 - Cycle/Trend Analytics&quot;)
+
+string i_mode = input(&quot;trend&quot;, &quot;Mode&quot;, options = [&quot;cycle&quot;, &quot;trend&quot;])
+
+float cyclePrice = 0.0
+float trendPrice = 0.0
+color c_cyan  = color.new(#00ffff, 20)
+
+if i_mode == &quot;cycle&quot;
+    cyclePrice := sin(360 * bar_index / 30)
+    trendPrice := cyclePrice
+else if i_mode == &quot;trend&quot;
+    cyclePrice := na
+    trendPrice := close
+
+plot(trendPrice - sma(trendPrice, 05), &quot;Osc05&quot;, color.rgb(255, 306 - 10.2 * 05, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 06), &quot;Osc06&quot;, color.rgb(255, 306 - 10.2 * 06, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 07), &quot;Osc07&quot;, color.rgb(255, 306 - 10.2 * 07, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 08), &quot;Osc08&quot;, color.rgb(255, 306 - 10.2 * 08, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 09), &quot;Osc09&quot;, color.rgb(255, 306 - 10.2 * 09, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 10), &quot;Osc10&quot;, color.rgb(255, 306 - 10.2 * 10, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 11), &quot;Osc11&quot;, color.rgb(255, 306 - 10.2 * 11, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 12), &quot;Osc12&quot;, color.rgb(255, 306 - 10.2 * 12, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 13), &quot;Osc13&quot;, color.rgb(255, 306 - 10.2 * 13, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 14), &quot;Osc14&quot;, color.rgb(255, 306 - 10.2 * 14, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 15), &quot;Osc15&quot;, color.rgb(255, 306 - 10.2 * 15, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 16), &quot;Osc16&quot;, color.rgb(255, 306 - 10.2 * 16, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 17), &quot;Osc17&quot;, color.rgb(255, 306 - 10.2 * 17, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 18), &quot;Osc18&quot;, color.rgb(255, 306 - 10.2 * 18, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 19), &quot;Osc19&quot;, color.rgb(255, 306 - 10.2 * 19, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 20), &quot;Osc20&quot;, color.rgb(255, 306 - 10.2 * 20, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 21), &quot;Osc21&quot;, color.rgb(255, 306 - 10.2 * 21, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 22), &quot;Osc22&quot;, color.rgb(255, 306 - 10.2 * 22, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 23), &quot;Osc23&quot;, color.rgb(255, 306 - 10.2 * 23, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 24), &quot;Osc24&quot;, color.rgb(255, 306 - 10.2 * 24, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 25), &quot;Osc25&quot;, color.rgb(255, 306 - 10.2 * 25, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 26), &quot;Osc26&quot;, color.rgb(255, 306 - 10.2 * 26, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 27), &quot;Osc27&quot;, color.rgb(255, 306 - 10.2 * 27, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 28), &quot;Osc28&quot;, color.rgb(255, 306 - 10.2 * 28, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 29), &quot;Osc29&quot;, color.rgb(255, 306 - 10.2 * 29, 0, 0), 2)
+plot(trendPrice - sma(trendPrice, 30), &quot;Osc30&quot;, color.rgb(255, 306 - 10.2 * 30, 0, 0), 2)
+
+plot(cyclePrice, &quot;Cycle Price&quot;, c_cyan, 3)
+plot(sma(cyclePrice, 5) - sma(cyclePrice, 30), &quot;MA delta&quot;, color.green, 3)
+hline(0, &quot;Zero&quot;, color.white)
+</pre>
+
+<p>The Pine code for the MAD indicator presented by John Ehlers in his article in this issue is as follows:</p>
+
+
+<pre>
+//&#64;version=4
+// (C) 2021 John F. Ehlers
+// Translation from EasyLanguage to TradingView's Pine Script by Ricardo Santos, for PineCoders.
+study(&quot;TASC 2021.10 - MAD Moving Average Difference&quot;)
+int i_shortLength = input(8, &quot;Short Length&quot;)
+int i_longLength  = input(23, &quot;Long Length&quot;)
+
+float shortAvg = sma(close, i_shortLength)
+float longAvg  = sma(close, i_longLength)
+float mad = 100 * (shortAvg - longAvg) / longAvg
+
+plot(mad, &quot;MAD&quot;, mad &gt; 0 ? color.lime : color.red, 2)
+hline(0, &quot;Zero&quot;)
+</pre>
+
+<div class="figBorder">
+<img src="images/TT-Tradingview1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 1: TRADINGVIEW. <a href="https://www.tradingview.com/chart/51Oot9eU" target="_parent">https://www.tradingview.com/chart/51Oot9eU</a></p></div>
+
+<div class="figBorder">
+<img src="images/TT-Tradingview2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 2: TRADINGVIEW. <a href="https://www.tradingview.com/x/YmwQ9EM3" target="_parent">https://www.tradingview.com/x/YmwQ9EM3</a></p></div>
+
+
+<p>These indicators are available on TradingView at:
+<a href="https://tradingview.com/u/PineCodersTASC/#published-scripts" target="_parent">tradingview.com/u/PineCodersTASC/#published-scripts</a></p>
+<p class="authorTips">&mdash;TradingView<br>
+<a href="https://www.tradingview.com" target="_parent">https://www.tradingview.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;"><span style="text-transform:lowercase;">e</span>Signal: October 2021</h3></div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;ve provided the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/10/images/code/CycleTrendAnalytics.efs" target="_blank">CycleTrend Analytics.efs</a> and <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/10/images/code/MovingAverageDifferenceIndicator.efs" target="_blank">Moving Average Difference Indicator.efs</a> studies based on the article in this issue by John Ehlers, &ldquo;Cycle/Trend Analytics And The MAD Indicator.&rdquo; These studies, in combination, create a trend indicator that is simple and robust.</p>
+<p>The study contains formula parameters that may be configured through the <em>edit chart</em> window (right-click on the chart and select &ldquo;edit chart&rdquo;). A sample chart is shown in Figure 3.</p>
+    <div class="figBorder">
+<img src="images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 3: eSIGNAL. Here is an example of the studies plotted on a daily chart of SPY. </p></div>
+    
+<p>To discuss this study or download a complete copy of the formula code, please visit the EFS library discussion board forum under the <em>forums</em> link from the support menu at <a href="https://www.esignal.com" target="_parent">www.esignal.com</a> or visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs" target="_parent">www.esignal.com/support/kb/efs</a>. The eSignal formula script (EFS) is also available for copying &amp; pasting below.</p>
+
+<pre>
+/**********************************
+Provided By:  
+Copyright 2019 Intercontinental Exchange, Inc. All Rights Reserved. 
+eSignal is a service mark and/or a registered service mark of Intercontinental Exchange, Inc. 
+in the United States and/or other countries. This sample eSignal Formula Script (EFS) 
+is for educational purposes only. 
+Intercontinental Exchange, Inc. reserves the right to modify and overwrite this EFS file with each new release. 
+
+Description:      
+    Cycle/Trend Analytics And The MAD Indicator
+    by John F. Ehlers
+    
+
+Version:            1.00  08/12/2021
+
+Formula Parameters:                    Default:
+CTMode                                 Cycle
+ 
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+var fpArray = new Array();
+var bInit = false;
+
+function preMain() {
+    setStudyTitle(&quot;Cycle/Trend Analytics&quot;);
+    setCursorLabelName(&quot; &quot;, 0);
+    setCursorLabelName(&quot; &quot;, 1);
+    setPriceStudy(false);
+    setDefaultBarFgColor(Color.RGB(0x00,0x94,0xFF), 0);
+    setDefaultBarFgColor(Color.green, 1);
+    setPlotType( PLOTTYPE_LINE , 0 );
+    setPlotType( PLOTTYPE_LINE , 1 );
+    setDefaultBarThickness(4, 0);
+    setDefaultBarThickness(4, 1);   
+    
+    
+    var x=0;
+    fpArray[x] = new FunctionParameter(&quot;CTMode&quot;, FunctionParameter.STRING);
+	with(fpArray[x++]){
+        addOption(&quot;Cycle&quot;);
+        addOption(&quot;Trend&quot;);    
+        setDefault(&quot;Cycle&quot;);
+    }    
+}
+
+var bVersion = null;
+var xClose = null;
+var xColor2 = [];
+var Osc = [];
+
+function main(CTMode) {
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return; 
+    
+    if ( bInit == false ) { 
+        xClose = close(); 
+        addBand(0, PS_DASH, 1, Color.white, 1);
+        
+        if (CTMode == &quot;Cycle&quot;) {
+            xPrice = efsInternal('Calc_Price');
+        }
+        else xPrice = xClose;
+        
+        Color1 = 255;
+        Color3 = 0;
+        
+        for (i = 2; i &lt;= 27; i++) {
+            xColor2[i] = 306 - 10.2 * (i+3);
+        }
+                        
+        bInit = true; 
+    }      
+    if (getCurrentBarCount() &lt; 30) return;
+
+    for (i = 2; i &lt;= 27; i++){
+        count = i + 3;
+        Osc[i] = xPrice.getValue(0) - sma(count, xPrice, 0);
+        setBarFgColor(Color.RGB(Color1,xColor2[i],Color3), i);
+        setCursorLabelName(&quot;S&quot;+ count, i);
+    }
+
+    if (CTMode == &quot;Cycle&quot;) {
+        Osc[0] = xPrice.getValue(0);
+        Osc[1] = sma(5, xPrice, 0) - sma(30, xPrice, 0)
+    }
+
+    return Osc;        
+}
+
+function Calc_Price(){
+    return (Math.sin(2 * Math.PI * getCurrentBarIndex() / (30)));
+}
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+</pre> 
+
+<pre>
+/**********************************
+Provided By:  
+Copyright 2019 Intercontinental Exchange, Inc. All Rights Reserved. 
+eSignal is a service mark and/or a registered service mark of Intercontinental Exchange, Inc. 
+in the United States and/or other countries. This sample eSignal Formula Script (EFS) 
+is for educational purposes only. 
+Intercontinental Exchange, Inc. reserves the right to modify and overwrite this EFS file with each new release. 
+
+Description:      
+    Cycle/Trend Analytics And The MAD Indicator
+    by John F. Ehlers
+    
+
+Version:            1.00  08/12/2021
+
+Formula Parameters:                    Default:
+ShortLength                            8
+LongLength                             23
+ 
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+var fpArray = new Array();
+var bInit = false;
+
+function preMain() {
+    setStudyTitle(&quot;Moving Average Difference Indicator&quot;);
+    setCursorLabelName(&quot;MAD&quot;, 0);
+    setPriceStudy(false);
+    setDefaultBarFgColor(Color.RGB(0x00,0x94,0xFF), 0);
+    setPlotType( PLOTTYPE_LINE , 0 );
+    
+    
+    var x=0;
+    fpArray[x] = new FunctionParameter(&quot;ShortLength&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1);  
+        setDefault(8);
+    }    
+    fpArray[x] = new FunctionParameter(&quot;LongLength&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1); 
+        setDefault(23);
+    }   
+}
+
+var bVersion = null;
+var xClose = null;
+var xMAD = null;
+
+function main(ShortLength, LongLength) {
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return; 
+    
+    if ( bInit == false ) { 
+        xClose = close(); 
+        addBand(0, PS_DASH, 1, Color.grey, 1);
+        xMAD = efsInternal('Calc_MAD', xClose, ShortLength, LongLength);
+                        
+        bInit = true; 
+    }      
+    
+    if (getCurrentBarCount() &lt; LongLength || getCurrentBarCount() &lt; ShortLength) return;
+
+
+    return xMAD.getValue(0);        
+}
+
+function Calc_MAD(xClose, ShortLength, LongLength){
+    ret = 100 * (sma(ShortLength, xClose) - sma(LongLength, xClose)) / sma(LongLength, xClose);
+    return ret;
+}
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+ </pre>
+
+<p class="authorTips">&mdash;Eric Lippert<br>
+eSignal, an Interactive Data company<br>
+800 779-6555, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a>
+</p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: October 2021</h3></div>
+<p>We have added John Ehlers&rsquo; MAD indicator into Wealth-Lab 7&rsquo;s recent build for the convenience of our users. This gives you the ability to quickly prototype various trading systems based on the indicator. For example, Figure 4 shows a classic trading system&mdash;the MACD (now MAD) crossing above the zero line is often considered a bullish signal, and vice versa.</p>
+    <div class="figBorder">
+<img src="images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 4: WEALTH-LAB. This example chart shows recent trades taken by the system if applied to a daily chart of SPY.</p></div>
+    
+<p><em>System rules</em></p>
+<ul><li>Enter when the MAD indicator crosses over its zero line</li>
+<li>Exit when the MAD indicator crosses under its zero line</li></ul>
+
+<p>Figure 5 shows an example of applying Ehlers&rsquo; new MAD indicator in Wealth-Lab&rsquo;s building blocks. In this way, no coding is needed when you use our building blocks to set up a strategy.</p>
+
+<div class="figBorder">
+<img src="images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 5: WEALTH-LAB. This demonstrates setting up the system using Wealth-Lab 7&rsquo;s building blocks.</p></div>
+<p class="authorTips">&mdash;Gene Geren, Robert Sucher<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: October 2021</h3></div>
+<p>John Ehlers&rsquo; MAD indicator, as described in his article in this issue, &ldquo;Cycle/Trend Analytics And The MAD Indicator,&rdquo; can be easily implemented in NeuroShell Trader by combining some of NeuroShell Trader&rsquo;s 800+ indicators.</p>
+<p>To implement the indicators, select <em>new indicator</em> from the <em>insert</em> menu and use the indicator wizard to create the following indicator:</p>
+    <pre>Divide( Avg1-Avg2( Close, 20, 40), Avg( Close, 40) )</pre>
+<p>A sample chart displaying the indicator is shown in Figure 6.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 6: NEUROSHELL TRADER. This NeuroShell Trader chart shows the MAD indicator applied to MSFT.</p></div>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p> 
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+
+
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: October 2021</h3></div>
+<p>The indicators described in John Ehlers&rsquo; article in this issue, &ldquo;Cycle/Trend Analytics And The MAD Indicator,&rdquo; are available for download at the following links for NinjaTrader 8 and for NinjaTrader 7:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/October2021SCNT8.zip" target="_blank">www.ninjatrader.com/SC/October2021SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7: </strong><a href="https://www.ninjatrader.com/SC/October2021SCNT7.zip">www.ninjatrader.com/SC/October2021SCNT7.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicators into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import in NinjaTrader 7, from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.
+</p>
+<p>You can review the source code for these indicators in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control center window and selecting the CycleTrendAnalytics or MAD file. You can review the indicators&rsquo; source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the control center window and selecting the CycleTrendAnalytics or MAD file.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, which provides you with the highest performance possible.</p>
+<p>A sample chart displaying these indicators is shown in Figure 7.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 7: NINJATRADER. This daily chart shows the EMINI S&amp;P 500 futures continuous contract with the cycle/trend analytics indicator in the topmost pane set to &ldquo;cycle,&rdquo; followed by the cycle/trend analytics set to &ldquo;trend&rdquo; in the next pane down, and finally the MAD indicator in the bottommost pane from 12/1/2019 through 7/2/2021.</p></div>
+<p class="authorTips">&mdash;Kate Windheuser<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Optuma.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Optuma: October 2021</h3></div>
+<p>The <em>cycle and trend modes</em> and MAD oscillator discussed in John Ehlers&rsquo; article in this issue (&ldquo;Cycle/Trend Analytics And The MAD Indicator&rdquo;) will be added to Optuma&rsquo;s Ehlers Tool Group (<a href="https://www.optuma.com/ehlers" target="_parent">www.optuma.com/ehlers</a>) and will be available to all clients. Here is the scripting code for the MAD oscillator:</p>
+<pre>//MvgAv Inputs;
+#$Short = 8;
+#$Long = 23;
+//Calculate MAD;
+S1 = MA(BARS=$Short, CALC=Close);
+L1 = MA(BARS=$Long, CALC=Close);
+100 * ((S1 - L1)/L1)</pre>
+<div class="figBorder">
+<img src="images/TT-Optuma.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 8: OPTUMA. This sample chart displays John Ehlers&rsquo; MAD indicator on S&amp;P 500 emini futures.</p></div>
+<p class="authorTips">&mdash;support@optuma.com<br>
+<a href="https://www.optuma.com" target="_parent">www.optuma.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Aiq: October 2021</h3></div>
+<p>The importable AIQ EDS file based on John Ehlers&rsquo; article in this issue, &ldquo;Cycle/Trend Analysis And The MAD Indicator,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also available below. Code for the author&rsquo;s indicator is set up in the AIQ code file.</p>
+<pre>
+!CYCLE/TREND ANALYTICS AND THE MAD INDICATOR
+!Author: John F. Ehlers, TASC Oct 2021
+!Coded by: Richard Denning, 8/15/2021
+
+!MAD (Moving Average Difference) Indicator 
+!(C) 2021 John F. Ehler
+
+Shortlength is 8.
+LongLength is 23.
+MAD is 100*(simpleavg([Close], ShortLength) - 
+    simpleavg([Close], LongLength)) / 
+    simpleavg([Close], LongLength).
+    </pre>
+<p>Figure 9 shows the MAD indicator on a chart of Tesla, Inc. (TSLA).</p>
+<div class="figBorder">
+<img src="images/TT-Aiq.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 9: AIQ. This shows a chart of Tesla, Inc. with the MAD indicator applied.</p></div>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for AIQ Systems</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradersStudio: October 2021</h3></div>
+<p>The importable TradersStudio file based on John Ehlers&rsquo; article in this issue, &ldquo;Cycle/Trend Analytics And The MAD Indicator,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also available below.</p> 
+<p>Code for the author&rsquo;s indicators is provided in the following files:</p>
+
+<ul style="list-style-type: none;">
+    <li><strong>Function EHLERS_MAD:</strong> Computes the MAD indicator</li>
+    <li><strong>Indicator plot EHLERS_MAD_IND:</strong> Plots the MAD indicator on a chart</li>
+    </ul>
+<pre>
+'CYCLE/TREND ANALYTICS AND THE MAD INDICATOR
+'Author: John F. Ehlers, TASC Oct 2021
+'Coded by: Richard Denning, 8/15/2021
+
+'MAD (Moving Average Difference) Indicator 
+'(C) 2021 John F. Ehler
+Function EHLERS_MAD(ShortLength,LongLength)
+    'Shortlength=8
+    'LongLength=23
+EHLERS_MAD = 100*(Average(Close, ShortLength) - Average(Close, LongLength)) / Average(Close, LongLength)
+End Function
+</pre>
+<p>Figure 10 shows the indicators on a chart of Amazon Inc. (AMZN) from 2012 to 2014.</p>
+<div class="figBorder">
+<img src="images/TT-Tradersstudio.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 10: TRADERSSTUDIO. The MAD indicator is shown on a chart of Microsoft Inc (MSFT) during 2011&ndash;2012.</p></div>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for TradersStudio</p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: October 2021</h3></div>
+<p>In his article in this issue, &ldquo;Cycle/Trend Analytics And The MAD Indicator,&rdquo; John Ehlers proposes a new trend indicator, the MAD (moving average difference) oscillator. As the name suggests, the indicator is just the difference of two moving averages normalized to +/-100. The code in C for Zorro is as follows:</p>
+<pre>
+var MAD(vars Data, int ShortPeriod, int LongPeriod) 
+{ 
+	return 100*(SMA(Data,ShortPeriod)/SMA(Data,LongPeriod)-1.);
+}
+</pre>
+<p>According to Ehlers, the two periods should differ by half the period of the dominant cycle in the data. This ensures that the indicator output is in phase with the dominant cycle, thus indicating its trend with no lag. For putting that to the test, we can apply an SMA 5-20 difference to a 30-period sine wave. The code for this is as follows:</p>
+<pre>
+function run()
+{
+   MaxBars = 200;
+   asset(&quot;&quot;); // dummy asset
+   ColorUp = ColorDn = 0; // don't plot a price curve
+   
+   vars Sine = series(genSine(30,30));
+   var Diff = SMA(Sine,5) - SMA(Sine,20);
+   plot(&quot;Sine&quot;,Sine[0]-0.5,LINE,BLUE);
+   plot(&quot;MAD&quot;,Diff,LINE,RED);
+}
+</pre>
+<p>The resulting chart is shown in Figure 11. The chart displays the SMA 5-20 difference (red) applied to a 30-period sine wave (blue). We can see that the red difference is indeed exactly in sync with the blue sine wave.</p>
+<div class="figBorder">
+<img src="images/TT-Zorro1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 11: ZORRO PROJECT. The chart displays the SMA 5-20 difference (red) applied to a 30-period sine wave (blue). We can see that the red difference is exactly in sync with the blue sine wave.</p></div>
+<p>In our tests this seems to work only with the selected 5-20-30 periods from Ehlers&rsquo; code. We tried other SMA periods like 10 and 25, but the red curve gets a phase shift although the difference is the same. Maybe Ehlers will shed some light on that phenomenon in a future article.</p>
+<p>Here&rsquo;s the code to replicate his chart with SPY data from the STOOQ website:</p>
+<pre>
+void run()
+{
+  StartDate = 20191201;
+  EndDate = 20210701;
+  BarPeriod = 1440;
+
+  assetAdd(&quot;SPY&quot;,&quot;STOOQ:*&quot;);
+  asset(&quot;SPY&quot;);
+  plot(&quot;MAD&quot;,MAD(seriesC(),8,23),NEW,RED); 
+}
+</pre>
+<p>The resulting chart in Figure 12 matches Ehlers&rsquo; example. Note that his normalization by dividing through the longer SMA introduces a small phase shift. So the chart would look slightly different with a plain SMA difference.</p>
+  <div class="figBorder">
+<img src="images/TT-Zorro2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 12: ZORRO PROJECT. This example SPY chart replicates the chart in John Ehlers&rsquo; article in this issue.  </p></div>  
+ <p>In his next article, Ehlers indicates that he will show examples of the indicator, so we will wait until then before testing it in a trading system.</p>   
+ <p>The MAD oscillator and test script can be downloaded from the 2021 script repository on <a href="https://financial-hacker.com" target="_parent">https://financial-hacker.com</a>. The Zorro platform can be downloaded from <a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a>.</p>   
+  <p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a></p> 
+  
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: October 2021</h3></div>
+<p>In his article in this issue, &ldquo;Cycle/Trend Analytics And The MAD Indicator,&rdquo; John Ehlers walks us through the development of his moving average difference (MAD) indicator.</p>
+<p>The mathematical steps and the charting techniques used to illustrate the steps are both informative and colorful.</p>
+<p>First, I&rsquo;ll show a set of &ldquo;price minus SMA-of-price&rdquo; oscillators where the length of the SMA varies from 5 to 30. Figure 13 shows the cycle mode and Figure 14 shows the trend mode.</p>
+<div class="figBorder">
+<img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 13: EXCEL, CYCLE MODE ANALYTIC. This displays the SMA oscillators with lengths from 5 to 30 using a 30-bar sine wave as input.</p></div>
+<div class="figBorder">
+<img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 14: EXCEL, TREND MODE ANALYTIC. This shows the same set of SMA oscillators using the closing price as input.</p></div>
+<p>Ehlers notes that when you substitute the close price as the input, &ldquo;the separation between the reddest line and the yellowest line reflects the strength of the trend.&rdquo; Further, &ldquo;When the red line is on top, the trend is up and when the red line is on the bottom, the trend is down.&rdquo; This leads us to Ehlers&rsquo; MAD indicator as the difference between two simple moving averages (Figure 15).</p>
+<div class="figBorder">
+<img src="images/TT-Excel3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 15: EXCEL, MAD INDICATOR. Here you can see the MAD indicator plotted using lengths 8 and 23.</p></div>
+<p>A key point of the development of MAD is the choice of lengths for the shorter and longer moving averages.</p>
+<p>Ehlers has a couple of comments on this topic:</p>
+<ul>
+   <li>MAD becomes smoother as the length of the shorter moving average becomes longer.</li> 
+    <li>If the dominant cycle of the input is known, then the difference between the averaging lengths should be approximately half the period of the dominant cycle.</li>
+    <li>If the dominant cycle is unknown, make the length of the longer average twice the length of the shorter average.</li>
+    </ul>
+  <p>Finally, a bit of visual perspective: See Figure 16.</p>  
+   <div class="figBorder">
+<img src="images/TT-Excel4.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 16: EXCEL, MAD INDICATOR. This chart demonstrates the trend mode oscillator and MAD indicator.</p></div> 
+    <p><em><strong>To download this spreadsheet:</strong></em> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/10/images/code/MadIndicator.xlsm">here</a>. To successfully download it, follow these steps:</p>  
+ <ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/10/images/code/MadIndicator.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>   
+  <p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>  
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item11">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: October 2021</h3></div>
+<p>In his article &ldquo;Cycle/Trend Analytics And The MAD Indicator,&rdquo; author John Ehlers discusses how his research into characteristics of cycles in market data led to the development of a new trend indicator called the <em>moving average difference</em> (MAD). First, the two modes (&ldquo;cycle&rdquo; and &ldquo;trend&rdquo;) of the cycle/trend analytics indicator provide a foundational context for the MAD oscillator. Essentially, the MAD oscillator is a difference between two simple moving averages with varying lengths. The difference in lengths should be approximately half the period of the dominant cycle in the data. If unknown, it is suggested to make the length of the longer moving average twice that of the shorter one.</p>
+<pre>
+Indicator:  TASC AUG 2021 MAB
+// TASC OCT 2021
+// Cycle/Trend Analytics
+// (C) 2021 John F. Ehlers
+
+Inputs:
+	CTMode(&quot;trend&quot;); // &quot;cycle&quot; or &quot;trend&quot;
+	
+Vars:
+	Price(0),
+	Length(0),
+	NormalLength(0),
+	Color1(0),
+	Color2(0),
+	Color3(0);
+	
+Arrays:
+	Osc[50](0);
+	
+Plot1(0,&quot;&quot;,white, 1, 1);
+	Price = Close;
+	
+If CTMode = &quot;cycle&quot; Then 
+Begin
+	Price = Sine(360*CurrentBar / 30);
+	Plot2(Price,&quot;&quot;, cyan, 4, 4);
+	Plot3(Average(Price, 5) - Average(Price, 30),&quot;&quot;, green, 4, 4);
+End;
+
+Color1 = 255;
+Color3 = 0;
+For Length = 5 to 30 Begin
+	Osc[Length] = Price - Average(Price, Length);
+End;
+
+For Length = 5 to 30 
+Begin
+	Color2 = 306 - 10.2*Length;
+	//If Length = 3 Then Plot3[0](Osc[Length], &quot;S3&quot;, RGB(Color1, 
+	//Color2, Color3),0,4);
+	If Length = 4 Then Plot4[0](Osc[Length], &quot;S4&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 5 Then Plot5[0](Osc[Length], &quot;S5&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 6 Then Plot6[0](Osc[Length], &quot;S6&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 7 Then Plot7[0](Osc[Length], &quot;S7&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 8 Then Plot8[0](Osc[Length], &quot;S8&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 9 Then Plot9[0](Osc[Length], &quot;S9&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 10 Then Plot10[0](Osc[Length], &quot;S10&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 11 Then Plot11[0](Osc[Length], &quot;S11&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 12 Then Plot12[0](Osc[Length], &quot;S12&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 13 Then Plot13[0](Osc[Length], &quot;S13&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 14 Then Plot14[0](Osc[Length], &quot;S14&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 15 Then Plot15[0](Osc[Length], &quot;S15&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 16 Then Plot16[0](Osc[Length], &quot;S16&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 17 Then Plot17[0](Osc[Length], &quot;S17&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 18 Then Plot18[0](Osc[Length], &quot;S18&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 19 Then Plot19[0](Osc[Length], &quot;S19&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 20 Then Plot20[0](Osc[Length], &quot;S20&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 21 Then Plot21[0](Osc[Length], &quot;S21&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 22 Then Plot22[0](Osc[Length], &quot;S22&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 23 Then Plot23[0](Osc[Length], &quot;S23&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 24 Then Plot24[0](Osc[Length], &quot;S24&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 25 Then Plot25[0](Osc[Length], &quot;S25&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 26 Then Plot26[0](Osc[Length], &quot;S26&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 27 Then Plot27[0](Osc[Length], &quot;S27&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 28 Then Plot28[0](Osc[Length], &quot;S28&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 29 Then Plot29[0](Osc[Length], &quot;S29&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+	If Length = 30 Then Plot30[0](Osc[Length], &quot;S30&quot;, RGB(Color1, 
+	 Color2, Color3),0,4);
+End
+
+ 
+
+Indicator:  TASC OCT 2021 MAD
+// TASC AUG 2021
+// MAD (Moving Average Difference) Indicator
+// (C) 2021 John F. Ehlers
+
+Inputs:
+	ShortLength(8),
+	LongLength(23);
+	
+Vars:
+	MAD(0);
+	MAD = 100*(Average(Close, 
+	 ShortLength) - Average(Close, 
+	 LongLength)) / Average(Close, 
+	 LongLength);
+	 
+Plot1(MAD, &quot;&quot;, red, 4, 4);
+Plot2(0,&quot;&quot;, white, 1, 1)
+</pre>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 17: TRADESTATION. A daily chart of the continuous E-mini S&amp;P 500 Index with the indicators applied.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice or strategy is being made, given or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+
+
+
+
+
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+    
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the October 2021 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2021, Technical Analysis, Inc.</p>
+
+</body>
+</html>

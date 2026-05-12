@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: Backwardation, Positioning, And Momentum: A Recipe For High-Conviction Trades by Alfred Francois Tagher. Contributions from: TradeStation; MetaQuotes; Wealth-Lab.com; NinjaTrader; TradingView; Neuroshell Trader; Optuma; The Zorro Platform.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - OCTOBER 2023</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">October 2023</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2023/10/images/TT-Tagher.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Alfred Fran&ccedil;ois Tagher&rsquo;s article in this issue, &ldquo;Backwardation, Positioning, And Momentum: A Recipe For High-Conviction Trades.&rdquo; Here, we present the October 2023 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: October 2023</a></li>
+  <li><a href="#item2">MetaQuotes: October 2023</a></li>
+  <li><a href="#item3">Wealth-Lab.com: October 2023</a></li>
+  <li><a href="#item4">NinjaTrader: October 2023</a></li>
+  <li><a href="#item5">TradingView: October 2023</a></li>
+  <li><a href="#item6">Neuroshell Trader: October 2023</a></li>
+  <li><a href="#item7">Optuma: October 2023</a></li>
+  <li><a href="#item8">The Zorro Platform: October 2023</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-New.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: October 2023</h3></div>
+<p>In his article in this issue, &ldquo;Backwardation, Positioning, And Momentum: A Recipe For High-Conviction Trades,&rdquo; author Alfred Fran&ccedil;ois Tagher presents a Commitments of Traders (COT) commercials indicator that is a 26-week fast stochastic (%K) of the commercial open interest values. These values are disseminated weekly through the Commitments of Traders report.</p>
+<p>By default, the indicator presented here will only use the futures report. To use the futures and options report, set the input <em>UseFuturesAndOptionsReport</em> to <em>true</em>. This study is intended to be applied to futures symbols for which there is Commitment of Traders data</p>
+<pre>
+<b>Indicator: COT Commercials</b>
+
+// TASC OCT 2023
+// Indicator: COT Commercials 
+// Alfred Fran&ccedil;ois Tagher 
+
+inputs: 
+	UseFuturesAndOptionsReport( false ),
+	DoComms( true ), 
+	DoSpecs( false ), 
+	Lkbk( 26 ), 
+	OB( 90 ),
+	OS( 10 ), 
+	NonExtremeColor( Blue ),
+	ExtremeColor( Red );
+	
+variables: 
+	double CommNet(0), 
+	double SpecNet(0), 
+	double COTCommIdx(0), 
+	double COTSpecsIdx(0),
+    double CommLong( 0 ),
+	double oCommLongErr( 0 ),
+	double CommShort( 0 ),
+	double oCommShortErr( 0 ),
+	double SpecLong( 0 ),
+	double oSpecLongErr( 0 ),
+	double SpecShort( 0 ),
+	double oSpecShortErr( 0 );
+
+once
+begin
+	if Category &gt; 0 then
+		RaiseRuntimeError(
+		 &quot;Study applies to futures symbols only.&quot;);
+end;
+
+if UseFuturesAndOptionsReport then
+begin
+	CommLong = FundValue( &quot;COTC-12&quot;, 
+	 0, oCommLongErr );
+	CommShort = FundValue( &quot;COTC-13&quot;, 
+	 0, oCommShortErr);
+	SpecLong = FundValue( &quot;COTC-16&quot;, 
+	 0, oSpecLongErr ); 
+	SpecShort = FundValue( &quot;COTC-17&quot;, 
+	 0, oSpecShortErr );
+end
+else
+begin
+	CommLong = FundValue( &quot;COTF-12&quot;, 
+	 0, oCommLongErr );
+	CommShort = FundValue( &quot;COTF-13&quot;, 
+	 0, oCommShortErr);
+	SpecLong = FundValue( &quot;COTF-16&quot;, 
+	 0, oSpecLongErr ); 
+	SpecShort = FundValue( &quot;COTF-17&quot;, 
+	 0, oSpecShortErr );
+end;
+
+if oCommLongErr = fdrOk and oCommShortErr = fdrOk then
+begin
+	CommNet = CommLong - CommShort;
+end;
+
+if oSpecLongErr = fdrOk and oSpecShortErr = fdrOk then
+begin
+	SpecNet = SpecLong - SpecShort;
+end;
+
+if DoComms then 
+begin
+	Value1 = CommNet - Lowest(CommNet, Lkbk);
+	Value2 = Highest(CommNet, Lkbk)
+	 - Lowest(CommNet, Lkbk);
+
+	if Value2 &lt;&gt; 0 then 
+		CotCommIdx = 100*(Value1/Value2)
+	else
+		CotCommIdx = 1;
+		
+	Plot1(CotCommIdx, &quot;CotCommIdx&quot;);
+
+	if CotCommIdx &gt; OB or CotCommIdx &lt; OS then
+		SetPlotColor(1, ExtremeColor)
+	else
+		SetPlotColor(1, NonExtremeColor);	
+end;
+
+if DoSpecs then 
+begin
+	Value1 = SpecNet - Lowest(SpecNet, Lkbk);
+	Value2 = Highest(SpecNet, Lkbk) 
+	 - Lowest(SpecNet, Lkbk);
+
+	if Value2 &lt;&gt; 0 then 
+		CotSpecsIdx = 100 * (Value1/Value2) 
+	else
+		CotSpecsIdx = 1;
+	
+	Plot4(CotSpecsIdx, &quot;CotSpecsIdx&quot;);
+
+	
+	if CotSpecsIdx &gt; OB or CotSpecsIdx &lt; OS then
+		SetPlotColor(4, ExtremeColor)
+	else
+		SetPlotColor(4, NonExtremeColor);
+end;
+
+Plot2(OB, &quot;OB&quot;);
+Plot3(OS, &quot;OS&quot;);
+</pre>
+<p>A sample chart is shown in Figure 1.</p> 
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. Here is a TradeStation continuous weekly chart of corn futures showing 2021, 2022, and 2023 with the COT commercials indicator applied.</p></div>
+    
+    <p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">MetaQuotes: October 2023</h3></div>
+<p>Here is code for use in MetaQuotes based on the article in this issue, &ldquo;Backwardation, Positioning, And Momentum: A Recipe For High-Conviction Trades&rdquo; by Alfred Fran&ccedil;ois Tagher.</p>
+<pre>
+//+------------------------------------------------------------------+
+//|                                              COT Commercials.mq5 |
+//|                            Copyright &copy; October 2023, Shaun Bosch |
+//|                                              shadavbos&#64;gmail.com |
+//+------------------------------------------------------------------+
+#property copyright &quot;Copyright &copy; October 2023, Shaun Bosch&quot;
+#property link      &quot;shadavbos&#64;gmail.com&quot;
+#property version   &quot;1.00&quot;
+#property description   &quot;by Alfred Fran&ccedil;ois Tagher (TASC Magazine October 2023)&quot;
+#property indicator_separate_window
+#property indicator_buffers 2
+#property indicator_plots   1
+#property indicator_maximum 110
+#property indicator_minimum -10
+//--- plot COT Index
+#property indicator_label1  &quot;COT Index&quot;
+#property indicator_type1   DRAW_COLOR_LINE
+#property indicator_color1  clrDodgerBlue;clrRed
+#property indicator_style1  STYLE_SOLID
+#property indicator_width1  2
+//--- enumerations
+enum ENUM_SOURCE
+  {
+   SOURCE_HIGH,         // Use High Price Data
+   SOURCE_OPEN          // Use Open Price Data
+  };
+//--- input parameters
+input ENUM_SOURCE    inp_source_list      = SOURCE_HIGH;       // Source List
+input int            inp_period           = 26;                // Period
+input double         inp_overbought       = 90.0;              // Overbought Level
+input double         inp_oversold         = 10.0;              // Oversold Level
+//--- indicator buffers
+double               cot_line[];
+double               cot_colors[];
+//--- indicator variables
+int                  period;
+double               overbought;
+double               oversold;
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+  {
+//--- check input parameters
+   period = inp_period &lt; 1 ? 1 : inp_period;
+   overbought = inp_overbought &lt; 50.0 ? 50.0 : inp_overbought &gt; 100.0 ? 100.0 : NormalizeDouble(inp_overbought, 1);
+   oversold = inp_oversold &lt; 0.0 ? 0.0 : inp_oversold &gt; 50.0 ? 50.0 : NormalizeDouble(inp_oversold, 1);
+//--- indicator buffers mapping
+   SetIndexBuffer(0, cot_line, INDICATOR_DATA);
+   SetIndexBuffer(1, cot_colors, INDICATOR_COLOR_INDEX);
+//--- accuracy of drawing of indicator values
+   IndicatorSetInteger(INDICATOR_DIGITS, 1);
+//--- set indicator name display
+   string src_name = inp_source_list == SOURCE_HIGH ? &quot;High Price Data&quot; : &quot;Open Price Data&quot;;
+   string short_name = &quot;COT Index (&quot; + src_name + &quot;, &quot; + IntegerToString(period) + &quot;, &quot; + DoubleToString(overbought, 1) + &quot;, &quot; + DoubleToString(oversold, 1) + &quot;)&quot;;
+   IndicatorSetString(INDICATOR_SHORTNAME, short_name);
+//--- set indicator levels
+   IndicatorSetInteger(INDICATOR_LEVELS, 2);
+   IndicatorSetDouble(INDICATOR_LEVELVALUE, 0, overbought);
+   IndicatorSetDouble(INDICATOR_LEVELVALUE, 1, oversold);
+//--- an empty value for plotting, for which there is no drawing
+   PlotIndexSetDouble(0, PLOT_EMPTY_VALUE, EMPTY_VALUE);
+//--- successful initialization
+   return(INIT_SUCCEEDED);
+  }
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const datetime &amp;time[],
+                const double &amp;open[],
+                const double &amp;high[],
+                const double &amp;low[],
+                const double &amp;close[],
+                const long &amp;tick_volume[],
+                const long &amp;volume[],
+                const int &amp;spread[])
+  {
+//--- populate COT buffers
+   wi_COT(rates_total, prev_calculated, inp_source_list, period, open, high, cot_line);
+//--- bar index start
+   int bar_index;
+   if(prev_calculated == 0)
+      bar_index = 0;
+   else
+      bar_index = prev_calculated - 1;
+//--- main loop
+   for(int i = bar_index; i &lt; rates_total &amp;&amp; !_StopFlag; i++)
+     {
+      if(i &lt; period)
+         cot_colors[i] = EMPTY_VALUE;
+      else
+         cot_colors[i] = cot_line[i] &gt; overbought || cot_line[i] &lt; oversold ? 1.0 : 0.0;
+     }
+//--- return value of prev_calculated for next call
+   return(rates_total);
+  }
+//+------------------------------------------------------------------+
+//| Commitments Of Traders Commercials (COT)                         |
+//+------------------------------------------------------------------+
+//--- by Alfred Fran&ccedil;ois Tagher (TASC Magazine October 2023)
+//         //--- System bar_index references:
+int wi_COT(const int rates_total,
+           const int prev_calculated,
+           //--- Input variables and arrays:
+           const ENUM_SOURCE src, // Source Data
+           const int prd, // Period (min val: 1; default val: 26)
+           const double &amp;open[], // Open Price
+           const double &amp;high[], // High Price
+           //--- Output arrays:
+           double &amp;result[])
+  {
+//--- bar index start
+   int bar_index;
+   if(prev_calculated == 0)
+      bar_index = 0;
+   else
+      bar_index = prev_calculated - 1;
+//--- main loop
+   for(int i = bar_index; i &lt; rates_total &amp;&amp; !_StopFlag; i++)
+     {
+      if(i &lt; prd)
+         result[i] = EMPTY_VALUE;
+      else
+        {
+         if(src == SOURCE_OPEN)
+           {
+            double hv = open[i], lv = open[i];
+            for(int j = 0; j &lt; prd; j++)
+              {
+               hv = open[i - j] &gt; hv ? open[i - j] : hv;
+               lv = open[i - j] &lt; lv ? open[i - j] : lv;
+              }
+            double value1 = open[i] - lv;
+            double value2 = hv - lv;
+            result[i] = value2 != 0.0 ? 100.0 * (value1 / value2) : 1.0;
+           }
+         if(src == SOURCE_HIGH)
+           {
+            double hv = high[i], lv = high[i];
+            for(int j = 0; j &lt; prd; j++)
+              {
+               hv = high[i - j] &gt; hv ? high[i - j] : hv;
+               lv = high[i - j] &lt; lv ? high[i - j] : lv;
+              }
+            double value1 = high[i] - lv;
+            double value2 = hv - lv;
+            result[i] = value2 != 0.0 ? 100.0 * (value1 / value2) : 1.0;
+           }
+        }
+     }
+   return(rates_total);
+  }
+//+------------------------------------------------------------------+
+</pre>
+<div class="figBorder">
+<img src="images/TT-Metaquotes1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: METAQUOTES INPUT TAB</p></div>
+<div class="figBorder">
+<img src="images/TT-Metaquotes2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: METAQUOTES</p></div>
+<div class="figBorder">
+<img src="images/TT-Metaquotes3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: METAQUOTES</p></div>
+<p class="authorTips">&mdash;Shaun Bosch<br>
+<a href="mailto:shadavbos@gmail.com">shadavbos@gmail.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: October 2023</h3></div> 
+<p>Wealth-Lab&rsquo;s extension package called &ldquo;Data Extensions&rdquo; adds new capabilities designed to bring Commitments of Traders data in both new and legacy CFTC formats to Wealth-Lab users. If used together with the <strong>Quandl</strong> historical data provider, a companion built-in strategy called &ldquo;Extremes in Commitments of Traders&rdquo; plots all COT data for a supported futures symbol, including the open interest. And of course it comes with trading rules designed to help backtest buys and sells according to extremes in the positions of commercial traders. This is especially interesting, since Alfred Fran&ccedil;ois Tagher&rsquo;s article in this issue touches on the idea of exploiting extreme readings in the Commitments of Traders data.</p>
+<p>To illustrate Tagher&rsquo;s 26-week fast stochastic indicator of the COT commercials data, we created the code shown here and ran it on the symbol <em>CFTC/088691_FO_L_ALL</em>. You can see the results in Figure 5. With the &ldquo;Quandl&rdquo; provider (now a Nasdaq data service) installed, that makes Wealth-Lab download and plot the COT data for CMX gold in legacy format. The green line plotted at the bottom pane reflects the oscillator with its overbought and oversold thresholds.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: WEALTH-LAB. The custom fast stochastic indicator is applied to a weekly COT chart of gold. The CFTC data is provided by Quandl.</p></div>
+<pre>
+using WealthLab.Backtest;
+using System;
+using WealthLab.Core;
+using WealthLab.Data;
+using WealthLab.Indicators;
+using System.Collections.Generic;
+using WealthLab.DataExtensions;
+
+namespace WealthScript1 
+{
+    public class MyStrategy : UserStrategyBase
+    {
+        public override void Initialize(BarHistory bars)
+        {
+			/* Commitment of Traders - Gold */
+			q = QuandlIndicator.Series(bars, &quot;CFTC&quot;, &quot;088691_FO_L_ALL&quot;);
+			b = GetHistoryUnsynched(&quot;CFTC/088691_FO_L_ALL&quot;, HistoryScale.Daily);
+			netCommercials = b.NamedSeries[&quot;Commercial Long&quot;] - b.NamedSeries[&quot;Commercial Short&quot;];
+			netCommercials = TimeSeriesSynchronizer.Synchronize(netCommercials, bars);
+			_high = Highest.Series(netCommercials, lookback);
+			_low = Lowest.Series(netCommercials, lookback);
+
+			TimeSeries Value1 = netCommercials - _low;
+			TimeSeries Value2 = _high - _low;
+			TimeSeries CotCommIdx = new TimeSeries( netCommercials.DateTimes );
+			for (int i = 0; i &lt; netCommercials.Count; i++)
+			{
+				if( Value2[i] != 0 )
+					CotCommIdx[i] = 100 * (Value1[i] / Value2[i]);
+				else 
+					CotCommIdx[i] = 1;
+			}
+
+			PlotTimeSeries( netCommercials, &quot;Net Commercials&quot;, &quot;NC&quot;, WLColor.Gray, PlotStyle.HistogramTwoColor);
+			PlotTimeSeries( CotCommIdx, &quot;CotCommIdx&quot;, &quot;cot&quot;, WLColor.LightGreen, PlotStyle.ThickLine);
+			DrawHorzLine( OS, WLColor.Red, 2, LineStyle.Solid, &quot;cot&quot;);
+			DrawHorzLine( OB, WLColor.Blue, 2, LineStyle.Solid, &quot;cot&quot;);
+		}
+
+        public override void Execute(BarHistory bars, int idx){}
+
+        /* declare private variables below */
+		QuandlIndicator q;
+		BarHistory b;
+		TimeSeries netCommercials, _high, _low;
+		int lookback = 26, OB = 90, OS = 10;
+	}
+}
+</pre>
+<p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: October 2023</h3></div>
+<p>The COT commercials indicator, which is presented in Alfred Fran&ccedil;ois Tagher&rsquo;s article in this issue titled &ldquo;Backwardation, Positioning, And Momentum: A Recipe For High-Conviction Trades,&rdquo; is available for download at the following link for NinjaTrader 8:</p>
+    <ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/Oct2023SCNT8.zip" target="_blank">www.ninjatrader.com/SC/Oct2023SCNT8.zip</a></li>
+</ul>  
+ <p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>   
+  <p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the file.</p>  
+  <p>A sample chart displaying the indicator is shown in Figure 6.</p>  
+  <div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: NINJATRADER. A weekly chart of the Sept 2023 contract of MES is shown with the COT index and the commercials indicator.</p></div> 
+ <p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+ <p class="authorTips">&mdash;NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>   
+    
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/TradingView.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: October 2023</h3></div>
+<p>Here is TradingView Pine Script code implementing the COT commercials indicator discussed in the article in this issue by Alfred Fran&ccedil;ois Tagher, titled &ldquo;Backwardation, Positioning, And Momentum: A Recipe For High-Conviction Trades.&rdquo;</p>
+<pre>
+//  TASC Issue: October 2023 - Vol. 41, Issue 11
+//     Article: Following The Smart Money
+//              Backwardation, Positioning, And Momentum: 
+//              A Recipe For High-Conviction Trades
+//  Article By: Alfred Fran&ccedil;ois Tagher
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//&#64;version=5
+string title  = 'TASC 2023.10 COT Commercials Indicator'
+string stitle = 'COTCI'
+indicator(title, stitle, false)
+
+
+import TradingView/LibraryCOT/2 as cot
+
+
+if not (timeframe.isweekly)
+    runtime.error('This strategy is designed for a weekly bar')
+
+
+//#region   Inputs:
+string doCommsTooltip = 'Use the data reported in the legacy format '+
+     'report for the activity of the commercial traders/hedgers.'
+string doSpecsTooltip = 'Use the data reported for the activity of ' +
+     'noncommercial traders (speculator).'
+bool doComms  = input.bool(true, 'Do Comms?', tooltip=doCommsTooltip)
+bool doSpecs  = input.bool(false, 'Do Specs?', tooltip=doSpecsTooltip)
+int lbPeriod  = input.int(26, 'Lookback Period:', 1)
+float obLevel = input.float(90.0, 'Overbought Level:', 0.01, 99.9)
+float osLevel = input.float(10.0, 'Oversold Level:', 0.01, 99.9)
+//#endregion
+
+
+//#region   Functions:
+COT_net_position (string metric, simple bool repaint=true) =&gt;
+    idNcomShort = cot.COTTickerid(
+     COTType = 'Legacy', CFTCCode = cot.convertRootToCOTCode(&quot;Auto&quot;),
+     includeOptions = false, metricName = metric, metricDirection = 'Short',
+     metricType = 'All')
+    idNcomLong = cot.COTTickerid(
+     COTType = 'Legacy', CFTCCode = cot.convertRootToCOTCode(&quot;Auto&quot;),
+     includeOptions=false, metricName=metric, metricDirection='Long',
+     metricType = 'All')
+    b = repaint ? barmerge.gaps_on : barmerge.gaps_off
+    l = repaint ? barmerge.lookahead_on : barmerge.lookahead_off
+    mShort = request.security(idNcomShort,timeframe.period,close,b,l)
+    mLong  = request.security(idNcomLong, timeframe.period,close,b,l)
+    mLong - mShort
+//#endregion
+
+
+//#region   Calculations:
+float commNet   = COT_net_position('Commercial Positions')
+float specsNet  = COT_net_position('Noncommercial Positions')
+
+
+float v1 = 0.0, v2 = 0.0, cotCommIdx = 1.0, cotSpecIdx = 1.0
+float lowestCommNet   = ta.lowest(commNet,   lbPeriod)
+float highestCommNet  = ta.highest(commNet,  lbPeriod)
+float lowestSpecsNet  = ta.lowest(specsNet,  lbPeriod)
+float highestSpecsNet = ta.highest(specsNet, lbPeriod)
+
+
+if doComms
+    v1 := commNet - lowestCommNet
+    v2 := highestCommNet - lowestCommNet
+    cotCommIdx := v2 != 0 ? 100 * v1 / v2 : 1.0
+
+
+if doSpecs
+    v1 := specsNet - lowestSpecsNet
+    v2 := highestSpecsNet - lowestSpecsNet
+    cotSpecIdx := v2 != 0 ? 100 * v1 / v2 : 1.0
+//#endregion
+
+
+//#region   Visuals:
+color colComm = cotCommIdx &gt; obLevel or cotCommIdx &lt; osLevel ? 
+              color.red : chart.fg_color
+color colSpec = cotSpecIdx &gt; obLevel or cotSpecIdx &lt; osLevel ? 
+              color.red : chart.fg_color
+plot(doComms ? cotCommIdx : na, 'Five-day Open' , colComm, 1)
+plot(doSpecs ? cotSpecIdx : na, 'Five-day High' , colSpec, 1)
+hline(obLevel,'Overbought Level',chart.fg_color,hline.style_dotted,1)
+hline(osLevel,'Oversold Level',  chart.fg_color,hline.style_dotted,1)
+//plot(commNet)
+//#endregion
+</pre>
+<p>The indicator is available on TradingView in the PineCodersTASC account: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_parent">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart is shown in Figure 7.</p>
+
+   <div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: TRADINGVIEW. The indicator plotted here on gold futures.</p></div> 
+    
+    <p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="https://www.TradingView.com" target="_parent">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+ <p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: October 2023</h3></div>
+<p> system can be easily implemented in NeuroShell Trader based on Alfred Fran&ccedil;ois Tagher&rsquo;s article in this issue, &ldquo;Backwardation, Positioning, And Momentum: A Recipe For High-Conviction Trades&rdquo; by combining some of NeuroShell Trader&rsquo;s 800+ indicators. To implement the trading system, select <em>new strategy</em> from the <em>insert</em> menu and use the trading strategy wizard to create the following strategy:</p>
+<pre>
+BUY LONG CONDITIONS: [All of which must be true]
+     A&gt;B(Close,Sugar #11 March 2024 Close)
+     A&gt;B(Max(Stoch%K(Sugar #11 Net Commercial HLC,26),5),90)
+     High Channel Breakout(High,5)
+
+LONG TRAILING STOP PRICES:
+     TrailPricePnts(Trading System,5)
+
+SELL LONG CONDITIONS: [All of which must be true]
+     Low Channel Breakout(Low,5)
+</pre>
+<p>A sample chart is shown in Figure 8. Note that the underlying chart is created with the spot price, while the forward price and Commitment Of Traders data are added as other instrument data.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: NEUROSHELL TRADER. This NeuroShell Trader chart shows the backwardation, positioning, and momentum trading system for sugar #11.</p></div>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p> 
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Optuma.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Optuma: October 2023</h3></div>
+<p>In this issue, Alfred Fran&ccedil;ois Tagher discusses an indicator based on the COT index in his article &ldquo;Backwardation, Positioning, And Momentum: A Recipe For High-Conviction Trades.&rdquo; Optuma has a COT database from which we calculate a number of tools, including COT Sentiment. This automatically calculates the stochastic of the Net Commercials &minus; (Net Large Speculators + Net Small Speculators) positions without the need to program anything. The tool is based on a 52-week stochastic but can be adjusted accordingly. Figure 9 demonstrates the 26-week COT Sentiment for WTI crude.</p>
+<div class="figBorder">
+<img src="images/TT-Optuma.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: OPTUMA. This sample chart displays the 26-week COT sentiment indicator for WTI crude oil.</p></div>
+<p class="authorTips">&mdash;<a href="mailto:support@optuma.com">support@optuma.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+ 
+ <p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" width="100px" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Platform: October 2023</h3></div>
+<p>In his article in this issue, &ldquo;Backwardation, Positioning, And Momentum: A Recipe For High-Conviction Trades&rdquo; Alfred Fran&ccedil;ois Tagher discusses an indicator based on the Commitment Of Traders report. The indicator can be found in the Zorro Project library under the name COT_CommercialIndex. Following is a small test script:</p>
+<pre>
+void run()
+{
+   StartDate = 2020;
+   EndDate = 2023;
+   BarPeriod = 1440;
+   PlotHeight2 = PlotHeight1;
+   set(PLOTNOW);
+
+   assetAdd(&quot;GOLD&quot;,&quot;YAHOO:GC=F&quot;);
+   asset(&quot;GOLD&quot;);
+   string COT_Code = &quot;088691&quot;; // gold COT report
+   var ComNet = COT_CommercialPos(1,COT_Code);
+   plot(&quot;Net Commercial&quot;,ComNet,NEW,RED);
+   var COTCI = COT_CommercialIndex(1,COT_Code,26);
+   plot(&quot;COT Index&quot;,COTCI,NEW,BLUE);
+}
+</pre>
+<p>This script uses the net positions of commercial traders. In the COT report, it&rsquo;s the fields &ldquo;Producer/Merchant/Processor/User&rdquo; and &ldquo;Money Manager.&rdquo; It applies a normalization filter, which in the article is the stochastic. The indicators access the COT report from the NASDAQ website. A resulting chart with gold futures is shown in Figure 10.</p>
+<div class="figBorder">
+<img src="images/TT-Zorro.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 10: ZORRO. The indicator and the COT index are shown with a chart of gold futures.</p></div>
+<p>The script can be downloaded from the 2023 script repository on <a href="https://financial-hacker.com" target="_parent">https://financial-hacker.com</a>. The Zorro platform for C/C++ algo trading can be downloaded from <a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a>.</p>
+<p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the October 2023 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2023, Technical Analysis, Inc.</p>
+
+</body>
+</html>

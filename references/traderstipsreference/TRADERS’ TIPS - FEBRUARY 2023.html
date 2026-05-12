@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: selected topics. Contributions from: TradingView; Wealth-Lab.com; Optuma; eSignal.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - FEBRUARY 2023</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">February 2023</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+
+<p>This month, instead of focusing on a particular article in this issue, we asked the software developers who regularly contribute to this section to submit something on a topic of their own choosing, whether that be an idea, technique, or program feature. So here, you will find some custom coding and some helpful pointers for implementing a technique or for using a platform feature.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p>
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradingView: February 2023</a></li>
+  <li><a href="#item2">Wealth-Lab.com: February 2023</a></li>
+  <li><a href="#item3">Optuma: February 2023</a></li>
+  <li><a href="#item4"><span style="text-transform:lowercase;">e</span>SIGNAL: February 2023</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: February 2023</h3></div>
+<p>Here, we present some TradingView Pine Script code that implements a directional version of Perry Kaufman&rsquo;s <em>efficiency ratio</em> calculated from intrabars, that is, bars at a lower timeframe than the chart&rsquo;s.</p>
+<p>The <em>intrabar efficiency ratio</em> (IER) is designed to gauge the &ldquo;efficiency&rdquo; of intrabar price movement. This is achieved by calculating the ratio of single-bar price changes for the current chart&rsquo;s timeframe to the sum of absolute intrabar changes. The results are smoothed, which gives an indication of how efficient changes are on the current chart&rsquo;s timeframe for each bar relative to the lower timeframe &ldquo;noise&rdquo; on an average basis. In addition, unlike the standard definition of the efficiency ratio, the IER calculation preserves directional information that allows it to be used as a momentum oscillator.</p>
+<pre>
+//  TASC Issue: January 2023 - Vol. 41, Issue 2
+//     Article: Intrabar Efficiency Ratio
+//  Article By: TradingView
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+// For a more complete version of this indicator, see:
+// https://www.tradingview.com/script/o8tRZCzT-Intrabar-Efficiency-Ratio/
+
+//&#64;version=5
+indicator(
+ 'TASC 2023.02 Intrabar Efficiency Ratio',
+ 'IER (TASC)', false, precision = 4)
+
+// Libraries used by the script.
+import PineCoders/Time/3 as PCtime
+import PineCoders/lower_tf/3 as PCltf
+
+
+//#region &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash; Constants and Inputs
+// &mdash;&mdash;&mdash;&mdash;&mdash; Constants
+// Colors
+color GRAY = #80808080
+color GRAY_LT = #f5f3f3
+
+// Strings
+string ltfString = &quot;2&quot;
+string TAB_TXT = &quot;Uses intrabars at {0}\nAvg intrabars per
+ chart bar: {1,number,#.#}\nChart bars covered: {2} of {3}&quot;
+
+// Error Messages
+string NI_ERR1 =
+ &quot;No intrabar information exists at the '{0}' timeframe.&quot;
+string NI_ERR2 = &quot;This script uses intrabars;
+ the chart's timeframe must be &gt;= 5min.&quot;
+
+// &mdash;&mdash;&mdash;&mdash;&mdash; Inputs
+string in10 = &quot;Line&quot;
+string in11 = &quot;Fill&quot;
+string in12 = &quot;12&quot;
+string in20 = &quot;20&quot;
+color icLine1 = input.color(#00BCD4AA, in10, &quot;&quot;, in10)
+color icLine2 = input.color(#FF5252AA, &quot;&quot;, &quot;&quot;, in10)
+int lenInput = input.int(20, &quot;Length&quot;, inline = in10)
+color icFill1 = input.color(#00BCD4AA, in11, &quot;&quot;, in11)
+color icFill2 = input.color(#fffc52aa, &quot;&quot;, &quot;&quot;, in11)
+color icFill3 = input.color(#FF5252AA, &quot;&quot;, &quot;&quot;, in11)
+
+bool rankWeightInput = input.bool(false,
+ &quot;Weigh using relative close changes&quot;, &quot;&quot;, in12)
+int rankLengthInput = input.int(100, &quot;&quot;, inline = in12)
+
+bool showInfoBoxInput = input.bool(true, &quot;Show information box&quot;)
+string infoBoxSizeInput = input.string(&quot;small&quot;, &quot;Size&quot;,
+ [&quot;tiny&quot;,&quot;small&quot;,&quot;normal&quot;,&quot;large&quot;,&quot;huge&quot;,&quot;auto&quot;], &quot;&quot;, in20)
+string infoBoxYPosInput = input.string(&quot;bottom&quot;,&quot;↕&quot;,
+ [&quot;top&quot;,&quot;middle&quot;,&quot;bottom&quot;], &quot;&quot;, in20)
+string infoBoxXPosInput = input.string(&quot;left&quot;, &quot;↔&quot;,
+ [&quot;left&quot;, &quot;center&quot;, &quot;right&quot;], &quot;&quot;, in20)
+color infoBoxColorInput = input.color(GRAY, &quot;&quot;, &quot;&quot;, in20)
+color infoBoxTxtColorInput = input.color(GRAY_LT, &quot;T&quot;, &quot;&quot;, in20)
+//#endregion
+
+
+//#region &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash; Calculations
+// &mdash;&mdash;&mdash;&mdash; IER
+// Get array of 'close' to 'close' changes in intrabars.
+array&lt;float&gt; travels = request.security_lower_tf(
+     syminfo.tickerid, ltfString, math.abs(ta.change(close)))
+float totalTravels = array.sum(travels)
+// Get 'close' to 'close' change of the chart's last two bars.
+float chartBarChange = nz(ta.change(close))
+// Weight on relative size of the 'close' to 'close' change.
+float weight = switch
+    rankWeightInput =&gt; ta.percentrank(
+         math.abs(chartBarChange), rankLengthInput) / 100.0
+    =&gt; 1.0
+// Calculate IER and its MA.
+float ier = nz(chartBarChange / totalTravels) * weight
+float maMid = ta.alma(ier, lenInput, 0.85, 6)
+
+// &mdash;&mdash;&mdash;&mdash; Intrabar stats
+[intrabars, chartBarsCovered, avgIntrabars] =
+ PCltf.ltfStats(travels)
+int chartBars = bar_index + 1
+//#endregion
+
+
+//#region &mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash; Visuals
+plotStyle1 = plot.style_line
+plotStyle2 = plot.style_linebr
+plotDN = display.none
+var float mR = 0.0
+mR := math.max(nz(mR), math.abs(maMid)) * 0.6
+float upper = math.max(0, maMid)
+float lower = math.min(0, maMid)
+grad = color.from_gradient(maMid, -mR, mR, icLine1, icLine2)
+plot(maMid, &quot;Mid MA&quot;, grad, 1, plotStyle1)
+plot(maMid, &quot;Mid MA&quot;, color.new(grad, 75), 3, plotStyle1)
+P1 = plot(upper, &quot;&quot;, grad, 1, plotStyle2, display = plotDN)
+P2 = plot(lower, &quot;&quot;, grad, 1, plotStyle2, display = plotDN)
+TSW = maMid &gt;= 0
+cUP = TSW ? icFill2 : icFill3
+cLO = TSW ? icFill1 : icFill2
+fill(P1, P2, TSW ? mR : 0, TSW ? 0 : -mR, cLO, cUP, &quot;&quot;)
+hline(0)
+
+// Information box.
+if showInfoBoxInput
+    var table infoBox = table.new(infoBoxYPosInput + &quot;_&quot; +
+     infoBoxXPosInput, 1, 1)
+    string formattedLtf = PCtime.formattedNoOfPeriods(
+     timeframe.in_seconds(ltfString) * 1000)
+    string txt = str.format(TAB_TXT, formattedLtf,
+     avgIntrabars, chartBarsCovered, chartBars)
+    if barstate.isfirst
+        table.cell(infoBox, 0, 0, txt,
+         text_color = infoBoxTxtColorInput,
+         text_size = infoBoxSizeInput,
+         bgcolor = infoBoxColorInput)
+    else if barstate.islast
+        table.cell_set_text(infoBox, 0, 0, txt)        
+
+// Runtime errors.
+if ta.cum(intrabars) == 0 and barstate.islast
+    runtime.error(str.format(NI_ERR1, ltfString))
+else if timeframe.in_seconds() &lt; 5 * 60
+    runtime.error(NI_ERR2)
+//#endregion
+</pre>
+<p>This indicator is available on TradingView: <a href="https://www.tradingview.com/script/o8tRZCzT-Intrabar-Efficiency-Ratio" target="_parent">https://www.tradingview.com/script/o8tRZCzT-Intrabar-Efficiency-Ratio</a>.</p>
+<p>An example chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADINGVIEW. The intrabar efficiency ratio (IER), which is a directional version of Perry Kaufman&rsquo;s efficiency ratio, is designed to gauge the &ldquo;efficiency&rdquo; of intrabar price movement. The IER calculation preserves directional information that allows it to be used as a momentum oscillator.</p></div>    
+    
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="https://www.TradingView.com" target="_parent">www.TradingView.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: February 2023</h3></div>
+<p>This month, we&rsquo;d like to highlight one of Wealth-Lab&rsquo;s strongest points: chart pattern recognition.</p>
+<p>With our Chart Patterns extension, all the &ldquo;textbook&rdquo; patterns that traders are familiar with&mdash;such as the cup &amp; handle, double bottom, triangles and flags&mdash;can be automatically detected and drawn on charts. You can even encode a chart pattern of your own invention&mdash;say, the <em>fivefold top</em>&mdash;and let the application scan for it.</p>
+<p>Progress never stops though. What we consider the killer feature of Wealth-Lab&rsquo;s Chart Patterns extension are grid-based patterns, which we call PriceGrids. Think of it as computer vision, simply put. A region of a price chart is divided into a 2D matrix (grid) and the grid cells where prices are found are marked with &ldquo;one&rdquo; bit and the blank cells as &ldquo;zero&rdquo; bits. This process creates a visual pattern of the price dynamic. Encoded into a &ldquo;fingerprint,&rdquo; it can then be matched by an indicator returning a <em>confidence factor</em> value that reflects how closely a pattern matches the current price dynamics. As the indicator calculates values bar-by-bar, a high confidence level may suggest that the PriceGrid pattern has emerged.</p>
+<p>Defining such patterns is easy: Spot what you think is a price pattern, drag the mouse pointer across a section of the chart and let Wealth-Lab instantly create a PriceGrid for you (Figure 2). But beware: The process can get addicting! Figure 3 shows an example of testing the new pattern on a stock.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: WEALTH-LAB. Here is an example of defining a pattern on a daily chart of Oracle (ORCL) using the PriceGrids feature of Wealth-Lab&rsquo;s Chart Patterns extension.</p></div>
+<div class="figBorder">
+<img src="images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: WEALTH-LAB. Once a pattern is defined, you can test the pattern on symbols you choose. Here&rsquo;s an example of testing a newly defined pattern on Goldman-Sachs stock (GS).</p></div>
+<p>And of course, everything of that can be done without having to write a single line of code. Dropping the &ldquo;Chart Patterns&rdquo; or &ldquo;PriceGrids&rdquo; rule onto a Building Block makes you one step closer to building a strategy that detects chart patterns (Figure 4) and trades them automatically in your brokerage account.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: WEALTH-LAB. Once you define and test a pattern, you can easily mock up a trading strategy by dropping the &ldquo;Chart Patterns&rdquo; or &ldquo;PriceGrids&rdquo; rule onto a Building Block. This shows an example of mocking up a trading system based on the new pattern.</p></div>
+    <p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Optuma.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Optuma: February 2023</h3></div>
+<p>One of the more interesting techniques that we find in W.D. Gann&rsquo;s original hand-drawn charts is that he often plotted the position of planets that he thought were influential to that security&mdash;what we call Gann planetary lines (GPLs).</p>
+<p>The method he used was to take the planet&rsquo;s longitudinal angle (from either a heliocentric or geocentric perspective) and convert it into a price using a scaling factor to have it display in the appropriate price range.</p>
+<p>This means that 180 degrees could be plotted at $1.80, $18.00, $1800, or even 18c. The next level is then plotted 360 degrees away ($3.60, $36.00, etc. depending on the scaling).</p>
+<p>The example in Figure 5 shows the 180-degree GPLs of Mars (in red).</p>
+<div class="figBorder">
+<img src="images/TT-Optuma1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: OPTUMA. This example of Gann planetary lines (GPLs) shows the 180-degree GPLs of Mars (in red). The method takes the planet&rsquo;s longitudinal angle and converts it into a price using a scaling factor to have it display in the appropriate price range. Optuma users with the Astro module can use an Optuma script to get alerts based on when price is approaching one of the GPL levels.</p></div>
+<p><strong>Gann planetary line alerts</strong><br>
+When looking at these plots, there are times when they behave as very effective support and resistance lines. Alan Oliver (TradingWithGann.com) has done a detailed study on these lines and which planets work best with which markets.</p>
+<p>The difficult part has always been to get alerted when price is approaching one of these levels (see Figure 5). For Optuma clients with the Astro module, the following script can do just that:</p>
+    <pre>P1=PVAL(PLANET=[Mars]);
+G1=GPA();
+ASPECTS(P1, G1, ORB=20.0, ASPECTS=[Conjunction,Opposition], EXACT=False)</pre>
+
+<p>The first line of code gets the planet&rsquo;s angle for each day (i.e., Mars).</p>
+<p>The second line of code is a new function that turns price into an angle based on the GPL rules. You can set your own scaling unit in this, but leaving them set to &ldquo;auto&rdquo; means it can scan lots of different securities.</p>
+<p>The final &ldquo;ASPECTS&rdquo; function takes the angles and the price angles (P1 &amp; G1) and allows us to set a tolerance&mdash;or orb&mdash;and the aspects to be considered (you can do all of them, with &ldquo;conjunction&rdquo; being 360 degrees, &ldquo;opposition&rdquo; at 180 degrees, &ldquo;square&rdquo; at 90 degrees, and so on).</p>
+    <p>This can then also be used in scans to find any security that is coming up against one of these planetary lines.</p>
+<div class="figBorder">
+<img src="images/TT-Optuma2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: OPTUMA. The &ldquo;ASPECTS&rdquo; function takes the angles and the price angles (P1 &amp; G1) and allows the user to set a tolerance&mdash;or orb&mdash;and the aspects to be considered. This can then also be used in scans to find any security that is coming up against one of these planetary lines.</p></div>   
+ <p class="authorTips">&mdash;<a href="mailto:support@optuma.com">support@optuma.com</a></p>   
+     <!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;"><span style="text-transform:lowercase;">e</span>SIGNAL: February 2023</h3></div>
+<p>Here, we&rsquo;ll focus on a robust and useful tool in eSignal to quickly scan the market for trading opportunities. Market Screener Plus (included with a subscription to eSignal) allows the user to integrate technical analysis and fundamental data to scan the markets. You&rsquo;ll find 20 existing filters (that is, preset defaults) that can be used as a template to create custom scans. These filters can be selected using the dropdown menu at the top of the window (see Figure 7).</p>
+<div class="figBorder">
+<img src="images/TT-eSignal1.gif" alt="Sample Chart" class="shadow1" style="width: 300px;"><p class="figCaption" style="width: 550px;">FIGURE 7: eSIGNAL. The Market Screener Plus feature of eSignal, which is included with a subscription to eSignal, allows the user to integrate technical analysis and fundamental data to scan the markets. Using the dropdown menu at the top of the window, the user can select from 20 preset filters that can be used as a template to create custom scans.</p></div>
+<p>In the following example, we&rsquo;ll use the preset default titled Average_Xover. Once you have selected a default, click the &ldquo;filter&rdquo; icon (see Figure 8). The default filters all have descriptions to give you an idea of the type of scan being performed (Figure 9).</p>
+<div class="figBorder">
+<img src="images/TT-eSignal2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: eSIGNAL. Here&rsquo;s an example of selecting one of the present filters (Average_Xover).</p></div>
+<div class="figBorder">
+<img src="images/TT-eSignal3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: eSIGNAL. Descriptions of the different preset filters available are provided onscreen to provide an idea of the type of scan the filter will perform.</p></div>
+<p>In the left-hand panel you can select additional scan criteria. In this example, we&rsquo;ll select &ldquo;exchanges&rdquo; and click the <em>add criterion</em> button (Figure 10). Alternatively, you can doubleclick the category to add it. Please note that by default, one exchange is available. In order to scan multiple exchanges, you will need to upgrade to either three or five exchanges, which is an add-on service.</p>
+<div class="figBorder">
+<img src="images/TT-eSignal4.gif" alt="Sample Chart" class="shadow1" style="width: 300px;"><p class="figCaption" style="width: 550px;">FIGURE 10: eSIGNAL. You can select additional scan criteria in the panel at left by selecting a choice and clicking the &ldquo;add criterion&rdquo; button (or doubleclick the category to add it).</p></div>
+<p>From here, click <em>add exchanges</em> to reveal a list of exchanges in the left panel. Choose the exchange you wish to scan, then click <em>apply</em> (Figure 11).</p>
+<div class="figBorder">
+<img src="images/TT-eSignal5.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 11: ESIGNAL. Click &ldquo;add exchanges&rdquo; to reveal a list of exchanges in the left panel. Choose the exchange you wish to scan, then click &ldquo;apply.&rdquo;</p></div>
+<p>The <em>scan</em> button can be used to periodically update the results, which are displayed in the window (Figure 12).</p>
+<div class="figBorder">
+<img src="images/TT-eSignal6.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 12: ESIGNAL. The scan button can be used to periodically update the results, which are displayed in the window.</p></div>    
+ <p>To create a new filter from scratch, click the menu icon (highlighted by the red box drawn on Figure 13) followed by &ldquo;new filter.&rdquo; Choose &ldquo;save filter as&rdquo; to assign the filter a new name and save it.</p>   
+  <div class="figBorder">
+<img src="images/TT-eSignal7.gif" alt="Sample Chart" class="shadow1" style="width: 300px;"><p class="figCaption" style="width: 550px;">FIGURE 13: ESIGNAL. To create a new filter from scratch, click the menu icon (highlighted by the red box) followed by &ldquo;new filter.&rdquo; Choose &ldquo;save filter as&rdquo; to assign the filter a new name and save it.</p></div>  
+<p>Back in the left panel, choose from the existing categories:</p>    
+  <ul style="list-style: none;">
+     <li><em>New expression</em>&mdash;&ldquo;Expressions&rdquo; allow you to compare the open, high, low, close, previous, volume, and more using mathematical operators (&gt;, &lt;, =, etc.).</li> 
+     <li><em>Bar values</em>&mdash;These include open, high, low, close, previous, and volume.</li> 
+    <li><em>Fundamental</em>&mdash;EPS, 52-week high/low, PE ratio, revenue, and sector are just some examples of the 45 fundamental data fields available for Market Screener Plus.</li>
+      <li><em>Technical analysis</em>&mdash;Use a library of technical analysis studies (33 in total) to create advanced scans of the market based on your custom settings.</li>
+    </ul>
+   <p>Since Market Screener Plus provides the same functionality as a watchlist window, you can also run built-in studies, formulas, and custom expressions (based on any of the values in the Market Screener columns) to further analyze and sort the results of your scans.</p> 
+   <p>In summary, we think you&rsquo;ll find Market Screener Plus to be an invaluable tool to scan and analyze entire markets (domestic and global) using the very same tools applied to any other window in eSignal.</p> 
+  <p class="authorTips">&mdash;ICE Data Services, <a href="https://eSignal.com" target="_parent">eSignal.com</a></p>  
+    
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the February 2023 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2023, Technical Analysis, Inc.</p>
+
+</body>
+</html>

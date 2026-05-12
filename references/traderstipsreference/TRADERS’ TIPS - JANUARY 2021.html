@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine.">
+<meta name="description" content="This month: Short-Term Patterns by Perry Kaufman. Contributions from: TradeStation; thinkorswim; Wealth-Lab.com; NinjaTrader; Neuroshell Trader; The Zorro Project; Optuma; TradersStudio; Aiq.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - JANUARY 2021</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">January 2021</h1>
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2021/01/images/TT-Kaufman.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+  <p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Perry Kaufman&rsquo;s article in this issue, &ldquo;A Fresh Look At Short-Term Patterns.&rdquo; Here, we present the January 2021 Traders&rsquo; Tips code with possible implementations in various software.</p>
+  <p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p>
+  <!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+  <p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+  <br class="clearfloat">
+</div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TRADESTATION: JANUARY 2021</a></li>
+  <li><a href="#item2">THINKORSWIM: JANUARY 2021</a></li>
+  <li><a href="#item3">WEALTH-LAB.COM: JANUARY 2021</a></li>
+  <li><a href="#item4">NINJATRADER: JANUARY 2021</a></li>
+  <li><a href="#item5">NEUROSHELL TRADER: JANUARY 2021</a></li>
+  <li><a href="#item6">THE ZORRO PROJECT: JANUARY 2021</a></li>
+  <li><a href="#item7">OPTUMA: JANUARY 2021</a></li>
+  <li><a href="#item8">TRADERSSTUDIO: JANUARY 2021</a></li>
+  <li><a href="#item9">AIQ: JANUARY 2021</a></li>
+</ul>
+<!--TIPS START HERE-->
+
+<p class="rules"></p>
+<div class="logoBorder" id="item1"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-NEW.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">TRADESTATION: JANUARY 2021</h3>
+</div>
+<p>In his article in this issue, &ldquo;A Fresh Look At Short-Term Patterns,&rdquo; author Perry Kaufman introduces some test methods to analyze various short-term price patterns to determine how they work with various stocks and ETFs. The analysis includes results with and without a trend filter. The trend filter used is an 80-period simple moving average and the article also provided the criteria for the various patterns used to determine if an entry is triggered.</p>
+<p>Shown here is the indicator code based on the author&rsquo;s work. A simple <em>Plot</em> statement was added to indicate that the code was running, but the code is designed to export the results to a text file.</p>
+<pre>
+ Indicator: TASC JAN 2021
+// TASC JAN 2021
+// PJK Short-Term patterns
+// Look at reliability of short-term patterns with 
+// and without a trend filter.
+// Look at using noise as a qualifier
+// Copyright 2020, P.J.Kaufman. All rights reserved
+
+inputs: 
+    trendper( 0 ), 
+    usekeyreversal( false ), 
+    useislandreversal( false ),
+    usecompression( 0 ),
+    usegaps( 0 ), 
+    useoutsideday( false ), 
+    usewiderangingday( 0 ),
+    forecast( 5 ),
+    investment( 10000 );
+    
+variables: 
+    trend( 0 ), 
+    pattern( &quot; &quot; ), 
+    bullcases( 0 ), 
+    bearcases( 0 ),
+    compression( false ),
+    gap( false ), 
+    outsideday( false ), 
+    widerangingday( false ),
+    bullpattern( false ),
+    bearpattern( false ), 
+    bulltrend( false ), 
+    beartrend( false ), 
+    bulltrendcases( 0 ),
+    beartrendcases( 0 ), 
+    cday( 0 ), 
+    comphigh( 0 ),
+    complow( 0 ), 
+    outsidebull( false ), 
+    outsidebear( false ), 
+    ratio( 0 ),
+    ndays( 0 ), 
+    adate( &quot; &quot; ), 
+    size( 0 ), 
+    back1( 0 ),
+    back2( 0 ),
+    back3( 0 ), 
+    back4( 0 );
+    
+arrays: 
+    bullreturns[6]( 0 ), 
+    bearreturns[6]( 0 ), 
+    bulltrendreturns[6]( 0 ),
+    beartrendreturns[6]( 0 );
+
+// trend
+if trendper &gt; 0 then 
+begin
+    trend = average( close, trendper );
+end;
+
+//====================================================
+//    3-day compression
+//====================================================
+if usecompression = 3 then 
+begin
+    cday = truerange[3];
+    
+    compression = truerange &lt; cday 
+     and truerange[1] &lt; cday
+     and truerange[2] &lt; cday;
+end;
+
+//====================================================
+//    key reversals
+//====================================================
+if usekeyreversal and ndays = 0 then 
+begin
+    pattern = &quot;Key Reversal&quot;;
+    
+    // key bearcases reversal
+    if high &gt; high[1] 
+        and low &lt; low[1] 
+        and close &lt; low[1] then
+    begin
+        ndays = 1;
+        bearcases = bearcases + 1;
+        bearpattern = true;
+        size = investment / close;
+        
+        if trend &lt; trend[1] then 
+        begin
+            beartrend = true;
+            beartrendcases = beartrendcases + 1;
+        end;
+    end
+    // key bullcases reversal
+    else if high &gt; high[1] 
+        and low &lt; low[1] 
+        and close &gt; high[1] then 
+    begin
+        ndays = 1;
+        bullcases = bullcases + 1;
+        bullpattern = true;
+        size = investment / close;
+        
+        if trend &gt; trend[1] then 
+        begin
+            bulltrend = true;
+            bulltrendcases = bulltrendcases + 1;
+        end;
+    end;
+end;
+
+//====================================================
+//    island reversals
+//====================================================
+if useislandreversal and ndays = 0 then 
+begin
+    pattern = &quot;Island Reversal&quot;;
+
+    // bearcases island reversal
+    if low &gt; high[1] and close &lt; open then 
+    begin
+        ndays = 1;
+        bearcases = bearcases + 1;
+        bearpattern = true;
+        size = investment / close;
+        
+        if trend &lt; trend[1] then 
+        begin
+            beartrend = true;
+            beartrendcases = beartrendcases + 1;
+        end;
+    end
+    // bullcases island reversal
+    else if high &lt; low[1] and close &gt; open then 
+    begin
+        ndays = 1;
+        bullcases = bullcases + 1;
+        bullpattern = true;
+        size = investment / close;
+        
+        if trend &gt; trend[1] then 
+        begin
+            bulltrend = true;
+            bulltrendcases = bulltrendcases + 1;
+        end;
+    end;
+end;
+
+//====================================================
+//    compression
+//====================================================
+if usecompression &gt; 0 and ndays = 0 then 
+begin
+    pattern = &quot;3-Day compression&quot;;
+    back4 = truerange[4];
+    back3 = truerange[3];
+    back2 = truerange[2];
+    back1 = truerange[1];
+    compression = back4 &gt; back3 and back4 &gt; back2 
+     and back4 &gt; back1;
+    
+    if compression then 
+    begin
+        comphigh = Highest( High[1], usecompression );
+        complow = Lowest( Low[1], usecompression );
+        
+        // bearcases compression
+        if close &lt; complow then 
+        begin
+            ndays = 1;
+            bearcases = bearcases + 1;
+            bearpattern = true;
+            size = investment / close;
+            
+            if trend &lt; trend[1] then 
+            begin
+                beartrend = true;
+                beartrendcases = beartrendcases + 1;
+            end;
+        end
+        // bullcases compression
+        else if close &gt; comphigh then 
+        begin
+            ndays = 1;
+            bullcases = bullcases + 1;
+            bullpattern = true;
+            size = investment / close;
+            
+            if trend &gt; trend[1] then 
+            begin
+                bulltrend = true;
+                bulltrendcases = bulltrendcases + 1;
+            end;
+        end;
+    end;
+end;
+
+//====================================================
+//  Outside day (or wide ranging day) with close in
+//  upper/lower 25% 
+//====================================================
+if (useoutsideday or usewiderangingday &lt;&gt; 0) 
+    and ndays = 0 then 
+begin
+    if useoutsideday then 
+        pattern = &quot;Outside Day&quot;
+    else 
+        pattern = &quot;Wide Ranging Day&quot;;
+    
+    outsidebull = high &gt; high[1] and low &lt; low[1] 
+     and close &gt; 0.75 * ( high - low ) + low;
+    
+    outsidebear = high &gt; high[1] and low &lt; low[1] 
+     and close &lt; 0.25 *  (high - low ) + low;
+   
+    ratio = 0;
+    
+    if usewiderangingday &lt;&gt; 0 then 
+    begin
+        ratio = truerange / avgtruerange( 20 );
+    end;
+
+    // bearcases outside day
+    if outsidebear and 
+        ( ratio = 0 
+        or ratio &gt; usewiderangingday ) then 
+    begin
+        ndays = 1;
+        bearcases = bearcases + 1;
+        bearpattern = true;
+        size = investment / close;
+        
+        if trend &lt; trend[1] then 
+        begin
+            beartrend = true;
+            beartrendcases = beartrendcases + 1;
+        end;
+    end
+    // bullcases outside day
+    else if outsidebull 
+        and (ratio = 0 
+        or ratio &gt; usewiderangingday) then 
+    begin
+        ndays = 1;
+        bullcases = bullcases + 1;
+        bullpattern = true;
+        size = investment / close;
+       
+        if trend &gt; trend[1] then 
+        begin
+            bulltrend = true;
+            bulltrendcases = bulltrendcases + 1;
+        end;
+    end;
+end;
+
+//====================================================
+// Gap opening with profits in direction of the gap
+//====================================================
+if usegaps &gt; 0 and ndays = 0 then 
+begin
+    pattern = &quot;Gap Opening&quot;;
+    ratio = ( open - close[1] )/avgtruerange( 20 )[1];
+
+    // downward gap
+    if ratio &lt; 0 and -ratio &gt;= usegaps then 
+    begin
+        ndays = 1;
+        bearcases = bearcases + 1;
+        bearpattern = true;
+        size = investment / close;
+        
+        if trend &lt; trend[1] then 
+        begin
+            beartrend = true;
+            beartrendcases = beartrendcases + 1;
+        end;
+    end
+    else if ratio &gt;= usegaps then 
+    begin
+        // bullcases gap
+        ndays = 1;
+        bullcases = bullcases + 1;
+        bullpattern = true;
+        size = investment / close;
+        
+        if trend &gt; trend[1] then 
+        begin
+            bulltrend = true;
+            bulltrendcases = bulltrendcases + 1;
+        end;
+    end;
+end;
+
+//====================================================
+// accumulated profits over next 5 days
+//====================================================
+if ndays &gt; 1 then 
+begin
+    if bullpattern then 
+    begin
+        bullreturns[ndays] = bullreturns[ndays] + 
+         size * ( close - close[ndays-1] );
+    end;
+    
+    if bearpattern then
+    begin 
+        bearreturns[ndays] = bearreturns[ndays] + 
+         size * ( close[ndays-1] - close );
+    end;
+    
+    if bulltrend then
+    begin 
+        bulltrendreturns[ndays] = 
+         bulltrendreturns[ndays] + 
+         size * ( close - close[ndays-1] );
+    end;
+    
+    if beartrend then 
+    begin
+        beartrendreturns[ndays] = 
+         beartrendreturns[ndays] + 
+         size * ( close[ndays-1] - close );
+    end;
+end;
+
+if ndays &gt; 0 then 
+begin
+    ndays = ndays + 1;
+end;
+
+//====================================================
+// summary
+//====================================================
+if lastbaronchartex then 
+begin
+    adate = ELdatetostring( Date );
+
+    // print headers to file
+    print(
+     file( &quot;c:\tradestation\Short-Term Patterns.csv&quot;),
+     &quot;Date,Pattern,Cases,Bull Cases,BullPL1,BullPL2,&quot; 
+     + &quot;BullPL3,BullPL4,BullPL5,Bear Cases,&quot;,
+     &quot;BearPL1,BearPL2,BearPL3,BearPL4,BearPL5,,&quot; 
+     + &quot;TrendCases,&quot;,
+     &quot;Bull Trend Cases,BullTrPL1,BullTrPL2,BullTrPL3&quot;
+     + &quot;,BullTrPL4,BullTrPL5,&quot;,
+     &quot;Bear Trend Cases,BearTrPL1,BearTrPL2,BearTrPL3,&quot;
+     + &quot;BearTrPL4,BearTrPL5&quot; );
+    
+    // print the data to file
+    print(
+     file( &quot;c:\tradestation\Short-Term Patterns.csv&quot;),
+     adate, &quot;,&quot;,
+     pattern, &quot;,&quot;,
+     bullcases+bearcases:8:0, &quot;,&quot;, 
+     bullcases:8:0, &quot;,&quot;, 
+     Bullreturns[2]:8:0, &quot;,&quot;, 
+     Bullreturns[3]:8:0, &quot;,&quot;,
+     Bullreturns[4]:8:0, &quot;,&quot;, 
+     Bullreturns[5]:8:0, &quot;,&quot;, 
+     Bullreturns[6]:8:0, &quot;,&quot;, 
+     bearcases:5:0, &quot;,&quot;, 
+     Bearreturns[2]:8:0, &quot;,&quot;, 
+     Bearreturns[3]:8:0, &quot;,&quot;,
+     Bearreturns[4]:8:0, &quot;,&quot;, 
+     Bearreturns[5]:8:0, &quot;,&quot;, 
+     Bearreturns[6]:8:0, &quot;,,&quot;,
+     bulltrendcases+beartrendcases:5:0, &quot;,&quot;, 
+     bulltrendcases:5:0, &quot;,&quot;, 
+     Bulltrendreturns[2]:8:0, &quot;,&quot;,
+     Bulltrendreturns[3]:8:0, &quot;,&quot;,
+     Bulltrendreturns[4]:8:0, &quot;,&quot;, 
+     Bulltrendreturns[5]:8:0, &quot;,&quot;,
+     Bulltrendreturns[6]:8:0, &quot;,&quot;,
+     beartrendcases:5:0, &quot;,&quot;, 
+     Beartrendreturns[2]:8:0, &quot;,&quot;,
+     Beartrendreturns[3]:8:0, &quot;,&quot;,
+     Beartrendreturns[4]:8:0, &quot;,&quot;, 
+     Beartrendreturns[5]:8:0, &quot;,&quot;, 
+     Beartrendreturns[6]:8:0 );
+end;
+
+//====================================================
+// end of trade
+//====================================================
+if ndays &gt; 6 then 
+begin
+    bullpattern = false;
+    bearpattern = false;
+    bulltrend = false;
+    beartrend = false;
+    ndays = 0;
+end;
+
+Plot1( Close ); // dummy plot to show code is running
+</pre>
+<p>To download the EasyLanguage code for TradeStation 10, please visit our TradeStation and EasyLanguage support forum. The files for this article can be found here: <a href="https://community.tradestation.com/discussions/Topic.aspx?Topic_ID=190289" target="_parent">https://community.tradestation.com/discussions/Topic.aspx?Topic_ID=190289</a>.</p>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder"> <img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 1: TRADESTATION. Shown here is a TradeStation daily chart of SPY with the indicator applied. The plot is used to indicate that the code is running and does not plot a significant number in terms of the article content. The code is designed to export information to a file. </p>
+</div>
+<p>This article is for informational purposes only. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</p>
+<p class="authorTips">&mdash;Chris Imhof<br>
+  TradeStation Securities, Inc.<br>
+  <a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Thinkorswim.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">THINKORSWIM: JANUARY 2021</h3>
+</div>
+<p>We have put together a study based on the article in this issue &ldquo;A Fresh Look At Short-Term Patterns (With And Without A Trend Filter)&rdquo; by Perry Kaufman.</p>
+<p>We built the study referenced by using our proprietary scripting language, thinkscript. To ease the loading process, simply click on <a href="https://tos.mx/pnEzI0G" target="_parent">https://tos.mx/pnEzI0G</a> or enter it into the address into <em>setup &rarr; open shared item</em> from within thinkorswim, then choose <em>view thinkScript study</em> and name it &ldquo;ReturnsCalculationForPricePatterns&rdquo; or whatever you like so you can identify it. You can then add the study to your charts from the <em>edit studies</em> menu from within the charts tab.</p>
+<div class="figBorder"> <img src="images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 2: THINKORSWIM. Here is an example of the study. The returns calculation from 1 to 5 days for bullish key reversals is shown in the upper pane with bearish key reversal returns in the lower pane. Log scale is enabled for the price pane to view the price moves more distinctly. </p>
+</div>
+<p>The example chart shown in Figure 2 is the returns calculation from 1 to 5 days for bullish key reversals (upper pane) and bearish key reversals (lower pane). Also, log scale is enabled for the price pane to see the price moves more distinctly. The price pattern to be used, its direction, whether or not to apply the trend filter, and investment size are all configurable via inputs. Please see Perry Kaufman&rsquo;s article for more information on how to read the study.</p>
+<p class="authorTips">&mdash;thinkorswim<br>
+  A division of TD Ameritrade, Inc.<br>
+  <a href="https://www.thinkorswim.com" target="_parent">www.thinkorswim.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">WEALTH-LAB.COM: JANUARY 2021</h3>
+</div>
+<p>The Wealth-Lab strategy code for the short-term pattern scanner described by Perry Kaufman in his article in this issue, &ldquo;A Fresh Look At Short-Term Patterns,&rdquo; is presented here.</p>
+<p>With <em>parameter sliders</em> at the bottom left of your Wealth-Lab workspace, the included strategy demonstrates how to switch between the patterns interactively when viewing a chart. Dragging the <em>pattern</em> slider to the left or to the right will change between the six choices and make the chart update with backtested trades.</p>
+<p>For example, Figure 3 illustrates one bearish and two bullish key reversal trades created on the next open following the pattern and exiting 3 days after. Through another parameter slider, you can control exits after <em>N</em> bars in a trade.</p>
+<div class="figBorder"> <img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 3: WEALTH-LAB. Sample entries are shown on a daily chart of QLD. Data provided by Yahoo! Finance.</p>
+</div>
+<p>To avoid copy/paste, hitting Ctrl-O and choosing <em>download</em> in Wealth-Lab gets you the downloadable strategy under the &ldquo;Chart patterns&rdquo; folder. </p>
+<pre>
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Drawing;
+using WealthLab;
+using WealthLab.Indicators;
+/* Requires Community Components installed */
+using Community.Components;
+
+namespace WealthLab.Strategies
+{
+	public class TASCJan2021 : WealthScript
+	{
+		private StrategyParameter paramPattern;
+		private StrategyParameter paramExitDays;
+
+		public TASCJan2021()
+		{
+			paramPattern = CreateParameter(&quot;Pattern&quot;, 1, 1, 6, 1);
+			paramExitDays = CreateParameter(&quot;Exit after&quot;, 3, 1, 10, 1);
+		}
+
+		protected override void Execute()
+		{
+			var _pattern = paramPattern.ValueInt;
+			var _exitAfter = paramExitDays.ValueInt;
+			int atrPeriod = 20, maPeriod = 80;
+			double tick = Bars.SymbolInfo.Tick;
+			var atr = ATR.Series(Bars, atrPeriod);
+			var trendFilter = SMA.Series(Close, maPeriod);
+			
+			for(int bar = GetTradingLoopStartBar( Math.Max(atrPeriod,maPeriod)); bar &lt; Bars.Count; bar++)
+			{
+				/* key reversal */
+				bool keyRevBear = High[bar] &gt; High[bar - 1] &amp;&amp; Low[bar] &lt; Low[bar - 1] &amp;&amp; Close[bar] &lt; Low[bar - 1];
+				bool keyRevBull = High[bar] &gt; High[bar - 1] &amp;&amp; Low[bar] &lt; Low[bar - 1] &amp;&amp; Close[bar] &gt; High[bar - 1];
+
+				/* island reversal */
+				bool islRevBear = Low[bar] &gt; High[bar - 1] &amp;&amp; Close[bar] &lt; Open[bar];
+				bool islRevBull = High[bar] &lt; Low[bar - 1] &amp;&amp; Close[bar] &gt; Open[bar];
+
+				/* outside day */
+				bool outsideBull = this.isOutsideBar(bar) &amp;&amp; Close[bar] &gt; Low[bar] + ( 0.75 * (High[bar] - Low[bar]));
+				bool outsideBear = this.isOutsideBar(bar) &amp;&amp; Close[bar] &lt; Low[bar] + ( 0.25 * (High[bar] - Low[bar]));
+
+				/* wide range day */
+				var ratio = TrueRange.Series(Bars)[bar] / atr[bar];
+				bool isWRBBull = outsideBull &amp;&amp; (ratio &gt; 1.5);
+				bool isWRBBear = outsideBear &amp;&amp; (ratio &gt; 1.5);
+
+				/* 3-day compression */
+				bool compression = CumDown.Series(TrueRange.Series(Bars), 1)[bar] &gt;= 3;
+
+				/* gap open */
+				bool isGapUp = (this.isGap(bar) == CommonSignalsEx.GapType.FullUp) &amp;&amp; (Open[bar] &gt; Close[bar] + 0.5 * atr[bar]);
+				bool isGapDown = (this.isGap(bar) == CommonSignalsEx.GapType.FullDown) &amp;&amp; (Open[bar] &lt; Close[bar] + 0.5 * atr[bar]);
+
+				/* trend filter */
+				bool isBullish = Close[bar] &gt; trendFilter[bar];
+				bool isBearish = Close[bar] &lt; trendFilter[bar];
+				
+				if (IsLastPositionActive)
+				{
+					/* Exit after N days */
+					Position p = LastPosition;
+					if (bar + 1 - p.EntryBar &gt;= _exitAfter)
+						ExitAtMarket( bar + 1, p, string.Format(&quot;After {0}&quot;, _exitAfter));
+				}
+				else
+				{
+					switch (_pattern)
+					{	
+						case 1: 
+							if( keyRevBear &amp;&amp; isBearish) ShortAtMarket( bar + 1, &quot;KeyRevBear&quot;); 
+							if( keyRevBull &amp;&amp; isBullish) BuyAtMarket( bar + 1, &quot;KeyRevBull&quot;); 
+							break;
+						case 2:
+							if (islRevBear &amp;&amp; isBearish) ShortAtMarket( bar + 1, &quot;IslRevBear&quot;);
+							if (islRevBull &amp;&amp; isBullish) BuyAtMarket( bar + 1, &quot;IslRevBull&quot;);
+							break;
+						case 3:
+							if (outsideBear &amp;&amp; isBearish) ShortAtMarket( bar + 1, &quot;OutsideBear&quot;);
+							if (outsideBull &amp;&amp; isBullish) BuyAtMarket( bar + 1, &quot;OutsideBull&quot;);
+							break;
+						case 4:
+							if (isWRBBear &amp;&amp; isBearish) ShortAtMarket( bar + 1, &quot;WRBBear&quot;);
+							if (isWRBBull &amp;&amp; isBullish) BuyAtMarket( bar + 1, &quot;WRBBull&quot;);
+							break;
+						case 5:
+							if (compression)
+							{
+								if(BuyAtStop(bar+1, Highest.Series(High,3)[bar], &quot;CompressionBull&quot;) ==null)
+									ShortAtStop( bar + 1, Lowest.Series(Low, 3)[bar], &quot;CompressionBear&quot;);
+							}
+							break;
+                            case 6:
+							if (isGapUp &amp;&amp; isBullish) BuyAtClose( bar, &quot;GapUp&quot;);
+							if (isGapDown &amp;&amp; isBearish) ShortAtClose( bar, &quot;GapDown&quot;);
+							break;
+                            default: break;
+					}
+				}
+			}
+		}
+	}
+}
+</pre>
+<p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+  Wealth-Lab team<br>
+  <a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">NINJATRADER: JANUARY 2021</h3>
+</div>
+<p>The PJKShortTermPatterns indicator, as presented in the article by Perry Kaufman in this issue, &ldquo;A Fresh Look at Short-Term Patterns,&rdquo; is available for download at the following links for NinjaTrader 8 and for NinjaTrader 7:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8:</strong> <a href="https://www.ninjatrader.com/SC/January2021SCNT8.zip" target="_blank">www.ninjatrader.com/SC/January2021SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7:</strong> <a href="https://www.ninjatrader.com/SC/January2021SCNT7.zip">www.ninjatrader.com/SC/January2021SCNT7.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTader 8 from within the control center by selecting Tools &rarr; Import &rarr;→ NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import in NinjaTrader 7 from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator&rsquo;s source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control center window and selecting the PJKShortTermPatterns file. You can review the indicator&rsquo;s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the control center window and selecting the PJKShortTermPatterns file.</p>
+<p>A sample chart displaying the indicator is shown in Figure 4.</p>
+<div class="figBorder"> <img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 4: NINJATRADER. The PJKShortTermPatterns indicator is displayed on a daily MSFT chart from November 2019 to November 2020 with TrendPer = 2 and Use Key Reversal = true. </p>
+</div>
+<p><em>NinjaScript uses compiled DLLs that run native, not interpreted, which provides you with the highest performance possible.</em></p>
+
+<p class="authorTips">&mdash;Chris Lauber<br>
+  NinjaTrader, LLC<br>
+  <a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">NEUROSHELL TRADER: JANUARY 2021</h3>
+</div>
+<p>A short-term pattern trading system such as the one discussed by Perry Kaufman in his article in this issue can be easily implemented in NeuroShell Trader by combining a few of NeuroShell Trader&rsquo;s 800+ indicators.</p>
+<p>For this example, we&rsquo;ve used the <em>island reversal</em> pattern, but you can choose from any of the 90 candlestick and traditional trading patterns included in NeuroShell Trader. To create the trading system, simply select <em>new trading</em> strategy from the <em>insert</em> menu and enter the following in the appropriate locations of the trading strategy wizard:</p>
+<pre>
+<strong>BUY LONG CONDITIONS: [All of which must be true]</strong>
+     Key Reversal: Bullish Flag(High,Low,Close)
+     A&gt;B(Momentum(Avg(Close,80),1),0)
+
+<strong>SELL LONG CONDITIONS: [All of which must be true]</strong>
+     BarsSinceFill&gt;=X(Trading Strategy,3)
+
+<strong>SELL SHORT CONDITIONS: [All of which must be true]</strong>
+     Key Reversal: Bearish Flag(High,Low,Close)
+     A&lt;B(Momentum(Avg(Close,80),1),0)
+
+<strong>COVER SHORT CONDITIONS: [All of which must be true]</strong>
+     BarsSinceFill&gt;=X(Trading Strategy,3)
+
+<strong>POSITION SIZING METHOD:</strong>
+     Fixed Dollar
+          10,000.00 Dollars
+</pre>
+<p>After entering the system conditions, you can also choose whether the parameters should be genetically optimized. After backtesting the trading strategy, use the <em>detailed analysis</em> button to view the backtest and trade-by-trade statistics for the system.</p>
+<div class="figBorder"> <img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 5: NEUROSHELL TRADER. This NeuroShell Trader chart shows the key reversal pattern applied to Walmart.</p>
+</div>
+<p>NeuroShell Trader users can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p class="authorTips">&mdash;Marge Sherald, Ward Systems Group, Inc.<br>
+  301 662-7950, <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+  <a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">THE ZORRO PROJECT: JANUARY 2021</h3>
+</div>
+<p>Japanese traders developed candlestick charts and candlestick patterns in the 17th century. Some traders believe that those patterns are still valid today. But since the 21st-century financial markets are quite different from the Kyoto rice market of 300 years ago, new patterns were invented. In the article &ldquo;A Fresh Look At Short-Term Patterns&rdquo; in this issue, Perry Kaufman tests several new patterns with major US stocks and indexes, and with an additional trend filter.</p>
+<p>The 6 patterns tested were key reversal, island reversal, outside days, wide-ranging days, 3-day compression, and gap opening. All are calculated from the previous 3 or 4 candles and give a buy or sell signal. Here&rsquo;s how they look coded as indicators in C:</p>
+<pre>
+var cdlKeyReversal()
+{
+  if(priceHigh(0) &gt; priceHigh(1) &amp;&amp; priceLow(0) &lt; priceLow(1))
+  {
+    if(priceClose(0) &lt; priceLow(1)) return -100; // sell
+    if(priceClose(0) &gt; priceHigh(1)) return 100; // buy
+  }
+  return 0;
+}
+
+
+var cdl3DayCompression()
+{
+  vars TRs = series(TrueRange(),4);
+  if(TRs[0] &lt; TRs[3] &amp;&amp; TRs[1] &lt; TRs[3] &amp;&amp; TRs[2] &lt; TRs[3])
+    return 100;
+  else
+    return 0;
+}
+
+var cdlIslandReversal()
+{
+  if(priceLow(0) &gt; priceHigh(1) &amp;&amp; priceClose(0) &lt; priceOpen(0))
+    return -100; // sell
+  if(priceLow(1) &lt; priceHigh(0) &amp;&amp; priceClose(0) &gt; priceOpen(0))
+    return 100; // buy
+  else return 0;
+}
+
+var cdlOutsideDay()
+{
+  if(priceHigh(0) &gt; priceHigh(1) &amp;&amp; priceLow(0) &lt; priceLow(1))
+  {
+    if(priceClose(0) &lt; 0.75*priceLow(0) + 0.25*priceHigh(0))
+      return -100; // sell
+    if(priceClose(0) &gt; 0.25*priceLow(0) + 0.75*priceHigh(0))
+      return 100; // buy
+  }
+  return 0;
+}
+
+var cdlWideRangeDays()
+{
+  if(TrueRange() &gt; 1.5*ATR(20))
+    return cdlOutsideDay();
+  else
+    return 0;
+}
+
+var cdlGapOpening()
+{
+  var Ratio = (priceOpen(0) - priceClose(1))/ATR(20);
+  if(Ratio &gt;= 0.5) return 100;
+  if(Ratio &lt;= -0.5) return -100;
+  return 0;
+}
+</pre>
+<p>Following the convention of the classic candle patterns from the TA indicator library, the pattern functions return 100 for a bullish pattern, -100 for a bearish pattern, and 0 for no pattern.</p>
+<p>We will test the patterns with IWM, AAPL, AMZN, GE, WMT, and TSLA stocks, as well as SPY and QQQ index ETFs. There are two differences from the test in Kaufman&rsquo;s article. First, we will use not merely price differences, but will simulate real trades with spread and commission. So the returns will be a bit worse but more realistic. Second, we test from 2010 to 2020 to help ensure that the results of all assets are comparable. Some of them, like TSLA, didn&rsquo;t exist before 2010.</p>
+<p>Here is the test script:</p>
+<pre>
+var pattern(); // function pointer
+
+void run()
+{
+  pattern = cdlGapOpening; // place pattern function here
+  bool WithTrend = true; // false without trend
+  BarPeriod = 1440; // 1 day
+  StartDate = 2010; // TSLA went public in 2010
+  var Investment = 10000;
+
+  while(asset(loop(&quot;SPY&quot;,&quot;QQQ&quot;,&quot;IWM&quot;,&quot;AAPL&quot;,&quot;AMZN&quot;,&quot;GE&quot;,&quot;WMT&quot;,&quot;TSLA&quot;))) {
+  vars Trend = series(SMA(seriesC(),80));
+  while(algo(loop(&quot;Day1&quot;,&quot;Day2&quot;,&quot;Day3&quot;,&quot;Day4&quot;,&quot;Day5&quot;))) {
+   Lots = Investment/priceClose();
+   LifeTime = Itor2+1; // life time in days
+  if(pattern() &gt; 0 &amp;&amp; (!WithTrend || rising(Trend)))
+    enterLong();
+  else if(pattern() &lt; 0  &amp;&amp; (!WithTrend || falling(Trend)))
+    enterShort();
+  if(is(EXITRUN)) { // print statistics in the last run
+    if(Itor2 == 0) // first loop run
+      printf(&quot;\n%s Cases %i/%i -&quot;,Asset,
+        NumWinLong+NumLossLong,NumWinShort+NumLossShort);
+    printf(&quot; %s: %.0f/%.0f &quot;,Algo,
+      WinLong-LossLong,WinShort-LossShort);
+  }
+  }} // asset/algo loops
+}
+</pre>
+<p>Here are some explanations for the code: At the start of the run() function, the pattern and the trend mode are set up. For convenience we&rsquo;re using a function pointer that is set to the pattern function to be tested. The test uses two nested loops, first for selecting the stocks, and second for selecting the trade lifetime to get the results from a 1-day trade up to a 5-day trade. The predefined <em>Itor2</em> variable is the iterator of the second loop and runs from 0 to 4, so we just use it to set the <em>LifeTime</em> variable for the subsequent trade. The number of stocks purchased is calculated in the same way as in Kaufman&rsquo;s article and code. The results are printed in the EXITRUN at the last day of the simulation.</p>
+<p>The table in Figure 6 shows an example result for the gap opening pattern with trend.</p>
+<div class="figBorder"> <img src="images/TT-Zorro.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 6: Zorro. Example result for the gap opening pattern with trend.</p>
+</div>
+<p>The numbers are the returns of long/short trades in US dollars.</p>
+<p>The pattern functions and the test script can be downloaded from the 2020 script repository on <a href="https://financial-hacker.com" target="_parent">https://financial-hacker.com</a>.</p>
+<p>The Zorro platform can be downloaded from <a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a>.</p>
+<p class="authorTips">&mdash;Petra Volkova<br>
+  The Zorro Project by oP group Germany<br>
+  <a href="https://www.zorro-project.com" target="_parent">www.zorro-project.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item7"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Optuma.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">OPTUMA: JANUARY 2021</h3>
+</div>
+<p>Here is a list of formulas for use with Optuma based on the article in this issue by Perry Kaufman, &ldquo;A Fresh Look At Short-Term Patterns.&rdquo;</p>
+<p>To include the 80-trend filter, users just need to add &lsquo;and MA(BARS=80) IsUp&rsquo; for bullish trend, or &lsquo;MA(BARS=80) IsDown&rsquo; for bearish.</p>
+<pre>
+<strong>Key Revesal - Bullish</strong>
+
+BARTYPES().Outside and CLOSE()&gt;HIGH()[1]
+
+
+<strong>Key Reversal - Bearish</strong>
+
+BARTYPES().Outside and CLOSE()&lt;LOW()[1]
+
+
+<strong>Island Reversal - Bullish</strong>
+
+HIGH()&lt;LOW()[1] and CLOSE()&gt;OPEN()
+
+
+<strong>Island Reversal - Bearish</strong>
+
+LOW()&gt;HIGH()[1] and CLOSE()&lt;OPEN()
+
+
+<strong>Compression - Bullish</strong>
+
+TR1 = TRUERANGE();
+
+Compression = (TR1[4] &gt; TR1[3]) and (TR1[4] &gt; TR1[2]) and (TR1[4] &gt; TR1[1]);
+
+CompHigh = HIGHESTHIGH(BARS=4);
+
+Compression and CLOSE() CrossesAbove CompHigh
+
+
+<strong>Compression - Bearish</strong>
+
+TR1 = TRUERANGE();
+
+Compression = (TR1[4] &gt; TR1[3]) and (TR1[4] &gt; TR1[2]) and (TR1[4] &gt; TR1[1]);
+
+CompLow = LOWESTLOW(BARS=4);
+
+Compression and CLOSE() CrossesBelow CompLow
+
+
+<strong>Outside Days - Bullish</strong>
+
+BARTYPES().Outside and
+
+CLOSE() &gt; 0.75*(HIGH() - LOW()) +LOW()
+
+
+<strong>Outside Days - Bearish</strong>
+
+BARTYPES().Outside and
+
+CLOSE() &lt; 0.25*(HIGH() - LOW()) +LOW()
+
+
+<strong>Wide Ranging Days - Bullish</strong>
+
+ATR1 = ATR(BARS=1);
+
+ATR20 = ATR(BARS=20, MULT=1.50);
+
+(ATR1&gt;ATR20) and
+
+CLOSE() &gt; 0.75*(HIGH() - LOW()) +LOW()
+
+
+<strong>Wide Ranging Days - Bearish</strong>
+
+ATR1 = ATR(BARS=1);
+
+ATR20 = ATR(BARS=20, MULT=1.50);
+
+(ATR1&gt;ATR20) and
+
+CLOSE() &lt; 0.25*(HIGH() - LOW()) +LOW()
+
+
+<strong>Opening Gaps - Bullish</strong>
+
+ATR20=ATR(BARS=20, MULT=0.50);
+
+OPEN()&gt;(CLOSE()[1]+ATR20) and CLOSE()&gt;OPEN()
+
+
+<strong>Opening Gas - Bearish</strong>
+
+ATR20=ATR(BARS=20, MULT=0.50);
+
+OPEN()&lt;(CLOSE()[1]-ATR20) and CLOSE()&lt;OPEN()
+</pre>
+<p><strong><em>Testing</em></strong><br>
+  Optuma has a Signal Testing module that can run these formulas over any timeframe and universe of stocks with a couple of clicks, giving the results in seconds. The results show the average percentage returns, and other statistics (including 20th/80th percentiles, standard deviation, and a Monte Carlo simulation).</p>
+<p>Here are two example tests since January 2000 on the three ETFs and five stocks used in the article.</p>
+<p><strong><em>Opening Gap&mdash;Bullish</em></strong><br>
+  Figure 7 shows 1,502 total signals showing performance 5 days before and 10 days after each signal.</p>
+<div class="figBorder"> <img src="images/TT-Optuma1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 7: OPTUMA. This chart displays sample test results for the bullish opening gap pattern. In this test, there were 1,502 total signals showing performance 5 days before and 10 days after each signal.</p>
+</div>
+<p>After 10 days, there was a probability of gain of 58%, for an average return of 0.51%. The individual instrument breakdown is as follows: 289 signals for SPY with probability of gain after 10 days of 60.5%, with a mean gain of 0.06%. TSLA had a higher mean return (4.3%) but a lower probability of gain (56%) and a higher standard deviation (15.5%) in the 82 events. (See Figure 8.)</p>
+<div class="figBorder"> <img src="images/TT-Optuma2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 8: OPTUMA. For the instruments tested you can view the trade statistics and metrics, including number of signals found, probability of gain or loss, standard deviation, and mean. </p>
+</div>
+<p><strong><em>Compression&mdash;Bearish with Trend Filter</em></strong><br>
+  For this test, we had 433 results showing an average gain after 10 days of 0.3% (see Figure 9). The individual components are shown in Figure 10.</p>
+<div class="figBorder"> <img src="images/TT-Optuma3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 9: OPTUMA. This chart displays sample test results for the bearish compression pattern with a trend filter.</p>
+</div>
+<div class="figBorder"> <img src="images/TT-Optuma4.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 10: OPTUMA. For the instruments tested you can view the trade statistics and metrics.</p>
+</div>
+<p class="authorTips">&mdash;<a href="mailto:support@optuma.com">support@optuma.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item8"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">TRADERSSTUDIO: JANUARY 2021</h3>
+</div>
+<p>The importable TradersStudio files based on Perry Kaufman&rsquo;s article in this issue, &ldquo;A Fresh Look At Short-Term Patterns (With And Without A Trend Filter),&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also available below.</p>
+<pre>
+'A Fresh Look At Short-Term Patterns
+'Author: Perry J  Kaufman, TASC Jan 2021
+'Coded by: Richard Denning 11/18/2020
+
+Sub ST_Patterns_Sys(TrendLen,ATRLen,exitLenLong,exitLenShort,useTrendFilter)
+'TrendLen = 80 
+'ATRLen = 20 
+'useTrentFilter = 0 (no trend filter or 1 use trend filter)
+Dim theTR As BarArray
+Dim theATR As BarArray
+theTR = Max(H - L,Max(Abs(C[1] - L),Abs(C[1] - H)))  
+theATR = Average(theTR,ATRLen) 
+
+'Trend Filter:
+Dim SMATrend As BarArray
+Dim UpTrend As BarArray
+Dim DnTrend As BarArray
+SMATrend = Average(C,TrendLen) 
+UpTrend = IFF(SMATrend &gt; SMATrend[1] And useTrendFilter=1,1,IFF(useTrendFilter=0,1,0))
+DnTrend = IFF(SMATrend &lt; SMATrend[1] And useTrendFilter=1,1,IFF(useTrendFilter=0,1,0))
+
+
+'Key reversals a higher high followed by a lower close 
+' We sell the lower close  The opposite for buy signals 
+  'If H &gt;  H[1] And C &lt; C[1] And DnTrend Then Sell(&quot;BearKeyR&quot;,1,0,Market,Day)
+  'If L &lt; L[1] And C &gt; C[1] and UpTrend Then Buy(&quot;BearKeyR&quot;,1,0,Market,Day)
+
+'Island reversals a gap higher followed by a lower close,
+' but not filling the gap  
+'We sell the lower close  The opposite for buy signals 
+  'If L &gt;  H[1] And C &lt; O And DnTrend Then Sell(&quot;BearIslandR&quot;,1,0,Market,Day)
+  'If H &lt; L[1] And C &gt; O And UpTrend Then Buy(&quot;BullIslandR&quot;,1,0,Market,Day)
+
+'Outside days a higher high and a lower low, but the 
+'close in the upper or lower 25% of the range  
+'We buy if upper, sell if lower 
+  'If H &gt;  H[1] And L &lt; L[1] And C &lt; (L + (H-L)*0.25) And DnTrend Then Sell(&quot;BearOutSide&quot;,1,0,Market,Day)
+  'If H &gt;  H[1] And L &lt; L[1] And C &gt; (H - (H-L)*0.25) And UpTrend Then Buy(&quot;BullOutSide&quot;,1,0,Market,Day)
+
+'Wide-ranging days the same as outside days, but the 
+' true  range  must  exceed  1.5    20-day average true range 
+  'If H &gt;  H[1] And L &lt; L[1] And C &lt; (L + (H-L)*0.25) And theTR &gt; 1.5*theATR And DnTrend Then Sell(&quot;BearWide&quot;,1,0,Market,Day)
+  'If H &gt;  H[1] And L &lt; L[1] And C &gt; (H - (H-L)*0.25) And theTR &gt; 1.5*theATR And UpTrend Then Buy(&quot;BullWide&quot;,1,0,Market,Day)
+
+'Compression the most recent 3 days must each have a 
+' true range smaller than the 4th previous day 
+' We buy a breakout above the highest high of the 
+'last 3 days and sell a breakout below the lowest low of the past 3 days 
+  'If theTR[4] &gt; theTR[1] And theTR[4] &gt; theTR[2] And theTR[4] &gt;theTR[3] And L &lt; Lowest(L,3,1) And DnTrend Then Sell(&quot;BearComp&quot;,1,0,Market,Day)
+  'If theTR[4] &gt; theTR[1] And theTR[4] &gt; theTR[2] And theTR[4] &gt;theTR[3] And H &gt; Highest(H,3,1) And UpTrend Then Buy(&quot;BullComp&quot;,1,0,Market,Day)
+
+'Gap openings must be larger than 0.5  20-day ATR 
+' We buy or sell the close of the gap day in the direction of the opening gap 
+If theATR[1]&lt;&gt;0 Then
+  If ((C[1]-O)/theATR[1]) &gt; 0.5*theATR[1] And O &lt; C[1] And DnTrend Then Sell(&quot;BearGap&quot;,1,0,Market,Day)
+  If ((O-C[1])/theATR[1]) &gt; 0.5*theATR[1] And O &gt; C[1] And UpTrend Then Buy(&quot;BullGap&quot;,1,0,Market,Day)
+End If
+
+
+Dim theBars
+theBars = BarsSinceEntry
+If theBars &gt;= exitLenLong Then ExitLong(&quot;LXTime&quot;,&quot;&quot;,1,0,Market,Day)
+If theBars &gt;= exitLenShort Then ExitShort(&quot;SXtime&quot;,&quot;&quot;,1,0,Market,Day)
+
+End Sub
+</pre>
+<p>Code for the short-term patterns in the article is included in the system file ST_Patterns_Sys both with and without the trend filter depending on the input parameters. All of the patterns are coded on one file so if all of the buy and sell rules for the patterns are uncommented then the back-test will run all the patterns in one run. To test each pattern individually, simply comment out all the other patterns not of current interest. The way I have supplied the code is with all but the BullGap and BearGap patterns commented out. Hence, the only one that will run on a backtest is the gap patterns. Figure 11 shows the equity curve of the BullGap and BearGap trading 100 shares per trade of the NASDAQ 100 list of stocks from 2000 to 2014 with the trend filter turned off. Figure 12 shows the equity curve for the same set except that the trend filter was turned on. The trend filter did not improve the returns.</p>
+<div class="figBorder"> <img src="images/TT-Tradersstudio1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 11: Tradersstudio. Equity curve for BullGap and BearGap trading 100 shares per trade of the NASDAQ 100 without the trend filter. </p>
+</div>
+<div class="figBorder"> <img src="images/TT-Tradersstudio2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 12: Tradersstudio. Equity curve for BullGap and BearGap trading 100 shares per trade of the NASDAQ 100 with the trend filter.</p>
+</div>
+<p class="authorTips">&mdash;Richard Denning<br>
+  <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+  for TradersStudio</p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item9"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">AIQ: JANUARY 2021</h3>
+</div>
+<p>The importable AIQ EDS file based on Perry Kaufman&rsquo;s article in this issue, &ldquo;A Fresh Look At Short-Term Patterns (With And Without A Trend Filter),&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also available below.</p>
+<pre>
+!A Fresh Look At Short-Term Patterns
+!Author: Perry J. Kaufman, TASC Jan 2021
+!Coded by: Richard Denning 11/18/2020
+
+C is [close].
+C1 is valresult(C,1).
+O is [open].
+H is [high].
+H1 is valresult(H,1).
+L is [low].
+L1 is valresult(L,1).
+L2 is valresult(L,2).
+TrendLen is 80.
+ATRlen is 20.
+OSD is offsettodate(month(),day(),year()).
+HD if hasdatafor(ATRlen+20) &gt;= ATRlen.
+TR is Max(H - L,max(abs(C1 - L),abs(C1 - H))). 
+ATR is iff(HD,simpleavg(TR,ATRlen),0).
+TR1 is valresult(TR,1).
+TR2 is valresult(TR,2).
+TR3 is valresult(TR,3).
+TR4 is valresult(TR,4).
+ATR1 is valresult(ATR,1).
+
+!Key reversals a higher high followed by a lower close.
+! We sell the lower close. The opposite for buy signals.
+BearKeyR if H &gt; H1 and C &lt; C1.
+BullKeyR if L &lt; L1 and C &gt; C1.
+
+!Island reversals a gap higher followed by a lower close,
+! but not filling the gap. 
+!We sell the lower close. The opposite for buy signals.
+BearIslandR if L &gt; H1 and C &lt; O.
+BullIslandR if H &lt; L1 and C &gt; O.
+
+!Outside days a higher high and a lower low, but the 
+!close in the upper or lower 25% of the range. 
+!We buy if upper, sell if lower.
+BearOutside if H &gt; H1 and L &lt; L1 and C &lt; (L + (H-L)*0.25).
+BullOutside if H &gt; H1 and L &lt; L1 and C &gt; (H - (H-L)*0.25).
+
+!Wide-ranging days the same as outside days, but  the 
+! true  range  must  exceed  1.5  ×  20-day average true range.
+BearWide if H &gt; H1 and L &lt; L1 and C &lt; (L + (H-L)*0.25) and TR &gt; 1.5*ATR.
+BullWide if H &gt; H1 and L &lt; L1 and C &gt; (H - (H-L)*0.25) and TR &gt; 1.5*ATR.
+
+!Compression the most recent 3 days must each have a 
+! true range smaller than the 4th previous day.
+! We buy a breakout above the highest high of the 
+!last 3 days and sell a breakout below the lowest low of the past 3 days.
+BearComp if TR4 &gt; TR1 and TR4 &gt; TR2 and TR4 &gt;TR3 and L &lt; lowresult(L,3,1).
+BullComp if TR4 &gt; TR1 and TR4 &gt; TR2 and TR4 &gt;TR3 and H &gt; highresult(H,3,1).
+
+!Gap openings must be larger than 0.5 × 20-day ATR.
+! We buy or sell the close of the gap day in the direction of the opening gap.
+BearGap if ((C1-O)/ATR1) &gt; 0.5*ATR1 and O &lt; C1.
+BullGap if ((O-C1)/ATR1) &gt; 0.5*ATR1 and O &gt; C1.
+
+!Trend Filter:
+SMATrend is simpleavg(C,TrendLen).
+SMATrend1 is valresult(SMATrend,1).
+UpTrend if SMATrend &gt; SMATrend1.
+DnTrend if SMATrend &lt; SMATrend1.
+
+!Patterns with Trend Filter:
+BearKeyRTrend if BearKeyR and DnTrend.
+BullKeyRTrend if BullKeyR and UpTrend.
+BearIslandRTrend if BearIslandR and DnTrend.
+BullIslandRTrend if BullIslandR and UpTrend.
+BearWideTrend if BearWide and DnTrend.
+BullWideTrend if BUllWide and UpTrend.
+BearCompTrend if BearComp and DnTrend.
+BullCompTrend if BullComp and UpTrend.
+BearGapTrend if BearGap and DnTrend.
+BullGapTrend if BullGap and UpTrend.
+</pre>
+<p>Code for short-term patterns in the article is included in the EDS file both with and without the trend filter. I ran a portfolio simulation trading NASDAQ 100 stocks with the Bull Outside Day pattern from 1999 to 2020. The equity curve (blue) compared to the NASDAQ index (red) is shown in Figure 13 and the ASA report for the test is shown in Figure 14.</p>
+<div class="figBorder"> <img src="images/TT-Aiq1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 13: AIQ. Equity curve (blue) for Bull Outside Day pattern compared to the NASDAQ 100 index (red) from 1999 to 2020, all trades closed on 4th bar&rsquo;s open after entry.</p>
+</div>
+<div class="figBorder"> <img src="images/TT-Aiq2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;"> FIGURE 14: AIQ. Account Statistics Analysis report for the portfolio simulation.</p>
+</div>
+<p class="authorTips">&mdash;Richard Denning<br>
+  <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+  for AIQ Systems</p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the January 2021 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2020, Technical Analysis, Inc.</p>
+</body>
+</html>

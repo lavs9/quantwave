@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: The Reversion Index by John F. Ehlers. Contributions from: TradeStation; Wealth-Lab.com; TradingView; Neuroshell Trader; Python; NinjaTrader.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - JANUARY 2026</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">January 2026</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2026/01/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John F. Ehlers&rsquo; article in this issue, &ldquo;The Reversion Index.&rdquo; Here, we present the January 2026 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: January 2026</a></li>
+  <li><a href="#item2">Wealth-Lab.com: January 2026</a></li>
+  <li><a href="#item3">TradingView: January 2026</a></li>
+  <li><a href="#item4">Neuroshell Trader: January 2026</a></li>
+  <li><a href="#item5">Python: January 2026</a></li>
+  <li><a href="#item6">NinjaTrader: January 2026</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: January 2026</h3></div>
+<p>In John Ehlers&rsquo; article in this issue, &ldquo;The Reversion Index,&rdquo; he presents an indicator that produces timely buy and sell signals for mean-reversion strategies by summing bar-to-bar price changes and normalizing them by their absolute values. He explains that the summation should cover about half of the dominant cycle in the data, and that peaks and valleys are identified by the crossings of two SuperSmoother filters with different lengths. The reversion index is a normalized sum of price differences that oscillates between -1 and +1.</p> 
+<p>EasyLanguage code for the reversion index is shown here. A sample chart of the reversion index is shown in Figure 1.</p>
+<pre>
+<b>Indicator: Reversion Index</b>
+
+{
+	TASC APR 2026
+	Reversion Index
+	(C) 2005 John F. Ehlers
+}
+
+inputs:
+	Length( 20 );
+	
+variables:
+	DeltaSum( 0 ),
+	AbsDeltaSum( 0 ),
+	Count( 0 ),
+	Ratio( 0 ),
+	Smooth( 0 ),
+	Trigger( 0 );
+
+DeltaSum = 0;
+AbsDeltaSum = 0;
+
+for Count = 0 to Length - 1 
+begin
+	DeltaSum = DeltaSum + Close[Count] - Close[Count + 1];
+	AbsDeltaSum = AbsDeltaSum + AbsValue( Close[Count] 
+	 - Close[Count + 1] );
+end;
+
+if AbsDeltaSum &lt;&gt; 0 then 
+	Ratio = DeltaSum / AbsDeltaSum;
+
+Smooth = $SuperSmoother( Ratio, 8 );
+Trigger = $SuperSmoother( Ratio, 4 );
+
+Plot1( Smooth, &quot;Smooth&quot; );
+Plot2( 0, &quot;Zero&quot; );
+Plot3( Trigger, &quot;Triger&quot; );
+
+<b>Function: $SuperSmoother</b>
+
+{
+	SuperSmoother Function
+ 	(C) 2025 John F. Ehlers
+}
+
+inputs:
+	Price(numericseries),
+	Period(numericsimple);
+
+variables:
+	a1( 0 ),
+	b1( 0 ),
+	c1( 0 ),
+	c2( 0 ),
+	c3( 0 );
+
+a1 = ExpValue(-1.414 * 3.14159 / Period);
+b1 = 2 * a1 * Cosine(1.414 * 180 / Period);
+c2 = b1;
+c3 = -a1 * a1;
+c1 = 1 - c2 - c3;
+
+if CurrentBar &gt;= 4 then 
+	$SuperSmoother = c1*(Price + Price[1]) / 2 
+	 + c2 * $SuperSmoother[1] + c3 * $SuperSmoother[2];
+if CurrentBar &lt; 4 then 
+	$SuperSmoother = Price;
+</pre>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This daily chart of the S&amp;P 500 ETF SPY showing a portion of 2025 demonstrates the indicator applied with the length set to 10.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="http://www.TradeStation.com" target="_blank">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: January 2026</h3></div>
+ <p>We added the reversion index, which is introduced in John Ehlers&rsquo; article in this issue, to our TASC indicator library in WealthLab 8, so you can use it in drag-and-drop strategy development.</p>
+<p>Our implementation has two parameters: a period with a default of 10, and a smoothing factory (internally using the SuperSmoother) with a default of 4.</p>
+<p>We used our building block strategy designer to quickly mock up a strategy by dropping the <em>indicator crosses indicator</em> condition block onto the buy and sell blocks. (See Figure 2.) We set up the indicators to use the reversion index with a smoothing of 4 crossing over a reversion index with a smoothing of 8 for entries, and crossing under for exits.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: WEALTH-LAB. Wealth-Lab&rsquo;s drag-and-drop building block feature is demonstrated to design a trading strategy based on the reversion index oscillator.</p></div>
+<p>Figure 3 demonstrates the strategy applied to The Trade Desk (TTD), showing some representative trades. It appears to work very well on a volatile stock such as this one, capturing the upward moves while protecting from larger drawdowns.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: WEALTH-LAB. The example strategy based on the reversion index is demonstrated on a chart of The Trade Desk (TTD).</p></div>
+<p class="authorTips">&mdash;Dion Kurczek<br>
+Wealth-Lab team<br>
+<a href="http://www.wealth-lab.com" target="_blank">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: January 2026</h3></div>
+<p>The TradingView Pine Script code presented here implements the reversion index as introduced by John Ehlers in his article in this issue, &ldquo;The Reversion Index (Identifying Peaks And Valleys In Ranging Markets).&rdquo;</p> 
+<pre>
+//  TASC Issue: January 2026
+//     Article: Identifying Peaks And Valleys In Ranging Markets
+//              The Reversion Index
+//  Article By: John F. Ehlers
+//    Language: TradingView's Pine Script® v6
+// Provided By: PineCoders, for tradingview.com
+
+//&#64;version=6
+indicator('TASC 2026.01 The Reversion Index', 'RI', overlay = false)
+
+//#region Inputs
+
+int length = input.int(20)
+
+//#endregion
+
+//#region Functions
+
+//===== Super Smoother Filter =====//
+superSmoother(float Series, float Period) =&gt;
+    var float ALPHA =  math.pi * math.sqrt(2.0) / Period
+    var float BETA  =  math.exp(-ALPHA )
+    var float COEF2 = -math.pow(BETA, 2)
+    var float COEF1 =  math.cos( ALPHA ) * 2.0 * BETA
+    var float COEF0 =  1.0 - COEF1 - COEF2
+    float sma2   = math.avg(Series, nz(Series[1], Series))
+    float smooth = na, smooth := COEF0 *      sma2      +
+                                 COEF1 *  nz(smooth[1]) +
+                                 COEF2 *  nz(smooth[2])
+
+reversionIndex (int length) =&gt;
+    float d = close - close[1]
+    float ds = math.sum(d, length)
+    float ads = math.sum(math.abs(d), length)
+    float ratio = ads != 0.0 ? ds / ads : 0.0
+    ratio
+
+//#endregion
+
+//#region Calculations
+
+float ri = reversionIndex(length)
+float sm = superSmoother(ri, 8)
+float tr = superSmoother(ri, 4)
+
+//#endregion
+
+//#region Display
+
+hline(0)
+plot(ri, 'RI', color.gray)
+plot(sm, 'Smooth', color.blue)
+plot(tr, 'Trigger', color.red)
+
+//#endregion
+</pre>
+<p>The indicator is available on TradingView from the PineCodersTASC account at: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart is shown in Figure 4.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: TRADINGVIEW. Here you an example of the reversion index plotted on a chart of emini S&amp;P 500 futures (ES.)</p></div>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="http://www.TradingView.com" target="_blank">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: January 2026</h3></div>
+ <p>The reversion index introduced in John Ehlers&rsquo; article in this issue can be easily implemented in NeuroShell Trader by selecting <em>new indicator</em> from the <em>insert</em> menu and using the indicator wizard to create the following indicators:</p>
+	<pre>Reversion index: 
+Divide(Sum(Momentum(Close,1),20),Sum(Abs(Momentum(Close,1)),20))
+
+Smoothed:
+Super Smoother( Reversion Index, 4)
+Super Smoother( Reversion Index, 8)</pre>
+<p>Note that the SuperSmoother indicator being used here was created and described in earlier Traders&rsquo; Tips (such as in the June 2025 and May 2021 issues). Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+<p class="figCaption" style="width: 550px;">FIGURE 5: NEUROSHELL TRADER. This NeuroShell Trader chart demonstrates the reversion index on a chart of emini S&amp;P 500 futures (ES) along with its SuperSmoother filtered version.</p></div>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_blank">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Python: January 2026</h3></div>
+ <p>Following is Python code to implement concepts described in John Ehlers&rsquo; article in this issue, &ldquo;The Reversion Index.&rdquo;</p>
+<pre>
+&quot;&quot;&quot;
+Written By: Rajeev Jain, jainraje&#64;yahoo.com
+
+Python code to implement concepts in Technical Analysis of S&amp;C Magazine 
+January 2026 article &quot;The Reversion Index&quot; by John F Ehlers. This python 
+code is provided for TraderTips section of the magazine.
+
+2025-11-12  Initial implementation
+2025-11-14  Uploaded to github
+
+https://github.com/jainraje/TraderTipArticles/
+
+&quot;&quot;&quot;
+
+# Import required python libraries
+
+%matplotlib inline
+
+import pandas as pd
+import numpy as np
+import yfinance as yf
+import math
+import datetime as dt
+import matplotlib.pyplot as plt
+
+
+
+# Use Yahoo Finance python package to obtain OHLCV data for desired instrument.
+
+symbol = '^GSPC'
+start = &quot;2023-11-13&quot;
+end = dt.datetime.now().strftime('%Y-%m-%d') 
+end = '2025-11-15'
+ohlcv = yf.download(
+    symbol, 
+    start, 
+    end,
+    group_by=&quot;Ticker&quot;,  
+    auto_adjust=True
+)
+ohlcv = ohlcv[symbol]
+ohlcv
+
+
+
+# three functions to implement concepts: 1) super_smoother 2) reversion_index 
+# and 3) plot_reversion_index to plot relevant signals
+
+def super_smoother(price: pd.Series, period: float) -&gt; pd.Series:
+    &quot;&quot;&quot;
+    Vectorized Ehlers SuperSmoother filter (&copy; John F. Ehlers)
+    
+    Parameters
+    ----------
+    price : pd.Series
+        Input price series (e.g., closing prices)
+    period : float
+        Smoothing period
+
+    Returns
+    -------
+    pd.Series
+        Smoothed price series
+    &quot;&quot;&quot;
+    q = np.exp(-1.414 * np.pi / period)
+    c1 = 2 * q * np.cos(np.radians(1.414 * 180 / period))
+    c2 = q * q
+    a0 = (1 - c1 + c2) / 2
+
+    price_vals = price.to_numpy()
+    out_values = np.zeros_like(price_vals)
+    
+    # Initialize first four values to the original price
+    out_values[:4] = price_vals[:4]
+
+    # Apply recursive filter from index 4 onward
+    for i in range(4, len(price_vals)):
+        out_values[i] = a0 * (price_vals[i] + price_vals[i-1]) + c1 * out_values[i-1] - c2 * out_values[i-2]
+
+    return pd.Series(out_values, index=price.index)
+
+
+def reversion_index(close: pd.Series, length: int = 20) -&gt; pd.DataFrame:
+    &quot;&quot;&quot;
+    Ehlers Reversion Index (&copy; 2025 John F. Ehlers)
+    Correct and fully vectorized Python version.
+    &quot;&quot;&quot;
+    close = close.astype(float)
+    
+    # Delta: change from previous bar
+    delta = close.diff().fillna(0)
+    
+    # Rolling sums of delta and absolute delta
+    delta_sum = delta.rolling(window=length, min_periods=1).sum()
+    abs_delta_sum = delta.abs().rolling(window=length, min_periods=1).sum()
+    
+    # Ratio: safely avoid division by zero
+    ratio = delta_sum / abs_delta_sum.replace(0, np.nan)
+    ratio = ratio.fillna(0)
+    
+    # Smooth and trigger lines
+    smooth = super_smoother(ratio, period=8)
+    trigger = super_smoother(ratio, period=4)
+    
+    return pd.DataFrame({
+        'ReversionSmooth': smooth,
+        'ReversionTrigger': trigger
+    }, index=close.index)
+
+
+def plot_reversion_index(df):
+    
+    import matplotlib.pyplot as plt
+    import matplotlib.dates as mdates
+    
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 9), sharex=True, gridspec_kw={'height_ratios':[2,2]})
+    
+    # ----- Top: Price &amp; SuperSmoother -----
+    ax1.plot(df.index, df['Close'], label='Close', linewidth=1)
+    ax1.plot(df.index, df['SuperSmoother'], label='SuperSmoother', linewidth=2, alpha=0.6, color='orange')
+    
+    # Shading for bullish/bearish signals
+    ax1.fill_between(df.index, df['Close'].min(), df['Close'].max(), 
+                     where=df['Signal'] == 1, color='green', alpha=0.1)
+    ax1.fill_between(df.index, df['Close'].min(), df['Close'].max(), 
+                     where=df['Signal'] == -1, color='red', alpha=0.1)
+    
+    ax1.set_title('Price &amp; SuperSmoother with Signal')
+    ax1.grid(True)
+    ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    
+    # ----- Bottom: ReversionSmooth &amp; ReversionTrigger -----
+    ax2.plot(df.index, df['ReversionSmooth'], label='ReversionSmooth', linewidth=1, color='red')
+    ax2.plot(df.index, df['ReversionTrigger'], label='ReversionTrigger', linewidth=1, color='darkblue')
+    ax2.axhline(0, color='gray', linestyle='--', linewidth=1)
+    
+    # Overlay Signal as step plot
+    #ax2.step(df.index, df['Signal'], where='mid', label='Signal', color='purple', linewidth=1.5, alpha=0.5)
+    
+    ax2.set_title('Reversion Index with Signal')
+    ax2.grid(True)
+    ax2.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    
+    # ----- Improve date formatting on the bottom subplot -----
+    ax2.xaxis.set_major_locator(mdates.AutoDateLocator())
+    ax2.xaxis.set_major_formatter(mdates.ConciseDateFormatter(mdates.AutoDateLocator()))
+    plt.setp(ax2.get_xticklabels(), rotation=0, ha='center')  # horizontal, centered
+    
+    #plt.xlabel('Date')
+    plt.tight_layout()
+    plt.show()
+	
+
+ 
+
+# Call functions to run required calculations. Set buy when ReversionTrigger 
+# swings above ReversionSmooth and sell for when ReversionTrigger swings below. 
+# Different period and lengths can be tested to determine optimum settings. 
+# Top plot close vs the SuperSmoother and red and white background shading to 
+# show highlight when buy and sell signals are active. Using slicing to plot 
+# last 1 year (aka 252 trading days).
+
+df = ohlcv.copy()
+df['SuperSmoother'] = super_smoother(df['Close'], period=10)
+df = df.join(reversion_index(df['Close'], length=20))
+df['Signal'] = np.where(df['ReversionTrigger'] &gt; df['ReversionSmooth'], 1, -1)
+plot_reversion_index(df[-252:])
+</pre>
+<p>The top plot in Figure 6 shows an example of the SuperSmoother and its signals superimposed on price; the red and green vertical shading highlights when buy and sell signals are active. The bottom chart plots the reversion index along with its smoothed version.</p>
+<div class="figBorder">
+<img src="images/TT-Python.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: PYTHON. The SuperSmoother is plotted along with price. The red and green vertical shading highlights when buy and sell signals are active (top). The reversion index and its smoothed version are demonstrated (bottom).</p></div>
+<p class="authorTips">&mdash;Rajeev Jain<br>
+<a href="mailto:jainraje@yahoo.com">jainraje@yahoo.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: January 2026</h3></div>
+ <p>In &ldquo;The Reversion Index (Identifying Peaks And Valleys In Ranging Markets)&rdquo; in this issue, John Ehlers introduces an indicator he designed for use with mean-reversion strategies.</p>
+<p>The indicator is available for download at the following link for NinjaTrader 8:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://ninjatrader.com/SC/January2026SCNT8.zip" target="_blank">ninjatrader.com/SC/January2026SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import it into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the source code in NinjaTrader 8 by selecting New &rarr; NinjaScript Editor &rarr; Indicators from within the control center window and selecting the file.</p>
+<p>A sample chart is shown in Figure 7.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: NINJATRADER. The reversion index is demonstrated on a daily chart of emini S&amp;P 500 futures (ES) over about a one-year period.</p></div>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">&mdash;Helom<br>
+NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_blank">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+	<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the January 2026 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+All rights reserved. &copy;&nbsp;Copyright&nbsp;2025, Technical Analysis, Inc.</p>
+
+</body>
+</html>

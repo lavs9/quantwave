@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine.">
+<meta name="description" content="This month: Windowing by John Ehlers. Contributions from: TradeStation; thinkorswim; eSignal; NinjaTrader; Wealth-Lab.com; Optuma; NeuroShell Trader; TradersStudio; The Zorro Project; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - SEPTEMBER 2021</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">September 2021</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2021/09/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John Ehlers&rsquo; article in this issue, &ldquo;Windowing.&rdquo; Here, we present the September 2021 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList" style="text-transform: uppercase;">
+  <li><a href="#item1">TradeStation: September 2021</a></li>
+  <li><a href="#item2">thinkorswim: September 2021</a></li>
+  <li><a href="#item3"><span style="text-transform:lowercase;">e</span>SIGNAL: September 2021</a></li>
+  <li><a href="#item4">NinjaTrader: September 2021</a></li>
+  <li><a href="#item5">Wealth-Lab.com: September 2021</a></li>
+  <li><a href="#item6">Optuma: September 2021</a></li>
+  <li><a href="#item7">NeuroShell Trader: September 2021</a></li>
+  <li><a href="#item8">TradersStudio: September 2021</a></li>
+  <li><a href="#item9">The Zorro Project: September 2021</a></li>
+  <li><a href="#item10">Microsoft Excel: September 2021</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-New.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: September 2021</h3></div>
+<p>In his article &ldquo;Windowing&rdquo; in this issue, author John Ehlers presents several window functions and explains how they can be applied to simple moving averages to enhance their functionality for trading. Afterwards, he discusses how he uses the rate of change (ROC) to further assist in trading decisions.</p>
+<pre>
+<b>Indicator:  TASC SEP 2021 FIR SMA</b>
+{
+	TASC SEP 2021
+	FIR SMA Indicator
+	(C) 2021   John F. Ehlers
+}
+
+Inputs:
+	Length(20);	
+
+Vars:
+	Deriv(0), 
+	Filt(0),
+	coef(0),
+	ROC(0),
+	count(0);
+
+//Derivative of the price wave	
+Deriv = Close - Open;
+
+Filt = 0;
+coef = 0;
+For count = 1 to Length Begin
+	Filt = Filt + Deriv[count];
+	coef = coef + 1;
+End;
+If coef &lt;&gt; 0 Then Filt = Filt / coef;
+
+ROC = (Length / 6.28)*(Filt - Filt[1]);
+	
+Plot1(Filt);
+Plot2(0);
+ 
+
+<b>Indicator:  TASC SEP 2021 FIR Triangle</b>
+{
+	TASC SEP 2021
+	FIR Triangle Weighting Indicator
+	(C) 2021   John F. Ehlers
+}
+
+Inputs:
+	Length(20);	
+
+Vars:
+	Deriv(0), 
+	Filt(0),
+	coef(0),
+	SumCoef(0),
+	ROC(0),
+	count(0);
+
+//Derivative of the price wave	
+Deriv = Close - Open;
+
+Filt = 0;
+SumCoef = 0;
+For count = 1 to Length Begin
+	If count &lt; Length / 2 Then Begin
+		coef = count;
+	End;
+	If count = Length / 2 Then coef = Length / 2;
+	If count &gt; Length / 2 Then Begin
+		coef = (Length + 1 - count);
+	End;
+	Filt = Filt + coef*Deriv[count - 1];
+	SumCoef = SumCoef + coef;
+End;
+If SumCoef &lt;&gt; 0 Then Filt = Filt / SumCoef;
+
+ROC = (Length / 6.28)*(Filt - Filt[1]);
+
+Plot1(Filt);
+Plot2(0);
+ 
+
+<b>Indicator:  TASC SEP 2021 FIR Hamming</b>
+{
+	TASC SEP 2021
+	FIR Hamming Window Indicator
+	(C) 2021   John F. Ehlers
+}
+
+Inputs:
+	Length(20),
+	Pedestal(10);	
+
+Vars:
+	Deriv(0), 
+	Filt(0),
+	coef(0),
+	ROC(0),
+	count(0);
+
+//Derivative of the price wave	
+Deriv = Close - Open;
+
+Filt = 0;
+coef = 0;
+For count = 0 to Length - 1 Begin
+	Filt = Filt + Sine(Pedestal + (180 - 2*Pedestal)*count / (Length - 1))*Deriv[count];
+	coef = coef + Sine(Pedestal + (180 - 2*Pedestal)*count / (Length - 1));
+End;
+If coef &lt;&gt; 0 Then Filt = Filt / coef;
+
+ROC = (Length / 6.28)*(Filt - Filt[1]);
+	
+Plot1(Filt);
+Plot2(0);{
+
+ 
+<b>Indicator:  TASC SEP 2021 FIR Hann</b>
+{
+	TASC SEP 2021
+	FIR Hann Window Indicator
+	(C) 2021   John F. Ehlers
+}
+
+Inputs:
+	Length(20);	
+
+Vars:
+	Deriv(0), 
+	Filt(0),
+	coef(0),
+	ROC(0),
+	count(0);
+
+//Derivative of the price wave	
+Deriv = Close - Open;
+
+Filt = 0;
+coef = 0;
+For count = 1 to Length Begin
+	Filt = Filt + (1 - Cosine(360*count / (Length + 1)))*Deriv[count - 1];
+	coef = coef + (1 - Cosine(360*count / (Length + 1)));
+End;
+If coef &lt;&gt; 0 Then Filt = Filt / coef;
+
+ROC = (Length / 6.28)*(Filt - Filt[1]);
+	
+Plot1(Filt);
+Plot2(0);
+</pre>
+ <p>Sample charts are shown in Figure 1 and 2 showing the indicators applied and the ROC indicator version applied.</p> 
+<div class="figBorder">
+<img src="images/TT-Tradestation1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This displays a TradeStation daily chart of the S&amp;P 500 ETF (SPY) with the indicators applied.</p></div>
+    
+    <div class="figBorder">
+<img src="images/TT-Tradestation2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: TRADESTATION. This displays a TradeStation daily chart of the S&amp;P 500 ETF (SPY) with the rate of change (ROC) indicator versions applied.</p></div>
+    
+    
+    <p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+     
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Thinkorswim.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">thinkorswim: September 2021</h3></div>
+<p>We put together a handful of studies related to the studies discussed by John Ehlers in his article in this issue titled &ldquo;Windowing.&rdquo; We built the studies referenced by using our proprietary scripting language, thinkscript. To ease the process of adding the studies to thinkorswim, simply click on the link below for the study or enter the address into <em>setup&rarr;open shared item</em> from within thinkorswim, then choose <em>view thinkScript study</em> and name the study with the corresponding name. The studies are as follows:</p>
+
+   <ul style="list-style: none;">
+    <li>FIR_Hamming (<a href="https://tos.mx/bHHl1ST" target="_parent">https://tos.mx/bHHl1ST</a>)</li>
+<li>FIR_Hann (<a href="https://tos.mx/BRtatFv" target="_parent">https://tos.mx/BRtatFv</a>)</li>
+<li>FIR_SMA (<a href="https://tos.mx/14TWSs3" target="_parent">https://tos.mx/14TWSs3</a>)</li>
+<li>FIR_TriangleWeighting (<a href="https://tos.mx/SGsjzl5" target="_parent">https://tos.mx/SGsjzl5</a>)</li>
+    </ul> 
+ <p>Figure 3 shows the studies added to a one-year daily chart of SPY. Please see John Ehlers&rsquo; article in this issue for more information on how to read and utilize these studies.</p>
+    
+    <div class="figBorder">
+<img src="images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: THINKORSWIM. This example chart shows the studies added to a one-year daily chart of SPY.</p></div>
+<p class="authorTips">&mdash;thinkorswim<br>
+A division of TD Ameritrade, Inc.<br>
+<a href="https://www.thinkorswim.com" target="_parent">www.thinkorswim.com</a></p>
+ 
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;"><span style="text-transform:lowercase;">e</span>SIGNAL: September 2021</h3></div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;ve provided the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/09/images/code/FirSMAIndicators.efs" target="_blank">FIR SMA Indicators.efs</a> study based on the article by John Ehlers, &ldquo;Windowing.&rdquo; This study improves the functionality of a simple moving average by reducing lag.</p>
+<p>The studies contain formula parameters which may be configured through the <em>edit chart</em> window (right-click on the chart and select &ldquo;edit chart&rdquo;). A sample chart is shown in Figure 4.</p>
+   <div class="figBorder">
+<img src="images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: eSIGNAL. Here is an example of the study plotted on a daily chart of SPY.</p></div> 
+  <p>To discuss this study or download a complete copy of the formula code, please visit the EFS library discussion board forum under the <em>forums</em> link from the support menu at <a href="https://www.esignal.com" target="_parent">www.esignal.com</a> or visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs" target="_parent">www.esignal.com/support/kb/efs</a>. The eSignal formula script (EFS) is also available for copying &amp; pasting below.</p>
+  <pre>
+/**********************************
+Provided By:  
+Copyright 2019 Intercontinental Exchange, Inc. All Rights Reserved. 
+eSignal is a service mark and/or a registered service mark of Intercontinental Exchange, Inc. 
+in the United States and/or other countries. This sample eSignal Formula Script (EFS) 
+is for educational purposes only. 
+Intercontinental Exchange, Inc. reserves the right to modify and overwrite this EFS file with each new release. 
+
+Description:      
+    Windowing
+    by John F. Ehlers
+    
+
+Version:            1.00  07/09/2021
+
+Formula Parameters:                    Default:
+Length                                 20
+Pedestal                               10
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+var fpArray = new Array();
+var bInit = false;
+
+function preMain() {
+    setStudyTitle(&quot;FIR SMA Indicators&quot;);
+    setCursorLabelName(&quot;SMA Indicator&quot;, 0);
+    setCursorLabelName(&quot;Triangle Weighting Indicator&quot;, 1);
+    setCursorLabelName(&quot;Hamming Window Indicator&quot;, 2);
+    setCursorLabelName(&quot;Hann Window Indicator&quot;, 3);
+    setPriceStudy(false);  
+    
+    var x=0;
+    fpArray[x] = new FunctionParameter(&quot;Length&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1);
+        setDefault(20);
+    }
+    fpArray[x] = new FunctionParameter(&quot;Pedestal&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1);
+        setDefault(10);            
+    }       
+}
+
+var bVersion = null;
+var xClose = null;
+var xOpen = null;
+var xDeriv = null;
+var xFilt = null;
+var xFiltTr = null;
+var xFiltHam = null;
+var xFiltHann = null;
+
+
+
+function main(Length, Pedestal) {
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return; 
+    
+    if ( bInit == false ) { 
+        xClose = close();  
+        xOpen = open();
+        xDeriv = efsInternal(&quot;Calc_Deriv&quot;, xClose, xOpen);
+        xFilt =  efsInternal(&quot;Calc_Filt&quot;, Length, xDeriv);
+        xFiltTr = efsInternal(&quot;Calc_FiltTr&quot;, Length, xDeriv);
+        xFiltHam = efsInternal(&quot;Calc_FiltHam&quot;, Length, xDeriv, Pedestal);
+        xFiltHann = efsInternal(&quot;Calc_FiltHann&quot;, Length, xDeriv);
+        
+        addBand( 0, PS_DASH, 1, Color.grey); 
+        
+        bInit = true; 
+    }      
+
+    if (getCurrentBarCount() &lt;= Length) return;
+    return [xFilt.getValue(0), xFiltTr.getValue(0), xFiltHam.getValue(0), xFiltHann.getValue(0)]
+
+}
+
+function Calc_FiltHann(Length, xDeriv){
+    var Filt = 0;
+    var Coef = 0;
+    for (var i = 1; i &lt;= Length; i++){
+        Filt = Filt + (1 - Math.cos(2 * Math.PI * i / (Length + 1))) * xDeriv.getValue(-i + 1);
+        Coef = (1 - Math.cos(2 * Math.PI * i / (Length + 1)));
+    }
+        
+    if (Coef != 0) return (Filt/Coef);  
+    return Filt;
+}
+
+function Calc_FiltHam(Length, xDeriv, Pedestal){
+    var Filt = 0;
+    var Coef = 0;
+    for (var i = 0; i &lt; Length; i++){
+        Filt = Filt + Math.sin(Pedestal * Math.PI / 180 + (Math.PI - 2 * Pedestal * Math.PI / 180) * i / (Length - 1)) * xDeriv.getValue(-i);
+        Coef = Math.sin(Pedestal * Math.PI / 180 + (Math.PI - 2 * Pedestal * Math.PI / 180)* i / (Length - 1));        
+    }
+        
+    if (Coef != 0) return (Filt/Coef);  
+    return Filt;
+}
+
+function Calc_FiltTr(Length, xDeriv){
+    var Filt = 0;
+    var Coef = 0;
+    var SumCoef = 0;
+    for (var i = 1; i &lt;= Length; i++){
+        if (i &lt; (Length/2)) Coef = i;
+        if (i == (Length/2)) Coef = (Length/2);
+        if (i &gt; (Length/2)) Coef = (Length + 1 - i);
+        Filt = Filt + (Coef * xDeriv.getValue( - i + 1));
+        SumCoef = SumCoef + Coef;
+    }
+    if (SumCoef != 0) return (Filt/SumCoef)*100;  
+    return Filt*100;
+}
+
+function Calc_Filt(Length, xDeriv){
+    var Filt = 0;
+    var Coef = 0;
+    for (var i = 1; i &lt;= Length; i++){
+        Filt = Filt + xDeriv.getValue(-i)
+        Coef = Coef + 1;
+    }
+    if (Coef != 0) return (Filt/Coef);  
+    return Filt;
+}
+
+function Calc_Deriv(xClose, xOpen){
+    var ret = 0;
+    ret = xClose.getValue(0) - xOpen.getValue(0); 
+    return ret;
+}
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+</pre>   
+    
+<p class="authorTips">&mdash;Eric Lippert<br>
+eSignal, an Interactive Data company<br>
+800 779-6555, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+ <!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: September 2021</h3></div>
+<p>The FIR SMA, FIR triangle, FIR Hamming, and FIR Hann indicators, as discussed in John Ehlers&rsquo; article in this issue &ldquo;Windowing,&rdquo; are available for download at the following links for NinjaTrader 8 and for NinjaTrader 7:</p>
+ <ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8:</strong> <a href="https://ninjatrader.com/SC/September2021SCNT8.zip" target="_blank">ninjatrader.com/SC/September2021SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7:</strong> <a href="https://ninjatrader.com/SC/September2021SCNT7.zip">ninjatrader.com/SC/September2021SCNT7.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicators into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import in NinjaTrader 7, from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>    
+ <p>You can review the source code for these indicators in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control center window and selecting the FIRSMA, FIRTriangle, FIRHamming, or FIRHann file. You can review the strategies&rsquo; source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the control center window and selecting the FIRSMA, FIRTriangle, FIRHamming, or FIRHann file.</p>   
+  <p>NinjaScript uses compiled DLLs that run native, not interpreted, which provides you with the highest performance possible.</p>
+<p>A sample chart displaying these indicators is shown in Figure 5.</p> 
+  <div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 5: NINJATRADER. This daily chart shows the SPDR S&amp;P 500 ETF (SPY) with the FIR SMA in the top-most pane, followed by the FIR triangle weighting indicator, the FIR Hamming window indicator, and the FIR Hann window indicator, from January 2020 through January 2021.</p></div>  
+ <p class="authorTips">&mdash;Kate Windheuser<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: September 2021</h3></div>
+<p>We have added the four windowed finite impulse response (FIR) filters to Wealth-Lab 7 for the convenience of our users. The chart in Figure 6 shows how they compare on a chart of SPY.</p>
+ <pre>
+using WealthLab.Backtest;
+using System;
+using WealthLab.Core;
+using WealthLab.Indicators;
+using WealthLab.TASC;
+using System.Drawing;
+using System.Collections.Generic;
+
+namespace WealthScript1 
+{
+    public class MyStrategy : UserStrategyBase
+    {
+        /* create indicators and other objects here, this is executed prior to the main trading loop */
+        public override void Initialize(BarHistory bars)
+        {
+		fs = FIRSMA.Series(bars, 20);
+		ft = FIRTriangle.Series(bars, 20);
+		fh1 = FIRHamming.Series(bars, 20,10);
+		fh2 = FIRHann.Series(bars, 20);
+
+		PlotIndicator(fs, Color.DarkRed, PlotStyles.Line, false, &quot;fSMA&quot;);
+		PlotIndicator(ft, Color.DarkRed, PlotStyles.Line, false, &quot;fTriangle&quot;);
+		PlotIndicator(fh1, Color.DarkRed, PlotStyles.Line, false, &quot;fHamming&quot;);
+		PlotIndicator(fh2, Color.DarkRed, PlotStyles.Line, false, &quot;fHann&quot;);
+
+		SetPaneDrawingOptions(&quot;fSMA&quot;, 20, 50);
+		SetPaneDrawingOptions(&quot;fTriangle&quot;, 20, 51);
+		SetPaneDrawingOptions(&quot;fHamming&quot;, 20, 52);
+		SetPaneDrawingOptions(&quot;fHann&quot;, 20, 53);
+        }
+
+        /* execute the strategy rules here, this is executed once for each bar in the backtest history */
+        public override void Execute(BarHistory bars, int idx)
+        {
+        }
+
+		/* declare private variables below */
+		FIRSMA fs; FIRTriangle ft; FIRHamming fh1; FIRHann fh2;
+	}
+}
+</pre>   
+  <div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 6: WEALTH-LAB. This example chart shows a comparison of the four windowed FIR filters.</p></div>  
+<p class="authorTips">    
+ &mdash;Gene Geren, Robert Sucher<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a>
+</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Optuma.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Optuma: September 2021</h3></div>
+<p>The four windowed finite impulse response (FIR) filters discussed in John Ehlers&rsquo; article in this issue (&ldquo;Windowing&rdquo;) have been added to Optuma&rsquo;s suite of 17 Ehlers tools available to users of Optuma (see <a href="https://www.optuma.com/ehlers" target="_parent">www.optuma.com/ehlers</a> for a complete list). See Figure 7 for an example chart of the indicators.</p>  
+<div class="figBorder">
+<img src="images/TT-Optuma.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 7: OPTUMA. This sample chart displays a 20-period SMA, the triangle FIR, Hamming FIR, and Hann FIR to a chart of the SPDR S&amp;P 500 ETF (SPY). 
+</p></div>
+    
+    <p class="authorTips">&mdash;<a href="mailto:support@optuma.com">support@optuma.com</a><br>
+<a href="https://www.optuma.com" target="_parent">www.optuma.com</a></p>
+    
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NeuroShell Trader: September 2021</h3></div>
+<p>John Ehlers&rsquo; windowing indicators described in his article in this issue can be easily implemented in NeuroShell Trader using NeuroShell Trader&rsquo;s ability to call external dynamic linked libraries. Dynamic linked libraries can be written in C, C++, and Power Basic.</p> 
+<p>After moving the EasyLanguage code given in the article to your preferred compiler and creating a DLL, you can insert the resulting indicators as follows:</p>
+
+<ol>
+ <li>Select &ldquo;new indicator&rdquo; from the <em>insert</em> menu.</li>
+<li>Choose the <strong>External Program &amp; Library Calls</strong> category.</li>   
+  <li>Select the appropriate <strong>External DLL Call</strong> indicator.</li>
+<li>Setup the parameters to match your DLL.</li>
+<li>Select the <em>finished</em> button.</li>
+   </ol>
+<p>A sample chart displaying the indicators is shown in Figure 8.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 8: NEUROSHELL TRADER. This NeuroShell Trader chart shows the SMA, triangle-weighted, Hamming, and Hann window indicators applied to SPY.</p></div>
+<p>Similar filter and cycle-based strategies can also be created using indicators found in John Ehlers&rsquo; Cybernetic and MESA91 NeuroShell Trader Add-ons.</p> 
+<p>Users of NeuroShell Trader can go to the Stocks & Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p> 
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p><!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradersStudio: September 2021</h3></div>
+<p>The importable TradersStudio files based on John Ehlers&rsquo; article in this issue, &ldquo;Windowing,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also shown below, where:</p>
+    <ul style="list-style: none;"><li><strong>Function EHLERS_FIT_TRIANGLE:</strong> Computes Filt for triangle indicator</li>
+<li><strong>Indicator plot EHLERS_FIT_TRIANGLE:</strong> Plots the Filt for triangle indicator on a chart</li></ul>
+    
+<pre>
+'WINDOWING 
+'Author: John F. Ehlers, TASC September 2021
+'Coded by Richard Denning, 7/18/21
+
+Function EHLERS_FIT_TRIANGLE(Length)
+
+    Dim Deriv As BarArray
+    Dim Filt As BarArray
+    Dim coef As BarArray
+    Dim SumCoef As BarArray
+    Dim theROC As BarArray
+    Dim count
+
+    If BarNumber=FirstBar Then
+        'Length = 20
+        Deriv = 0
+        Filt = 0
+        coef = 0
+        SumCoef = 0
+        theROC = 0
+        count = 0
+    End If
+
+    Deriv = Close - Open
+    Filt = 0
+    SumCoef = 0
+    For count = 1 To Length
+        If count &lt; Length / 2 Then
+            coef = count
+        End If
+        If count = Length / 2 Then
+            coef = Length / 2
+        End If
+        If count &gt; Length / 2 Then
+            coef = (Length + 1 - count)
+        End If
+        Filt = Filt + coef*Deriv[count - 1]
+        SumCoef = SumCoef + coef
+    Next
+    If SumCoef &lt;&gt; 0 Then
+        Filt = Filt / SumCoef
+    End If
+    theROC = (Length / 6.28)*(Filt - Filt[1])
+    EHLERS_FIT_TRIANGLE = Filt
+End Function
+'---------------------------------------------
+'INDICATOR PLOT FOR TRIANGLE INDICATOR:
+Dim Filt As BarArray
+Filt = EHLERS_FIT_TRIANGLE(length)
+PLOT1(Filt)
+PLOT2(0)
+
+End Sub
+'---------------------------------------------
+</pre>
+
+<p>Figure 9 demonstrates the indicators on a chart of Amazon Inc. (AMZN) from 2012 to 2014.</p>
+<div class="figBorder">
+<img src="images/TT-Tradersstudio.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 9: TRADERSSTUDIO. The FILT TRIANGLE indicator is shown here on a chart of Amazon Inc. (AMZN) from 2012 to 2014.</p></div>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for TradersStudio</p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: September 2021</h3></div>
+<p>Indicators can be improved by preprocessing their input data. John Ehlers, in his article in this issue, proposes using the windowing technique to preprocess data&mdash;that is, multiplying the input data by an array of factors. In his article, he demonstrates implementing triangle, Hamming, and Hann windowing to the simple moving average (SMA) indicator.</p>
+<p>Fortunately, Zorro&rsquo;s C language allows windowing functions that work for any indicator:</p>
+<pre>
+vars triangle(vars Data, int Length)
+{
+  vars Out = series(0,Length);
+  int i;
+  for(i=0; i&lt;Length; i++)
+    Out[i] = Data[i] * ifelse(i&lt;Length/2,i+1,Length-i);
+  return Out;
+}
+
+vars hamming(vars Data, int Length, var Pedestal)
+{
+  vars Out = series(0,Length);
+  int i;
+  for(i=0; i&lt;Length; i++)
+    Out[i] = Data[i] * sin(Pedestal+(PI-2*Pedestal)*(i+1)/(Length-1));
+  return Out;
+}
+
+vars hann(vars Data, int Length)
+{
+  vars Out = series(0,Length);
+  int i;
+  for(i=0; i&lt;Length; i++)
+    Out[i] = Data[i] * (1-cos(2*PI*(i+1)/(Length+1)));
+  return Out;
+}
+</pre>
+<p>Any of the three functions takes a time series, multiplies it with a specific window array, and generates an output series to be fed to the indicator. The output is not normalized because that&rsquo;s irrelevant for the curve. To replicate the chart in Ehlers&rsquo; article, we can use the following code to display the SMA indicator on the SPY price curve derivative:</p>
+<pre>
+void run()
+{
+  StartDate = 20191101;
+  EndDate = 20210101;
+  BarPeriod = 1440;
+
+  assetAdd(&quot;SPY&quot;,&quot;STOOQ:*&quot;); // load data from STOOQ
+  asset(&quot;SPY&quot;);
+
+  vars Deriv = series(priceClose() - priceOpen());
+  plot(&quot;FIR_SMA&quot;,SMA(Deriv,20),NEW,RED);
+  plot(&quot;Triangle&quot;,SMA(triangle(Deriv,20),20),NEW,RED);
+  plot(&quot;Hamming&quot;,SMA(hamming(Deriv,20,10*PI/360),20),NEW,RED);
+  plot(&quot;Hann&quot;,SMA(hann(Deriv,20),20),NEW,RED);
+}
+</pre>
+<p>The resulting chart in Figure 10 displays first the original SMA, and below the SMA you see a triangle, Hamming, and Hann data window. </p>
+<div class="figBorder">
+<img src="images/TT-Zorro1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 10: ZORRO PROJECT. This example chart displays the SMA indicator on the SPY price curve derivative. The original SMA is shown at top, and below that, the SMA applied on a triangle, Hamming, and Hann data window.</p></div>
+<p>For testing the smoothness of the indicator, Ehlers uses the rate-of-change (ROC) of the SMA. The code in C for Zorro is as follows:</p>
+<pre>
+var ROC_SMA(vars Data,int Length)
+{ 
+  vars Filt = series(SMA(Data,Length),2);
+  return Length/(2*PI)*(Filt[0]-Filt[1]);
+}
+</pre>
+<p>Now we can replicate the ROC chart in Ehlers&rsquo; article by replacing the SMA in the run() function with ROC_SMA. In Figure 11, we again show first the original ROC_SMA, and below that, a triangle, Hamming, and Hann data window.</p>
+  <div class="figBorder">
+<img src="images/TT-Zorro2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 11: ZORRO PROJECT. This example chart replicates the chart in John Ehlers&rsquo; article in this issue. The original ROC_SMA is displayed at the top, and below that you see the triangle, Hamming, and Hann data window.</p></div>  
+<p>We see in the chart that the Hann window indeed generates the smoothest curve, and this at no cost of lag. </p>    
+ <p>The windowing functions and test script can be downloaded from the 2021 script repository on <a href="https://financial-hacker.com" target="_parent">https://financial-hacker.com</a>. The Zorro platform can be downloaded from <a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a>.</p>   
+    
+  <p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a></p>  
+    
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: September 2021</h3></div>
+<p>In his article in this issue, &ldquo;Windowing,&rdquo; John Ehlers takes a step into the world of <em>finite impulse response</em> (FIR) filters using four different weighted moving averages (WMA), each with a different weighting profile.</p>
+<p>First up, there is our old friend, the simple moving average. SMA uses a constant weighting coefficient of 1.0 for all terms within the SMA window.</p>
+<p>The remaining three indicators in the article each use a different computation to determine the weight to be applied to each term in their WMA window. And, while it is not a requirement of WMAs, the weighting factors resulting from each of these particular formulations are symmetrical around the center of their windowing period, which you will see in Figure 14.</p>
+<p>The similarities of the filter tracings are easy to see in the four-way grouping in Figure 12. The differences become more evident when you drill down by using the checkboxes to the right of the charts.</p>
+<div class="figBorder">
+<img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 12: EXCEL. All four filters are on display in this chart. Checkboxes to the right of the chart allow you to mix and match. </p></div>
+<p>Ehlers uses a &ldquo;rate of change&rdquo; (ROC) calculation to explore how much smoothing is afforded by each of the four weighting scenarios. Radio buttons to the right of the charts shift the charts from displaying the filters to the ROC display shown in Figure 13.</p>
+<div class="figBorder">
+<img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 13: EXCEL. This displays the rate of change analysis of the filters.</p></div>
+<p>A quick visual inspection shows that SMA can be pretty noisy. Again, you can use the checkboxes to drill down into the ROC displays.</p>
+<p>One last thought came to mind in building this spreadsheet. How do the coefficients for the various filter types compare? As calculated here, the raw coefficients for each filter type differ from one another by as much as an order of magnitude.</p>
+<p>For a weighted moving average calculation, you multiply each element within the averaging window by a predetermined coefficient and sum the result. You then divide the summed result by the sum of the coefficients.</p>
+<p>With a bit of basic algebra you can distribute the division by the sum-of-coefficients across the terms to see that the resulting WMA on &ldquo;<em>n</em>&rdquo; terms is a sum of the form:</p>
+ <pre>
+ WMA-<em>n</em> = Coef-1/SumOfCoefs * Term-1 + Coef-2/SumOfCoefs*Term-2 +…+ Coef-n/SumOfCoefs*Term-<em>n</em>
+ </pre>
+  <p>We can use the Coef-x/SumOfCoefs construct to normalize the coefficients for the different filters to the same scale and then chart them on the same graph as in Figure 14. Note that regardless of the envelope shape, the normalized weighted average coefficients always total to 1.00.</p>  
+  <div class="figBorder">
+<img src="images/TT-Excel3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 14: EXCEL. Here you can see a comparison of the coefficient envelopes.</p></div>  
+<p><em>To download this spreadsheet:</em> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/09/images/code/Windowing.xlsm" target="_blank">here</a>. To successfully download it, follow these steps:</p>
+    
+   <ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/09/images/code/Windowing.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul> 
+    
+  <p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>  
+    
+    
+    <!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+    
+    
+ <!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the September 2021 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2021, Technical Analysis, Inc.</p>
+
+</body>
+</html>

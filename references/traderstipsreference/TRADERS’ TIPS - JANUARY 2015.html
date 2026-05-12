@@ -1,0 +1,985 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "https://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="https://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine." />
+<meta name="description" content="This month: Whiter Is Brighter. Contributions from: TradeStation, eSignal, MetaStock,Wealth-lab, Amibroker, AIQ, TradersStudio, Neuroshell Trader, NinjaTrader, Updata, VT Trader, Microsoft Excel." />
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - JANUARY 2015</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc." />
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2012.css" rel="stylesheet" type="text/css" />
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">January 2015</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div id="top">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2015/01/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail"/>
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John Ehlers&rsquo; article in this issue, &ldquo;Whiter Is Brighter.&rdquo; Here, we present the January 2015 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p>Code for TradeStation is already provided in Ehlers&rsquo; article by the author. S&amp;C subscribers will find that code at the Subscriber Area of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>. Presented here is an overview of some possible implementations for other software as well.</p> 
+<p>Traders&rsquo; Tips code is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by various software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat" /></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TRADESTATION: JANUARY 2015</a></li>
+  <li><a href="#item2"><span style="text-transform:lowercase;">e</span>SIGNAL: JANUARY 2015</a></li>
+  <li><a href="#item3">METASTOCK: JANUARY 2015</a></li>
+  <li><a href="#item4">WEALTH-LAB: JANUARY 2015</a></li>
+  <li><a href="#item5">AMIBROKER: JANUARY 2015</a></li>
+  <li><a href="#item6">AIQ: JANUARY 2015</a></li>
+  <li><a href="#item7">TRADERSSTUDIO: JANUARY 2015</a></li>
+  <li><a href="#item8">NEUROSHELL TRADER: JANUARY 2015</a></li>
+  <li><a href="#item9">NINJATRADER: JANUARY 2015</a></li>
+  <li><a href="#item10">UPDATA: JANUARY 2015</a></li>
+  <li><a href="#item11">VT TRADER: JANUARY 2015</a></li>
+  <li><a href="#item12">MICROSOFT EXCEL: JANUARY 2015</a></li>
+  <li><a href="#item13">THINKORSWIM: JANUARY 2015</a></li>
+</ul>
+<!--TIPS START HERE-->
+
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation.gif" alt="logo" />
+ <h3 class="newsTitle grey_blue">
+TRADESTATION: JANUARY 2015</h3></div>
+<p>In &ldquo;Whiter Is Brighter,&rdquo; author John Ehlers presents a new indicator he calls the <em>universal oscillator</em>. It is based on his theory that market data resembles pink noise, or as he puts it, &ldquo;noise with memory.&rdquo;</p> 
+<p>In his article, Ehlers has already provided some TradeStation code for his ultimate oscillator that could be used to create a short-term trading strategy. To facilitate using it with the TradeStation Scanner, we have added alerts to the indicator and have provided an example short-term trading strategy. You can apply the strategy to a TradeStation chart to perform a backtest on a symbol of your choice or you can use the strategy along with the TradeStation Portfolio Maestro to backtest your favorite portfolio.</p>
+<p>For convenience, we are providing this indicator code with alerts as well as the example strategy at our TradeStation and EasyLanguage support forum at <a target="_parent" href="https://www.tradestation.com/TASC-2015">https://www.tradestation.com/TASC-2015</a>. The ELD filename is &ldquo;_TASC_UniversalOscillator.ELD.&rdquo; For more information about EasyLanguage in general, please see <a target="_parent" href="https://www.tradestation.com/EL-FAQ">https://www.tradestation.com/EL-FAQ</a>. The code is also shown below:</p>
+<pre>
+_Ehlers_Universal Oscillator (Indicator)
+
+// Universal Oscillator
+// (c) 2014 John F. Ehlers
+// TASC January 2015
+inputs:
+	BandEdge( 20 ) ;
+variables:
+	WhiteNoise( 0 ),
+	a1( 0 ),
+	b1( 0 ),
+	c1( 0 ),
+	c2( 0 ),
+	c3( 0 ),
+	Filt(0),
+	Peak(0),
+	Universal( 0 ) ;
+
+once
+	begin
+	if BandEdge &lt;= 0 then
+		RaiseRunTimeError( &quot;BandEdge must be &gt; zero&quot; ) ;
+	end ;
+
+WhiteNoise = ( Close - Close[2] ) / 2 ;
+
+// SuperSmoother Filter
+a1 = ExpValue( -1.414 * 3.14159 / BandEdge ) ;
+b1 = 2 * a1 * Cosine( 1.414 * 180 / BandEdge ) ;
+c2 = b1 ;
+c3 = -a1 * a1 ;
+c1 = 1 - c2 - c3 ;
+Filt = c1 * ( WhiteNoise + WhiteNoise [1] ) / 2 + 
+c2 * Filt[1] + c3 * Filt[2] ;
+If Currentbar = 1 then 
+	Filt = 0 ;
+If Currentbar = 2 then 
+	Filt = c1 * 0 * ( Close + Close[1] ) / 2 + c2 * Filt[1] ;
+If Currentbar = 3 then 
+	Filt = c1 * 0 * ( Close + Close[1] ) / 2 + c2 * Filt[1] +
+c3 * Filt[2] ;
+
+// Automatic Gain Control (AGC)
+Peak = .991 * Peak[1] ;
+If Currentbar = 1 then 
+	Peak = .0000001 ;
+If AbsValue( Filt ) &gt; Peak then 
+	Peak = AbsValue( Filt ) ;
+If Peak &lt;&gt; 0 then 
+	Universal = Filt / Peak ;
+Plot1( Universal ) ;
+Plot2( 0 ) ;
+
+
+if Universal crosses over 0 then
+	Alert( &quot;Osc cross over zero line&quot; )
+else if Universal crosses under 0 then	
+	Alert( &quot;Osc cross under zero line&quot; ) ;
+
+
+_Ehlers_Universal Oscillator (Strategy)
+
+// Universal Oscillator
+// (c) 2014 John F. Ehlers
+// TASC January 2015
+inputs:
+	BandEdge( 20 ) ;
+variables:
+	WhiteNoise( 0 ),
+	a1( 0 ),
+	b1( 0 ),
+	c1( 0 ),
+	c2( 0 ),
+	c3( 0 ),
+	Filt(0),
+	Peak(0),
+	Universal( 0 ) ;
+
+once
+	begin
+	if BandEdge &lt;= 0 then
+		RaiseRunTimeError( &quot;BandEdge must be &gt; zero&quot; ) ;
+	end ;
+
+WhiteNoise = ( Close - Close[2] ) / 2 ;
+
+// SuperSmoother Filter
+a1 = ExpValue( -1.414 * 3.14159 / BandEdge ) ;
+b1 = 2 * a1 * Cosine( 1.414 * 180 / BandEdge ) ;
+c2 = b1 ;
+c3 = -a1 * a1 ;
+c1 = 1 - c2 - c3 ;
+Filt = c1 * ( WhiteNoise + WhiteNoise [1] ) / 2 + 
+c2 * Filt[1] + c3 * Filt[2] ;
+If Currentbar = 1 then 
+	Filt = 0 ;
+If Currentbar = 2 then 
+	Filt = c1 * 0 * ( Close + Close[1] ) / 2 + c2 * Filt[1] ;
+If Currentbar = 3 then 
+	Filt = c1 * 0 * ( Close + Close[1] ) / 2 + c2 * Filt[1] +
+c3 * Filt[2] ;
+
+// Automatic Gain Control (AGC)
+Peak = .991 * Peak[1] ;
+If Currentbar = 1 then 
+	Peak = .0000001 ;
+If AbsValue( Filt ) &gt; Peak then 
+	Peak = AbsValue( Filt ) ;
+If Peak &lt;&gt; 0 then 
+	Universal = Filt / Peak ;
+
+if Universal crosses over 0 then
+	Buy next bar at Market ;
+
+if Universal crosses under 0 then
+	SellShort next bar at Market ;
+</pre> 
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2015/01/images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;" /><p class="figCaption">FIGURE 1: TRADESTATION, SCANNER. Here, the TradeStation Scanner shows a list of S&amp;P 500 symbols that had the scan criteria met on 11/11/2014. The scan criteria is met when the universal oscillator crosses above or below zero. In the chart, the universal oscillator is applied to the symbol DO and displays the cross. The chart and the scanner are linked such that clicking a scanner symbol name will force the chart to redraw with that symbol.</p></div> 
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;Doug McCrary<br />
+TradeStation Securities, Inc.<br />
+<a target="_parent" href="https://www.TradeStation.com">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo" />
+ <h3 class="newsTitle grey_blue">
+eSIGNAL: JANUARY 2015</h3></div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;re providing the formula <a href="https://www.traders.com/Documentation/FEEDbk_docs/2015/01/images/code/Universal_Oscillator.efs">Universal_Oscillator.efs</a> based on the formula given in John Ehlers&rsquo; article in this issue, &ldquo;Whiter Is Brighter.&rdquo;</p> 
+<p>The study contains formula parameters which may be configured through the <em>edit chart</em> window (right-click on the chart and select &ldquo;edit chart&rdquo;). A sample chart is shown in Figure 2.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2015/01/images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;" /><p class="figCaption">FIGURE 2: eSIGNAL. Here is an example implementation of the universal oscillator on Raytheon (RTN).</p></div>
+<p>To discuss this study or download a complete copy of the formula code, please visit the EFS Library Discussion Board forum under the <em>forums</em> link from the support menu at <a target="_parent" href="https://www.esignal.com">www.esignal.com</a> or visit our EFS KnowledgeBase at <a target="_parent" href="https://www.esignal.com/support/kb/efs/">https://www.esignal.com/support/kb/efs/</a>. The eSignal formula script (EFS) is also available for copying &amp; pasting below.</p>
+<pre>
+/*********************************
+Provided By:  
+    Interactive Data Corporation (Copyright &copy; 2014) 
+    All rights reserved. This sample eSignal Formula Script (EFS)
+    is for educational purposes only. Interactive Data Corporation
+    reserves the right to modify and overwrite this EFS file with 
+    each new release. 
+
+Description:        
+    Universal Oscillator by John Ehlers
+
+    
+
+Formula Parameters:                     Default:
+    BandEdge                            20
+    
+Version:            1.00  11/11/2014
+
+Notes:
+    The related article is copyrighted material. If you are not a subscriber
+    of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+
+
+
+var fpArray = new Array();
+
+
+
+function preMain(){
+
+    
+    setStudyTitle(&quot;Universal Oscillator&quot;);
+    setPriceStudy(false);
+
+    
+
+    setCursorLabelName(&quot;UniOsc&quot;, 0);   
+
+   
+
+    addBand(0,PS_SOLID,1,Color.grey);
+
+    var x = 0;
+
+    fpArray[x] = new FunctionParameter(&quot;BandEdge&quot;, FunctionParameter.NUMBER);
+    with(fpArray[x++]){
+        setName(&quot;BandEdge&quot;);
+        setLowerLimit(1);
+        setDefault(20);
+    }    
+}
+
+
+var bVersion = null;
+
+var WhiteNoise = 0;
+
+var WhiteNoise_1 = 0;
+
+var Filt = 0;
+
+var Filt_1 = 0;
+
+var Filt_2 = 0;
+
+var Peak = 0;
+
+var Peak_1 = 0;
+
+
+
+function main(BandEdge){
+
+    
+
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return;
+
+    
+
+    if(BandEdge==null) BandEdge = 20;
+
+    
+
+    var a1 = 0;
+
+    var b1 = 0;
+
+    var c1 = 0; 
+
+    var c2 = 0;
+
+    var c3 = 0;
+
+    var Universal = 0;
+
+    
+
+    if(getBarState()==BARSTATE_ALLBARS){
+
+        xClose = close();
+
+    }
+
+
+
+    if(getBarState()==BARSTATE_NEWBAR){
+
+        WhiteNoise_1 = WhiteNoise;
+
+        Filt_2 = Filt_1;
+
+        Filt_1 = Filt;
+
+        Peak_1 = Peak;
+
+    }
+
+
+
+    WhiteNoise = (xClose.getValue(0)-xClose.getValue(-1))/2;
+
+    a1 = Math.exp(-1.414*3.14159/BandEdge);
+
+    b1 = 2*a1*Math.cos(1.414*180/BandEdge);
+
+    c2 = b1;
+
+    c3 = -a1*a1;
+
+    c1 = 1-c2-c3;
+
+    Filt = c1*(WhiteNoise+WhiteNoise_1)/2+c2*Filt_1+c3*Filt_2;
+
+
+
+    if(getCurrentBarCount()==1) Filt = 0
+
+    if(getCurrentBarCount()==2) Filt = c1*0*(xClose.getValue(0)+xClose.getValue(-1))/2+c2*Filt_1;
+
+    if(getCurrentBarCount()==3) Filt = c1*0*(xClose.getValue(0)+xClose.getValue(-1))/2+c2*Filt_1+c3*Filt_2;
+
+
+
+    Peak = .991*Peak_1;
+
+    if(getCurrentBarCount()==1) Peak = 0.0000001;
+
+    if(Math.abs(Filt)&gt;Peak) Peak = Math.abs(Filt);
+
+    if(Peak!=0) Universal = Filt/Peak;
+
+    
+
+    return Universal;
+
+}
+
+
+
+function verify(){
+
+    
+    var b = false;
+
+    
+    if (getBuildNumber() &lt; 779){
+
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 8.0 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else 
+        b = true;
+    
+    return b;
+}
+</pre>
+<p class="authorTips">&mdash;Eric Lippert<br />
+eSignal, an Interactive Data company<br />
+800 779-6555, <a target="_parent" href="https://www.eSignal.com">www.eSignal.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Metastock.gif" alt="logo" />
+ <h3 class="newsTitle grey_blue">
+METASTOCK: JANUARY 2015</h3></div>
+<p>John Ehlers&rsquo; article in this issue, &ldquo;Whiter Is Brighter,&rdquo; introduces his <em>universal oscillator</em>. The MetaStock code for this indicator follows:</p>
+<pre>
+<strong>Universal Oscillator:</strong>
+
+bandedge:= 20;
+whitenoise:= (C - Ref(C,-2))/2;
+
+{super smoother filter}
+a1:= Exp(-1.414 * 3.14159 / bandedge);
+b1:= 2*a1 * Cos(1.414*180 /bandedge);
+c2:= b1;
+c3:= -a1 * a1;
+c1:= 1 - c2 - c3;
+filt:= c1 * (whitenoise + Ref(whitenoise, -1))/2 + c2*PREV + c3*Ref(PREV,-1);
+filt1:= If(Cum(1) = 0, 0, If(Cum(1) = 2, c2*PREV,
+If(Cum(1) = 3, c2*PREV + c3*Ref(PREV,-1), filt)));
+
+pk:= If(Cum(1) = 2, .0000001,
+If(Abs(filt1) &gt; PREV, Abs(filt1), 0.991 * PREV));
+denom:= If(pk=0, -1, pk);
+If(denom = -1, PREV, filt1/pk)
+</pre>
+<p class="authorTips">&mdash;William Golson<br />
+MetaStock Technical Support <br />
+<a target="_parent" href="https://www.metastock.com">www.metastock.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo" />
+ <h3 class="newsTitle grey_blue">
+WEALTH-LAB: JANUARY 2015</h3></div>
+<p>The <em>universal oscillator</em> introduced in John Ehlers&rsquo; article in this issue, &ldquo;Whiter Is Brighter,&rdquo; is an evolution of Ehlers&rsquo; SuperSmoother filter, which was introduced in his January 2014 STOCKS &amp; COMMODITIES article &ldquo;Predictive And Successful Indicators&rdquo;). The new indicator follows the short-term variations in price without introducing extra delay. It is comfortably controlled through just a single input &mdash; the <em>bandedge</em> &mdash; which basically is frequency. The smaller it is set, the less lag there is, but the smoother the indicator&rsquo;s outline will be. Built-in automatic gain control normalizes the output to vary between -1 to +1.</p>
+<p>As an illustration of its application, a straightforward short-term countertrend system could, for example, use the following rules:</p>
+
+<ul><li>Cover your short position and go long when the universal oscillator crosses below zero</li>
+<li>Sell and go short when the universal oscillator crosses above zero.</li></ul>
+
+<p>Since it is really a universal oscillator, the indicator can power up a trend-trading system just as easily:</p>
+
+<ul><li>Buy when the long-term universal oscillator crosses above zero</li>
+<li>Sell when the long-term universal oscillator crosses below zero.</li></ul> 
+
+<p>The trading system code we&rsquo;re providing for Wealth-Lab implements both approaches. To switch between trend- and countertrend trading modes, drag the parameter slider named &ldquo;swing/trend&rdquo; at the bottom left part of the screen, and Wealth-Lab will instantly rebuild the backtest.</p>
+<p>Wouldn&rsquo;t it be interesting to adapt to different market conditions, distinguishing a trending market from a range-bound one? Motivated traders can take it a step further and automate the switching from trending to mean-reversion mode and vice versa. To achieve that, they can employ a dedicated trendiness oscillator like ADX, the Dreiss choppiness index, or McEwan&rsquo;s volatility switch [see Ron McEwan&rsquo;s article in the February 2013 STOCKS &amp; COMMODITIES, &ldquo;The Volatility (Regime) Switch Indicator,&rdquo; for a description]. </p>
+<p>To execute the example trading system, Wealth-Lab users need to install (or update) to the latest version of the TASCIndicators library from the <em>extensions</em> section of our website if they haven&rsquo;t already done so, and restart Wealth-Lab.</p>
+<p>A sample chart is shown in Figure 3.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2015/01/images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;" /><p class="figCaption">FIGURE 3: WEALTH-LAB. Here, a Wealth-Lab 6 chart illustrates application of the system&rsquo;s rules on a daily chart of Cisco Systems (CSCO).</p></div> 
+<pre>
+<strong>C# Code</strong>
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Drawing;
+using WealthLab;
+using WealthLab.Indicators;
+using TASCIndicators;
+
+namespace WealthLab.Strategies
+{
+	public class UniversalOscSARStrategy : WealthScript
+	{
+		StrategyParameter be;
+		StrategyParameter mode;
+		
+		public UniversalOscSARStrategy()
+		{
+			be = CreateParameter(&quot;Band edge&quot;, 20, 5, 200, 5);
+			mode = CreateParameter(&quot;Swing/Trend&quot;, 0, 0, 1, 1);
+		}
+		
+		protected override void Execute()
+		{
+			bool swingTrade = mode.ValueInt == 0 ? true : false;
+			int period = be.ValueInt;
+				
+			UniversalOscillator uo = UniversalOscillator.Series(Close,period );
+			ChartPane uPane = CreatePane(30,false,true); HideVolume();
+			PlotSeries(uPane,uo,Color.IndianRed,LineStyle.Solid,2);
+			DrawHorzLine(uPane,0,Color.Blue,LineStyle.Dashed,1);
+
+			for(int bar = GetTradingLoopStartBar(period); bar &lt; Bars.Count; bar++)
+			{
+				// Detect crossover/crossunder and store state in variable
+				bool uXo = CrossOver(bar, uo, 0);
+				bool uXu = CrossUnder(bar, uo, 0);
+
+				if( swingTrade ) // Countertrend trading
+				{
+					// The first trade
+					if (Positions.Count == 0){
+						if ( uXu )
+							BuyAtMarket( bar + 1 );
+						else if( uXo )
+							ShortAtMarket( bar + 1 );
+					}
+						// Subsequent trades
+					else
+					{
+						Position p = LastPosition;				
+						if ( p.PositionType == PositionType.Long )
+						{
+							if ( uXo )
+							{
+								SellAtMarket( bar + 1, p );
+								ShortAtMarket( bar + 1 );
+							}
+						}
+						else if ( uXu )
+						{
+							CoverAtMarket( bar + 1, p );
+							BuyAtMarket( bar + 1 );
+						}
+					}
+				}
+				else // Trend trading
+				{
+					if (IsLastPositionActive)
+					{
+						if ( uXu )
+							SellAtMarket( bar + 1, LastPosition );
+					}
+					else
+					{
+						if ( uXo )
+							BuyAtMarket( bar + 1 );
+					}
+				}								
+			}
+		}
+	}
+}
+
+</pre>
+
+<p class="authorTips">&mdash;Eugene, Wealth-Lab team<br />
+MS123, LLC<br />
+<a target="_parent" href="https://www.wealth-lab.com">www.wealth-lab.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Amibroker.gif" alt="logo" />
+ <h3 class="newsTitle grey_blue">
+AMIBROKER: JANUARY 2015</h3></div>
+<p>In &ldquo;Whiter Is Brighter&rdquo; in this issue, author John Ehlers presents his <em>universal oscillator</em>, which is based on filtering two-day price momentum using a second-order infinite impulse response (IIR) filter. </p>
+<p>The code for the universal oscillator as implemented in AmiBroker formula language (AFL) is shown here:</p>
+<pre>
+LISTING 1.
+// John F. Ehlers' Universal Oscillator 
+// January 2015 S&amp;C Traders' Tips 
+// 
+// AFL implementation - TJ 
+SetBarsRequired( 100 ); 
+
+BandEdge = Param(&quot;BandEdge&quot;, 20, 2, 100, 1 ); 
+
+WhiteNoise = ( Close - Ref( Close, -2 ) ) / 2; 
+
+// SuperSmoother filter 
+// note: in AFL angles are in radians 
+pi = 3.1415926; 
+r2 = sqrt( 2 ); 
+a1 = exp( - r2 * pi / BandEdge ); 
+b1 = 2 * a1 * cos( r2 * pi / BandEdge ); 
+c2 = b1; 
+c3 = - a1 * a1; 
+c1 = 1 - c2 - c3; 
+
+pk = 0.0000001; 
+universal = 0; 
+
+input = Nz( WhiteNoise + Ref( WhiteNoise, -1 ) ) / 2; 
+Filt = input; 
+
+// IIR+AGC loop 
+for( i = 2; i &lt; BarCount; i++ ) 
+{ 
+ Filt[ i ] = c1 * input[ i ]  + 
+             c2 * Filt[ i - 1 ] + 
+             c3 * Filt[ i - 2 ]; 
+
+ pk = 0.991 * pk; 
+             
+ af = abs( Filt[ i ] ); 
+
+ if( af &gt; pk ) pk = af; 
+
+ universal[ i ] = Filt[ i ] / pk; 
+} 
+
+Plot( universal, &quot;Universal&quot; + _PARAM_VALUES(), colorRed, styleThick ); 
+Plot( 0, &quot;&quot;, colorBlue, styleNoLabel );
+
+</pre> 
+<p>To use the oscillator, input the code into the formula editor and press <em>apply indicator</em>. A sample chart is shown in Figure 4.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2015/01/images/TT-Amibroker.gif" alt="Sample Chart" class="shadow1" style="width: 610px;" /><p class="figCaption">FIGURE 4: AMIBROKER. Here, a 20-day universal oscillator (bottom pane) is shown on a daily price chart of RTN, replicating the chart from John Ehlers&rsquo; article in this issue.</p></div> 
+<p class="authorTips">&mdash;Tomasz Janeczko, AmiBroker.com<br />
+<a target="_parent" href="https://www.amibroker.com">www.amibroker.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo" />
+ <h3 class="newsTitle grey_blue">
+AIQ: JANUARY 2015</h3></div>
+<p>The AIQ code based on John Ehlers&rsquo; article in this issue, &ldquo;Whiter Is Brighter,&rdquo; is provided at <a target="_parent" href="https://www.TradersEdgeSystems.com/traderstips.htm">www.TradersEdgeSystems.com/traderstips.htm</a>. It is also shown below, for reference.</p>
+<pre>
+!WHITER IS BRIGHTER
+!Author: John Ehlers, TASC Jan 2015
+!Coded by: Richard Denning 11/11/2014
+!www.TradersEdgeSystems.com
+
+!Universal Oscillator
+!(c) 2014 John F. Ehlers
+
+!INPUTS:
+BandEdge is 20.
+
+!SuperSmoother Filter
+WhiteNoise is ([Close] - val([Close],2)) / 2.
+a1 is Exp(-1.414*3.14159 / BandEdge).
+b1 is 2*a1*Cos((1.414*180) / BandEdge).
+c2 is b1.
+c3 is -a1*a1.
+c1 is 1 - c2 - c3.
+
+DaysInto is ReportDate() - RuleDate().
+Stop if DaysInto &gt; 10.
+stopfilt is iff(stop,[close], filt).
+Filt is c1*(WhiteNoise + valresult(WhiteNoise,1)) / 2
+  + c2*valresult(stopfilt,1) + c3*valresult(stopfilt,2).
+stopPeak is iff(stop,[close], peak).
+Peak is 0.991*valresult(stopPeak,1).
+ !Plot for Univeral Oscillator
+
+Universal is (Filt / (max(Peak,abs(Filt))))*10. 
+</pre>
+<p class="authorTips">&mdash;Richard Denning<br />
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br />
+for AIQ Systems</p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo" />
+ <h3 class="newsTitle grey_blue">
+TRADERSSTUDIO: JANUARY 2015</h3></div>
+<p>The TradersStudio code based on John Ehlers&rsquo; article in this issue, &ldquo;Whiter Is Brighter,&rdquo; is provided at the following websites:</p> 
+<ul>
+<li><a href="https://www.TradersEdgeSystems.com/traderstips.htm" target="_parent">www.TradersEdgeSystems.com/traderstips.htm</a></li>
+<li><a href="https://www.tradersstudio.com/TradersResources/TradersTips.aspx" target="_parent">www.TradersStudio.com &rarr; Traders Resources &rarr; Traders&rsquo; Tips</a></li>
+</ul>
+
+<p>The following code files are provided in the download:</p>
+<ul><li>Function: EHLERS_UNIVERSAL_OSC &mdash; returns the oscillator values</li>
+<li>Indicator plot: EHLERS_UNIVERSAL_OSC_IND &mdash; plots the universal oscillator.</li></ul> 
+<pre>
+
+'WHITER IS BRIGHTER
+'Author: John Ehlers, TASC Jan 2015
+'Coded by: Richard Denning 11/11/2014
+'www.TradersEdgeSystems.com
+
+'Universal Oscillator
+'(c) 2014 John F. Ehlers
+Function EHLERS_UNIVERSAL_OSC(BandEdge)
+    Dim WhiteNoise As BarArray
+    Dim a1
+    Dim b1
+    Dim c1
+    Dim c2
+    Dim c3
+    Dim Filt As BarArray
+    Dim Peak As BarArray
+    Dim Universal
+
+    If BarNumber=FirstBar Then
+        'BandEdge = 20
+        WhiteNoise = 0
+        a1 = 0
+        b1 = 0
+        c1 = 0
+        c2 = 0
+        c3 = 0
+        Filt = 0
+        Peak = 0
+        Universal = 0
+    End If
+
+  'SuperSmoother Filter
+    WhiteNoise = (Close - Close[2]) / 2
+    a1 = Exp(-1.414*3.14159 / BandEdge)
+    b1 = 2*a1*Cos(1.414*180 / BandEdge)
+    c2 = b1
+    c3 = -a1*a1
+    c1 = 1 - c2 - c3
+    Filt = c1*(WhiteNoise + WhiteNoise [1]) / 2 + c2*Filt[1] + c3*Filt[2]
+    If CurrentBar - 1 = 1 Then
+        Filt = 0
+    End If
+    If CurrentBar - 1 = 2 Then
+        Filt = c1*0*(Close + Close[1])/2 + c2*Filt[1]
+    End If
+    If CurrentBar - 1 = 3 Then
+        Filt = c1*0*(Close + Close[1])/2 + c2*Filt[1] + c3*Filt[2]
+    End If
+    Peak = .991*Peak[1]
+    If CurrentBar - 1 = 1 Then
+        Peak = .0000001
+    End If
+    If Abs(Filt) &gt; Peak Then
+        Peak = Abs(Filt)
+    End If
+    If Peak &lt;&gt; 0 Then
+        Universal = Filt / Peak
+    End If
+EHLERS_UNIVERSAL_OSC = Universal
+End Function
+'--------------------------------------------------------------------------
+' Indicator Plot:
+Sub EHLERS_UNIVERSAL_OSC_IND(BandEdge)
+plot1(EHLERS_UNIVERSAL_OSC(BandEdge))
+plot2(0)
+End Sub
+'--------------------------------------------------------------------------
+
+</pre>
+<p>In Figure 5, I show a chart of the full-sized S&amp;P 500 futures contract (using data from Pinnacle Data Corp.) with the universal oscillator.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2015/01/images/TT-Tradersstudio.gif" alt="Sample Chart" class="shadow1" style="width: 610px;" /><p class="figCaption">FIGURE 5: TRADERSSTUDIO. The universal oscillator is plotted on the S&amp;P 500 futures.</p></div>
+<p class="authorTips">&mdash;Richard Denning<br />
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br />
+for TradersStudio</p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Neuroshell_Ward.gif" alt="logo" />
+ <h3 class="newsTitle grey_blue">
+NEUROSHELL TRADER: JANUARY 2015</h3></div>
+<p>The <em>universal oscillator</em> introduced by John Ehlers in his article in this issue, &ldquo;Whiter Is Brighter,&rdquo; can be implemented in NeuroShell Trader using NeuroShell Trader&rsquo;s ability to call external dynamic linked libraries. Dynamic linked libraries can be written in C, C++, Power Basic, or Delphi.</p> 
+<p>After moving the EasyLanguage code provided in Ehlers&rsquo; article to your preferred compiler and creating a DLL, you can insert the resulting indicators as follows:</p>
+
+<ol><li>Select <em>new indicator</em> from the Insert menu</li>
+<li>Choose the &ldquo;external program &amp; library calls&rdquo; category</li>
+<li>Select the appropriate external DLL call indicator</li>
+<li>Set up the parameters to match your DLL</li>
+<li>Select the <em>finished</em> button.</li></ol>
+
+<p>Dynamic trading systems can be easily created in NeuroShell Trader by combining the universal oscillator with NeuroShell Trader&rsquo;s genetic optimizer to find optimal lengths. Similar filter and cycle-based strategies can also be created using indicators found in John Ehlers&rsquo; Cybernetic and MESA91 NeuroShell Trader add-ons. A sample chart is shown in Figure 6.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2015/01/images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;" /><p class="figCaption">FIGURE 6: NEUROSHELL TRADER. This NeuroShell Trader chart displays the ultimate oscillator indicator</p></div>
+<p>Users of NeuroShell Trader can go to the STOCKS &amp; COMMODITIES section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p class="authorTips">&mdash;Marge Sherald, Ward Systems Group, Inc.<br />
+301 662-7950, <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br />
+<a target="_parent" href="https://www.neuroshell.com">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo" />
+ <h3 class="newsTitle grey_blue">
+NINJATRADER: JANUARY 2015</h3></div>
+<p>In &ldquo;Whiter Is Brighter&rdquo; in this issue, author John Ehlers introduces his universal oscillator. We&rsquo;re making the UniversalOsc indicator, based on his article, available for download at <a href="https://www.ninjatrader.com/SC/January2015SC.zip">www.ninjatrader.com/SC/January2015SC.zip</a>.</p>
+<p>Once it has been downloaded, from within the NinjaTrader Control Center window, select the menu <em>File &rarr; Utilities &rarr; Import NinjaScript</em> and select the downloaded file. This file is for NinjaTrader version 7 or greater.</p>
+<p>You can review the indicator source code by selecting the menu <em>Tools &rarr; Edit NinjaScript &rarr; Indicator</em> from within the NinjaTrader Control Center window and selecting the <em>UniversalOsc</em> file.</p>
+<p>A sample chart implementing the strategy is shown in Figure 7.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2015/01/images/TT-Ninjatrader.gif" alt="Sample Chart" class="shadow1" style="width: 610px;" /><p class="figCaption">FIGURE 7: NINJATRADER. This screenshot shows the indicator applied to a 30-minute chart of the DAX index. </p></div> 
+<p class="authorTips">&mdash;Raymond Deux &amp; Jesse Nelson, NinjaTrader, LLC<br />
+<a target="_parent" href="https://www.ninjatrader.com">www.ninjatrader.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Updata.gif" alt="logo" />
+ <h3 class="newsTitle grey_blue">
+UPDATA: JANUARY 2015</h3></div> 
+<p>Our Traders&rsquo; Tip this month is based on John Ehlers&rsquo; article in this issue, &ldquo;Whiter Is Brighter.&rdquo; In it, Ehlers seeks to develop a zero-lag oscillator in order to generate signals on underlying market data that is said to display &ldquo;pink noise&rdquo; properties. This is distinct from white noise in that some memory is inherent in the data, and could form the basis of a short-term trading model.</p>
+<p>The Updata code for this article is in the Updata Library and may be downloaded by clicking the <em>custom</em> menu and <em>indicator</em> library. Those who cannot access the library due to a firewall may paste the code shown below into the Updata custom editor and save it.</p>
+<pre>
+
+'Universal Oscillator
+DISPLAYSTYLE 2LINES
+INDICATORTYPE CHART
+INDICATORTYPE2 TOOL
+COLOUR2 RGB(200,0,0) 
+PARAMETER &quot;Band Edge&quot; &#64;BANDEDGE=20
+NAME Universal Oscillator
+&#64;WHITENOISE=0
+&#64;A1=0
+&#64;B1=0
+&#64;C1=0
+&#64;C2=0
+&#64;C3=0
+&#64;FILT=0
+&#64;PEAK=0
+&#64;UNIVERSAL=0
+&#64;ROOT2=0
+&#64;PI=0
+FOR #CURDATE=2 TO #LASTDATE
+   &#64;ROOT2=EXPBASE(2,0.5)
+   &#64;PI=CONST_PI
+   &#64;WHITENOISE=(CLOSE-CLOSE(2))/2   
+   &#64;A1=EXP(-&#64;ROOT2*&#64;PI/&#64;BANDEDGE)
+   &#64;B1=2*&#64;A1*COS(&#64;ROOT2*&#64;PI*0.5/&#64;BANDEDGE)
+   &#64;C2=&#64;B1
+   &#64;C3=-&#64;A1*&#64;A1 
+   &#64;C1=1-&#64;C2-&#64;C3
+   &#64;FILT=&#64;C1*0.5*(&#64;WHITENOISE+HIST(&#64;WHITENOISE,1))+&#64;C2*HIST(&#64;FILT,1)+&#64;C3*HIST(&#64;FILT,2)
+   IF #CURDATE=2
+      &#64;FILT=0
+   ELSEIF #CURDATE=3
+      &#64;FILT=&#64;C2*HIST(&#64;FILT,1)
+   ELSEIF #CURDATE=4
+      &#64;FILT=&#64;C2*HIST(&#64;FILT,1)+&#64;C3*HIST(&#64;FILT,2) 
+   ENDIF
+   'AUTOMATIC GAIN CONTROL (AGC)
+   &#64;PEAK=0.991*HIST(&#64;PEAK,1)
+   IF #CURDATE=2
+      &#64;PEAK=0.0000001
+   ENDIF
+   IF ABS(&#64;FILT)&gt;&#64;PEAK
+      &#64;PEAK=ABS(&#64;FILT)
+   ENDIF
+   IF &#64;PEAK!=0
+      &#64;UNIVERSAL=&#64;FILT/&#64;PEAK
+   ENDIF
+   &#64;PLOT=&#64;UNIVERSAL
+   &#64;PLOT2=0
+NEXT
+
+</pre>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2015/01/images/TT-Updata.gif" alt="Sample Chart" class="shadow1" style="width: 610px;" /><p class="figCaption">FIGURE 8: UPDATA. This chart shows the universal oscillator of band edge 50, as applied to Raytheon Company in daily resolution data.</p></div>
+<p class="authorTips">&mdash;Updata support team<br />
+<a href="mailto:support@updata.co.uk">support@updata.co.uk</a>, <a target="_parent" href="https://www.updata.co.uk">www.updata.co.uk</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item11">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/VTTrader.gif" alt="logo" />
+ <h3 class="newsTitle grey_blue">
+VT TRADER: JANUARY 2015</h3></div>
+<p>This Traders&rsquo; Tip is based on &ldquo;Whiter Is Brighter&rdquo; in this issue by John Ehlers. We&rsquo;ll be offering the universal oscillator for download in our VT client forums at <a target="_parent" href="https://forum.vtsystems.com">https://forum.vtsystems.com</a> along with other precoded and free indicators and trading systems.</p> 
+<p>The VT Trader instructions for creating the aforementioned indicator are as follows:</p>
+<ol>
+<li>VT Trader&rsquo;s Ribbon&rarr;Technical Analysis menu&rarr;Indicators group&rarr;Indicators Builder&rarr;[New] button</li>
+
+<li>In the General tab, type the following text into each corresponding text box:
+<pre>
+Name: TASC - 01/2015 - Universal Oscillator
+Function Name Alias: tasc_UniOsc
+Label Mask: TASC - 01/2015 - Universal Oscillator (%BandEdge%) = %Universal%
+Placement: New Frame
+Data Inspection Alias: Universal Oscillator</pre></li>
+
+<li>In the Input Variable(s) tab, create the following variables:
+<pre>
+[New] button...
+Name: BandEdge
+Display Name: Band Edge Periods
+Type: integer
+Default: 20</pre></li>
+
+<li>In the Output Variable(s) tab, create the following variables:
+<pre>
+[New] button...
+Var Name: Universal	
+Name: (Universal)
+Line Color: dark blue
+Line Width: 2
+Line Type: solid line</pre></li>
+
+<li>In the Horizontal Line tab, create the following horizontal lines:
+<pre>
+[New] button...
+Value: 0
+Line Color: black
+Line Width: thin
+Line Type: dashed</pre></li>
+
+<li>In the Formula tab, copy and paste the following formula:
+<pre>
+{Provided By: Visual Trading Systems, LLC}
+{Copyright: 2014}
+{Description: TASC, January 2015 - &quot;Relax, It's Just Noise - Whiter Is Brighter&quot; by John Ehlers}
+{File: tasc_UniOsc.vtscr - Version 1.0}
+
+Whitenoise:= If(BarCount()&lt;3,0,(Close - Ref(Close,-2)) / 2);
+
+// SuperSmoother Filter
+
+a1:= If(BarCount()=1, 0, Exp(-1.414*3.14159 / Bandedge));
+b1:= If(BarCount()=1, 0, 2*a1*Cos(1.414*180 / Bandedge));
+c2:= If(BarCount()=1, 0, b1);
+c3:= If(BarCount()=1, 0, -a1*a1);
+c1:= If(BarCount()=1, 0, 1 - c2 - c3);
+Filt:= If(BarCount()=1, 0,
+       If(BarCount()=2, c1*0*(Close + Ref(Close,-1))/2 + c2*Prev(0),
+       If(BarCount()=3, c1*0*(Close + Ref(Close,-1))/2 + c2*Prev(0) + c3*Ref(Prev(0),-1),
+       c1*(Whitenoise + Ref(Whitenoise,-1)) / 2 + c2*Prev(0) + c3*Ref(Prev(0),-1))));
+
+// automatic Gain Control (aGC)
+
+_Peak:= If(BarCount()=1, 0.0000001,
+        If(Abs(Filt) &gt; Prev(0), Abs(Filt),
+        0.991*Prev(0)));
+
+Universal:= Filt / _Peak;</pre></li>
+
+<li>Click the &ldquo;Save&rdquo; icon in the toolbar to finish building the Universal Oscillator.</li></ol>
+
+<p>A sample chart implementation is shown in Figure 9.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2015/01/images/TT-VTTrader.gif" alt="Sample Chart" class="shadow1" style="width: 610px;" /><p class="figCaption">FIGURE 9: VT TRADER. Here, the universal oscillator is shown on a daily candle chart of EUR/USD.</p></div> 
+<p><em>Risk disclaimer: Past performance is not indicative of future results. Forex trading involves a substantial risk of loss and may not be suitable for all investors.</em></p>
+<p class="authorTips">&mdash;Visual Trading Systems, LLC<br />
+<a href="mailto:vttrader@vtsystems.com">vttrader@vtsystems.com</a>, <a target="_parent" href="https://www.vtsystems.com">www.vtsystems.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item12">
+
+ <h3 class="newsTitle grey_blue">
+MICROSOFT EXCEL: JANUARY 2015</h3></div>
+<p>John Ehlers&rsquo; <em>white noise universal oscillator</em>, introduced in his article in this issue (&ldquo;Whiter Is Brighter&rdquo;), is elegant in its computational simplicity. Four columns of Excel cell formulas do the job nicely.</p> 
+<p>And, even better, this oscillator is remarkable in my experience for its minimal (zero?) signal-to-response lag.</p> 
+<p>The chart in Figure 10 is my approximation of Figure 3 from Ehlers&rsquo; article. Setting <em>bandedge</em> to 50 using the dates as shown here will replicate Figure 4 from Ehlers&rsquo; article.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2015/01/images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;" /><p class="figCaption">FIGURE 10: EXCEL, BANDEDGE. Here&rsquo;s an example price chart with bandedge set to the suggested swing trade value of 20.</p></div>
+<p>You could also apply the concept to a countertrend trading strategy using the inverse of the rules proposed for a trend-following strategy. The results summarized in the lower left of Figure 10 reflect this inverse relationship and allow you to see how the two trading strategies fare side by side at any given bandedge setting.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2015/01/images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;" /><p class="figCaption">FIGURE 11: EXCEL, LOGIC TABLES. Trading logic tables are located just to the right of the charts.</p></div> 
+<p>Figure 11 shows the decision tables reflecting the two strategies using the current bandedge setting. Because this system is computed on bar close, these tables simulate trade execution on the bar following a buy or sell crossover signal. The tables drive the trading details shown on the corresponding transaction summary tab in Figure 12. There is one summary tab for each strategy so that we may see in detail how long and short positions fare for that strategy.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2015/01/images/TT-Excel3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;" /><p class="figCaption">FIGURE 12: EXCEL, TRANSACTION TABS. Here&rsquo;s an example of the detailed transaction summary tabs.</p></div>
+<p>The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2015/01/images/code/WhiteNoiseUniversalOscillator.xlsm">here</a>. To successfully download it, follow these steps:</p>
+
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2015/01/images/code/WhiteNoiseUniversalOscillator.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+<p class="authorTips">&mdash;Ron McAllister, Excel and VBA programmer<br />
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item13">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Thinkorswim.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+THINKORSWIM: JANUARY 2015</h3></div>
+<p>In &ldquo;Whiter Is Brighter&rdquo; by John Ehlers in this issue, Ehlers discusses eliminating the &ldquo;noise&rdquo; in the market to get a clearer picture of entry &amp; exit points. From this we derived the UniversalOscillator strategy using our proprietary scripting language, thinkscript. To load the strategy into thinkorswim, simply click on the following link: <a target="_parent" href="https://tos.mx/zzhBRD">https://tos.mx/zzhBRD</a> and choose &ldquo;Backtest in thinkorswim.&rdquo; Then choose to rename your study to &ldquo;UniversalOscillatorStrategy.&rdquo; You can adjust the parameters within the <em>edit studies</em> window to fine tune your variables.</p> 
+<p>You can see from the chart in Figure 13 that the strategy on thinkorswim charts will give you entry points (the two blue arrows) when the flag is beginning and when the point forms. You can also see that the peak of the pole is the indicator with the exit point.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2015/01/images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;" /><p class="figCaption">FIGURE 13: THINKORSWIM</p></div> 
+<p>To see how this strategy performed, simply right-click on the exit point and choose <em>show report</em>.</p> 
+<p>For a detailed description of the strategy or to read the full article, STOCKS &amp; COMMODITIES subscribers can read Ehlers&rsquo; full article in the article archive at Traders.com by <a href="https://technical.traders.com/archive/article.asp?file=\V33\C01\908EHLE.pdf">clicking here</a>.</p>
+<p class="authorTips">—thinkorswim<br />
+A division of TD Ameritrade, Inc.<br />
+<a target="_parent" href="https://www.thinkorswim.com">www.thinkorswim.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+
+
+
+
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the Jan 2015 issue of<br />
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br />
+  All rights reserved. &copy;&nbsp;Copyright 2014, Technical Analysis, Inc.</p>
+
+</body>
+</html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: Undersampling Data by John Ehlers. Contributions from: TradeStation; Wealth-Lab.com; NinjaTrader; TradingView; NeuroShell Trader; The Zorro Project; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - APRIL 2023</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">April 2023</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2023/04/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John Ehlers&rsquo; article in this issue, &ldquo;Just Ignore Them.&rdquo; Here, we present the April 2023 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: April 2023</a></li>
+  <li><a href="#item2">Wealth-Lab.com: April 2023</a></li>
+  <li><a href="#item3">NinjaTrader: April 2023</a></li>
+  <li><a href="#item4">TradingView: April 2023</a></li>
+  <li><a href="#item5">NeuroShell Trader: April 2023</a></li>
+  <li><a href="#item6">The Zorro Project: April 2023</a></li>
+  <li><a href="#item7">Microsoft Excel: April 2023</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: April 2023</h3></div>
+<p>In his article in this issue, &ldquo;Just Ignore Them: Undersampling The Data As A Smoothing Technique,&rdquo; John Ehlers explains that data smoothing is often used as a means to help avoid trading whipsaws. While this can result in fewer trading signals, it can also result in a lag in those trading signals. In the article, Ehlers describes how undersampling coupled with Hann-windowed finite impulse response (FIR) filters can be used to remove high-frequency components in price data, resulting in less lag than that of traditional smoothing filters.</p>
+<pre>
+Function: $Hann
+
+{	
+	TASC APR 2023
+	Function: Hann Windowed Lowpass FIR Filter
+	(c) 2021-2022 John F. Ehlers
+}
+inputs:
+	Price( numericseries ),
+	Length( numericsimple );
+	
+variables:
+	Count( 0 ),
+	Coef( 0 ),
+	Filt( 0 );
+	
+Filt = 0;
+Coef = 0;
+
+for Count = 1 to Length 
+begin
+	Filt = Filt + (1 - Cosine(360 * Count / (Length + 
+	 1))) * Price[Count - 1];
+	Coef = Coef + 
+	 (1 - Cosine(360 * Count / (Length + 1)));
+end;
+
+if Coef &lt;&gt; 0 Then 
+	$Hann = Filt / Coef;
+
+
+Indicator: Undersampled Double MA
+
+{
+	TASC APR 2023
+	Undersampled Double MA Indicator
+	(c) 2022 John F. Ehlers
+}
+
+inputs:
+	FastLength( 6 ),
+	SlowLength( 12 );
+
+variables:
+	Sample( 0 ),
+	FastAvg( 0 ),
+	SlowAvg( 0 );
+	
+Sample = Sample[1];
+
+//Sample every five days
+if CurrentBar / 5 = IntPortion(CurrentBar / 5) then 
+	Sample = Close;
+//Find Fast Average using Hann FIR filter 
+FastAvg = $Hann(Sample, FastLength);
+//Find Slow Average using Hann FIR filter 
+SlowAvg = $Hann(Sample, SlowLength);
+
+Plot1(FastAvg, &quot;FastAvg&quot;);
+Plot2(SlowAvg, &quot;SlowAvg&quot;);
+
+
+Indicator: Undersampled Intraday Double MA
+
+{
+	TASC APR 2023
+	Undersampled Intraday Double MA Indicator
+	(c) 2022 John F. Ehlers
+}
+
+inputs:
+	BegDate( 1221117 ),
+	FastLength( 20 ),
+	SlowLength( 40 );
+
+variables:
+	Gap(0 ),
+	Degap( 0 ),
+	FastAvg( 0 ),
+	SlowAvg( 0 );
+	Degap = Degap[1]; 
+	
+if Time = 645 then
+begin
+	Gap = Close - Degap[1];
+	Degap = Close - Gap;
+end;
+
+if Time = 800 or Time = 900 
+ or Time = 1000 or Time = 1100 
+ or Time = 1200 or Time = 1315 then 
+ 	Degap = Close - Gap;
+ 	
+if Date &lt; BegDate then 
+	Degap = Close;
+//Find Fast Average using Hann FIR filter 
+FastAvg = $Hann(Degap, FastLength);
+//Find Slow Average using Hann FIR filter 
+SlowAvg = $Hann(Degap, SlowLength);
+
+Plot1(FastAvg, &quot;Fast Avg&quot;);
+Plot2(SlowAvg, &quot;Slow Avg&quot;);
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This TradeStation daily chart of the S&amp;P 500 ETF SPY shows a portion of 2022 and 2023 with the undersampled double MA indicator applied. A fast length of 6 is used and a slow length of 12 is used. The fast average is shown in magenta and the slow average is shown in blue.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_blank">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: April 2023</h3></div>
+<p>In his article &ldquo;Just Ignore Them&rdquo; in this issue, John Ehlers suggests a smoothing method by undersampling the data and using Hann windowing.</p>
+<p>The Hann indicator is ready for use in Wealth-Lab 8, allowing the user to choose whether to apply undersampling to the data or leave it as is. You can apply it equally using various tools in Wealth-Lab such as Building Blocks (to create no-code trading strategies), the Indicator Profiler (which tells how much of an edge an indicator provides), or our Strategy Optimizer.</p>
+<p>With Wealth-Lab&rsquo;s ability to combine different indicators in a GUI wizard, Hann filters can even be used as a &ldquo;smoother&rdquo; to your favorite indicator like MFI, RSI, or momentum. The techniques, common to moving average interpretation, apply here as well.</p>
+<p>Prototyping a trading system, including complex ideas, doesn&rsquo;t take much effort with the Building Blocks feature. If you&rsquo;re not familiar with Wealth-Lab, our <strong>web-based backtesting engine</strong> is free to use. Create a system (for example, applying the Hann filter to a price or indicator of choice) in its user-friendly interface and run backtests of your strategy right in the browser. As a natural next step, your strategy becomes instantly available in the Wealth-Lab desktop application for in-depth use. And if the strategy turns out to be good enough, you could choose to publish it for the benefit of the Wealth-Lab community of members. Strategies published by community members can be found at <a href="https://www.wealth-lab.com/Strategy/PublishedStrategies" target="_blank">https://www.wealth-lab.com/Strategy/PublishedStrategies</a>.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: WEALTH-LAB. This sample chart demonstrates a 6- and 12-period Hann filter (5-period undersampled) on the daily chart of the emini S&amp;P 500 futures (ES=F). Data provided by Yahoo! Finance.</p></div>
+<p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_blank">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: April 2023</h3></div>
+<p>The smoothing technique that John Ehlers presents in his article in this issue, &ldquo;Just Ignore Them,&rdquo; using undersampling and Hann windowing is available for download from the following links for NinjaTrader 8 and for NinjaTrader 7:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/April2023SCNT8.zip" target="_blank">www.ninjatrader.com/SC/April2023SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7: </strong><a href="https://www.ninjatrader.com/SC/April2023SCNT7.zip">www.ninjatrader.com/SC/April2023SCNT7.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import into NinjaTrader 7, from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator&rsquo;s source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control center window and selecting the file you wish to examine. You can review the indicator&rsquo;s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the control center window and selecting the file to examine.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, which provides you with the highest performance possible.</p>
+<p>A sample chart displaying the double moving average as discussed in Ehlers&rsquo; article is shown in Figure 3.</p>
+<div class="figBorder">
+<img src="images/TT-Ninjatrader.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: NINJATRADER. This shows an example of the undersampled double moving average on a daily chart of the emini ES, 11/15/2022 to 2/10/2023.</p></div>
+<p class="authorTips">&mdash;Chelsea Bell<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_blank">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: April 2023</h3></div>
+<p>Here is TradingView Pine Script code implementing the undersampled double moving average indicator described in the article in this issue by John Ehlers, titled &ldquo;Just Ignore Them: Undersampling The Data As A Smoothing Technique.&rdquo;</p>
+<pre>
+//  TASC Issue: April 2023 - Vol. 41, Issue 5
+//     Article: Undersampling The Data As A Smoothing Technique.
+//              Just Ignore Them.
+//  Article By: John Ehlers
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+//&#64;version=5
+string title  = 'TASC 2023.04 Undersampled Double MA'
+string stitle = 'UDMA'
+indicator(title, stitle, true)
+
+// &#64;function Samples a source every period of bars.
+// &#64;param period int   . Period of sampling.
+// &#64;param source float . Data source.
+// &#64;returns float.
+sampledSource (int period = 5, float source = close) =&gt;
+   var float sample = source
+   // sample every period:
+   if bar_index % period == 0
+       sample := source
+   sample
+
+// &#64;function Hann Windowed Lowpass FIR Filter.
+// &#64;param source float . Data source.
+// &#64;param length int   . Length period.
+// &#64;returns float.
+hann (float source, int length) =&gt;
+   float PIx2 = math.pi * 2.0, filt = 0.0, coef = 0.0
+   for count = 1 to length
+       float w = 1.0-math.cos(PIx2*count / (length + 1.0))
+       filt += w * nz(source[count - 1])
+       coef += w
+   float hann = coef != 0.0 ? filt / coef : na
+   hann
+
+// &#64;function Undersampled Double Moving Average.
+// &#64;param length       int   . Length period.
+// &#64;param samplePeriod int   . Sampling period.
+// &#64;param source       float . Data source.
+// &#64;returns float.
+udma (int length      =     6,
+int      samplePeriod =     5,
+float    source       = close
+) =&gt;
+   float sample = sampledSource(samplePeriod, source)
+   //find average using Hann FIR filter:
+   float result = hann(sample, length)
+   result
+
+int samplePeriod = input.int( 5, 'Sampling period:', 1)
+int fastLength   = input.int( 6, 'Fast period:', 1)
+int slowLength   = input.int(12, 'Slow period:', 1)
+
+float fast = udma(fastLength, samplePeriod)
+float slow = udma(slowLength, samplePeriod)
+
+plot(fast, 'Fast UDMA', color.red, 4)
+plot(slow, 'Slow UDMA', color.navy, 4)
+</pre>
+<p>The indicator is available on TradingView from the PineCodersTASC account at:
+<a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart is shown in Figure 4.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: TRADINGVIEW. This daily TradingView chart of the S&amp;P 500 index demonstrates the undersampled double moving average (5,6,12).</p></div>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="https://www.TradingView.com" target="_blank">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NeuroShell Trader: April 2023</h3></div>
+<p>Using undersampling of the data as a smoothing technique, as described by John Ehlers in his article in this issue, &ldquo;Just Ignore Them,&rdquo; can be easily implemented in NeuroShell Trader by combining some of NeuroShell Trader&rsquo;s 800+ indicators. To implement the undersampled intraday double MA indicator, select &ldquo;new indicator&rdquo; from the <em>insert</em> menu, and use the indicator wizard to set up the following indicators:</p>
+<pre>
+Gap	Sub(DayOpen(Date,Open,0),DayClose(Date,Close,1))
+CumGap	CumSum( IfThenElse(A not equal B(Momentum( Gap, 1), 0), Gap, 0) ,0)
+Price	Sub(Close, CumGap)	
+SampleFreq	4
+Degap	SelectiveAvg(Price,A=B(Remainder(CumSum(Add2(1,0),0), SampleFreq),0),1)
+FastAvg	Hann(Degap, 20)
+SlowAvg	Hann(Degap, 40)
+</pre>
+<p>Note that Ehlers&rsquo; Hann filter indicator is created using NeuroShell Trader&rsquo;s ability to call external dynamic linked libraries (DLLs). After moving the Hann filter code given in the article to your preferred compiler and creating a DLL, you can insert the resulting indicator as follows:</p>
+<ol>
+  <li>Select &ldquo;new indicator&rdquo; from the <em>insert</em> menu.</li>  
+  <li>Choose the <em>External Program &amp; Library Calls</em> category.</li>  
+  <li>Select the appropriate <em>External DLL Call</em> indicator.</li>  
+  <li>Set up the parameters to match your DLL.</li>  
+  <li>Select the <em>finished</em> button.</li>  
+</ol>
+<p>Figure 5 demonstrates the undersampled intraday double moving average indicator.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: NEUROSHELL TRADER. This NeuroShell Trader chart demonstrates the undersampled intraday double moving average indicator.</p></div>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_blank">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" style="width: 100px;" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: April 2023</h3></div>
+<p>All smoothing indicators, such as the simple moving average (SMA) or lowpass filter, trade more lag for more smoothing. In this issue&rsquo;s article &ldquo;Just Ignore Them,&rdquo; John Ehlers suggests undersampling the price curves for achieving a better compromise between smoothness and lag. We can check that out by applying a Hann filter to the original price curve and a five-fold undersampled curve.</p>
+<p>The C code for the Hann filter, from Ehlers&rsquo; article, is:</p>
+<pre>
+var Hann(vars Data,int Length)
+{
+  var Filt = 0, Coeff = 0;
+  int i;
+  for(i=1; i&lt;=Length; i++) {
+    Filt += (1-cos(2*PI*i/(Length+1)))*Data[i-1];
+    Coeff += 1-cos(2*PI*i/(Length+1));
+  }
+  return Filt/fix0(Coeff);
+}
+</pre>
+<p>The <strong>fix0</strong> function in the denominator has the purpose of working around division-by-zero issues. We will now apply the Hann filter to the undersampled SPY price curve:</p>
+<pre>
+void run() 
+{
+  StartDate = 20220101;
+  EndDate = 20221231;
+  BarPeriod = 1440;
+
+  set(PLOTNOW);
+  asset(&quot;SPY&quot;);
+
+  vars Samples = series();
+  if(Init || Bar%5 == 0)
+    Samples[0] = priceC(0);
+  else
+    Samples[0] = Samples[1];
+
+  plot(&quot;Hann6&quot;,Hann(Samples,6),LINE,MAGENTA);
+  plot(&quot;Hann12&quot;,Hann(Samples,12),LINE,BLUE);
+  plot(&quot;Hann&quot;,Hann(seriesC(),12),0,DARKGREEN);
+}
+</pre>
+<p>The resulting chart is shown in Figure 6. The blue line is the Hann filter of the undersampled curve with period 12, and magenta line with period 6. For comparison, we&rsquo;ve added the Hann filter output from the original curve (green). You can see that the green line has less lag but is also less smooth.</p>
+<div class="figBorder">
+<img src="images/TT-Zorro.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: ZORRO PROJECT. This chart of the daily SPY applies a Hann filter to the original price curve and a five-fold undersampled curve. The blue line is the Hann filter of the undersampled curve with period 12, and magenta line with period 6. The Hann filter output from the original curve is shown in green for comparison. You can see that the green line has less lag but is also less smooth.</p></div>
+<p>A test script for the Hann indicator and undersampling can be downloaded from the 2022 script repository on <a href="https://financial-hacker.com" target="_blank">https://financial-hacker.com</a>. The Zorro platform can be downloaded from <a href="https://zorro-project.com" target="_blank">https://zorro-project.com</a>.</p>
+<p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_blank">https://zorro-project.com</a></p> 
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: April 2023</h3></div>
+<p>In his article in this issue, &ldquo;Just Ignore Them: Undersampling The Data As A Smoothing Technique,&rdquo; John Ehlers presents an interesting approach to reducing the impact of noise in the data (high-frequency components) by way of undersampling the data and taking advantage of the resulting aliasing.</p>
+<p>We can replicate his technique in Excel by using a two-step computation:</p>
+<ol>
+<li>Undersample the data by collecting sample values a set number of bars apart. Then propagate this value forward as the sample value for the intervening bars until the next sample bar (Figure 7).</li>
+<li>Compute two weighted averages of the sample values using different-length Hann weighting profiles (Figure 8).</li>
+</ol>
+<div class="figBorder">
+<img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: EXCEL. To replicate the smoothing technique presented in John Ehlers&rsquo; article in this issue, the first step, illustrated here, is to undersample the data by collecting sample values a set number of bars apart, then propagate this value forward as the sample value for the intervening bars until the next sample bar. Here, the closing price value is sampled every 5 bars, with the value carried forward until the next sample bar.</p></div>
+<div class="figBorder">
+<img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: EXCEL. The next step in Excel is to compute two weighted averages of the sample values using different-length Hann weighting profiles. Here, Hann 6 and Hann 12 averages are used.</p></div>
+<p>A careful observer will notice that the fast and slow Hann plots presented here do not quite match Figure 2 in Ehlers&rsquo; article in this issue. This difference really stands out in the right-most 12 or so bars. After researching this difference a bit, I determined that this is simply a case of &ldquo;source data misalignment. &rdquo; It turns out that which bar we use to start the sampling and bar counting matters. Ehlers&rsquo; sampling started with a different bar.</p>
+<p>The formulas in this spreadsheet default the starting bar of the count to be the most recent bar available (right-most bar on the chart). But the misalignment problem could be the same if my count started with the oldest bar available.</p>
+<p>To adjust the relative starting bar, I introduced an &ldquo;interval offset&rdquo; in the user controls area. A non-zero &ldquo;interval offset&rdquo; value shifts the logical starting bar to the right. With a sampling interval of 5, valid offset values are 0 through 4. Under the covers, higher offset values logically wrap back into 0 through 4 via a modulo calculation based on the sampling interval value.</p>
+<p>An interval offset of 3 produced a chart (Figure 9) that is a near match to Ehlers&rsquo; Figure 2. It was interesting to observe the changes of the fast and slow shapes and crossovers as I cycled through the possible interval offset values.</p>
+<div class="figBorder">
+<img src="images/TT-Excel3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: EXCEL. Here, an interval offset is chosen (of &ldquo;3&rdquo;) to match Figure 2 in John Ehlers&rsquo; article in this issue.</p></div>
+<p>Determining the starting bar for the sampling process becomes particularly important as new data bars become available and older bars drop out of the calculation and charting window over time.</p>
+<p>In Figure 10, I stepped 7 days forward in time without changing the interval offset. Here, the fast and slow shapes of the right-most bars look very similar to Figure 7. (Changing the interval offset to &ldquo;4&rdquo; restored the picture.)</p>    
+<div class="figBorder">
+<img src="images/TT-Excel4.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 10: EXCEL. Seven days into the future, the fast and slow once again look similar to Figure 1 in John Ehlers&rsquo; article in this issue.</p></div>    
+<p>With a sampling interval of 5, the fast and slow shapes for mid-plot bars will exhibit a repeating cycle every fifth new bar. This is similar to what we observed as we cycled the interval offset value.</p>    
+ <p>A possible solution would be to specify a particular bar date as an anchor for the sampling interval rather than an interval offset. And you might need to keep track of that date for each symbol you look at.</p>   
+ <p><strong><em>To download this spreadsheet:</em></strong> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2023/04/images/code/JustIgnoreThem.xlsm">here</a>. To successfully download it, follow these steps:</p>
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2023/04/images/code/JustIgnoreThem.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>   
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>    
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the April 2023 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2023, Technical Analysis, Inc.</p>
+</body>
+</html>

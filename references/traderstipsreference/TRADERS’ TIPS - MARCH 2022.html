@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: Relative Strength Moving Averages, Part 3 by Vitali Apirine. Contributions from: TradeStation; eSignal; Wealth-lab.com; NinjaTrader; TradingView; Neuroshell Trader; Optuma; TradersStudio; The Zorro Project; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - MARCH 2022</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">March 2022</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2022/03/images/TT-Apirine.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Vitali Apirine&rsquo;s article in this issue, &ldquo;Relative Strength Moving Averages, Part 3.&rdquo; Here, we present the March 2022 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: March 2022</a></li>
+  <li><a href="#item2"><span style="text-transform:lowercase;">e</span>SIGNAL: March 2022</a></li>
+  <li><a href="#item3">Wealth-lab.com: March 2022</a></li>
+  <li><a href="#item4">NinjaTrader: March 2022</a></li>
+  <li><a href="#item5">TradingView: March 2022</a></li>
+  <li><a href="#item6">Neuroshell Trader: March 2022</a></li>
+  <li><a href="#item7">Optuma: March 2022</a></li>
+  <li><a href="#item8">TradersStudio: March 2022</a></li>
+  <li><a href="#item9">The Zorro Project: March 2022</a></li>
+  <li><a href="#item10">Microsoft Excel: March 2022</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: March 2022</h3></div>
+<p>The current article series &ldquo;Relative Strength Moving Averages&rdquo; by Vitali Apirine focuses on differences between traditional exponential moving averages (EMAs) and relative strength-based EMA indicators. In this issue's article, Apirine describes the relative strength volatility-adjusted exponential moving average (RS VolatAdj EMA).</p>
+<p>The indicator is designed to account for relative strength of volatility, and it requires a second, corresponding volatility index. For example, if charting the S&amp;P 500 ETF (SPY), one can use the CBOE Volatility Index ($VIX.X). The indicator compared to itself of varying lengths, or the indicator compared to a traditional EMA with the same length, can be used to help to identify trends and turning points. During an uptrend, RS VolatAdj EMA crossovers can be used to help identify entry points for long trades.</p>
+<pre>
+Indicator: TASC MAR 2022 RS VolatAdj EMA
+// TASC MAR 2022
+// Relative StrengthMoving Averages
+// Part 3: The Relative Strength Volatility-Adjusted 
+// Exponential Moving Average (RS VolatAdj EMA)
+//
+// Vitali Apirine 2022
+
+inputs:
+	int Periods( 10 ),
+	int Pds( 10 ),
+	int Mltp( 10 );
+
+variables:
+	Mltp1( 0 ),
+	VolatC( 0, Data2 ),
+	VolatUpDay( 0 ),
+	VolatDwnDay( 0 ),
+	Rate( 0 ),
+	RS( 0 ),
+	PlotValue( 0 );
+
+Mltp1 = 2 / (Periods + 1);
+VolatC = Close of Data2;
+VolatUpDay = IFF(Close &gt; Close[1], VolatC, 0);
+VolatDwnDay = IFF(C &lt; Close[1], VolatC, 0);
+RS = AbsValue(XAverage(VolatUpDay, Pds) -
+ XAverage(VolatDwnDay, Pds)) / (XAverage(VolatUpDay, Pds) +
+ XAverage(VolatDwnDay, Pds) + 0.00001);
+RS = RS * Mltp;
+Rate = Mltp1 * (1 + RS);
+
+If CurrentBar = Periods + 1 then
+	PlotValue = Close
+else
+	PlotValue = PlotValue[1] + Rate * (Close - PlotValue[1]);	
+
+if CurrentBar &gt;= Periods + 1 then
+	Plot1( PlotValue, &quot;RS VolatAdj&quot; );
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 1: TRADESTATION. Shown is a TradeStation daily chart of the S&amp;P 500 ETF (SPY) and the CBOE Volatility Index ($VIX.X) with the indicator applied. Indicator inputs have been set to 50, 50 and 10. A traditional 50-period EMA is also plotted (shown in red).</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a>
+</p>
+
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;"><span style="text-transform:lowercase;">e</span>SIGNAL: March 2022</h3></div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;ve provided the study <a href="https://www.traders.com/Documentation/FEEDbk_docs/2022/03/images/code/RSVolatAdj.efs" target="_blank">RS VolatAdj.efs</a> based on the article by Vitali Apirine in this issue, &ldquo;Relative Strength Moving Averages, Part 3: The Relative Strength Volatility-Adjusted Exponential Moving Average (RS VolatAdj EMA).&rdquo; This study displays the relative strength of volatility as an exponential moving average.</p>
+<p>The study contains formula parameters that may be configured through the <em>edit chart</em> window (right-click on the chart and select &ldquo;edit chart&rdquo;). A sample chart is shown in Figure 2.</p>
+<div class="figBorder">
+<img src="images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 2: eSIGNAL. Here is an example of the study plotted on a daily chart of $SPX. This study displays the relative strength of volatility as an exponential moving average.</p></div>
+    <p>To discuss this study or download a complete copy of the formula code, please visit the EFS library discussion board forum under the <em>forums</em> link from the support menu at <a href="https://www.esignal.com" target="_parent">www.esignal.com</a> or visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs" target="_parent">www.esignal.com/support/kb/efs</a>. The eSignal formula script (EFS) is also available for copying &amp; pasting here:</p>
+  <pre>
+/**********************************
+Provided By:  
+Copyright 2019 Intercontinental Exchange, Inc. All Rights Reserved. 
+eSignal is a service mark and/or a registered service mark of Intercontinental Exchange, Inc. 
+in the United States and/or other countries. This sample eSignal Formula Script (EFS) 
+is for educational purposes only. 
+Intercontinental Exchange, Inc. reserves the right to modify and overwrite this EFS file with each new release. 
+
+Description:      
+    Relative Strength Moving Averages
+    by Vitali Apirine
+    
+
+Version:            1.00  12/01/2022
+
+Formula Parameters:                     Default:
+Periods                                 10
+VolInd                                  $VIX
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+var fpArray = new Array();
+var bInit = false;
+
+function preMain() {
+    setStudyTitle(&quot;RS VolatAdj EMA&quot;);
+    setCursorLabelName(&quot;RS VolatAdj EMA&quot;, 0);
+    setPriceStudy(true);
+    setDefaultBarFgColor(Color.RGB(0x00,0x94,0xFF), 0);
+    setPlotType( PLOTTYPE_LINE , 0 );
+    setDefaultBarThickness(2, 0);
+    setIntervalsBackfill(true);
+    
+    var x=0;
+    fpArray[x] = new FunctionParameter(&quot;Periods&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1);   
+        setDefault(10);
+    }    
+    fpArray[x] = new FunctionParameter(&quot;VolInd&quot;, FunctionParameter.STRING);
+	with(fpArray[x++]){
+        setDefault('$VIX');
+        setName(&quot;Corresponding Volatility Index&quot;)
+            
+    }    
+}
+
+var bVersion = null;
+var xClose = null;
+var RS = null;
+var RS_1  = null;
+
+
+function main(Periods, VolInd) {
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return; 
+    
+    if ( bInit == false ) { 
+        xClose = close(); 
+        xCloseVIX = close(VolInd);
+        Pds = 10;
+        Mltp = 10;
+        Mltp1 = 2 / (Periods+1);
+        
+        VolatUpDay = efsInternal('Calc_UD', xClose, xCloseVIX);
+        VolatDwnDay = efsInternal('Calc_DD', xClose, xCloseVIX);
+        xRS = efsInternal('Calc_RS', VolatUpDay, VolatDwnDay, Pds, Mltp);
+        
+        RS = 0;
+        RS_1 = 0;
+        
+                        
+        bInit = true; 
+    }      
+    if (getCurrentBarCount() &lt;= Periods) return;
+    if (getBarState() == BARSTATE_NEWBAR) {
+        RS_1 = RS;
+        RS = 0;
+    }
+    
+    Rate = Mltp1 * (1+xRS.getValue(0)); 
+    if (getCurrentBarCount() == Periods + 1) ret = xClose.getValue(0);
+    else ret = RS_1 + Rate * (xClose.getValue(0) - RS_1); 
+    RS = ret;
+
+    return RS;        
+}
+
+function Calc_RS(VolatUpDay, VolatDwnDay, Pds, Mltp){
+    ret = Math.abs(ema(Pds, VolatUpDay) - ema(Pds, VolatDwnDay)) / (ema(Pds, VolatUpDay) + ema(Pds, VolatDwnDay) + 0.00001);
+    ret = ret * Mltp;
+    
+    return ret;
+}
+var ret = 0;
+function Calc_DD(xClose, xCloseVIX){
+    var ret = 0;
+    if (xClose.getValue(1) &lt; xClose.getValue(0)){
+        ret = xCloseVIX.getValue(0);
+    }
+    else ret = 0;
+    
+    return ret;
+}
+var ret = 0;
+function Calc_UD(xClose, xCloseVIX){
+    var ret = 0;
+    if (xClose.getValue(1) &gt; xClose.getValue(0)){
+        ret = xCloseVIX.getValue(0);
+    }
+    else ret = 0;
+    
+    return ret;
+}
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+</pre>  
+<p class="authorTips">&mdash;Eric Lippert<br>
+eSignal, an Intercontinental Exchange, Inc. company<br>
+770-999-4511, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-lab.com: March 2022</h3></div>
+<p>The relative strength volatility-adjusted exponential moving average (RSVolatAdjEMA), an indicator introduced in Vitali Apirine&rsquo;s article in this issue, &ldquo;Relative Strength Moving Averages, Part 3: The Relative Strength Volatility-Adjusted Exponential Moving Average (RS VolatAdj EMA),&rdquo; has been added to Wealth-Lab 7. It opens up for including it in your research without any programming. For example, the indicator could be used as a basis for building and training a backpropagation neural network or tested in the Indicator Profiler extension to see how much of an edge it provides compared to other indicators.</p>
+<p>And of course it&rsquo;s a snap to build a trading system from within Building Blocks. Figure 3 illustrates one such system derived from an idea mentioned in the article. The blocks use the RSVolatAdjEMA crossovers as entry points for trades during a long-term uptrend. We entered the symbol ^VIX to get the VIX data from Yahoo! Finance but you can take any other supported data source.</p>
+    <div class="figBorder">
+<img src="images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 3: WEALTH-LAB. This example trading system using crossovers of the relative strength volatility-adjusted exponential moving average (RSVolatAdjEMA) was created in under a minute by using Wealth-Lab&rsquo;s Building Blocks feature to set up the strategy.</p></div>
+<p>The rules of the sample system are:</p>
+
+<ul style="list-style-type: none;"><li>Buy when RSVolatAdjEMA(50,50,10) crosses above RSVolatAdjEMA(200,200,10)</li>
+<li>Sell when RSVolatAdjEMA(50,50,10) crosses below RSVolatAdjEMA(200,200,10)</li></ul>
+
+<p>Alternatively, the same rules can be applied as a trend direction filter in a custom trading system. (See Figure 4.)</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 4: WEALTH-LAB. This chart shows sample trades taken by the system applied to a daily chart of SPY.</p></div>
+<pre>
+using WealthLab.Backtest;
+using WealthLab.Core;
+using WealthLab.Indicators;
+using System.Drawing;
+using WealthLab.TASC;
+
+namespace WealthScript1 
+{
+    public class S_C_2022_03__RelativeStrengthMovingAveragesPart3 : UserStrategyBase
+    {
+        public override void Initialize( BarHistory bars)
+        {
+		rsv1 = new RSVolatAdjEMA(bars,&quot;^VIX&quot;,50,50,10);
+		rsv2 = new RSVolatAdjEMA(bars,&quot;^VIX&quot;,200,200,10);
+
+		PlotIndicator( rsv1,Color.FromArgb(255,0,0,0));
+		PlotIndicator( rsv2,Color.FromArgb(255,0,0,255));
+
+		StartIndex = 200;
+        }
+
+        public override void Execute( BarHistory bars, int idx)
+        {
+		if (LastPosition == null)
+		{
+			if (rsv1.CrossesOver(rsv2, idx))
+				PlaceTrade( bars, TransactionType.Buy, OrderType.Market, 0, 0, &quot;Crossover&quot;);
+		}
+		else
+		{
+			if (rsv1.CrossesUnder(rsv2, idx))
+				ClosePosition( LastPosition, OrderType.Market, 0, &quot;Crossunder&quot;);
+		}
+        }
+
+	private IndicatorBase rsv1, rsv2;
+    }
+}
+</pre>
+  <p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a>
+</p>  
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: March 2022</h3></div>
+
+<p>The RS VolatAdj EMA indicator, which is presented in Vitali Apirine&rsquo;s article in this issue, &ldquo;Relative Strength Moving Averages, Part 3: The Relative Strength Volatility-Adjusted Exponential Moving Average (RS VolatAdj EMA),&rdquo; is available for download at the following links for NinjaTrader 8 and for NinjaTrader 7:</p>
+
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/March2022SCNT8.zip" target="_blank">www.ninjatrader.com/SC/March2022SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7: </strong><a href="https://www.ninjatrader.com/SC/March2022SCNT7.zip">www.ninjatrader.com/SC/March2022SCNT7.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import into NinjaTrader 7, from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the RSVolatAdjEMA file. You can review the indicator&rsquo;s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Strategy from within the control center window and selecting the RSVolatAdjEMA file.</p>
+<p>A sample chart displaying the RSVolatAdjEMA indicator is shown in Figure 5.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 5: NINJATRADER. The RSVolatAdjEMA indicator is displayed here on a daily S&amp;P 500 index chart from August 2020 to December 2020.</p></div>
+    <p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">&mdash;Chris Lauber<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: March 2022</h3></div>
+<p>Here is the TradingView Pine Script code implementing the relative strength volatility-adjusted exponential moving average (RS VolatAdj EMA). This indicator is presented in the article in this issue by Vitali Apirine.</p>
+<pre>
+//  TASC Issue: March 2022 - Vol. 40, Issue 3
+//     Article: Relative Strength Moving Averages - 
+//               Part 3: The Relative Strength
+//                        Volatility-Adjusted
+//                     Exponential Moving Average
+//                         (RS VolatAdj EMA)
+//  Article By: Vitali Apirine
+//    Language: TradingView's Pine Script v5
+// Provided By: PineCoders, for tradingview.com
+
+//&#64;version=5
+indicator(&quot;TASC 2022.03 RS VolatAdj EMA&quot;, &quot;RSVAEMA&quot;, true)
+
+selVIX = input.symbol(&quot;TVC:VIX&quot;,              &quot;VIX Selection&quot;)
+source = input.source(    close,                     &quot;Source&quot;)
+perEMA = input.int   (       20,                 &quot;EMA Period&quot;)
+perVS  = input.int   (       20, &quot;Volatility Strength Period&quot;)
+multVS = input.float (     10.0,                 &quot;Multiplier&quot;)
+
+// Relative Strength Volatility-Adjusted EMA Function
+rsvae(source, srcVIX, periodEMA, periodVolatS, multVolatS) =&gt;
+    var MULT = 2.0 / (math.max(1.0, periodEMA) + 1.0)
+    var ALPH = 2.0 / (math.max(1.0, periodVolatS) + 1.0)
+    var BETA = 1.0 - ALPH
+    volatUp   = source &gt; nz(source[1], source) ? srcVIX : 0.0
+    volatDown = source &lt; nz(source[1], source) ? srcVIX : 0.0
+    volatUpEMA  = float(na)
+    volatUpEMA :=        volatUp  * ALPH +
+     nz(volatUpEMA[1],   volatUp) * BETA
+    volatDnEMA  = float(na)
+    volatDnEMA :=      volatDown  * ALPH +
+     nz(volatDnEMA[1], volatDown) * BETA
+    VolatS =  nz(math.abs(volatUpEMA - volatDnEMA) /
+                         (volatUpEMA + volatDnEMA))
+    rsVolatAdjEMA  = source
+    lastRSVAE      = nz(rsVolatAdjEMA[1], rsVolatAdjEMA)
+    rsVolatAdjEMA := lastRSVAE + (source - lastRSVAE) * MULT *
+                   (1.0 +  VolatS * math.max(0.0, multVolatS))
+    rsVolatAdjEMA
+
+VIXvalue = request.security(selVIX, timeframe.period, close)
+
+RSvolatAdjEMA = rsvae(source, VIXvalue, perEMA, perVS, multVS)
+EMA           = ta.ema(source, perEMA)
+fillColor     = RSvolatAdjEMA &gt; EMA ? #FF8C0033 : #2096F233
+
+plotEMA   = plot(EMA)
+plotRSVAE = plot(RSvolatAdjEMA, &quot;&quot;, #ff8c00, 2)
+fill(plotEMA, plotRSVAE, color=fillColor)
+</pre>
+<p>The indicator is available on TradingView from the PineCodersTASC account:
+<a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_parent">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a></p>
+    <div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 6: TRADINGVIEW. Shown here is the RS VolatAdj EMA on a chart of the S&amp;P 500 index.</p></div>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="https://www.TradingView.com" target="_parent">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: March 2022</h3></div>
+<p>The relative strength volatility-adjusted exponential moving average (RS VolatAdj EMA), which is introduced in Vitali Apirine&rsquo;s article in this issue, can be easily implemented in NeuroShell Trader by combining some of NeuroShell Trader&rsquo;s 800+ indicators.</p>
+<p>To implement the indicators, select <em>new indicator</em> from the <em>insert</em> menu and use the indicator wizard to create the following indicators:</p>
+<pre>
+UVEMA:		ExpAvg( IfThenElse( A&gt;B( Momentum(Close, 1), 0 ), VIX, 0 ), 10)
+DVEMA:		ExpAvg( IfThenElse( A&lt;B( Momentum(Close, 1), 0 ), VIX, 0 ), 10)
+RS:		Divide( Abs( Subtract(UVEMA , DVEMA ) ), Add2(UVEMA , DVEMA) )
+RATE:		Multiply2( Add2(1, Multiply(RS, 10) ), Divide( 2, Add2(10, 1) ) )
+RSVolatAdjEMA:	DynamicExpAvg (Close, RATE )
+</pre>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 7: NEUROSHELL TRADER. This NeuroShell Trader chart shows the SPX relative strength volatility-adjusted exponential moving average (RS VolatAdj EMA).</p></div>
+<p>NeuroShell Trader users can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p>The DynamicExpAvg is a dynamic rate exponential moving average custom indicator that is also available for download at our free technical support website at <a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a>.</p>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Optuma.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Optuma: March 2022</h3></div>
+<p>In his article in this issue, Vitali Apirine presents the relative strength volatility-adjusted exponential moving average (RS VolatAdj EMA). Following is a formula to use in Optuma for EMA(10,10,10):</p>
+<pre>
+VolatC = GETDATA(CODE=VIX:CBOEI);
+$PDS = 10;
+Periods = 10;
+Mltp = 10;
+Mltp1 = 2/(Periods + 1);
+//MA(BARS=$PDS, STYLE=Exponential, CALC=Close)
+ 
+VolatUpDay = IF(Close() IsUp, VolatC,0);
+VolatDwnDay = IF(Close() IsDown, VolatC,0);
+ 
+RS=ABS(MA(VolatUpDay, BARS=$PDS, STYLE=Exponential) - MA(VolatDwnDay, BARS=$PDS, STYLE=Exponential)) / (MA(VolatUpDay, BARS=$PDS, STYLE=Exponential) + MA(VolatDwnDay, BARS=$PDS, STYLE=Exponential) + 0.0001);
+RS1 = RS*Mltp;
+Rate = Mltp1*(1+RS1);
+CLOSE()[1]+Rate*(CLOSE()-CLOSE()[1])
+</pre>
+<p>Figure 8 shows a weekly chart of the S&P 500 showing the crossovers automatically.</p>
+<div class="figBorder">
+<img src="images/TT-Optuma.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 8: OPTUMA. This weekly chart of the S&amp;P 500 shows crossovers of the RS VolatAdj EMA.</p></div>
+<p class="authorTips">&mdash;<a href="mailto:support@optuma.com">support@optuma.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradersStudio: March 2022</h3></div>
+<p>The importable TradersStudio file based on Vitali Apirine&rsquo;s article in this issue, &ldquo;Relative Strength Moving Averages, Part 3: The Relative Strength Volatility-Adjusted Exponential Moving Average (RS VolatAdj EMA),&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also available below.</p>
+ <p>Code for the author&rsquo;s indicators is provided in following files:</p>
+
+<ul style="list-style-type: none;"><li><strong>Function RSVEMA:</strong> Computes the volatility adjusted relative strength exponential moving average</li>
+<li><strong>Indicator plot RSVEMA_IND:</strong> Plots the RSVEMA indicator on a chart</li></ul>  
+<pre>
+'Relative Strength Moving Average, Volatility Adjusted
+'Author: Vitali Apirine, TASC March 2022
+'Coded by: Richard Denning, 1/10/2022
+
+'FUNCTION TO COMPUTE INDICATOR VALUES:
+Function RSVEMA(Periods, Pds, Mltp)
+'Periods = 10, Pds = 10, Mltp = 10
+Dim MLTP1
+Dim VolatC As BarArray
+Dim UV As BarArray
+Dim DV As BarArray
+Dim RS As BarArray
+Dim Rate
+Dim RSVe As BarArray
+MLTP1 = 2/(Periods + 1)
+VolatC = C Of independent1
+UV = IIF(C&gt;C[1],VolatC,0)
+DV = IIF(C&lt;C[1],VolatC,0)
+RS=Abs(XAverage(UV,Pds,0)-XAverage(DV,Pds,0))/(XAverage(UV,Pds,0)+XAverage(DV,Pds,0)+0.00001) 
+RS=RS*Mltp
+Rate=MLTP1*(1+RS)
+RSVe = RSVe[1] + Rate*(C-RSVe[1])
+RSVEMA = RSVe
+End Function
+'--------------------------------------------
+'INDICATOR PLOT:
+Sub RSVEMA_IND(Periods, Pds, Mltp)
+Dim RSVe As BarArray
+RSVe=RSVEMA(Periods, Pds, Mltp)
+plot1(RSVe)
+End Sub
+'-------------------------------------------
+</pre>
+<p>Figure 9 shows the RSVEMA indicators (10- and 50-bar) on a chart of Amgen (AMGN) during part of 2013.</p>
+<div class="figBorder">
+<img src="images/TT-Tradersstudio.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 9: Tradersstudio. The RSVEMA indicators (10- and 50-bar) are shown on a chart of Amgen (AMGN) during part of 2013.</p></div>
+    <p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for TradersStudio</p>
+    <!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: March 2022</h3></div>
+<p>The exponential moving average (EMA) and the relative strength indicator (RSI) are both very popular indicators. In his article in this issue, &ldquo;Relative Strength Moving Averages, Part 3: The Relative Strength Volatility-Adjusted Exponential Moving Average (RS VolatAdj EMA),&rdquo; Vitali Apirine combines them. He measures the relative strength of a volatility index (VIX) and uses the result as an EMA time period.</p>
+<p>The algorithm from the article, slightly reformulated for clarity, is as follows:</p>
+    <pre>RSEMA[0] = Alpha * Price + (1-Alpha) * RSEMA[1]</pre>
+<p>This is a classic EMA, but with a volatility-dependent alpha factor:</p>
+    <pre>Alpha = 2/(TimePeriod+1) * (1 + 10*abs(EMAUp-EMADn)/(EMAUp+EMADn))</pre>
+<p>EMAUp and EMADn are the VIX EMA of days with positive returns and the VIX EMA of days with negative returns. The separation into positive and negative days resembles the RSI. There is a double EMA in this formula. The factor 10 is inserted to improve the result.</p>
+<p>VIX historical data is not available via API from free online sources (as far as I know), but most brokerages offer the data. Thus, Zorro users can most likely download the data from their brokerage using the Zorro download script.</p>
+<p>Following is C code as converted from the MetaStock code given in Apirine&rsquo;s article in this issue:</p>
+<pre>
+var RSEMA(int Periods, int PdsEMA, var Mltp)
+{
+  asset(&quot;VIX&quot;);
+  var VolatC = priceC();
+  asset(AssetPrev);
+  vars VolatUpDays = series(ifelse(RET(1)&gt;0,VolatC,0)),
+    VolatDnDays = series(ifelse(RET(1)&lt;0,VolatC,0));
+  var EMAUp = EMA(VolatUpDays,PdsEMA),
+    EMADn = EMA(VolatDnDays,PdsEMA);
+  var RS = abs(EMAUp-EMADn)/(EMAUp+EMADn+0.00001)*Mltp;
+  var Rate = 2./(Periods+1)*(RS+1);
+  vars RSEMAs = series(0,2);
+  return RSEMAs[0] = Rate*(priceC() + (1-Rate) * RSEMAs[1];
+}
+</pre>
+<p><em>AssetPrev</em> is the asset that was selected when the RSEMA function is called. Adding 0.00001 to the divisor prevents a crash from division by zero. In order to support multiple function calls with multiple assets, I am using here a series of length 2 for RSEMA, not a static variable as in the original code.</p>
+ <p>Figure 10 shows a chart that replicates the chart in the article in this issue, with the RSEMA(10,10,10) applied to a chart of the SPX500.</p>   
+ <div class="figBorder">
+<img src="images/TT-Zorro1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 10: ZORRO PROJECT. Here, the RSEMA(10,10,10) is applied to a chart of the SPX500.</p></div>   
+<p>Looking at the chart, you can see that the RSEMA (blue) has noticeably less lag than the EMA (red), which is not really surprising because the higher alpha rate is equivalent to a smaller EMA time period. The author states that EMA crossovers of this indicator can be used as potential entry points for long trades, with the caveat that they can produce a lot of whipsaws and should be used in conjunction with price analysis. As you can see in Figure 11, a long-only SPY trading system with crossovers of the RSEMA and EMA at default parameter values produced a positive end result but with large drawdowns. Thus, it should be used only in conjunction with price analysis.</p>    
+<div class="figBorder">
+<img src="images/TT-Zorro2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 11: ZORRO PROJECT. This example chart shows a long-only SPY trading system with crossovers of the RSEMA and EMA at default parameter values.</p></div>    
+<p>The RSEMA indicator and the SPY trading system can be downloaded from the 2022 script repository on <a href="https://financial-hacker.com" target="_parent">https://financial-hacker.com</a>. The Zorro software can be downloaded from <a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a>.</p>
+<p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a></p>   
+    
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: March 2022</h3></div>
+<p>In his article in this issue, Vitali Apirine uses a volatility relative strength construct to condition an EMA (exponential moving average) of a closing price series.</p>
+<p>Simply stated, when using this construct, the higher the volatility RS (relative strength) at any given bar, the more reactive the resulting EMA is to the closing price of that bar.</p>
+<p>In terms of the user parameters to this indicator, parameters of a shorter length mean a result that tracks the close price closely (Figure 12) while parameters of a longer length ease the fit (Figure 13).</p>
+<div class="figBorder">
+<img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 12: EXCEL. Volatility (^VIX) relative strength adjusted EMAs of the close are shown.</p></div>
+<div class="figBorder">
+    <img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 13: EXCEL. Using somewhat longer parameters help to reflect overall trends in the price and may help prevent leaving money on the table by exiting too soon.</p></div>
+<p>The author suggests that when the shorter-spec EMA crosses up over the longer-spec EMA, <em>and</em> the overall trend is up, we have a potential buying opportunity. He cautions that down crosses should be ignored in an overall uptrend. So other exit strategies are necessary. Likewise, a down cross in an overall downtrend can signal a potential shorting opportunity, with similar exit caveats.
+    </p><p><strong><em>To download this spreadsheet:</em></strong> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2022/03/images/code/VolatAdjRSI.xlsm">here</a>. To successfully download a working version of the spreadsheet, follow these steps:</p>
+    
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2022/03/images/code/VolatAdjRSI.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the March 2022 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2022, Technical Analysis, Inc.</p>
+
+</body>
+</html>

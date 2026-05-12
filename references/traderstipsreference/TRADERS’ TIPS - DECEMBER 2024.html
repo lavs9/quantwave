@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: Revisualizing The ADX Oscillator by Neil Jon Harrington. Contributions from: TradeStation; NinjaTrader; MetaStock; Wealth-Lab.com; TradingView; Neuroshell Trader; AIQ; Trade Navigator; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - DECEMBER 2024</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">December 2024</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2024/12/images/TT-Harrington.jpg" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Neil Jon Harrington&rsquo;s article in the October 2024 issue, &ldquo;Revisualizing The ADX Oscillator.&rdquo; Here, we present the December 2024 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: December 2024</a></li>
+  <li><a href="#item2">NinjaTrader: December 2024</a></li>
+  <li><a href="#item3">MetaStock: December 2024</a></li>
+  <li><a href="#item4">Wealth-Lab.com: December 2024</a></li>
+  <li><a href="#item5">TradingView: December 2024</a></li>
+  <li><a href="#item6">Neuroshell Trader: December 2024</a></li>
+  <li><a href="#item7">AIQ: December 2024</a></li>
+  <li><a href="#item8">Trade Navigator: December 2024</a></li>
+  <li><a href="#item9">Microsoft Excel: December 2024</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: December 2024</h3></div>
+<p>In his October 2024 article in <em>Technical Analysis of</em> Stocks &amp; Commodities magazine, &ldquo;Revisualizing The ADX Oscillator,&rdquo; Neil Jon Harrington presents an enhanced ADX oscillator based on the original ADX and DMI indicators created by J. Welles Wilder in the 1970s. The Harrington ADX Oscillator applies smoothing and includes a color-coded histogram for a more perceptive display of trend direction and strength.</p>
+<pre>
+<strong>Indicator: Ultimate Strength Index (USI)</strong> 
+
+{
+	TASC DEC 2024
+	Harrington ADX Oscillator
+	Copyright: Neil Jon Harrington, NJH Group
+ 	&copy; Copyright 2024
+ 
+  	Description: Display the ADX and DMI information 
+  	as a histogram above or below zero. The color 
+  	reflects the direction, slope, and location of 
+  	the ADX. The histogram is above zero when 
+  	DMI+ &gt; DMI-, and vice versa. Tradeable when the 
+  	ADX is above/below the Low Threshold and sloping 
+  	in the direction of the Trend.
+}
+
+inputs: 
+	ADXLength( 10 ),
+	ADXLowThreshold( 15 ),
+	ADXHighThreshold( 40 ),
+	ADXSmoothLength( 1 ),
+	OBUpColor( Cyan ),
+	OBWeakUpColor( DarkCyan ),
+	UpColor( Green ),
+	WeakUpColor( DarkGreen ),
+	NeutralUpColor( DarkGray ),
+	NeutralDownColor( Black ),
+	WeakDownColor( DarkRed ),
+	DownColor( Red ),
+	OSWeakDownColor( DarkMagenta ),
+	OSDownColor( Magenta );
+	
+variables: 
+	oDMIPlus( 0 ),
+	oDMIMinus( 0 ),
+	oDMI( 0 ),
+	oADX( 0 ),
+	oADXR( 0 ),
+	oVolty( 0 ),
+	NegativeADX( 0 ),
+	SmoothedPlus( 0 ),
+	SmoothedMinus( 0 ),
+	NetDMI( 0 ),
+	ADXColor( White ),
+	TrendColor( White );
+	
+Value1 = DirMovement(High, Low, Close, ADXLength, 
+ oDMIPlus, oDMIMinus, oDMI, oADX, oADXR, oVolty);
+NegativeADX = -oADX;
+SmoothedPlus = Average(oDMIPlus, ADXSmoothLength);
+SmoothedMinus = Average(oDMIMinus, ADXSmoothLength);
+NetDMI = SmoothedPlus - SmoothedMinus;
+
+if oADX &gt; oADX[1] then 
+	ADXColor = NeutralUpColor;
+if oADX &lt; oADX[1] then 
+	ADXColor = NeutralDownColor;
+
+switch( NetDMI )
+begin
+	case &gt;= 0:
+		if (oADX &gt;= ADXHighThreshold) then
+		begin
+			if (oADX &gt; oADX[1]) then 
+				ADXColor = OBUpColor;
+			if (oADX &lt; oADX[1]) then 
+				ADXColor = OBWeakUpColor;
+		end;
+		
+		if (oADX &gt;= ADXLowThreshold)
+		 and (oADX &lt;= ADXHighThreshold) then 
+		begin
+			if (oADX &gt; oADX[1]) then 
+				ADXColor = UpColor;
+			if (oADX &lt; oADX[1]) then 
+				ADXColor = WeakUpColor;
+		end;
+		
+		Plot1 (oADX,&quot;ADXO&quot;, ADXColor);
+	
+	case &lt; 0:
+		if(oADX &gt;= ADXHighThreshold) then
+		begin
+			if(oADX &gt; oADX[1]) then 
+				ADXColor = OSDownColor;
+			if(oADX &lt; oADX[1]) then 
+				ADXColor = OSWeakDownColor;
+		end;
+		
+		if (oADX &gt;= ADXLowThreshold)
+		 and (oADX &lt;= ADXHighThreshold) then 
+		begin
+			if (oADX &gt; oADX[1]) then 
+				ADXColor = DownColor;
+			if (oADX &lt; oADX[1]) then 
+				ADXColor = WeakDownColor;
+		end;
+		
+		Plot1 (NegativeADX,&quot;ADXO&quot;,ADXColor);
+		
+end; // Switch NetDMI
+
+Plot2( ADXHighThreshold, &quot;HiThresh&quot; );
+Plot3( ADXLowThreshold, &quot;LoThresh&quot; );
+Plot4( 0, &quot;Zero&quot;);
+Plot5( -ADXLowThreshold, &quot;-LoThresh&quot; );
+Plot6( -ADXHighThreshold, &quot;-HiThresh&quot; )
+
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This shows a daily chart of the continuous emini NASDAQ-100 futures contract with the indicator applied and the DMI indicator applied above it.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="http://www.TradeStation.com" target="_blank">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: December 2024</h3></div>
+<p>The indicator introduced in Neil Jon Harrington&rsquo;s October 2024 article in <em>Technical Analysis of</em> Stocks &amp; Commodities magazine, &ldquo;Revisualizing The ADX Oscillator,&rdquo; is now available for download at the following link for NinjaTrader 8:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://ninjatrader.com/SC/December2024SCNT8.zip" target="_blank">ninjatrader.com/SC/December2024SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the indicator file.</p>
+<p>A sample chart displaying the indicator is shown in Figure 2.</p>
+<div class="figBorder">
+<img src="images/TT-Ninjatrader.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: NINJATRADER. This shows the indicator displayed on a daily chart of the emini Nasdaq-100 futures (NQ).</p></div>
+<p><em>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</em></p>
+<p class="authorTips">&mdash;Chelsea Bell<br>
+NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_blank">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Metastock.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">MetaStock: December 2024</h3></div>
+<p>Neil Jon Harrington&rsquo;s article in the October 2024 issue, &ldquo;Revisualizing The ADX oscillator,&rdquo; introduces a reimagining of the ADX indicator. Here is the formula to add that indicator to MetaStock.</p>
+<p>Please note that the suggested colors are in comments and will not change the display. MetaStock 19 will prompt you for the input values when you plot the indicator in your chart. Click the <strong>color/style</strong> tab to set the color and tell MetaStock to display the indicator lines as histograms. If you click the <strong>defaults</strong> button at the bottom of that tab, you can save your settings as the default, so you do not have to adjust the line style or colors when you add the indicator to other charts.</p>
+<pre>
+<b>Dynamic ADX Histogram:</b>
+
+{aka. Harrington ADX Oscillator}
+pds:= Input(&quot;ADX length&quot;, 2, 50, 10);
+loth:= Input(&quot;Low Threshold&quot;, 5, 30, 15);
+hith:= Input(&quot;High Threshold&quot;, 30, 60, 40);
+spds:= Input(&quot;Smooth Length&quot;, 1, 5, 1);
+
+base:= ADX(pds);
+smpdi:= Mov(PDI(pds), spds, s);
+smmdi:= Mov(MDI(pds), spds, s);
+netdmi:= smpdi - smmdi;
+
+{OB up - Cyan}
+if(netdmi &gt; 0 AND base &gt;= hith and base &gt; Ref(base, -1), base, 0);
+{OB weak up - Dark Cyan}
+if(netdmi &gt; 0 AND base &gt;= hith and base &lt;= Ref(base, -1), base, 0);
+{up - Green}
+if(netdmi &gt; 0 AND base &gt;= loth AND base &lt; hith AND base &gt; Ref(base, -1), base, 0);
+{weak up - Dark Green}
+if(netdmi &gt; 0 AND base &gt;= loth AND base &lt; hith AND base &lt;= Ref(base, -1), base, 0);
+{neutral up - Dark Gray}
+if(netdmi &gt; 0 AND base &lt; loth, base, 0);
+{neutral down - Black}
+if(netdmi &lt;= 0 AND base &lt; loth, -base, 0);
+{weak down - Dark Red}
+if(netdmi &lt;= 0 AND base &gt;= loth AND base &lt; hith AND base &lt;= Ref(base, -1), -base, 0);
+{down - Red}
+if(netdmi &lt;= 0 AND base &gt;= loth AND base &lt; hith AND base &gt; Ref(base, -1), -base, 0);
+{OS weak down - Dark Magenta}
+if(netdmi &lt;= 0 AND base &gt;= hith and base &lt;= Ref(base, -1), -base, 0);
+{OS down - Magenta}
+if(netdmi &lt;= 0 AND base &gt;= hith and base &gt; Ref(base, -1), -base, 0);
+</pre>
+<p class="authorTips">&mdash;William Golson<br>
+MetaStock Technical Support<br>
+<a href="http://www.MetaStock.com" target="_blank">www.MetaStock.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: December 2024</h3></div>
+<p>Neil Jon Harrington, in his October 2024 article in <em>Technical Analysis of</em> Stocks &amp; Commodities magazine titled &ldquo;Revisualizing The ADX Oscillator,&rdquo; introduces a technique in which he reenvisions the classic ADX indicator developed in the 1970s by J. Welles Wilder to create what he feels is a more useful and intuitive indicator for traders. We have now prepared this indicator for use in Wealth-Lab for Wealth-Lab users.</p>
+<p>Users will find this new multicolored ADX indicator as &ldquo;ADXHist&rdquo; in our &ldquo;TASC Indicator library.&rdquo; You can drag and drop it onto a chart and use it as you would any other indicator in strategies that you may wish to create. For a demonstration of this, see Figure 3, which shows an example strategy based on this new indicator, using the convenient Building Blocks feature in Wealth-Lab to set up the strategy rules without having to write code.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: WEALTH-LAB. Users can take advantage of the convenient Building Blocks feature in Wealth-Lab to set up strategy rules to develop a strategy without the need for the user to write code. Here you see an example strategy.</p></div>
+<p>In our example strategy, note that even without any sort of optimization, the simple two-indicator strategy shown in Figure 4 for demonstration purposes approximates the QQQ&rsquo;s buy and hold return over the same period, with far less risk and exposure.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: WEALTH-LAB. This sample chart demonstrates the multicolored indicator on a chart of the daily QQQ.</p></div>
+<p class="authorTips">&mdash;Robert Sucher<br>
+Wealth-Lab team<br>
+<a href="http://www.wealth-lab.com" target="_blank">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: December 2024</h3></div>
+<p>The TradingView Pine Script code presented here implements the dynamic ADX histogram indicator that is introduced by Neil Jon Harrington in his article in the October 2024 issue, &ldquo;Revisualizing The ADX Oscillator.&rdquo;</p>
+<pre>
+//  TASC Issue: December 2024
+//     Article: Revisualizing The ADX Oscillator
+//  Article By: Neil Jon Harrington
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//&#64;version=5
+title ='TASC 2024.11 Dynamic ADX Histogram'
+stitle = 'DADX'
+indicator(title, stitle, false)
+
+
+int ADX_Length = input.int(10)
+int ADX_THLo = input.int(15)
+int ADX_THHi = input.int(40)
+int ADX_Smooth = input.int(15)
+
+
+string gu = 'Colors, Up:'
+string gn = 'Neutral:'
+string gd = 'Down:'
+color col_OBUp = input.color(#00ffff, gu, inline=gu)
+color col_OBWUp = input.color(#008b8b, '', inline=gu)
+color col_Up = input.color(#09ff00, '', inline=gu)
+color col_WUp = input.color(#048000, '', inline=gu)
+color col_NUp = input.color(#383838, gn, inline=gn)
+color col_Ndn = input.color(#000000, '', inline=gn)
+color col_Wdn = input.color(#680000, gd, inline=gd)
+color col_dn = input.color(#ff0000, '', inline=gd)
+color col_OSWdn = input.color(#5c001f, '', inline=gd)
+color col_OSdn = input.color(#ff00aa, '', inline=gd)
+
+
+[DIP, DIN, DIA] = ta.dmi(ADX_Length, ADX_Smooth)
+float NADX = -DIA
+float SP = math.avg(DIP, ADX_Smooth - ADX_Length)
+float SM = math.avg(DIN, ADX_Smooth - ADX_Length)
+float NET = SP - SM
+
+
+bool isDIAup = DIA &gt; DIA[1]
+bool isDIAdn = DIA &lt; DIA[1]
+
+
+color col = color(na)
+if isDIAup
+    col := col_NUp
+if isDIAdn
+    col := col_Ndn
+
+
+float hp = na
+float hn = na
+switch
+    NET &gt;= 0 =&gt;
+        if DIA &gt;= ADX_THHi
+            if isDIAup
+                col := col_OBUp
+            if isDIAdn
+                col := col_OBWUp
+        if DIA &gt;= ADX_THLo and DIA &lt;= ADX_THHi
+            if isDIAup
+                col := col_Up
+            if isDIAdn
+                col := col_WUp
+        hp := DIA
+    NET &lt; 0 =&gt;
+        if DIA &gt;= ADX_THHi
+            if isDIAup
+                col := col_OSdn
+            if isDIAdn
+                col := col_OSWdn
+        if DIA &gt;= ADX_THLo and DIA &lt;= ADX_THHi
+            if isDIAup
+                col := col_dn
+            if isDIAdn
+                col := col_Wdn
+        hn := NADX
+
+
+plot(hp, &quot;ADXO&quot;, col, 1, plot.style_columns)
+plot(hn, 'ADXO', col, 1, plot.style_columns)
+
+
+hline(ADX_THHi, 'High Threshold')
+hline(ADX_THLo, 'Low Threshold')
+hline(0, 'Zero')
+hline(-ADX_THLo, 'Low Threshold')
+hline(-ADX_THHi, 'High Threshold')
+</pre>
+<p>The script is available on TradingView from the PineCodersTASC account: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart is shown in Figure 5.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;"></p></div>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="https://www.TradingView.com" target="_blank">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: December 2024</h3></div>
+<p>The new dynamic ADX histogram oscillator introduced by Neil Jon Harrington in his October 2024 article in <em>Technical Analysis of</em> Stocks &amp; Commodities magazine, &ldquo;Revisualizing The ADX Oscillator,&rdquo; can be easily implemented in NeuroShell Trader. Simply select &ldquo;new indicator&rdquo; from the <em>insert</em> menu and use the indicator wizard in NeuroShell Trader to set up the indicators as follows:</p>
+<pre>
+ADX:		ADX(High,Low,Close,10,10),
+NetDMI:		Sub(Avg(PlusDI(High,Low,Close,10),5),Avg(MinusDI(High,Low,Close,10),5))
+Dynamic ADX:	IfThenElse(A&gt;B(NetDMI,0), ADX, Neg(ADX))
+</pre>
+	<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: NEUROSHELL TRADER. This NeuroShell Trader chart demonstrates the oscillator on the emini Nasdaq-100. </p></div>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_blank">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">AIQ: December 2024</h3></div>
+<p>The importable AIQ EDS file based on Neil Jon Harrington&rsquo;s article in the October 2024 issue of <em>Technical Analysis of</em> Stocks &amp; Commodities magazine, titled &ldquo;Revisualizing The ADX Oscillator,&rdquo; can be obtained on request via <a href="mailto:rdencpa@gmail.com">rdencpa@gmail.com</a>. The code is also shown here:</p>
+<pre>
+!DMI &amp; ADX indicators 
+!Coded by Rich Denning, 10/14/24
+	
+Dailyrange is [high]-[low].
+Ycloseh is abs(val([close],1)-[low]).
+Yclosel is abs(val([close],1)-[high]).
+Trange1 is Max(Dailyrange,Ycloseh).
+Trange is Max(Trange1,Yclosel).
+
+define HarringtonLength 10.
+define sLen 5.
+define ADXlow 15.
+define ADXHigh 40.
+
+!To convert Wilder averaging to exponential averaging use this formula:
+!ExponentialPeriods = 2 * WilderPeriod - 1.
+
+days is 2 * HarringtonLength - 1.
+
+!+DM CODE:
+yhigh is val([high],1).
+ylow is val([low],1).
+rhigh is ([high]-yhigh).
+rlow is (ylow-[low]).
+DMplus is iff(rhigh &gt; 0 and rhigh &gt; rlow, rhigh, 0).
+DMminus is iff(rlow &gt; 0 and rlow &gt;= rhigh, rlow, 0).
+	
+AvgPlusDM is expAvg(DMplus,days).
+AvgMinusDM is expavg(DMminus,days).
+                  	
+!AVERAGE TRUE RANGE:
+ATR is expAvg(Trange,Days).
+!DMI CODE:
+PlusDMI is (AvgPlusDM/ATR)*100.	
+sPlusDMI is simpleavg(PlusDMI,sLen).
+MinusDMI is AvgMinusDM/ATR*100.	
+sMinusDMI is simpleavg(MinusDMI,sLen).
+
+!PLOT sDIdiff as historigram:           
+  sDIdiff is sPlusDMI-sMinusDMI. 		 
+  ZERO if sPlusDMI = 0 and sMinusDMI = 0.
+  sDIsum is sPlusDMI+sMinusDMI.
+  sDX is iff(ZERO,100,abs(sDIdiff)/sDIsum*100).
+!PLOT ADX as single line indicator with support at 15:
+  sADX is ExpAvg(sDX,days).		
+
+Green if sDIdiff &gt; 0 and sADX &gt; ADXlow.
+Red if sDIdiff &lt;= 0 and sADX &lt;= ADXlow.
+</pre>
+<p>Code for the author&rsquo;s indicator is set up in the AIQ EDS code file. Figure 7 demonstrates the indicator on a daily chart of the QQQ. Note that I did not implement here all of the colors the author uses. I implemented the <em>strong up</em> (green), <em>strong down</em> (red) and <em>neutral</em> (yellow).</p>
+<div class="figBorder">
+<img src="images/TT-Aiq.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: AIQ. The indicator is displayed on a chart of the NASDAQ-100 ETF (QQQ).</p></div>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:rdencpa@gmail.com">rdencpa@gmail.com</a><br>
+for AIQ Systems</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Genesis.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Trade Navigator: December 2024</h3></div>
+<p>A downloadable file has now been created to make it easy for Trade Navigator users to implement the indicator introduced in Neil Jon Harrington&rsquo;s October 2024 article, &ldquo;Revisualizing The ADX Oscillator.&rdquo;</p>
+<p>The downloadable library filename is &ldquo;SC202412.&rdquo; To download it, click on the blue telephone button, select &ldquo;download special file,&rdquo; then erase the word &ldquo;upgrade&rdquo; in the dialog box and type in &ldquo;SC202412.&rdquo; Then click the <em>start</em> button. When prompted to upgrade, click the <em>yes</em> button. If prompted to close all software, click <em>continue</em>. Your library file will then download.</p>
+<p>The template can be inserted onto your chart by opening the charting drop-down menu, then selecting the <em>templates</em> command, then selecting the &ldquo;Revisualizing The ADX Oscillator&rdquo; template.</p>
+<p>An example chart is shown in Figure 8.</p>
+
+	<div class="figBorder">
+<img src="images/TT-Tradenavigator.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: TRADE NAVIGATOR. The indicator is displayed on a daily chart of the emini Nasdaq-100 futures (NQ).</p></div><p>If you need technical support with using the indicators and/or template, call 719 284-1616 or click on the live chat tool located under Trade Navigator&rsquo;s help menu and at the top of our homepage, <a href="http://www.TradeNavigator.com" target="_blank">www.TradeNavigator.com</a>. Support hours are M&ndash;F 8am&ndash;5pm US Mountain Time. Happy trading!</p>
+<p class="authorTips">&mdash;Genesis Financial Data<br>
+Tech support 719 884-0245<br>
+<a href="http://www.TradeNavigator.com" target="_blank">www.TradeNavigator.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: December 2024</h3></div>
+<p>In &ldquo;Revisualizing The ADX Oscillator&rdquo; in the October 2024 issue of <em>Technical Analysis of</em> Stocks &amp; Commodities magazine, Neil Jon Harrington introduces a new version of the classic ADX that he developed. He starts with a standard ADX &ldquo;strength of trend&rdquo; indicator and adds a simple approach to demonstrating trend direction using intermediate values derived as part of the standard ADX calculation.</p>
+<p><em>Step 1</em> of Harrington&rsquo;s technique takes the difference between the DMI+ and DMI− values to determine trend direction and thus project the ADX value above or below zero. The envelope shown in the bottom subchart of Figure 9 matches (and reflects) the ADX tracing shown in the middle panel of the chart.</p>
+<p><em>Step 2</em> of Harrington&rsquo;s technique builds a histogram of the ADX with bars above zero designating a local uptrend, or below zero designating a local downtrend.</p>
+<p>Then Harrington takes his indicator a couple of very beneficial steps further. First, he sets thresholds that separate histogram bars (up or down) into three strength ranges (total of six ranges), as follows:</p>
+<ul>
+	<li>ADX values from zero to the low threshold are considered nontrending. These values would not be a contributor to trend-based trading decisions.</li>
+	<li>ADX values from the low threshold to the high threshold are considered directional and trending. These values are strong enough to be considered in trend-based trading decisions.</li>
+	<li>ADX values above the high threshold are considered to be directional and overbought or oversold.</li>
+	</ul>
+<p>Next, Harrington formulates a way to display a final layer of the larger ADX trend and finer bar-to-bar movement by color-coding the histogram bars. The low trend strength ranges are assigned a color group taken from greens and blues. The high trend strength ranges are assigned a color group taken from reds and oranges. ADX values closer to zero are assigned black or gray.</p>
+<p>Within a range, a bar that is further from zero than the previous bar (gaining trend strength) is assigned the base color for that threshold range.</p>
+<p>A bar that is closer to zero than the previous bar (declining trend strength) is assigned a slightly darker shade of the base color for that threshold range.</p>
+<p>See Figure 9 for an implementation of this in Excel.</p>
+<div class="figBorder">
+<img src="images/TT-Excel.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 10: Microsoft Excel. Comparing USI at different lengths.</p></div>
+<p>So there you have it&mdash;a colorful, quick boost from Harrington to an old indicator friend, the ADX oscillator.</p>
+<p><strong><em>To download this spreadsheet:</em></strong> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="http://www.traders.com/Documentation/FEEDbk_docs/2024/12/images/code/hADXo.xlsm">here</a>. To successfully download it, follow these steps:</p>
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2024/12/images/code/hADXo.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+
+<h3>Problem and fix notice:</h3>	
+<p>Early on the morning of Saturday, September 7, 2024, the spreadsheets that I developed for Traders&rsquo; Tips began displaying the following error message:</p>	
+	<pre>
+	tatus(4) - Get Prices Error: Symbol (A) "401 - Unauthorized"
+	</pre>
+	<p>While fixing <em>that</em> situation, I accidentally messed up handling stock splits when they were present in the history download.</p>
+	<p>The changes necessary to make my November 2024 spreadsheet functional were extensive.</p>
+	<p>The splits problem, by comparison, wasn&rsquo;t nearly as difficult to fix.</p>
+	<p>In any case, the REPAIRS tab of the spreadsheet I am providing for this issue containing Harrington&rsquo;s ADX histogram can deal with both of these problems.</p>
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>	
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+
+
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the December 2024 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2024, Technical Analysis, Inc.</p>
+
+</body>
+</html>

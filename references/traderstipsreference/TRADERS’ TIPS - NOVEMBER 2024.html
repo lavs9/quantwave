@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: Ultimate Strength Index (USI) by John F. Ehlers. Contributions from: TradeStation; NinjaTrader; MetaStock; Wealth-Lab.com; TradingView; RealTest; Neuroshell Trader;The Zorro Project; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - NOVEMBER 2024</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">November 2024</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2024/11/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John F. Ehlers&rsquo; article in this issue, &ldquo;Ultimate Strength Index (USI).&rdquo; Here, we present the November 2024 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: November 2024</a></li>
+  <li><a href="#item2">NinjaTrader: November 2024</a></li>
+<li><a href="#item3">NinjaTrader: October 2024</a></li>
+	<li><a href="#item4">NinjaTrader: September 2024</a></li>
+  <li><a href="#item5">MetaStock: November 2024</a></li>
+  <li><a href="#item6">Wealth-Lab.com: November 2024</a></li>
+  <li><a href="#item7">TradingView: November 2024</a></li>
+  <li><a href="#item8">RealTest: November 2024</a></li>
+  <li><a href="#item9">Neuroshell Trader: November 2024</a></li>
+  <li><a href="#item10">The Zorro Project: November 2024</a></li>
+  <li><a href="#item11">Microsoft Excel: November 2024</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-New.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: November 2024</h3></div>
+<p>In &ldquo;Ultimate Strength Index (USI)&rdquo; in this issue, John Ehlers introduces an enhanced version of the RSI with significantly reduced lag. The USI retains many benefits of the traditional RSI, while providing faster, more responsive results. It highlights bullish and bearish conditions and allows for adjustments based on different data lengths, typically using more data than the standard RSI to achieve comparable outcomes.</p>
+<pre>
+<b>Function: $UltimateSmoother</b>
+
+{
+	UltimateSmoother Function
+	(C) 2004-2024 John F. Ehlers
+}
+
+inputs:
+	Price( numericseries ),
+	Period( numericsimple );
+	
+variables:
+	a1( 0 ),
+	b1( 0 ),
+	c1( 0 ),
+	c2( 0 ),
+	c3( 0 ),
+	US( 0 );
+	
+a1 = ExpValue(-1.414*3.14159 / Period);
+b1 = 2 * a1 * Cosine(1.414*180 / Period);
+c2 = b1;
+c3 = -a1 * a1;
+c1 = (1 + c2 - c3) / 4;
+
+if CurrentBar &gt;= 4 then 
+ US = (1 - c1)*Price + (2 * c1 - c2) * Price[1] 
+ - (c1 + c3) * Price[2] + c2*US[1] + c3 * US[2];
+ 
+if CurrentBar &lt; 4 then 
+	US = Price;
+
+$UltimateSmoother = US;
+
+<b>Indicator: Ultimate Strength Index (USI) </b>
+
+{
+	TASC NOVEMBER 2024
+	Ultimate Strength Index (USI)
+	(C) 2024 John F. Ehlers
+}
+
+inputs:
+	Length( 14 );
+
+variables:
+	SU( 0 ),
+	USU( 0 ),
+	SD( 0 ),
+	USD( 0 ),
+	USI( 0 );
+
+if Close &gt; Close[1] then 
+	SU = Close - Close[1] 
+else 
+	SU = 0;
+
+USU = $UltimateSmoother(Average(SU,4), Length);
+
+if Close &lt; Close[1] then 
+	SD = Close[1] - Close 
+else 
+	SD = 0;
+
+USD = $UltimateSmoother(Average(SD, 4), Length);
+
+If (USU + USD &lt;&gt; 0 and USU &gt; .01 and USD &gt; .01) then 
+	USI = (USU - USD) / (USU + USD);
+
+Plot1( USI, &quot;USI&quot; );
+Plot2( 0, &quot;Zero Line&quot; );
+</pre>
+<p>A sample chart is shown in Figure 1.</p> 
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. A daily chart of the emini S&amp;P 500 continuous futures contract (ES) demonstrates the ultimate strength index indicator applied.</p></div>
+	<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="http://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: November 2024</h3></div>
+<p>The ultimate strength index, which is introduced in the article by John Ehlers in this issue, is available for download at the following link for NinjaTrader 8:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://ninjatrader.com/SC/November2024SCNT8.zip" target="_blank">ninjatrader.com/SC/November2024SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the file.</p>
+<p>A sample chart displaying the indicator is shown in Figure 2.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja-Nov.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: NINJATRADER. The ultimate strength index is demonstrated on a daily chart of ES.</p></div>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">&mdash;NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: October 2024</h3></div>
+<p>The October 2024 issue contained an article by Francesco Bufi titled &ldquo;Overbought/Oversold Oscillators: Useless Or Just Misused?&rdquo; In that article, Bufi presents a strategy based on the relative strength index (RSI) that continuously adjusts the buying level. Coding for NinjaTrader based on the code provided in Bufi&rsquo;s article is available for download at the following link for NinjaTrader 8:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://ninjatrader.com/SC/October2024SCNT8.zip" target="_blank">ninjatrader.com/SC/October2024SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the file into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p> 
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the file.</p>
+<p>A sample chart displaying the indicator is shown in Figure 3.</p> 
+<div class="figBorder">
+<img src="images/TT-Ninja-Oct.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: NINJATRADER. Francesco Bufi&rsquo;s adaptive thresholds technique is demonstrated on a one-minute chart of ES.</p></div>
+<p class="authorTips">&mdash;NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: September 2024</h3></div>
+<p>The September 2024 issue contained an article by John Ehlers titled &ldquo;Precision Trend Analysis,&rdquo; which described a method for trend detection and confirmation. Code for NinjaTrader based on the coding included in Ehlers&rsquo; September 2024 article is available for download at the following link for NinjaTrader 8:
+</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://ninjatrader.com/SC/September2024SCNT8.zip" target="_blank">ninjatrader.com/SC/September2024SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the file into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p> 
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the file.</p>
+<p>A sample chart displaying the indicator is shown in Figure 4.</p> 
+<div class="figBorder">
+<img src="images/TT-Ninja-Sep.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: NINJATRADER. John Ehlers&rsquo; trend analysis technique is demonstrated here on a daily chart of ES.</p></div>
+	
+	<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">&mdash;NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Metastock.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">MetaStock: November 2024</h3></div>
+<p>John Ehlers&rsquo; article in this issue, &ldquo;Ultimate Strength Index (USI)&rdquo;, introduces his latest modification to the RSI indicator. Here is the formula to add that indicator to MetaStock.</p>
+<pre>
+<b>Ultimate Strength Index (USI):</b>
+
+len:= Input(&quot;Length&quot;, 4, 150, 14);
+
+a1:= exp(-1.414*3.14159 / len);
+b1:= 2*a1*Cos(1.414*180 / len);
+c1:= -a1*a1;
+x:= (1 + b1 - c1) / 4;
+
+SU:= if(C &gt; Ref(C, -1), C - Ref(C, -1), 0);
+avSU:= Mov(SU, 4, S);
+SD:= if(C &lt; Ref(C, -1), Ref(C, -1) - C, 0);
+avSD:= Mov(SD, 4, S);
+
+{calculate ultimate smoother values of SU and SD}
+USU:= if(cum(1) &lt; 8, avSU,
+(1-x)*avSU + (2*x - b1)*Ref(avSU, -1) - (x + c1)*Ref(avSU, -2) + b1*Prev + c1*Ref(Prev, -1));
+
+USD:= if(cum(1) &lt; 8, avSD,
+(1-x)*avSD + (2*x - b1)*Ref(avSD, -1) - (x + c1)*Ref(avSD, -2) + b1*Prev + c1*Ref(Prev, -1));
+
+denom:= if( (USU + USD &lt;&gt; 0), USU + USD, -1);
+if(denom = -1, 0, (USU-USD) / denom)
+</pre>
+<p class="authorTips">&mdash;William Golson<br>
+MetaStock Technical Support<br>
+<a href="https://MetaStock.com" target="_parent">MetaStock.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: November 2024</h3></div>
+<p>We have added John Ehlers&rsquo; ultimate strength index (USI) as a built-in indicator in WealthLab 8. We then proceeded to create a simple, example drag-and-drop trading strategy with the following rules:</p>
+<ul>
+	<li>Buy next bar at open after USI crosses above -1</li>
+	<li>Sell next bar at open after USI crosses above 1</li>
+	</ul>
+<p>This quick proof of concept highlights the value of this indicator, as the strategy achieved an impressive 77% profitable trade rate. The sample chart in Figure 5 shows a representative trade.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: WEALTH-LAB. This chart plots the ultimate strength index (USI) and shows an example trade in SPY.</p></div>
+<p class="authorTips">&mdash;Dion Kurczek<br>
+Wealth-Lab team<br>
+<a href="http://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: November 2024</h3></div>
+<p>The TradingView Pine Script code presented here implements the ultimate strength index (USI) introduced by John Ehlers in his article in this issue.</p>
+<pre>
+//  TASC Issue: November 2024
+//     Article: Ultimate Strength Index (USI)
+//  Article By: John F. Ehlers
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//&#64;version=5
+title ='TASC 2024.11 Ultimate Strength Index'
+stitle = 'USI'
+indicator(title, stitle, false)
+
+
+int length1 = input.int(28, 'USI Length:', minval = 1)
+float   src = input.source(close, &quot;Source&quot;)
+
+
+// --- Functions ---
+// &#64;function      The UltimateSmoother is a filter created
+//                by subtracting the response of a high-pass 
+//                filter from that of an all-pass filter.
+// &#64;param src     Source series.
+// &#64;param period  Critical period.
+// &#64;returns       Smoothed series.
+UltimateSmoother (float src, int period) =&gt;
+    float a1 = math.exp(-1.414 * math.pi / period)
+    float c2 = 2.0 * a1 * math.cos(1.414 * math.pi / period)
+    float c3 = -a1 * a1
+    float c1 = (1.0 + c2 - c3) / 4.0
+    float us = src
+    if bar_index &gt;= 4
+        us := (1.0 - c1) * src + 
+              (2.0 * c1 - c2) * src[1] - 
+              (c1 + c3) * src[2] + 
+              c2 * nz(us[1]) + c3 * nz(us[2])
+    us
+
+
+// &#64;function Ultimate Strength Index is a new version of 
+// the RSI calculation that has a small ammount of lag.
+// &#64;param   src Source Series.
+// &#64;param   l1  Length of Ultimate smoother function.
+// &#64;param   l2  Length of the short period smoothing.
+// &#64;returns USI value.
+UltimateStrengthIndex (float src, int l1=14, int l2=4) =&gt;
+    float eps = syminfo.mintick
+    float diff = src - src[1]
+    float SU = diff &gt; 0.0 ?  diff : 0.0
+    float SD = diff &lt; 0.0 ? -diff : 0.0
+    USU = UltimateSmoother(ta.sma(SU, l2), l1)
+    USD = UltimateSmoother(ta.sma(SD, l2), l1)
+    USI = 0.0
+    USI := nz(USI[1])
+    if USU + USD != 0 and USU &gt; eps and USD &gt; eps
+        USI := (USU - USD) / (USU + USD)
+    USI
+
+
+// --- Calculations ---
+float usi = UltimateStrengthIndex(src, length1)
+usiLine   = plot(usi, 'USI', #377eb8)
+midLine   = plot(0, 'Zero Line', color.silver)
+
+
+fill(usiLine, midLine, 1, 0, 
+     color.new(#4daf4a, 50), color.new(#4daf4a, 100))
+fill(usiLine, midLine, 0,-1, 
+     color.new(#e41a1c, 100), color.new(#e41a1c, 50))
+</pre>
+<p>The indicator is available on TradingView from the PineCodersTASC account: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_parent">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart is shown in Figure 6.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: TRADINGVIEW. Here you an example of the ultimate strength index (USI) applied to a daily chart of the emini S&amp;P 500 futures contract (ES) using 28 bars (bottom subgraph) and 112 bars (top subgraph) of data.</p></div>
+	<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="http://www.TradingView.com" target="_parent">www.TradingView.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Realtest.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">RealTest: November 2024</h3></div>
+<p>Provided here is coding for use in the RealTest platform to implement John Ehlers&rsquo; ultimate strength index (USI) indicator, which is described in his article in this issue.</p>
+<pre>
+Notes:
+
+	Ultimate Strength Index (USI)
+	TASC Trader's Tips for November 2024 article by John Ehlers
+
+
+Import:
+
+	DataSource:	Norgate
+	IncludeList:	&amp;ES_CCB
+	StartDate:	2023-01-01
+	EndDate:	2024-08-01
+	SaveAs:	es.rtd
+
+
+Settings:
+
+	DataFile:	es.rtd
+	BarSize:	Daily
+
+
+Parameters:
+
+	rsi_len:	14
+	usi_len:	28
+	
+
+Data:
+
+	// &quot;MyRSIH&quot; calculation (January 2022 article)
+	CU:	Sum(if(C &gt; C[1], (1 - Cosine(360 * (rsi_len - FunBar + 1) / (rsi_len + 1)))*(C - C[1]), 0), rsi_len)
+	CD:	Sum(if(C &lt; C[1], (1 - Cosine(360 * (rsi_len - FunBar + 1) / (rsi_len + 1)))*(C[1] - C), 0), rsi_len)
+	MyRSIH:	if(BarNum &gt; rsi_len, (CU - CD) / (CU + CD), nan)
+
+	// Ultimate Smoother common
+	a1:	exp(-1.414*3.14159 / usi_len)
+	b1:	2 * a1 * Cosine(1.414*180 / usi_len)
+	c2:	b1
+	c3:	-a1 * a1
+	c1:	(1 + c2 - c3) / 4
+
+	// &quot;USI&quot; calculation (November 2024 article)
+	SU4:	Avg(if(C &gt; C[1], C - C[1], 0), 4)
+	USU:	if(BarNum &gt; rsi_len, (1 - c1) * SU4 + (2 * c1 - c2) * SU4[1] - (c1 + c3) * SU4[2] + c2 * USU[1] + c3 * USU[2], 0)
+	SD4:	Avg(if(C &lt; C[1], C[1] - C, 0), 4)
+	USD:	if(BarNum &gt; rsi_len, (1 - c1) * SD4 + (2 * c1 - c2) * SD4[1] - (c1 + c3) * SD4[2] + c2 * USD[1] + c3 * USD[2], 0)
+	USI:	if(USU + USD &lt;&gt; 0 and USU &gt; 0.01 and USD &gt; 0.01, (USU - USD) / (USU + USD), USI[1])
+
+
+Charts:
+
+	MyRSIH:	MyRSIH {|}
+	USI:	USI {|}
+</pre>
+<p>Figure 7 demonstrates the indicator plotted on a daily chart of the emini S&amp;P 500 continuous futures contract (ES).</p>
+<div class="figBorder">
+<img src="images/TT-Realtest.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: REALTEST. The ultimate strength index (USI) is plotted here on a daily chart of ES.</p></div>
+<p class="authorTips">&mdash;Marsten Parker<br>
+MHP Trading<br>
+<a href="mailto:mhp@mhptrading.com">mhp@mhptrading.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: November 2024</h3></div>
+<p>The ultimate strength index (USI), introduced in John Ehlers&rsquo; article in this issue, can be easily implemented with a few of NeuroShell Trader&rsquo;s 800+ indicators. Simply select &ldquo;new indicator…&rdquo; from the <em>insert</em> menu and use the indicator wizard to create the following indicators:</p>
+<pre>
+USU:	UltimateSmoother(Avg(IfThenElse(A&gt;B(Close,Lag(Close,1)),Sub(Close,Lag(Close,1)),0),4),14)
+USD:	UltimateSmoother(Avg(IfThenElse(A&lt;B(Close,Lag(Close,1)),Sub(Lag(Close,1),Close),0),4),14)
+USI:	Divide ( Subtract( USU, USD ), Add2( USU, USD ) )
+</pre>
+<p>Note that the UltimateSmoother indicator is from the April 2024 issue and April 2024 Traders&rsquo; Tips. Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p>A sample chart is shown in Figure 8.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: NEUROSHELL TRADER. This NeuroShell Trader chart demonstrates the ultimate strength index (USI) applied to the emini S&amp;P 500 futures contract (ES).</p></div>
+	<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" style="width: 90px" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: November 2024</h3></div>
+<p>In his article in this issue, John Ehlers proposes a replacement for the popular RSI indicator. His ultimate strength index (USI) has the advantage of symmetry&mdash;the range is -1 to 1&mdash;and less lag. Like the RSI, it enhances cycles and trends in the data, and thus, the author proposes it is well suited for different types of trading systems. Let&rsquo;s look how to realize it in code.</p>
+<p>The USI is based on another indicator developed by John Ehlers, the UltimateSmoother, which was described in an article in the April 2024 issue. Here again is that code in C:</p>
+<pre>
+var UltimateSmoother (var *Data, int Length)
+{
+  var f = (1.414*PI) / Length;
+  var a1 = exp(-f);
+  var c2 = 2*a1*cos(f);
+  var c3 = -a1*a1;
+  var c1 = (1+c2-c3)/4;
+  vars US = series(*Data,4);
+  return US[0] = (1-c1)*Data[0] + (2*c1-c2)*Data[1] - (c1+c3)*Data[2]
+   + c2*US[1] + c3*US[2];
+}
+</pre>
+<p>Similar to the RSI, the ultimate strength index calculates the normalized differences of the ups and downs in the price curve, after no-lag smoothing. Here is the EasyLanguage code given in Ehlers&rsquo; article in this issue converted to C:</p>
+<pre>
+var UltimateStrength (int Length)
+{
+  vars SU = series(max(0,priceC(0) - priceC(1)));
+  var USU = UltimateSmooth(series(SMA(SU,4)),Length);
+  vars SD = series(max(0,priceC(1) - priceC(0)));
+  var USD = UltimateSmooth(series(SMA(SD,4)),Length);
+  return (USU-USD)/fix0(USU+USD);
+}
+</pre>
+<p>For checking the correctness of our conversion, we will plot the USI with two different time periods on a chart of SPX. Here is the code to plot it:</p>
+<pre>
+void run() 
+{
+  BarPeriod = 1440;
+  StartDate = 20230801;
+  EndDate = 20240801;
+  assetAdd(&quot;SPX&quot;,&quot;STOOQ:^SPX&quot;);
+  asset(&quot;SPX&quot;);
+  plot(&quot;USI(112)&quot;,UltimateStrength(112),NEW|LINE,BLUE);
+  plot(&quot;USI(28)&quot;,UltimateStrength(28),NEW|LINE,BLUE);
+}
+</pre>
+<p>The resulting chart (Figure 9) replicates the chart in Ehlers&rsquo; article in this issue.</p>
+<div class="figBorder">
+<img src="images/TT-Zorro.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: ZORRO. Here is an example of the ultimate strength index plotted on a chart of SPX.</p></div>
+<p>We can see that the long timeframe USI enhances the beginning and end of trends, and the short timeframe USI makes the cycles visible.</p>
+<p>The code can be downloaded from the 2024 script repository on <a href="https://financial-hacker.com" target="_parent">https://financial-hacker.com</a>. The Zorro platform can be downloaded from <a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a>.</p>
+<p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a></p>	
+	
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+<p class="rules"></p>
+<div class="logoBorder" id="item11">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: November 2024</h3></div>
+<p>In John Ehlers&rsquo; article in this issue, &ldquo;Ultimate Strength Index (USI)&rdquo; Ehlers shows an incremental lag and jitter-reduction effort applied to the widely used RSI. In it, he simply applies his UltimateSmoother to a 4-bar average of each of the up and down components prior to substituting each smoothed result for the corresponding bits of the standard RSI formula to arrive at his ultimate strength index (USI).</p>
+<p>In Figure 10, you can see longer- and shorter-period USI plots. The longer-period USI plot stays above zero for much of the longer uptrend. The shorter-period USI plot is more sensitive to short swings.</p>
+<div class="figBorder">
+<img src="images/TT-Excel.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 10: Microsoft Excel. Comparing USI at different lengths.</p></div>
+<p>Ehlers notes in his article that crossovers created by adding a two-bar delay plot can assist in identifying swing trade opportunities.</p>
+<p><strong><em>To download this spreadsheet:</em></strong> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="http://www.traders.com/Documentation/FEEDbk_docs/2024/11/images/code/UltimateStrengthIndex.xlsm">here</a>. To successfully download it, follow these steps:</p>
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2024/11/images/code/UltimateStrengthIndex.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+
+	<h3>Problem fix notice:</h3>
+<p>Early Saturday on the morning of September 7, 2024, recent Traders' Tips spreadsheets began displaying the following message:</p>
+<pre>
+Status(4) - Get Prices Error: Symbol (A) &ldquo;401 - Unauthorized&rdquo;
+</pre>
+<p>The changes necessary to make the spreadsheet provided here (that is, for the November 2024 issue) functional were extensive.</p>	
+<p>Therefore, I have provided a &ldquo;REPAIRS!&rdquo; tab in this month&rsquo;s spreadsheet that will allow you to select a problem spreadsheet and then automatically apply a cumulative set of repairs that should make your problem Traders&rsquo; Tip spreadsheet functional once again.</p>	
+<p>Details and necessary setup steps are described in the &ldquo;REPAIRS!&rdquo; tab.</p>	
+	
+	<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the November 2024 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2024, Technical Analysis, Inc.</p>
+
+</body>
+</html>

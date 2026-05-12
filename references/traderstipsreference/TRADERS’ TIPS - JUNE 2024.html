@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: Is The Price REIT by Markos Katsanos. Contributions from: TradeStation; MetaStock; NinjaTrader; RealTest; Wealth-Lab.com; TradingView; AIQ; Neuroshell Trader.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - JUNE 2024</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">June 2024</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2024/06/images/TT-Katsanos.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Markos Katsanos&rsquo; article in this issue, &ldquo;Is The Price REIT?&rdquo; Here, we present the June 2024 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: June 2024</a></li>
+  <li><a href="#item2">MetaStock: June 2024</a></li>
+  <li><a href="#item3">NinjaTrader: June 2024</a></li>
+  <li><a href="#item4">RealTest: June 2024</a></li>
+  <li><a href="#item5">Wealth-Lab.com: June 2024</a></li>
+  <li><a href="#item6">TradingView: June 2024</a></li>
+  <li><a href="#item7">AIQ: June 2024</a></li>
+  <li><a href="#item8">Neuroshell Trader: June 2024</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: June 2024</h3></div>
+<p>In the article &ldquo;Is The Price REIT?&rdquo; in this issue, Markos Katsanos provides an in-depth analysis of the REIT landscape and provides a weekly trading system for trading REIT stocks and REIT ETFs, centered around their correlation with interest rates.</p>
+<p>The EasyLanguage code is provided here for the strategy. Within the &ldquo;Strategy properties for all&rdquo; window, the &ldquo;Maximum number of bars study will reference&rdquo; (MaxBarsBack) must be set to at least 100. The strategy requires three weekly symbols. Data1 should represent the REIT stock or REIT ETF for trading, while Data2 should correspond to SPY, and Data3 to $TNX.X.</p>
+<pre>
+// TASC JUNE 2024
+// Weekly REIT Strategy
+// Markos Katsanos
+
+inputs:
+	BBPeriod( 15 ),
+	SDev( 2 ),
+	TBars( 25 ),
+	ChannelLength( 30 ),
+	TNXPerc( 15 ),
+	CorMax( 0.3 ),
+	YieldMin( 2 ),
+	ATRs( 1.5 ),
+	MaxLossPerc( 8 );
+
+variables:
+	Yield( 0 ),
+	Stoch( 0 ),
+	TH( 0 ),
+	TL( 0 ),
+	TR( 0 ),
+	ATR15( 0 ),
+	LLT( 0 ),
+	HHT( 0 ),
+	TNXUp( 0 ),
+	TNXDn( 0 ),
+	LLBars( 0 ),
+	LL( 0 ),
+	PercUp( 0 ),
+	Upper( 0 ),
+	Cort( 0 ),
+	Cors( 0 ),
+	BBBOT( 0 ),
+	BuyBB( false ),
+	BuyTrend( false ),
+	BuySignal( false ),
+	Sell_1( false ),
+	StrategyStop( false ),
+	SellOB( false ),
+	SellSignal( false );
+	
+Yield = Close of Data3 / 10;
+Stoch = (Close - Lowest(Low, 10)) / (Highest(High, 10)
+ - Lowest(Low, 10) + .0001) * 100;
+Stoch = Average(Stoch, 3);
+
+TH = MaxList(Close[1], High);
+TL = MinList(Close[1], Low);
+TR = TH - TL;
+ATR15 = XAverage(TR, 15 * 2 -1);
+
+LLT = Lowest(Close of Data3, TBars) of Data3;
+HHT = Highest(Close of Data3, TBars) of Data3;
+TNXUp = (Close of Data3 - LLT) / (LLT + .001) * 100;
+TNXDn = (Close of Data3 - HHT) / (HHT + .001) * 100;
+LL = Lowest(Low, 100);
+PercUp = (Close - LL) / (LL + .001) * 100;
+Upper = Highest(Close, ChannelLength)[1];
+Cort = CoefficientR(Close, Close of Data3, 20);
+Cors = CoefficientR(Close, Close of Data2, 20);
+BBBOT = BollingerBand(Close, BBPeriod, -SDev);
+
+StrategyStop = Close &lt; Average(Close, 30)
+ and Close &lt; (1 - MAXLOSSPERC / 100 ) * Highest(Close, 2)
+ and (Close of Data2  &lt; (1 - MAXLOSSPERC / 100)
+ * Close[1] of Data2 or Cors &lt; 0);
+ 
+BuyBB = (Low &lt; BBBOT and Close &gt; BBBOT + .2 * ATR15)
+ and ((TNXDN &lt; -TNXPERC
+ and Cort &lt; CorMax) or Yield &lt; YieldMin)
+ and Close &gt; (High + Low) / 2
+ and StrategyStop = false;
+ 
+BuyTrend = Close &gt; Upper and Close of Data2 &gt;
+ Average(Close of Data2, 20) of Data2
+ and ( HighestBar(Close of Data3, ChannelLength) &gt; 10
+ or Cort &gt; CorMax or Yield &lt; YieldMin);
+ 
+BuySignal = BuyBB or BuyTrend;
+
+if BuySignal then
+	Buy next bar at market;
+
+Sell_1 = (TNXUp &gt; TNXPerc or (Yield &gt; 4 and TNXUp &gt; 0))
+ and Close &lt; Highest(Close, 5) - ATRs * ATR15
+ and BuyBB = false;
+ 
+StrategyStop = Close &lt; Average(Close, 30)
+ and Close &lt; (1 - MaxLossPerc / 100) * Close[1]
+ and (Close of Data2 &lt; (1 - MaxLossPerc / 100)
+ * Close[1] of Data2 or Cors &lt; 0);
+SellOB = PercUp &gt; 50 and Close &lt; Highest(High, 3) - ATRs
+ * ATR15 and Highest(Stoch, 3) &gt; 90;
+
+SellSignal = Sell_1 or SellOB or StrategyStop;
+
+if SellSignal then
+	Sell next bar at market;
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This TradeStation weekly chart of the Vanguard Real Estate ETF VNQ demonstrates the strategy applied.</p></div>
+
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="http://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Metastock.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">MetaStock: June 2024</h3></div>
+<p>Markos Katsanos&rsquo; article in this issue, &ldquo;Is The Price REIT?&rdquo; presents a system for trading REIT ETFs. Below are the MetaStock formulas for the backtest system. The article includes optimization variables, which must be defined in MetaStock&rsquo;s System Tester (see Figure 2).</p>
+<table width="80%" style="padding-left: 9%; padding-top: 40px;">
+  <tbody>
+    <tr>
+      <th width="11%" scope="col">Name</th>
+      <th width="50%" scope="col">Description</th>
+      <th width="15%" scope="col">Minimum</th>
+      <th width="16%" scope="col">Maximum</th>
+      <th width="8%" scope="col">Step</th>
+    </tr>
+    <tr>
+      <td>OPT1</td>
+      <td>Bollinger Band Period</td>
+      <td style="text-align: center;">15</td>
+      <td style="text-align: center;">20</td>
+      <td style="text-align: center;">5</td>
+    </tr>
+    <tr>
+      <td>OPT2</td>
+      <td>Bollinger Band StDe</td>
+      <td style="text-align: center;">2</td>
+      <td style="text-align: center;">2</td>
+      <td style="text-align: center;">0.5</td>
+    </tr>
+    <tr>
+      <td>OPT3</td>
+      <td>Lookback period for TNX HH or LL</td>
+      <td style="text-align: center;">25</td>
+      <td style="text-align: center;">25</td>
+      <td style="text-align: center;">5</td>
+    </tr>
+    <tr>
+      <td>OPT4</td>
+      <td>Donchian Channel Length</td>
+      <td style="text-align: center;">30</td>
+      <td style="text-align: center;">30</td>
+      <td style="text-align: center;">5</td>
+    </tr>
+    <tr>
+      <td>OPT5</td>
+      <td>Minimum% TNX Change</td>
+      <td style="text-align: center;">15</td>
+      <td style="text-align: center;">25</td>
+      <td style="text-align: center;">5</td>
+    </tr>
+    <tr>
+      <td>OPT6</td>
+      <td>Maximum correlation for buy signal</td>
+      <td style="text-align: center;">0.2</td>
+      <td style="text-align: center;">0.3</td>
+      <td style="text-align: center;">0.1</td>
+    </tr>
+    <tr>
+      <td>OPT7</td>
+      <td>Minimum yield (TNX/10)</td>
+      <td style="text-align: center;">2</td>
+      <td style="text-align: center;">2</td>
+      <td style="text-align: center;">0.5</td>
+    </tr>
+    <tr>
+      <td>OPT8</td>
+      <td>ATR Stop Multiplier</td>
+      <td style="text-align: center;">1.5</td>
+      <td style="text-align: center;">1.5</td>
+      <td style="text-align: center;">0.5</td>
+    </tr>
+    <tr>
+      <td>OPT9</td>
+      <td>Maximum Stop Loss %</td>
+      <td style="text-align: center;">8</td>
+      <td style="text-align: center;">8</td>
+      <td style="text-align: center;">1</td>
+    </tr>
+  </tbody>
+</table>
+<div class="figBorder">
+<p class="figCaption" style="width: 550px;">FIGURE 2: Metastock. Optimization variables can be defined in MetaStock&rsquo;s system tester. </p></div>
+
+<p>Those OPT variables must be replaced with numeric constants to use the formulas in a MetaStock exploration or MetaStock expert advisor.</p>
+<pre>
+Buy Order:
+SPY:= Security(&quot;ONLINE:SPY&quot;, C);
+TNX:= Security(&quot;ONLINE:TNX&quot;, C);
+
+YLD:= TNX/10;
+STO10:= Mov(Stoch(10,1),3,S);
+ATR15:= Mov(ATR(1),15*2-1,E);
+
+{ TNX HH &amp;LL }
+LLT:= LLV(TNX, OPT3);
+HHT:= HHV(TNX, OPT3);
+TNXUP:= (TNX-LLT)/(LLT+.001)*100;
+TNXDN:= (TNX-HHT)/(HHT+.001)*100;
+
+{ ETF HH &amp; LL }
+LL:= LLV(L,100);
+PERCUP:= (C-LL)/(LL+.001)*100;
+Upper:= Ref(HHV(C, OPT4),-1) ; { Donchian Upper Channel }
+
+{ Correlations }
+CORT:= Correl(C,TNX,20,0);
+CORS:= Correl(C,SPY,20,0);
+
+BBBOT:= BBandBot(C, OPT1, S, OPT2);
+
+NoBuy:= C&lt;Mov(C,30,S) AND C&lt;(1-OPT9/100)*HHV(C,2) AND 
+(SPY&lt;(1-OPT9/100)*Ref(SPY,-1) OR CORS&lt;0);
+
+{ Buy Conditions }
+BuyBB:= (L&lt;BBBOT AND C&gt;BBBOT+.2*ATR15) AND
+((TNXDN&lt;-OPT5 AND CORT&lt;OPT6) OR YLD&lt;OPT7)
+AND C&gt;(H+L)/2 AND NoBuy = 0;
+
+BUYTrend:= C&gt;UPPER AND SPY&gt;Mov(SPY,20,S) AND 
+(HHVBARS(TNX, OPT4)&gt;10 OR CORT&gt;OPT6 OR YLD&lt;OPT7);
+
+BuyBB OR BuyTrend
+
+Sell Order:
+SPY:= Security(&quot;ONLINE:SPY&quot;, C);
+TNX:= Security(&quot;ONLINE:TNX&quot;, C);
+
+YLD:= TNX/10;
+STO10:= Mov(Stoch(10,1),3,S);
+ATR15:= Mov(ATR(1),15*2-1,E);
+
+LLT:= LLV(TNX, OPT3);
+HHT:= HHV(TNX, OPT3);
+TNXUP:= (TNX-LLT)/(LLT+.001)*100;
+TNXDN:= (TNX-HHT)/(HHT+.001)*100;
+
+LL:= LLV(L,100);
+PERCUP:= (C-LL)/(LL+.001)*100;
+
+CORT:= Correl(C,TNX,20,0);
+CORS:= Correl(C,SPY,20,0);
+
+BBBOT:= BBandBot(C, OPT1, S, OPT2);
+
+NoBuy:= C&lt;Mov(C,30,S) AND C&lt;(1-OPT9/100)*HHV(C,2) AND 
+(SPY&lt;(1-OPT9/100)*Ref(SPY,-1) OR CORS&lt;0);
+
+{ Buy Conditions }
+BuyBB:= (L&lt;BBBOT AND C&gt;BBBOT+.2*ATR15) AND
+((TNXDN&lt;-OPT5 AND CORT&lt;OPT6) OR YLD&lt;OPT7)
+AND C&gt;(H+L)/2 AND NoBuy = 0;
+
+{ Sell Conditions }
+Sell1:= (TNXUP&gt; OPT5 OR (YLD&gt;4 AND TNXUP&gt;0) )
+AND C&lt;HHV(C,5)-OPT8*ATR15 AND BuyBB = 0;
+
+STOP:= C&lt;Mov(C,30,S) AND C&lt;(1-OPT9/100)*Ref(C,-1)
+AND (SPY&lt;(1-OPT9/100)*Ref(SPY,-1) OR CORS&lt;0);
+
+SELLOB:= PERCUP&gt;50 AND C&lt;HHV(H,3)-OPT8*ATR(15) AND HHV(STO10,3)&gt;90;
+
+SELL1 OR SELLOB OR STOP
+</pre>
+<p class="authorTips">&mdash;William Golson<br>
+MetaStock Technical Support<br>
+<a href="http://www.MetaStock.com" target="_parent">www.MetaStock.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: June 2024</h3></div>
+<p>The REIT ETF strategy and indicator detailed in the article &ldquo;Is The Price REIT?&rdquo; in this issue by Markos Katsanos is available for download at the following link for NinjaTrader 8:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://Ninjatrader.com/SC/June2024SCNT8.zip" target="_blank">Ninjatrader.com/SC/June2024SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the strategy and indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the strategy&rsquo;s source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Strategies from within the control center window and selecting the &ldquo;REITETFStrategy&rdquo; file.</p>
+<p>A sample chart displaying the indicator and strategy is shown in Figure 3.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: NINJATRADER. This demonstrates the REIT ETF strategy backtested on a VNQ weekly chart from January 1, 2007 to April 16, 2024, displaying results from January, 2020 to April 2024.</p></div>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">&mdash;Brandon Haulk<br>
+NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Realtest.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">RealTest: June 2024</h3></div>
+<p>In the article &ldquo;Is The Price REIT?&rdquo; in this issue, author Markos Katsanos offers a strategy to trade REIT ETFs. The code shown below implements the author&rsquo;s technique in RealTest (mhptrading.com).</p>
+<pre>
+Import:	
+	// definition of data needed by this script (run once to import and create local file)
+	
+	DataSource:	Norgate
+	IncludeList:	VNQ, IYR, RWR, ICF {&quot;reits&quot;}	// named list of REIT ETFs
+	IncludeList:	SPY, %TNX, %FFYE	// other symbols used
+	StartDate:	2006-01-01	// import at least two extra years
+	EndDate:	Latest
+	SaveAs:	reit_test.rtd
+
+Settings:
+	// settings to use when running tests
+	
+	DataFile:	reit_test.rtd	// the file created by import
+	StartDate:	2009-01-31	// test date range
+	EndDate:	2024-01-31
+	BarSize:	Weekly	// use weekly bars
+	RiskFreeRateSym:	%FFYE	// fed funds rate	
+	CashIntPct:	-0.05	// assume %FFYE - 0.5% interest on free cash
+
+Parameters:
+	// constants used in data or strategy formulas
+	
+	BBPeriod:	from 15 to 20 step 5 def 15	// equivalent to AmiBroker &quot;Optimize&quot; statement
+	SD:	2	// or can just state single values
+	TBars:	25
+	CL:	30
+	TNXPerc:	15
+	CorMax:	0.3
+	YLDMin:	2
+	ATRS:	1.5
+	MaxLossPerc:	8
+	
+Data:
+	// arrays to calculate before any tests are run
+	
+	// external symbols
+	SPY:	Extern($SPY, C)
+	TNX:	Extern($%TNX, C)
+	// stochastics (internal calcs match author's method)
+	STOCH:	STOC(10, 3)
+	// ATR (ditto - Wilder's smoothing is used)
+	ATR15:	ATR(15)
+	// TNX HH &amp; LL
+	LLT:	LLV(TNX, TBars)
+	HHT:	HHV(TNX, TBars)
+	TNXUP:	(TNX - LLT) / (LLT + .001) * 100
+	TNXDN:	(TNX - HHT) / (HHT + .001) * 100
+	// ETFs HH &amp; LL
+	LL:	LLV(L, 100) // no need to check BarNum &lt; 100 since 2 extra years were imported
+	PERCup:	(C - LL) / (LL + .001) * 100
+	Upper:	HHV(C, CL)[1]
+	// Correlations
+	CORT:	Correl(C, TNX, 20) // Pearson's
+	CORS:	Correl(C, SPY, 20)
+	BBottom:	BBBOT(BBPeriod, SD)
+	// Entry/Exit conditions
+	Stop:	C &lt; MA(C,30) AND C &lt; (1-MaxLossPerc/100) * C[1] AND (SPY &lt; (1-MaxLossPerc/100) * SPY[1] OR CORS &lt; 0)
+	BuyBB:	(L &lt; BBottom AND C &gt; BBottom + .2 * ATR15) AND ((TNXDN &lt; -TNXPerc AND CORT &lt; CorMax) OR TNX &lt; YLDMin) AND C &gt; (H + L) / 2 AND not STOP
+	BuyTrend:	C &gt; Upper AND SPY&gt;MA(SPY, 20) AND (SinceHigh(TNX, CL) &gt; 10 OR CORT &gt; CORMax OR TNX &lt; YLDMin)
+	Sell1:	(TNXUP &gt;TNXPerc OR (TNX &gt; 4 AND TNXUP &gt; 0)) AND C &lt; HHV(C, 5) - ATRS * ATR15 AND not BuyBB
+	SellOB:	PERCup &gt; 50 AND C &lt; HHV(H, 3) - ATRS * ATR(15) AND HHV(STOCH, 3) &gt; 90
+	
+Strategy: reit_etf
+	// strategy definition (in this case a very simple one)
+	
+	Side:	Long
+	EntrySetup:	InList(&quot;reits&quot;) and (BuyBB or BuyTrend)
+	ExitRule:	Sell1 or SellOB or Stop
+
+</pre>
+<p><strong><em>Note:</em></strong> To run the code for each REIT ETF separately, press &ldquo;optimize&rdquo; and select the &ldquo;For each symbol&rdquo; option.</p>
+<p>This produces the output shown in Figure 4. Note that the results are similar but not identical to the author&rsquo;s. The somewhat better stats are due to the fact that RealTest&rsquo;s compounding model includes reinvestment of dividends and interest.</p>
+<div class="figBorder">
+<img src="images/TT-Realtest.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: REALTEST. The sample results for the REIT strategy are shown here from RealTest software. </p></div>
+<p class="authorTips">&mdash;Marsten Parker<br>
+MHP Trading, <a href="http://Mhptrading.com" target="_parent">Mhptrading.com</a><br>
+<a href="mailto:mhp@mhptrading.com">mhp@mhptrading.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: June 2024</h3></div>
+<p>We&rsquo;ve coded the REIT system&rsquo;s trading rules given in Markos Katsanos&rsquo; article in this issue in C# for Wealth-Lab.</p>
+<pre>
+using WealthLab.Backtest;
+using System;
+using WealthLab.Core;
+using WealthLab.Data;
+using WealthLab.Indicators;
+using System.Collections.Generic;
+
+namespace WealthScript1 
+{
+    public class MyStrategy : UserStrategyBase
+    {
+        public MyStrategy()
+        {
+            AddParameter(&quot;Lookback period for TNX HH or LL&quot;, ParameterType.Int32, 25, 25, 25, 5);
+			AddParameter(&quot;Donchian Channel Length&quot;, ParameterType.Int32, 30, 30, 30, 5);
+			AddParameter(&quot;Bollinger Band Period&quot;, ParameterType.Int32, 15, 15, 20, 5); 
+			AddParameter(&quot;Bollinger Band StDev&quot;, ParameterType.Double, 2, 2, 2, 0.5); 
+			AddParameter(&quot;Min% TNX Change&quot;, ParameterType.Int32, 15, 15, 25, 5);
+			AddParameter(&quot;Max correlation for buy signal&quot;, ParameterType.Double, 0.3, 0.2, 0.2, 0.1);
+			AddParameter(&quot;Min yield (TNX/10)&quot;, ParameterType.Double, 2, 2, 2, 0.5);
+			AddParameter(&quot;Stop Loss&quot;, ParameterType.Int32, 8, 8, 8, 1);
+			AddParameter(&quot;ATR Stop&quot;, ParameterType.Double, 1.5, 1.5, 1.5, 0.5);
+		}
+
+        public override void Initialize (BarHistory bars)
+        {
+			spy = GetHistory (bars, _spy);
+			tnx = GetHistory (bars, _2nd);
+
+			stoch = StochD.Series(bars, stochPeriod, stochSmoothing);
+			hhvStoch = Highest.Series(stoch, 3);
+			atr = ATR.Series(bars, atrPeriod);
+
+			/* TNX HH &amp;LL */
+			tbars = Parameters[0].AsInt;
+			var llt = Lowest.Series(tnx.Close, tbars); 
+			var hht = Highest.Series(tnx.Close, tbars); 
+			tnxUp = (tnx.Close - llt) / (llt + .001) * 100;
+			tnxDn = (tnx.Close - hht) / (hht  + .001) * 100;
+
+			/* ETF HH &amp; LL */
+			cl = Parameters[1].AsInt;
+			var ll = Lowest.Series(bars.Low, llbars);
+			percUp = (bars.Close - ll) / (ll + .001) * 100;
+			upper = Highest.Series(bars.Close, cl) &gt;&gt; -1; /* Donchian Upper Channel */
+
+			/* Pearson&rsquo;s Correlation */
+			bbPeriod = Parameters[2].AsInt;
+			sd = Parameters[3].AsDouble;
+			corT = Corr.Series(bars, _2nd, PriceComponent.Close, 20);
+			corS = Corr.Series(bars, _spy, PriceComponent.Close, 20);
+			bbBot = SMA.Series(bars.Close, bbPeriod) - sd * StdDev.Series(bars.Close, bbPeriod);
+
+			tnxPerc = Parameters[4].AsInt;
+			corMax = Parameters[5].AsDouble;
+			yld = tnx.Close / 10d;
+			yldMin = Parameters[6].AsDouble;
+			
+			sma30 = SMA.Series(bars.Close, 30);
+			maxLossPerc = Parameters[7].AsInt;
+			hhv2 = Highest.Series(bars.Close, 2);
+			hhv3 = Highest.Series(bars.Close, 3);
+			spyMA = SMA.Series(spy.Close, 20);
+			hhvBars = TimeSeries.BarsSince( tnx.High &gt;= Highest.Series(tnx.High, cl));
+			atrs = Parameters[8].AsDouble;
+		}
+
+        public override void Execute (BarHistory bars, int idx)
+        {
+			bool stop = bars.Close[idx] &lt; sma30[idx] &amp;&amp; bars.Close[idx] &lt; ((1 - maxLossPerc / 100d)*hhv2[idx]) &amp;&amp; 
+				((spy.Close[idx] &lt; ((1 - maxLossPerc / 100d) * spy.Close[idx - 1])) || corS[idx] &lt; 0);
+			var buyBB = (bars.Low[idx] &lt; bbBot[idx] &amp;&amp; bars.Close[idx] &gt; bbBot[idx] + 0.2 * atr[idx]) &amp;&amp;
+				((tnxDn[idx] &lt; -tnxPerc &amp;&amp; corT[idx] &lt; corMax) || yld[idx] &lt; yldMin) &amp;&amp;
+				bars.Close[idx] &gt; bars.AveragePriceHL[idx] &amp;&amp; !stop;
+
+			if (! HasOpenPosition (bars, PositionType.Long))
+            {
+				var buyTrend = bars.Close[idx] &gt; upper[idx] &amp;&amp; spy.Close[idx] &gt; spyMA[idx] &amp;&amp; hhvBars[idx] &gt; 10 || corT[idx] &gt; corMax || yld[idx] &lt; yldMin;
+				var buy = buyBB || buyTrend;
+
+				if(buy)
+					PlaceTrade(bars, TransactionType.Buy, OrderType.Market);
+			}
+            else
+            {
+				/* Chandelier Sell Stop */
+				var Sell1 = (tnxUp[idx] &gt; tnxPerc || (yld[idx] &gt; 4 &amp;&amp; tnxUp[idx] &gt; 0) ) &amp;&amp; bars.Close[idx] &lt; (hhv3[idx]-atrs * atr[idx]) &amp;&amp; !buyBB;
+
+				/* Stop Loss */
+				var Stop = bars.Close[idx] &lt; sma30[idx] &amp;&amp; 
+					((bars.Close[idx] &lt; ((1 - maxLossPerc / 100d) * bars.Close[idx - 1])) &amp;&amp;
+					((spy.Close[idx] &lt; ((1 - maxLossPerc / 100d) * spy.Close[idx - 1])) ||corS[idx] &lt; 0));
+				var SellOB = percUp[idx] &gt; 50 &amp;&amp; bars.Close[idx] &lt; (hhv3[idx] - atrs * atr[idx]) &amp;&amp; hhvStoch[idx] &gt; 90;
+				var Sell = Sell1 || SellOB || Stop;
+
+				if (Sell)
+					PlaceTrade(bars, TransactionType.Sell, OrderType.Market);
+			}
+        }
+
+		/* declare private variables below */
+		BarHistory tnx, spy;
+		int stochPeriod = 0, stochSmoothing = 3, atrPeriod = 15, tbars, llbars = 100, cl, bbPeriod, tnxPerc, maxLossPerc;
+		double sd, corMax, yldMin, atrs;
+		string _2nd = &quot;^TNX&quot;, _spy = &quot;SPY&quot;;
+		TimeSeries bbBot, corT, corS, atr, tnxUp, tnxDn, yld, sma30, hhv2, hhv3, upper, spyMA, hhvBars, percUp, stoch, hhvStoch;
+	}
+}
+</pre>
+<p>Since it uses Yahoo&rsquo;s ^TNX as the symbol for the CBOE 10-Year Treasury Note Yield Index, to run it properly you should either check Yahoo Finance&rsquo;s &ldquo;Data Manager&rsquo;s Historical Providers&rdquo; list or choose the symbol name of your preferred data provider.</p>
+<p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="http://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: June 2024</h3></div>
+<p>The TradingView Pine Script code below implements the REIT ETF trading system described in Markos Katsanos&rsquo; article in this issue, &ldquo;Is The Price REIT?&rdquo; It functions as a strategy script, displaying filled order marks on the chart and providing performance metrics in the Strategy Tester tab beneath the TradingView chart.</p>
+<pre>
+//  TASC Issue: December 2024 - Vol. 42, Issue 6
+//     Article: Is The Price REIT?
+//              An Approach To Real Estate Investment Trusts
+//  Article By: Markos Katsanos
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//&#64;version=5
+string it  = 'TASC 2024.06 REIT ETF Trading System'
+string st  = 'REIT TS'
+strategy(it, st, true)
+
+
+// --- Inputs ---
+string it0 = 'Bollinger Bands Length'
+string it1 = 'Bollinger Bands Multiplier'
+string it2 = 'Lookback Period for TNX Index'
+string it3 = 'Min TNX Change, %'
+string it4 = 'Donchian Channel Length'
+string it5 = 'Max Correlation for Buy Signal'
+string it6 = 'Min Yield (TNX/10)'
+string it7 = 'ATR Stop'
+string it8 = 'Stop Loss, %'
+
+
+int    iBBlen = input.int(15, it0)
+float  iBBmul = input.float(2.0, it1)
+int   iTNXlen = input.int(25, it2)
+int   iTNXper = input.int(15, it3)
+int    iDClen = input.int(30, it4)
+float iCORmax = input.float(0.3, it5)
+float iYLDmin = input.float(2.0, it6)
+float iATRstp = input.float(1.5, it7)
+int   iMAXlos = input.int(8, it8)
+
+
+// --- Helper Functions ---
+NotAtLoss (float src, float limit) =&gt;
+    src &lt; ((1.0 - iMAXlos / 100.0) * limit)
+
+
+// --- Calculations ---
+if not timeframe.isweekly
+    string er0 = 'The script should be applied on '+
+                 'a WEEKLY chart of any REIT ETF.'
+    runtime.error(er0)
+
+
+// Reference indices (SPY and TNX)
+float spy = request.security('SPY', timeframe.period, close, 
+                   barmerge.gaps_on, barmerge.lookahead_off)
+float tnx = request.security('TNX', timeframe.period, close, 
+                   barmerge.gaps_on, barmerge.lookahead_off)
+
+
+// Treasury Yield, Stochastic, ATR
+float yld     = tnx / 10.0
+float stoch   = ta.sma(ta.stoch(close, high, low, 10), 3)
+float atr15   = ta.atr(15)
+
+
+// HH &amp; LL of TNX
+float TNXll   = ta.lowest(tnx, iTNXlen)
+float TNXhh   = ta.highest(tnx, iTNXlen)
+float TNXup   = ((tnx - TNXll) / (TNXll + 0.001)) * 100.0
+float TNXdn   = ((tnx - TNXhh) / (TNXhh + 0.001)) * 100.0
+
+
+// HH &amp; LL of ETF
+int   LLbars  = bar_index &gt;= 100 ? 100 : bar_index + 1
+float ll      = ta.lowest(low, LLbars)
+float PERCup  = (close - ll) / (ll + 0.001) * 100.0
+float DCupper = ta.highest(close, iDClen)[1] 
+
+
+// Correlations
+float CORt    = ta.correlation(close, tnx, 20)
+float CORs    = ta.correlation(close, spy, 20)
+float BBlower = ta.sma(close, iBBlen) -
+     iBBmul * ta.stdev(close, iBBlen)
+bool  isStop  = close &lt; ta.sma(close, 30) and 
+     NotAtLoss(close, ta.highest(close, 2)) and 
+     NotAtLoss(spy, spy[1]) or 
+     CORs &lt; 0
+
+
+// Trade Signals
+bool BuyBB    = (low &lt; BBlower and 
+     close &gt; BBlower + 0.2 * atr15) and 
+     ((TNXdn &lt; -iTNXper and CORt &lt; iCORmax) or 
+     yld &lt; iYLDmin) and close &gt; hl2 and not isStop
+bool BuyTrend = close &gt; DCupper and
+     spy &gt; ta.sma(spy, 20) and 
+     (ta.highest(tnx, iTNXlen) &gt; 10.0 or 
+     CORt &gt; iCORmax or yld &lt; iYLDmin)
+
+
+// Stop Loss
+bool Sell1  = (TNXup &gt; iTNXper or 
+     (yld &gt; 4.0 and TNXup &gt; 0.0)) and 
+     close &lt; ta.highest(close, 5) - iATRstp * atr15 and 
+     not BuyBB  // Chandelier Exit
+bool Stop0  = close &lt; ta.sma(close, 30) and 
+     NotAtLoss(close, close[1]) and 
+     NotAtLoss(spy, spy[1]) or 
+     CORs &lt; 0 
+bool SellOB = PERCup &gt; 50.0 and 
+     close &lt; ta.highest(high, 3) - iATRstp * atr15 and 
+     ta.highest(stoch, 3) &gt; 90
+
+
+// Execution
+switch
+    BuyBB =&gt;
+        strategy.entry(&quot;BUY BB&quot;, strategy.long)
+    BuyTrend =&gt; 
+        strategy.entry(&quot;BUY Trend&quot;, strategy.long)
+    Sell1 =&gt;
+        strategy.close_all('STOP Trail')
+    SellOB =&gt;
+        strategy.close_all('STOP OB')
+    Stop0 =&gt;
+        strategy.close_all('STOP Stop')
+</pre>
+
+<p>The indicator is available on TradingView from the PineCodersTASC account at <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_parent">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart is shown in Figure 5.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: TRADINGVIEW. This TradingView chart demonstrates the REIT trading strategy applied on the SPDR Dow Jones REIT ETF (RWR).</p></div>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="https://www.TradingView.com" target="_parent">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">AIQ: June 2024</h3></div>
+<p>The importable AIQ EDS file based on Markos Katsanos&rsquo; article in this issue, &ldquo;Is The Price REIT?&rdquo; can be obtained on request via <a href="mailto:rdencpa@gmail.com">rdencpa@gmail.com</a>. The code is also shown below.</p>
+	<pre>
+! Is The Price REIT?
+! Author: Markos Katsanos, TASC June 2024
+! Coded by: Richard Denning 4/17/2024
+
+!INPUTS:
+BBPERIOD is 15.
+SD is 2.
+TBARS is 25.
+CL is 30.
+TNXPERC is 15.
+CORMAX is 0.3.
+YLDMIN is 2.
+ATRS is 1.5.
+MAXLOSSPERC is 8.
+!IMSEC2 is &quot;SPY&quot;.
+!IMSEC3 is &quot;TNX&quot;.
+
+C is [close].
+C1 is valresult(C,2).
+H is [high].
+L is [low].
+
+!FORMULAS:
+SPYc is tickerudf(&quot;SPY&quot;,C).
+TNXc is tickerudf(&quot;TNX&quot;,C).
+YLD is TNXc/10.
+STOCH is (C-lowresult(L,10))/(highresult(H,10)-lowresult(L,10)+0.0001)*100.
+STOCHavg is simpleavg(STOCH,3).
+TH is max(C1,H).
+TL is min(C1,L).
+TR is TH - TL.
+ATR15 is expavg(TR,15*2-1).
+
+LLT is lowresult(TNXc,TBARS).
+HHT is highresult(TNXc,TBARS).
+TNXUP is (TNXc-LLT)/(LLT+0.001)*100.
+TNXDN is (TNXc-HHT)/(HHT+0.001)*100.
+
+HDF is hasdatafor(110).
+LLBARS is iff(HDF&gt;100,100,HDF).
+LL is lowresult(L, LLBARS).
+PERCUP is (C-LL)/(LL+ 0.001)*100.
+Upper is valresult(highresult(C,CL),1).
+StDev is sqrt(variance(C,BBPERIOD)).
+BBBOT is simpleavg(C,BBPERIOD)-SD*StDev.
+STOP if C&lt;simpleavg(C,30) AND C&lt;(1-MAXLOSSPERC/100)*highresult(C,2)
+AND (SPYc&lt;(1-MAXLOSSPERC/100)*valresult(SPYc,1) OR CORS&lt;0).
+BuyBB if (L&lt;BBBOT AND C&gt;BBBOT+0.2*ATR15) AND
+((TNXDN&lt;-TNXPERC AND CORT&lt;CORMAX) OR YLD&lt;YLDMIN)
+AND C&gt;(H+L)/2 AND not STOP.
+BUYTrend if C&gt;UPPER AND SPYc&gt;simpleavg(SPYc,20)
+AND ( highresult(TNXc,CL)&gt;10 OR CORT&gt;CORMAX OR
+YLD&lt;YLDMIN).
+Buy if BuyBB OR BuyTrend.
+
+! Chandelier Sell Stop
+SELL1 if (TNXUP&gt;TNXPERC OR (YLD&gt;4 AND TNXUP&gt;0) )
+AND C&lt;highresult(C,5)-ATRS*ATR15 AND not BuyBB.
+
+! Stop Loss
+SELLOB if PERCUP&gt;50 AND C&lt;highresult(H,3)-ATRS*ATR15 AND
+highresult(STOCH,3)&gt;90. 
+ExitLong if SELL1 OR SELLOB OR STOP.
+
+!PEARSON CORRELATION TO SPY:
+N is 20.
+rC is (C / C1 - 1) * 100.
+!SPYc is TickerUDF(&quot;SPY&quot;,C) .
+rSPYc is (SPYc / valresult(SPYc,1) - 1) * 100.
+stdDx is sqrt(variance(rC,N)).
+Zx is (rC - simpleavg(rC,N)) / stdDx.
+stdDy is sqrt(variance(rSPYc,N)).
+Zy is (rSPYc - simpleavg(rSPYc,N)) / stdDy.
+HD if hasdatafor(N*2) &gt;= N.
+Sr is iff(HD,simpleavg(Zx*Zy,N) * 1000,0).
+SPYr is TickerUDF(&quot;SPY&quot;,Sr).
+r is Sr / SPYr * 1000.
+CORS is r.
+
+!PEARSON CORRELATION TO TNX:
+!TNXc is TickerUDF(&quot;TNX&quot;,C) .
+rTNXc is (SPYc / valresult(TNXc,1) - 1) * 100.
+stdDyT is sqrt(variance(rTNXc,N)).
+ZyT is (rTNXc - simpleavg(rTNXc,N)) / stdDyT.
+SrT is iff(HD,simpleavg(Zx*ZyT,N) * 1000,0).
+TNXr is TickerUDF(&quot;TNX&quot;,SrT).
+rT is SrT / TNXr * 1000 .
+CORT is rT.
+</pre>
+<p>The code for the author&rsquo;s system is set up in the AIQ EDS code file. To run a backtest of the system in AIQ EDS, first make a list of the ETFs that you want to test. Then set up the backtest as shown in Figure 6.</p>
+<div class="figBorder">
+<img src="images/TT-Aiq.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: AIQ. Demonstrated here are selected setup screens for the EDS backtest of the REIT ETF trading system.</p></div>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:rdencpa@gmail.com">rdencpa@gmail.com</a><br>
+for AIQ Systems</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: June 2024</h3></div>	
+<p>The REIT trading system presented in Markos Katsanos&rsquo; article in this issue, &ldquo;Is The Price REIT?&rdquo;, can be easily implemented in NeuroShell Trader by combining some of NeuroShell Trader&rsquo;s 800+ indicators. To implement the indicators, select &ldquo;New indicator…&rdquo; from the <em>insert</em> menu and use the indicator wizard to create the following indicators:</p>	
+<pre>
+STOP  
+And3( Price&lt;Avg(Close,30),
+            A&lt;B(Close,Mul2(Sub(1,Divide(8,100)),Lag(Close,1))),
+            Or2( A&lt;B(SPY Close,Mul2(Sub(1,Divide(8,100)),Lag(SPY Close,1))),
+                     A&lt;B(LinXYReg r(Close,SPY Close,20),0)))
+
+BuyBB 
+And4( And2( A&lt;B(Low,BB Low(Close,15,2)),
+                        A&gt;B(Close,Add2(BB Low(Close,15,2),Mul2(0.2,ATR(High,Low,Close,15))))),
+            Or2( And2( A&lt;B(Mul2(Sub(Divide(TNX Close,Max(TNX Close,25)),1),100),-15), 
+                               A&lt;B(LinXYReg r(Close,TNX Close,20),0.3)),
+                     A&lt;B(Divide(TNX Close,10),2)),
+            A&gt;B(Close,Avg2(High,Low)),
+            Not(STOP))
+
+BUYTrend
+And3( A&gt;B(Close,Lag(Max(Close,30),1)),
+            Price&gt;Avg(SPY Close,20),
+            Or3( A&gt;B(Max(TNX Close,30),
+                     Max(TNX Close,10)),
+                     A&gt;B(LinXYReg r(Close,TNX Close,20),0.3),A&lt;B(Divide(TNX Close,10),2)))
+
+Sell1 
+And3( Or2( A&gt;B(Mul2(Sub(Divide(TNX Close,Min(TNX Close,25)),1),100),15),
+                     And2( A&gt;B(Divide(TNX Close,10),4),
+                                 A&gt;B(Mul2(Sub(Divide(TNX Close,Min(TNX Close,25)),1),100),0))),
+            A&lt;B(Close,Sub(Max(Close,5),Mul2(1.5,ATR(High,Low,Close,15)))),
+            Not(BuyBB))
+
+SELLOB 
+And3( A&gt;B(Mul2(Sub(Divide(Close,Min(Low,100)),1),100),50),
+            A&lt;B(Close,Sub(Max(High,3),Mul2(1.5,ATR(High,Low,Close,15)))),
+            A&gt;B(Max(Stoch%D(High,Low,Close,10,3),3),90))
+</pre>	
+<p>To implement the trading system, select &ldquo;New strategy…&rdquo; from the <em>insert</em> menu and use the trading strategy wizard to create the following strategy:</p>	
+<pre>
+BUY LONG CONDITIONS: [1 of which must be true]
+     BuyBB
+     BUYTrend
+
+SELL LONG CONDITIONS: [1 of which must be true]
+     Sell1
+     SELLOB
+     STOP
+</pre>	
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: NEUROSHELL TRADER. This NeuroShell Trader chart demonstrates the REIT trading system applied to eight different REIT ETFs.</p></div>	
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the June 2024 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2024, Technical Analysis, Inc.</p>
+
+</body>
+</html>

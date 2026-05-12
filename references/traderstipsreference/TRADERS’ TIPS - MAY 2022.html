@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: RSEMA by Vitali Apirine. Contributions from: TradeStation; TradingView; eSignal; Wealth-Lab.com; NinjaTrader; Neuroshell Trader; Optuma; TradersStudio; The Zorro Project; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - MAY 2022</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">May 2022</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2022/05/images/TT-Apirine.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Vitali Apirine&rsquo;s article in the January 2022 issue, &ldquo;Relative Strength Moving Averages, Part 1: The Relative Strength Exponential Moving Average (RS EMA).&rdquo; Here, we present the May 2022 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: May 2022</a></li>
+  <li><a href="#item2">TradingView: May 2022</a></li>
+  <li><a href="#item3"><span style="text-transform:lowercase;">e</span>Signal: May 2022</a></li>
+  <li><a href="#item4">Wealth-Lab.com: May 2022</a></li>
+  <li><a href="#item5">NinjaTrader: May 2022</a></li>
+  <li><a href="#item6">Neuroshell Trader: May 2022</a></li>
+  <li><a href="#item7">Optuma: May 2022</a></li>
+  <li><a href="#item8">TradersStudio: May 2022</a></li>
+    <li><a href="#item9">TradersStudio: April 2022</a></li>
+  <li><a href="#item10">The Zorro Project: May 2022</a></li>
+  <li><a href="#item11">Microsoft Excel: May 2022</a></li>
+</ul>
+<!--TIPS START HERE-->
+
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: May 2022</h3></div>
+<p>In part 1 of a three-part series focused on differences between traditional EMAs and relative strength-based EMA indicators, author Vitali Apirine introduces the relative strength exponential moving average (RS EMA). The study is designed to account for relative strength of price and is considered a trend-following indicator that can be used in combination with an EMA of the same length to identify the overall trend. RS EMAs with different lengths can define turning points and filter price movements.</p>
+<pre>
+inputs:
+	Periods( 50 ),
+	Pds( 50 ),
+	Mltp( 10 );
+
+variables:
+	Mltp1( 0 ),
+	Cup( 0 ),
+	Cdwn( 0 ),
+	RS( 0 ),
+	Rate( 0 ),
+	CalcValue( 0 );
+	
+Mltp1 = 2 / ( Periods + 1 );
+Cup = Iff( Close &gt; Close[1], Close - Close[1] , 0 );
+Cdwn = Iff( Close &lt; Close[1], Close[1]-Close, 0 );
+RS = AbsValue( XAverage( CUP, Pds )- XAverage( Cdwn, Pds ) ) / 
+ ( XAverage( CUP, Pds ) + XAverage( Cdwn, Pds ) + 0.00001 );
+
+RS = RS * Mltp;
+Rate = Mltp1 * ( 1 + RS );
+
+CalcValue = Iff( CurrentBar = 1, Close, CalcValue[1] + Rate *( Close - CalcValue[1] ) );
+
+Plot1( CalcValue );
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+    <div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 1: TRADESTATION. A TradeStation daily chart of the S&amp;P 500 index ($SPX.X) with the RS EMA indicator (in blue) and a 50-day exponential moving average (in red) applied. The RS EMA indicator is applied with the inputs 50, 50, and 10.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: May 2022</h3></div>
+<p>Here is the Pine Script code for use in TradingView that implements the relative strength exponential moving average (RS EMA), which is described in the January 2022 article by Vitali Apirine titled &ldquo;Relative Strength Moving Averages, Part 1: RSEMA.&rdquo;</p>
+<pre>
+//  TASC Issue: May 2022 - Vol. 40, Issue 5
+//     Article: Relative Strength Moving Averages
+//              Part 1: The Relative Strength 
+//              Exponential Moving Average (RS EMA)
+//  Article By: Vitali Apirine
+//    Language: TradingView's Pine Script v5
+// Provided By: PineCoders, for tradingview.com
+
+//&#64;version=5
+indicator(title='TASC 2022.05 RS EMA', overlay=true)
+
+int periods = input.int(  title='EMA Length:'   , defval=50)
+int     pds = input.int(  title='RS Length:'    , defval=50)
+float  mltp = input.float(title='RS Multiplier:', defval=10.0)
+
+rsema (  float       source = close, 
+         simple int periods = 50, 
+         simple int     pds = 50, 
+         float   multiplier = 10.0
+         ) =&gt;
+    float mltp1 = 2.0 / (periods + 1.0)
+    float diff = ta.change(close)
+    float cup = diff &gt; 0 ? diff : 0.0
+    float cdn = diff &lt; 0 ? math.abs(diff) : 0.0
+    float acup = ta.ema(cup, pds)
+    float acdn = ta.ema(cdn, pds)
+    float rs = math.abs(acup - acdn)
+    rs /= (acup + acdn + 0.00001)
+    rs *= multiplier
+    float rate = mltp1 * (1.0 + rs)
+    float rsema = close
+    float prev = nz(rsema[1])
+    rsema := prev + rate * (close - prev)
+    rsema
+
+float rsema = rsema(close, periods, pds, mltp)
+
+plot(series=rsema, title='RS EMA', color=color.green)
+</pre>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 2: TRADINGVIEW. Shown is an example of the relative strength exponential moving average (RS EMA) on a chart of the S&amp;P 500 index.</p></div>
+
+<p>The indicator is available on TradingView from the PineCodersTASC account:
+<a href="https://tradingview.com/u/PineCodersTASC/#published-scripts" target="_parent">tradingview.com/u/PineCodersTASC/#published-scripts</a></p>
+
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="https://www.TradingView.com" target="_parent">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;"><span style="text-transform:lowercase;">e</span>Signal: May 2022</h3></div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;re providing the study <a href="https://www.traders.com/Documentation/FEEDbk_docs/2022/05/images/code/RS_EMA.efs" target="_blank">RS EMA.efs</a> based on the article by Vitali Apirine in the January 2022 issue, &ldquo;Relative Strength Moving Averages, Part 1: The RS EMA.&rdquo;</p>
+<p>The study contains formula parameters that may be configured through the <em>edit chart</em> window (right-click on the chart and select &ldquo;edit chart&rdquo;). A sample chart is shown in Figure 3.</p>
+<div class="figBorder">
+<img src="images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 3: eSIGNAL. Here is an example of the study plotted on a daily chart of $RUT.</p></div>
+<p>To discuss this study or download a complete copy of the formula code, please visit the EFS library discussion board forum under the <em>forums</em> link from the support menu at <a href="https://www.esignal.com" target="_parent">www.esignal.com</a> or visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs" target="_parent">www.esignal.com/support/kb/efs</a>. The eSignal formula script (EFS) is also available for copying &amp; pasting below.</p>
+<pre>
+/**********************************
+Provided By:  
+Copyright 2019 Intercontinental Exchange, Inc. All Rights Reserved. 
+eSignal is a service mark and/or a registered service mark of Intercontinental Exchange, Inc. 
+in the United States and/or other countries. This sample eSignal Formula Script (EFS) 
+is for educational purposes only. 
+Intercontinental Exchange, Inc. reserves the right to modify and overwrite this EFS file with each new release. 
+
+Description:      
+    Relative Strength Moving Averages
+    by Vitali Apirine
+    
+
+Version:            1.00  09/03/2022
+
+Formula Parameters:                     Default:
+Periods                                 50
+Mltp                                    10
+
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+var fpArray = new Array();
+var bInit = false;
+
+function preMain() {
+    setStudyTitle(&quot;RS EMA&quot;);
+    setCursorLabelName(&quot;RS EMA&quot;, 0);
+    setPriceStudy(true);
+    setDefaultBarFgColor(Color.RGB(0x00,0x94,0xFF), 0);
+    setPlotType( PLOTTYPE_LINE , 0 );
+    setDefaultBarThickness(2, 0);
+    
+    var x=0;
+    fpArray[x] = new FunctionParameter(&quot;Periods&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1);   
+        setDefault(50);
+    } 
+    fpArray[x] = new FunctionParameter(&quot;Pds&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1);   
+        setDefault(50);          
+    }   
+    fpArray[x] = new FunctionParameter(&quot;Mltp&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1);   
+        setDefault(10);          
+    } 
+}
+
+var bVersion = null;
+var xClose = null;
+var RS = null;
+var RS_1 = null;
+var Mltp1 = null;
+
+
+function main(Periods, Pds, Mltp) {
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return; 
+    
+    if ( bInit == false ) { 
+        xClose = close(); 
+        Mltp1 = 2 / (Periods+1);
+        RS = 0;
+        RS_1 = 0;
+        
+        xCup = efsInternal('Calc_Cup', xClose);
+        xCdwn = efsInternal('Calc_Cdwn', xClose);
+        xRS = efsInternal('Calc_RS', xCup, xCdwn, Pds, Mltp);
+           
+        bInit = true; 
+    }      
+    if (getCurrentBarCount() &lt;= Periods) return;
+    if (getBarState() == BARSTATE_NEWBAR) {
+        RS_1 = RS;
+        RS = 0;
+    }
+    
+    Rate = Mltp1 * (1+xRS.getValue(0)); 
+    if (getCurrentBarCount() == Periods + 1) ret = xClose.getValue(0);
+    else ret = RS_1 + Rate * (xClose.getValue(0) - RS_1); 
+    RS = ret;
+
+    return RS;        
+}
+
+function Calc_RS(xCup, xCdwn, Pds, Mltp){
+    x1 = ema(Pds, xCup);
+    x2 = ema(Pds, xCdwn);
+    ret = Math.abs(x1 - x2);
+    ret = ret / (ema(Pds, xCup) + ema(Pds, xCdwn) + 0.00001);
+    ret = ret * Mltp;
+    
+    return ret;
+}
+var ret = 0;
+function Calc_Cdwn(xClose){
+    var ret = 0;
+    if (xClose.getValue(0) &lt; xClose.getValue(-1)){
+        ret = xClose.getValue(-1) - xClose.getValue(0);
+    }
+    else ret = 0;
+    
+    return ret;
+}
+var ret = 0;
+function Calc_Cup(xClose){
+    var ret = 0;
+    if (xClose.getValue(0) &gt; xClose.getValue(-1)){
+        ret = xClose.getValue(0) - xClose.getValue(-1)
+    }
+    else ret = 0;
+    
+    return ret;
+}
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+ </pre>
+
+<p class="authorTips">&mdash;Eric Lippert<br>
+eSignal, an Interactive Data company<br>
+800 779-6555, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+    <!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: May 2022</h3></div>
+<p>In his article in January 2022 issue, Vitali Apirine introduces a new EMA-like smoothing indicator that accounts for relative strength of price.</p>
+<p>To see how easy is to verify whether a trading idea works or not, we will construct a quick and dirty system using Wealth-Lab&rsquo;s Building Blocks. Knowing that bullish and bearish crossovers can be used as entry points for trades, we drag and drop just the two crossover rules:</p>
+
+<ul><li><strong>Entry.</strong> Medium-term RSEMA (50,50,10) crosses above a long-term 200-period EMA</li>
+<li><strong>Exit.</strong> Medium-term RSEMA (50,50,10) crosses below a long-term 200-period EMA</li>
+</ul>
+
+<p>Without investing much effort, we created a trading system in a few clicks in just a few minutes of time (Figure 4). Figure 5 shows characteristic trades in the times of uptrends, trading ranges, and market corrections. Does the idea has merit? Further backtesting and walk-forward analysis would help shed light on it.</p>
+    <div class="figBorder">
+<img src="images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 4: WEALTH-LAB. Prototyping a trading system is a simple task for Wealth-Lab 7.</p></div>
+    <div class="figBorder">
+<img src="images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 5: WEALTH-LAB. Sample trades taken by the system are applied to a daily chart of SPY.</p></div>
+<p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: May 2022</h3></div>
+<p>The RS EMA indicator, as detailed in the January 2022 S&amp;C article titled &ldquo;Relative Strength Moving Averages&rdquo; by Vitali Apirine, is available for download at the following links for NinjaTrader 8 and for NinjaTrader 7:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/May2022SCNT8.zip" target="_blank">www.ninjatrader.com/SC/May2022SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7: </strong><a href="https://www.ninjatrader.com/SC/May2022SCNT7.zip">www.ninjatrader.com/SC/May2022SCNT7.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import in NinjaTrader 7 from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator&rsquo;s source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control center window and selecting the RSEMA file. You can review the indicator&rsquo;s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the control center window and selecting the RSEMA file</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted which provides you with the highest performance possible.</p>
+<p>A sample chart displaying the indicator is shown in Figure 6.</p> 
+ <div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 6: NINJATRADER. The chart showcases RSEMA(10,50,50) and RSEMA(10,20,20) applied to daily FTSE 100 index futures data from October 2017 to May 2018.</p></div>   
+    
+<p class="authorTips">&mdash;Brandon Haulk<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: May 2022</h3></div>
+<p>The relative strength exponential moving average can be easily implemented in NeuroShell Trader using NeuroShell Trader&rsquo;s ability to call external dynamic linked libraries (DLLs). Dynamic linked libraries can be written in C, C++, and Power Basic.</p> 
+<p>After moving the code given in the article to your preferred compiler and creating a DLL, you can insert the resulting indicator as follows:</p>
+
+<ol><li>Select &ldquo;new indicator&rdquo; from the <em>insert</em> menu.</li>
+<li>Choose the <strong>External Program &amp; Library Calls</strong> category.</li>
+<li>Select the appropriate <strong>External DLL Call</strong> indicator.</li>
+<li>Setup the parameters to match your DLL.</li>
+<li>Select the <em>finished</em> button.</li>
+</ol>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 7: NEUROSHELL TRADER. This NeuroShell Trader chart shows the standard EMA versus relative strength EMA.</p></div>
+<p>NeuroShell Trader users can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p> 
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Optuma.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Optuma: May 2022</h3></div>
+<p>Here is the code translation for the January 2022 article &ldquo;Relative Strength Moving Averages, Part 1: RSEMA&rdquo; by Vitali Apirine, for use on the Optuma platform.</p>
+<pre>
+#$EMABar = 50;
+#$RSBar = 50;
+#$MLTPBar = 10;
+MLTP = 2 / (VarToList(VAL=$MLTPBar) + 1);
+MLTPRS = 2 / (VarToList(VAL=$RSBar) + 1);
+Gain = IF(Close() IsUp, Close() - Close()[1], 0);
+Loss = IF(Close() IsDown, Close()[1] - Close(), 0);
+EMAGain = MA(Gain,CALC=Close, STYLE=Exponential, BARS=$EMABar);
+EMALoss = MA(Loss,CALC=Close, STYLE=Exponential, BARS=$EMABar);
+RS=ABS(EMAGain - EMALoss) / (EMAGain + EMALoss) + 0.00001;
+RSEMA = RSEMA[1] + MLTP * (1 + RS * MLTPRS) * (Close() - RSEMA[1]);
+RSEMA
+</pre>
+<div class="figBorder">
+<img src="images/TT-Optuma.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 8: OPTUMA. This sample chart displays the RS EMA on a chart of the S&amp;P 500 index.</p></div>
+<p class="authorTips">&mdash;<a href="mailto:support@optuma.com">support@optuma.com</a><br>
+<a href="https://Optuma.com" target="_parent">Optuma.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradersStudio: May 2022</h3></div>
+<p>The importable TradersStudio files based on Vitali Apirine&rsquo;s January 2022 article, &ldquo;Relative Strength Exponential Moving Averages, Part 1: The RS EMA,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also shown below.</p> 
+<p>Code for the author&rsquo;s indicators is provided in following files:</p> 
+	<ul style="list-style: none;"><li><strong>Function RSEMA:</strong> Computes the RSEMA moving average indicator</li> 
+	<li><strong>Indicator plot RSEMA_IND:</strong> Plots the RSEMA indicator on a chart</li></ul>
+<p>A sample TradersStudio chart is shown in Figure 9.</p>
+<div class="figBorder">
+<img src="images/TT-Tradersstudio.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 9: TRADERSSTUDIO. Shown here is the RSEMA(50,50,10) in red and a EMA(50) in cyan on a chart of Cisco Systems.</p></div>
+<pre>
+'Relative Strength Exponential Moving Average
+'Author: Vitali Apirine, TASC Jan 2022
+'Coded by: Richard Denning, 3/8/2022
+
+Function RSEMA(Periods, Pds, Mltp)
+'Periods = 50, Pds = 50, Mltp = 10
+Dim MLTP1
+Dim Cup As BarArray
+Dim Cdwn As BarArray
+Dim RS As BarArray
+Dim Rate
+Dim RSe As BarArray
+MLTP1 = 2/(Periods + 1)
+Cup = IIF(C&gt;C[1],C-C[1],0)
+Cdwn = IIF(C&lt;C[1],C[1]-C,0)
+RS=Abs(XAverage(Cup,Pds,0)-XAverage(Cdwn,Pds,0))/(XAverage(Cup,Pds,0)+XAverage(Cdwn,Pds,0)+0.00001) 
+RS=RS*Mltp
+Rate=MLTP1*(1+RS)
+RSe = RSe[1] + Rate*(C-RSe[1])
+RSEMA = RSe
+End Function
+'-----------------------------------------------------
+'INDICATOR PLOT
+Sub RSEMA_IND(Periods, Pds, Mltp)
+Dim RSe As BarArray
+RSe = RSEMA(Periods, Pds, Mltp)
+plot1(RSe)
+End Sub
+'------------------------------------------------------
+</pre>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for TradersStudio</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradersStudio: April 2022</h3></div>
+<p>An importable TradersStudio file based on Markos Katsanos&rsquo; article in the April 2022 issue, &ldquo;Stock Market Seasonality,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also available below.</p>
+<p>Code for the Katsanos&rsquo; indicators is provided in following files:</p>
+	<ul style="list-style: none;"><li><strong>HSEASONAL_SYS:</strong> system code for the seasonal buy/sell signals</li> 
+	<li><strong>Function VFI2022:</strong> computes the VFI indicator</li> 
+	<li><strong>Function ATR:</strong> computes the average true range</li>
+	<li><strong>Indicator plot VFI_IND:</strong> plots the VFI indicator on a chart</li></ul>
+<pre>
+'Stock Market Seasonality
+'Author: Markos Katsanos, TASC April 2022
+'Coded by: Richard Denning, 2/12/2022
+
+Sub HSEASONAL_sys(SELLMONTH,VIXUPMAX,CRIT,K)
+'SELLMONTH is 8.
+'VIXUPMAX is 60. 
+'CRIT is -20. !VFI SELL
+'K is 1.5.  !ATR/VIX RATIO
+Dim VIX As BarArray
+Dim vixDN As BarArray
+Dim vixUP As BarArray
+Dim atrDN As BarArray
+Dim atrUP As BarArray
+Dim myATR As BarArray
+Dim theVFI As BarArray
+Dim VOLCONDITION As BarArray
+Dim SELLSEASONAL As BarArray
+Dim SELLVOLATILITY As BarArray
+Dim SELLMF As BarArray
+Dim AvgVFI As BarArray
+Dim myVFI As BarArray
+Dim theCross As BarArray
+Dim AvgVFIdn As BarArray
+Dim Period,Coef,VCoef,SmoPeriods,MA
+
+VIX = C Of independent1
+vixDN=Round((VIX/(HighestBar(VIX,25,1))-1),0)*100
+vixUP=Round((VIX/(LowestBar(VIX,25,1))-1),0)*100
+myATR=ATR(H,L,C,15)
+atrDN=Round((myATR/(HighestBar(myATR,25,1))-1),0)*100
+atrUP=Round((myATR/(LowestBar(myATR,25,1))-1),0)*100
+
+Period=130
+Coef=0.2
+VCoef=2.5
+SmoPeriods=3
+MA=30
+
+theVFI=VFI2022(Period, Coef, VCoef,SmoPeriods, MA)
+VOLCONDITION=IFF((vixUP&lt;VIXUPMAX Or atrUP&lt;K*VIXUPMAX ) And theVFI&gt;CRIT,1,0)
+ 
+If(Month(Date)&gt;=10 Or Month(Date)&lt;SELLMONTH) And (VOLCONDITION[1]=1) Then Buy(&quot;LE&quot;,1,0,Market,Day)
+
+SELLSEASONAL=IFF(Month(Date)=SELLMONTH,1,0) 'SEASONAL Exit
+SELLVOLATILITY=IFF(vixUP&gt;2*VIXUPMAX,1,0) 'VOLATILITY Exit
+AvgVFI=Round(Average(theVFI,10),0)
+theCross=IFF(CRIT&gt;theVFI And CRIT&lt;=theVFI[1],1,0)
+AvgVFIdn=IFF(AvgVFI&lt;AvgVFI[1],1,0)
+SELLMF=IFF(CRIT&gt;theVFI And CRIT&lt;=theVFI[1] And AvgVFI&lt;AvgVFI[1],1,0)
+
+If SELLSEASONAL Then ExitLong(&quot;LXsea&quot;,&quot;&quot;,1,0,Market,Day)
+If SELLVOLATILITY=1 Then ExitLong(&quot;LXvola&quot;,&quot;&quot;,1,0,Market,Day)
+If SELLMF=1 Then ExitLong(&quot;LXmf&quot;,&quot;&quot;,1,0,Market,Day)
+End Sub
+'---------------------------------------------------------------------------------------------------
+Function VFI2022(Period, Coef, VCoef, SmoothingPeriods, theMA)
+   'Period = 130
+    'Coef = .2
+    'VCoef = 2.5
+    'SmoothingPeriods = 3 
+    'MA = 30
+    Dim TP As BarArray
+    Dim Inter As BarArray
+    Dim VInter As BarArray
+    Dim CutOff As BarArray
+    Dim VAve As BarArray
+    Dim VMax As BarArray
+    Dim theVC As BarArray
+    Dim theMF As BarArray
+    Dim DirVol As BarArray
+    Dim myVFI As BarArray
+    Dim SumDV As BarArray
+    
+    TP = (H+L+C)/3
+    If TP &gt; 0 And TP[1] &gt; 0 Then
+        Inter = Log(TP) - Log(TP[1])
+    Else
+        Inter = 0
+    End If
+    VInter = StdDev(Inter,theMA)
+    CutOff = Coef * VInter * C
+    VAve = Average(V,Period)/1000
+    VMax = VAve[1] * VCoef
+    theVC = IIF(V/1000 &lt; VMax , V/1000, VMax)
+    theMF = TP - TP[1]   
+    DirVol = IIF(theMF &gt; CutOff, theVC, IIF(theMF &lt; -CutOff, -theVC, 0))
+   
+    If VAve[1] &lt;&gt; 0 Then
+    Dim PosDV As BarArray
+    Dim NegDV As BarArray
+    Dim SumDVpos As BarArray
+    Dim SumDVneg As BarArray
+    
+        PosDV = IIF(DirVol&gt;0,DirVol,0)
+        NegDV = IIF(DirVol&lt;0,DirVol,0)
+        SumDVpos = summation(PosDV/1000,Period)
+        SumDVneg = summation(NegDV/1000,Period)
+        SumDV = SumDVpos + SumDVneg
+        myVFI =  SumDV / (VAve[1]/1000)
+    Else
+        myVFI = 0
+    End If
+    If SmoothingPeriods &gt; 0 Then
+        myVFI = XAverage(myVFI, SmoothingPeriods)
+    Else
+        myVFI = myVFI
+    End If
+    VFI2022=Round(myVFI,2)
+End Function
+'-----------------------------------------------------------------------------
+' AVERAGE TRUE RANGE
+Function ATR(PriceH As BarArray,PriceL As BarArray,PriceC As BarArray,ATRlen)
+Dim TR As BarArray
+TR  = Max(PriceH - PriceL,Max(Abs(PriceC[1] - PriceL),Abs(PriceC[1]- PriceH)))  
+ATR = Average(TR,ATRlen) 
+End Function
+'-----------------------------------------------------------------------------
+'INDICATOR PLOT
+Sub VFI_IND(Period, Coef, VCoef, SmoothingPeriods, MA)
+Dim theVFI As BarArray
+theVFI = VFI2022(Period, Coef, VCoef, SmoothingPeriods, MA)
+Plot1(theVFI)
+Plot2(0)
+'-------------------------------------------------------------
+End Sub
+</pre>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for TradersStudio</p><!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: May 2022</h3></div>
+<p>In the March 2022 issue, we implemented the volatility-adjusted relative strength moving average, which was part 3 of the article series by Vitali Apirine titled &ldquo;Relative Strength Moving Averages.&rdquo; This time, we will implement the RS EMA based on part 1 of his article series, which appeared in the January 2022 issue.</p> 
+<p>This task is to measure the relative strength of an EMA and use the result for the time period of another EMA. Here is the algorithm from the article, reformulated for clarity:</p>
+
+<pre>RSEMA[0] = Alpha * Price + (1-Alpha) * RSEMA[1]
+</pre>
+
+<p>This is a classical EMA, but with an RSI-dependent alpha factor:</p>
+
+    <pre>Alpha = 2/(TimePeriod+1) * (1 + 10*abs(EMA(Gain)-EMA(Loss))/(EMA(Gain)-EMA(Loss)))
+</pre>
+
+<p>EMA(Loss) is the 10-day EMA of negative returns. The separation into positive and negative returns resembles the RSI. The code converted from MetaStock to C is:</p>
+
+ <pre>
+var RSEMA1(int Periods, int Pds, var Mltp)
+{
+  var Cup = max(RET(1),0), Cdn = max(-RET(1),0);
+  var EMAUp = EMA(Cup,Pds), EMADn = EMA(Cdn,Pds);
+  var RS = abs(EMAUp-EMADn)/(EMAUp+EMADn+0.00001)*Mltp;
+  var Rate = 2./(Periods+1)*(RS+1);
+  return EMA(priceC(),Rate);
+}
+</pre>   
+    
+ <p>Adding 0.00001 to the divisor prevents a crash by division by zero.</p>   
+    
+<p>The RSEMA1(10,10,10) applied to an SPX500 chart in Figure 10 replicates the chart in the article.</p>
+  <div class="figBorder">
+<img src="images/TT-Zorro1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 10: the ZORRO PROJECT. This chart replicates the chart given in the article, &ldquo;Relative Strength Moving Averages, Part 1: The RS EMA,&rdquo; in the January 2022 issue.</p></div>  
+<p>We can see that the 200-day RSEMA (blue) indeed captured the 2015&ndash;2016 corrections. This gives us hope that trading the RSEMA-EMA crossovers could produce a better result than buy &amp; hold. Here is the code for the trading system:</p>    
+    
+ <pre>
+function run()
+{
+  BarPeriod = 1440; 
+  LookBack = 250;
+  StartDate = 2009; 
+  EndDate = 2021;
+  asset(&quot;SPY&quot;);	
+
+  vars RSEMAs = series(RSEMA1(200,200,10));
+  vars EMAs = series(EMA(priceC(),200));
+  if(crossOver(RSEMAs,EMAs)) 
+    enterLong();
+  if(crossUnder(RSEMAs,EMAs)) 
+    exitLong();
+  plotBuyHold(&quot;SPY&quot;,GREY);
+}
+</pre>   
+ 
+<p>The result from trading the RSEMA-EMA crossovers with SPY on leverage 2, blue = RSEMA1 crossover equity curve, gray = benchmark equity curve from SPY buy & hold is shown in Figure 11.</p>    
+    
+ <div class="figBorder">
+<img src="images/TT-Zorro2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 11: the ZORRO PROJECT. This shows the result from trading the RSEMA-EMA crossovers with SPY on leverage 2, blue = RSEMA1 crossover equity curve, gray = benchmark equity curve from SPY buy & hold. 
+</p></div>   
+    
+  <p>Although the buy &amp; hold benchmark generates higher end profit, the RSEMA1 system appears to have smaller drawdowns.</p> 
+<p>The RSEMA1 indicator and the SPY trading system can be downloaded from the 2022 script repository on <a href="https://financial-hacker.com" target="_parent">https://financial-hacker.com</a>. The Zorro software can be downloaded from <a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a>.</p> 
+<p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a></p>  
+    
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item11">
+
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: May 2022</h3></div>
+
+<p>In &ldquo;Relative Strength Moving Averages, Part 1: The RS EMA&rdquo; in the January 2022 issue, author Vitali Apirine walks us through the construction and features of RsEMA, the first of his three approaches to using various relative strength measures toward improving on the basic EMA indicator.</p>
+<p>Apirine notes that RsEMA, like the standard EMA, &ldquo;...is a trend-following, lagging indicator that responds more quickly to price changes&rdquo; than a standard EMA of the same length. So it may be used to identify turning points with a bit less delay. He also notes that &ldquo;in the absence of a strong trend, RsEMA-based strategies can produce lots of whipsaws. So it should be used in conjunction with other indicators to help filter the whipsaw situations.&rdquo;</p>
+<p>Figure 12 replicates the chart in Figure 3 of Apirine&rsquo;s article using Excel. In the user controls area at the left, you may specify the period lengths for two separate EMA calculations and the parameters for two separate RsEMA calculations.</p>
+<div class="figBorder">
+<img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 12: EXCEL. This chart replicates Figure 3 from the article, &ldquo;Relative Strength Moving Averages, Part 1: The RS EMA,&rdquo; in the January 2022 issue.</p></div>
+<p>You select the mix and match of how they are to be displayed on the chart by clicking a combination of buttons in the &ldquo;clutter control&rdquo; area to the right of the chart. The major decision is 1 or 2 (see Figure 13). You will achieve a price chart and then you choose which mix of indicators to display in your chart arrangement.</p>
+<div class="figBorder">
+<img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 13: EXCEL. This chart replicates Figure 5 from the article, &ldquo;Relative Strength Moving Averages, Part 1: The RS EMA,&rdquo; in the January 2022 issue.</p></div>
+<p>Figure 13 replicates the chart in Figure 5 of Apirine&rsquo;s article using Excel.</p>
+<p>On the Notes tab of this spreadsheet, I provide directions for replicating the various charts that Apirine uses in his article.</p>
+    <p><strong><em>To download this spreadsheet:</em></strong> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2022/05/images/code/RsEMA.xlsm">here</a>. To successfully download it, follow these steps:</p>
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2022/05/images/code/RsEMA.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the May 2022 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2022, Technical Analysis, Inc.</p>
+
+</body>
+</html>

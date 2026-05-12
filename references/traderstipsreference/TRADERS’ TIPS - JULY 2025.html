@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: Laguerre Filters by John F. Ehlers. Contributions from: TradeStation; MetaStock; Wealth-Lab.com; NinjaTrader; RealTest; TradingView; Neuroshell Trader; Python; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - JULY 2025</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">July 2025</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2025/07/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John F. Ehlers&rsquo; article in this issue, &ldquo;Laguerre Filters.&rdquo; Here, we present the July 2025 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: July 2025</a></li>
+  <li><a href="#item2">MetaStock: July 2025</a></li>
+  <li><a href="#item3">Wealth-Lab.com: July 2025</a></li>
+  <li><a href="#item4">NinjaTrader: July 2025</a></li>
+  <li><a href="#item5">RealTest: July 2025</a></li>
+  <li><a href="#item6">TradingView: July 2025</a></li>
+  <li><a href="#item7">Neuroshell Trader: July 2025</a></li>
+  <li><a href="#item8">Python: July 2025</a></li>
+  <li><a href="#item9">Microsoft Excel: July 2025</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: July 2025</h3></div>
+ <p>In &ldquo;Laguerre Filters&rdquo; in this issue, John Ehlers presents a trend-trading technique using the Laguerre filter. Since Laguerre filters excel at smoothing long-wavelength components in a data set, this makes them particularly well-suited for identifying trading trends.</p>
+	<pre>Function: Laguerre Filter
+{
+	TASC JUL 2025
+	Laguerre Filter
+	(C) 2002-2025 John F. Ehlers
+}
+
+inputs:
+	Gama( .8 ),
+	Length( 40 );
+
+variables:
+	L0( 0 ),
+	L1( 0 ),
+	L2( 0 ),
+	L3( 0 ),
+	L4( 0 ),
+	Laguerre( 0 );
+	
+L0 = $UltimateSmoother(Close, Length);
+L1 = -Gama * L0[1] + L0[1] + Gama * L1[1];
+L2 = -Gama * L1[1] + L1[1] + Gama * L2[1];
+L3 = -Gama * L2[1] + L2[1] + Gama * L3[1];
+L4 = -Gama * L3[1] + L3[1] + Gama * L4[1];
+
+Laguerre = (L0 + 4*L1 + 6*L2 + 4*L3 + L4) / 16;
+
+
+Plot1( Laguerre );
+Plot2( L0 );
+
+
+Indicator: Laguerre Oscillator
+{
+	TASC JUL 2025
+	Laguerre Oscillator
+	(C) 2002-2025 John F. Ehlers
+}
+
+inputs:
+	Gama( .5 ),
+	Length( 30 );
+
+variables:
+	L0( 0 ),
+	L1( 0 ),
+	RMS( 0 ),
+	LaguerreOsc( 0 );
+
+L0 = $UltimateSmoother(Close, Length);
+L1 = -Gama * L0 + L0[1] + Gama * L1[1];
+RMS = $RMS(L0 - L1, 100);
+
+if RMS &lt;&gt; 0 then 
+	LaguerreOsc = (L0 - L1) / RMS;
+	
+Plot1( LaguerreOsc, &quot;Laguerre Osc&quot; );
+Plot2( 0, &quot;Zero Line&quot; );
+
+Function: $RMS
+{
+	RMS Function
+	(C) 2015-2025 John F. Ehlers
+}
+
+inputs:
+	Price( numericseries ),
+	Length( numericsimple );
+
+variables:
+	SumSq( 0 ),
+	count( 0 );
+
+SumSq = 0;
+
+for count = 0 to Length - 1 
+begin
+	SumSq = SumSq + Price[count] * Price[count];
+end;
+
+If SumSq &lt;&gt; 0 then 
+	$RMS = SquareRoot(SumSq / Length);
+
+Function: $SuperSmoother
+{
+	UltimateSmoother Function
+	(C) 2004-2025 John F. Ehlers
+}
+
+inputs:
+	Price( numericseries ),
+	Period( numericsimple );
+	
+variables:
+	a1( 0 ),
+	b1( 0 ),
+	c1( 0 ),
+	c2( 0 ),
+	c3( 0 ),
+	US( 0 );
+	
+a1 = ExpValue(-1.414*3.14159 / Period);
+b1 = 2 * a1 * Cosine(1.414*180 / Period);
+c2 = b1;
+c3 = -a1 * a1;
+c1 = (1 + c2 - c3) / 4;
+
+if CurrentBar &gt;= 4 then 
+ US = (1 - c1)*Price + (2 * c1 - c2) * Price[1] 
+ - (c1 + c3) * Price[2] + c2*US[1] + c3 * US[2];
+ 
+if CurrentBar &lt; 4 then 
+	US = Price;
+
+$UltimateSmoother = US;
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This demonstrates a daily chart of SPY showing a portion of 2024 and 2025 with the indicators applied.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="http://www.TradeStation.com" target="_blank">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Metastock.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">MetaStock: July 2025</h3></div>
+ <p>John Ehlers&rsquo; article in this issue, &ldquo;Laguerre Filters,&rdquo; introduces two indicators, the Laguerre filter and Laguerre oscillator. Here are the formulas to add those indicators to MetaStock.</p>
+	<pre>THE LAGUERRE FILTER
+
+{Laguerre Filter}
+{by John Ehlers}
+gama:= 0.8;
+len:= 40;
+
+{Ultimate Smoother}
+a1:= exp(-1.414*3.14159 / len);
+b1:= 2*a1*Cos(1.414*180 / len);{c2}
+c1:= -a1*a1; {c3}
+x1:= (1 + b1 - c1) / 4; {c1}
+L0:= (1-x1)*Close + (2*x1-b1)*Ref(Close,-1) -
+ (x1+c1)*Ref(Close,-2) + b1*Prev + c1*Ref(prev,-1);
+
+{Laguerre calculation}
+L1:= -gama*Ref(L0,-1) + Ref(L0,-1) + gama*Prev;
+L2:= -gama*Ref(L1,-1) + Ref(L1,-1) + gama*Prev;
+L3:= -gama*Ref(L2,-1) + Ref(L2,-1) + gama*Prev;
+L4:= -gama*Ref(L3,-1) + Ref(L3,-1) + gama*Prev;
+ 
+Laguerre:= (L0 + 4*L1 + 6*L2 + 4*L3 + L4)/16;
+ 
+if(BarsSince(cum(1)&gt;=len+5)=0, Laguerre, C);
+if(BarsSince(cum(1)&gt;=len+5)=0, L0, C)
+ 
+
+
+THE LAGUERRE OSCILLATOR
+
+{Laguerre Oscillator}
+{by John Ehlers}
+gama:= 0.5;
+len:= 30;
+ 
+{Ultimate Smoother}
+a1:= exp(-1.414*3.14159 / len);
+b1:= 2*a1*Cos(1.414*180 / len);{c2}
+c1:= -a1*a1; {c3}
+x1:= (1 + b1 - c1) / 4; {c1}
+L0:= (1-x1)*Close + (2*x1-b1)*Ref(Close,-1) -
+ (x1+c1)*Ref(Close,-2) + b1*Prev + c1*Ref(prev,-1);
+ 
+L1:= -gama* Ref(L0,-1) + Ref(L0,-1) + gama*Prev;
+diff:= L0 - L1;
+ 
+{RMS of diff}
+RMS:= SQRT(Sum(diff * diff, 100) / 100);
+ 
+{divide by zero trap}
+denom:= if(RMS = 0, -1, RMS);
+LaguerreOsc:= If(denom = -1, 0, diff/denom);
+ 
+LaguerreOsc;
+0
+</pre>
+<p class="authorTips">&mdash;William Golson<br>
+MetaStock Technical Support<br>
+<a href="http://MetaStock.com" target="_blank">MetaStock.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: July 2025</h3></div>
+ <p>You&rsquo;ll find the Laguerre indicator and the LaguerreOsc indicator in WealthLab&rsquo;s TASC Indicator library to drag and drop into charts or block strategies.</p>
+<p>As suggested at the end of John Ehlers&rsquo; article in this issue, &ldquo;Laguerre Filters,&rdquo; a (long-only) <em>UltimateSmoother/Laguerre</em> crossover strategy is somewhat profitable, even without optimizing. However, we goosed the profit significantly in the backtest period by entering <em>long before a crossover</em> when <em>LaguerreOsc</em> turns up from between -2 and -3 standard deviations. This entry required adding a stop-loss, which we fixed at -3%. The first two entries in Figure 2 are examples of how timely this bonus signal can be!</p>
+	<pre>using WealthLab.TASC;
+using System;
+using WealthLab.Backtest;
+using WealthLab.Core;
+using WealthLab.Indicators;
+
+namespace WealthScript
+{
+    public class LaguerreX : UserStrategyBase
+    {
+        public LaguerreX()
+        {
+            _period = AddParameter(&quot;Period&quot;, ParameterType.Int32, 60, 20, 80, 10);
+            _gamma = AddParameter(&quot;Gamma&quot;, ParameterType.Double, 0.2, 0.1, 0.5, 0.1);
+        }
+
+        public override void Initialize(BarHistory bars)
+        {
+            PlotStopsAndLimits(3);
+            _laguerre = new Laguerre(bars.Close, _period.AsInt, _gamma.AsDouble);
+            _ultsmooth = new UltimateSmoother(bars.Close, _period.AsInt);
+            _lagOsc = new LaguerreOsc(bars.Close, _period.AsInt, _gamma.AsDouble);
+
+            PlotIndicatorLine(_laguerre, WLColor.Aqua);
+            PlotIndicatorLine(_ultsmooth, WLColor.Red);
+            PlotIndicatorLine(_lagOsc, WLColor.Gold);
+            DrawHorzLine(-2, WLColor.White, 2, LineStyle.Dashed, _lagOsc.PaneTag);
+            StartIndex = Math.Max(100, _period.AsInt);
+        }
+
+        public override void Execute(BarHistory bars, int idx)
+        {
+            if (!HasOpenPosition(bars, PositionType.Long))
+            {
+                if (_ultsmooth.CrossesOver(_laguerre, idx))
+                    PlaceTrade(bars, TransactionType.Buy, OrderType.Market, 0, 1);
+                if (_lagOsc.TurnsUp(idx) &amp;&amp; _lagOsc[idx - 1] &lt; -2 &amp;&amp; _lagOsc[idx - 1] &gt; -3)
+                    PlaceTrade(bars, TransactionType.Buy, OrderType.Market, 0, 2);
+            }
+            else
+            {
+                Position p = LastPosition;
+                ClosePosition(p, OrderType.Stop, p.EntryPrice * 0.97, &quot;SL&quot;);
+                if (_ultsmooth.CrossesUnder(_laguerre, idx))
+                    ClosePosition(p, OrderType.Market, 0, &quot;XU&quot;);
+            }
+        }
+
+        Parameter _period;
+        Parameter _gamma;
+        IndicatorBase _laguerre;
+        IndicatorBase _ultsmooth;
+        IndicatorBase _lagOsc;
+    }
+}</pre>
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: WEALTH-LAB. This demonstrates using the Laguerre oscillator and smoothing filter on a daily chart of the emini S&amp;P 500 contract. In this example you see the modified crossover strategy with two entries triggered by LaguerreOsc.</p></div>
+<p class="authorTips">&mdash;Robert Sucher<br>
+Wealth-Lab team<br>
+<a href="http://www.wealth-lab.com" target="_blank">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: July 2025</h3></div>
+<p>In his article &ldquo;Laguerre Filters&rdquo; in this issue, John Ehlers presents two indicators, the Laguerre filter and the Laguerre oscillator. The indicators are available for download at the following link for NinjaTrader 8:</p> 
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://ninjatrader.com/SC/July2025SCNT8.zip" target="_blank">ninjatrader.com/SC/July2025SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicators into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the file.</p>
+<p>A sample chart is shown in Figure 3.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: NINJATRADER. The indicators are demonstrated on a daily chart of ES.</p></div>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">&mdash;Eduardo<br>
+NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_blank">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Realtest.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">RealTest: July 2025</h3></div>
+<p>Provided here is a RealTest script for the RealTest platform to implement the indicators described in John Ehlers&rsquo; article in this issue, &ldquo;Laguerre Filters.&rdquo;</p> 
+<p>Figure 4 demonstrates the Laguerre filter on a daily chart of the emini S&amp;P 500 continuous futures contract (ES). Figure 5 demonstrates the Laguerre oscillator on a daily chart of ES. </p>
+<div class="figBorder">
+<img src="images/TT-Realtest1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: REALTEST. Here you see an example of the Laguerre filter applied to a daily chart of the emini S&amp;P 500 continuous futures contract (ES).</p></div>
+<div class="figBorder">
+<img src="images/TT-Realtest2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: REALTEST. This demonstrates the Laguerre oscillator on a daily chart of ES.</p></div>
+	<pre>Notes:
+	John Ehlers &quot;Laguerre Filters&quot;, TASC July 2025.
+	Implements and plots the indicators as in the article.
+	
+Import:
+	DataSource:	Norgate
+	IncludeList:	&amp;ES
+	StartDate:	2023-02-01
+	EndDate:	Latest
+	SaveAs:	es.rtd
+	
+Settings:
+	DataFile:	es.rtd
+	BarSize:	Daily
+
+Parameters:
+	gama:	0.8 
+	len:	20
+	RMSlen:	100
+	
+Data:
+	
+// Common constants
+	
+	decay_factor:	-1.414 * 3.14159
+	phase_angle:	1.414 * 180
+	two_pi:	6.28
+	
+	// Ultimate Smoother of Close
+	
+	a1:	exp(decay_factor / len)
+	b1:	2 * a1 * Cosine(phase_angle / len)
+	c2:	b1
+	c3:	-a1 * a1
+	c1:	(1 + c2 - c3) / 4
+	USC:	if(BarNum &gt;= 4, (1 - c1) * Close + (2 * c1 - c2) 		* Close[1] - (c1 + c3) * Close[2] + c2 * USC[1] + c3 * 		USC[2], Close)
+	
+	// Laguerre Filter of USC
+	
+	L1:	-gama * USC[1] + USC[1] + 										gama*nonan(L1[1])
+	L2:	-gama * L1[1] + L1[1] + gama*nonan(L2[1])
+	L3:	-gama * L2[1] + L2[1] + gama*nonan(L3[1])
+	L4:	-gama * L3[1] + L3[1] + gama*nonan(L4[1])
+	Laguerre:	(USC + 4 * L1 + 6 * L2 + 4 * L3 + L4) / 16
+	
+	// Laguerre Oscillator
+	
+	LUSC:	-gama * USC + USC[1] + gama * 						nonan(LUSC[1])
+	RMS:	Sqr(SumSQ(USC - LUSC, RMSlen) / RMSlen)
+	LaguerreOsc:	(USC - LUSC) / RMS
+	
+
+Charts:
+
+//	USC:	USC 
+
+//	Laguerre:	Laguerre 
+	LaguerreOsc:	LaguerreOsc {|}
+</pre>
+<p class="authorTips">&mdash;Marsten Parker<br>
+MHP Trading<br>
+<a href="mailto:mhp@mhptrading.com">mhp@mhptrading.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: July 2025</h3></div>
+ <p>The TradingView Pine Script code presented here implements the Laguerre filter discussed by John Ehlers in his article in this issue, &ldquo;Laguerre Filters.&rdquo;</p>
+	<pre>//  TASC Issue: July 2025
+//     Article: A Tool For Trend Trading
+//              Laguerre Filters
+//  Article By: John F. Ehlers
+//    Language: TradingView's Pine Script® v6
+// Provided By: PineCoders, for tradingview.com
+
+//&#64;version=6
+indicator(&quot;TASC 2025.07 Laguerre Filters&quot;, &quot;&quot;, false)
+
+//#region   Inputs:
+
+// &#64;variable The Source series to process. 
+float src = input.source(close, 'Source:')
+// &#64;variable Weigth - Gamma. 
+float gamma = input.float(0.5, 'Gamma:')
+// &#64;variable The UltimateSmoother filter period. 
+int length1 = input.int(30, 'L1:')
+// &#64;variable The number of bars in the RMS calculation.
+int length2 = input.int(100, 'L2:')
+
+//#endregion
+//#region   Functions:
+
+//  from:
+//  TASC Issue: April 2024, Article: The Ultimate Smoother
+//
+// &#64;function      The UltimateSmoother is a filter created
+//                by subtracting the response of a high-pass 
+//                filter from that of an all-pass filter.
+// &#64;param src     Source series.
+// &#64;param period  The length of the filter's critical period.
+// &#64;returns       Smoothed series.
+UltimateSmoother (float src, int period) =&gt;
+    float a1 = math.exp(-1.414 * math.pi / period)
+    float c2 = 2.0 * a1 * math.cos(1.414 * math.pi / period)
+    float c3 = -a1 * a1
+    float c1 = (1.0 + c2 - c3) / 4.0
+    float us = src
+    if bar_index &gt;= 4
+        us := (1.0 - c1) * src + 
+              (2.0 * c1 - c2) * src[1] - 
+              (c1 + c3) * src[2] + 
+              c2 * nz(us[1]) + c3 * nz(us[2])
+    us
+
+// &#64;function Laguerre Filter
+// &#64;param src     Source series, default=`close`.
+// &#64;param gamma   Weigth used in LF calculation, default=0.8.
+// &#64;param length  Period used in UltimateSmoother, default=40.
+// &#64;returns       Laguerre Filter used on chart.
+LF (float src=close, float gamma=0.8, int length=40) =&gt;
+    float L0 = UltimateSmoother(src, length)
+    float L1 = 0.0 , float L2 = 0.0 , float L3 = 0.0
+    float L4 = 0.0 , float L5 = 0.0
+    L1 := -gamma * nz(L0[1]) + nz(L0[1]) + gamma * nz(L1[1]) 
+    L2 := -gamma * nz(L1[1]) + nz(L1[1]) + gamma * nz(L2[1]) 
+    L3 := -gamma * nz(L2[1]) + nz(L2[1]) + gamma * nz(L3[1]) 
+    L4 := -gamma * nz(L3[1]) + nz(L3[1]) + gamma * nz(L4[1]) 
+    L5 := -gamma * nz(L4[1]) + nz(L4[1]) + gamma * nz(L5[1])
+    float LF = nz(L0 + 4 * L1 + 6 * L2 + 4 * L3 + L5) / 16
+
+// &#64;function         Calculates the root mean square (RMS) of a series.
+// &#64;param Source     The series of values to process.
+// &#64;param Length     The number of bars in the calculation.
+// &#64;returns          The RMS of the `Source` values over `Length` bars.
+RMS (float Source, int Length) =&gt;
+    math.sqrt(ta.sma(Source * Source, Length))
+
+// &#64;function Laguerre Oscillator
+// &#64;param src     Source series, default=`close`.
+// &#64;param gamma   Weigth used in LO calculation, default=0.5.
+// &#64;param length1 Period used in UltimateSmoother, default=30.
+// &#64;param length2 Period used in RMS, default=100.
+// &#64;returns       Laguerre Oscillator used on a separate pane.
+LO (float src=close
+  , float gamma=0.5
+  , int length1=30
+  , int length2=100) =&gt;
+    float L0 = UltimateSmoother(src, length1)
+    float L1 = 0.0
+    L1 := -gamma * L0 + nz(L0[1]) + gamma * nz(L1[1])
+    float RMS = RMS(L0 - L1, length2)
+    float LO = na
+    if RMS != 0
+        LO := (L0 - L1) / RMS
+    LO
+
+//#endregion
+//#region   Laguerre Filter/Oscillator:
+
+float lf = LF(src, gamma, length1)
+float lo = LO(src, gamma, length1, length2)
+
+plot(lf
+  , 'Laguerre Filter'
+  , force_overlay=true
+  , linewidth=2)
+plot(lo
+  , 'Laguerre Oscillator'
+  , color=#f23645
+  , linewidth=2)
+hline(0
+  , &quot;Zero-line&quot;
+  , chart.fg_color)
+
+//#endregion</pre>
+<p>The indicator is available on TradingView from the PineCodersTASC account: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart is shown in Figure 6.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: TRADINGVIEW. Here you an example of the Laguerre filter on a daily chart of the S&amp;P 500 index.</p></div>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="http://www.TradingView.com" target="_blank">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: July 2025</h3></div>
+ <p>The Laguerre filter and oscillator introduced in &ldquo;Laguerre Filters&rdquo; this issue by John Ehlers can be easily implemented in NeuroShell Trader using NeuroShell Trader&rsquo;s ability to call external dynamic linked libraries. Dynamic linked libraries can be written in C, C++ and Power Basic.</p>
+<p>After moving the code given in the article to your preferred compiler and creating a DLL, you can insert the resulting indicator(s) as follows:</p>
+<ol><li>Select &ldquo;New Indicator&rdquo; from the <em>insert</em> menu.</li>
+<li>Choose the <strong>External Program &amp; Library Calls</strong> category.</li>
+<li>Select the appropriate <strong>External DLL Call</strong> indicator.</li>
+<li>Setup the parameters to match your DLL.</li>
+<li>Select the <em>finished</em> button.</li></ol>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: NEUROSHELL TRADER. This NeuroShell Trader chart demonstrates the Laguerre filter and Laguerre oscillator on a daily chart of the emini S&amp;P 500 (ES).</p></div>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_blank">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Python: July 2025</h3></div>
+ <p>Here we present Python code to implement concepts in John Ehlers&rsquo; article in this issue, &ldquo;Laguerre Filters.&rdquo; The code implements the Laguerre filter, the Laguerre oscillator, and the UltimateSmoother. The indicators are plotted using the MatplotLib and MplFinance Python packages.</p>
+	<pre># import required python libraries
+%matplotlib inline
+
+import pandas as pd
+import numpy as np
+import yfinance as yf
+import math
+import datetime as dt
+import matplotlib.pyplot as plt
+import mplfinance as mpf
+
+print(yf.__version__)
+
+
+# Use Yahoo Finance python package to obtain OHLCV data 
+symbol = '^GSPC'
+symbol = 'SPY'
+ohlcv = yf.download(symbol, start=&quot;1995-01-01&quot;, end=&quot;2025-04-18&quot;, group_by=&quot;Ticker&quot;, auto_adjust=True)
+ohlcv = ohlcv[symbol]
+
+
+# Python code building block/routines used to implement the Laguerre filter, 
+# the Laguerre oscillator, and the UltimateSmoother as defined by John Ehlers
+# in his article. 
+
+def calc_ultimate_smoother(price, period):
+    
+    a1 = np.exp(-1.414 * np.pi / period)
+    b1 = 2*a1*np.cos(math.radians(1.414 * 180 / period))
+    c2 = b1
+    c3 = -a1 * a1
+    c1 = (1 + c2 - c3)/4
+
+    us_values = []
+
+    for i in range(len(price)):
+        if i &gt;= 4:
+            us_values.append(
+                (1-c1)*price[i] + (2*c1 - c2)*price[i-1] - (c1 + c3)*price[i-2] + c2*us_values[i-1] + c3*us_values[i-2]
+            )
+        else:
+            us_values.append(price[i]) 
+
+    return us_values
+
+
+def calc_rms(price):
+    
+    length = len(price)
+    sum_sq = 0
+    for count in range(length):
+        sum_sq += price[count] * price[count]
+    return np.sqrt(sum_sq / length)
+
+
+def laguerre_filter(prices, length=40, gama=0.8):
+    prices = pd.Series(prices)
+    
+    # Apply the Ultimate Smoother to get L0
+    L0 = calc_ultimate_smoother(prices, length)
+    
+    # Initialize lagged values
+    L1 = pd.Series(np.zeros_like(prices), index=prices.index)
+    L2 = pd.Series(np.zeros_like(prices), index=prices.index)
+    L3 = pd.Series(np.zeros_like(prices), index=prices.index)
+    L4 = pd.Series(np.zeros_like(prices), index=prices.index)
+    L5 = pd.Series(np.zeros_like(prices), index=prices.index)
+    Laguerre = pd.Series(np.zeros_like(prices), index=prices.index)
+        
+    for i in range(1, len(prices)):
+        L1[i] = -gama * L0[i-1] + L0[i-1] + gama * L1[i-1]
+        L2[i] = -gama * L1[i-1] + L1[i-1] + gama * L2[i-1]
+        L3[i] = -gama * L2[i-1] + L2[i-1] + gama * L3[i-1]
+        L4[i] = -gama * L3[i-1] + L3[i-1] + gama * L4[i-1]
+        L5[i] = -gama * L4[i-1] + L4[i-1] + gama * L5[i-1]
+        Laguerre[i] = (L0[i] + 4 * L1[i] + 6 * L2[i] + 4 * L3[i] + L5[i]) / 16
+
+    return Laguerre
+
+def laguerre_oscillator(prices, length=40, gama=0.8):
+    prices = pd.Series(prices)
+    
+    # Apply the Ultimate Smoother to get L0
+    L0 = calc_ultimate_smoother(prices, length)
+    
+    # Initialize lagged values
+    if 1:
+        L1 = pd.Series(np.zeros_like(prices), index=prices.index)
+        LaguerreOsc = pd.Series(np.zeros_like(prices), index=prices.index)
+    else:
+        L1 =[0] * len(prices)
+        LaguerreOsc = [0] * len(prices)
+        
+    for i in range(1, len(prices)):
+        L1[i] = -gama * L0[i] + L0[i-1] + gama * L1[i-1]
+    
+    rms = L1.rolling(100).apply(calc_rms)
+    LaguerreOsc = (L0 - L1)/rms
+    
+    return LaguerreOsc
+
+
+def simple_plot1(df):
+    
+    cols = ['Close', 'US', 'Laguerre']
+    ax = df[cols].plot(marker='.', grid=True, figsize=(9,6), title=f'Laguerre Filter vs UltimateSmoother, Ticker={symbol}')
+    ax.set_xlabel('')
+
+# Below is example usage to run the Laguerre filter and the UltimateSmoother 
+# indicator calculations using the length and gamma suggested in John Ehlers' article
+# with a simple plot presenting price overlaid with indicators.
+
+length = 30
+gama = 0.8
+
+df = ohlcv.copy()
+df['US'] = calc_ultimate_smoother(df['Close'], period=length)
+df['Laguerre'] = laguerre_filter(df['Close'], length=length, gama=gama)
+simple_plot1(df['2024-03':'2025-02-10'])
+
+# Example usage to run the Laguerre Filter, Laguerre Oscillator, and 
+# UltimateSmoother indicator calculations using the length and gamma 
+# suggested in the article.
+# 
+# The plot is created using MatplotLib and MplFinance python packages. 
+# This plot presents all indicators on a single plot. Crossovers of the 
+# Laguerre Filter and UltimateSmoother are overlaid on the price candles.
+# The Laguerre Oscillator is plotted as a 2nd subplot.
+
+df = ohlcv.copy()
+df['US'] = calc_ultimate_smoother(df['Close'], period=40)
+df['Laguerre'] = laguerre_filter(df['Close'], length=40, gama=0.2)
+df['LaguerreOsc'] = 100/3*laguerre_oscillator(df['Close'], 20, 0.8)
+df
+mpf_plot1(df['2024-03':'2025-02-10']) </pre>
+<p>Figure 8 shows an example of the Laguerre filter and the UltimateSmoother overlaid on a chart of the S&amp;P 500 index (GSPC). The indicator calculations used here are based on the length and gamma suggested in John Ehlers&rsquo; article in this issue.</p>
+<div class="figBorder">
+<img src="images/TT-Python1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: PYTHON. This shows an example of both the Laguerre filter and the UltimateSmoother, for comparison, overlaid on a chart of the S&amp;P 500 stock index (GSPC). The indicator calculations used here are based on the length and gamma suggested in John Ehlers&rsquo; article in this issue.</p></div>
+<p>Figure 9 shows an example of the Laguerre oscillator applied to a chart of the S&amp;P 500 index. The Laguerre oscillator is plotted in the subplot. In the main pane, crossovers of the Laguerre filter and the UltimateSmoother are overlaid on the price candles.</p>
+	<div class="figBorder">
+<img src="images/TT-Python2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: PYTHON. This shows an example of the Laguerre oscillator applied to a chart of the S&amp;P 500 index in the subplot. In the main pane, crossovers of the Laguerre filter and the UltimateSmoother are overlaid on price candles. </p></div>
+<p class="authorTips">&mdash;Rajeev Jain<br>
+<a href="mailto:jainraje@yahoo.com">jainraje@yahoo.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: July 2025</h3></div>
+<p>In his article in this issue, &ldquo;Laguerre Filters,&rdquo; John Ehlers makes a simple adjustment to the Laguerre calculation by applying his UltimateSmoother as the first layer of the calculation. Then he compares the resulting Laguerre filter with the UltimateSmoother (see Figure 10). That chart in his article shows the Laguerre filter to be the better trend follower.</p> 
+<div class="figBorder">
+<img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 10: EXCEL. Here you see the Laguerre filter and the UltimateSmoother plotted on a chart of the emini S&amp;P 500 index futures contract (ES) for comparison. The Laguerre filter appears to be a better trend-follower.</p></div>
+<p>In his article, Ehlers proceeds to demonstrate the effectiveness of pairing two Laguerre filters with slightly different specifications to generate trend-following signals. (See Figure 11.)</p>
+<div class="figBorder">
+<img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 11: EXCEL. Here is a demonstration of two Laguerre filters, each with different length and gamma specs, used to generate trend-following signals. </p></div>
+<p>As a last option, Ehlers shows how to turn parts of the Laguerre calculation into a trend-following oscillator, where values above zero generally correspond to upward movement and values below zero to downward movement. (See Figure 12.)</p>
+<div class="figBorder">
+<img src="images/TT-Excel3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 12: EXCEL. Here is a demonstration of the Laguerre oscillator, a low-lag trend indicator, applied to a chart of ES. Values above zero generally correspond to upward movement and values below zero generally correspond to downward movement.</p></div>
+<p><strong><em>To download this spreadsheet:</em></strong> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="http://www.traders.com/Documentation/FEEDbk_docs/2025/07/images/code/LaguerreFilterAndOscillator.xlsm">here</a>. To successfully download it, follow these steps:</p>
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2025/07/images/code/LaguerreFilterAndOscillator.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the July 2025 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+All rights reserved. &copy;&nbsp;Copyright&nbsp;2025, Technical Analysis, Inc.</p>
+
+</body>
+</html>

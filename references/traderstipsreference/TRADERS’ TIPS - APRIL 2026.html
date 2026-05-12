@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: A Synthetic Oscillator by John F. Ehlers. Contributions from: TradeStation; Wealth-Lab.com; NinjaTrader; RealTest; TradingView; NeuroShell Trader; Python.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - APRIL 2026</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">April 2026</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2026/04/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John F. Ehlers&rsquo; article in this issue, &ldquo;A Synthetic Oscillator.&rdquo; Here, we present the April 2026 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: April 2026</a></li>
+  <li><a href="#item2">Wealth-Lab.com: April 2026</a></li>
+  <li><a href="#item3">NinjaTrader: April 2026</a></li>
+  <li><a href="#item4">RealTest: April 2026</a></li>
+  <li><a href="#item5">TradingView: April 2026</a></li>
+  <li><a href="#item6">NeuroShell Trader: April 2026</a></li>
+  <li><a href="#item7">Python: April 2026</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation2026.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: April 2026</h3></div>
+ <p>In &ldquo;A Synthetic Oscillator&rdquo; in this issue, John Ehlers introduces a nonlinear oscillator designed to reduce lag while maintaining smooth, responsive trading signals. The indicator adapts to changing market conditions by measuring the instantaneous dominant cycle and generating signals through a phase-based sine waveform.</p>
+<p>EasyLanguage code for the indicator is shown here and a sample chart plotting the indicator is shown in Figure 1.</p>
+<pre>
+Function: $HighPass
+
+{
+	$HighPass Function
+ 	(C) 2004-2024 John F. Ehlers
+}
+
+inputs:
+	Price(numericseries),
+	Period(numericsimple);
+	
+variables:
+	a1( 0 ),
+	b1( 0 ),
+	c1( 0 ),
+	c2( 0 ),
+	c3( 0 );
+
+a1 = ExpValue(-1.414 * 3.14159 / Period);
+b1 = 2 * a1 * Cosine(1.414 * 180 / Period);
+c2 = b1;
+c3 = -a1 * a1;
+c1 = (1 + c2 - c3) / 4;
+
+if CurrentBar &gt;= 4 then 
+ 	$HighPass = c1*(Price - 2 * Price[1] + Price[2]) +
+	 c2 * $HighPass[1] + c3 * $HighPass[2];
+if Currentbar &lt; 4 then 
+	$HighPass = 0;
+
+
+Function: $RMS
+
+{
+ $RMS Function
+ (C) 2025 John F. Ehlers
+}
+
+inputs:
+	Price( numericseries ),
+	Length( numericsimple );
+
+variable:
+	SumSq( 0 ),
+	Count( 0 );
+
+SumSq = 0;
+
+for Count = 0 to Length - 1
+begin
+	SumSq = SumSq + Price[count]*Price[count];
+end;
+
+if SumSq &lt;&gt; 0 then 
+	$RMS = SquareRoot(SumSq / Length);
+
+
+Function: $SuperSmoother
+
+{
+	$SuperSmoother Function
+	(C) 2025 John F. Ehlers
+}
+inputs:
+	Price( numericseries ),
+	Period( numericsimple );
+
+variables:
+	A0( 0 ),
+	Q( 0 ),
+	C1( 0 ),
+	C2( 0 );
+	
+Q = ExpValue( -1.414*3.14159 / Period );
+C1 = 2 * Q * Cosine(1.414*180 / Period);
+C2 = Q*Q;
+A0 = (1 - c1 + c2) / 2;
+
+if CurrentBar &gt;= 4 Then $SuperSmoother = A0*( Price +
+ Price[1]) + C1 * $SuperSmoother[1] - C2 * $SuperSmoother[2];
+
+if Currentbar &lt; 4 then 
+	$SuperSmoother = Price;
+
+
+Function: $Hann
+
+{
+	$Hann Windowed Lowpass FIR Filter Function
+	(c) 2025 John F. Ehlers
+}
+inputs:
+	Price( numericseries ),
+	Length( numericsimple );
+
+variables:
+	count(0),
+	coef(0),
+	Filt(0);
+	Filt = 0;
+	coef = 0;
+
+for count = 1 to Length 
+begin
+	Filt = Filt + (1 - Cosine(360*count / (Length +
+	 1)))*Price[count - 1];
+	coef = coef + (1 - Cosine(360*count / (Length + 1)));
+end;
+
+if coef &lt;&gt; 0 then 
+	$Hann = Filt / coef;
+
+
+Function $UltimateSmoother
+
+{
+	UltimateSmoother Function
+	(C) 2004-2024 John F. Ehlers
+}
+
+inputs:
+	Price( numericseries ),
+	Period( numericsimple );
+	
+variables:
+	a1( 0 ),
+	b1( 0 ),
+	c1( 0 ),
+	c2( 0 ),
+	c3( 0 ),
+	US( 0 );
+	
+a1 = ExpValue(-1.414*3.14159 / Period);
+b1 = 2 * a1 * Cosine(1.414*180 / Period);
+c2 = b1;
+c3 = -a1 * a1;
+c1 = (1 + c2 - c3) / 4;
+
+if CurrentBar &gt;= 4 then 
+ US = (1 - c1)*Price + (2 * c1 - c2) * Price[1] 
+ - (c1 + c3) * Price[2] + c2*US[1] + c3 * US[2];
+ 
+if CurrentBar &lt; 4 then 
+	US = Price;
+
+$UltimateSmoother = US;
+
+
+Indicator: Synthetic Oscillator
+
+{
+	TASC APR 2026
+	Synthetic Oscillator Indicator
+	(C) 2025 John F. Ehlers
+}
+
+inputs:
+	LowerBound( 15 ),
+	UpperBound( 25 ),
+	Length( 4 );
+
+variables:
+	Price( 0 ),
+	HP( 0 ),
+	LP( 0 ),
+	RMS( 0 ),
+	Real( 0 ),
+	ROC( 0 ),
+	QRMS( 0 ),
+	Imag( 0 ),
+	Denom( 0 ),
+	DC( 0 ),
+	Count( 0 ),
+	Mid( 0 ),
+	HP2( 0 ),
+	BP( 0 ),
+	Phase( 0 ),
+	Synth( 0 ),
+	Synth2( 0 ),
+	ROC2( 0 );
+
+Price = $Hann( Close, 12 );
+
+{ Real component is bandpass filtered and normalized }
+HP = $HighPass( Price, UpperBound );
+LP = $SuperSmoother( HP, LowerBound );
+
+RMS = $RMS( LP, 100 );
+if RMS &lt;&gt; 0 then
+	Real = LP / RMS;
+
+{ Imaginary component is rate of change normalized }
+ROC = Real - Real[ 1 ];
+
+QRMS = $RMS( ROC, 100 );
+if QRMS &lt;&gt; 0 then
+	Imag = ROC / QRMS;
+
+{ Solve rate of change of arctangent }
+Denom = ( ( Real - Real[ 1 ] ) * Imag ) 
+ - ( ( Imag - Imag[ 1 ] ) * Real );
+ 
+if Denom &lt;&gt; 0 then
+	DC = 6.28 * ( ( Real * Real ) 
+	 + ( Imag * Imag ) ) / Denom;
+
+{ Limit range of measured values }
+if DC &lt; LowerBound then
+	DC = LowerBound;
+
+if DC &gt; UpperBound then
+	DC = UpperBound;
+
+Mid = SquareRoot( LowerBound * UpperBound );
+
+{ Create a bandpass filter at the average dominant cycle period }
+HP2 = $HighPass( Close, Mid );
+BP  = $UltimateSmoother( HP2, Mid );
+
+{ Cumulate phase and force reset at 0 and 180 degrees }
+Phase = Phase + ( 360 / DC );
+
+if BP crosses over 0 then
+	Phase = 180 / DC;
+
+if BP crosses under 0 then
+	Phase = 180 + ( 180 / DC );
+
+{ Synthetic oscillator is the sine of the cumulative phase angle }
+Synth = Sine( Phase );
+
+{ Remove reset glitch if continuity falls in the same quadrant }
+if Phase &gt; 0 and Phase &lt; 90 and Synth &lt; Synth[ 1 ] then
+	Synth = Synth[ 1 ];
+
+if Phase &gt; 180 and Phase &lt; 270 and Synth &gt; Synth[ 1 ] then
+	Synth = Synth[ 1 ];
+
+plot1( Synth );
+plot2( 0 );
+</pre>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This demonstrates a daily chart of the S&amp;P 500 ETF SPY with the indicator applied, showing a portion of 2025 and 2026.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="http://www.TradeStation.com" target="_blank">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: April 2026</h3></div>
+ <p>In his article in this issue, John Ehlers introduces a synthetic oscillator he developed for reversion-to-the-mean-type trading.</p>
+<p>In Wealth-Lab, users don&rsquo;t need to code it; they can simply drag and drop the SyntheticOscillator onto a chart from WealthLab&rsquo;s list of TASC preprogrammed indicators. This can easily be done using Wealth-Lab&rsquo;s building blocks.</p>
+<p>For Wealth-Lab users who also want to see or use the C# code, this time with optimizable parameters, we are also showing that code below.</p>
+<pre>
+using WealthLab.Backtest;
+using WealthLab.Core;
+using WealthLab.Indicators;
+using WealthLab.TASC;
+
+namespace WealthScript42
+{
+    public class SynthOscSample : UserStrategyBase
+    {
+        Parameter _Ubnd;
+        Parameter _Lbnd;
+        Parameter _Length;
+
+        public SynthOscSample()
+        {
+            _Lbnd = AddParameter(&quot;Lowerbound&quot;, ParameterType.Int32, 12, 5, 15);
+            _Ubnd = AddParameter(&quot;Upperbound&quot;, ParameterType.Int32, 25, 15, 30);
+            _Length = AddParameter(&quot;Length&quot;, ParameterType.Int32, 12, 5, 15);
+        }
+
+        SyntheticOscillator _synth;
+        TimeSeries _roc2;
+
+        public override void Initialize(BarHistory bars)
+        {
+            _synth = new SyntheticOscillator(bars.Close, _Lbnd.AsInt, _Ubnd.AsInt);
+            PlotIndicator(_synth);
+
+            _roc2 = Momentum.Series(Hann.Series(_synth, _Length.AsInt), 1);
+            StartIndex = _Ubnd.AsInt;
+        }
+
+        public override void Execute(BarHistory bars, int idx)
+        {
+            if (!HasOpenPosition(bars, PositionType.Long))
+            {
+                if (_roc2.CrossesOver(0, idx))
+                    PlaceTrade(bars, TransactionType.Buy, OrderType.Market);
+            }
+            else
+            {
+                if (_roc2.CrossesUnder(0, idx))
+                    ClosePosition(LastPosition, OrderType.Market);
+            }
+        }
+    }
+}
+</pre>
+<p>Figure 2 shows some recent entry/exit trades using the demonstration trading strategy given in Ehlers&rsquo; article using the synthetic oscillator. The trading strategy is based on the concept of when the momentum of a Hann-windowed <em>SyntheticOscillator</em> crosses above/below zero.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: WEALTH-LAB. Entry/exit signals are displayed on a daily chart of emini S&amp;P 500 futures (ES) for the example trading strategy based on the synthetic oscillator given in John Ehlers&rsquo; article in this issue.</p></div>
+<p class="authorTips">&mdash;Robert Sucher<br>
+Wealth-Lab<br>
+<a href="http://www.wealth-lab.com" target="_blank">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: April 2026</h3></div>
+<p>In &ldquo;A Synthetic Oscillator&rdquo; in this issue, John Ehlers introduces an indicator he developed. The synthetic oscillator discussed in the article is available for download at the following link for NinjaTrader 8:</p> 
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/April2026SCNT8.zip" target="_blank">www.ninjatrader.com/SC/April2026SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the file.</p>
+<p>A sample chart is shown in Figure 3.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: NINJATRADER. John Ehlers&rsquo; synthetic oscillator is demonstrated on a daily chart of emini S&amp;P 500 futures (ES).</p></div>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">&mdash;Jesse N.<br>
+NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_blank">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/RealTest-New.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">RealTest: April 2026</h3></div>
+ <p>Provided here is coding for use in the RealTest platform to implement the indicator introduced in John Ehlers&rsquo; article in this issue, &ldquo;A Synthetic Oscillator.&rdquo;</p>
+<pre>
+Notes:
+	John Ehlers &quot;Synthetic Oscillator&quot;, TASC April 2026.
+	Implements and plots the indicator as in the article.
+	Adds a simple strategy to demonstrate trading signals.
+
+Import:
+	DataSource:	Norgate
+	IncludeList:	&amp;ES_CCB // back-adjusted continuous contract
+	StartDate:	2008-01-01
+	EndDate:	Latest
+	SaveAs:	es.rtd
+
+Settings:
+	DataFile:	es.rtd
+	BarSize:	Daily
+	StartDate:	2009-01-01
+	EndDate:	Latest
+
+Parameters:
+	LowerBound:	15
+	UpperBound:	25
+	Len:	4
+
+Data:
+	// Common constants
+	decay_factor:	-1.414 * 3.14159
+	phase_angle:	1.414 * 180
+
+	// Hann windowed filter of Close (Len 12)
+	filt:	Sum((1 - Cosine(360 * FunBar / 13)) * Close, 12)
+	coef:	Sum(1 - Cosine(360 * FunBar / 13), 12)
+	hann:	filt / coef
+
+	// Highpass Filter at UpperBound period
+	hp_Q:	exp(decay_factor / UpperBound)
+	hp_c1:	2 * hp_Q * Cosine(phase_angle / UpperBound)
+	hp_c2:	hp_Q * hp_Q
+	hp_a0:	(1 + hp_c1 + hp_c2) / 4
+	HP:	if(BarNum &gt;= 4, hp_a0 * (hann - 2 * hann[1] + hann[2]) + hp_c1 * HP[1] - hp_c2 * HP[2], 0)
+
+	// SuperSmoother at LowerBound period
+	ss_Q:	exp(decay_factor / LowerBound)
+	ss_c1:	2 * ss_Q * Cosine(phase_angle / LowerBound)
+	ss_c2:	ss_Q * ss_Q
+	ss_a0:	(1 - ss_c1 + ss_c2) / 2
+	LP:	if(BarNum &gt;= 4, ss_a0 * (HP + HP[1]) + ss_c1 * LP[1] - ss_c2 * LP[2], HP)
+
+	// RMS of LP and normalized Real component
+	RMS_LP:	Sqr(SumSQ(LP, 100) / 100)
+	Real:	if(RMS_LP, LP / RMS_LP, nonan(Real[1]))
+
+	// Imaginary component (normalized rate of change of Real)
+	ROC_R:	Real - Real[1]
+	QRMS:	Sqr(SumSQ(ROC_R, 100) / 100)
+	Imag:	if(QRMS, ROC_R / QRMS, nonan(Imag[1]))
+
+	// Dominant Cycle period
+	Denom:	(Real - Real[1]) * Imag - (Imag - Imag[1]) * Real
+	rawDC:	if(Denom, 6.28 * (Real * Real + Imag * Imag) / Denom, nonan(rawDC[1]))
+	DC:	Bound(rawDC, LowerBound, UpperBound)
+
+	// Mid frequency for bandpass filter
+	MidP:	Sqr(LowerBound * UpperBound)
+
+	// Highpass of Close at Mid period
+	hp2_Q:	exp(decay_factor / MidP)
+	hp2_c1:	2 * hp2_Q * Cosine(phase_angle / MidP)
+	hp2_c2:	hp2_Q * hp2_Q
+	hp2_a0:	(1 + hp2_c1 + hp2_c2) / 4
+	HP2:	if(BarNum &gt;= 4, hp2_a0 * (Close - 2 * Close[1] + Close[2]) + hp2_c1 * HP2[1] - hp2_c2 * HP2[2], 0)
+
+	// Ultimate Smoother of HP2 at Mid period (same period as above so use those elements again)
+	BP:	if(BarNum &gt;= 4, (1 - hp2_a0) * HP2 + (2 * hp2_a0- hp2_c1) * hp2[1] + (hp2_c2 - hp2_a0) * hp2[2] + hp2_c1 * nonan(BP[1]) - hp2_c2 * nonan(BP[2]), HP2)
+
+	// Phase accumulation with reset at zero crossings of BP
+	Phase:	Select(Cross(BP, 0), 180 / DC, Cross(0, BP), 180 + 180 / DC, nonan(Phase[1]) + 360 / DC)
+
+	// Synthetic Oscillator with glitch removal
+	rawSynth:	Sine(Phase)
+	Synth:	if((Phase &gt; 0 and Phase &lt; 90 and rawSynth &lt; nonan(Synth[1])) or (Phase &gt; 180 and Phase &lt; 270 and rawSynth &gt; nonan(Synth[1])), nonan(Synth[1]), rawSynth)
+
+	// Trading signal: Hann smoothed Synth and its rate of change
+	filt2:	Sum((1 - Cosine(360 * FunBar / (Len + 1))) * Synth, Len)
+	coef2:	Sum(1 - Cosine(360 * FunBar / (Len + 1)), Len)
+	Synth2:	filt2 / coef2
+	ROC2:	Synth2 - Synth2[1]
+	goLong:	Cross(ROC2, 0)
+	goShort:	Cross(0, ROC2)
+
+Charts:
+	Synth:	Synth {|}
+	Zero:	0 {|}
+
+Strategy: synth_long
+	Side:	Long
+	Quantity:	1
+	EntrySetup:	goLong
+	ExitRule:	goShort
+
+Strategy: synth_short
+	Side:	Short
+	Quantity:	1
+	EntrySetup:	goShort
+	ExitRule:	goLong
+</pre>
+<p>Figure 4 shows an example of the oscillator plotted on a chart of ES.</p>
+<div class="figBorder">
+<img src="images/TT-Realtest.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: REALTEST. The synthetic oscillator is plotted beneath a daily chart of emini S&amp;P 500 futures (ES). </p></div>
+<p class="authorTips">&mdash;Marsten Parker<br>
+MHP Trading<br>
+<a href="mailto:mhp@mhptrading.com">mhp@mhptrading.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: April 2026</h3></div>
+ <p>The TradingView Pine Script code presented here implements the synthetic oscillator presented in John Ehlers&rsquo; article in this issue, &ldquo;A Synthetic Oscillator.&rdquo;</p>
+<pre>
+//  TASC Issue: April 2026
+//     Article: Avoiding Whipsaw Trades
+//              A Synthetic Oscillator
+//  Article By: John F. Ehlers
+//    Language: TradingView's Pine Script® v6
+// Provided By: PineCoders, for tradingview.com
+
+
+//&#64;version=6
+TITLE = &quot;TASC 2026.04 A Synthetic Oscillator&quot;
+indicator(TITLE, &quot;SO&quot;, false)
+
+//#region Inputs
+
+float src = input.source(close, &quot;Source Series:&quot;)
+int lb = input.int(15, &quot;Lower Bound:&quot;)
+int ub = input.int(25, &quot;Upper Bound:&quot;)
+
+//#endregion
+
+//#region Functions
+
+// &#64;function The SuperSmoother is a second-order infinite im-
+// pulse response (IIR) filter, meaning that it uses two
+// previous calculations of the filter output in the cur-
+// rent calculation of the filter response.
+// &#64;param   src     Source series
+// &#64;param   period  Critical period
+// &#64;returns Smoothed series
+SuperSmoother (float src, int period) =&gt;
+    float q = math.exp(-1.414*math.pi/period)
+    float c1 = 2.0*q*math.cos(1.414*math.pi/period)
+    float c2 = q*q
+    float a0 = (1.0 - c1 + c2)/2
+    float ss = src
+    if bar_index &gt;= 4
+        ss := a0*(src + src[1]) + 
+              c1*ss[1] - c2*ss[2]
+    ss
+
+// &#64;function      The UltimateSmoother is a filter created
+//                by subtracting the response of a high-pass 
+//                filter from that of an all-pass filter.
+// &#64;param src     Source series.
+// &#64;param period  Critical period.
+// &#64;returns       Smoothed series
+UltimateSmoother (float src, int period) =&gt;
+    float q = math.exp(-1.414*math.pi/period)
+    float c1 = 2.0*q*math.cos(1.414*math.pi/period)
+    float c2 = q*q
+    float a0 = (1.0 + c1 + c2)/4.0
+    float us = src
+    if bar_index &gt;= 4
+        us := (1.0 - a0)*src + 
+              (2.0*a0 - c1)*src[1] + 
+              (c2 - a0)*src[2] + 
+              c1*nz(us[1]) - c2*nz(us[2])
+    us
+
+// &#64;function Root Mean Square
+RMS (float Source, int Length) =&gt;
+    float s2 = math.sum(Source*Source, Length)
+    if s2 != 0
+        math.sqrt(s2/Length)
+    else
+        0.0
+
+// &#64;function High Pass Filter
+HP (float src, int Period) =&gt;
+    float Q = math.exp(-1.414*math.pi/Period)
+    float c1 = 2.0*Q*math.cos(1.414*math.pi/Period)
+    float c2 = Q*Q
+    float a0 = (1 + c1 + c2)/4
+    float hp = 0.0
+    if bar_index &gt;= 4
+        hp := a0*(src - 2*src[1] + 
+              src[2]) + c1*hp[1] - c2*hp[2]
+    hp
+
+//&#64;function Hann Filter
+Hann (float src, int length) =&gt;
+    float filt = 0.0
+    float coef = 0.0
+    for c = 1 to length
+        float p = math.cos(2*math.pi*c/(length + 1))
+        filt += 1.0 - p*src[c-1]
+        coef += 1.0 - p
+    coef != 0.0 ? filt/coef : 0.0
+
+// &#64;function Synthetic Oscillator.
+// &#64;param   src     Source Series.
+// &#64;param   LB      Lower Bound.
+// &#64;param   UB      Upper Bound.
+// &#64;param   length  Length period.
+// &#64;returns Synthetic Oscillator.
+SO (float src=close, int LB=15, int UB=25) =&gt;
+    float price = Hann(src,12)
+    // Real component is bandpass filtered and normalized
+    float hp = HP(price, UB)
+    float lp = SuperSmoother(hp, LB)
+    float rms = RMS(lp, 100)
+    float re = rms != 0.0 ? lp/rms : 0.0
+    // Imaginary component is rate of change normalized.
+    float roc = re - re[1]
+    float qrms = RMS(roc, 100)
+    float im = qrms != 0.0 ? roc/qrms : 0.0
+    // Solve rate of change of arctangent.
+    float denom = roc*im - (im - im[1])*re
+    float dc = denom != 0.0 ? 
+      6.28*(re*re + im*im)/denom : 0.0
+    // Limit range of measured values.
+    dc := math.max(LB, math.min(UB, dc))
+    int mid = int(math.sqrt(LB*UB))
+    // Create a Bandpass filter at the Average Dominant
+    // Cycle Period.
+    float hp2 = HP(src, mid)
+    float bp = UltimateSmoother(hp2, mid)
+    // Cumulate Phase and force reset at 0 and 180 degrees
+    var float ph = 0.0
+    ph += 2*math.pi/dc
+    bool xo = ta.crossover(bp, 0.0)
+    bool xu = ta.crossunder(bp, 0.0)
+    switch
+        xo =&gt; ph := math.pi/dc
+        xu =&gt; ph := math.pi + math.pi/dc
+    
+    // Synthetic Oscillator is the Sine of the cumulative
+    // phase angle.
+    float so = math.sin(ph)
+    // Remove reset glitch if continuity falls in the 
+    // same quadrant.
+    switch
+        ph &gt; 0.0 and ph &lt; math.pi/2 and so &lt; so[1] =&gt;
+            so := so[1]
+        ph &gt; math.pi and ph &lt; 3*math.pi/2 and so &gt; so[1] =&gt; 
+            so := so[1]
+        =&gt;
+            so
+
+//#endregion
+
+//#region Calculations
+
+so = SO(src, lb, ub)
+
+//#endregion
+
+//#region Plots
+
+plot(so, &quot;Synthetic Oscillator&quot;)
+hline(0, &quot;Zero Line&quot;)
+
+//#endregion
+</pre>
+<p>The indicator is available on TradingView from the PineCodersTASC account at <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart is shown in Figure 5.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: TRADINGVIEW. An example of John Ehlers&rsquo; synthetic oscillator is plotted beneath a daily chart of emini S&amp;P 500 futures (ES).</p></div>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="http://www.TradingView.com" target="_blank">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NeuroShell Trader: April 2026</h3></div>
+ <p>The synthetic oscillator, introduced in John Ehlers&rsquo; article in this issue, &ldquo;A Synthetic Oscillator,&rdquo; can be easily implemented in NeuroShell Trader using NeuroShell Trader&rsquo;s ability to call external dynamic linked libraries. Dynamic linked libraries (DLLs) can be written in C, C++, orPower Basic.</p> 
+<p>After moving the code given in the article to your preferred compiler and creating a DLL, you can insert the resulting indicator(s) as follows:</p>
+<ol>
+	<li>Select &ldquo;New indicator …&rdquo; from the <em>insert</em> menu</li>
+	<li>Choose the &ldquo;<strong>External program &amp; library calls</strong>&rdquo; category.</li>
+	<li>Select the appropriate external DLL call indicator.</li>
+	<li>Set up the parameters to match your DLL.</li>
+	<li>Select the <em>finished</em> button.</li>
+	</ol>
+<div class="figBorder">
+<img src="images/TT-NeuroShell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: NEUROSHELL TRADER. This NeuroShell Trader chart demonstrates the synthetic oscillator on a chart of Emini S&amp;P 500 futures (ES).</p></div>
+	<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_blank">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Python: April 2026</h3></div>
+ <p>Provided here is Python code to implement concepts described in John Ehlers&rsquo; article in this issue, &ldquo;A Synthetic Oscillator.&rdquo;</p>
+<p>Readers will also find the following code in a Jupyter notebook on GitHub at: <a href="https://github.com/jainraje/TraderTipArticles" target="_blank">https://github.com/jainraje/TraderTipArticles</a>.</p>
+<pre>
+&quot;&quot;&quot;
+Python code to implement concepts in Technical Analysis of Stocks &amp; Commodiities magazine 
+April 2026 article &quot;A Synthetic Oscillator&quot; by John F Ehlers. This python code is provided 
+for TraderTips section of the magazine.
+
+Written By:
+Rajeev Jain, Feb 2026
+jainraje&#64;yahoo,com
+
+All code available in GitHub:
+https://github.com/jainraje/TraderTipArticles/
+
+HELPER FUNCTIONS 
+Not included in Trader Tip article but included in the associated
+Jupyter notebook found in the GitHub repo.
+
+Functions called:
+- HannFilter
+- SuperSmoother
+- HighPassFilter
+- UltimateSmoother
+- RMS
+
+&quot;&quot;&quot;
+
+# import required python libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import yfinance as yf
+import math
+print(yf.__version__)
+
+# MAIN CODE FOR ARTICLE
+
+def synthetic_oscillator(close, params=(15, 25, 4)):
+    &quot;&quot;&quot;
+    Synthetic Oscillator function (Python version compatible with list-based helper functions)
+    close       : list of closing prices
+    lower_bound : Lower bound of cycle period
+    upper_bound : Upper bound of cycle period
+    length      : smoothing length (not directly used here)
+    returns: list of oscillator values
+
+    &quot;&quot;&quot;
+
+    lower_bound = params[0]
+    upper_bound = params[1]
+    length = params[2]
+
+    n = len(close)
+    synth = [0] * n
+    phase = [0] * n
+
+    # Step 1: Price preprocessing with Hann window
+    price = hann_lowpass(close, length=12)
+
+    # Step 2: Real component (bandpass filtered &amp; normalized)
+    hp = high_pass(price, upper_bound)
+    lp = super_smoother(hp, lower_bound)
+    rms_lp = rms(lp, 100)
+    real = [lp[i] / rms_lp[i] if rms_lp[i] != 0 else 0 for i in range(n)]
+
+    # Step 3: Imaginary component (rate of change normalized)
+    roc = [0] * n
+    for i in range(1, n):
+        roc[i] = real[i] - real[i-1]
+    qrms = rms(roc, 100)
+    imag = [roc[i] / qrms[i] if qrms[i] != 0 else 0 for i in range(n)]
+
+    # Step 4: Dominant cycle period (DC) calculation
+    dc = [0] * n
+    for i in range(1, n):
+        denom = (real[i] - real[i-1]) * imag[i] - (imag[i] - imag[i-1]) * real[i]
+        if denom != 0:
+            dc_val = 2 * math.pi * (real[i]**2 + imag[i]**2) / denom
+            # limit DC to lower and upper bounds
+            dc[i] = max(lower_bound, min(dc_val, upper_bound))
+        else:
+            dc[i] = lower_bound
+
+    # Step 5: Midpoint cycle
+    mid = math.sqrt(lower_bound * upper_bound)
+
+    # Step 6: Bandpass filter at average dominant cycle
+    hp2 = high_pass(close, mid)
+    bp = ultimate_smoother(hp2, mid)
+
+    # Step 7: Phase accumulation
+    for i in range(1, n):
+        phase[i] = phase[i-1] + 360 / dc[i]
+
+        # Reset phase at BP zero crossings
+        if bp[i-1] &lt; 0 &lt;= bp[i]:
+            phase[i] = 180 / dc[i]
+        elif bp[i-1] &gt; 0 &gt;= bp[i]:
+            phase[i] = 180 + 180 / dc[i]
+
+    # Step 8: Synthetic oscillator = sine of cumulative phase
+    synth = [math.sin(math.radians(p)) for p in phase]
+
+    # Step 9: Remove reset glitch if continuity falls in same quadrant
+    for i in range(1, n):
+        if 0 &lt; phase[i] &lt; 90 and synth[i] &lt; synth[i-1]:
+            synth[i] = synth[i-1]
+        elif 180 &lt; phase[i] &lt; 270 and synth[i] &gt; synth[i-1]:
+            synth[i] = synth[i-1]
+
+    return synth
+
+def plot_trading_signals(df, params, plot_so_ena=False, plot_roc2_ena=True, plot_buy_sell_ena=True):
+    
+    fig, (ax1, ax2) = plt.subplots(
+        2, 1,
+        figsize=(9, 6),
+        sharex=True,
+        constrained_layout=True,
+        gridspec_kw={'height_ratios': [2, 1]}
+    )
+    
+    # --- Price subplot ---
+    ax1.plot(df.index, df['Close'], label='Close', color='black')
+    ax1.set_ylabel('Close Price')
+
+    if plot_buy_sell_ena:
+        ax1.set_title(f&quot;Ticker='{symbol}', Close &amp; Buy and Sell Signals&quot;)
+    else:
+        ax1.set_title(f&quot;Ticker='{symbol}', Close&quot;)
+    ax1.grid(True)
+
+    if plot_buy_sell_ena:
+        # --- Plot Buy/Sell markers only on transitions ---
+        if 'Signal' in df.columns:
+            buy_idx = df[(df['Signal'] == 1) &amp; (df['Signal'].shift(1) != 1)]
+            sell_idx = df[(df['Signal'] == -1) &amp; (df['Signal'].shift(1) != -1)]
+    
+            ax1.scatter(
+                buy_idx.index,
+                buy_idx['Close'],
+                marker='^',
+                color='green',
+                s=100,
+                label='Buy',
+                zorder=3
+            )
+    
+            ax1.scatter(
+                sell_idx.index,
+                sell_idx['Close'],
+                marker='v',
+                color='red',
+                s=100,
+                label='Sell',
+                zorder=3
+            )
+
+    ax1.legend(loc='upper left')
+
+    # --- Oscillator subplot ---
+    ax2_left = ax2
+    ax2_right = ax2.twinx()
+
+
+    title_text = f&quot;params={params}&quot;
+
+    if plot_so_ena and 'SO' in df.columns:
+        ax2_right.plot(df.index, df['SO'], label='Synthetic Oscillator', color='darkblue')
+        title_text += f&quot;, SO_last={df['SO'].iloc[-1]:.2f}&quot;
+
+    if plot_roc2_ena and 'ROC2' in df.columns:
+        ax2_right.plot(df.index, df['ROC2'], label='ROC2', color='darkblue')
+        title_text += f&quot;, ROC2_last={df['ROC2'].iloc[-1]:.2f}&quot;
+        if 'Signal' in df.columns:
+            ax2_left.plot(df.index, df['Signal'], label='Signal', color='lightblue')
+            ax2_left.set_ylabel('Signal')
+
+    ax2_right.set_ylabel('Oscillators')
+    ax2_right.axhline(0, color='black', linewidth=2)
+    ax2_right.set_title(title_text)
+    ax2_right.grid(True)
+
+    lines_left, labels_left = ax2_left.get_legend_handles_labels()
+    lines_right, labels_right = ax2_right.get_legend_handles_labels()
+    ax2_right.legend(lines_left + lines_right, labels_left + labels_right, loc='upper left')
+    
+    plt.xticks(rotation=45)
+    plt.show()
+
+
+# The following function contains all indicator calculations and trading logic.
+def calc_trading_strategy(ohlcv, params=None):
+
+    if params is None:
+        params=(17, 23, 8)
+
+    length = params[2]
+
+    df = ohlcv.copy()
+    # synthetic oscillator indicator (aka SO)
+    df['SO'] = synthetic_oscillator(df['Close'], params)
+
+    # run SO output through Hann lowpass filter and perform ROC 
+    df['SO2'] = hann_lowpass(df['SO'], params[2])
+    df['ROC2'] = df['SO2'] - df['SO2'].shift()
+
+    # buy logic (ROC2 cross above 0)
+    cond_buy = (df['ROC2'] &gt; 0) &amp; (df['ROC2'].shift() &lt; 0)
+    df['Signal'] = np.where(cond_buy, 1, np.nan)
+
+    # sell logic (ROC2 cross below 0)
+    cond_sell = (df['ROC2'] &lt; 0) &amp; (df['ROC2'].shift() &gt; 0)
+    df['Signal'] = np.where(cond_sell, -1, df['Signal'])
+    df['Signal'] = df['Signal'].fillna(method='ffill')
+
+    # add BUY and SELL alerts to dataframe
+    df['Alert'] = np.where((df['Signal']==1) &amp; (df['Signal'].shift()== -1), 'BUY', '')
+    df['Alert'] = np.where((df['Signal']==-1) &amp; (df['Signal'].shift()== 1), 'SELL', df['Alert'])
+
+    return df
+
+
+# EXAMPLE USAGE
+
+# download price data from Yahoo Finance
+symbol = '^GSPC'
+symbol = 'ES=F'
+ohlcv = yf.download(
+    symbol, 
+    start=&quot;2000-01-01&quot;, 
+    end=&quot;2026-02-12&quot;, 
+    group_by=&quot;Ticker&quot;,
+    auto_adjust=True,
+    progress=False,
+)
+ohlcv = ohlcv[symbol]
+
+
+# Call trading strategy and plotting functions. 
+# Use slicing technique to set plot start and end timeframes.
+# Set arguments on plotting function to enable or disable 
+# desired indicator plots
+
+# example usage below shows closing price for instrument in top subplot
+# and Synthetic Oscillator in the bottom subplot
+
+# --- Set Indicator Parameters as desired ---
+lower_bound = 17
+upper_bound = 23
+length = 8
+params=(lower_bound, upper_bound, length)    
+df = calc_trading_strategy(ohlcv, params)
+plot_trading_signals(df['2010':'2010'], params, plot_so_ena=True, plot_roc2_ena=False, plot_buy_sell_ena=False)
+
+
+# Call trading strategy and plotting functions. 
+# Use slicing technique to set plot start and end timeframes.
+# Note the Signal line (light blue) generates the buy and sell
+# signals as the ROC2 indicator goes above and below zero.
+# Inspect plot for buy or sell signal.
+
+# --- Set Indicator Parameters as desired ---
+lower_bound = 17
+upper_bound = 23
+length = 8
+
+params=(lower_bound, upper_bound, length)    
+df = calc_trading_strategy(ohlcv, params)
+plot_trading_signals(df['2010':'2010'], params, plot_so_ena=False, plot_roc2_ena=True, plot_buy_sell_ena=True)
+
+
+# Inspect resulting dataframe for a BUY or SELL Alert
+# example below shows most recent last 12 days
+df.tail(12)
+
+
+# Filter to inspect all BUY and SELL Alerts
+# Use slicing techniques to zero in on specific time frames
+cond = df['Alert'] != ''
+df[cond]['2025':'2025'].head(10)
+</pre>
+<div class="figBorder">
+<img src="images/TT-Python1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: PYTHON. An example plot of John Ehlers&rsquo; synthetic oscillator is demonstrated on a chart of Emini S&amp;P 500 futures (ES). </p></div>
+<div class="figBorder">
+<img src="images/TT-Python2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: PYTHON. Example trading signals display buy and sell points from a demonstration trading system based on the synthetic oscillator.</p></div>
+<p class="authorTips">&mdash;Rajeev Jain</p>
+	<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the April 2026 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+All rights reserved. &copy;&nbsp;Copyright&nbsp;2026, Technical Analysis, Inc.</p>
+
+</body>
+</html>

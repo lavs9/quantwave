@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine.">
+<meta name="description" content="This month: Fourier Series Model Of The Market by John Ehlers. Contributions from: TRADESTATION; METASTOCK; THINKORSWIM; WEALTH-LAB; QUANTACULA; NEUROSHELL TRADER; NINJATRADER; TRADE NAVIGATOR; MICROSOFT EXCEL; AMIBROKER; TRADERSSTUDIO.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - JUNE 2019</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="https://traders.com/CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">June 2019</h1>
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div> <img src="images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+  <p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John Ehlers&rsquo; article in this issue, &ldquo;Fourier Series Model Of The Market.&rdquo; Here, we present the June 2019 Traders&rsquo; Tips code with possible implementations in various software.</p>
+  <p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p>
+  <!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+  <p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+  <br class="clearfloat">
+</div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TRADESTATION: JUNE 2019</a></li>
+  <li><a href="#item2">METASTOCK: JUNE 2019</a></li>
+  <li><a href="#item3">THINKORSWIM: JUNE 2019</a></li>
+  <li><a href="#item4"><span style="text-transform:lowercase;">e</span>SIGNAL: JUNE 2019</a></li>
+  <li><a href="#item5">WEALTH-LAB: JUNE 2019</a></li>
+  <li><a href="#item6">QUANTACULA: JUNE 2019</a></li>
+  <li><a href="#item7">NEUROSHELL TRADER: JUNE 2019</a></li>
+  <li><a href="#item8">NINJATRADER: JUNE 2019</a></li>
+  <li><a href="#item9">TRADE NAVIGATOR: JUNE 2019</a></li>
+  <li><a href="#item10">MICROSOFT EXCEL: JUNE 2019</a></li>
+  <li><a href="#item11">AMIBROKER: JUNE 2019</a></li>
+  <li><a href="#item12">TRADERSSTUDIO: JUNE 2019</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/tradestation-new.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">TRADESTATION: JUNE 2019</h3>
+</div>
+<p>In &ldquo;Fourier Series Model Of The Market&rdquo; in this issue, author John Ehlers introduces a Fourier series indicator designed to help traders identify cycles in the market. According to the author, the approach based on five principles outlined by J.M. Hurst in his 1970 book allows the determinization of a security&rsquo;s primary cycle period and gives a faithful picture of market activity.</p>
+<p>Here, we are providing TradeStation EasyLanguage code for an indicator and strategy based on Ehlers&rsquo; concepts described in the article. This code can be downloaded by visiting our TradeStation and EasyLanguage support forum at the link provided after the following code listing.</p>
+<pre>
+Indicator: Fourier Series Indicator
+// TASC JUN 2019
+// Fourier Series Analysis
+// (C) 2005-2018 John F. Ehlers
+
+inputs:
+	Fundamental( 20 ) ;
+	
+variables:
+	Bandwidth(.1),
+	G1( 0 ), S1( 0 ), L1( 0 ), BP1( 0 ), Q1( 0 ), P1( 0 ),
+	G2( 0 ), S2( 0 ), L2( 0 ), BP2( 0 ), Q2( 0 ), P2( 0 ),
+	G3( 0 ), S3( 0 ), L3( 0 ), BP3( 0 ), Q3( 0 ), P3( 0 ),
+	count( 0 ),	Wave( 0 ), ROC( 0 ) ;
+
+//compute filter coefficients once
+once
+begin
+	L1 = Cosine( 360 / Fundamental ) ;
+	G1 = Cosine( Bandwidth * 360 / Fundamental ) ;
+	S1 = 1 / G1 - SquareRoot( 1 / ( G1 * G1 ) - 1 ) ;
+	L2 = Cosine( 360 / ( Fundamental / 2 ) ) ;
+	G2 = Cosine( Bandwidth * 360 / ( Fundamental / 2 ) ) ;
+	S2 = 1 / G2 - SquareRoot( 1 / ( G2 * G2 ) - 1 ) ;
+	L3 = Cosine( 360 / ( Fundamental / 3 ) ) ;
+	G3 = Cosine( Bandwidth * 360 / ( Fundamental / 3 ) ) ;
+	S3 = 1 / G3 - SquareRoot( 1 / ( G3 * G3 ) - 1 ) ;
+end ;
+
+//Fundamental Band-Pass
+BP1 = .5 * ( 1 - S1) * ( Close - Close[2] ) 
+	+ L1 * ( 1 + S1 ) * BP1[1] - S1 * BP1[2] ;
+if CurrentBar  &lt;= 3 then 
+	BP1 = 0 ;
+	
+//Fundamental Quadrature
+Q1 = ( Fundamental / 6.28 ) * ( BP1 - BP1[1] ) ;
+if CurrentBar &lt;= 4 then 
+	Q1 = 0 ;
+	
+//Second Harmonic Band-Pass
+BP2 = .5 * ( 1 - S2 ) * ( Close - Close[2] ) 
+	+ L2 * ( 1 + S2 ) * BP2[1] - S2 * BP2[2] ;
+if CurrentBar &lt;= 3 then 
+	BP2 = 0 ;
+	
+//Second Harmonic Quadrature
+Q2 = ( Fundamental / 6.28 ) * ( BP2 - BP2[1] ) ;
+if CurrentBar &lt;= 4 then 
+	Q2 = 0 ;
+
+//Third Harmonic Band-Pass
+BP3 = .5 * ( 1 - S3 ) * ( Close - Close[2] ) 
+	+ L3 * ( 1 + S3 ) * BP3[1] - S3 * BP3[2] ;
+if CurrentBar &lt;= 3 then 
+	BP3 = 0 ;
+	
+//Third Harmonic Quadrature
+Q3 = ( Fundamental / 6.28 ) * ( BP3 - BP3[1] ) ;
+if CurrentBar &lt;= 4 then 
+Q3 = 0 ;
+
+//Sum power of each harmonic at 
+//each bar over the Fundamental period
+P1 = 0 ;
+P2 = 0 ;
+P3 = 0 ;
+For count = 0 to Fundamental - 1 
+begin
+	P1 = P1 + BP1[count] * BP1[count] 
+		+ Q1[count] * Q1[count] ;
+	P2 = P2 + BP2[count] * BP2[count] 
+		+ Q2[count] * Q2[count] ;
+	P3 = P3 + BP3[count] * BP3[count] 
+		+ Q3[count] * Q3[count] ;
+end ;
+
+//Add the three harmonics together 
+//using their relative amplitudes
+If P1 &lt;&gt; 0 then 
+	Wave = BP1 + SquareRoot( P2 / P1 ) * BP2 
+		+ SquareRoot( P3 / P1 ) * BP3 ;
+
+Plot1( Wave );
+Plot2( 0 );
+
+//Optional cyclic trading signal
+//Rate of change crosses zero at 
+//cyclic turning points
+ROC = ( Fundamental / 12.57 ) * 
+	( Wave - Wave[2] ) ;
+Plot3( ROC ) ;
+
+
+Strategy: Fourier Series Strategy
+// TASC JUN 2019
+// Fourier Series Analysis
+// (C) 2005-2018 John F. Ehlers
+
+inputs:
+	Fundamental( 20 ) ;
+	
+variables:
+	Bandwidth(.1),
+	G1( 0 ), S1( 0 ), L1( 0 ), BP1( 0 ), Q1( 0 ), P1( 0 ),
+	G2( 0 ), S2( 0 ), L2( 0 ), BP2( 0 ), Q2( 0 ), P2( 0 ),
+	G3( 0 ), S3( 0 ), L3( 0 ), BP3( 0 ), Q3( 0 ), P3( 0 ),
+	count( 0 ),	Wave( 0 ), ROC( 0 ) ;
+
+//compute filter coefficients once
+once
+begin
+	L1 = Cosine( 360 / Fundamental ) ;
+	G1 = Cosine( Bandwidth * 360 / Fundamental ) ;
+	S1 = 1 / G1 - SquareRoot( 1 / ( G1 * G1 ) - 1 ) ;
+	L2 = Cosine( 360 / ( Fundamental / 2 ) ) ;
+	G2 = Cosine( Bandwidth * 360 / ( Fundamental / 2 ) ) ;
+	S2 = 1 / G2 - SquareRoot( 1 / ( G2 * G2 ) - 1 ) ;
+	L3 = Cosine( 360 / ( Fundamental / 3 ) ) ;
+	G3 = Cosine( Bandwidth * 360 / ( Fundamental / 3 ) ) ;
+	S3 = 1 / G3 - SquareRoot( 1 / ( G3 * G3 ) - 1 ) ;
+end ;
+
+//Fundamental Band-Pass
+BP1 = .5 * ( 1 - S1) * ( Close - Close[2] ) 
+	+ L1 * ( 1 + S1 ) * BP1[1] - S1 * BP1[2] ;
+if CurrentBar  &lt;= 3 then 
+	BP1 = 0 ;
+	
+//Fundamental Quadrature
+Q1 = ( Fundamental / 6.28 ) * ( BP1 - BP1[1] ) ;
+if CurrentBar &lt;= 4 then 
+	Q1 = 0 ;
+	
+//Second Harmonic Band-Pass
+BP2 = .5 * ( 1 - S2 ) * ( Close - Close[2] ) 
+	+ L2 * ( 1 + S2 ) * BP2[1] - S2 * BP2[2] ;
+if CurrentBar &lt;= 3 then 
+	BP2 = 0 ;
+	
+//Second Harmonic Quadrature
+Q2 = ( Fundamental / 6.28 ) * ( BP2 - BP2[1] ) ;
+if CurrentBar &lt;= 4 then 
+	Q2 = 0 ;
+
+//Third Harmonic Band-Pass
+BP3 = .5 * ( 1 - S3 ) * ( Close - Close[2] ) 
+	+ L3 * ( 1 + S3 ) * BP3[1] - S3 * BP3[2] ;
+if CurrentBar &lt;= 3 then 
+	BP3 = 0 ;
+	
+//Third Harmonic Quadrature
+Q3 = ( Fundamental / 6.28 ) * ( BP3 - BP3[1] ) ;
+if CurrentBar &lt;= 4 then 
+Q3 = 0 ;
+
+//Sum power of each harmonic at 
+//each bar over the Fundamental period
+P1 = 0 ;
+P2 = 0 ;
+P3 = 0 ;
+For count = 0 to Fundamental - 1 
+begin
+	P1 = P1 + BP1[count] * BP1[count] 
+		+ Q1[count] * Q1[count] ;
+	P2 = P2 + BP2[count] * BP2[count] 
+		+ Q2[count] * Q2[count] ;
+	P3 = P3 + BP3[count] * BP3[count] 
+		+ Q3[count] * Q3[count] ;
+end ;
+
+//Add the three harmonics together 
+//using their relative amplitudes
+If P1 &lt;&gt; 0 then 
+	Wave = BP1 + SquareRoot( P2 / P1 ) * BP2 
+		+ SquareRoot( P3 / P1 ) * BP3 ;
+
+//Rate of change crosses zero at 
+//cyclic turning points
+ROC = ( Fundamental / 12.57 ) * 
+	( Wave - Wave[2] ) ;
+
+if ROC crosses over 0 then 
+	Buy next bar at Market
+else if ROC crosses under 0 then
+	SellShort next bar at Market ;	
+</pre>
+<p>To download the EasyLanguage code, please visit our TradeStation and EasyLanguage support forum. The files for this article can be found here: <a href="https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=156727" target="_parent">https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=156727</a>. The filename is &ldquo;TASC_JUN2019.ZIP.&rdquo; For more information about EasyLanguage in general, please see <a href="https://www.tradestation.com/EL-FAQ" target="_parent">https://www.tradestation.com/EL-FAQ</a>.</p>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder"> <img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This shows a daily chart of SPY with the Fourier series indicator and strategy applied.</p>
+</div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips"> &mdash;Doug McCrary<br>
+  TradeStation Securities, Inc.<br>
+  <a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Metastock.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">METASTOCK: JUNE 2019</h3>
+</div>
+<p>John Ehlers&rsquo; article in this issue, &ldquo;Fourier Series Model Of The Market,&rdquo; explains how to reduce market action to a sinewave using Fourier series analysis. The MetaStock formula for that indicator is given here.</p>
+<pre>
+Fourier Series Analysis
+
+x:= Input(&quot;fundemental cycle length&quot;, 2, 100, 20);
+bw:= 0.1; {bandwidth}
+L1:= Cos(360/x);
+G1:= Cos((bw*360)/x);
+S1:= 1/G1 - Sqrt(1/(G1*G1) -1);
+L2:= Cos( 360 / (x/2));
+G2:= Cos((bw*360)/(x/2));
+S2:= 1/G2 - Sqrt(1/(G2*G2) -1);
+L3:= Cos( 360 / (x/3));
+G3:= Cos((bw*360)/(x/3));
+S3:= 1/G3 - Sqrt(1/(G3*G3) -1);
+{fundemental band pass}
+BP1:= .5*(1-S1)*(C-Ref(C,-2)) + L1*(1+S1)*PREV - S1*Ref(PREV,-1);
+Q1:= (x/6.28)*(BP1-Ref(BP1,-1));
+{second harmonic band pass}
+BP2:= .5*(1-S2)*(C-Ref(C,-2)) + L2*(1+S2)*PREV - S2*Ref(PREV,-1);
+Q2:= (x/6.28)*(BP2-Ref(BP2,-1));
+{third harmonic band pass}
+BP3:= .5*(1-S3)*(C-Ref(C,-2)) + L3*(1+S3)*PREV - S3*Ref(PREV,-1);
+Q3:= (x/6.28)*(BP3-Ref(BP3,-1));
+{final calculations}
+p1:= Sum((BP1*BP1) + (Q1*Q1), x);
+p2:= Sum((BP2*BP2) + (Q2*Q2), x);
+p3:= Sum((BP3*BP3) + (Q3*Q3), x);
+BP1 + Sqrt(p2/p1)*BP2 + Sqrt(p3/p1)*BP3;
+</pre>
+<p class="authorTips"> &mdash;William Golson<br>
+  MetaStock Technical Support<br>
+  <a href="https://www.metastock.com" target="_parent">www.metastock.com</a> </p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Thinkorswim.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">THINKORSWIM: JUNE 2019</h3>
+</div>
+<p>We have put together a study based on the article &ldquo;Fourier Series Model Of The Market&rdquo; in this issue by John Ehlers. We built the referenced study and strategy by using our proprietary scripting language, thinkScript. To ease the loading process, simply click on <a href="https://tos.mx/vDTSrd" target="_parent">https://tos.mx/vDTSrd</a> and then choose <em>view thinkScript study</em> and name it &ldquo;fourierseriesindicator.&rdquo; This can then be added to your chart from the <em>edit study and strategies</em> menu within thinkorswim.</p>
+<p>The study can be seen in Figure 2, set to display one-day candles for the date range of October 20, 2017 through December 20, 2018. See John Ehlers&rsquo; article in this issue for more details on how to interpret the study.</p>
+<div class="figBorder"> <img src="images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 2: THINKORSWIM. This sample thinkorswim chart displays the study on one-day candles for the date range 10/20/2017&ndash;12/20/2018.</p>
+</div>
+<p class="authorTips"> &mdash;thinkorswim<br>
+  A division of TD Ameritrade, Inc.<br>
+  <a href="https://www.thinkorswim.com" target="_parent">www.thinkorswim.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">eSIGNAL: JUNE 2019</h3>
+</div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;ve provided the study <a href="https://www.traders.com/Documentation/FEEDbk_docs/2019/06/images/code/Fourier_Series_Indicator.efs" target="_blank">Fourier_Series_Indicator.efs</a> based on the article in this issue by John Ehlers, &ldquo;Fourier Series Model Of The Market.&rdquo; This study can be used to describe the cycles present in a market.</p>
+<p>The study contains formula parameters that may be configured through the <em>edit chart</em> window (right-click on the chart and select &ldquo;edit chart&rdquo;). A sample chart is shown in Figure 3.</p>
+<div class="figBorder"> <img src="images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 3: eSIGNAL. Here is an example of the study plotted on a daily chart of SPY.</p>
+</div>
+<p>To discuss this study or download a complete copy of the formula code, please visit the EFS library discussion board forum under the <em>forums</em> link from the support menu at <a href="https://www.esignal.com" target="_blank">www.esignal.com</a> or visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs/" target="_parent">https://www.esignal.com/support/kb/efs/</a>. The eSignal formula script (EFS) is also available for copying &amp; pasting below.</p>
+<pre>
+/*********************************
+Provided By:  
+Copyright 2019 Intercontinental Exchange, Inc. All Rights Reserved. 
+eSignal is a service mark and/or a registered service mark of Intercontinental Exchange, Inc. 
+in the United States and/or other countries. This sample eSignal Formula Script (EFS) 
+is for educational purposes only. 
+Intercontinental Exchange, Inc. reserves the right to modify and overwrite this EFS file with each new release. 
+
+Description:        
+   Fourier series Model Of The Market
+   by John F. Ehlers
+    
+
+Version:            1.00  04/08/2019
+
+Formula Parameters:                     Default:
+Fundamental                             20
+
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+
+
+
+var fpArray = new Array();
+
+function preMain(){
+    setPriceStudy(false);
+    setStudyTitle(&quot;Fourier Series Indicator&quot;);
+    setCursorLabelName(&quot;Fourier Series Indicator&quot;);
+    setPlotType(PLOTTYPE_LINE);
+    
+    var x = 0;
+    fpArray[x] = new FunctionParameter(&quot;Fundamental&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setName(&quot;Fundamental&quot;);
+        setLowerLimit(1);
+        setDefault(20);        
+    }
+    
+}
+
+var bInit = false;
+var bVersion = null;
+var xClose = null;
+var Bandwidth = 0.1;
+var G1 = 0;
+var S1 = 0;
+var L1 = 0;
+var BP1 = 0;
+var Q1 = 0;
+var P1 = 0;
+var G2 = 0;
+var S2 = 0;
+var L2 = 0;
+var BP2 = 0;
+var Q2 = 0;
+var P2 = 0; 
+var G3 = 0;
+var S3 = 0;
+var L3 = 0;
+var BP3 = 0;
+var Q3 = 0;
+var P3 = 0; 
+var Wave = 0;
+var vBP1 = [];
+var vBP2 = [];
+var vBP3 = [];
+var vQ1 = [];
+var vQ2 = [];
+var vQ3 = [];
+var fNewBar = null;
+
+
+
+function main(Fundamental){
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return;
+        
+    if (getBarState() == BARSTATE_ALLBARS){
+        bInit = false;
+    }
+
+    if (getCurrentBarCount() &lt; Fundamental) {
+        
+        vBP1.unshift(0);
+        vBP2.unshift(0);
+        vBP3.unshift(0)
+        vQ1.unshift(0)
+        vQ2.unshift(0)
+        vQ3.unshift(0)
+        return;
+        
+    }
+    
+    if (!bInit){
+        
+        xClose = close();
+        L1 = Math.cos(2 * Math.PI / Fundamental);
+        L2 = Math.cos(2 * Math.PI / (Fundamental / 2));
+        L3 = Math.cos(2 * Math.PI / (Fundamental / 3));
+        G1 = Math.cos(Bandwidth * 2 * Math.PI / Fundamental);
+        G2 = Math.cos(Bandwidth * 2 * Math.PI / (Fundamental / 2));
+        G3 = Math.cos(Bandwidth * 2 * Math.PI / (Fundamental / 3));
+        S1 = 1 / G1 - Math.sqrt(1 / (G1*G1) - 1);      
+        S2 = 1 / G2 - Math.sqrt(1 / (G2*G2) - 1);      
+        S3 = 1 / G3 - Math.sqrt(1 / (G3*G3) - 1);     
+        
+        addBand(0, PS_DASH, 1, Color.grey, 0);    
+        bInit = true;
+    }
+
+    fNewBar = false;
+    P1 = 0;
+    P2 = 0;
+    P3 = 0;
+
+    if (getBarState() == BARSTATE_NEWBAR) fNewBar = true;        
+    if (!fNewBar) {
+        vBP1.shift();
+        vBP2.shift();
+        vBP3.shift();
+        vQ1.shift();
+        vQ2.shift();
+        vQ3.shift();
+    }
+
+    if (getCurrentBarCount() &lt;= 3) {
+        vBP1.unshift(0);
+        vBP2.unshift(0);
+        vBP3.unshift(0);
+    }
+    else {
+        vBP1.unshift(0.5 * (1 - S1)*(xClose.getValue(0) - xClose.getValue(-2)) + L1*(1 + S1)*vBP1[0] - S1*vBP1[1]);
+        vBP2.unshift(0.5 * (1 - S2)*(xClose.getValue(0) - xClose.getValue(-2)) + L2*(1 + S2)*vBP2[0] - S2*vBP2[1]);
+        vBP3.unshift(0.5 * (1 - S3)*(xClose.getValue(0) - xClose.getValue(-2)) + L3*(1 + S3)*vBP3[0] - S3*vBP3[1]);
+    }
+
+    if (getCurrentBarCount() &lt;= 4) {
+        vQ1.unshift(0);
+        vQ2.unshift(0);
+        vQ3.unshift(0);
+    }
+    else {
+        vQ1.unshift((Fundamental / 6.28)*(vBP1[0] - vBP1[1]));
+        vQ2.unshift((Fundamental / 6.28)*(vBP2[0] - vBP2[1]));
+        vQ3.unshift((Fundamental / 6.28)*(vBP3[0] - vBP3[1]));
+    }
+       
+    for (var i = 0; i &lt; Fundamental; i++) {        
+        P1 = P1 + vBP1[i]*vBP1[i] + vQ1[i]*vQ1[i]; 
+        P2 = P2 + vBP2[i]*vBP2[i] + vQ2[i]*vQ2[i];
+        P3 = P3 + vBP3[i]*vBP3[i] + vQ3[i]*vQ3[i];        
+    }
+    Wave = Calc_Ret(0, vBP1, vBP2, vBP3, P1, P2, P3);
+    
+    return Wave
+}
+
+
+function Calc_Ret(V, vBP1, vBP2, vBP3, P1, P2, P3){
+    if (P1 == 0) return;
+    var vWave = vBP1[0 + V] + Math.sqrt(P2 / P1)*vBP2[0 + V] + Math.sqrt(P3 / P1)*vBP3[0 + V];
+    return vWave;
+}
+ 
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+</pre>
+<p class="authorTips"> &mdash;Eric Lippert<br>
+  eSignal, an Interactive Data company<br>
+  800 779-6555, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">WEALTH-LAB: JUNE 2019</h3>
+</div>
+<p>The FourierSeries indicator presented by John Ehlers in his article in this issue, &ldquo;Fourier Series Model Of The Market,&rdquo; represents market activity based on analysis principles established by J.M. Hurst. It does so by applying a set of band-pass filters.</p>
+<p>In Wealth-Lab, install (or update) the TASCIndicators library to its most-recent version from our website or by using the built-in Extension Manager. Once you see the &ldquo;Fourier series&rdquo; and &ldquo;Fourier cyclic trading signal&rdquo; indicators listed under the TASC Magazine Indicators group, they&rsquo;re ready for use in Wealth-Lab.</p>
+<p>In Figure 4, you can see an example of the indicators applied.</p>
+<div class="figBorder"> <img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 4: WEALTH-LAB. Here are the two Fourier-based indicators applied to a daily chart of SPY (data provided by Yahoo).</p>
+</div>
+<p class="authorTips"> &mdash;Gene (Eugene) Geren, Wealth-Lab team<br>
+  MS123, LLC<br>
+  <a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a> </p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Quantacula.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">QUANTACULA: JUNE 2019</h3>
+</div>
+<p>The FourierSeries indicator presented by John Ehlers in his article in this issue, &ldquo;Fourier Series Model Of The Market,&rdquo; is now available for Quantacula.com and Quantacula Studio from our TASC Extension library. We developed a simple system to exercise the indicator. Our trading model&rsquo;s rules are: </p>
+<ul>
+  <li> Buy next bar at market open when the FourierSeries(20) has reached a new 200-bar low and then turns up. This is an example of a &ldquo;self-tuning&rdquo; model, a concept we&rsquo;ve been working with recently at Quantacula. Rather than establish an arbitrary oversold level, we use the historical data itself to look for an appropriate reversal level. </li>
+  <li>Sell at a limit price equal to the highest two-bar high. We&rsquo;ve found that this exit works well to capture small gains in markets that are due for an upside move, while reducing exposure.</li>
+</ul>
+<p>We ran the model on the historical Nasdaq 100 stocks, corrected for survivorship bias by accounting for the stocks that came into and out of the index over time. We used $100,000 starting capital, a position size of 25% of equity, and a margin factor of 2 to 1. Over a 20-year backtest, the model returned 7.84% APR while the QQQ benchmark returned 3.49% APR. The model also had a win rate of nearly 70%.</p>
+<p>Here is the Quantacula C# code for the self-tuning FourierSeries model:</p>
+<pre>
+using QuantaculaBacktest;
+using QuantaculaCore;
+using TASCExtensions;
+
+namespace Quantacula
+{
+    public class MyModel : UserModelBase
+    {
+        //create indicators and other objects here, executed prior to main trading loop
+        public override void Initialize(BarHistory bars)
+        {
+            fs = new FourierSeries(bars.Close, 20);
+            PlotIndicator(fs);
+            StartIndex = 201;
+        }
+
+        //execute strategy rules here, executed once for each bar in the backtest history
+        public override void Execute(BarHistory bars, int idx)
+        {
+            if (LastPosition == null)
+            {
+                //is FS at its historical low, and turning up?
+                double lowFS = fs.GetLowest(idx - 1, 200);
+                if (fs[idx - 1] == lowFS)
+                    if (fs.TurnsUp(idx))
+                        PlaceTrade(bars, TransactionType.Buy, OrderType.Market);
+            }
+            else
+            {
+                //sell at 2 bar high
+                PlaceTrade(bars, TransactionType.Sell, OrderType.Limit, bars.High.GetHighest(idx, 2));
+            }
+        }
+
+        //declare private variables below
+        private FourierSeries fs;
+    }
+}
+</pre>
+<div class="figBorder"> <img src="images/TT-Quantacula.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 5: QUANTACULA. This shows an example equity curve for the self-tuning FourierSeries model on Nasdaq 100 stocks. </p>
+</div>
+<p class="authorTips"> &mdash;Dion Kurczek, Quantacula LLC<br>
+  <a href="mailto:info@quantacula.com">info@quantacula.com</a><br>
+  <a href="https://www.quantacula.com" target="_parent">www.quantacula.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item7"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">NEUROSHELL TRADER: JUNE 2019</h3>
+</div>
+<p>The Fourier market analysis indicator that John Ehlers describes in his article in this issue, &ldquo;Fourier Series Model Of The Market,&rdquo; can be easily implemented in NeuroShell Trader using NeuroShell Trader&rsquo;s ability to call external dynamic linked libraries. Dynamic linked libraries (DLLs) can be written in C, C++, and Power Basic.</p>
+<p>After moving the code given in Ehlers&rsquo; article to your preferred compiler and creating a DLL, you can insert the resulting indicator as follows:</p>
+<ol>
+  <li>Select &ldquo;New indicator …&rdquo; from the <em>insert</em> menu.</li>
+  <li>Choose the External Program &amp; Library Calls 
+    category.</li>
+  <li>Select the appropriate External DLL Call indicator.</li>
+  <li>Set up the parameters to match your DLL.</li>
+  <li>Select the <em>finished</em> button.</li>
+</ol>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p>A sample chart is shown in Figure 6.</p>
+<div class="figBorder"> <img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 6: NEUROSHELL TRADER. This NeuroShell Trader chart shows the Fourier analysis on an SPY chart.</p>
+</div>
+<p class="authorTips"> &mdash;Marge Sherald, Ward Systems Group, Inc.<br>
+  301 662-7950, <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+  <a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item8"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">NINJATRADER: JUNE 2019</h3>
+</div>
+<p>The Fourier series analysis indicator, as discussed in the article by John Ehlers in this issue, &ldquo;Fourier Series Model Of The Market,&rdquo; is available for download at the following links for NinjaTrader 8 and NinjaTrader 7:</p>
+<ul style="list-style-type: none;">
+  <li><strong>NinjaTrader 8:</strong> <a href="https://ninjatrader.com/SC/June2019SCNT8.zip" target="_blank">ninjatrader.com/SC/June2019SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7:</strong> <a href="https://ninjatrader.com/SC/June2019SCNT7.zip">ninjatrader.com/SC/June2019SCNT7.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import into NinjaTrader 7, from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator&rsquo;s source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control center window and selecting the &ldquo;Fourier series analysis&rdquo; file. You can review the indicator&rsquo;s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the control center window and selecting the &ldquo;Fourier series analysis&rdquo; file.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, which provides you with the highest performance possible.</p>
+<p>A sample chart implementing the indicator is shown in Figure 7.</p>
+<div class="figBorder"> <img src="images/TT-Ninjatrader.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 7: NINJATRADER. This shows the FourierSeriesAnalysis indicator displayed on a daily SPY chart from November 2017 to December 2018. </p>
+</div>
+<p class="authorTips"> &mdash;Raymond Deux &amp; Chris Lauber<br>
+  NinjaTrader, LLC<br>
+  <a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item9"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Genesis.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">TRADE NAVIGATOR: JUNE 2019</h3>
+</div>
+<p>In the article &ldquo;Fourier Series Model Of The Market&rdquo; in this issue, author John Ehlers describes a Fourier series indicator. Users of Trade Navigator can download this library in Trade Navigator.</p>
+<p>To download this library, click on Trade Navigator&rsquo;s telephone button (or use the pull-down menu and then click &ldquo;update data&rdquo;),  select &ldquo;download special file,&rdquo; then click on the <em>start</em> button. You will then be guided through an upgrade of your Trade Navigator.  If you are prompted to &ldquo;reimport libraries,&rdquo; please do so. This will import the new indicator into the software.</p>
+<p>Once this update is complete, you can insert the Fourier series indicator onto a chart by opening the <em>charting</em> dropdown menu, selecting the <em>add to chart</em> command, then on the <em>indicators</em> tab, finding the Fourier series indicator, selecting it, then clicking on the <em>add</em> button. Repeat this procedure for additional indicators as well if you wish.</p>
+<p>Users may contact our technical support staff by phone or by live chat if any assistance is needed in importing the library.</p>
+<p>A chart displaying the indicator is shown in Figure 8.</p>
+<div class="figBorder"> <img src="images/TT-Tradenavigator.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 8: TRADE NAVIGATOR. Here, the Fourier series indicator is displayed in the lower panel on a chart of SPY.</p>
+</div>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+  <h3 class="newsTitle grey_blue">MICROSOFT EXCEL: JUNE 2019</h3>
+</div>
+<p>In his article in this issue, &ldquo;Fourier Series Model Of The Market,&rdquo; author John Ehlers presents a very interesting Fourier-based oscillator construct that maps very nicely to cyclic price swings while filtering out much of the higher-frequency cycle noise.</p>
+<p>He then suggests that the trader can apply rate-of-change (ROC) logic to pinpoint the extreme high and low turning points of this Fourier-based oscillator and thus the underlying turning points of the price action. This is a good tool to suggest potential swing trading entry and exit points.</p>
+<p>The Fourier oscillator (Figure 9) can also help differentiate trending periods from cycle-mode periods by way of the oscillator swing amplitudes.</p>
+<div class="figBorder"> <img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 9: EXCEL, FOURIER OSCILLATOR</p>
+</div>
+<p>This oscillator and the ROC crossover signals can be a great addition to any already-robust trading decision system but should not be used as a standalone system.</p>
+<p>I got a little curious about this F-ROC signaling technique and Figures 10 and 11 show the simple statistics this spreadsheet collects.</p>
+<div class="figBorder"> <img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 10: EXCEL, BAR COUNT TO NEXT EVENT</p>
+</div>
+<div class="figBorder"> <img src="images/TT-Excel3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 11: EXCEL, SIMPLE EVENT-TYPE STATISTICS</p>
+</div>
+<p>The formulas in columns just to the right of the charts, which are shown in Figure 10, keep track of the number of bars until the next occurrence of the indicated F-ROC crossover types. Of particular interest, the half wave would be the duration of a long or short swing trade when based on F-ROC crossovers.</p>
+<p>Figure 11 provides a couple of interesting bits. When using &ldquo;20&rdquo; as the fundamental cycle length for the Fourier construct, the F-ROC detected full cycle lengths, either <em>up to up</em>, or <em>down to down</em>, clustered around seven bars.</p>
+<p>For swing traders, the half wave (long or short position duration) clusters around four bars.</p>
+<p>Ehlers suggests 20 as a fundamental cycle length for these calculations, as that is roughly the number of trading days in a month.</p>
+<p>Just for grins, I thought to try 60 as an approximation of the number of trading days in a quarter.</p>
+<p>One interesting result, seen in Figure 12, is that with the fundamental cycle length set to 60, the full cycle numbers cluster around 20 bars, similar to Ehlers&rsquo; observation for the trading length of a month.</p>
+<div class="figBorder"> <img src="images/TT-Excel4.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 12: EXCEL, STATISTICS FOR A FUNDAMENTAL CYCLE LENGTH OF 60</p>
+</div>
+<p>The spreadsheet file for this Traders&rsquo; Tip can be downloaded from Traders.com in the Traders&rsquo; Tips area. To successfully download it, follow these steps:</p>
+<ul>
+  <li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2019/06/images/code/FourierMarketModel.xlsm">Excel file link</a>, then</li>
+  <li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li>
+</ul>
+<p class="authorTips"> &mdash;Ron McAllister<br>
+  Excel and VBA programmer<br>
+  <a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item11"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Amibroker.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">AMIBROKER: JUNE 2019</h3>
+</div>
+<p>In his article in this issue, &ldquo;Fourier Series Model Of The Market,&rdquo; John Ehlers presents a new Fourier series indicator that describes cyclic market activity to help swing traders develop trading strategy rules. Ready-to-use code is provided below. </p>
+<pre>
+// Fourier Series Analysis 
+
+Fundamental = 20; 
+Bandwidth = 0.1; 
+TWOPI = 2 * 3.1415926; 
+
+//compute filter coefficients 
+L1 = cos( TWOPI / Fundamental); 
+G1 = cos( Bandwidth*TWOPI / Fundamental); 
+S1 = 1 / G1 - sqrt(1 / (G1*G1) - 1); 
+L2 = cos(TWOPI / (Fundamental / 2)); 
+G2 = cos(Bandwidth*TWOPI / (Fundamental / 2)); 
+S2 = 1 / G2 - sqrt(1 / (G2*G2) - 1); 
+L3 = cos(TWOPI / (Fundamental / 3)); 
+G3 = cos(Bandwidth*TWOPI / (Fundamental / 3)); 
+S3 = 1 / G3 - sqrt(1 / (G3*G3) - 1); 
+
+
+// Fundamental Band-Pass 
+// 2nd order IIR 
+// IIR( array, b0, 
+//             a1, b1, 
+//             a2, b2 ) 
+// aX - output (feedback) at X bar back   
+// bX - input at X bar back 
+               
+BP1 = IIR( Close, 0.5*( 1 - S1 ), 
+                  L1*(1 + S1), 0, 
+                  -S1, - 0.5*( 1 - S1 ) ); 
+
+// Fundamental Quadrature 
+Q1 = (Fundamental / TWOPI)*(BP1 - Ref(BP1, -1 )); 
+
+//Second Harmonic Band-Pass 
+BP2 = IIR( Close, 0.5*(1 - S2), 
+                  L2*(1 + S2), 0, 
+                  -S2, - 0.5*(1 - S2) ); 
+
+//Second Harmonic Quadrature 
+Q2 = (Fundamental / TWOPI)*(BP2 - Ref( BP2, -1 )); 
+
+// Third Harmonic Band-Pass 
+BP3 = IIR( Close, 0.5*(1 - S3), 
+                  L3*(1 + S3), 0, 
+                  -S3, - 0.5*(1 - S3) ); 
+
+
+//Third Harmonic  Quadrature 
+Q3 = (Fundamental / TWOPI)*(BP3 - Ref(BP3, -1) ); 
+
+// Sum power of each harmonic at each bar over the Fundamental period 
+P1 = 0; P2 = 0; P3 = 0; 
+for( count = 0; count &lt; Fundamental; count++ ) 
+{ 
+  b = Ref( BP1, -count ); q = Ref( Q1, -count ); 
+  P1 += b * b + q * q;   
+  b = Ref( BP2, -count ); q = Ref( Q2, -count ); 
+  P2 += b * b + q * q;   
+  b = Ref( BP3, -count ); q = Ref( Q3, -count ); 
+  P3 += b * b + q * q;   
+} 
+
+// Add the three harmonics together using their relative amplitudes 
+Wave = BP1 + sqrt(P2 / P1)*BP2 + sqrt(P3 / P1)*BP3; 
+
+Plot(Wave, &quot;Wave&quot;, colorRed ); 
+
+// Optional cyclic trading signal 
+// Rate of change crosses zero at cyclic turning points 
+rocc = (Fundamental / 12.57)*(Wave - Ref(Wave, -2)); 
+// Plot(rocc, &quot;Rate of change crosses zero&quot;, colorBlue); 
+</pre>
+<p>A sample chart is shown in Figure 13.</p>
+<div class="figBorder"> <img src="images/TT-Amibroker.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 13: AMIBROKER. This daily chart of SPY with the Fourier series indicator (wave) in the lower pane replicates the chart from the referenced article in this issue.</p>
+</div>
+<p class="authorTips"> &mdash;Tomasz Janeczko, AmiBroker.com<br>
+  <a href="https://www.amibroker.com" target="_parent">www.amibroker.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item12"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+  <h3 class="newsTitle grey_blue">TRADERSSTUDIO: JUNE 2019</h3>
+</div>
+<p>The importable TradersStudio files based on John Ehlers&rsquo; article in this issue, &ldquo;Fourier Series Model of The Market,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also available at Traders.com in the Traders&rsquo; Tips area.</p>
+<p>The author did not provide complete code for a trading system. The code I am supplying may not be what the author intended. It only seems to work when traded without commissions or slippage so additional work is needed to convert this to a real-world trading system.</p>
+<pre>
+'Fourier Series Model of The Market
+'Author: John F. Ehlers, TASC Jun 2019
+'Coded by: Richard Denning, 4/16/2019
+'www.TradersEdgeSystems.com
+
+'Compute filter coefficients once
+Function WAVE(Fundamental,Bandwidth)
+  'Fundamental = 20
+    Dim G1 As BarArray
+    Dim S1 As BarArray
+    Dim L1 As BarArray
+    Dim BP1 As BarArray
+    Dim Q1 As BarArray
+    Dim P1 As BarArray
+    Dim G2 As BarArray
+    Dim S2 As BarArray
+    Dim L2 As BarArray
+    Dim BP2 As BarArray
+    Dim Q2 As BarArray
+    Dim P2 As BarArray
+    Dim G3 As BarArray
+    Dim S3 As BarArray
+    Dim L3 As BarArray
+    Dim BP3 As BarArray
+    Dim Q3 As BarArray
+    Dim P3 As BarArray
+    Dim count As BarArray
+   
+   If CurrentBar = 1 Then 
+        L1 = TStation_Cosine(360 / Fundamental)
+        G1 = TStation_Cosine(Bandwidth*360 / Fundamental)
+        S1 = 1 / G1 - Sqr(1 / (G1*G1) - 1)
+        L2 = TStation_Cosine(360 / (Fundamental / 2))
+        G2 = TStation_Cosine(Bandwidth*360 / (Fundamental / 2))
+        S2 = 1 / G2 - Sqr(1 / (G2*G2) - 1)
+        L3 = TStation_Cosine(360 / (Fundamental / 3))
+        G3 = TStation_Cosine(Bandwidth*360 / (Fundamental / 3))
+        S3 = 1 / G3 - Sqr(1 / (G3*G3) - 1)
+   End If
+   
+'Fundamental Band-Pass
+    BP1 = .5*(1 - S1)*(Close - Close[2]) + L1*(1 + S1)*BP1[1] - S1*BP1[2]
+    
+'Fundamental Quadrature
+    Q1 = (Fundamental / 6.28)*(BP1 - BP1[1])
+        
+'Second Harmonic Band-Pass
+    BP2 = .5*(1 - S2)*(Close - Close[2]) + L2*(1 + S2)*BP2[1] - S2*BP2[2]
+        
+'Second Harmonic Quadrature
+    Q2 = (Fundamental / 6.28)*(BP2 - BP2[1])
+       
+'Thrid Harmonic Band-Pass
+    BP3 = .5*(1 - S3)*(Close - Close[2]) + L3*(1 + S3)*BP3[1] - S3*BP3[2]
+    Q3 = (Fundamental / 6.28)*(BP3 - BP3[1])
+        
+'Sum power of each harmonic at each bar over the Fundamental period
+    P1 = 0
+    P2 = 0
+    P3 = 0
+    For count = 0 To Fundamental - 1
+        P1 = P1 + BP1[count]*BP1[count] + Q1[count]*Q1[count]
+        P2 = P2 + BP2[count]*BP2[count] + Q2[count]*Q2[count]
+        P3 = P3 + BP3[count]*BP3[count] + Q3[count]*Q3[count]
+    Next
+    
+'Add the three harmonics together using their relative amplitudes
+    If P1 &lt;&gt; 0 Then
+        WAVE = BP1 + Sqr(P2 / P1)*BP2 + Sqr(P3 / P1)*BP3
+    End If
+'Print FormatDateTime(Date),&quot; P1 &quot;,P1,&quot; WAVE &quot;,wave
+End Function
+'----------------------------------------------------------------------
+Function TSTATION_COSINE(TSdegrees)
+TSTATION_COSINE = Cos(DegToRad(TSdegrees))
+End Function
+'----------------------------------------------------------------------
+'Code to plot indicator
+Sub WAVE_IND(FundamentalLen,Bandwidth)
+Dim theWAVE As BarArray
+theWAVE = WAVE(FundamentalLen,Bandwidth)
+plot1(theWAVE)
+'-----------------------------------------------------------------------
+'Optional cyclic trading signal 
+'Rate Of change crosses zero at cyclic turning points 
+Sub WAVE_SYS(FundamentalLen,Bandwidth)
+Dim theWAVE As BarArray
+Dim theROC As BarArray
+theWAVE = WAVE(FundamentalLen,Bandwidth)
+theROC = (FundamentalLen / 12.57)*(theWAVE - theWAVE[2])
+If theROC[1] &gt;= 0 And theROC &lt; 0 Then Buy(&quot;LE&quot;,1,0,Market,Day)
+If theROC[1] &lt;= 0 And theROC &gt; 0 Then ExitLong(&quot;LX&quot;,&quot;&quot;,1,0,Market,Day)
+If theROC[1] &lt;= 0 And theROC &gt; 0 Then Sell(&quot;SE&quot;,1,0,Market,Day)
+If theROC[1] &gt;= 0 And theROC &lt; 0 Then ExitShort(&quot;SX&quot;,&quot;&quot;,1,0,Market,Day)
+End Sub
+'------------------------------------------------------------------------
+End Sub
+</pre>
+<p class="authorTips"> &mdash;Richard Denning<br>
+  <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+  for AIQ Systems</p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the June 2019 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2019, Technical Analysis, Inc.</p>
+</body>
+</html>

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: The Continuation Index by John F. Ehlers. Contributions from: TradeStation; Wealth-Lab.com; TradingView; Neuroshell Trader; Python; NinjaTrader.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - SEPTEMBER 2025</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">September 2025</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2025/09/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John F. Ehlers&rsquo; article in this issue, &ldquo;The Continuation Index.&rdquo; Here, we present the September 2025 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: September 2025</a></li>
+  <li><a href="#item2">Wealth-Lab.com: September 2025</a></li>
+  <li><a href="#item3">TradingView: September 2025</a></li>
+  <li><a href="#item4">Neuroshell Trader: September 2025</a></li>
+  <li><a href="#item5">Python: September 2025</a></li>
+  <li><a href="#item6">NinjaTrader: September 2025</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: September 2025</h3></div>
+<p>In &ldquo;The Continuation Index&rdquo; in this issue, John Ehlers presents an indicator named the continuation index, designed to signal both the early onset and potential exhaustion of a trend. The indicator is based on the Laguerre filter and reduces computational lag using the UltimateSmoother filter.</p> 
+<pre>
+<b>Indicator: Continuation Index</b>
+{
+ 	TASC SEPTEMBER 2025
+	Continuation Index
+	(C) 2025 John F. Ehlers
+}
+inputs:
+	Gama( .8 ),
+	Order( 8 ),
+	Length( 40 );
+
+variables:
+	US( 0 ),
+	LG( 0 ),
+	Ref( 0 ),
+	Variance( 0 ),
+	CI( 0 );
+
+//Ultimate Smoother
+US = $UltimateSmoother(Close, Length / 2);
+//Laguerre Filter
+LG = $Laguerre(Close, Gama, Order, Length);
+//Average the filter difference
+Variance = Average(AbsValue(US - LG), Length);
+//Double the normalized variance
+if Variance &lt;&gt; 0 then 
+	Ref = 2*(US - LG) / Variance;
+//Compress using an Inverse Fisher Transform
+CI = ( ExpValue(2 * Ref) - 1) / (ExpValue(2 * Ref) + 1);
+
+plot1( CI );
+Plot2( 0 );
+
+<b>Function: $Laguerre</b>
+{
+ Laguerre Filter Function
+ (C) 2005-2022 John F. Ehlers
+
+ Usage: $Laguerre(Price, gama, Order, Length);
+ ` gama must be less than 1 and equal to or greater
+ than zero order must be an integer, 10 or less
+}
+inputs:
+	Price( numericseries ),
+	Gama( numericsimple ),
+	Order( numericsimple ),
+	Length( numericsimple );
+	
+variables:
+	Count( 0 ),
+	FIR( 0 );
+
+arrays:
+	LG[10, 2]( 0 );
+	
+//load the current values of the arrays to be the values 
+// one bar ago
+for count = 1 to order 
+begin
+	LG[count, 2] = LG[count, 1];
+end;
+
+//compute the Laguerre components for the current bar
+for count = 2 to order
+begin
+	LG[count, 1] = -gama*LG[count - 1, 2] + LG[count - 1, 2]
+	 + gama*LG[count, 2];
+End;
+
+LG[1, 1] = $UltimateSmoother(Price, Length);
+//sum the Laguerre components
+FIR = 0;
+for count = 1 to order 
+begin
+	FIR = FIR + LG[count, 1];
+end;
+
+$Laguerre = FIR / order;
+
+<b>Function: $SuperSmoother</b>
+{
+	UltimateSmoother Function
+	(C) 2004-2025 John F. Ehlers
+}
+
+inputs:
+	Price( numericseries ),
+	Period( numericsimple );
+	
+variables:
+	a1( 0 ),
+	b1( 0 ),
+	c1( 0 ),
+	c2( 0 ),
+	c3( 0 ),
+	US( 0 );
+	
+a1 = ExpValue(-1.414*3.14159 / Period);
+b1 = 2 * a1 * Cosine(1.414*180 / Period);
+c2 = b1;
+c3 = -a1 * a1;
+c1 = (1 + c2 - c3) / 4;
+
+if CurrentBar &gt;= 4 then 
+ US = (1 - c1)*Price + (2 * c1 - c2) * Price[1] 
+ - (c1 + c3) * Price[2] + c2*US[1] + c3 * US[2];
+ 
+if CurrentBar &lt; 4 then 
+	US = Price;
+
+$UltimateSmoother = US;
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. A daily chart of the continuous emini S&amp;P 500 futures showing a portion of 2024 and 2025 demonstrates the indicator applied.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">—John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="http://www.TradeStation.com" target="_blank">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: September 2025</h3></div>
+ <p>We&rsquo;ve added John Ehlers&rsquo; continuation index (CI) indicator to WealthLab 8 as a built-in indicator with adjustable parameters for <em>gamma</em>, <em>order</em> and <em>length</em>.</p>
+<p>Shown here is a simple strategy (for demonstration purposes only) based on the indicator, built using our drag-and-drop strategy builder feature. The strategy uses the following rules:</p>
+<ul><li>Buy when CI crosses above &minus;0.9</li><li>Sell when CI crosses below 0</li></ul>
+<p>These settings appear to capture long-term trends. Positions can be held until a major turnaround of the trend is detected. Figure 2 shows an example trade that occurred recently on SPY in a backtest.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: WEALTH-LAB. This demonstrates applying a simple trading strategy to a chart of SPY to test trading signals produced by the continuation index. Here you can see a recent trade it signaled.</p></div>
+<p class="authorTips">—Dion Kurczek<br>
+<a href="http://www.wealth-lab.com" target="_blank">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: September 2025</h3></div>
+ <p>The TradingView Pine Script code presented here implements the continuation index introduced by John Ehlers in his article in this issue, &ldquo;The Continuation Index.&rdquo;</p>
+<pre>
+//  TASC Issue: September 2025
+//     Article: Trend Onset And Trend Exhaustion
+//              The Continuation Index
+//  Article By: John F. Ehlers
+//    Language: TradingView's Pine Script® v6
+// Provided By: PineCoders, for tradingview.com
+
+//&#64;version=6
+indicator(&quot;TASC 2025.09 The Continuation Index&quot;, &quot;CI&quot;, false)
+
+//#region Inputs:
+
+float src = input.source(close, &quot;Data Source:&quot;)
+float gamma = input.float(0.8, &quot;Gamma:&quot;, minval=0.0, maxval=1.0)
+int order = input.int(8, &quot;Order:&quot;, minval=1, maxval=10)
+int length = input.int(40, &quot;Length:&quot;)
+
+//#endregion
+
+
+//#region   Functions:
+
+//  from: TASC 2025.07
+// &#64;function      The UltimateSmoother is a filter created
+//                by subtracting the response of a high-pass 
+//                filter from that of an all-pass filter.
+// &#64;param src     Source series.
+// &#64;param period  Critical period.
+// &#64;returns       Smoothed series.
+UltimateSmoother (float src, int period) =&gt;
+    float a1 = math.exp(-1.414 * math.pi / period)
+    float c2 = 2.0 * a1 * math.cos(1.414 * math.pi / period)
+    float c3 = -a1 * a1
+    float c1 = (1.0 + c2 - c3) / 4.0
+    float us = src
+    if bar_index &gt;= 4
+        us := (1.0 - c1) * src + 
+              (2.0 * c1 - c2) * src[1] - 
+              (c1 + c3) * src[2] + 
+              c2 * nz(us[1]) + c3 * nz(us[2])
+    us
+
+// &#64;function Laguerre Filter.
+// &#64;param src Data source.
+// &#64;param gama Gamma value controls the the filter response, range: `[0, 1]`.
+// &#64;param order Order of the laguerre filter lag, range: `[1, 10]`.
+// &#64;param length Length of the smoothness effect.
+// &#64;returns Laguerre filtered value.
+LF (float src=close, float gama=0.8, float order=8, int length=40) =&gt;
+    var matrix&lt;float&gt; LG = matrix.new&lt;float&gt;(10, 2, 0.0)
+    // load the current values of the arrays to be the values one bar ago.
+    for i = 0 to order - 1
+        LG.set(i, 1, LG.get(i, 0))
+    // compute the laguerre components for the current bar.
+    for i = 1 to order - 1
+        LG.set(i, 0, 
+         -gama * LG.get(i-1, 1) + LG.get(i-1, 1) + gama * LG.get(i, 1))
+    LG.set(0, 0, UltimateSmoother(src, length))
+    // sum the laguerre components
+    float FIR = 0.0
+    for i = 0 to order - 1
+        FIR += LG.get(i, 0)
+    FIR / order
+
+// &#64;function Continuation Index.
+// &#64;param src Data source.
+// &#64;param gama Gamma value controls the the filter response, range: `[0, 1]`.
+// &#64;param order Order of the laguerre filter lag, range: `[1, 10]`.
+// &#64;param length Length of the smoothness effect.
+// &#64;returns Continuation index value.
+CI (
+ float src=close, 
+ float gamma=0.8, 
+ int order=8, 
+ int length=40
+ ) =&gt;
+    float US = UltimateSmoother(src, int(length / 2))
+    float LG = LF(src, gamma, order, length)
+    float Variance = ta.sma(math.abs(US - LG), length)
+    float Ref = Variance != 0.0 ? 2.0 * (US - LG) / Variance : 0.0
+    (math.exp(2.0 * Ref) - 1.0) / (math.exp(2.0 * Ref) + 1.0)
+
+
+//#endregion
+
+
+//#region Display:
+
+float CI = CI(src, gamma, order, length)
+
+color ci_col = switch 
+    CI &gt;  0.5 =&gt; color.from_gradient(CI,  0.5,  1.0, color.gray, color.green)
+    CI &lt; -0.5 =&gt; color.from_gradient(CI, -0.5, -1.0, color.red, color.gray)
+    =&gt; color.gray
+
+plot(CI, &quot;Continuation index&quot;, ci_col)
+barcolor(ci_col)
+
+//#endregion
+</pre>
+<p>The indicator is available on TradingView from the PineCodersTASC account at <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart is shown in Figure 3.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: TRADINGVIEW. Here you see an example chart of SPY with the continuation index indicator applied.</p></div>
+<p class="authorTips">—PineCoders, for TradingView<br>
+<a href="https://www.TradingView.com" target="_blank">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: September 2025</h3></div>
+<p>The continuation index, as introduced by John Ehlers&rsquo; article in this issue, can be easily implemented in NeuroShell Trader by combining some of NeuroShell Trader&rsquo;s 800+ indicators and Ehlers&rsquo; UltimateSmoother and Laguerre filter indicators (see the July 2025 July Traders&rsquo; Tips). To implement the continuation index, select &ldquo;New indicator&rdquo; from the insert menu and use the indicator wizard to create the following indicators:</p> 
+<pre>
+DIFF:			Subtract( Ultimate Smoother(Close,40), Laguerre Filter(Close,0.8,40) )
+VARIANCE:		MovAvg( Abs(DIFF), 40 )
+EXP:			Exp( Divide( Mul2( 4, DIFF )))
+CONTINUATION INDEX:	Divide( Subtract( EXP, 1 ), Add2( EXP, 1 ) )
+</pre>
+<p>A sample chart is in Figure 4.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: NEUROSHELL TRADER. This example NeuroShell Trader chart shows the continuation index (bottom pane) applied to a daily chart of the emini S&amp;P 500 continuous contract (ES) along with Ehlers&rsquo; UltimateSmoother and Laguerre filter indicators plotted.</p></div>
+<p class="authorTips">—Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_blank">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Python: September 2025</h3></div>
+<p>Following is an implementation of the continuation index, as introduced John Ehlers&rsquo; article in this issue, &ldquo;The Continuation Index,&rdquo; in the Python programming language. The continuation index is based on Ehlers&rsquo; UltimateSmoother function and the Laguerre filter function. The code given here imports the required Python libraries, imports data from Yahoo Finance, converts the EasyLanguage code given in Ehlers&rsquo; article to Python for the continuation index, and compares parameters.</p> 
+<pre>
+&quot;&quot;&quot;
+Written By: Rajeev Jain, 2025-07-23
+Trader Tips python code for TAS&amp;C Magazine article &quot;The Continuation Index&quot;
+
+&quot;&quot;&quot;
+
+# import required python libraries
+%matplotlib inline
+
+import pandas as pd
+import numpy as np
+import math
+import datetime as dt
+import yfinance as yf
+print(yf.__version__)
+
+0.2.58
+
+# Use Yahoo Finance python package to obtain OHLCV data for the SP500 index
+symbol = '^GSPC'
+ohlcv = yf.download(
+    symbol, 
+    start=&quot;2019-01-01&quot;, 
+    end=&quot;2025-07-24&quot;, 
+    #group_by=&quot;Ticker&quot;, 
+    auto_adjust=True,
+    multi_level_index=False,
+    progress=False,
+)
+
+# Python functions to implement UltimateSmoother, Laguerre Filter and 
+# Continuation Index as defined in John Ehlers&rsquo; article. 
+def ultimate_smoother(price_series, period):
+    &quot;&quot;&quot;
+    Ultimate Smoother function converted from EasyLanguage to Python.
+    
+    Parameters:
+        price_series (list or np.array): Time series of prices (e.g., closing
+        prices)
+        period (float): Smoothing period
+
+    Returns:
+        np.array: Smoothed price series
+    &quot;&quot;&quot;
+    price_series = np.asarray(price_series)
+    n = len(price_series)
+    US = np.zeros(n)
+
+    # Filter coefficients
+    Q = math.exp(-1.414 * math.pi / period)
+    c1 = 2 * Q * math.cos(1.414 * math.pi / period)
+    c2 = Q * Q
+    a0 = (1 + c1 + c2) / 4
+
+    for i in range(n):
+        if i &lt; 3:
+            US[i] = price_series[i]
+        else:
+            US[i] = ((1 - a0) * price_series[i] +
+                     (2 * a0 - c1) * price_series[i - 1] +
+                     (c2 - a0) * price_series[i - 2] +
+                     c1 * US[i - 1] -
+                     c2 * US[i - 2])
+    return US
+
+def laguerre_filter(price_series, gama, order, length):
+    &quot;&quot;&quot;
+    Laguerre Filter Function converted from EasyLanguage to Python.
+    Parameters:
+        price_series (list or np.array): Input price data
+        gama (float): Laguerre parameter, 0 &lt;= gama &lt; 1
+        order (int): Filter order (integer &lt;= 10)
+        length (float): Length for Ultimate Smoother
+    Returns:
+        np.array: Laguerre filtered series
+    &quot;&quot;&quot;
+    assert 0 &lt;= gama &lt; 1, &quot;gama must be in [0, 1)&quot;
+    assert order &lt;= 10 and order &gt;= 1, &quot;order must be integer between 1 and 10&quot;
+    price_series = np.asarray(price_series)
+    n = len(price_series)
+    output = np.zeros(n)
+
+    # Initialize Laguerre matrix: shape (order+1, 2)
+    LG = np.zeros((order + 1, 2))
+
+    # Precompute ultimate smoother once
+    smoothed_price = ultimate_smoother(price_series, length)
+    for t in range(n):
+        # Shift previous values: LG[:, 2] = LG[:, 1]
+        LG[:, 1] = LG[:, 0]
+        # Update LG[1] using the smoothed price at current time
+        LG[1, 0] = smoothed_price[t]
+        # Compute rest of the Laguerre components recursively
+        for count in range(2, order + 1):
+            LG[count, 0] = (
+                -gama * LG[count - 1, 1] +
+                LG[count - 1, 1] +
+                gama * LG[count, 1]
+            )
+        # Sum current values of LG[1] to LG[order]
+        FIR = np.sum(LG[1:order + 1, 0])
+        output[t] = FIR / order
+    return output
+def continuation_index(close_prices, gama=0.8, order=8, length=40):
+    &quot;&quot;&quot;
+    Continuation Index by John F. Ehlers (converted from EasyLanguage).
+    
+    Parameters:
+        close_prices (list or np.array): Series of closing prices
+        gama (float): Laguerre gamma (0 &lt;= gama &lt; 1)
+        order (int): Order of Laguerre filter (&lt;= 10)
+        length (int): Base smoothing period
+    Returns:
+        np.array: Continuation Index values
+    &quot;&quot;&quot;
+    close_prices = np.asarray(close_prices)
+    n = len(close_prices)
+
+    # Step 1: Ultimate Smoother with Length / 2
+    US = ultimate_smoother(close_prices, length / 2)
+    # Step 2: Laguerre Filter
+    LG = laguerre_filter(close_prices, gama, order, length)
+    # Step 3: Variance = avg(abs(US - LG)) over Length
+    diff = np.abs(US - LG)
+    variance = np.convolve(diff, np.ones(length)/length, mode='same')
+    # Step 4: Normalized difference, scaled by 2
+    with np.errstate(divide='ignore', invalid='ignore'):
+        ref = np.where(variance != 0, 2 * (US - LG) / variance, 0)
+    # Step 5: Inverse Fisher Transform compression
+    CI = (np.exp(2 * ref) - 1) / (np.exp(2 * ref) + 1)
+    return CI
+
+# Compare Laguerre filter response for gamma setting of 0.4 vs gamma setting of 0.8
+gama1 = 0.4
+gama2 = 0.8
+order = 8
+length = 40
+df = ohlcv.copy()
+df['Laguerre_0.4'] = laguerre_filter(df['Close'], gama1, order, length)
+df['Laguerre_0.8'] = laguerre_filter(df['Close'], gama2, order, length)
+cols = ['Close', 'Laguerre_0.4', 'Laguerre_0.8']
+ax = df[-255:][cols].plot(marker='.', grid=True, figsize=(9,6), title=f'Ticker={symbol}, Laguerre Filder Response, Gamma Parameter Comparison')
+ax.set_xlabel('')
+plt.show()
+
+# Compare Laguerre filter response for order of 4 vs order of 8
+order1 = 4
+order2 = 8
+length = 40
+gama = 0.8
+df = ohlcv.copy()
+df['Laguerre_4th'] = laguerre_filter(df['Close'], gama, order1, length)
+df['Laguerre_8th'] = laguerre_filter(df['Close'], gama, order2, length)
+df
+cols = ['Close', 'Laguerre_4th', 'Laguerre_8th']
+ax = df[-255:][cols].plot(marker='.', grid=True, figsize=(9,6), title=f'Ticker={symbol}, Laguerre Filder Response, Order Parameter Comparison')
+ax.set_xlabel('')
+plt.show()
+
+# Example of continuation index using default setting for 
+# daily close of S&amp;P 500 index
+def plot_ci(df):
+    ax = df[['Close', 'Laguerre']].plot(
+        marker='.', 
+        grid=True, 
+        figsize=(9,4), 
+        title=f'Ticker={symbol}'
+    )
+    ax.set_xlabel('')
+    ax = df[['CI']].plot(
+        marker='.', 
+        grid=True, 
+        figsize=(9,2), 
+        title=f'Continuation Index'
+    )
+    ax.set_xlabel('')
+
+gama=0.8
+order=8
+length=40
+df = ohlcv.copy()
+df['Laguerre'] = laguerre_filter(df['Close'], gama, order, length)
+df['CI'] = continuation_index(df['Close'], gama, order, length)
+plot_ci(df[-252:])
+</pre>
+<p>The chart in Figure 5 shows the continuation index on a daily chart of the emini S&amp;P 500.</p>
+<div class="figBorder">
+<img src="images/TT-Python1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: PYTHON. This demonstrates John Ehlers&rsquo; continuation index (bottom pane) on a daily chart of the emini S&amp;P 500. </p></div>
+<p class="authorTips">—Rajeev Jain<br>
+<a href="mailto:jainraje@yahoo.com">jainraje@yahoo.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: September 2025</h3></div>
+ <p>In his article &ldquo;The Continuation Index&rdquo; in this issue, John Ehlers presents an indicator named the continuation index. The indicator is available for download at the following link for NinjaTrader 8:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://ninjatrader.com/SC/September2025SCNT8.zip" target="_blank">ninjatrader.com/SC/September2025SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the file.</p>
+<p>A sample chart is shown in Figure 6.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: Ninjatrader. The continuation index is displayed in the bottom pane on a daily chart of the emini S&amp;P 500 futures (ES). The Laguerre filter (in two different settings) is displayed in the price pane.</p></div>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">—Chelsea Bell<br>
+NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_blank">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the September 2025 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+All rights reserved. &copy;&nbsp;Copyright&nbsp;2025, Technical Analysis, Inc.</p>
+
+</body>
+</html>

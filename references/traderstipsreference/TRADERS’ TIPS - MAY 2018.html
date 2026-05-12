@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine.">
+<meta name="description" content="This month: RocketRSI by John Ehlers. Contributions from: TradeStation, MetaStock, eSignal, Wealth-Lab.com, AmiBroker, Neuroshell Trader, TradersStudio, Quantacula, NinjaTrader, Trade Navigator and Microsoft Excel programmer Ron mcAllister.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - MAY 2018</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">May 2018</h1>
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+  <p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John Ehlers&rsquo; article
+    in this issue, &ldquo;RocketRSI&mdash;A Solid Propellant For Your Rocket
+    Science Trading.&rdquo; Here, we present the May 2018 Traders&rsquo; Tips
+    code with possible implementations in various software.</p>
+  <p><strong>You can right-click on any chart to open it in a new tab or window
+      and view it at it&rsquo;s originally supplied size, often much larger than
+      the version printed in the magazine.</strong></p>
+  <p>EasyLanguage code is also provided by Ehlers in the article, which S&amp;C
+    subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>
+  <p>The Traders&rsquo; Tips section is provided to help the reader implement
+    a selected technique from an article in this issue or another recent issue.
+    The entries here are contributed by software developers or programmers for
+    software that is capable of customization.</p>
+  <br class="clearfloat">
+</div>
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TRADESTATION: MAY 2018</a></li>
+  <li><a href="#item2">METASTOCK: MAY 2018</a></li>
+  <li><a href="#item3"><span style="text-transform:lowercase;">e</span>SIGNAL:
+      MAY 2018</a></li>
+  <li><a href="#item4">WEALTH-LAB: MAY 2018</a></li>
+  <li><a href="#item5">AMIBROKER: MAY 2018</a></li>
+  <li><a href="#item6">NEUROSHELL TRADER: MAY 2018</a></li>
+  <li><a href="#item7">TRADERSSTUDIO: MAY 2018</a></li>
+  <li><a href="#item8">QUANTACULA: MAY 2018</a></li>
+  <li><a href="#item9">NINJATRADER: MAY 2018</a></li>
+  <li><a href="#item10">TRADE NAVIGATOR: MAY 2018</a></li>
+  <li><a href="#item11">MICROSOFT EXCEL: MAY 2018</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-New1.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> TRADESTATION: MAY 2018</h3>
+</div>
+<p>In &ldquo;RocketRSI&mdash;A Solid Propellant For Your Rocket Science Trading&rdquo; in this
+  issue, author John Ehlers introduces a new take on the classic RSI indicator
+  originally developed by J. Welles Wilder. Ehlers begins by introducing a new
+  version of the RSI based on a simple accumulation of up and down closes rather
+  than averages. To this he applies a Fisher transform. He tells us that the
+  resultant output is statistically significant spikes that indicate cyclic turning
+  points with precision.</p>
+<p>Here, we are providing the TradeStation EasyLanguage code for an indicator
+  and a strategy based on the author&rsquo;s work.</p>
+<pre>
+// RocketRSI Indicator
+// (C) 2005-2018 John F. Ehlers
+// TASC May 2018
+
+inputs:
+	SmoothLength( 10 ),
+	RSILength( 10 ),
+	OBOSLevel( 2 ) ;
+variables:
+	a1( 0 ),
+	b1( 0 ),
+	c1( 0 ),
+	c2( 0 ),
+	c3( 0 ),
+	Filt( 0 ),
+	Mom( 0 ),
+	count( 0 ),
+	CU( 0 ),
+	CD( 0 ),
+	MyRSI( 0 ),
+	RocketRSI( 0 ),
+	DollarsPerTrade( 0 ),
+	PositionSize( 0 ) ;
+	
+//Compute Super Smoother coefficients once
+if CurrentBar = 1 then 
+begin
+	a1 = expvalue( -1.414 * 3.14159 
+		/ ( SmoothLength ) ) ;
+	b1 = 2 * a1 * Cosine( 1.414 * 180 
+		/ ( SmoothLength ) ) ;
+	c2 = b1 ;
+	c3 = -a1 * a1 ;
+	c1 = 1 - c2 - c3 ;
+end ;
+
+//Create half dominant cycle Momentum
+Mom = Close - Close[RSILength - 1] ;
+
+//SuperSmoother Filter
+Filt = c1 * ( Mom + Mom[1] ) 
+	/ 2 + c2 * Filt[1] + c3 * Filt[2] ;
+
+//Accumulate &quot;Closes Up&quot; and &quot;Closes Down&quot;
+CU = 0 ;
+CD = 0 ;
+for count = 0 to RSILength -1 
+begin
+	if Filt[count] - Filt[count + 1] &gt; 0 then 
+		CU = CU + Filt[count] - Filt[count + 1] ;
+	if Filt[count] - Filt[count + 1] &lt; 0 then 
+		CD = CD + Filt[count + 1] -	Filt[count] ;
+end ; 
+
+if CU + CD &lt;&gt; 0 then 
+	MyRSI = ( CU - CD ) / ( CU + CD ) ;
+
+//Limit RocketRSI output to 
+//+/- 3 Standard Deviations
+iF MyRSI &gt; .999 then 
+	MyRSI = .999 ;
+if MyRSI &lt; -.999 then 
+	MyRSI = -.999 ;
+
+//Apply Fisher Transform to establish 
+//Gaussian Probability Distribution
+RocketRSI = .5 * Log( ( 1 + MyRSI ) 
+	/ ( 1 - MyRSI ) ) ;
+
+Plot1( RocketRSI, &quot;RocketRSI&quot; ) ;
+Plot2( 0, &quot;Zero Line&quot; ) ;
+Plot3( OBOSLevel, &quot;OB Level&quot; ) ;
+Plot4( -OBOSLevel, &quot;OS Level&quot; ) ;
+
+
+
+Strategy: RocketRSI
+
+// RocketRSI Strategy
+// (C) 2005-2018 John F. Ehlers
+// TASC May 2018
+
+inputs:
+	SmoothLength( 10 ),
+	RSILength( 10 ),
+	OBOSLevel( 2 ),
+	InitialCapital( 100000 ),
+	Leverage( 2 ),
+	SLAmount( 2 ) ;
+variables:
+	a1( 0 ),
+	b1( 0 ),
+	c1( 0 ),
+	c2( 0 ),
+	c3( 0 ),
+	Filt( 0 ),
+	Mom( 0 ),
+	count( 0 ),
+	CU( 0 ),
+	CD( 0 ),
+	MyRSI( 0 ),
+	RocketRSI( 0 ),
+	DollarsPerTrade( 0 ),
+	PositionSize( 0 ) ;
+	
+//Compute Super Smoother coefficients once
+if CurrentBar = 1 then 
+begin
+	a1 = expvalue( -1.414 * 3.14159 
+		/ ( SmoothLength ) ) ;
+	b1 = 2 * a1 * Cosine( 1.414 * 180 
+		/ ( SmoothLength ) ) ;
+	c2 = b1 ;
+	c3 = -a1 * a1 ;
+	c1 = 1 - c2 - c3 ;
+end ;
+
+//Create half dominant cycle Momentum
+Mom = Close - Close[RSILength - 1] ;
+
+//SuperSmoother Filter
+Filt = c1 * ( Mom + Mom[1] ) 
+	/ 2 + c2 * Filt[1] + c3 * Filt[2] ;
+
+//Accumulate &quot;Closes Up&quot; and &quot;Closes Down&quot;
+CU = 0 ;
+CD = 0 ;
+for count = 0 to RSILength -1 
+begin
+	if Filt[count] - Filt[count + 1] &gt; 0 then 
+		CU = CU + Filt[count] - Filt[count + 1] ;
+	if Filt[count] - Filt[count + 1] &lt; 0 then 
+		CD = CD + Filt[count + 1] -	Filt[count] ;
+end ; 
+
+if CU + CD &lt;&gt; 0 then 
+	MyRSI = ( CU - CD ) / ( CU + CD ) ;
+
+//Limit RocketRSI output to 
+//+/- 3 Standard Deviations
+iF MyRSI &gt; .999 then 
+	MyRSI = .999 ;
+if MyRSI &lt; -.999 then 
+	MyRSI = -.999 ;
+
+//Apply Fisher Transform to establish 
+//Gaussian Probability Distribution
+RocketRSI = .5 * Log( ( 1 + MyRSI ) 
+	/ ( 1 - MyRSI ) ) ;
+
+// Calculate Position Size
+DollarsPerTrade = ( InitialCapital + NetProfit 
+	+ OpenPositionProfit ) * Leverage ;
+PositionSize = DollarsPerTrade / Close ;
+
+
+if RocketRSI crosses below -OBOSLevel then
+	Buy PositionSize shares next bar at Market 
+else if RocketRSI crosses above OBOSLevel then
+	SellShort PositionSize shares next bar at Market ;	
+
+// Apply a Stop Loss
+SetStopShare ;
+SetStopLoss( SLAmount )
+</pre>
+<p>To download the EasyLanguage code, please visit our TradeStation and EasyLanguage
+  support forum. The files for this article can be found here: <a href="https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=142776" target="_parent">https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=142776</a>.
+  The filename is &ldquo;TASC_MAY2018.ZIP.&rdquo;</p>
+<p>For more information about EasyLanguage in general, please see <a href="https://developer.tradestation.com/easylanguage" target="_parent">https://developer.tradestation.com/easylanguage</a>.</p>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. Here is
+    an example daily chart of SPY with the RocketRSI indicator and strategy applied.</p>
+</div>
+<p><em>This article is for informational purposes. No type of trading or investment
+    recommendation, advice, or strategy is being made, given, or in any manner
+    provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;Doug McCrary<br>
+  TradeStation Securities, Inc.<br>
+  <a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Metastock.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> METASTOCK: MAY 2018</h3>
+</div>
+<p>John Ehlers&rsquo; article in this issue, &ldquo;RocketRSI&mdash;A Solid Propellant For Your
+  Rocket Science Trading,&rdquo; presents two variations on the standard RSI calculation.
+  Here are the MetaStock formulas for these indicators:</p>
+<pre>
+MYRSI:
+
+sml:= 8; {smooth length}
+rsil:= 10; {RSI length}
+
+{super smoother}
+a1:= Exp(-1.414 * 3.14159 / sml);
+b1:= 2*a1 * Cos(1.414*180 / sml);
+c2:= b1;
+c3:= -a1 * a1;
+c1:= 1 - c2 - c3;
+filt:= c1 * (C + Ref(C, -1))/2 + c2*PREV + c3*Ref(PREV,-1);
+
+{RSI}
+change:= ROC(filt, 1, $);
+CU:= Sum(If(change &gt; 0, change, 0), rsil);
+CD:= Sum(If(change &lt; 0, Abs(change), 0), rsil);
+denom:= If(CU+CD = 0, -1, CU+CD);
+If(denom=-1, 0, (CU-CD)/denom)
+
+
+RocketRSI:
+
+sml:= 8; {smooth length}
+rsil:= 10; {RSI length}
+
+{super smoother}
+a1:= Exp(-1.414 * 3.14159 / sml);
+b1:= 2*a1 * Cos(1.414*180 / sml);
+c2:= b1;
+c3:= -a1 * a1;
+c1:= 1 - c2 - c3;
+
+rmom:= C-Ref(C, -(rsil-1));
+filt:= c1 * (rmom + Ref(rmom, -1))/2 + c2*PREV + c3*Ref(PREV,-1);
+
+{RSI}
+change:= ROC(filt, 1, $);
+CU:= Sum(If(change &gt; 0, change, 0), rsil);
+CD:= Sum(If(change &lt; 0, Abs(change), 0), rsil);
+denom:= If(CU+CD = 0, -1, CU+CD);
+myRSI:= If(denom=-1, 50, (CU-CD)/denom);
+
+limit:= If(myRSI&gt;0.999, 0.999, If(myRSI&lt;-0.999, -0.999, myRSI));
+.5*Log((1+limit) / (1-limit))
+</pre>
+<p class="authorTips">&mdash;William Golson<br>
+  MetaStock Technical Support<br>
+  <a href="https://www.metastock.com" target="_parent">www.metastock.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> eSIGNAL: MAY 2018</h3>
+</div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;ve provided the study <a href="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/code/RocketRSI.efs" target="_blank">RocketRSI.efs</a> based
+  on the article by John Ehlers in this issue, &ldquo;RocketRSI&mdash;A Solid Propellant
+  For Your Rocket Science Trading.&rdquo; The study is designed to assist you in identifying
+  cyclic reversal points.</p>
+<p>The study contains formula parameters that may be configured through the <em>edit
+    chart</em> window (right-click on the chart and select &ldquo;edit chart&rdquo;). A sample
+    chart is shown in Figure 2.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 2: eSIGNAL. Here is an example
+    of the study plotted on a daily chart of SPY.</p>
+</div>
+To discuss this study or download a complete copy of the formula code, please
+visit the members community section of our website at <a href="https://www.esignal.com/members/community" target="_parent">https://www.esignal.com/members/community</a> or
+visit our KnowledgeBase at <a href="https://kb.esignal.com" target="_parent">https://kb.esignal.com</a>.
+The eSignal formula script (EFS) is also available for copying &amp; pasting <a href="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/code/RocketRSI.efs" target="_parent">here</a>:
+<pre>
+/*********************************
+Provided By:  
+eSignal (Copyright c eSignal), a division of Interactive Data 
+Corporation. 2016. All rights reserved. This sample eSignal 
+Formula Script (EFS) is for educational purposes only and may be 
+modified and saved under a new file name.  eSignal is not responsible
+for the functionality once modified.  eSignal reserves the right 
+to modify and overwrite this EFS file with each new release.
+
+Description:        
+    RocketRSI - A Solid Propellant For Your Rocket Science Trading by John F. Ehlers
+
+Version:            1.00  21/03/2018
+
+Formula Parameters:                     Default:
+Smoothing Length                        8
+RSI Length                              10
+
+
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+
+var fpArray = new Array();
+
+function preMain(){
+    setPriceStudy(false);
+    setStudyTitle(&quot;Rocket RSI&quot;);
+    
+    var x = 0;
+    fpArray[x] = new FunctionParameter(&quot;SmLength&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setName(&quot;Smoothing Length&quot;);
+        setLowerLimit(1);
+        setDefault(8);
+    }
+    fpArray[x] = new FunctionParameter(&quot;RSILength&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setName(&quot;RSI Length&quot;);
+        setLowerLimit(1);
+        setDefault(10);
+    }
+}
+
+var bInit = false;
+var bVersion = null;
+var xRocketRSI = null
+
+function main(SmLength, RSILength){
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return;
+    
+    if (getCurrentBarCount() &lt;= SmLength + RSILength + 1) return;
+    
+    if (getBarState() == BARSTATE_ALLBARS){
+        bInit = false;
+    }
+    
+    if (!bInit){
+        var a1 = Math.exp(-Math.SQRT2 * Math.PI / SmLength);
+        var b1 = 2 * a1* Math.cos( (Math.PI / 180) * Math.SQRT2 * 180 / SmLength);
+        var c2 = b1;
+        var c3 = - a1 * a1;
+        var c1 = 1 - c2 - c3;
+        
+        var xMomentum = mom(RSILength-1);
+        var xSSFilter = efsInternal(&quot;calc_SSFilter&quot;, xMomentum, c1, c2, c3);
+        xRocketRSI = efsInternal(&quot;calc_RocketRSI&quot;, RSILength, xSSFilter);
+        
+        addBand(0, PS_DASH, 1, Color.grey, 1);
+        
+        bInit = true;
+    }
+
+    if( xRocketRSI.getValue(0) != null) return xRocketRSI.getValue(0);
+}
+
+var nSSFilter = 0;
+var nSSFilter_1 = 0;
+var nSSFilter_2 = 0;
+
+function calc_SSFilter(xMomentum, c1, c2, c3){
+    if (xMomentum.getValue(-1) == null) return;
+    
+    if (getBarState() == BARSTATE_NEWBAR){
+        nSSFilter_2 = nSSFilter_1;
+        nSSFilter_1 = nSSFilter;
+    }
+        
+    nSSFilter = c1 * (xMomentum.getValue(0) + xMomentum.getValue(-1)) / 2 + c2 * nSSFilter_1 + c3 * nSSFilter_2;
+    
+    if (nSSFilter == null) return;
+    
+    return nSSFilter;
+}
+
+function calc_RocketRSI(RSILength, xSSFilter){     
+    if (xSSFilter.getValue(-RSILength - 1) == null) return;
+    
+    var nCU = 0;
+    var nCD = 0;
+    var nMyRSI = 0;
+    var nRocketRSI = 0;
+    
+    for (var i = 0; i &lt; RSILength; i++){
+        
+        if (xSSFilter.getValue(-i) - xSSFilter.getValue(-i - 1) &gt; 0)
+            nCU += (xSSFilter.getValue(-i) - xSSFilter.getValue(-i - 1));
+        
+        if (xSSFilter.getValue(-i) - xSSFilter.getValue(-i - 1) &lt; 0)
+            nCD += (xSSFilter.getValue(-i - 1) - xSSFilter.getValue(-i)); 
+    }
+
+    
+    if ((nCU + nCD) != 0) nMyRSI = (nCU - nCD) / (nCU + nCD);
+    
+    if (nMyRSI &gt; 0.999) nMyRSI = 0.999;
+    if (nMyRSI &lt; -0.999) nMyRSI = -0.999;
+        
+    nRocketRSI = 0.5 * Math.log((1 + nMyRSI) / (1 - nMyRSI));
+    
+    return nRocketRSI;
+}
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+</pre>
+<p class="authorTips">&mdash;Eric Lippert<br>
+  eSignal, an Interactive Data company<br>
+  800 779-6555, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> WEALTH-LAB: MAY 2018</h3>
+</div>
+<p>In good tradition, in this issue we&rsquo;re pleased to find two new indicators
+  introduced by John Ehlers in his article, &ldquo;RocketRSI&mdash;A Solid Propellant For
+  Your Rocket Science Trading.&rdquo; Is RocketRSI the new dawn for the RSI? Let&rsquo;s
+  take a look.</p>
+<p>From our brief encounter with this new indicator, it seems that its applicability
+  greatly depends on finding the dominant cycle period. The &ldquo;$64,000 question&rdquo;
+  is whether this cycle actually exists in the data, and how stable it is over
+  time.</p>
+<p>We created a barebones system to put to test the idea that a spike below -2
+  provides a long entry timing signal (we&rsquo;ll skip the opposite signal this time).
+  Figure 3 illustrates some typical entries. Its only exit rule is to &ldquo;exit after <em>fixed
+  bars</em>&rdquo; (where <em>fixed bars</em> is a parameter). Looking ahead, this
+  parameter had the biggest impact on the system&rsquo;s net profit (as shown in Figure
+  4). Then we ran a portfolio simulation on 10 years of daily data for the 30
+  DJIA stocks allocating 10% equity to each signal.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 3: WEALTH-LAB. This shows
+    some typical long entries following spikes below -2 standard deviations on
+    a daily chart of Apple (AAPL).</p>
+</div>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 4: WEALTH-LAB. Increasing
+    the bars to hold parameter had the most visible effect on the system&rsquo;s net
+    profit.</p>
+</div>
+<p>On a 3D optimization graph we plotted the system&rsquo;s net profit on axis Y, and
+  the RSI length and fixed bars parameters on axes X and Z, respectively (Figure
+  5).</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/TT-Wealthlab3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 5: WEALTH-LAB. This 3D optimization
+    graph plots the system&rsquo;s net profit on axis Y, the RSI length on axis x,
+    and fixed bars parameters on axis Z.</p>
+</div>
+<p>The best net profit amount came from the eight-period RSI length, which suggests
+  that there may be a 16-bar cycle period in the 30 DJIA stocks. However, the
+  3D graph indicates there&rsquo;s a sharp peak around this value. The smooth area
+  of the curve nearby suggests a stable and profitable zone with multiple adjacent
+  parameter values, which leads to more consistent results. Hence, we&rsquo;d rather
+  pick the half-cycle period from this area in the 10 to 14 ballpark&mdash;which is
+  close to the author&rsquo;s suggestion.</p>
+<p>To give the RocketRSI the more thorough testing that it deserves and to start
+  building your own systems, install or update our TASCIndicators library to
+  its latest version and restart Wealth-Lab. This makes it instantly applicable
+  to any building blocks called <em>rules</em>. By simply combining and reordering
+  them, the user can come up with fairly elaborate strategies. The test system&rsquo;s
+  code follows:</p>
+<pre>
+Wealth-Lab strategy code C#
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Drawing;
+using WealthLab;
+using WealthLab.Indicators;
+using TASCIndicators;
+
+namespace WealthLab.Strategies
+{
+	public class MyStrategy : WealthScript
+	{
+		StrategyParameter slider1;
+		StrategyParameter slider2;
+		StrategyParameter paramExitDays;
+
+		public MyStrategy()
+		{
+			slider1 = CreateParameter(&quot;Smoothing Length&quot;, 8, 2, 20, 2);
+			slider2 = CreateParameter(&quot;RSI Length&quot;, 10, 2, 20, 2);
+			paramExitDays = CreateParameter(&quot;Exit after&quot;, 10, 5, 30, 5);
+		}
+
+		protected override void Execute()
+		{
+			var rr = RocketRSI.Series(Close,slider1.ValueInt,slider2.ValueInt);
+			var fixedBars = paramExitDays.ValueInt;
+			
+			for(int bar = GetTradingLoopStartBar(1); bar &lt; Bars.Count; bar++)
+			{
+				if (IsLastPositionActive)
+				{
+					Position p = LastPosition;
+					if ( bar+1 - p.EntryBar &gt;= fixedBars )
+						SellAtMarket( bar+1, p, &quot;Exit after N bars&quot; ); 
+				}
+				else
+				{
+					if( rr[bar] &lt;= -2.0 )
+						BuyAtMarket(bar+1);
+				}
+			}
+
+			var ls = LineStyle.Solid;
+			ChartPane paneRocketRSI = CreatePane(40,true,true);
+			PlotSeries(paneRocketRSI,rr,Color.Black,ls,2);
+			DrawHorzLine(paneRocketRSI,0,Color.Violet,ls,2);
+			DrawHorzLine(paneRocketRSI,2,Color.Red,ls,1);
+			DrawHorzLine(paneRocketRSI,-2,Color.Blue,ls,1);
+		}
+	}
+}
+</pre>
+<p class="authorTips">&mdash;Gene Geren &amp; Robert Sucher<br>
+  Wealth-Lab (MS123, LLC)<br>
+  <a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Amibroker.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> AMIBROKER: MAY 2018</h3>
+</div>
+<p>In &ldquo;RocketRSI&mdash;A Solid Propellant For Your Rocket Science Trading&rdquo; in this
+  issue, author John Ehlers presents a new variation of the RSI indicator. The
+  AmiBroker code listing shown here provides a ready-to-use formula. To adjust
+  parameters, right-click on the chart and select <em>parameters</em> from the
+  context menu. </p>
+<pre>
+// RocketRSI Indicator 
+// based on TS code by John F. Ehlers, S&amp;C May 2018 
+
+SmoothLength = Param(&quot;SmoothLength&quot;, 10, 2, 50 ); 
+RSILength = Param(&quot;RSILength&quot;, 10, 2, 50 ); 
+
+// Compute Super Smoother coefficients once 
+
+PI = 3.1415926; 
+
+a1 = exp( -1.414 * PI / SmoothLength ); 
+b1 = 2 * a1 * Cos( 1.414 * PI / SmoothLength ); 
+c2 = b1; 
+c3 = -a1 * a1; 
+c1 = 1 - c2 - c3; 
+
+// Create half dominant cycle Momentum 
+Mom = Close - Ref( Close, RSILength - 1 ); 
+
+// SuperSmoother Filter 
+Filt = IIR( Mom, 0.5 * c1, c2, 0.5 * c1, c3 ); 
+
+// Accumulate &quot;Closes Up&quot; and &quot;Closes Down&quot; 
+Diff = Ref( Filt, -1 ) - Filt; 
+
+Up = Max( Diff, 0 ); 
+Dn = Max( -Diff, 0 ); 
+
+CU = Sum( Up, RSILength ); 
+CD = Sum( Dn, RSILength ); 
+
+MyRSI = ( CU - CD ) / ( CU + CD ); 
+
+MyRSI = Ref( MyRSI, - RSILength + 1 ); 
+
+// Limit RocketRSI output to +/- 3 Standard Deviations 
+
+MyRSI = Min( 0.999, MyRSI ); 
+MyRSI = Max( -0.999, MyRSI ); 
+
+// Apply Fisher Transform to establish Gaussian Probability Distribution 
+RocketRSI = .5 * Log( ( 1 + MyRSI ) / ( 1 - MyRSI ) ); 
+
+Plot( RocketRSI, &quot;RocketRSI&quot; + _PARAM_VALUES(), colorRed, styleThick ); 
+
+Plot( 0, &quot;&quot;, colorBlue, styleNoLabel ); 
+</pre>
+<p>A sample chart is shown in Figure 6.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/TT-Amibroker.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 6: AMIBROKER. Here is a
+    daily chart of the SPY (upper pane) with the RocketRSI (lower pane), replicating
+    a chart from Ehlers&rsquo; article in this issue.</p>
+</div>
+<p class="authorTips">&mdash;Tomasz Janeczko, AmiBroker.com<br>
+  <a href="https://www.amibroker.com" target="_parent">www.amibroker.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> NEUROSHELL TRADER: MAY 2018</h3>
+</div>
+<p>The RocketRSI indicator presented by John Ehlers in his article in this issue,
+  &ldquo;RocketRSI&mdash;A Solid Propellant For Your Rocket Science Trading,&rdquo; can be easily
+  implemented in NeuroShell Trader using NeuroShell Trader&rsquo;s ability to call
+  external dynamic linked libraries. Dynamic linked libraries can be written
+  in C, C++ and Power Basic.</p>
+<p>After moving the code given in the article to your preferred compiler and
+  creating a DLL, you can insert the resulting indicator as follows:</p>
+<ol>
+  <li>Select <em>new indicator</em> from the <em>insert</em> menu.</li>
+  <li>Choose the External Program &amp; Library Calls category.</li>
+  <li>Select the appropriate <em>external DLL call</em> indicator.</li>
+  <li>Set up the parameters to match your DLL.</li>
+  <li>Select the <em>finished</em> button.</li>
+</ol>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section
+  of the NeuroShell Trader free technical support website to download a copy
+  of this or any previous Traders&rsquo; Tips.</p>
+<p>A sample chart is shown in Figure 7.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 7: NEUROSHELL TRADER. This
+    sample NeuroShell Trader chart shows the RocketRSI on a chart of SPY.</p>
+</div>
+<p class="authorTips">&mdash;Marge Sherald, Ward Systems Group, Inc.<br>
+  301 662-7950, <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+  <a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item7"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> TRADERSSTUDIO: MAY 2018</h3>
+</div>
+<p>The TradersStudio code based on John Ehlers&rsquo; article in this issue, &ldquo;RocketRSI&mdash;A
+  Solid Propellant For Your Rocket Science Trading,&rdquo; is provided at <a href="https://www.TradersEdgeSystems.com/traderstips.htm" target="_parent">www.TradersEdgeSystems.com/traderstips.htm</a> as
+  well as here:</p>
+<pre>
+'RocketRSI
+'Author: John Ehlers, TASC May 2018
+'Coded by: Richard Denning, 3/12/18
+'www.TradersEdgeSystems.com
+
+Function RocketRSI(SmoothLength, RSILength)
+    Dim a1
+    Dim b1
+    Dim c1
+    Dim c2
+    Dim c3
+    Dim Filt As BarArray
+    Dim count
+    Dim CU
+    Dim CD
+    Dim myRSI
+    
+    'SmoothLength = 8
+    'RSILength = 10
+       
+    If CurrentBar - 1 Then
+        a1 = Exp(-1.414*3.14159 / (SmoothLength))
+        b1 = 2*a1*Cos(DegToRad(1.414*180 / (SmoothLength)))
+        c2 = b1
+        c3 = -a1*a1
+        c1 = 1 - c2 - c3
+    End If
+    Filt = c1*(Close + Close[1]) / 2 + c2*Filt[1] + c3*Filt[2]
+    CU = 0
+    CD = 0
+    For count = 0 To RSILength -1
+        If Filt[count] - Filt[count + 1] &gt; 0 Then
+            CU = CU + Filt[count] - Filt[count + 1]
+        End If
+        If Filt[count] - Filt[count + 1] &lt; 0 Then
+            CD = CD + Filt[count + 1] - Filt[count]
+        End If
+    Next
+    If CU + CD &lt;&gt; 0 Then
+         myRSI = (CU - CD) / (CU + CD)
+    End If
+    If myRSI &gt; 0.999 Then myRSI = 0.999
+    If myRSI &lt; -0.999 Then myRSI = -0.999
+    RocketRSI = 0.5*Log((1+myRSI) / (1 - myRSI))
+End Function
+'---------------------------------------------------------------
+Sub Ehlers_RocketRSI_IND(SmoothLength, RSILength)
+  Dim MyRSI
+  MyRSI = RocketRSI(SmoothLength,RSILength)
+  plot1(MyRSI)
+  plot2(0)
+End Sub
+'----------------------------------------------------------------
+</pre>
+<p>Figure 8 shows the RocketRSI indicator (yellow line) on a chart of S&amp;P
+  500 futures contract (SP) during part of 2006 and 2007.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/TT-Tradersstudio.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 8: TRADERSSTUDIO. This shows
+    the RocketRSI indicator (yellow line) on a chart of S&amp;P 500 futures (SP)
+    during part of 2006 and 2007.</p>
+</div>
+<p class="authorTips"> &mdash;Richard Denning<br>
+  <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+  for TradersStudio</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item8"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Quantacula.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> QUANTACULA: MAY 2018</h3>
+</div>
+<p>We added John Ehlers&rsquo; RocketRSI indicator (described in his article in this
+  issue, &ldquo;RocketRSI&mdash;A Solid Propellant For Your Rocket Science Trading&rdquo;) to our
+  free TASC Extensions package for Quantacula that you can obtain by clicking
+  our <em>marketplace</em> link at <a href="https://www.quantacula.com" target="_parent">www.quantacula.com</a>.</p>
+<p>Once the extension is installed, you will see the RocketRSI among the other
+  indicators adapted from previous Traders&rsquo; Tips the next time you launch Quantacula
+  Studio.</p>
+<p>You can now use RocketRSI anywhere in the product that accepts an indicator
+  input, for example, the building block model builder. We built a simple model
+  by dragging and dropping the following building blocks:</p>
+<ul>
+  <li><strong><em>Entry:</em></strong> Buy at market open</li>
+  <li><strong><em>Condition:</em></strong> Indicator crosses value (RocketRSI
+    crosses below -2.00)</li>
+  <li><strong><em>Exit:</em></strong> Sell at market open</li>
+  <li><strong><em>Condition:</em></strong> Indicator crosses value (RocketRSI
+    crosses below 2.00)</li>
+</ul>
+<p>Note we used &ldquo;crosses below 2.00&rdquo; for the exit condition, rather than &ldquo;crosses
+  above 2.00.&rdquo; This lets the winning positions ride further, and resulted in
+  a better overall return in our backtesting.</p>
+<p>Figure 10 shows the model applied to a chart of Intel Corporation daily historical
+  data, illustrating how it can pinpoint entry and exit points with surgical
+  precision. A suggested next step would be to perform some portfolio backtesting
+  on a universe of data you&rsquo;re interested in trading.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/TT-Quantacula1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 9: QUANTACULA. This sample
+    chart shows the TASC Extensions indicators and the RocketRSI dragged onto
+    a chart in Quantacula Studio.</p>
+</div>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/TT-Quantacula2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 10: QUANTACULA. Here, the
+    RocketRSI model is applied to Intel Corporation historical data.</p>
+</div>
+<p class="authorTips">&mdash;Dion Kurczek, Quantacula LLC<br>
+  <a href="mailto:info@quantacula.com">info@quantacula.com</a><br>
+  <a href="https://www.quantacula.com" target="_parent">www.quantacula.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item9"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> NINJATRADER: MAY 2018</h3>
+</div>
+<p>The RocketRSI and MyRSI indicators, as discussed in John Ehlers&rsquo; article in
+  this issue, &ldquo;RocketRSI&mdash;A Solid Propellant For Your Rocket Science Trading,&rdquo;
+  is available for download at the following links for NinjaTrader 8 and NinjaTrader
+  7:</p>
+<ul style="list-style:none;">
+  <li>NinjaTrader 8: <a href="https://www.ninjatrader.com/SC/May2018SCNT8.zip" target="_parent">www.ninjatrader.com/SC/May2018SCNT8.zip</a></li>
+  <li>NinjaTrader 7: <a href="https://www.ninjatrader.com/SC/May2018SCNT7.zip" target="_parent">www.ninjatrader.com/SC/May2018SCNT7.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator in NinjaTader 8
+  from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript
+  Add-On and then selecting the downloaded file for NinjaTrader 8. To import
+  in NinjaTrader 7, from within the control center window, select the menu File &rarr; Utilities &rarr; Import
+  NinjaScript and select the downloaded file.</p>
+<p>You can review the indicators&rsquo; source code in NinjaTrader 8 by selecting the
+  menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control
+  Center window and selecting the RocketRSI and MyRSI files. You can review the
+  indicators&rsquo; source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit
+  NinjaScript &rarr; Indicator from within the control center window and selecting
+  the RocketRSI and MyRSI files.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, which provides
+  you with the highest performance possible.</p>
+<p>A sample chart implementing the strategy is shown in Figure 11.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 11: NINJATRADER. Here, the
+    RocketRSI and MyRSI indicators are shown on a daily SPY chart.</p>
+</div>
+<p class="authorTips">&mdash;Raymond Deux &amp; Jim Dooms<br>
+  NinjaTrader, LLC<br>
+  <a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item10"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Genesis.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> TRADE NAVIGATOR: MAY 2018</h3>
+</div>
+<p>The RocketRSI indicator presented by John Ehlers in his article in this issue,
+  &ldquo;RocketRSI&mdash;A Solid Propellant For Your Rocket Science Trading,&rdquo; has now been
+  recreated in Trade Navigator software for your use. If you have an older version
+  of the software, you can get the indicator by downloading the <em>upgrade special</em> file.
+  When prompted to upgrade, click the <em>yes</em> button. If prompted to close
+  all software, click on the <em>continue</em> button. It should automatically
+  re-import and verify the libraries. Once the program restarts, you will then
+  be able to hit the &ldquo;A&rdquo; key on your keyboard and then select the RocketRSI indicator
+  from the list under the <em>indicators</em> tab.</p>
+<p>If you would like to recreate the indicator manually, the TradeSense language
+  for it is as follows:</p>
+<pre>
+&amp;Mom := Expression - (Expression).(RsiLength - 1) 
+&amp;Filt := Ehlers SuperSmoother (&amp;Mom , SmoothLength) 
+&amp;CU := MovingSum (&amp;Filt - (&amp;Filt).1 , RsiLength , 1) 
+&amp;CD := MovingSum ((&amp;Filt).1 - &amp;Filt , RsiLength , 1) 
+&amp;MyRSI := (&amp;CU - &amp;CD) / (&amp;CU + &amp;CD) 
+&amp;LimitRSI := IFF (&amp;MyRSI &gt; 0.999 , 0.999 , IFF (&amp;MyRSI &lt; -0.999 , -0.999 , &amp;MyRSI)) 
+0.5 * Log ((1 + &amp;LimitRSI) / (1 - &amp;LimitRSI))
+</pre>
+<p><strong><em>Creating a function</em></strong><br>
+  To create this indicator manually, click on the <em>edit</em> dropdown menu
+  and open the trader&rsquo;s toolbox (or use CTRL + T) and click on the functions
+  tab. Now click on the <em>new</em> button, and a <em>new function</em> dialog
+  window will open. Type the code for the indicator into the text box. Please
+  ensure there are no extra spaces at the end of each line. When completed, click
+  on the <em>verify</em> button. You may be presented with an <em>add inputs</em> popup
+  message if there are variables in the code. If so, click the <em>yes</em> button,
+  then enter the values in the <em>default value</em> column (close, 8, and 10
+  are the default values in this case). If all is well, when you click on the <em>function</em> tab,
+  the code you entered will convert to italic font. Now click on the <em>save</em> button,
+  and type a name for the indicator.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/TT-Tradenav.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 12: TRADE NAVIGATOR. This
+    shows the RocketRSI indicator on LULU.</p>
+</div>
+<p>If you have any difficulty creating the indicators or would like help recreating
+  the chart shown here, our technical support staff would be happy to help. Call
+  719 884-0245 or click on the live chat tool located under Trade Navigator&rsquo;s
+  help menu or at the top of our homepage. Our support hours are M-F 6am&ndash;6pm
+  US Mountain Time. Happy trading!</p>
+<p class="authorTips">&mdash;Genesis Financial Technologies<br>
+  Tech support 719 884-0245<br>
+  <a href="https://www.TradeNavigator.com" target="_parent">www.TradeNavigator.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item11">
+  <h3 class="newsTitle grey_blue"> MICROSOFT EXCEL: MAY 2018</h3>
+</div>
+<p>In his article in this issue, &ldquo;RocketRSI&mdash;A Solid Propellant For Your Rocket
+  Science Trading,&rdquo; John Ehlers provides us with two variants on the RSI calculation.</p>
+<p>For the first variation, MyRSI, Ehlers uses his SuperSmoother filter on bar-by-bar
+  closing price deltas and calculates MyRSI using these filtered values (Figure
+  13).</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 13: EXCEL, MYRSI</p>
+</div>
+<p>For the second variation, RocketRSI, Ehlers uses his SuperSmoother filter
+  on a momentum value that is the difference between the current close and the
+  close from <em>RSI length bars previous</em>. Then he computes an RSI using
+  the filtered momentum values and applies a Fisher transform to this RSI value
+  to arrive at the value of the RocketRSI (Figure 14).</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 14: EXCEL, ROCKET RSI</p>
+</div>
+<p>The spreadsheet file for this Traders&rsquo; Tip can be <a href="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/code/RocketRSI.xlsm">downloaded
+    here</a>. To successfully download it, follow these steps:</p>
+<ul>
+  <li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2018/05/images/code/RocketRSI.xlsm">Excel
+      file link</a>, then</li>
+  <li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place
+    a copy of the spreadsheet file on your hard drive.</li>
+</ul>
+
+<p style="text-align:center; color:#FFF; background-color:#F00; padding:1em;"><a style="color:#fff;" href="https://traders.com/files/Tips-ExcelFix.html" target="_parent"><strong>A fix for previous Excel spreadsheets, required due to Yahoo modifications, can be found here: https://traders.com/files/Tips-ExcelFix.html</strong></a></p>
+
+<p class="authorTips">&mdash;Ron McAllister<br>
+  Excel and VBA programmer<br>
+  <a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the May 2018 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2018, Technical Analysis, Inc.</p>
+</body>
+</html>

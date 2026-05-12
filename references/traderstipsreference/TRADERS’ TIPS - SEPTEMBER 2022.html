@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: The Linear Regression-Adjusted Exponential Moving Average by Vitali Apirine. Contributions from: TradeStation; thinkorswim; Wealth-Lab.com; NinjaTrader; Neuroshell Trader; AIQ; The Zorro Project; Microsoft Excel; TradingView.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - SEPTEMBER 2022</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">September 2022</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2022/09/images/TT-Apirine.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Vitali Apirine&rsquo;s article in the August issue, &ldquo;The Linear Regression-Adjusted Exponential Moving Average.&rdquo; Here, we present the September 2022 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: September 2022</a></li>
+  <li><a href="#item2">thinkorswim: September 2022</a></li>
+  <li><a href="#item3">Wealth-Lab.com: September 2022</a></li>
+  <li><a href="#item4">NinjaTrader: September 2022</a></li>
+  <li><a href="#item5">Neuroshell Trader: September 2022</a></li>
+  <li><a href="#item6">AIQ: September 2022</a></li>
+  <li><a href="#item7">The Zorro Project: September 2022</a></li>
+  <li><a href="#item8">Microsoft Excel: September 2022</a></li>
+<li><a href="#item9">TradingView: September 2022</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: September 2022</h3></div>
+<p>In his article in the August 2022 issue, &ldquo;The Linear Regression-Adjusted Exponential Moving Average,&rdquo; author Vitali Apirine presents a technique called the linear regression-adjusted exponential moving average (LRAdj EMA) to combine a linear regression indicator with an exponential moving average. The indicator can be used to help define turning points while filtering price movement. The LRAdj EMA can be used in combination with a traditional exponential moving average of the same length to facilitate trend identification. It is important to note that when using the EasyLanguage function code below, it should be configured as a <em>series function</em> in the <em>general</em> tab of the function&rsquo;s <em>properties</em> window.</p>
+<pre>
+<b>Series Function: LRAdjEMA</b>
+// TASC SEP 2022
+// LRAdjEMA - Linear Regression-adjusted Exponential
+// Moving Average Series Function
+// 2022 Vitali Apirine
+
+inputs: 
+	Periods( numericseries),
+	Pds( numericseries ),
+	Mltp( numericseries );
+
+variables:
+	Mltp1( 0 ),
+	LR( 0 ),
+	Dist( 0 ),
+	ST( 0 ),
+	Mltp2( 0 ),
+	Rate( 0 );
+
+Mltp1 = 2 / (Periods + 1); 
+LR = LinearRegValue(Close, Pds, 0);
+Dist = AbsValue(LR - Close); 
+ST = (Dist - Lowest(Dist, Pds)) / 
+ (Highest(Dist, Pds) - Lowest(Dist, Pds)); 
+Mltp2 = ST * Mltp; 
+Rate = Mltp1 * (1 + Mltp2); 
+
+if CurrentBar = 1 then
+	LRAdjEMA = Close
+else
+	LRAdjEMA = LRAdjEMA[1] + Rate * 
+	 (Close - LRAdjEMA[1]);
+ 
+<b>Indicator: TASC SEP 2022 LRAdj EMA</b>
+// TASC SEP 2022
+// LRAdj EMA - Linear Regression-adjusted Exponential
+// Moving Average Indicator
+// 2022 Vitali Apirine
+
+inputs:
+	Periods( 50 ),
+	Pds( 50 ),
+	Mltp( 3 );
+
+variables:
+	LinRegAdjEMA( 0 );
+
+LinRegAdjEMA = LRAdjEMA(Periods, Pds, Mltp);
+
+Plot1(LinRegAdjEMA, &quot;LinRegAdjEMA&quot;);
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 1: TRADESTATION. A TradeStation weekly chart of the Dow Jones Industrial Average ($INDU) is shown with the indicator (blue) applied and an exponential moving average (red). Both indicators have the same period of 50.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/thinkorswim.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">thinkorswim: September 2022</h3></div>
+<p>We have put together a study based on the August 2022 S&amp;C article &ldquo;The Linear Regression-Adjusted Exponential Moving Average&rdquo; by Vitali Apirine. We built the strategy referenced by using our proprietary scripting language, thinkscript. To ease the loading process, simply click <a href="https://tos.mx/95FNU3h" target="_parent">https://tos.mx/95FNU3h</a> or enter it in <em>setup</em> &rarr; <em>open shared item</em> from within thinkorswim, then choose <em>view thinkScript study</em> and name it &ldquo;LinearRegAdjEMA&rdquo; or whatever you like and can identify. You can then add the strategy to your charts from the <em>edit studies</em> menu from within the <em>charts</em> tab and then selecting <em>studies</em>.</p>
+<p>Figure 2 shows the study added to a daily chart of SPX over the period of 7/1/2019 through 11/1/2019. Please see Vitali Apirine&rsquo;s article in the August 2022 issue for more information on how to utilize the study.</p>
+<div class="figBorder">
+<img src="images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 2: THINKORSWIM. This sample chart shows the study added to a daily chart of SPX over the period of 7/1/2019 through 11/1/2019.</p></div>
+
+<p class="authorTips">&mdash;thinkorswim<br>
+A division of TD Ameritrade, Inc.<br>
+<a href="https://www.thinkorswim.com" target="_parent">www.thinkorswim.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: September 2022</h3></div>
+<p>The LRAdjEMA indicator has been added to Wealth-Lab 8 Build 12, which makes it available to any tools and extensions automatically.</p>
+<p>Building upon some ideas from Vitali Apirine&rsquo;s article in the August 2022 issue of Stocks &amp; Commodities, which introduces the indicator, let&rsquo;s review the interplay of the LRAdjEMA and EMA. It&rsquo;s a cinch in Wealth-Lab to create a trading system based on crossovers of the two related smoothers with faster and slower reaction speed. As suggested by the author, for trend identification, we&rsquo;ll use a long-term EMA. For the example provided here in Figures 3 and 4, we will use a 200-period EMA.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 3: WEALTH-LAB. Shown here is an example of laying out the system&rsquo;s rules by using the building blocks feature in Wealth-Lab 8.</p></div>
+
+<p>Figure 3 shows an example of laying out the system&rsquo;s rules in Wealth-Lab 8&rsquo;s building blocks feature. In Figure 4, we show example signals from this system. This chart points to potential short trades that could take place when the faster LRAdjEMA crossed below the same-period EMA during the bear market that sparked in 2008.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 4: WEALTH-LAB. This chart shows example trade signals given by the demonstration system, applied to a chart of the S&amp;P 500 index (^GSPC). In this example, the system&rsquo;s signals point to potential short trades based on when the faster LRAdjEMA crosses below the same-period EMA during the 2008 bear market.</p></div>
+<p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: September 2022</h3></div>
+<p>The LRADJEMA indicator, as detailed in the August 2022 S&C article titled &ldquo;The Linear Regression-Adjusted Exponential Moving Average&rdquo; by Vitali Apirine, is available for download at the following links for NinjaTrader 8 and for NinjaTrader 7:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/September2022SCNT8.zip" target="_blank">www.ninjatrader.com/SC/September2022SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7: </strong><a href="https://www.ninjatrader.com/SC/September2022SCNT7.zip">www.ninjatrader.com/SC/September2022SCNT7.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import into NinjaTrader 7, from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator&rsquo;s source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control center window and selecting the LRADJEMA file. You can review the indicator&rsquo;s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the control center window and selecting the LRADJEMA file.</p>
+<p>A sample chart displaying the indicator is shown in Figure 5.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 5: NINJATRADER. The LRADJEMA(50,50,5) indicator is applied to the FTSE 100 index futures from December 2017 to May 2019.</p></div>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">&mdash;Brandon Haulk<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: September 2022</h3></div>
+<p>The linear regression-adjusted exponential moving average introduced by Vitali Apirine in his article last month in the August 2022 issue can be easily implemented in NeuroShell Trader by combining some of NeuroShell Trader&rsquo;s 800+ indicators. To implement the indicator, select &ldquo;new indicator&rdquo; from the insert menu and use the indicator wizard to create the following indicators:</p>
+<pre>
+LR:  Sub(LinTimeReg PredValue(Close,50,0),Close)
+MLTP2:  Mul3(3,SimpleStoch%K(LR, 50),0.01)
+RATE:  Mul2(Divide(2,Add2(1,51)),Add2(1, MLTP2))
+LRAdj EMA:  DynamicExpAvg (Close, RATE )
+</pre>
+<p>A sample chart is shown in Figure 6.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 6: NEUROSHELL TRADER. This NeuroShell Trader chart demonstrates the linear regression-adjusted exponential moving average on the SPY.</p></div>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips. Note that the DynamicExpAvg is a dynamic rate exponential moving average custom indicator available for download on the free technical support website with this Traders&rsquo; Tip.</p>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">AIQ: September 2022</h3></div>
+<p>The importable AIQ EDS file based on Vitali Apirine&rsquo;s article in the August 2022 issue, &ldquo;The Linear Regression-Adjusted Exponential Moving Average,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also shown below.</p>
+<p>Code for the author&rsquo;s indicator is set up in the AIQ EDS code file. Figure 7 shows a comparison of the EMA(50) versus the LRA_EMA on a chart of AAPL.</p>
+<pre>
+! Linear Regresssion Adjusted Exponential Moving Average
+! Author: Vitali Apirine, TASC September 2022
+! Coded by: Richard Denning, 7/19/2022
+
+Periods is 50.
+Pds is 50.
+Mltp is 3.
+C is [close].
+Mltp1 is 2/(Periods+1).
+
+NN is Periods.  ! THIS DETERMINES THE END POINT OF THE LR LINE
+YY is C.            ! AN INDICATOR OR OTHER UDF CAN BE USED HERE
+b is slope2(YY,NN).
+intercept is sum(YY,NN)/NN - (b * (NN + 1) / 2).
+LR is intercept + (NN*b).                      !LinearReg(C,Pds).
+Dist is Abs(LR-C).
+ST is (Dist-LOWRESULT(Dist,PDS))/
+         (HIGHRESULT(Dist,PDS)-LOWRESULT(Dist,PDS)).
+Mltp2 is ST*Mltp.
+Rate is Mltp1*(1+Mltp2).
+
+HD if hasdatafor(Periods*2+1) &gt; Periods*2.
+DaysInto is ReportDate() - RuleDate().
+Stop if DaysInto &gt; 20.
+stopesa is iff(stop,C,LRA_EMA).
+!myesa is alpha * [close] + beta * valresult( stopesa, 1 ).
+
+LRA_EMA is iff(HD,valresult(stopesa,1)+Rate*(C-valresult(stopesa,1)),C). 
+!If(Cum(1)=Periods*2,C,PREV+Rate*(C-PREV)).
+
+ListValues if 1.
+EMAp is expavg(C,Periods).
+</pre>
+<div class="figBorder">
+<img src="images/TT-Aiq.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 7: AIQ. Shown here is an exponential moving average (EMA) of the close over 50 bars (smooth line) compared to the LRA_EMA(50,50,3) jagged line on a chart of Apple Inc. (AAPL).</p></div>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for AIQ Systems</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: September 2022</h3></div>
+<p>In his August 2022 S&amp;C article, &ldquo;The Linear Regression-Adjusted Exponential Moving Average,&rdquo; Vitali Apirine introduces an EMA variant. It&rsquo;s an EMA with a variable period derived from the distance of the current price and a linear regression line. The LR_EMA indicator can be converted from the MetaStock formula given in Apirine&rsquo;s article to C code, as follows:</p>
+<pre>
+var LREMA(int Periods,int Pds,var Mltp)
+{
+  var Mltp1 = 2./(Periods+1);
+  var LR = LinearReg(seriesC(),Pds);
+  vars Dists = series(abs(LR-priceC()));
+  var ST = (Dists[0]-MinVal(Dists,Pds))/
+     max(MaxVal(Dists,Pds)-MinVal(Dists,Pds),0.01);
+  var Rate = min(1.,Mltp1*(1+ST*Mltp));
+  return EMA(priceC(),Rate);
+}
+</pre>
+<p>The max and min functions prevent divisions by zero and EMA rates above 1. This can otherwise happen at the beginning of the backtest when price series are still flat.</p>
+<p>In Figure 8, we show the LREMA(20,20,5) and EMA(20) applied on a chart of SPY, which replicates the chart in Apirine&rsquo;s article. In the chart, we can see that the LREMA (blue line) follows the price more closely than the EMA (red line). That is not surprising given that the LREMA period is almost always smaller.</p>
+<div class="figBorder">
+<img src="images/TT-Zorro1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 8: ZORRO PROJECT. The LREMA(20,20,5) and EMA(20) is applied on a chart of SPY. This replicates the chart in Vitali Apirine&rsquo;s August 2022 S&amp;C article. The LREMA (blue line) follows the price more closely than the EMA (red line).</p></div>
+<p>For testing how the LREMA may identify trend changes, we can write a simple system, which we are making available to users as a download. This system will give trade signals concurrently from both the EMA and LREMA. A single position is entered when the faster EMA crosses over a slower EMA, and the position is closed when it crosses back. The LREMA is used likewise. So as not to compare apples with oranges, we optimize all time periods and test with walk-forward analysis. The code of this trading system in C is as follows:</p>
+<pre>
+void run()
+{
+	BarPeriod = 1440; 
+	LookBack = 200;
+	StartDate = 2005; 
+	EndDate = 2022;
+	assetList(&quot;AssetsIB&quot;);
+	asset(&quot;SPY&quot;);
+// walk-forward optimization setup
+	set(PARAMETERS,TESTNOW,PLOTNOW); 
+	NumWFOCycles = 8;
+// run a loop over the two algos
+	while(algo(loop(&quot;LR_EMA&quot;,&quot;EMA&quot;))) 
+{
+		vars Signals1, Signals2;
+		int Color;
+// optimize time periods
+		int Period1 = optimize(20,10,50,10);
+		int Period2 = Period1*optimize(2.5,1.5,3,0.5);
+		if(Algo == &quot;LR_EMA&quot;) {
+			Signals1 = series(LREMA(Period1,Period1,5));
+			Signals2 = series(LREMA(Period2,Period2,5));
+			Color = BLUE;
+		} else if(Algo == &quot;EMA&quot;) {
+			Signals1 = series(EMA(seriesC(),Period1));
+			Signals2 = series(EMA(seriesC(),Period2));
+			Color = GREY;
+		}
+// trade on fast/slow crossovers
+		if(crossOver(Signals1,Signals2)) enterLong();
+		if(crossUnder(Signals1,Signals2)) exitLong();
+// plot equity curve
+		plot(Algo,ProfitOpen+ProfitClosed,LINE+AXIS2,Color);
+	}
+}
+</pre>
+<p>The fast and slow periods are optimized separately for both algorithms. The slow period is the fast period multiplied by a factor. This guarantees that the slow period is always bigger than the fast period during the optimization. The system is trained by clicking the [train] button on the Zorro panel, then a backtest is automatically started. Training and test take about two seconds. The resulting equity curve is plotted in a blue line for the LR_EMA algo, and in a gray line for the standard EMA algo (Figure 9).</p>
+<div class="figBorder">
+<img src="images/TT-Zorro2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 9: ZORRO PROJECT. In Zorro, you can test and train an algorithm quickly by clicking the [train] button on the Zorro panel, and then a backtest is automatically started. A resulting equity curve can then be plotted. Here, example equity curves are shown for the LR_EMA algo (in blue) and in gray for the standard EMA algo.</p></div>
+<p>We can see that both algorithms yield a positive result, with the standard EMA a bit more so than the LR_EMA. A possible reason is the optimization of periods, which is more effective on the fixed-period EMA than on the variable-period LR_EMA. It&rsquo;s possible the LR_EMA fares better with unoptimized systems or different assets.</p>
+<p>The LREMA indicator and the EMA/LREMA trading system can be downloaded from the 2022 script repository on <a href="https://financial-hacker.com" target="_parent">https://financial-hacker.com</a>. The Zorro software for C/C++ algo trading can be downloaded from <a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a>.</p>
+<p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: September 2022</h3></div>
+<p>In his article in the August 2022 issue, Vitali Apirine introduces the LRAdjEMA indicator in his article titled &ldquo;The Linear Regression-Adjusted Exponential Moving Average.&rdquo;</p> 
+<p>This use of the linear regression value at each bar to modify the EMA coefficient used at each bar results in an indicator that tracks the price action more closely than either the bare EMA or the bare linear regression values of similar lookback settings (Figure 10).</p>
+  <div class="figBorder">
+<img src="images/TT-Excel.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 10: EXCEL. This shows a comparison of EMA(50), LinReg(50), and the LRAdjEMA(50,50,5), similar to the chart in Figure 1 in Vitali Apirine&rsquo;s August 2022 S&amp;C article.</p></div>  
+    
+<p>This is one where you really need to play with the user control value lengths and then mix and contrast the four indicators to get a good feel for the impacts.</p>
+<p><strong><em>To download this spreadsheet:</em></strong> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2022/09/images/code/LraEma.xlsm" target="_blank">here</a>. To successfully download it, follow these steps:</p>
+
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2022/09/images/code/LraEma.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    <p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: September 2022</h3></div>
+<p>This is the TradingView Pine Script code implementing the LRAdj EMA indicator described in the August issue's article "The Linear Regression-Adjusted Exponential Moving Average" by Vitali Apirine:</p>
+<pre>
+//  TASC Issue: September 2022 - Vol. 40, Issue 10
+//     Article: The Linear Regression-Adjusted
+//              Exponential Moving Average - The LRAdj EMA
+//  Article By: Vitali Apirine
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+//&#64;version=5
+indicator(title='TASC 2022.09 The LRAdj EMA', overlay=true)
+
+LRAdjEMA (
+  float source = close, 
+  int  Periods = 10, 
+  int      Pds = 10, 
+  float   Mltp = 3.0
+  ) =&gt;
+    int     pds = math.max(1, Pds)
+    float Mltp1 = 2.0 / math.max(1, Periods + 1.0)
+    float    LR = ta.linreg(source, pds, 0)
+    float  Dist = math.abs(LR - source)
+    float   LLV = ta.lowest(Dist, pds)
+    float   HHV = ta.highest(Dist, pds)
+    float LRAdj = (Dist - LLV) / nz(HHV - LLV, 1.0e-307)
+    float Mltp2 = LRAdj * Mltp
+    float  Rate = Mltp1 * (1.0 + Mltp2)
+    
+    float LRAdjma = na
+    if bar_index &gt; math.max(Periods, pds)
+        float prev = nz(LRAdjma[1], source)
+        LRAdjma := prev + Rate * (source - prev)
+    LRAdjma
+
+int Periods = input.int(50,           'EMA Length:')
+int     Pds = input.int(50,   'LR Lookback Period:')
+float  Mltp = input.float(5.0,        'Multiplier:')
+
+ma = LRAdjEMA(close, Periods, Pds, Mltp)
+plot(ma, color=color.blue)
+</pre>
+<p>The indicator is available on TradingView from the PineCodersTASC account:
+<a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_parent">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 11: TRADINGVIEW</p></div>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="https://www.TradingView.com" target="_parent">www.TradingView.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    <!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the September 2022 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2022, Technical Analysis, Inc.</p>
+
+</body>
+</html>

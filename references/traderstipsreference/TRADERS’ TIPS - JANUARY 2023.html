@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: True Range Adjusted Exponential Moving Average (TRAdj EMA) by Vitali Apirine. Contributions from: TradeStation; thinkorswim; Wealth-Lab.com; NinjaTrader; TradingView; Neuroshell Trader; Optuma; AIQ.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - JANUARY 2023</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">January 2023</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2023/01/images/TT-Apirine.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Vitali Apirine&rsquo;s article in this issue, &ldquo;True Range Adjusted Exponential Moving Average (TRAdj EMA).&rdquo; Here, we present the January 2023 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: January 2023</a></li>
+  <li><a href="#item2">thinkorswim: January 2023</a></li>
+  <li><a href="#item3">Wealth-Lab.com: January 2023</a></li>
+  <li><a href="#item4">NinjaTrader: January 2023</a></li>
+  <li><a href="#item5">TradingView: January 2023</a></li>
+  <li><a href="#item6">Neuroshell Trader: January 2023</a></li>
+  <li><a href="#item7">Optuma: January 2023</a></li>
+  <li><a href="#item8">AIQ: January 2023</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: January 2023</h3></div>
+<p>In his article in this issue, &ldquo;True Range Adjusted Exponential Moving Average (TRAdj EMA),&rdquo; author Vitali Apirine presents how a security&rsquo;s true range, which measures volatility, can be incorporated into a traditional exponential moving average. The trend-following indicator, called the true range adjusted exponential moving average (TRAdj EMA), applied with different lengths, can help define turning points and filter price movements. By comparing the indicator with an exponential moving average of identical length, the trader can gain insight into the overall trend.</p>
+<pre>
+// TASC JAN 2023
+// True Range Adjusted EMA
+// Vitali Apirine
+
+inputs:
+	Periods( 40 ),
+	Pds( 40 ),
+	Mltp( 10 );
+
+variables:
+	Mltp1( 0 ),
+	Mltp2( 0 ),
+	Rate( 0 ),
+	TH( 0 ),
+	TL( 0 ),
+	TR( 0 ),
+	TRAdj( 0 ),
+	TRAdjEMA( 0 );
+
+Mltp1 = 2 / (Periods + 1);
+TH = Iff(Close[1] &gt; High, Close[1], High);
+TL = Iff(Close[1] &lt; Low, Close[1], Low);
+TR = AbsValue(TH - TL); 
+TRAdj = (TR - Lowest(TR, Pds)) / 
+ (Highest(TR, Pds) - Lowest(TR, Pds));
+Mltp2 = TrAdj * Mltp;
+Rate = Mltp1*(1 + Mltp2);
+
+if CurrentBar = 1 then 
+	TRAdjEMA = Close
+else
+	TRAdjEMA = TRAdjEMA[1] + Rate * 
+	 (Close - TRAdjEMA[1]);
+	
+Plot1( TRAdjEMA, &quot;TRAdjEMA&quot; );
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This TradeStation daily chart of the S&amp;P 500 ETF SPY shows a portion of 2022 with the indicator and exponential moving average applied. The indicator is configured with inputs 20, 20, and 5, and the exponential moving average is configured with the same length of 20.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by Trade­Station Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Thinkorswim.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">thinkorswim: January 2023</h3></div>
+<p>We have put together a study based on the article by Vitali Apirine in this issue on the true range adjusted exponential moving average (TR AdjEMA). We built the study referenced by using our proprietary scripting language, thinkscript. To ease the loading process, simply click <a href="https://tos.mx/Iwxt5XL" target="_parent">https://tos.mx/Iwxt5XL</a> or enter it into the address into <em>setup &rarr; open shared item</em> from within thinkorswim, then choose <em>view thinkScript study</em> and name it &ldquo;TRAdjEMA&rdquo; or whatever you prefer and can identify. You can then add the study to your charts from the <em>edit studies</em> menu from within the <em>charts</em> tab and then selecting &ldquo;studies.&rdquo;</p>
+<p>Figure 2 shows our version of the study on a daily chart of SPX. Please see Apirine&rsquo;s article in this issue for how to interpret the indicator.</p>
+<div class="figBorder">
+<img src="images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: THINKORSWIM. Here is a sample plot of a version of the study (TRAdjEMA) on a daily chart of SPX. Please see Vitali Apirine&rsquo;s article in this issue for how to interpret the indicator.</p></div>
+<p class="authorTips">&mdash;thinkorswim<br>
+A division of TD Ameritrade, Inc.<br>
+<a href="https://www.thinkorswim.com" target="_parent">www.thinkorswim.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+    <p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: January 2023</h3></div>
+<p>The TRAdjEMA described by Vitali Apirine in his article in this issue has been added to Wealth-Lab 8 Build 22+, making it available to its wide range of tools and extensions automatically.</p>
+<p>To demonstrate the new indicator&rsquo;s application, let&rsquo;s sketch a trading system based on bullish crossovers of the two TRAdjEMA smoothers with faster and slower reaction speed. For example, the author took the TRAdj EMA(10,10,5) and TRAdj EMA(40,40,5) in his article. For testing purposes, to close the long position, we simply exit after 25 bars. The trading system&rsquo;s rules are outlined in Figure 3.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: WEALTH-LAB. An example of laying out the system&rsquo;s rules in the Building Blocks feature of Wealth-Lab 8.</p></div>
+<p>Figure 4 illustrates some potential long trades that could have taken place when the faster TRAdjEMA (black) crossed below the slower TRAdjEMA (blue) in 2021 and 2022.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: WEALTH-LAB. Trades taken by the fast/slow TRAdjEMA crossovers are applied to a weekly chart of the Russell 2000 index (^RUT).</p></div>
+<p class="authorTips">
+&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+    <p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: January 2023</h3></div>
+<p>The indicator described in Vitali Apirine&rsquo;s article in this issue, &ldquo;True Range Adjusted Exponential Moving Average (TRAdj EMA),&rdquo; has been made available for download at the following links for NinjaTrader 8 and for NinjaTrader 7:</p>
+
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/January2023SCNT8.zip" target="_blank">www.ninjatrader.com/SC/January2023SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7: </strong><a href="https://www.ninjatrader.com/SC/January2023SCNT7.zip">www.ninjatrader.com/SC/January2023SCNT7.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import into NinjaTrader 7, from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the indicator file. You can review the indicator&rsquo;s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the control center window and selecting the indicator file.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p>A sample chart displaying the indicator is shown in Figure 5.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: NINJATRADER. The TRAdjEMA indicator is displayed on a one-minute chart of S&amp;P 500 emini futures (ES).</p></div>
+<p class="authorTips">&mdash;Chelsea Bell<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+    <p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: January 2023</h3></div>
+<p>Here is TradingView Pine Script code implementing the TRAdj EMA indicator described in this issue&rsquo;s article by Vitali Apirine, &ldquo;True Range Adjusted Exponential Moving Average (TRadj EMA).&rdquo;</p>
+<pre>
+//  TASC Issue: January 2023 - Vol. 41, Issue 1
+//     Article: TRAdj EMA - True Range Adjusted
+//              Exponential Moving Average
+//  Article By: Vitali Apirine
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+//&#64;version=5
+string title = 'TASC 2023.01 TRAdj EMA'
+string stitle = 'TRAdj EMA'
+indicator(title, stitle, true)
+
+int Periods = input.int(40,       'MA Length:', 1)
+int     Pds = input.int(40, 'Lookback Period:', 1)
+int    Mltp = input.int(10,      'Multiplier:', 5, 10)
+
+TRAdjEMA (
+  float source = close, 
+  int  Periods = 40, 
+  int      Pds = 40, 
+  int     Mltp = 10
+ ) =&gt; 
+    int   pds      = math.max(1, Pds)
+    float Mltp1    = 2.0 / (Periods + 1.0)
+    float HHV      = ta.highest(ta.tr, pds)
+    float LLV      = ta.lowest(ta.tr, pds)
+    float TRAdj    = (ta.tr - LLV) / (HHV - LLV)
+    float Mltp2    = TRAdj * Mltp
+    float Rate     = Mltp1 * (1.0 + Mltp2)
+    float TRAdjEMA = na
+    if bar_index &gt; math.max(Periods, pds)
+        float prev = nz(TRAdjEMA[1], source)
+        TRAdjEMA  := prev + Rate * (source - prev)
+    TRAdjEMA
+
+float ma = TRAdjEMA(close, Periods, Pds, Mltp)
+plot(ma, 'TRAdjEMA', color.blue)
+</pre>
+<p>The code is available on TradingView in the PineCodersTASC account: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_parent">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart is shown in Figure 6.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: TRADINGVIEW. This chart demonstrates the indicator described in Vitali Apirine&rsquo;s article in this issue, the TRadj EMA.</p></div>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="https://www.TradingView.com" target="_parent">www.TradingView.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+    <p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: January 2023</h3></div>
+<p>The indicator described in Vitali Apirine&rsquo;s article in this issue, &ldquo;True Range Adjusted Exponential Moving Average (TRAdj EMA),&rdquo; can be easily implemented in NeuroShell Trader by combining some of NeuroShell Trader&rsquo;s 800+ indicators. To implement the indicators, select &ldquo;new indicator&rdquo; from the <em>insert</em> menu and use the indicator wizard to create the following indicators:</p>
+    <pre>Mltp1:	Divide(2,Add2(40,1)))
+Mltp2:	Mul2(Divide(SimpleStoch%K(ATR(High,Low,Close,1),40),100),10)
+RATE:	Mul2(Mltp1, Add2(1, Mltp2))
+
+TRAdjEMA:	DynamicExpAvg (Close, RATE )
+</pre>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips. The DynamicExpAvg is a dynamic rate exponential moving average custom indicator available for download on the free technical support website with the Traders&rsquo; Tip.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: NEUROSHELL TRADER. This NeuroShell Trader chart shows the SPX true range adjusted exponential moving average.</p></div>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+    <p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Optuma.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Optuma: January 2023</h3></div>
+<p>Here is an Optuma script formula to implement the true range adjusted exponential moving average (TRAdj EMA), which is described in the article in this issue by Vitali Apirine.</p>
+<pre>
+$Periods = 40;
+$Pds = 40;
+MLTP = 10;
+MLTP1 = 2 / (VarToList(VAL=$Periods) + 1);
+TR=TRUERANGE();
+TRAdj = (TR-LOWESTLOW(TR, BARS=$Pds)) / (HIGHESTHIGH(TR, BARS=$Pds) - LOWESTLOW(TR, BARS=$Pds));
+
+MLTP2=TRAdj*MLTP;
+
+RATE=MLTP1*(1+MLTP2);
+RES1=RES1 + RATE * (Close() - RES1[1]);
+RES1
+</pre>
+<div class="figBorder">
+<img src="images/TT-Optuma.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: OPTUMA. This sample chart displays the true range adjusted exponential moving average (TRAdj EMA).</p></div>
+<p class="authorTips">&mdash;<a href="mailto:support@optuma.com">support@optuma.com</a><br>
+<a href="https://Optuma.com" target="_parent">Optuma.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+    <p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">AIQ: January 2023</h3></div>
+<p>The importable AIQ EDS file based on Vitali Apirine&rsquo;s article in this issue, &ldquo;True Range Adjusted Exponential Moving Average,&rdquo; can be obtained on request via <a href="mailto:rdencpa@gmail.com">rdencpa@gmail.com</a>. The code is also available below.</p>
+<pre>
+!TRUE RANGE ADJUSTED EXPONENTIAL MOVING AVERAGE
+!TRadj EMA
+!Author: Vitali Apirine, TASC Jan 2023
+!Coded by: Richard Denning, 11/18/2022
+
+C is [close].
+C1 is valresult(C,1).
+H is [high].
+L is [low].
+
+Periods is 10.
+Pds is 10.
+Mltp is 5.
+Mltp1 is 2 / (Periods+1).
+
+TH is max(H,C1).
+TL is min(L,C1).
+TR is abs(TH-TL).
+TRadj is (TR-lowresult(TR,Pds))/(highresult(TR,Pds)-lowresult(TR,Pds)).
+
+Mltp2 is TRadj*Mltp.
+Rate is Mltp1*(1+Mltp2).
+
+HD if hasdatafor(Periods*2+1) &gt; Periods*2.
+DaysInto is ReportDate() - RuleDate().
+Stop if DaysInto &gt; Periods.
+stopesa is iff(stop,C,TRadj_EMA).
+
+TRadj_EMA is iff(HD,valresult(stopesa,1)+Rate*(C-valresult(stopesa,1)),C). 
+
+EMA10 is expavg(C,10).
+
+Status is iff(TRadj_EMA&gt;EMA10,1,0).
+ShowValues if 1.
+</pre>
+<p>Code for the author&rsquo;s color study is set up in the AIQ EDS code file. Figure 9 shows the TRadj_EMA(10,10,5) indicator (red jagged line) and the EMA(10) (green smooth line) on a chart of the S&P 500 index to 9/30/2020. The results match the author&rsquo;s Excel spreadsheet. This indicator runs very slowly in AIQ so you have to be patient for it to load. Also, if you increase the parameters to longer than 10,10,5 it will run even slower.</p>
+<div class="figBorder">
+<img src="images/TT-Aiq.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: AIQ SYSTEMS. The TRadj_EMA(10,10,5) and EMA(10) are shown on chart of the S&amp;P 500 index.</p></div>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:rdencpa@gmail.com">rdencpa@gmail.com</a><br>
+for AIQ Systems</p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the January 2023 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2022, Technical Analysis, Inc.</p>
+
+</body>
+</html>

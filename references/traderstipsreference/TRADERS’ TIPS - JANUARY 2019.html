@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine.">
+<meta name="description" content="This month: The V-Trade, Part 5: Technical Analysis&mdash;Moving Average Support & Resistance And Volatility Bands by Sylvain Vervoort. Contributions from: TradeStation, thinkorswim, Quantacula, NinjaTrader, eSignal, Wealth-Lab.com, Neuroshell Trader, AIQ, TradersStudio, AmiBroker, Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - JANUARY 2019</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">January 2019</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2019/01/images/TT-Vervoort.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Sylvain Verboort&rsquo;s article in the July 2018 issue, &ldquo;<a href="https://technical.traders.com/archive/article.asp?file=\V36\C07\681VERV.pdf" target="_parent">The V-Trade, Part 5: Technical Analysis&mdash;Moving Average Support &amp; Resistance And Volatility Bands</a>.&rdquo; Here, we present the January 2019 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TRADESTATION: JANUARY 2019</a></li>
+  <li><a href="#item2">THINKORSWIM: JANUARY 2019</a></li>
+  <li><a href="#item3">QUANTACULA: JANUARY 2019</a></li>
+  <li><a href="#item4">NINJATRADER: JANUARY 2019</a></li>
+  <li><a href="#item5"><span style="text-transform:lowercase;">e</span>SIGNAL: JANUARY 2019</a></li>
+  <li><a href="#item6">WEALTH-LAB: JANUARY 2019</a></li>
+  <li><a href="#item7">NEUROSHELL TRADER: JANUARY 2019</a></li>
+  <li><a href="#item8">AIQ: JANUARY 2019</a></li>
+  <li><a href="#item9">TRADERSSTUDIO: JANUARY 2019</a></li>
+  <li><a href="#item10">AMIBROKER: JANUARY 2019</a></li>
+  <li><a href="#item11">MICROSOFT EXCEL: JANUARY 2019</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+TRADESTATION: JANUARY 2019</h3></div>
+<p>In &ldquo;The V-Trade, Part 5: Technical Analysis&mdash;Moving Average Support &amp; Resistance And Volatility Bands&rdquo; in the July 2018 STOCKS &amp; COMMODITIES, author Sylvain Vervoort introduced a new type of price band that he calls the SVEVolatilityBand. He created this new type of band to better highlight volatility changes when using non-time-related charts. According to the author, when using charts such as renko, traditional bands may fail to effectively highlight these changes.</p>
+<p>The TradeStation EasyLanguage code for the SVEVolatilityBands indicator based on the author&rsquo;s work is presented here.</p>
+<pre>Indicator: SVEVolatilityBands
+// SVEVolatilityBands
+// Sylvain Vervoort
+// TASC Jan 2019
+
+inputs:
+	Price( Close ),
+	BandsPeriod( 20 ),
+	BandsDeviation( 2.4 ),
+	LowBandAdjust( .9 ),
+	MidLineLength( 20 ) ;
+	
+variables:
+	HighBand( 0 ),
+	LowBand( 0 ),
+	MidLine( 0 ),
+	ATRVal( 0 ),
+	WtdAvgVal( 0 ) ;
+	
+		
+ATRVal = AvgTrueRange( BandsPeriod * 2 - 1 ) 
+	* BandsDeviation ;
+WtdAvgVal = WAverage( Price, BandsPeriod ) ;
+HighBand = WtdAvgVal + WtdAvgVal 
+	* ( AtrVal / Price ) ;
+LowBand = WtdAvgVal - WtdAvgVal 
+	* ( AtrVal * LowBandAdjust / Price ) ;
+MidLine = WAverage( TypicalPrice, MidLineLength ) ;
+
+Plot1( HighBand, &quot;Upper Band&quot; ) ;
+Plot2( LowBand, &quot;Lower Band&quot; ) ;
+Plot3( MidLine, &quot;Mid Line&quot; ) ;
+		</pre>
+<p>To download the EasyLanguage code, please visit our TradeStation and EasyLanguage support forum. The files for this article can be found here: <a href="https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=156727" target="_parent">https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=156727</a>. The filename is &ldquo;TASC_JAN2019.ZIP.&rdquo;</p>
+<p>For more information about EasyLanguage in general, please see <a href="https://www.tradestation.com/EL-FAQ" target="_parent">https://www.tradestation.com/EL-FAQ</a>.</p>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2019/01/images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. A TradeStation mean renko chart of the S&amp;P 500 displays the SVEVolatilityBands indicator.</p></div>
+
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;Doug McCrary<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Thinkorswim.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+THINKORSWIM: JANUARY 2019</h3></div>
+<p>We have put together a study for thinkorswim based on the July 2018 article by Sylvain Vervoort, &ldquo;The V-Trade, Part 5: Technical Analysis&mdash;Moving Average Support &amp; Resistance And Volatility Bands.&rdquo;</p> 
+<p>We built the study and strategy by using our proprietary scripting language, thinkScript. To ease the loading process, simply click on <a href="https://tos.mx/ODAWqm" target="_parent">https://tos.mx/ODAWqm</a>, then choose <em>view thinkScript study</em> and name it &ldquo;SVEVolatilityBand.&rdquo; This can then be added to your chart from the <em>edit study and strategies</em> menu within thinkorswim.</p>
+<p>In Figure 2, the study can be seen on a range chart set to ATR (average true range) of the GBP/USD forex pair. See Sylvain Vervoot&rsquo;s article in the July 2018 issue for more details on how to interpret the study.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2019/01/images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: THINKORSWIM. Here, the study can be seen on a range chart set to ATR (average true range) of the GBP/USD forex pair.</p></div>
+<p class="authorTips">&mdash;thinkorswim<br>
+A division of TD Ameritrade, Inc.<br>
+<a href="https://www.thinkorswim.com" target="_parent">www.thinkorswim.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Quantacula.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+QUANTACULA: JANUARY 2019</h3></div>
+<p>The smoothed volatility bands indicator described by author Sylvain Vervoort in his July 2018 article, &ldquo;The V-Trade, Part 5: Technical Analysis&mdash;Moving Average Support &amp; Resistance And Volatility Bands,&rdquo; is available in Quantacula&rsquo;s open-source TASC Extensions library. The sourcecode for all 100+ indicators is available in the following GitHub repository, which is a treasure trove of Quantacula programming knowledge:</p>
+
+<p><a href="https://github.com/LucidDion/TASC-Extensions" target="_parent">https://github.com/LucidDion/TASC-Extensions</a></p>
+
+<p>The SVESmoothedVolatilityBandUpper and Lower were recently added to the repository by a Quantacula user and have since been included in the latest builds of the Quantacula.com website and the Quantacula Studio desktop backtesting platform.</p>
+<p>We noticed that the bands identify extreme price excursions when the deviation parameter is set to 3.0. The following trading model uses simulated limit orders to try and buy Nasdaq 100 stocks that penetrate the lower band. The model then sells the next day at market open. It uses the following settings:</p>
+
+<pre>Starting capital: $400,000
+Margin ractor: 2:1
+Commission: $4.95 per trade
+Position size: 5% of equity per trade</pre>
+
+<p>We tested the model on the QPremium Nasdaq 100 universe, which contains dynamic logic that swaps symbols in and out of the universe as they were added and removed from the Nasdaq 100 historically. The equity curve for the <em>SVE smoothed volatility band lower trading model</em> in Quantacula Studio is shown in Figure 3.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2019/01/images/TT-Quantacula.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: QUANTACULA. The equity curve for the SVE smoothed volatility band lower trading model in Quantacula Studio is shown.</p></div>
+
+<p>The model&rsquo;s C# code for Quantacula.com or Quantacula Studio is shown here:</p>
+<pre>using QuantaculaBacktest;
+using QuantaculaCore;
+using QuantaculaIndicators;
+using TASCIndicators;
+
+namespace Quantacula
+{
+    public class MyModel : UserModelBase
+    {
+	 //constructor
+        public MyModel() : base()
+        {
+        }
+
+	 //Initialize is called once prior to backtest
+        public override void Initialize(BarHistory bars)
+        {
+            vb = new SVESmoothedVolatilityBandLower(bars, 20, 20, 3.0, 0.90);
+            Plot(vb);
+        }
+
+	 //Execute is called once for every bar of data in the history
+        public override void Execute(BarHistory bars, int idx)
+        {
+            PlaceTrade(bars, TransactionType.Buy, OrderType.Limit, vb[idx]);
+            foreach (Position pos in OpenPositions)
+                ClosePosition(pos, OrderType.Market);
+        }
+
+	 //declare variables
+        private IndicatorBase vb;
+    }
+}</pre>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+NINJATRADER: JANUARY 2019</h3></div>
+<p>The SveVolatilityBand indicator, as discussed in the July 2018 article &ldquo;The V-Trade, Part 5: Technical Analysis&mdash;Moving Average Support &amp; Resistance And Volatility Bands,&rdquo; is available for download at the following links for NinjaTrader 8 and for NinjaTrader 7.</p>
+
+<ul style="list-style:none;"><li><strong>NinjaTrader 8:</strong> <a href="https://www.ninjatrader.com/SC/January2019SCNT8.zip" target="_parent">www.ninjatrader.com/SC/January2019SCNT8.zip</a></li>
+<li><strong>NinjaTrader 7:</strong> <a href="https://www.ninjatrader.com/SC/January2019SCNT7.zip" target="_parent">www.ninjatrader.com/SC/January2019SCNT7.zip</a></li></ul>
+
+<p>Once the file is downloaded, you can import the indicator in NinjaTader 8 from within the Control Center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import in NinjaTrader 7 from within the Control Center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator&rsquo;s source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the Control Center window and selecting the SveVolatilityBand file. You can review the indicator&rsquo;s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the Control Center window and selecting the SveVolatilityBand file.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, which provides you with the highest performance possible.</p>
+<p>A sample chart implementing the strategy is shown in Figure 4.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2019/01/images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: NINJATRADER. The SveVolatilityBand indicator displayed on a one-minute ES 12-18 chart on November 8, 2018.</p></div>
+
+<p class="authorTips">&mdash;Raymond Deux &amp; Jim Dooms<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+eSIGNAL: JANUARY 2019</h3></div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;ve provided the SveVolatilityBand.efs study based on the article by Sylvain Vervoort that appeared in the July 2018 issue of STOCKS &amp; COMMODITIES, &ldquo;The V-Trade, Part 5: Technical Analysis&mdash;Moving Average Support &amp; Resistance And Volatility Bands.&rdquo; This study displays the volatility band on the price chart.</p>
+<p>The studies contain formula parameters that may be configured through the <em>edit chart</em> window (right-click on the chart and select <em>edit chart</em>). A sample chart is shown in Figure 5.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2019/01/images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: eSIGNAL. Here is an example of the study plotted on a 60-minute chart of EUR A0-FX. </p></div>
+
+<p>To discuss this study or download a complete copy of the formula code, please visit the EFS library discussion board forum under the forums link from the support menu at <a href="https://www.esignal.com" target="_parent">www.esignal.com</a> or visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs/" target="_parent">www.esignal.com/support/kb/efs/</a>. The eSignal formula script (EFS) is also available <a href="https://www.traders.com/Documentation/FEEDbk_docs/2019/01/images/code/SveVolatilityBand.efs" target="_blank">here</a>:</p>
+<pre>/*********************************
+Provided By:  
+eSignal (Copyright c eSignal), a division of Interactive Data 
+Corporation. 2016. All rights reserved. This sample eSignal 
+Formula Script (EFS) is for educational purposes only and may be 
+modified and saved under a new file name.  eSignal is not responsible
+for the functionality once modified.  eSignal reserves the right 
+to modify and overwrite this EFS file with each new release.
+
+Description:        
+    The V-Trade. Part 5: Technical Analysis&mdash;Moving Average Support &amp; Resistance And Volatility Bands
+    by Sylvain Vervoort
+    
+
+Version:            1.00  11/13/2018
+
+Formula Parameters:                     Default:
+VolatilityBand                          True
+Bands Average Bars                      20
+Bands Volatility Range                  2.4
+Low Band Adjust (Vol. Band Only)        0.9
+Middle Line LWMA Average                20
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+
+
+
+var fpArray = new Array();
+
+function preMain(){
+    setPriceStudy(true);
+    setStudyTitle(&quot;SveVolatilityBand&quot;);
+    setCursorLabelName(&quot;Upper&quot;,0);
+    setCursorLabelName(&quot;Basis&quot;,1);
+    setCursorLabelName(&quot;Lower&quot;,2);
+    setPlotType(PLOTTYPE_LINE, 0);
+    setPlotType(PLOTTYPE_LINE, 1);
+    setPlotType(PLOTTYPE_LINE, 2);
+    setDefaultBarThickness(2,0);
+    setDefaultBarThickness(2,1);
+    setDefaultBarThickness(2,2);
+    setDefaultBarFgColor(Color.RGB(0x00,0x94,0xFF),0);
+    setDefaultBarFgColor(Color.RGB(0xFE,0x69,0x00),1);
+    setDefaultBarFgColor(Color.RGB(0x00,0x94,0xFF),2);
+    
+    
+    var x = 0;
+    fpArray[x] = new FunctionParameter(&quot;VolatilityBand&quot;, FunctionParameter.BOOLEAN);
+	with(fpArray[x++]){
+        setName(&quot;Volatility Band (true=Volatility, false=Bollinger)&quot;);
+        setDefault(true);
+        
+    }
+
+    fpArray[x] = new FunctionParameter(&quot;BandsPeriod&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setName(&quot;Bands Average Bars&quot;);
+        setLowerLimit(1);
+        setDefault(20);
+       
+    }
+    fpArray[x] = new FunctionParameter(&quot;BandsDeviation&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setName(&quot;Bands Volatility Range&quot;);
+        setLowerLimit(0);
+        setDefault(2.4);
+        
+    }
+    fpArray[x] = new FunctionParameter(&quot;LowbandAdjust&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setName(&quot;Low Band Adjust (Vol. Band Only)&quot;);
+        setLowerLimit(0);
+        setDefault(0.9);
+        
+    }
+    fpArray[x] = new FunctionParameter(&quot;MiddleLineLwma&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setName(&quot;Middle Line LWMA Average&quot;);
+        setLowerLimit(1);
+        setDefault(20);
+        
+    }
+}
+
+var bInit = false;
+var bVersion = null;
+
+var xAtrBuf = null;
+var xTempBuf = null;
+var xHigh = null;
+var xLow = null;
+var xClose = null;
+var xWMA;
+var xHighChannel = null;
+var xLowChannel = null;
+var xMedianAverage = null;
+
+function main(VolatilityBand, BandsPeriod, BandsDeviation, LowbandAdjust, MiddleLineLwma){
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return;
+        
+    if (getBarState() == BARSTATE_ALLBARS){
+        bInit = false;
+    }
+   
+    if (!bInit){
+                
+        xClose = close();
+        xHigh = high();
+        xLow = low();
+        xWMA = wma(BandsPeriod);
+        
+        xTempBuf = efsInternal(&quot;Calc_TempBuf&quot;, xHigh, xLow, xClose);
+        xAtrBuf = efsInternal(&quot;Calc_AtrBuf&quot;, xTempBuf, BandsPeriod, BandsDeviation);
+        
+        xMedianAverage = wma(MiddleLineLwma, hlc3());
+        if (VolatilityBand == true) {
+            xHighChannel = efsInternal( &quot;_HighChannel&quot;, xWMA, xAtrBuf, xClose);
+            xLowChannel = efsInternal( &quot;_LowChannel&quot;, xWMA, xAtrBuf, xClose, LowbandAdjust);
+        }
+        else {
+            xHighChannel = upperBB(BandsPeriod, BandsDeviation, xClose);
+            xLowChannel = lowerBB (BandsPeriod, BandsDeviation, xClose);
+        }    
+        bInit = true;
+    }
+
+    var vHighChannel = xHighChannel.getValue(0);    
+    var vMedianAverage = xMedianAverage.getValue(0);
+    var vLowChannel = xLowChannel.getValue(0);    
+    
+    return [vHighChannel, vMedianAverage, vLowChannel];
+}
+
+function Calc_TempBuf (xHigh, xLow, xClose){
+    if (xClose.getValue(-1) == null ) return (xHigh.getValue(0)- xLow.getValue(0));
+    var TB = Math.max(xHigh.getValue(0), xClose.getValue(-1)) - Math.min(xLow.getValue(0), xClose.getValue(-1));
+    return TB; 
+}
+
+ var xSMA = null;
+function Calc_AtrBuf(xTempBuf, BandsPeriod, BandsDeviation){  
+    if(xSMA == null) xSMA = sma(BandsPeriod, xTempBuf);
+    if (xTempBuf.getValue(-BandsPeriod) == null) return;
+    return (xSMA.getValue(0) * BandsDeviation);
+}
+
+ function _HighChannel(xWMA, xAtrBuf, xClose){
+        if (xAtrBuf.getValue(0) == null) return;
+        var vHC = xWMA.getValue(0) + (xWMA.getValue(0) * xAtrBuf.getValue(0) / xClose.getValue(0)) ;
+            
+    return vHC;
+}
+
+function _LowChannel(xWMA, xAtrBuf, xClose, LowbandAdjust){
+        if (xAtrBuf.getValue(0) == null) return;
+        var vLC = xWMA.getValue(0) - (xWMA.getValue(0) * xAtrBuf.getValue(0) * LowbandAdjust / xClose.getValue(0)) ;
+            
+    return vLC;
+}
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+</pre>
+
+<p class="authorTips">&mdash;Eric Lippert<br>
+eSignal, an Interactive Data company<br>
+800 779-6555, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+WEALTH-LAB: JANUARY 2019</h3></div>
+<p>Don&rsquo;t be confused by the SveVolatilityBands name: The new bands discussed by author Sylvain Vervoort in his July 2018 STOCKS &amp; COMMODITIES article &ldquo;The V-Trade, Part 5: Technical Analysis&mdash;Moving Average Support &amp; Resistance And Volatility Bands&rdquo; are different from the synonymous indicator from his August 2013 article in STOCKS &amp; COMMODITIES and which we wrote about in the Traders&rsquo; Tips section of that issue.</p>
+<p>Since this indicator does not come with a trading system, we decided that a good illustration of its application may be through the concept of volatility contraction and expansion. Price breakout following a volatility contraction implies an expansion in volatility of the price range, which acts as catalyst to longer-term trends. The opposite phase, that is, when the bands&rsquo; volatility reaches its longer-term high, signifies considerable price changes and a potential end of the trend. The width percentage of the smoothed volatility bands is measured over desired lookback (here, 200 days).</p>
+
+<p><strong>System rules:</strong></p>
+<ul><li><strong><em>Buy at stop</em></strong> at the highest 20-day high when the percent width of the SveVolatilityBands contracts to its lowest 200-day value, and there&rsquo;s a bullish trend (close price above 200-day SMA).</li>
+<li><strong><em>Sell at market</em></strong> when the percent width of the SveVolatilityBands widens to its highest 200-day value, and today&rsquo;s low drops below the 20-day lowest low.</li></ul>
+
+<p>The system may be risky in its current barebone state so motivated traders might want to use a stop-loss and/or a trend filter to liquidate the position if the trend has changed from bullish.</p> 
+<p>A sample chart is shown in Figure 6.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2019/01/images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: WEALTH-LAB. This sample chart demonstrates the characteristic volatility expansion trade in AAPL (Apple Inc).</p></div>
+
+<p>For extra flexibility in configuring various parameters, drag &ldquo;sliders&rdquo; at the bottom of the screen interactively. The strategy&rsquo;s code is downloadable and can be found under the &ldquo;breakouts&rdquo; folder in the &ldquo;open strategy&rdquo; dialog (Ctrl-O, then click <em>download</em> and <em>begin download</em>).</p>
+<p>To execute successfully in Wealth-Lab, the system requires the latest version of the TASCIndicators library. Please install (or update if you haven&rsquo;t done so already) the library from our Wealth-Lab.com site to its latest version.</p>
+<pre><strong>C# Code</strong>
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Drawing;
+using WealthLab;
+using WealthLab.Indicators;
+using TASCIndicators;
+
+namespace WealthLab.Strategies
+{
+	public class SVESmoothedVolatilityBands : WealthScript
+	{
+		private StrategyParameter paramBandAvg;
+		private StrategyParameter paramMiddleLine;
+		private StrategyParameter paramDevFact;
+		private StrategyParameter paramLowBAdj;
+		private StrategyParameter paramSqueezeLookback;
+
+		public SVESmoothedVolatilityBands()
+		{
+			paramBandAvg = CreateParameter(&quot;Band average&quot;, 20, 2, 100, 1);
+			paramMiddleLine = CreateParameter(&quot;Middle line period&quot;, 20, 2, 100, 1);
+			paramDevFact = CreateParameter(&quot;Deviation factor&quot;, 2.4, 0.2, 5.0, 0.2);
+			paramLowBAdj = CreateParameter(&quot;Low Band Adj.&quot;, 0.9, 0.1, 3.0, 0.1);
+			paramSqueezeLookback = CreateParameter(&quot;Squeeze lookback&quot;, 200, 5, 150, 1 );        
+		}
+		
+		protected override void Execute()
+		{
+			int average = paramBandAvg.ValueInt;
+			int middleperiod = paramMiddleLine.ValueInt;
+			double devfact = paramDevFact.Value;
+			double lowbandadjust = paramLowBAdj.Value;
+			int squeezelen = paramSqueezeLookback.ValueInt;
+
+			// Smoothed Volatility Bands
+			var TypicalPrice = AveragePriceC.Series( Bars );
+			var MedianAverage = WMA.Series(TypicalPrice, middleperiod);
+			var HighChannel = SVESmoothedVolatilityBandUpper.Series( Bars, average, middleperiod, devfact, lowbandadjust );
+			var LowChannel = SVESmoothedVolatilityBandLower.Series( Bars, average, middleperiod, devfact, lowbandadjust );
+
+			SolidBrush shadowBrush = new SolidBrush(Color.FromArgb(50, Color.Violet));
+			PlotSeriesFillBand(PricePane, HighChannel, LowChannel, Color.Blue, shadowBrush, LineStyle.Solid, 2);
+			PlotSeries(PricePane, MedianAverage, Color.Blue, LineStyle.Solid, 1);
+			HideVolume();
+
+			// Squeeze and expansion in SveVolatilityBands
+			var PctWidth = ( ( HighChannel - LowChannel ) / MedianAverage ) * 100; PctWidth.Description = &quot;% Width&quot;;
+			var PctWidthMax = Highest.Series( PctWidth, squeezelen );
+			var PctWidthMin = Lowest.Series( PctWidth, squeezelen );
+			
+			ChartPane PctWPane = CreatePane( 20, true, true );
+			PlotSeries( PctWPane, PctWidth, Color.Blue, WealthLab.LineStyle.Solid, 2 );
+			PlotSeries( PctWPane, Lowest.Series( PctWidth, squeezelen ), Color.DarkGreen, LineStyle.Dashed, 2 );
+			PlotSeries( PctWPane, Highest.Series( PctWidth, squeezelen ), Color.DarkRed, LineStyle.Dashed, 2 );
+
+			for(int bar = GetTradingLoopStartBar(average); bar &lt; Bars.Count; bar++)
+			{
+				if (IsLastPositionActive)
+				{
+					if(	PctWidth[bar] &gt;= PctWidthMax[bar] )
+					{
+						SetBackgroundColor( bar, Color.FromArgb(30, Color.Red) );
+						if( Low[bar] &lt;= Lowest.Series(Low, average)[bar] )
+							SellAtMarket(bar+1, LastPosition, &quot;Vola expansion&quot;);
+					}					
+				}
+				else
+				{
+					if(	PctWidth[bar] &lt;= PctWidthMin[bar] )
+					{
+						SetBackgroundColor( bar, Color.FromArgb(30, Color.Green) );
+						if( Close[bar] &gt;= SMA.Series(Close,	squeezelen)[bar] )
+							BuyAtStop( bar+1, Highest.Series(High, average)[bar], &quot;Vola contraction&quot; );
+					}
+				}	
+			}
+		}
+	}
+}
+</pre>
+
+
+<p class="authorTips">&mdash;Gene (Eugene) Geren, Wealth-Lab team<br>
+MS123, LLC<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+NEUROSHELL TRADER: JANUARY 2019</h3></div>
+<p>The moving averages and volatility bands described by Sylvain Vervoort in his July 2018 STOCKS &amp; COMMODITIES article &ldquo;The V-Trade, Part 5: Technical Analysis&mdash;Moving Average Support &amp; Resistance And Volatility Bands&rdquo; can be easily implemented in the NeuroShell Trader by combining a few of NeuroShell Trader&rsquo;s 800+ indicators. To implement the indicators, select <em>new indicator</em> from the <em>insert</em> menu and use the Indicator Wizard to create the following indicators:</p>
+
+<pre><strong>Moving Averages:</strong>
+Simple Moving Average:	Avg(Close,100)
+Exponential Moving Average:		ExpAvg(Close,100)
+Linearly-weighted Moving Average: 	LinWgtAvg(Close,100)
+
+<strong>SveVolatiltyBands:</strong>
+Upper Band: 	Mul2( LinWgtAvg(Close,20), Add2(1, Divide( Mul2( Avg( Sub( Max2( High, Lag(Close,1)), Min2( Low, Lag(Close,1))), 20), 2.4), Close)))
+Lower Band: 	Mul2( LinWgtAvg(Close,20), Sub(1, Divide( Mul3( Avg( Sub( Max2( High, Lag(Close,1)), Min2( Low, Lag(Close,1))), 20), 2.4, 0.9), Close)))
+Middle:		LinWgtAvg(Avg3(High,Low,Close),20)
+
+<strong>Bollinger Bands:</strong>
+Upper Band:	BB High(Close,20,2.4)
+Lower Band:	BB Low(Close,20,2.4)
+Middle:	LinWgtAvg(Avg3(High,Low,Close),20)</pre>
+
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the Neuro­Shell Trader free technical support website to download a copy of this or any Traders&rsquo; Tips.</p>
+<p>A sample chart is shown in Figure 7.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2019/01/images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: NEUROSHELL TRADER. This NeuroShell Trader chart shows a comparison of the different moving averages and volatility bands.</p></div>
+<p class="authorTips">&mdash;Marge Sherald, Ward Systems Group, Inc.<br>
+301 662-7950, <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+AIQ: JANUARY 2019</h3></div>
+<p>The AIQ EDS file for Sylvain Vervoort&rsquo;s July 2018 article in S&amp;C, &ldquo;The V-Trade, Part 5: Technical Analysis&mdash;Moving Average Support &amp; Resistance And Volatility Bands,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also available below.</p>
+
+<pre>!THE V-TRADE, PART 5
+!Author: Sylvain Vervoort, TASC July 2018
+!Coded by: Richard Denning 11/15/18
+!www.TradersEdgeSystems,com
+
+!ABBREVIATIONS:
+C is [close].
+C1 is valresult(C,1).
+C2 is valresult(C,2).
+C3 is valresult(C,3).
+C4 is valresult(C,4).
+C5 is valresult(C,5).
+C6 is valresult(C,6).
+C7 is valresult(C,7).
+C8 is valresult(C,8).
+C9 is valresult(C,9).
+C10 is valresult(C,10).
+C11 is valresult(C,11).
+C12 is valresult(C,12).
+C13 is valresult(C,13).
+C14 is valresult(C,14).
+C15 is valresult(C,15).
+C16 is valresult(C,16).
+C17 is valresult(C,17).
+C18 is valresult(C,18).
+C19 is valresult(C,19).
+PD is {position days}.
+PEP is {position entry price}.
+
+!MOVING AVERAGES:
+!SIMPLE MOVING AVERAGES:
+smaLen1 is 50.
+smaLen2 is 100.
+smaLen3 is 200.
+esaLen is 20.
+esaBandPct is 10.
+
+sma1 is simpleavg(C,smaLen1).
+sma2 is simpleavg(C,smaLen2).
+sma3 is simpleavg(C,smaLen3).
+
+!LINEAR WEIGHTED 
+LWMA is (C*20+C1*19+C2*18+C3*17+C4*16
+      +C5*15+C6*14+C7*13+C8*12+C9*11
+      +C10*10+C11*9+C12*8+C13*7+C14*6
+      +C15*5+C16*4+C17*3+C18*2+C19*1)/210.
+
+!ESA BANDS:
+esa is expavg(C,esaLen).
+upperESA is esa*(1+esaBandPct/100).
+lowerESA is esa*(1-esaBandPct/100).
+
+!BOLLINGER BANDS:
+!SET PARAMETERS FOR BANDS:
+ BBlen 	is 20.!Default is 20
+ Mult1 	is 2. !Default is 2
+ Mult2 	is 2. !Default is 2
+
+Variance is Variance([close],BBlen).
+StdDev is Sqrt(Variance).
+SMA is simpleavg([close],BBlen).
+UpperBB is SMA + StdDev *  Mult1.
+LowerBB is SMA - StdDev *  Mult2.
+
+ShowValues if 1.
+
+Squeeze if upperESA &gt; UpperBB and lowerESA &lt; LowerBB.
+
+SqIndicator is iff(Squeeze,1,iff(not Squeeze,0,-1)).
+
+Buy if upperESA &lt; UpperBB  and valrule(Squeeze,1)
+	 and C &gt; sma3 and C&lt;LWMA. 
+Sell if (PD&gt;=3 and  LWMA &lt; valresult(LWMA,1)) or C &lt; PEP.</pre>
+
+<p>The EDS file contains the code for the various moving averages mentioned in the article as well as code for the Bollinger Bands and exponential bands. I did not code the SVE bands discussed by Vervoort in his article. I coded a system that uses the concept of a squeeze, as discussed in the article. A squeeze occurs when the Bollinger Bands are inside the exponential bands. Figure 8 shows a sample trade from the system on NVDA. Figure 9 shows the EDS summary report for a four-year backtest using the NASDAQ 100 list of stocks.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2019/01/images/TT-Aiq1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: AIQ. This shows a sample trade from the squeeze system.</p></div>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2019/01/images/TT-Aiq2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: AIQ. Here is a summary EDS report for a four-year backtest of the squeeze system.</p></div>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for AIQ Systems</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+TRADERSSTUDIO: JANUARY 2019</h3></div>
+<p>The TradersStudio code file for Sylvain Vervoort&rsquo;s July 2018 article in S&amp;C, &ldquo;The V-Trade, Part 5: Technical Analysis&mdash;Moving Average Support &amp; Resistance And Volatility Bands,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also available here:</p>
+<pre>'THE V-TRADE, PART 5
+'Author: Sylvain Vervoort, TASC July 2018
+'Coded by: Richard Denning 11/15/18
+'www.TradersEdgeSystems.com
+
+Sub SQUEEZE_MKT(smaLen,lwmaLen,esaLen,esaPct,minHold)
+'smaLen=150,lwmaLen=20,esaLen=20,esaPct=7,minHold=3
+Dim SMA As BarArray
+Dim upperBB As BarArray
+Dim lowerBB As BarArray
+Dim ESA As BarArray
+Dim upperESA As BarArray
+Dim lowerESA As BarArray
+Dim LWMA As BarArray
+Dim SQZE As BarArray
+Dim SMAmkt As BarArray
+SMA = Average(C,smaLen)
+SMAmkt = Average(C Of independent1,smaLen)
+LWMA = WeightedMA(C,lwmaLen,0)
+upperBB = UpperBolBand(C,esaLen,2,0)
+lowerBB = LowerBolBand(C,esaLen,2,0)
+ESA = XAverage(C,esaLen)
+upperESA = ESA*(1+esaPct/100)
+lowerESA = ESA*(1-esaPct/100)
+
+If upperESA &gt; upperBB And lowerESA &lt; lowerBB Then
+    SQZE = 1
+Else
+    SQZE = 0
+End If
+
+If C Of independent1 &gt; SMAmkt Then
+  If upperESA &lt; upperBB  And SQZE[1]=1 And C &gt; SMA And C &lt; LWMA Then
+    Buy(&quot;LE&quot;,1,0,Market,Day) 
+  End If
+End If
+If (BarsSinceEntry &gt;= minHold And LWMA &lt; LWMA[1]) Or C &lt; EntryPrice Then
+    ExitLong(&quot;LX&quot;,&quot;&quot;,1,0,Market,Day)
+End If
+End Sub</pre>
+<p>I did not code the SVE bands that are discussed in Vervoort&rsquo;s article. I coded a system that uses the concept of a squeeze, as discussed in the article. A squeeze occurs when the Bollinger Bands are inside the exponential bands. Figure 10 shows a sample equity curve trading the list of the NASDAQ 100 stocks from 2000 to 2014 using the SQUEEZE_MKT code.</p>
+
+
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2019/01/images/TT-Tradersstudio.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 10: TRADERSSTUDIO. This shows a sample equity curve trading the list of the NASDAQ 100 stocks from 2000–2014 using the SQUEEZE_MKT code.</p></div>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for TradersStudio</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Amibroker.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+AMIBROKER: JANUARY 2019</h3></div>
+<p>In &ldquo;The V-Trade, Part 5: Technical Analysis&mdash;Moving Average Support &amp; Resistance And Volatility Bands&rdquo; in the July 2018 STOCKS &amp; COMMODITIES, author Sylvain Vervoort presented the <em>Sve volatility bands</em> that can serve as a complementary tool to Bollinger Bands. <em>Sve volatility bands</em> are essentially ATR-based bands with a small twist.</p> 
+<p>Some ready-to-use code for AmiBroker is provided here. A sample chart is shown in Figure 11.</p>
+<pre>
+BandsPeriod = Param(&quot;Bands Period&quot;, 20, 2, 100 ); 
+BandsDeviation = Param(&quot;Bands Deviation&quot;, 2.4, 1.0, 3.0, 0.1 ); 
+LowBandAdj = Param(&quot;LowBand Adjust&quot;, 0.9, 0.5, 1.5, 0.1 ); 
+MiddleMA = Param(&quot;Middle LWMA&quot;, 20, 2, 100 ); 
+
+TR = ATR( 1 ); // true range 
+
+// TASC code uses simple MA 
+MATR = BandsDeviation * MA( TR, BandsPeriod * 2 - 1 ); 
+
+MAC = WMA( C, BandsPeriod ); 
+
+HighChannel = MAC * ( 1 + MATR / Close ); 
+LowChannel = MAC * ( 1 - LowBandAdj * MATR / Close ); 
+
+// WMA from typical price 
+MedAverage = WMA( Avg, MiddleMA ); 
+
+Plot( Close, &quot;Price&quot;, colorDefault, styleCandle ); 
+Plot( HighChannel, &quot;HighChannel&quot;, colorPink ); 
+Plot( LowChannel, &quot;LowChannel&quot;, colorPink ); 
+Plot( MedAverage, &quot;MedAverage&quot;, colorBlue );</pre>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2019/01/images/TT-Amibroker.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 11: AMIBROKER. Here is an example range bar chart of GBPUSD with Sve Volatility bands and a weighted moving average.</p></div>
+
+
+<p class="authorTips">&mdash;Tomasz Janeczko, AmiBroker.com<br>
+<a href="https://www.amibroker.com" target="_parent">www.amibroker.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item11">
+ <h3 class="newsTitle grey_blue">
+MICROSOFT EXCEL: JANUARY 2019</h3></div>
+<p>In &ldquo;The V-Trade, Part 5: Technical Analysis&mdash;Moving Average Support &amp; Resistance And Volatility Bands&rdquo; in the July 2018 STOCKS &amp; COMMODITIES, author Sylvain Vervoort has laid out a couple of ways to look for support &amp; resistance in a price time series.</p>
+<p>Among the first he describes are a set of moving averages, where we are looking at price action reaching and frequently bouncing off one of these averages as the pricing continues a trend, or penetrating one or more of the averages in reversal situations.</p>
+<p>Figure 12 shows a price chart and a renko chart of roughly the same time period. Due to the nature of creating renko bars, the renko chart will almost never display the exact same number of bars as in a price chart of the same period. It usually displays many fewer bars since the process of creating a renko bar may have &ldquo;devoured&rdquo; many price bars in the areas of sideways or very low-pitch trending price action. This &ldquo;timeless&rdquo; nature of renko charts reduces the predictive utility of the moving averages on renko charts.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2019/01/images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 12: EXCEL, MOVING AVERAGES ON PRICE AND RENKO CHARTS</p></div>
+<p>Compare the location of the cursor on the price chart and on the renko chart. The cursor on the renko chart is over the bar that most closely matches the time stamp of the bar under the cursor on the price chart. Selecting peaks and adjacent valleys with the cursor on the price chart can give you a feel for the renko bricks inserted for a steep price move, or the price bars &ldquo;devoured&rdquo; in a shallow or sideways price move.</p> 
+<p>Figures 13 &amp; 14 allow us to compare and contrast two approaches to using volatility banding in predictive strategies.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2019/01/images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 13: EXCEL, SVE VOLATILITY BANDS ON PRICE AND RENKO CHARTS</p></div>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2019/01/images/TT-Excel3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 14: EXCEL, BOLLINGER BANDS</p></div>
+<p>The envelope created by Vervoort&rsquo;s new SveVolatility band strategy does a nice job of tracking both the price and renko bars.</p>
+<p>Bollinger Bands are by design much more sensitive to changes in volatility and among other features, they do a very nice job of locating sideways and well-defined price trend channels.</p>
+<p>The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2019/01/images/code/SveVolatilityBands.xlsm">here</a>:</p>
+
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2019/01/images/code/SveVolatilityBands.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the January 2019 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2018, Technical Analysis, Inc.</p>
+
+</body>
+</html>

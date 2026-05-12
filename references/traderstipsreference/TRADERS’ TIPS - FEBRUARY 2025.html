@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: Drunkard&rsquo;s Walk: Theory And Measurement By Autocorrelation by John F. Ehlers. Contributions from: TradeStation; Wealth-Lab.com; TradingView; Neuroshell Trader; The Zorro Project; NinjaTrader.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - FEBRUARY 2025</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">February 2025</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2025/02/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John F. Ehlers&rsquo; article in this issue, &ldquo;Drunkard&rsquo;s Walk: Theory And Measurement By Autocorrelation.&rdquo; Here, we present the February 2025 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: February 2025</a></li>
+  <li><a href="#item2">Wealth-Lab.com: February 2025</a></li>
+  <li><a href="#item3">TradingView: February 2025</a></li>
+  <li><a href="#item4">Neuroshell Trader: February 2025</a></li>
+  <li><a href="#item5">The Zorro Project: February 2025</a></li>
+  <li><a href="#item6">NinjaTrader: February 2025</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: February 2025</h3></div>
+<p>John Ehlers&rsquo; new autocorrelation indicator, introduced in this article in this issue (&ldquo;Drunkard&rsquo;s Walk: Theory And Measurement By Autocorrelation&rdquo;) can be used to identify patterns in financial markets, which often behave unpredictably, like a &ldquo;drunkard&rsquo;s walk.&rdquo; This indicator draws upon mathematical models&mdash;the diffusion equation for trends and the wave equation for cycles&mdash;to uncover hidden order within seemingly random price movements. By analyzing the correlation of price data over different periods, the indicator can be used to reveal cyclical patterns, potential reversals, and emerging trends.</p>
+<pre>
+Function: $SuperSmoother
+{
+	SuperSmoother Function
+ 	(C) 2004-2024 John F. Ehlers
+}
+
+inputs:
+	Price(numericseries),
+	Period(numericsimple);
+
+variables:
+	a1( 0 ),
+	b1( 0 ),
+	c1( 0 ),
+	c2( 0 ),
+	c3( 0 );
+
+a1 = ExpValue(-1.414 * 3.14159 / Period);
+b1 = 2 * a1 * Cosine(1.414 * 180 / Period);
+c2 = b1;
+c3 = -a1 * a1;
+c1 = 1 - c2 - c3;
+
+if CurrentBar &gt;= 4 then 
+	$SuperSmoother = c1*(Price + Price[1]) / 2 
+	 + c2 * $SuperSmoother[1] + c3 * $SuperSmoother[2];
+if CurrentBar &lt; 4 then 
+	$SuperSmoother = Price;
+
+Indicator: Autocorrelation 
+{
+	TASC FEB 2025
+	AutoCorrelation Indicator
+	(C) 2024 John F. Ehlers
+}
+
+inputs:
+	Length( 20 );
+
+variables:
+	Filt( 0 ),
+	Lag( 0 ),
+	J( 0 ),
+	Sx( 0 ),
+	Sy( 0 ),
+	Sxx( 0 ),
+	Sxy( 0 ),
+	Syy( 0 ),
+	X( 0 ),
+	Y( 0 ),
+	Color1( 0 ), 
+	Color2( 0 );
+
+arrays:
+	Corr[100]( 0 );
+	
+Filt = $UltimateSmoother( Close, 20 );
+
+// Cycle test waveform
+// Filt = Sine(360*CurrentBar / 20);
+
+// &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Correlation &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;
+for Lag = 0 to 99 
+begin
+	Sx = 0;
+	Sy = 0;
+	Sxx = 0;
+	Sxy = 0;
+	Syy = 0;
+	for J = 0 to Length - 1 
+	begin
+		X = Filt[J];
+		Y = Filt[Lag + J];
+		Sx = Sx + X;
+		Sy = Sy + Y;
+		Sxx = Sxx + X*X;
+		Sxy = Sxy + X*Y;
+		Syy = Syy + Y*Y;
+	end;
+	
+	If (Length*Sxx - Sx*Sx &gt; 0) and (Length*Syy - Sy*Sy &gt; 0) Then
+	Corr[Lag + 1] = (Length*Sxy - Sx*Sy) / SquareRoot((Length*Sxx -
+	Sx*Sx)*(Length*Syy - Sy*Sy));
+end;
+
+//Plot the AutoCorrelation as a Heatmap
+for Lag = 1 to 99 
+begin
+	//Convert Power to RGB Color for Display
+	if Corr[Lag + 1] &gt;= 0 Then 
+	begin
+		Color2 = 255;
+		Color1 = 255*(1 - Corr[Lag + 1]);
+	end;
+
+	if Corr[Lag + 1] &lt; 0 then 
+	begin
+		Color2 = 255*(1 + Corr[Lag + 1]);
+		Color1 = 255;
+	end;
+
+	switch( Lag )
+	begin
+		case 0:
+			Plot1(0, &quot;S0&quot;, RGB(Color1, Color2, 0),0,4);
+		case 1:
+			Plot2(1, &quot;S1&quot;, RGB(Color1, Color2, 0),0,4);
+	end;
+	
+	switch( Lag )
+	begin
+		case 0:
+			Plot1(0, &quot;S0&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 1:
+			Plot2(1, &quot;S1&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 2:
+			Plot3(2, &quot;S2&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 3:
+			Plot4(3, &quot;S3&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 4:
+			Plot5(4, &quot;S4&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 5:
+			Plot6(5, &quot;S5&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 6:
+			Plot7(6, &quot;S6&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 7:
+			Plot8(7, &quot;S7&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 8:
+			Plot9(8, &quot;S8&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 9:
+			Plot10(9, &quot;S9&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 10:
+			Plot11(10, &quot;S10&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 11:
+			Plot12(11, &quot;S11&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 12:
+			Plot13(12, &quot;S12&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 13:
+			Plot14(13, &quot;S13&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 14:
+			Plot15(14, &quot;S14&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 15:
+			Plot16(15, &quot;S15&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 16:
+			Plot17(16, &quot;S16&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 17:
+			Plot18(17, &quot;S17&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 18:
+			Plot19(18, &quot;S18&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 19:
+			Plot20(19, &quot;S19&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 20:
+			Plot21(20, &quot;S20&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 21:
+			Plot22(21, &quot;S21&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 22:
+			Plot23(22, &quot;S22&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 23:
+			Plot24(23, &quot;S23&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 24:
+			Plot25(24, &quot;S24&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 25:
+			Plot26(25, &quot;S25&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 26:
+			Plot27(26, &quot;S26&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 27:
+			Plot28(27, &quot;S27&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 28:
+			Plot29(28, &quot;S28&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 29:
+			Plot30(29, &quot;S29&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 30:
+			Plot31(30, &quot;S30&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 31:
+			Plot32(31, &quot;S31&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 32:
+			Plot33(32, &quot;S32&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 33:
+			Plot34(33, &quot;S33&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 34:
+			Plot35(34, &quot;S34&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 35:
+			Plot36(35, &quot;S35&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 36:
+			Plot37(36, &quot;S36&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 37:
+			Plot38(37, &quot;S37&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 38:
+			Plot39(38, &quot;S38&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 39:
+			Plot40(39, &quot;S39&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 40:
+			Plot41(40, &quot;S40&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 41:
+			Plot42(41, &quot;S41&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 42:
+			Plot43(42, &quot;S42&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 43:
+			Plot44(43, &quot;S43&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 44:
+			Plot45(44, &quot;S44&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 45:
+			Plot46(45, &quot;S45&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 46:
+			Plot47(46, &quot;S46&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 47:
+			Plot48(47, &quot;S47&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 48:
+			Plot49(48, &quot;S48&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 49:
+			Plot50(49, &quot;S49&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 50:
+			Plot51(50, &quot;S50&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 51:
+			Plot52(51, &quot;S51&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 52:
+			Plot53(52, &quot;S52&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 53:
+			Plot54(53, &quot;S53&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 54:
+			Plot55(54, &quot;S54&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 55:
+			Plot56(55, &quot;S55&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 56:
+			Plot57(56, &quot;S56&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 57:
+			Plot58(57, &quot;S57&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 58:
+			Plot59(58, &quot;S58&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 59:
+			Plot60(59, &quot;S59&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 60:
+			Plot61(60, &quot;S60&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 61:
+			Plot62(61, &quot;S61&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 62:
+			Plot63(62, &quot;S62&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 63:
+			Plot64(63, &quot;S63&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 64:
+			Plot65(64, &quot;S64&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 65:
+			Plot66(65, &quot;S65&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 66:
+			Plot67(66, &quot;S66&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 67:
+			Plot68(67, &quot;S67&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 68:
+			Plot69(68, &quot;S68&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 69:
+			Plot70(69, &quot;S69&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 70:
+			Plot71(70, &quot;S70&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 71:
+			Plot72(71, &quot;S71&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 72:
+			Plot73(72, &quot;S72&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 73:
+			Plot74(73, &quot;S73&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 74:
+			Plot75(74, &quot;S74&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 75:
+			Plot76(75, &quot;S75&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 76:
+			Plot77(76, &quot;S76&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 77:
+			Plot78(77, &quot;S77&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 78:
+			Plot79(78, &quot;S78&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 79:
+			Plot80(79, &quot;S79&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 80:
+			Plot81(80, &quot;S80&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 81:
+			Plot82(81, &quot;S81&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 82:
+			Plot83(82, &quot;S82&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 83:
+			Plot84(83, &quot;S83&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 84:
+			Plot85(84, &quot;S84&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 85:
+			Plot86(85, &quot;S85&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 86:
+			Plot87(86, &quot;S86&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 87:
+			Plot88(87, &quot;S87&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 88:
+			Plot89(88, &quot;S88&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 89:
+			Plot90(89, &quot;S89&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 90:
+			Plot91(90, &quot;S90&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 91:
+			Plot92(91, &quot;S91&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 92:
+			Plot93(92, &quot;S92&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 93:
+			Plot94(93, &quot;S93&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 94:
+			Plot95(94, &quot;S94&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 95:
+			Plot96(95, &quot;S95&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 96:
+			Plot97(96, &quot;S96&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 97:
+			Plot98(97, &quot;S97&quot;, RGB(Color1, Color2, 0), 0, 4);
+		case 98:
+			Plot99(98, &quot;S98&quot;, RGB(Color1, Color2, 0), 0, 4);
+	end;
+end;
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This daily chart of the continuous contract emini S&amp;P 500 futures shows a portion of 2024 with the indicator applied using a length of 20.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="http://www.TradeStation.com" target="_blank">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: February 2025</h3></div>
+<p>So...a Z-transform and a LaPlace transform walked into a smokey bar and began solving the continuous variable random walk problem with differential and wave equations. They stumbled out in a drunkard&rsquo;s walk...</p>
+<p>In the article &ldquo;Drunkard&rsquo;s Walk: Theory And Measurement By Autocorrelation&rdquo; in this issue, John Ehlers presents coding for his autocorrelation indicator and heatmap display. WealthLab&rsquo;s version of that code is presented here, with the result given in Figure 2.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: WEALTH-LAB. Here&rsquo;s an example periodogram displaying autocorrelation in the S&amp;P emini futures, using length=2 and 20 bars.</p></div>
+<p>We find that the 2-period autocorrelation is quick to predict reversals and may produce many false alarms.</p>
+<pre>
+using WealthLab.Backtest;
+using System;
+using WealthLab.Core;
+using WealthLab.Indicators;
+using WealthLab.TASC;
+
+namespace WealthScript6 
+{
+    public class DrunkardAutoCorr : UserStrategyBase
+    {
+		Parameter _period;
+		Parameter _testWave;		
+			
+		public DrunkardAutoCorr()
+		{
+			_period = AddParameter(&quot;Period&quot;, ParameterType.Int32, 20, 5, 60, 1);
+			_testWave = AddParameter(&quot;Sine Test&quot;, ParameterType.Int32, 0, 0, 1);
+		}
+
+        public override void Initialize(BarHistory bars)
+        {
+			int length = _period.AsInt;
+			double[] corr = new double[101];
+			
+			TimeSeries[] raster = new TimeSeries[101];
+			for (int n = 0; n &lt; 101; n++)
+			{
+				raster[n] = new TimeSeries(bars.DateTimes, n);
+				PlotTimeSeriesLine(raster[n], &quot;&quot;, &quot;A/C&quot;, WLColor.Black, 4, suppressLabels: true);
+			}
+			DrawHeaderText($&quot;AutoCorrelation({length})&quot;, WLColor.White, 12, &quot;A/C&quot;);
+			SetPaneDrawingOptions(&quot;A/C&quot;, 40);
+			TimeSeries _filt = UltimateSmoother.Series(bars.Close, _period.AsInt);
+
+			//Cycle test waveform
+			if (_testWave.AsInt == 1)
+			{
+				_filt = new TimeSeries(bars.DateTimes);
+				for (int n = 0; n &lt; bars.Count; n++)
+					_filt[n] = Math.Sin(2 * Math.PI * n / 20);
+				PlotTimeSeriesLine(_filt, &quot;Sine&quot;, &quot;Sine&quot;);
+			}
+			
+			for (int bar = length + 100; bar &lt; bars.Count; bar++)
+			{
+				//&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Correlation &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;				
+				for (int lag = 0; lag &lt; 100; lag++)
+				{
+					double Sx = 0, Sy = 0, Sxx = 0, Sxy = 0, Syy = 0;
+					for (int j = 0; j &lt; length; j++)
+					{
+						double X = _filt[bar - j];
+						double Y = _filt[bar - (lag + j)];
+						Sx = Sx + X;
+						Sy = Sy + Y;
+						Sxx = Sxx + X * X;
+						Sxy = Sxy + X * Y;
+						Syy = Syy + Y * Y;
+					}
+
+					if (length * Sxx - Sx * Sx &gt; 0 &amp;&amp; length * Syy - Sy * Sy &gt; 0)
+						corr[lag + 1] = (length * Sxy - Sx * Sy) / Math.Sqrt((length * Sxx - Sx * Sx) * (length * Syy - Sy * Sy));
+				}
+
+				//convert AutoCorrelation to colors
+				for (int lag = 1; lag &lt; 100; lag++)
+				{
+					byte clr1 = 255;
+					byte clr2 = 255;
+					if (corr[lag + 1] &gt;= 0)
+						clr1 = (byte)(255 * (1 - corr[lag + 1]));
+					else
+						clr2 = (byte)(255 * (1 + corr[lag + 1]));						
+					SetSeriesBarColor(raster[lag + 1], bar, WLColor.FromRgb(clr1, clr2, 0));
+				}
+			}
+		}
+		
+		public override void Execute(BarHistory bars, int idx)
+        {  }
+    }
+}
+</pre>
+<p class="authorTips">&mdash;Robert Sucher<br>
+Wealth-Lab team<br>
+<a href="http://www.wealth-lab.com" target="_blank">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: February 2025</h3></div>
+<p>The TradingView Pine Script code presented here implements John Ehlers&rsquo; autocorrelation indicator, introduced in his article in this issue titled &ldquo;Drunkard&rsquo;s Walk: Theory And Measurement By Autocorrelation.&rdquo;</p>
+<pre>
+//  TASC Issue: February 2025
+//     Article: Drunkard's Walk:
+//              Theory And Measurement By Autocorrelation.
+//  Article By: John F. Elhers
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//&#64;version=5
+title ='TASC 2025.02 Autocorrelation Indicator'
+stitle = 'ACI'
+indicator(title, stitle, false)
+
+
+// --- Inputs and Constants ---
+
+
+//&#64;enum Range Selection Enumeration:
+enum R
+    R1 = '0 -&gt; 32'
+    R2 = '33 -&gt; 65'
+    R3 = '66 -&gt; 98'
+
+
+// &#64;variable Full Angle Rotation `360`.
+float FROT = 2.0 * math.pi
+// &#64;variable Square Root of 2 `1.414`.
+float SQRT2 = math.sqrt(2.0)
+// &#64;variable Perfect Cycle Test signal.
+// `Signal = math.sin(360.0 * bar_index / 30.0)`.
+float TS = math.sin(FROT * bar_index / 30.0)
+
+
+float Src  = input.source(close, 'Source:')
+int Length = input.int(100, 'Length:')
+// &#64;variable Use Test Signal.
+bool iTest = input.bool(false, 'Use Test Signal:')
+// &#64;variable Range Selection.
+R iR = input.enum(R.R1, 'Range Selection:')
+
+
+// --- Functions ---
+
+
+// &#64;function      UltimateSmoother 
+UltimateSmoother (float src, int period) =&gt;
+    float a1 = math.exp(-1.414 * math.pi / period)
+    float c2 = 2.0 * a1 * math.cos(1.414 * math.pi / period)
+    float c3 = -a1 * a1
+    float c1 = (1.0 + c2 - c3) / 4.0
+    float us = src
+    if bar_index &gt;= 4
+        us := (1.0 - c1) * src + 
+              (2.0 * c1 - c2) * src[1] - 
+              (c1 + c3) * src[2] + 
+              c2 * nz(us[1]) + c3 * nz(us[2])
+    us
+
+
+// &#64;function Correlation
+correlation (float src, int length) =&gt;
+    float[] _corr = array.new&lt;float&gt;(101, 0.0)
+    color[] _col = array.new&lt;color&gt;(101, #00000000)
+    for _l = 0 to 99
+        float _Sx = 0.0
+        float _Sy = 0.0
+        float _Sxx = 0.0
+        float _Sxy = 0.0
+        float _Syy = 0.0
+        for _j = 0 to length - 1
+            float _x = src[_j]
+            float _y = src[_l + _j]
+            _Sx += _x
+            _Sy += _y
+            _Sxx += _x * _x
+            _Sxy += _x * _y
+            _Syy += _y * _y
+        float _ca1 = length * _Sxx - _Sx * _Sx
+        float _ca2 = length * _Syy - _Sy * _Sy
+        if _ca1 &gt; 0.0 and _ca2 &gt; 0.0
+            float _ca3 = length * _Sxy - _Sx * _Sy
+            _corr.set(_l + 1, _ca3 / math.sqrt(_ca1 * _ca2))
+    for _l = 1 to 99
+        float _c = _corr.get(_l + 1)
+        if _c &gt;= 0.0
+            _col.set(_l, color.rgb(255, 255 * (1.0 - _c), 0))
+        if _c &lt; 0.0
+            _col.set(_l, color.rgb(255 * (1.0 + _c), 255, 0))
+    _col
+
+
+
+
+// --- Calculations: ---
+
+
+float Filt = iTest ? TS : UltimateSmoother(Src, Length)
+
+
+//&#64;variable Color array.
+color[] C = correlation(Filt, Length)
+
+
+switch iR
+    R.R1 =&gt; C := C.slice(0, 32)
+    R.R2 =&gt; C := C.slice(33, 65)
+    =&gt; C := C.slice(66, 98)
+
+
+int IDX00 = iR == R.R1 ? 00 : (iR == R.R2 ? 33+00 : 66+00)
+int IDX01 = iR == R.R1 ? 01 : (iR == R.R2 ? 33+01 : 66+01)
+int IDX02 = iR == R.R1 ? 02 : (iR == R.R2 ? 33+02 : 66+02)
+int IDX03 = iR == R.R1 ? 03 : (iR == R.R2 ? 33+03 : 66+03)
+int IDX04 = iR == R.R1 ? 04 : (iR == R.R2 ? 33+04 : 66+04)
+int IDX05 = iR == R.R1 ? 05 : (iR == R.R2 ? 33+05 : 66+05)
+int IDX06 = iR == R.R1 ? 06 : (iR == R.R2 ? 33+06 : 66+06)
+int IDX07 = iR == R.R1 ? 07 : (iR == R.R2 ? 33+07 : 66+07)
+int IDX08 = iR == R.R1 ? 08 : (iR == R.R2 ? 33+08 : 66+08)
+int IDX09 = iR == R.R1 ? 09 : (iR == R.R2 ? 33+09 : 66+09)
+int IDX10 = iR == R.R1 ? 10 : (iR == R.R2 ? 33+10 : 66+10)
+int IDX11 = iR == R.R1 ? 11 : (iR == R.R2 ? 33+11 : 66+11)
+int IDX12 = iR == R.R1 ? 12 : (iR == R.R2 ? 33+12 : 66+12)
+int IDX13 = iR == R.R1 ? 13 : (iR == R.R2 ? 33+13 : 66+13)
+int IDX14 = iR == R.R1 ? 14 : (iR == R.R2 ? 33+14 : 66+14)
+int IDX15 = iR == R.R1 ? 15 : (iR == R.R2 ? 33+15 : 66+15)
+int IDX16 = iR == R.R1 ? 16 : (iR == R.R2 ? 33+16 : 66+16)
+int IDX17 = iR == R.R1 ? 17 : (iR == R.R2 ? 33+17 : 66+17)
+int IDX18 = iR == R.R1 ? 18 : (iR == R.R2 ? 33+18 : 66+18)
+int IDX19 = iR == R.R1 ? 19 : (iR == R.R2 ? 33+19 : 66+19)
+int IDX20 = iR == R.R1 ? 20 : (iR == R.R2 ? 33+20 : 66+20)
+int IDX21 = iR == R.R1 ? 21 : (iR == R.R2 ? 33+21 : 66+21)
+int IDX22 = iR == R.R1 ? 22 : (iR == R.R2 ? 33+22 : 66+22)
+int IDX23 = iR == R.R1 ? 23 : (iR == R.R2 ? 33+23 : 66+23)
+int IDX24 = iR == R.R1 ? 24 : (iR == R.R2 ? 33+24 : 66+24)
+int IDX25 = iR == R.R1 ? 25 : (iR == R.R2 ? 33+25 : 66+25)
+int IDX26 = iR == R.R1 ? 26 : (iR == R.R2 ? 33+26 : 66+26)
+int IDX27 = iR == R.R1 ? 27 : (iR == R.R2 ? 33+27 : 66+27)
+int IDX28 = iR == R.R1 ? 28 : (iR == R.R2 ? 33+28 : 66+28)
+int IDX29 = iR == R.R1 ? 29 : (iR == R.R2 ? 33+29 : 66+29)
+int IDX30 = iR == R.R1 ? 30 : (iR == R.R2 ? 33+30 : 66+30)
+int IDX31 = iR == R.R1 ? 31 : (iR == R.R2 ? 33+31 : 66+31)
+int IDX32 = iR == R.R1 ? 32 : (iR == R.R2 ? 33+32 : 66+32)
+
+
+PLTS = plot.style_line, DSP = display.pane, F = false
+plot(IDX01, 'S', C.get(00), 2, PLTS, F, display=DSP)
+plot(IDX02, 'S', C.get(01), 2, PLTS, F, display=DSP)
+plot(IDX03, 'S', C.get(02), 2, PLTS, F, display=DSP)
+plot(IDX04, 'S', C.get(03), 2, PLTS, F, display=DSP)
+plot(IDX05, 'S', C.get(04), 2, PLTS, F, display=DSP)
+plot(IDX06, 'S', C.get(05), 2, PLTS, F, display=DSP)
+plot(IDX07, 'S', C.get(06), 2, PLTS, F, display=DSP)
+plot(IDX08, 'S', C.get(07), 2, PLTS, F, display=DSP)
+plot(IDX09, 'S', C.get(08), 2, PLTS, F, display=DSP)
+plot(IDX10, 'S', C.get(09), 2, PLTS, F, display=DSP)
+plot(IDX11, 'S', C.get(10), 2, PLTS, F, display=DSP)
+plot(IDX12, 'S', C.get(11), 2, PLTS, F, display=DSP)
+plot(IDX13, 'S', C.get(12), 2, PLTS, F, display=DSP)
+plot(IDX14, 'S', C.get(13), 2, PLTS, F, display=DSP)
+plot(IDX15, 'S', C.get(14), 2, PLTS, F, display=DSP)
+plot(IDX16, 'S', C.get(15), 2, PLTS, F, display=DSP)
+plot(IDX17, 'S', C.get(16), 2, PLTS, F, display=DSP)
+plot(IDX18, 'S', C.get(17), 2, PLTS, F, display=DSP)
+plot(IDX19, 'S', C.get(18), 2, PLTS, F, display=DSP)
+plot(IDX20, 'S', C.get(19), 2, PLTS, F, display=DSP)
+plot(IDX21, 'S', C.get(20), 2, PLTS, F, display=DSP)
+plot(IDX22, 'S', C.get(21), 2, PLTS, F, display=DSP)
+plot(IDX23, 'S', C.get(22), 2, PLTS, F, display=DSP)
+plot(IDX24, 'S', C.get(23), 2, PLTS, F, display=DSP)
+plot(IDX25, 'S', C.get(24), 2, PLTS, F, display=DSP)
+plot(IDX26, 'S', C.get(25), 2, PLTS, F, display=DSP)
+plot(IDX27, 'S', C.get(26), 2, PLTS, F, display=DSP)
+plot(IDX28, 'S', C.get(27), 2, PLTS, F, display=DSP)
+plot(IDX29, 'S', C.get(28), 2, PLTS, F, display=DSP)
+plot(IDX30, 'S', C.get(29), 2, PLTS, F, display=DSP)
+plot(IDX31, 'S', C.get(30), 2, PLTS, F, display=DSP)
+plot(IDX32, 'S', C.get(31), 2, PLTS, F, display=DSP)
+</pre>
+<p>An example chart is shown in Figure 3.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: TRADINGVIEW. Here you see an example periodogram of Ehlers&rsquo; autocorrelation indicator on the emini S&amp;P 500 futures market.</p></div>
+<p>The indicator is available on TradingView from the PineCodersTASC account at <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="http://www.TradingView.com" target="_blank">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: February 2025</h3></div>
+<p>In &ldquo;Drunkard&rsquo;s Walk: Theory And Measurement By Autocorrelation&rdquo; in this issue, John Ehlers introduces his autocorrelation indicator displayed on a periodogram. Ehlers designed the approach he describes in the article to help to analyze price data over different periods.</p>
+<p>This type of sliding window correlation can be easily implemented in NeuroShell Trader. Simply select &ldquo;New indicator ...&rdquo; from the <em>insert</em> menu and use the indicator wizard to create the indicator. Note that by entering a parameter value of 0:99, NeuroShell Trader will automatically insert the correlation with lags between 0 and 99 in one single step onto your NeuroShell Trader chart:</p>
+	<pre>LinXYReg r( UltimateSmoother(Close,20), Lag(UltimateSmoother(Close,20),0:99),20)</pre>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: NEUROSHELL TRADER. This NeuroShell Trader chart demonstrates the sliding window correlations of the UltimateSmoother on emini Nasdaq-100 data.</p></div>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_blank">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" style= "width: 90px" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: February 2025</h3></div>
+<p>John Ehlers&rsquo; article in this issue, &ldquo;Drunkard&rsquo;s Walk: Theory And Measurement By Autocorrelation,&rdquo; deals with the usage of price autocorrelation for trading. Autocorrelation can be found in real price curves but is not found in completely random data. Depending on market regime, prices correlate with themselves shifted by some lag into the past. This is caused by some cyclic behavior of price curves, and can be used for trading systems.</p>
+<p>In his EasyLanguage script, Ehlers generates an autocorrelation heatmap over a lag range from 1 to 100. He is not using raw price data, but rather, filters it beforehand with his UltimateSmoother. That filter was the topic of a past S&amp;C article by Ehlers and the accompanying Traders&rsquo; Tips section, so I already coded it. Here again is the code for the UltimateSmoother, in C:</p>
+<pre>
+var UltimateSmoother (var *Data, int Length)
+{
+  var f = (1.414*PI) / Length;
+  var a1 = exp(-f);
+  var c2 = 2*a1*cos(f);
+  var c3 = -a1*a1;
+  var c1 = (1+c2-c3)/4;
+  vars US = series(*Data,4);
+  return US[0] = (1-c1)*Data[0] + (2*c1-c2)*Data[1] - (c1+c3)*Data[2]
+   + c2*US[1] + c3*US[2];
+}
+</pre>
+<p>Next, we can replicate Ehlers&rsquo; autocorrelation heatmap from his article in this issue. His script plots every pixel of the heatmap in a separate function. The Zorro platform provides heatmap and contour plots as part of its advanced plotting functions. This results in somewhat simpler and shorter code:</p>
+<pre>
+void run() 
+{
+  BarPeriod = 1440;
+  StartDate = 20231001;
+  EndDate = 20240901;
+  LookBack = 150;
+  assetAdd(&quot;SPY&quot;,&quot;STOOQ:SPY.US&quot;);
+  asset(&quot;SPY&quot;);
+  int Lag, Length = 20;
+  vars Prices = series(SmoothUltimate(seriesC(),Length));
+  if(!is(LOOKBACK))
+    for(Lag=1; Lag&lt;100; Lag++) {
+      int Row = dataRow(1,dataAppendRow(1,3));
+      dataSet(1,Row,0,Correlation(Prices+Length,Prices+Length+Lag,Length));
+      dataSet(1,Row,1,wdate());
+      dataSet(1,Row,2,(var)Lag);
+   }
+if(is(EXITRUN))
+  dataChart(1,0,CONTOUR,NULL);}
+</pre>
+<p>In this code, we&rsquo;re storing the correlation value, the date, and the lag in a dataset. For the correlation, we&rsquo;re using the Pearson correlation function. The resulting heatmap replicates the chart in Ehlers&rsquo; article, but I think it looks a bit prettier! (See Figure 5).</p>
+<div class="figBorder">
+<img src="images/TT-Zorro.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: ZORRO. Here is an example of autocorrelation and periodic patterns in SPY price data. The y-axis is the lag and the x-axis represents the date (in the Windows date format). Green areas show strong correlation while red areas show strong anticorrelation.</p></div>
+<p>The y-axis is the lag, and the x-axis is the date in the Windows DATE format, which is simply the number of days since 1899. Green areas have strong correlation, while the red areas show strong anticorrelation. We can see from the periodic patterns that the SPY price curve indeed has cyclic components which allow, to some degree, the prediction of short-term price trends.</p>
+<p>The code can be downloaded from the 2024 script repository on <a href="https://financial-hacker.com" target="_blank">https://financial-hacker.com</a>. The Zorro platform can be downloaded from <a href="https://zorro-project.com" target="_blank">https://zorro-project.com</a>.</p>
+<p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_blank">https://zorro-project.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: February 2025</h3></div>
+<p>In &ldquo;Drunkard&rsquo;s Walk: Theory And Measurement By Autocorrelation&rdquo; in this issue, John Ehlers introduces his autocorrelation indicator. The indicator discussed in the article is available for download at the following link for NinjaTrader 8:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="http://www.traders.com/Documentation/FEEDbk_docs/2025/02/images/code/Feburary2025SCNT8.zip" target="_blank">ninjatrader.com/SC/February2025SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the file.</p>
+<p>A sample chart is shown in Figure 6.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: NINJATRADER. This shows an example of the indicator on a daily chart of the emini S&amp;P 500 futures (ES).</p></div>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">&mdash;NinjaTrader_JesseN.<br>
+NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_blank">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the February 2025 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+All rights reserved. &copy;&nbsp;Copyright&nbsp;2025, Technical Analysis, Inc.</p>
+
+</body>
+</html>

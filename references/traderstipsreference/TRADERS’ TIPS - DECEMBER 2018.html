@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine.">
+<meta name="description" content="This month: The V-Trade, Part 3: Technical Analysis--Fibonacci Projections And Daily Pivots by Sylvain Vervoort. Contributions from: TradeStation, MetaStock, eSignal, Wealth-Lab.com, AmiBroker, Neuroshell Trader, AIQ, TradersStudio, NinjaTrader, Quantacula Studio and Trade Navigator.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - DECEMBER 2018</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">December 2018</h1>
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/12/images/TT-Vervoort.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+  <p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Sylvain Vervoort&rsquo;s
+    article in the May 2018 issue, &ldquo;<a href="https://technical.traders.com/archive/article.asp?file=\V36\C05\651VERV.pdf" target="_parent">The
+    V-Trade, Part 3: Technical Analysis&mdash;Fibonacci Projections And Daily
+    Pivots</a>.&rdquo; Here, we present the December 2018 Traders&rsquo; Tips
+    code with possible implementations in various software.</p>
+  <p><strong>You can right-click on any chart to open it in a new tab or window
+      and view it at it&rsquo;s originally supplied size, often much larger than
+      the version printed in the magazine.</strong></p>
+  <!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+  <p>The Traders&rsquo; Tips section is provided to help the reader implement
+    a selected technique from an article in this issue or another recent issue.
+    The entries here are contributed by software developers or programmers for
+    software that is capable of customization.</p>
+  <br class="clearfloat">
+</div>
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TRADESTATION: DECEMBER 2018</a></li>
+  <li><a href="#item2">METASTOCK: DECEMBER 2018</a></li>
+  <li><a href="#item3"><span style="text-transform:lowercase;">e</span>SIGNAL:
+      DECEMBER 2018</a></li>
+  <li><a href="#item4">WEALTH-LAB: DECEMBER 2018</a></li>
+  <li><a href="#item5">AMIBROKER: DECEMBER 2018</a></li>
+  <li><a href="#item6">NEUROSHELL TRADER: DECEMBER 2018</a></li>
+  <li><a href="#item7">AIQ: DECEMBER 2018</a></li>
+  <li><a href="#item8">TRADERSSTUDIO: DECEMBER 2018</a></li>
+  <li><a href="#item9">NINJATRADER: DECEMBER 2018</a></li>
+  <li><a href="#item10">QUANTACULA: DECEMBER 2018</a></li>
+  <li><a href="#item11">TRADE NAVIGATOR: DECEMBER 2018</a></li>
+  <li><a href="#item12">QUANTCONNECT: DECEMBER 2018</a></li>
+  <li><a href="#item13">THINKORSWIM: DECEMBER 2018</a></li>
+
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-New.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> TRADESTATION: DECEMBER 2018</h3>
+</div>
+<p>Sylvain Vervoort, in his May 2018 STOCKS &amp; COMMODITIES article, &ldquo;The
+  V-Trade, Part 3: Technical Analysis&mdash;Fibonacci Projections And Daily Pivots,&rdquo; introduces
+  a modified version of the venerable floor trader pivots that he calls <em>SvePivots</em>.
+  With his new SvePivots, he identifies additional support &amp; resistance levels
+  beyond the standard calculations. These include mid-levels between the between
+  normal support &amp; resistance as well as prior day highs and lows.</p>
+<p>The TradeStation EasyLanguage code for the SvePivots indicator based on the
+  author&rsquo;s work is presented here.</p>
+<pre>Indicator: SvePivots
+// SvePivots
+// Sylvain Vervoort
+// TASC Dec 2018
+
+inputs:
+	int R3Color( RGB(250,48,8) ), 
+	int R2Color( RGB(250,100,103) ), 
+	int R1Color( RGB(252,180,148) ), 
+	int PivotColor( RGB(240,209,50) ),
+	int S1Color( RGB(192,221,250) ), 
+	int S2Color( RGB(113,181,250) ), 
+	int S3Color( RGB(35,141,247) ), 
+	int YestHighColor( RGB(18,252,65) ),
+	int YestLowColor( RGB(252,18,61) ) ;
+
+
+variables:
+	intrabarpersist int BT( 0 ),
+	int CurrSess( 0 ),
+	bool CalcTrigger( false ),
+    double S1( 0 ),
+	double S2( 0 ),
+	double S3( 0 ),
+	double R1( 0 ),
+	double R2( 0 ),
+	double R3( 0 ),
+	double SM1( 0 ),
+	double SM2( 0 ),
+	double SM3( 0 ),
+	double RM1( 0 ),
+	double RM2( 0 ),
+	double RM3( 0 ),
+	double PP( 0 ),
+	double TodaysHigh( 0 ),
+	double YestHigh( 0 ),
+	double TodaysLow( 0 ),
+	double YestLow( 0 ),
+	double TodaysClose( 0 ),
+	double YestClose( 0 ),
+	int Counter( 0 );
+
+
+CurrSess = CurrentSession( 0 );
+CalcTrigger = CurrSess &lt;&gt; CurrSess[1];
+
+if CalcTrigger then
+begin
+	if CurrentBar &gt; 1 then
+		Counter = Counter + 1;
+	
+	YestHigh = TodaysHigh;
+	YestLow = TodaysLow;
+	YestClose = Close[1];
+	TodaysHigh = High;
+   	TodaysLow = Low;
+	
+	PP = ( YestHigh + YestLow + YestClose ) / 3;
+	R1 = PP * 2 - YestLow;
+	R2 = PP + YestHigh - YestLow;
+	R3 = PP * 2 + ( YestHigh - YestLow * 2 ) ;
+	S1 = PP * 2 - YestHigh;
+	S2 = PP - YestHigh + YestLow;
+	S3 = PP * 2 - ( YestHigh * 2 - YestLow ) ;
+	
+	RM1 = ( R1 - PP ) / 2 + PP ;
+	SM1 = ( PP - S1 ) / 2 + S1 ;
+	RM2 = ( R2 - R1 ) / 2 + R1 ;
+	SM2 = ( S1 - S2 ) / 2 + S2 ;
+	RM3 = ( R3 - R2 ) / 2 + R2 ;
+	SM3 = ( S2 - S3 ) / 2 + S3 ;
+	
+   	if BT &lt;&gt; 2 then
+   	begin
+   		SetPlotColor[1]( 1, Transparent );
+   		SetPlotColor[1]( 2, Transparent );
+   		SetPlotColor[1]( 3, Transparent );
+   		SetPlotColor[1]( 4, Transparent );
+   		SetPlotColor[1]( 5, Transparent );
+   		SetPlotColor[1]( 6, Transparent );
+   		SetPlotColor[1]( 7, Transparent );
+   		SetPlotColor[1]( 8, Transparent );
+   		SetPlotColor[1]( 9, Transparent );
+   		SetPlotColor[1]( 10, Transparent );
+   		SetPlotColor[1]( 11, Transparent );
+   		SetPlotColor[1]( 12, Transparent );
+   		SetPlotColor[1]( 13, Transparent );
+   		SetPlotColor[1]( 14, Transparent );
+   		SetPlotColor[1]( 15, Transparent );
+ 	end;		
+end
+else
+begin
+	if High &gt; TodaysHigh then
+		TodaysHigh = High;
+	if Low &lt; TodaysLow then
+		TodaysLow = Low;
+end;
+
+if Counter &gt;= 2 then 
+begin
+	Plot1( R3, &quot;R3&quot;, R3Color  );
+	Plot2( R2, &quot;R2&quot;, R2Color );
+	Plot3( R1, &quot;R1&quot;, R1Color );
+	Plot4( PP, &quot;PP&quot;, PivotColor );
+	Plot5( S1, &quot;S1&quot;, S1Color );
+	Plot6( S2, &quot;S2&quot;, S2Color );
+	Plot7( S3, &quot;S3&quot;, S3Color );
+	Plot8( RM3, &quot;RM3&quot;, R3Color );
+	Plot9( RM2, &quot;RM2&quot;, R2Color );
+	Plot10( RM1, &quot;RM1&quot;, R1Color );
+	Plot11( SM1, &quot;SM1&quot;, S1Color );
+	Plot12( SM2, &quot;SM2&quot;, S2Color );
+	Plot13( SM3, &quot;SM3&quot;, S3Color );
+	Plot14( YestHigh, &quot;YestHigh&quot;, 
+		YestHighColor ) ;
+	Plot15( YestLow, &quot;YestLow&quot;, 
+		YestLowColor) ;
+end;</pre>
+<p>To download the EasyLanguage code, please visit our TradeStation and EasyLanguage
+  support forum. The files for this article can be found here: <a href="https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=152631" target="_parent">https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=152631</a>.
+  The filename is &ldquo;TASC_DEC2018.ZIP.&rdquo;</p>
+<p>For more information about EasyLanguage in general, please see <a href="https://www.tradestation.com/EL-FAQ" target="_parent">https://www.tradestation.com/EL-FAQ</a>.</p>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/12/images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This intraday
+    TradeStation chart of the euro FX futures shows the SvePivot levels.</p>
+</div>
+<p><em>This article is for informational purposes. No type of trading or investment
+    recommendation, advice, or strategy is being made, given, or in any manner
+    provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;Doug McCrary<br>
+  TradeStation Securities, Inc.<br>
+  <a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Metastock.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> METASTOCK: DECEMBER 2018</h3>
+</div>
+<p>Sylvain Vervoort&rsquo;s May 2018 article in STOCKS &amp; COMMODITIES, &ldquo;The
+  V-Trade, Part 3: Technical Analysis&mdash;Fibonacci Projections And Daily Pivots,&rdquo; introduced
+  a modified pivot point indicator called &ldquo;SvePivots.&rdquo; The MetaStock
+  formula for that indicator is shown here:</p>
+<pre><strong>SvePivots</strong>
+new:=ROC(DayOfWeek(),1,$)&lt;&gt;0;
+YH:=ValueWhen(1,new, Ref(HighestSince(1,new,H),-1));
+YL:=ValueWhen(1,new, Ref(LowestSince(1,new,L),-1));
+YC:=ValueWhen(1,new, Ref(C,-1));
+pp:=(YC+YH+YL)/3;
+r1:=(pp*2)-YL;
+s1:=(pp*2)-YH;
+r2:= pp+(YH-YL);
+s2:= pp-(YH-YL);
+r3:= (pp*2)+(YH-(YL*2));
+s3:= (pp*2)-((YH*2)-YL);
+rm1:= ((r1-pp)/2)+pp;
+sm1:= ((pp-s1)/2)+s1;
+rm2:= ((r2-r1)/2)+r1;
+sm2:= ((s1-s2)/2)+s2;
+rm3:= ((r3-r2)/2)+r2;
+sm3:= ((s2-s3)/2)+s3;
+YH; {previous day's high}
+YL; {previous day's low}
+r3; 
+rm3;
+r2;
+rm2;
+r1;
+rm1;
+pp;
+sm1;
+s1;
+sm2;
+s2;
+sm3;
+s3;</pre>
+<p>This indicator plots 15 lines (Figure 2). Thirteen of those are in numerical
+  order from highest to lowest. The R3 line is always the top and the S3 line
+  is always the bottom of these 13 lines. However, the lines for the previous
+  day&rsquo;s high and low will shift where they are among the other lines. This
+  behavior is normal but causes difficulty in coloring the lines.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/12/images/TT-Metastock.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 2: METASTOCK. This indicator
+    plots 15 lines. Thirteen of those are in numerical order from highest to
+    lowest. The R3 line is always the top and the S3 line is always the bottom
+    of these 13 lines. However, the lines for the previous day&rsquo;s high and
+    low will shift where they are among the other lines.</p>
+</div>
+<p>MetaStock&rsquo;s formula language does not allow colors to be assigned as
+  part of the formula. Instead, the colors and line styles are set after the
+  indicator is plotted in the chart. To facilitate coloring the previous day&rsquo;s
+  high and low prices, these two lines are the first ones plotted. That means
+  if you look at the data window or the tool tip for this indicator, those values
+  will be listed first. That allows you to find them more easily in the list
+  of the lines and then assign the desired colors. The remaining lines can then
+  be colored by counting from either the top or bottom of the list.</p>
+<p class="authorTips">&mdash;William Golson<br>
+  MetaStock Technical Support<br>
+  <a href="https://www.metastock.com" target="_parent">www.metastock.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> eSIGNAL: DECEMBER 2018</h3>
+</div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;ve provided the study <a href="https://www.traders.com/Documentation/FEEDbk_docs/2018/12/images/code/SvePivots.efs" target="_blank">SvePivots.efs</a>,
+  based on the May 2018 in S&amp;C by Sylvain Vervoort, &ldquo;The V-Trade, Part
+  3: Technical Analysis&mdash;Fibonacci Projections And Daily Pivots,&rdquo; This
+  study displays daily pivots.</p>
+<p>The studies contain formula parameters which may be configured through the
+  Edit Chart window (right-click on the chart and select &ldquo;Edit Chart&rdquo;).
+  A sample chart is shown in Figure 3.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/12/images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 3: eSIGNAL. Here is an example
+    of the study plotted on a 60-minute chart of CAD A0-FX.</p>
+</div>
+<p>To discuss this study or download a complete copy of the formula code, please
+  visit the EFS Library Discussion Board forum under the forums link from the
+  support menu at <a href="https://www.esignal.com" target="_parent">www.esignal.com</a> or
+  visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs/" target="_parent">https://www.esignal.com/support/kb/efs/</a>.
+  The eSignal formula script (EFS) is also available for copying &amp; pasting
+  below.</p>
+<pre>/*********************************
+Provided By:  
+eSignal (Copyright c eSignal), a division of Interactive Data 
+Corporation. 2016. All rights reserved. This sample eSignal 
+Formula Script (EFS) is for educational purposes only and may be 
+modified and saved under a new file name.  eSignal is not responsible
+for the functionality once modified.  eSignal reserves the right 
+to modify and overwrite this EFS file with each new release.
+
+Description:        
+    Pivotal Concerns. The V-Trade. Part 3: Technical Analysis&mdash;Fibonacci Projections And Daily Pivots by Sylvain Vervoort
+    
+
+Version:            1.00  10/19/2018
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+var fpArray = new Array();
+function preMain()
+{
+    setPriceStudy(true);
+    setStudyTitle(&quot;SvePivots&quot;);
+    setCursorLabelName(&quot;Pivot&quot;, 0); 
+    setCursorLabelName(&quot;Resistance 1&quot;, 1); 
+    setCursorLabelName(&quot;Support 1&quot;, 2); 
+    setCursorLabelName(&quot;Resistance 2&quot;, 3); 
+    setCursorLabelName(&quot;Support 2&quot;, 4); 
+    setCursorLabelName(&quot;Resistance 3&quot;, 5); 
+    setCursorLabelName(&quot;Support 3&quot;, 6);
+    setCursorLabelName(&quot;Previous day low&quot;, 7);
+    setCursorLabelName(&quot;Resistance 1 mean value&quot;, 8);
+    setCursorLabelName(&quot;Support 1 mean value&quot;, 9);
+    setCursorLabelName(&quot;Resistance 2 mean value&quot;, 10);
+    setCursorLabelName(&quot;Support 2 mean value&quot;, 11);
+    setCursorLabelName(&quot;Resistance 3 mean value&quot;, 12);
+    setCursorLabelName(&quot;Support 3 mean value&quot;, 13);
+    setCursorLabelName(&quot;Previous day High&quot;, 14); 
+    
+    
+    setDefaultBarFgColor(Color.blue,0); 
+    setDefaultBarFgColor(Color.yellow,1); 
+    setDefaultBarFgColor(Color.yellow,2); 
+    setDefaultBarFgColor(Color.RGB(250, 100, 0),3); 
+    setDefaultBarFgColor(Color.RGB(250, 100, 0),4); 
+    setDefaultBarFgColor(Color.red,5); 
+    setDefaultBarFgColor(Color.red,6); 
+    setDefaultBarFgColor(Color.RGB(255,0,255),7);
+    setDefaultBarFgColor(Color.lightgrey,8);
+    setDefaultBarFgColor(Color.lightgrey,9);
+    setDefaultBarFgColor(Color.lightgrey,10);
+    setDefaultBarFgColor(Color.lightgrey,11);
+    setDefaultBarFgColor(Color.lightgrey,12);
+    setDefaultBarFgColor(Color.lightgrey,13);
+    setDefaultBarFgColor(Color.RGB(0,255,0),14);
+
+    setDefaultBarStyle(PS_SOLID,0);
+    setDefaultBarStyle(PS_SOLID,7);
+    setDefaultBarStyle(PS_SOLID,14);
+    setDefaultBarStyle(PS_DOT,1);
+    setDefaultBarStyle(PS_DOT,3);
+    setDefaultBarStyle(PS_DOT,5);
+    setDefaultBarStyle(PS_DOT,8);
+    setDefaultBarStyle(PS_DOT,10);
+    setDefaultBarStyle(PS_DOT,12);
+    setDefaultBarStyle(PS_DASHDOT,2);
+    setDefaultBarStyle(PS_DASHDOT,4);
+    setDefaultBarStyle(PS_DASHDOT,6);    
+    setDefaultBarStyle(PS_DASHDOT,9);
+    setDefaultBarStyle(PS_DASHDOT,11);
+    setDefaultBarStyle(PS_DASHDOT,13);
+    
+    setDefaultBarThickness(2,0);
+    setDefaultBarThickness(2,1);
+    setDefaultBarThickness(2,2);
+    setDefaultBarThickness(2,3);
+    setDefaultBarThickness(2,4);
+    setDefaultBarThickness(2,5);
+    setDefaultBarThickness(2,6);
+    setDefaultBarThickness(2,7);
+    setDefaultBarThickness(2,8);
+    setDefaultBarThickness(2,9);
+    setDefaultBarThickness(2,10);
+    setDefaultBarThickness(2,11);
+    setDefaultBarThickness(2,12);
+    setDefaultBarThickness(2,13);
+    setDefaultBarThickness(2,14);
+
+}
+
+
+var dClose = null;
+var dOpen = null;
+var dHigh = null;
+var dLow = null;
+var bInit = false;
+var bVersion = null;
+
+//
+var ThisDay = null;
+var bForex = false;
+var vHHV_1 = 0;
+var vHHV = 0;
+var vLLV_1 = 0;
+var vLLV = 0;
+var vClose_1 = null;
+var vClose = null;
+var vClosed = null;
+var vLow;
+var vHigh;
+var vPivot = null;
+var R1 = null;
+var S1 = null;
+var R2 = null;
+var S2 = null;
+var R3 = null;
+var S3 = null;
+var PL = null;
+var PH = null;
+var R1M = null;
+var S1M = null;
+var R2M = null; 
+var S2M = null;
+var R3M = null;
+var S3M = null;
+var retArr;
+
+function main()
+{
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return;
+    
+    if (getBarState() == BARSTATE_ALLBARS){
+        bInit = false;
+    }
+    
+    if (!bInit){
+        bForex = Is_Forex();
+        if (bForex == false){ 
+            dHigh  = high(inv('D'));
+            dLow   = low(inv('D'));
+            dClose = close(inv('D'));
+        }
+        bInit = true;    
+    }
+
+    if (bForex == true){
+        var dDay = getValue(&quot;rawtime&quot;);
+        vFirstIndex = getFirstBarIndexOfDay(dDay);
+        if (vFirstIndex == null) return; 
+        var Date = getValue(&quot;Time&quot;, 0);
+        ThisDay = Date.getDay();  
+        
+        var diff = getCurrentBarIndex() - vFirstIndex;
+        if (diff == 0 &amp;&amp; ThisDay != 0) {
+            vHHV_1 = vHHV;
+            vHHV = high(0);
+            vLLV_1 = vLLV;
+            vLLV = low(0);
+            vClose_1 = vClose;
+        }
+        vClose = close(0);
+        if ( vClose_1 == null ) return;
+       
+        if (ThisDay == 0) {
+            if (hour(0) &lt;19) {
+                return;
+            }
+            else {
+                if (high(0) &gt; vHHV) vHHV = high(0);
+                if (low(0) &lt; vLLV) vLLV = low(0);
+                vClose = close(0);
+                return retArr;
+            }
+        }
+        else {
+            
+            if (high(0) &gt; vHHV) vHHV = high(0);
+            if (low(0) &lt; vLLV) vLLV = low(0);
+        }
+                 
+        vClosed = vClose_1;
+        vLow = vLLV_1;
+        vHigh = vHHV_1;
+        vPivot = null;
+    }   
+    else {
+        vClosed = dClose.getValue(-1);
+        vLow = dLow.getValue(-1);
+        vHigh = dHigh.getValue(-1);
+    }
+
+    vPivot = ( vHigh + vLow + vClosed ) / 3;
+    if (vPivot == 0) return; 
+          
+      
+     R1 = 2 * vPivot - vLow;
+     S1 = 2 * vPivot - vHigh;
+
+     R2 = vPivot + (R1 - S1);
+     S2 = vPivot - (R1 - S1);
+    
+     R3 = vHigh + 2 * (vPivot - vLow);
+     S3 = vLow - 2 * (vHigh - vPivot);
+
+     PL = vLow;
+     PH = vHigh;
+
+     R1M = (R1 - vPivot) / 2 + vPivot;
+     S1M = (vPivot - S1) / 2 + S1;
+    
+     R2M = (R2 - R1) / 2 + R1; 
+     S2M = (S1 - S2) / 2 + S2;
+
+     R3M = (R3 - R2) / 2 + R2;
+     S3M = (S2 - S3) / 2 + S3;
+    
+     retArr = new Array(vPivot, R1, S1, R2, S2, R3, S3, PL,  R1M, S1M, R2M, S2M, R3M, S3M, PH);  
+    
+    return retArr;
+}
+
+function Is_Forex(){
+    var sSymbol = getSymbol();
+    var vLen = sSymbol.length;
+    if (sSymbol.substr(vLen-3, 3) == '-FX'){
+        bForex = true;
+    }
+    return bForex;
+}
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}</pre>
+<p class="authorTips">&mdash;Eric Lippert<br>
+  eSignal, an Interactive Data company<br>
+  800 779-6555, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> WEALTH-LAB: DECEMBER 2018</h3>
+</div>
+<p>The code for Wealth-Lab for the SvePivots technique described by author Sylvain
+  Vervoort in his May 2018 article in S&amp;C, &ldquo;The V-Trade, Part 3: Technical
+  Analysis&mdash;Fibonacci Projections And Daily Pivots,&rdquo; is presented
+  here. The included strategy demonstrates how to calculate the traditional as
+  well as the new pivot series. It uses data compressed in the daily scale and
+  then saves the information in the intraday scale so that it can be charted.</p>
+<p>Figure 4 illustrates the usual &ldquo;floor trader&rdquo; pivots as well as
+  the new &ldquo;SvePivots.&rdquo;</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/12/images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 4: WEALTH-LAB. This illustrates
+    the usual &ldquo;floor trader&rdquo; pivots as well as the new &ldquo;SvePivots.&rdquo;</p>
+</div>
+<pre><strong>Wealth-Lab strategy code (C#):</strong>
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Drawing;
+using WealthLab;
+using WealthLab.Indicators;
+
+namespace WealthLab.Strategies
+{	
+	public class SvePivots : WealthScript
+	{
+		private StrategyParameter paramSwitch;
+		
+		public SvePivots()
+		{
+			paramSwitch = CreateParameter(&quot;Show SvePivots?&quot;, 1, 0, 1, 1 );
+		}
+		
+		protected override void Execute()
+		{
+			if(!Bars.IsIntraday)
+			{
+				DrawLabel( PricePane, &quot;Requires intraday data&quot;);
+				Abort();
+			}
+
+			SetScaleDaily();
+			DataSeries hPivot = AveragePriceC.Series(Bars);
+			DataSeries hDayHigh = High;
+			DataSeries hDayClose = Close;
+			DataSeries hDayLow = Low;
+			RestoreScale();
+			hPivot = Synchronize( hPivot ) &gt;&gt; 1;				
+			hDayHigh = Synchronize( hDayHigh ) &gt;&gt; 1;
+			hDayClose = Synchronize( hDayClose ) &gt;&gt; 1;
+			hDayLow = Synchronize( hDayLow ) &gt;&gt; 1;
+			
+			var hR1 = ( 2 * hPivot - hDayLow );					
+			var hS1 = ( 2 * hPivot - hDayHigh );				
+			var hR2 = ( hPivot - ( hS1 - hR1 ) );				
+			var hS2 = ( hPivot - ( hR1 - hS1 ) );				
+			var hR3 = 2 * hPivot + (hDayHigh - (hDayLow * 2)); 	
+			var hS3 = 2 * hPivot - ((hDayHigh * 2) - hDayLow); 	
+
+			var hRM1 = (hR1 - hPivot)/2 + hPivot; 			
+			var hSM1 = (hPivot - hS1)/2 + hS1; 					
+			var hRM2 = (hR2 - hR1)/2 + hR1; 					
+			var hSM2 = (hS1 - hS2)/2 + hS2; 					
+			var hRM3 = (hR3 - hR2)/2 + hR2; 					
+			var hSM3 = (hS2 - hS3)/2 + hS3; 					
+			
+			hPivot.Description = &quot;Pivot&quot;;
+			hR1.Description = &quot;R1&quot;; hRM1.Description = &quot;Resistance Mean value 1&quot;;
+			hS1.Description = &quot;S1&quot;; hSM1.Description = &quot;Support Mean value 1&quot;;
+			hR2.Description = &quot;R2&quot;; hRM2.Description = &quot;Resistance Mean value 2&quot;;
+			hS2.Description = &quot;S2&quot;; hSM2.Description = &quot;Support Mean value 2&quot;;
+			hR3.Description = &quot;R3&quot;; hRM3.Description = &quot;Resistance Mean value 3&quot;;
+			hS3.Description = &quot;S3&quot;; hSM3.Description = &quot;Support Mean value 3&quot;;
+			
+			HideVolume();
+			PlotSeries( PricePane, hR2, Color.Maroon, LineStyle.Dotted, 1);
+			PlotSeries( PricePane, hR1, Color.Olive, LineStyle.Solid, 1 );
+			PlotSeries( PricePane, hPivot, Color.Blue, LineStyle.Solid, 1 );
+			PlotSeries( PricePane, hS1, Color.Fuchsia, LineStyle.Dotted, 1 );
+			PlotSeries( PricePane, hS2, Color.Red, LineStyle.Solid, 1 );
+
+			bool showSvePivots = paramSwitch.Value == 1;			
+			if(showSvePivots)
+			{
+				PlotSeries( PricePane, hR3, Color.Maroon, LineStyle.Dotted, 1);
+				PlotSeries( PricePane, hS3, Color.Red, LineStyle.Dotted, 1 );
+
+				PlotSeries( PricePane, hRM1, Color.Maroon, LineStyle.Dashed, 1);
+				PlotSeries( PricePane, hSM1, Color.Olive, LineStyle.Dashed, 1 );
+				PlotSeries( PricePane, hRM2, Color.Blue, LineStyle.Dashed, 1 );
+				PlotSeries( PricePane, hSM2, Color.Fuchsia, LineStyle.Dashed, 1 );
+				PlotSeries( PricePane, hRM3, Color.Red, LineStyle.Dashed, 1 );
+				PlotSeries( PricePane, hSM3, Color.Red, LineStyle.Dashed, 1 );
+			}
+		}
+	}
+}</pre>
+<p class="authorTips">&mdash;Eugene (Gene Geren), Wealth-Lab team<br>
+  MS123, LLC<br>
+  <a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Amibroker.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> AMIBROKER: DECEMBER 2018</h3>
+</div>
+<p>In Sylvain Vervoort&rsquo;s May 2018 article in S&amp;C, &ldquo;The V-Trade,
+  Part 3: Technical Analysis&mdash;Fibonacci Projections And Daily Pivots,&rdquo; the
+  author presents a way to automatically draw support &amp; resistance levels
+  based on daily pivot points. The code listing presented here contains a ready-to-use
+  formula, and Figure 5 shows a sample chart automatically generated by the formula.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/12/images/TT-Amibroker.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 5: AMIBROKER. This sample
+    30-minute GBPUSD chart shows the daily SVE pivots in action.</p>
+</div>
+<pre>Plot( C, &quot;Price&quot;, colorDefault, styleCandle ); 
+
+// get previous day price (from daily interval) 
+pc = TimeFrameGetPrice( &quot;C&quot;, inDaily, -1 ); 
+ph = TimeFrameGetPrice( &quot;H&quot;, inDaily, -1 ); 
+pl = TimeFrameGetPrice( &quot;L&quot;, inDaily, -1 ); 
+
+// pivot point 
+pp = (ph + pl + pc )/3; 
+
+// SVE pivot levels 
+r1 = pp * 2 - pl; 
+s1 = pp * 2 - ph; 
+r2 = pp + ( ph - pl ); 
+s2 = pp - ( ph - pl ); 
+r3 = pp * 2 + ( ph - pl ); 
+s3 = pp * 2 - ( ph - pl ); 
+
+rm1 = ( r1 - pp )/2 + pp; 
+sm1 = ( pp - s1 )/2 + s1; 
+rm2 = ( r2 - r1 )/2 + r1; 
+sm2 = ( s1 - s2 )/2 + s2; 
+rm3 = ( r3 - r2 )/2 + r2; 
+sm3 = ( s2 - s3 )/2 + s3; 
+
+Plot( ph, &quot;HH&quot;, colorGreen ); 
+Plot( pl, &quot;LL&quot;, colorViolet ); 
+Plot( r2, &quot;R2&quot;, colorLavender, styleDashed ); 
+Plot( r1, &quot;R1&quot;, colorAqua, styleDashed ); 
+Plot( rm1, &quot;R1M&quot;, colorGrey50, styleDashed ); 
+Plot( pp, &quot;PP&quot;, colorBlue, styleDashed ); 
+Plot( s1, &quot;S1&quot;, colorRed, styleDashed ); 
+Plot( sm1, &quot;S1M&quot;, colorGrey50, styleDashed ); 
+Plot( s2, &quot;S2&quot;, colorDarkRed, styleDashed ); </pre>
+<p class="authorTips">&mdash;Tomasz Janeczko, AmiBroker.com<br>
+  <a href="https://www.amibroker.com" target="_parent">www.amibroker.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> NEUROSHELL TRADER: DECEMBER 2018</h3>
+</div>
+<p>Fibonacci projections and daily pivot points, which were topics in Sylvain
+  Vervoort&rsquo;s May 2018 article in S&amp;C, &ldquo;The V-Trade, Part 3: Technical
+  Analysis&mdash;Fibonacci Projections And Daily Pivots,&rdquo; can be easily
+  determined in NeuroShell Trader using the following methods:</p>
+<ol>
+  <li>The <strong>Turning Points</strong> add-on for NeuroShell Trader, which
+    finds local peaks and valleys in a price series and allows implementation
+    of price swings and Fibonacci projections into automated trading systems.
+    Among other things, the turning points indicator computes support &amp; resistance
+    lines from prior price swings, Fibonacci retracement lines from each price
+    swing, and the probability that the current price level is at a new turning
+    point based on statistical measures.</li>
+  <li>Draw Fibonacci retracement, Fibonacci projection, and even Fibonacci time
+    lines on the chart using NeuroShell Trader&rsquo;s built-in drawing tools.</li>
+  <li>Create daily pivot and in-between indicators using a few of NeuroShell
+    Trader&rsquo;s 800+ indicators. Simply select <em>new indicator</em> from
+    the <em>insert</em> menu and use the indicator wizard to create the following
+    indicators:
+    <pre>Pivot Point PP:	Avg3(DayHigh(High,1), DayLow(Low,1), DayClose(Close,1))
+Resistance R1: 	Subtract(Add2(PP, PP), DayLow(Low,1))
+Resistance R2: 	Add2(PP, DayRange(High,Low1))
+Resistance R3: 	Add2(R1, DayRange(High,Low1))
+Support S1: 	Subtract(Add2(PP, PP), DayHigh(High,1))
+Support S2: 	Subtract(PP, DayRange(High,Low1))
+Support S3: 	Subtract(S1, DayRange(High,Low1))
+
+Resistance Mean value 1:	Avg2( R1, PP )
+Support Mean value 1:		Avg2( PP, S1 )
+Resistance Mean value 2:	Avg2( R2, R1 )
+Support Mean value 2:		Avg2( S1, S2 )
+Resistance Mean value 3:	Avg2( R3, R2 )
+Support Mean value 3:		Avg2( S2, S3 )
+
+Previous day's low:		DayLow(Low,1)
+Previous day's high:		DayHigh(High,1)</pre>
+  </li>
+</ol>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section
+  of the NeuroShell Trader free technical support website to download a copy
+  of this or any previous Traders&rsquo; Tips.</p>
+<p>A sample chart is shown in Figure 6.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/12/images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 6: NEUROSHELL TRADER. This
+    NeuroShell Trader chart displays a few of the Turning Point Add-on indicators,
+    including automated Fibonnaci retracements and peak/valley probability indicators,
+    both of which can be incorporated into automated trading systems and trading
+    rules.</p>
+</div>
+<p class="authorTips">&mdash;Marge Sherald, Ward Systems Group, Inc.<br>
+  301 662-7950, <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+  <a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item7"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> AIQ: DECEMBER 2018</h3>
+</div>
+<p>The AIQ code based on Sylvain Vervoort&rsquo;s article in the May 2018 issue, &ldquo;The
+  V-Trade, Part 3: Technical Analysis&mdash;Fibonacci Projections And Daily Pivots,&rdquo; can
+  be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>.
+  The code is also shown here:</p>
+<pre>! THE V-TRADE
+! Author: Sylvain Vervoort, TASC May 2018 
+! Note: for Traders Tips in Dec 2018
+! Coded by: Richard Denning, 10/17/2018
+! www.TradersEdgeSystem.com
+
+!ABBREVIATIONS:
+  O	is [open].
+  O1	is valresult(O,1).
+  L 	is [low].
+  L1 	is valresult(L,1).
+  H 	is [high].
+  H1 	is valresult(H,1).
+  C 	is [close].
+  C1 	is valresult(C,1).
+
+!USE THE FOLLOWING TO GET THE SUPPORT &amp;
+! RESISTENCE LEVELS FOR NEXT DAY'S DAY TRADING:
+  PP 	is (H1+L1+C1)/3.
+  R1 	is PP*2 - L1.
+  S1 	is PP*2 - H1.
+  R2 	is PP + (H1-L1).
+  S2 	is PP - (H1-L1).
+  R3 	is PP*2 + (H1-L1*2).
+  S3 	is PP*2 - (H1*2 - L1).
+
+!HERE ARE THE INBETWEEN LEVELS PER THE AUTHOR:
+  RM1 	is (R1-PP)/2 + PP.
+  SM1 	is (PP-S1)/2 + S1.
+  RM2 	is (R2-R1)/2 + R1.
+  SM2 	is (S1-S2)/2 + S2.
+  RM3 	is (R3-R2)/2 + R2.
+  SM3 	is (S2-S3)/2 + S3.
+  PDL 	is L1.
+  PDH 	is H1.
+
+Show_S_R 	if 1.
+ShowInBetween 	if 1.
+ </pre>
+<p>The AIQ EDS file containing the code generates two reports. One shows the
+  various support &amp; resistance (S&amp;R) levels, while the other report shows
+  the in-between levels. The main S&amp;R levels for the next day&rsquo;s daytrading
+  are shown in Figure 7 and the in-between level report is shown in Figure 8.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/12/images/TT-Aiq1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 7: AIQ. This report shows
+    the main support &amp; resistance (S&amp;R) levels for the next day&rsquo;s
+    daytrading.</p>
+</div>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/12/images/TT-Aiq2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 8: AIQ. This report shows
+    the in-between levels for the next day&rsquo;s daytrading.</p>
+</div>
+<p class="authorTips">&mdash;Richard Denning<br>
+  <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+  for AIQ Systems</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item8"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> TRADERSSTUDIO: DECEMBER 2018</h3>
+</div>
+<p>The TradersStudio code file for Sylvain Vervoort&rsquo;s May 2018 STOCKS &amp; COMMODITIES
+  article, &ldquo;The V-Trade, Part 3: Technical Analysis&mdash;Fibonacci Projections
+  And Daily Pivots,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>.
+  The code is also shown here:</p>
+<pre>' THE V-TRADE
+' Author: Sylvain Vervoort, TASC May 2018 
+' Note: for Traders Tips in Dec 2018
+' Coded by: Richard Denning, 10/17/2018
+' www.TradersEdgeSystem.com
+
+Sub PIVOTS()
+Dim PriceH As BarArray
+Dim PriceL As BarArray
+Dim PriceC As BarArray
+
+Dim PP,R1,S1,R2,S2,R3,S3
+
+PriceH = H Of independent1
+PriceL = L Of independent1
+PriceC = C Of independent1
+
+'USE THE FOLLOWING To GET THE SUPPORT &amp;
+' RESISTENCE LEVELS For Next Day'S Day TRADING:
+
+  PP    = (PriceH[1]+PriceL[1]+PriceC[1])/3 
+  R1    = PP*2 - PriceL[1] 
+  S1    = PP*2 - PriceH[1] 
+  R2    = PP + (PriceH[1]-PriceL[1]) 
+  S2    = PP - (PriceH[1]-PriceL[1]) 
+  R3    = PP*2 + (PriceH[1]-PriceL[1]*2) 
+  S3    = PP*2 - (PriceH[1]*2 - PriceL[1]) 
+  If Date &lt;&gt; Date[1] Then
+  Print FormatDateTime(Date),&quot; PP &quot;,round(PP,2),&quot; R1 &quot;,round(R1,2),&quot; S1 &quot;,round(S1,2),&quot; R2 &quot;,round(R2,2),&quot; S2 &quot;,round(S2,2),&quot; R3 &quot;,round(R3,2),&quot; S3 &quot;,round(S3,2)
+  end if
+End Sub</pre>
+<p>The code file generates a terminal report that shows the various main support &amp; resistance
+  (S&amp;R) levels. The main S&amp;R levels for same day&rsquo;s daytrading are
+  shown in Figure 9.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/12/images/TT-Tradersstudio.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 9: TRADERSSTUDIO. This report
+    shows the main support &amp; resistance (S&amp;R) levels for the same day&rsquo;s
+    daytrading.</p>
+</div>
+<p class="authorTips">&mdash;Richard Denning<br>
+  <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+  for TradersStudio</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item9"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> NINJATRADER: DECEMBER 2018</h3>
+</div>
+<p>The NTSvePivots indicator, as discussed in the May 2018 article by Sylvain
+  Vervoort titled &ldquo;The V-Trade, Part 3: Technical Analysis&mdash;Fibonacci
+  Projections And Daily Pivots,&rdquo; is available for download at the following
+  links for NinjaTrader 8 and for NinjaTrader 7:</p>
+<ul style="list-style:none;">
+  <li><strong>NinjaTrader 8:</strong> <a href="https://www.ninjatrader.com/SC/December2018SCNT8.zip" target="_blank">www.ninjatrader.com/SC/December2018SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7:</strong> <a href="https://www.ninjatrader.com/SC/December2018SCNT7.zip">www.ninjatrader.com/SC/December2018SCNT7.zip</a></li>
+</ul>
+<p>Once you have downloaded the file, you can import the indicator into NinjaTader
+  8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript
+  Add-On and then selecting the downloaded file for NinjaTrader 8. To import
+  into NinjaTrader 7, from within the control center window, select the menu
+  File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator&rsquo;s source code in NinjaTrader 8 by selecting
+  the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control
+  center window and selecting the NTSvePivots file. You can review the indicator&rsquo;s
+  source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator
+  from within the control center window and selecting the NTSvePivots file.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, which provides
+  you with the highest performance possible.</p>
+<p>A sample chart implementing the indicator is shown in Figure 10.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/12/images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 10: NINJATRADER. In this
+    sample NinjaTrader chart, the NTSvePivots indicator is showing usable pivots
+    for October 19, 2016 and for October 20, 2016 on GBPUSD.</p>
+</div>
+<p class="authorTips">&mdash;Raymond Deux &amp; Jim Dooms<br>
+  NinjaTrader, LLC<br>
+  <a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item10"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Quantacula.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> QUANTACULA: DECEMBER 2018</h3>
+</div>
+<p>In his May 2018 article in STOCKS &amp; COMMODITIES, &ldquo;The V-Trade, Part
+  3: Technical Analysis&mdash;Fibonacci Projections And Daily Pivots,&rdquo; author
+  Sylvain Vervoort calculates a plethora of pivot point levels for intraday charts.
+  In Quantacula Studio, you can calculate and plot levels like this all in the <strong>Initialize</strong> method.</p>
+<p>Quantacula&rsquo;s framework contains two helpers that make working with multiple
+  timeframes easier. These two objects do the &ldquo;heavy lifting&rdquo; and
+  are summarized below:</p>
+<ul>
+  <li>The BarHistoryCompressor compresses the incoming intraday history into
+    a daily history. Once the daily history is obtained, we calculate all the
+    pivot points based on the daily data.</li>
+  <li>The TimeSeriesSynchronizer then takes these daily time series data and
+    synchronizes them back up with the intraday chart so that we can plot them.</li>
+</ul>
+<p>By using the helper classes, we can avoid much of the code and focus on calculating
+  the pivot levels. We used the free <strong>AlphaVantage</strong> extension
+  for Quantacula Studio to get the intraday data for this test. You can download
+  this extension from the <a href="https://www.quantacula.com" target="_parent">www.quantacula.com</a> website under the <em>purchase/extensions</em> menu
+  item.</p>
+<pre>public override void Initialize(BarHistory bars)
+{
+    //convert time series data to daily
+    BarHistory daily = BarHistoryCompressor.ToDaily(bars);
+
+    //calculate pivots
+    TimeSeries pp = (daily.High + daily.Low + daily.Close) / 3;
+    TimeSeries r1 = pp * 2 - daily.Low;
+    TimeSeries s1 = pp * 2 - daily.High;
+    TimeSeries r2 = pp + (daily.High - daily.Low);
+    TimeSeries s2 = pp - (daily.High - daily.Low);
+    TimeSeries r3 = pp * 2 + (daily.High - daily.Low * 2);
+    TimeSeries s3 = pp * 2 - (daily.High * 2 - daily.Low);
+
+    //calculate in-between levels
+    TimeSeries rmv1 = (r1 - pp) / 2 + pp;
+    TimeSeries smv1 = (pp - s1) / 2 + s1;
+    TimeSeries rmv2 = (r2 - r1) / 2 + r1;
+    TimeSeries smv2 = (s1 - s2) / 2 + s2;
+    TimeSeries rmv3 = (r3 - r2) / 2 + r2;
+    TimeSeries smv3 = (s2 - s3) / 2 + s3;
+    TimeSeries pl = daily.Low;
+    TimeSeries ph = daily.High;
+
+    //synchronize the daily TimeSeries with the intraday chart
+    pp = TimeSeriesSynhronizer.Synchronize(pp, bars);
+    r1 = TimeSeriesSynhronizer.Synchronize(r1, bars);
+    s1 = TimeSeriesSynhronizer.Synchronize(s1, bars);
+    r2 = TimeSeriesSynhronizer.Synchronize(r2, bars);
+    s2 = TimeSeriesSynhronizer.Synchronize(s2, bars);
+    r3 = TimeSeriesSynhronizer.Synchronize(r3, bars);
+    s3 = TimeSeriesSynhronizer.Synchronize(s3, bars);
+    rmv1 = TimeSeriesSynhronizer.Synchronize(rmv1, bars);
+    smv1 = TimeSeriesSynhronizer.Synchronize(smv1, bars);
+    rmv2 = TimeSeriesSynhronizer.Synchronize(rmv2, bars);
+    smv2 = TimeSeriesSynhronizer.Synchronize(smv2, bars);
+    rmv3 = TimeSeriesSynhronizer.Synchronize(rmv3, bars);
+    smv3 = TimeSeriesSynhronizer.Synchronize(smv3, bars);
+    pl = TimeSeriesSynhronizer.Synchronize(pl, bars);
+    ph = TimeSeriesSynhronizer.Synchronize(ph, bars);
+
+    //plot them all
+    Plot(pp, &quot;PP&quot;, Color.Blue, PlotStyles.Line, &quot;Price&quot;);
+    Plot(r1, &quot;R1&quot;, Color.Red, PlotStyles.Line, &quot;Price&quot;);
+    Plot(s1, &quot;S1&quot;, Color.SkyBlue, PlotStyles.Line, &quot;Price&quot;);
+    Plot(r2, &quot;R2&quot;, Color.Coral, PlotStyles.Line, &quot;Price&quot;);
+    Plot(s2, &quot;S2&quot;, Color.Aqua, PlotStyles.Line, &quot;Price&quot;);
+    Plot(r3, &quot;R3&quot;, Color.Pink, PlotStyles.Line, &quot;Price&quot;);
+    Plot(rmv1, &quot;RMV1&quot;, Color.Blue, PlotStyles.DottedLine, &quot;Price&quot;);
+    Plot(smv1, &quot;SMV1&quot;, Color.Red, PlotStyles.DottedLine, &quot;Price&quot;);
+    Plot(rmv2, &quot;RMV2&quot;, Color.SkyBlue, PlotStyles.DottedLine, &quot;Price&quot;);
+    Plot(smv2, &quot;SMV2&quot;, Color.Coral, PlotStyles.DottedLine, &quot;Price&quot;);
+    Plot(rmv3, &quot;RMV3&quot;, Color.Aqua, PlotStyles.DottedLine, &quot;Price&quot;);
+    Plot(smv3, &quot;SMV3&quot;, Color.Pink, PlotStyles.DottedLine, &quot;Price&quot;);
+    Plot(pl, &quot;PL&quot;, Color.Silver, PlotStyles.ThickLine, &quot;Price&quot;);
+    Plot(ph, &quot;PH&quot;, Color.Silver, PlotStyles.ThickLine, &quot;Price&quot;);
+}</pre>
+<p>Figure 11 is a Quantacula Studio chart that plots the pivot levels on a five-minute
+  chart of Microsoft.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/12/images/TT-Quantacula.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 11: QUANTACULA STUDIO. This
+    sample chart in Quantacula Studio plots the pivot levels on a five-minute
+    chart of Microsoft.</p>
+</div>
+<p class="authorTips">&mdash;Dion Kurczek, Quantacula LLC<br>
+  <a href="mailto:info@quantacula.com">info@quantacula.com</a><br>
+  <a href="https://www.quantacula.com" target="_parent">www.quantacula.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item11"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Genesis.gif" alt="logo">
+  <h3 class="newsTitle grey_blue"> TRADE NAVIGATOR: DECEMBER 2018</h3>
+</div>
+<p>We&rsquo;re making available a file for download within the Trade Navigator
+  library to make it easy for users to implement the indicator discussed in Sylvain
+  Vervoort&rsquo;s May 2018 article in STOCKS &amp; COMMODITIES, &ldquo;The V-Trade,
+  Part 3: Technical Analysis&mdash;Fibonacci Projections And Daily Pivots.&rdquo; The
+  filename is &ldquo;SC201812.&rdquo;</p>
+<p>To download it, click on Trade Navigator&rsquo;s <em>file</em> dropdown menu,
+  then select <em>update data</em>. Next, select <em>download special file</em>,
+  then and replace the word &ldquo;upgrade&rdquo; with &ldquo;SC201812&rdquo; (without
+  the quotes). Then click the <em>start</em> button. When prompted to upgrade,
+  click the <em>yes</em> button. If prompted to close all software, click on
+  the <em>continue</em> button. Your library will now download.</p>
+<p>This library contains a template named &ldquo;SC The VTrade&rdquo; plus the
+  following indicators: Sve_PP, Sve_R1, Sve_R2, Sve_R3, Sve_S1, Sve_S2, Sve_S3,
+  Sve_R1M, Sve_R2M, Sve_R3M, Sve_S1M, Sve_S2M, Sve_S3M, Sve_PH, and Sve_PL.</p>
+<p>The template allows you to modify your chart with a prebuilt indicator package
+  and settings. To use it, open the <em>charting</em> pulldown menu, select the <em>templates</em> command,
+  then on the sub-menu that opens, select the &ldquo;SC The VTrade&rdquo; template.
+  If you are prompted to &ldquo;save the current chart settings as template?&rdquo; your
+  answer will depend on whether you have made any changes to your current chart
+  template that you would like to keep. If you choose <em>no</em>, changes will
+  be discarded while a <em>yes</em> choice will save your changes to the prior
+  template on your chart before switching to the &ldquo;SC The VTrade&rdquo; template.</p>
+<p><strong><em>Adding indicators to your chart</em></strong><br>
+  You can insert these indicators individually onto your chart by opening the <em>charting</em> dropdown
+  menu, selecting the <em>add to chart</em> command, then on the <em>indicators</em> tab,
+  finding your named indicator, selecting it, and clicking on the <em>add</em> button.
+  You can repeat this procedure for additional indicators.</p>
+<p>Users may contact our technical support staff by phone or by live chat (click
+  on the <em>live chat</em> tool near the top of the page at <a href="https://www.TradeNavigator.com" target="_parent">www.TradeNavigator.com</a> or
+  via Trade Navigator&rsquo;s help menu) if any assistance is needed.</p>
+<p>A sample chart implementing the template is shown in Figure 12.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/12/images/TT-Tradenavigator.gif" alt="Sample Chart" class="shadow1" style="width: 610px;">
+  <p class="figCaption" style="width: 550px;">FIGURE 12: TRADE NAVIGATOR. This
+    sample chart implements the template to display the indicator.</p>
+</div>
+<p class="authorTips">&mdash;Genesis Financial Technologies<br>
+  Tech support 719 884-0245<br>
+  <a href="https://www.TradeNavigator.com" target="_parent">www.TradeNavigator.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item12">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/QuantConnect.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+QUANTCONNECT: DECEMBER 2018</h3></div>
+
+<p>The team at QuantConnect has developed an algorithm using the &ldquo;SvePivots&rdquo; indicator described in Sylvain Vervoort&rsquo;s May 2018 article in STOCKS &amp; COMMODITIES, &ldquo;The V-Trade,
+  Part 3: Technical Analysis&mdash;Fibonacci Projections And Daily Pivots.&rdquo; You can see the backtest and code at this link:
+
+<a href="https://www.quantconnect.com/terminal/processCache/?request=embedded_backtest_0173e7a7af8e49717287f4e21c20e4f0.html" target="_parent">https://www.quantconnect.com/terminal/processCache/?request=embedded_backtest_0173e7a7af8e49717287f4e21c20e4f0.html</a>
+</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/12/images/TT-Quantconnect1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 13: QUANTCONNECT CHART</p></div>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/12/images/TT-Quantconnect2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 14: QUANTCONNECT RESULT TABLE</p></div>
+<p class="authorTips">&mdash;<a href="https://www.quantconnect.com" target="_parent">https://www.quantconnect.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item13">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Thinkorswim.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+THINKORSWIM: DECEMBER 2018</h3></div>
+<p>We have improved the SVEPivot points study in thinkorswim to better align with the methods discussed in Sylvain Vervoot&rsquo;s May 2018 STOCKS &amp; COMMODITIES article, &ldquo;The V-Trade, Part 3: Technical Analysis—Fibonacci Projections And Daily Pivots.&rdquo;</p> 
+<p>The study is included as part of the available studies within thinkorswim. To add this to your chart, simply navigate to the <em>studies</em> menu on the <em>charts</em> tab, then select <em>add study</em>. You can either scroll down to the study and select it, or select <em>edit studies</em> and then search for SVEPivots and select <em>add selected</em>. Alternatively, you can load the study by simply clicking on <a href="https://tos.mx/uh0djM" target="_parent">https://tos.mx/uh0djM</a> or enter this URL into a web browser and click <em>open shared item</em> from within thinkorswim. Choose view thinkscript and name it &ldquo;SVEPivotnew.&rdquo;</p>
+<p>The newly enhanced study adds to the original by including six plots at in-between levels and the previous day&rsquo;s high and low plots. Something of note is that unlike in some other platforms, there is no need to do any manual tuning of the study to work with specific instruments. The chart in Figure 15 shows the study added to a two-day, 30-minute chart of the forex pair GBP/USD. See Sylvain Vervoot&rsquo;s article in the May 2018 issue for more information on how to use this study.</p> 
+
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/12/images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 15: THINKORSWIM. Here, the study has been added to a two-day, 30-minute chart of the forex pair GBP/USD.</p></div>
+<p class="authorTips">—thinkorswim<br>
+A division of TD Ameritrade, Inc.<br>
+<a href="https://www.thinkorswim.com" target="_parent">www.thinkorswim.com</a></p>
+
+
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+
+
+
+
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the December 2018 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2018, Technical Analysis, Inc.</p>
+</body>
+</html>

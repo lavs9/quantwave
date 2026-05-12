@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: Precision Trend Analysis by John F. Ehlers. Contributions from: TradeStation; Wealth-Lab.com; RealTest; TradingView; The Zorro Project; Neuroshell Trader; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - SEPTEMBER 2024</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">September 2024</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2024/09/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John F. Ehlers&rsquo; article in this issue, &ldquo;Precision Trend Analysis.&rdquo; Here, we present the September 2024 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: September 2024</a></li>
+  <li><a href="#item2">Wealth-Lab.com: September 2024</a></li>
+  <li><a href="#item3">RealTest: September 2024</a></li>
+  <li><a href="#item4">TradingView: September 2024</a></li>
+  <li><a href="#item5">The Zorro Project: September 2024</a></li>
+  <li><a href="#item6">Neuroshell Trader: September 2024</a></li>
+  <li><a href="#item7">Microsoft Excel: September 2024</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: September 2024</h3></div>
+<p>In &ldquo;Precision Trend Analysis&rdquo; in this issue, author John Ehlers describes a method for effective trend detection and confirmation. The indicator can be easily interpreted: it suggests a long position when positive and a short position when negative. Provided here are two EasyLanguage functions and the indicator itself.</p>
+<pre>
+<b>Function - $HighPass</b>
+
+{
+ $HighPass Function
+ (C) 2004-2024 John F. Ehlers
+}
+inputs:
+	Price(numericseries),
+	Period(numericsimple);
+	
+variables:
+	a1( 0 ),
+	b1( 0 ),
+	c1( 0 ),
+	c2( 0 ),
+	c3( 0 );
+
+a1 = ExpValue(-1.414 * 3.14159 / Period);
+b1 = 2 * a1 * Cosine(1.414 * 180 / Period);
+c2 = b1;
+c3 = -a1 * a1;
+c1 = (1 + c2 - c3) / 4;
+
+if CurrentBar &gt;= 4 then 
+ 	$HighPass = c1*(Price - 2 * Price[1] + Price[2]) +
+	 c2 * $HighPass[1] + c3 * $HighPass[2];
+if Currentbar &lt; 4 then 
+	$HighPass = 0;
+
+
+<b>Function - $SuperSmoother</b>
+
+{
+ SuperSmoother Function
+ (C) 2004-2024 John F. Ehlers
+}
+inputs:
+	Price(numericseries),
+	Period(numericsimple);
+
+variables:
+	a1( 0 ),
+	b1( 0 ),
+	c1( 0 ),
+	c2( 0 ),
+	c3( 0 );
+
+a1 = ExpValue(-1.414 * 3.14159 / Period);
+b1 = 2 * a1 * Cosine(1.414 * 180 / Period);
+c2 = b1;
+c3 = -a1 * a1;
+c1 = 1 - c2 - c3;
+
+if CurrentBar &gt;= 4 then 
+	$SuperSmoother = c1*(Price + Price[1]) / 2 
+	 + c2 * $SuperSmoother[1] + c3 * $SuperSmoother[2];
+if CurrentBar &lt; 4 then 
+	$SuperSmoother = Price;
+
+<b>Indicator &ndash; Trend Analysis</b>
+
+{
+	TASC SEP 2024
+	Trend Analysis Indicator
+	(c) 2024 John F. Ehlers
+}
+inputs:
+	Length1( 250 ),
+	Length2( 40 );
+
+variables:
+	HP1( 0 ),
+	HP2( 0 ),
+	Trend( 0 ),
+	ROC( 0 );
+	
+HP1 = $Highpass(Close, Length1);
+HP2 = $Highpass(Close, Length2);
+Trend = HP1 - HP2;
+ROC = (Length2 / 6.28) * (Trend - Trend[1]);
+Plot1(Trend, &quot;Trend&quot;, Red );
+Plot2(ROC, &quot;ROC&quot;, Blue );
+Plot3(0, &quot;Zero&quot;, Black);
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This demonstrates a daily chart of the emini S&amp;P continuous futures contract with the indicator applied showing a portion of 2024.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">
+&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="http://www.TradeStation.com" target="_blank">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: September 2024</h3></div>
+<p>At the core of both indicators discussed in John Ehlers&rsquo; article in this issue, &ldquo;Precision Trend Analysis,&rdquo; and its companion &ldquo;ROC&rdquo; indicators is a highpass filter, now shipped with Wealth-Lab 8 out of the box.</p>
+<p>As Ehlers suggests in his article, crossings of the ROC of trend analysis indicator over and under zero pinpoint the onset of a new trend.</p>
+<p>Is the ROC effective for timing signals? Here, we provide some C# code for a sample trading system with rules simple enough for users to get a look and feel of the new indicators:</p>
+<ul>
+	<li><strong>Enter</strong> next bar at market when the ROC of the trend analysis indicator crosses above zero</li>
+	<li><strong>Exit</strong> next bar at market when the ROC of the trend analysis indicator crosses below zero</li>
+</ul>
+<p>You can view some example signals for this trading system in Figure 2. As you can see, for this simple trading system, the ROC of the trend analysis crossovers indicate trend changes but produce quite a bit of whipsaws, as Ehlers discusses in his article.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: WEALTH-LAB. Sample trades in ES=F (emini S&amp;P 500). Data courtesy Yahoo! Finance.</p></div>
+<pre>
+using WealthLab.Backtest;
+using System;
+using WealthLab.Core;
+using WealthLab.TASC;
+
+namespace WealthScript1 
+{
+    public class TASCSep2024 : UserStrategyBase
+    {
+		public TASCSep2024() : base()
+		{
+			AddParameter(&quot;Period 1&quot;, ParameterType.Int32, 250, 10, 250, 10);
+			AddParameter(&quot;Period 2&quot;, ParameterType.Int32, 40, 2, 40, 2);
+		}
+
+		public override void Initialize(BarHistory bars)
+		{
+			period1 = Parameters[0].AsInt;
+			period2 = Parameters[1].AsInt;
+			StartIndex = Math.Max(period1, period2);
+
+			hp1 = HighPass.Series(bars.Close, period1);
+			hp2 = HighPass.Series(bars.Close, period2);
+			ta = (hp1 - hp2);
+			_roc = ((period2 / 6.28) * (ta - (ta &gt;&gt; 1)));
+
+			PlotTimeSeries( ta, &quot;Trend Analysis&quot;, &quot;ta&quot;, WLColor.DarkRed, PlotStyle.ThickLine, default);
+			PlotTimeSeries( _roc, &quot;ROC of TA&quot;, &quot;ta&quot;, WLColor.DarkBlue, PlotStyle.ThickLine, default);
+			DrawHorzLine( 0, WLColor.White, 1, LineStyle.Dashed, &quot;ta&quot;);
+		}
+		
+		HighPass hp1, hp2;
+		TimeSeries ta, _roc;
+		int period1, period2;
+
+        public override void Execute(BarHistory bars, int idx)
+        {
+            if (!HasOpenPosition(bars, PositionType.Long))
+            {
+                if(_roc.CrossesOver(0, idx))
+			PlaceTrade( bars, TransactionType.Buy, OrderType.Market);
+            }
+            else
+            {
+			if (_roc.CrossesUnder(0, idx))
+				PlaceTrade( bars, TransactionType.Sell, OrderType.Market);
+            }
+        }
+    }
+}
+</pre>
+<p class="authorTips">
+&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="http://www.wealth-lab.com" target="_blank">www.wealth-lab.com</a></p>
+	<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Realtest.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">RealTest: September 2024</h3></div>
+<p>Provided here is coding for use in the RealTest platform to implement John Ehlers&rsquo; indicators described in his article in this issue, &ldquo;Precision Trend Analysis.&rdquo;</p>
+<pre>
+Notes:
+	John Ehlers &quot;Precision Trend Analysis&quot;, TASC September 2024.
+	Implements and plots the indicators as in the article, with the addition of a smoothed ROC line.
+	Adds two simple strategies to test the long and short sides separately and together.
+	
+Import:
+	DataSource:	Norgate
+	IncludeList:	&amp;ES
+	StartDate:	Earliest
+	EndDate:	Latest
+	SaveAs:	es.rtd
+	
+Settings:
+	DataFile:	es.rtd
+	BarSize:	Daily
+
+Parameters:
+	Length1:	250
+	Length2:	40
+	Smooth:	20
+	Test:	from 1 to 3
+
+Data:
+	// Common constants
+	decay_factor:	-1.414 * 3.14159
+	phase_angle:	1.414 * 180
+	two_pi:	6.28
+	
+	// Price Value
+	price:	Close
+
+	// Highpass Filter Length1
+	hp1a1:	exp(decay_factor / Length1)
+	hp1b1:	2 * hp1a1 * Cosine(phase_angle / Length1)
+	hp1c2:	hp1b1
+	hp1c3:	-hp1a1 * hp1a1
+	hp1c1:	(1 + hp1c2 - hp1c3) / 4
+	HP1:	if(BarNum &gt;= 4, hp1c1 * (price - 2 * price[1] + price[2]) + hp1c2 * HP1[1] + hp1c3 * HP1[2], 0)
+
+	// Highpass Filter Length2
+	hp2a1:	exp(decay_factor / Length2)
+	hp2b1:	2 * hp2a1 * Cosine(phase_angle / Length2)
+	hp2c2:	hp2b1
+	hp2c3:	-hp2a1 * hp2a1
+	hp2c1:	(1 + hp2c2 - hp2c3) / 4
+	HP2:	if(BarNum &gt;= 4, hp2c1 * (price - 2 * price[1] + price[2]) + hp2c2 * HP2[1] + hp2c3 * HP2[2], 0)
+	
+	// Trend Indicator
+	Trend:	HP1 - HP2
+	TROC:	(Length2 / two_pi) * (Trend - Trend[1])
+
+	// Ultimate Smoother of TROC
+	trusa1:	exp(decay_factor / smooth)
+	trusb1:	2 * trusa1 * Cosine(phase_angle / smooth)
+	trusc2:	trusb1
+	trusc3:	-trusa1 * trusa1
+	trusc1:	(1 + trusc2 - trusc3) / 4
+	TRUS:	if(BarNum &gt;= 4, (1 - trusc1) * TROC + (2 * trusc1 - trusc2) * TROC[1] - (trusc1 + trusc3) * TROC[2] + trusc2 * TRUS[1] + trusc3 * TRUS[2], TROC)
+	
+	// Trading Signals
+	signal1:	Trend
+	signal2:	TROC
+	signal3:	TRUS
+	signal:	Item(Format(&quot;signal{#}&quot;, Test))
+	goLong:	Cross(Signal, 0)
+	goShort:	Cross(0, Signal)
+	
+Charts:
+	Trend:	Trend {|}
+	TROC:	TROC {|}
+	TRUS:	TRUS {|}
+	Zero:	0 {|}
+
+Strategy: trend_long
+	Side:	Long
+	EntrySetup:	goLong
+	ExitRule:	goShort
+	Quantity:	1
+	
+Strategy: trend_short
+	Side:	Short
+	EntrySetup:	goShort
+	ExitRule:	goLong
+	Quantity:	1
+</pre>
+<p>Figure 3 shows the indicators plotted below a chart of the S&P emini (ES).</p>
+<div class="figBorder">
+<img src="images/TT-Realtest.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: REALTEST. Here you an example of John Ehlers&rsquo; indicators plotted on a chart of the S&amp;P emini (ES).</p></div>
+<p class="authorTips">
+&mdash;Marsten Parker<br>
+MHP Trading<br>
+<a href="mailto:mhp@mhptrading.com">mhp@mhptrading.com</a></p>
+	<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: September 2024</h3></div>
+<p>The TradingView Pine Script code presented here implements the trend indicator and its rate of change (ROC), as described in John Ehlers&rsquo; article in this issue, &ldquo;Precision Trend Analysis.&rdquo; The script generates on-chart signals for trend reversals at peaks and valleys and colors chart bars based on whether the trend indicator is above or below the zero balance point, providing clear visual cues for trend direction and potential trade entry/exit points.</p>
+<pre>
+//  TASC Issue: September 2024
+//     Article: Precision Trend Analysis.
+//              A New Way To Pinpoint Trend.
+//  Article By: John F. Ehler
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//&#64;version=5
+title =&quot;TASC 2024.09 Precision Trend Analysis&quot;
+stitle = &quot;Trend Analysis&quot;
+indicator(title, stitle, false)
+
+
+// --- Inputs ---
+int length01 = input.int(250, &quot;Length 1:&quot;)
+int length02 = input.int( 40, &quot;Length 2:&quot;)
+
+
+// --- Functions ---
+highpass(float Source, float Period) =&gt;
+    float a1  =  math.exp(-1.414 * math.pi / Period)
+    float b1  =  2 * a1 * math.cos(1.414 * math.pi / Period)
+    float c2  =  b1 
+    float c3  = -a1 * a1
+    float c1  =  (1.0 + c2 - c3) *0.25
+    float hp  =  0.0
+    if bar_index &gt;= 4
+        hp := c1 * (Source - 2 * Source[1] + Source[2]) + 
+              c2 * nz(hp[1]) + c3 * nz(hp[2])
+    hp
+
+
+// --- Calculations ---
+float HP1   = highpass(close, length01)
+float HP2   = highpass(close, length02)
+float Trend = HP1 - HP2
+float ROC   = (length02 / 6.28) * ta.change(Trend)
+
+
+// --- Visuals ---
+color colTrend = Trend &gt; 0? #4daf4a : #e41a1c
+plot(Trend, &quot;Trend Indicator&quot;, colTrend, 2)
+plot(ROC, &quot;ROC&quot;, #377eb8, 2)
+hline(0.0, &quot;Zero Point&quot;)
+
+
+plotshape(ta.crossunder(ROC, 0) and Trend &lt; 0 ? ROC : na, 
+          &quot;Peak&quot;, shape.triangledown, location.absolute, 
+          colTrend, size = size.tiny)
+plotshape(ta.crossover(ROC, 0) and Trend &gt; 0 ? ROC : na, 
+          &quot;Valley&quot;, shape.triangleup, location.absolute, 
+          colTrend, size = size.tiny)
+
+
+barcolor(colTrend, editable = true)
+</pre>
+<p>The script is available on TradingView from the PineCodersTASC account at: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart is shown in Figure 4.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: TRADINGVIEW. Here you an example of John Ehlers&rsquo; indicators plotted on a chart of the S&amp;P emini (ES).</p></div>
+<p class="authorTips">
+&mdash;PineCoders, for TradingView<br>
+<a href="http://www.TradingView.com" target="_blank">www.TradingView.com</a></p>
+	<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" style="width: 90px" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: September 2024</h3></div>
+<p>In his article in this issue, &ldquo;Precision Trend Analysis,&rdquo; John Ehlers presents functions for separating the trend from a price curve. Some of these functions, for instance Ehlers&rsquo; SuperSmoother, are already available in the indicator library of the Zorro platform. The remaining functions are a 1:1 conversion from the EasyLanguage code provided in Ehlers&rsquo; article to C:</p>
+<pre>
+var HighPass3(vars Data, int Length)
+{
+   var f = 1.414*PI/Length;
+   var a1 = exp(-f);
+   var c2 = 2*a1*cos(f);
+   var c3 = -a1*a1;
+   var c1 = (1+c2-c3)/4;
+   vars HP = series(0,4);
+   return HP[0] = c1*(Data[0] - 2*Data[1] + Data[2])
+      + c2*HP[1] + c3*HP[2];
+}
+
+var TROC;
+var Trend(vars Data,int Length1,int Length2)
+{
+   var HP1 = HighPass3(Data,Length1);
+   var HP2 = HighPass3(Data,Length2);
+   vars Trends = series(HP1-HP2,2);
+   TROC = (Length2/6.28)*(Trends[0]-Trends[1]);
+   return Trends[0];
+}
+</pre>
+<p>The filter name is HighPass3 because Zorro already has three other highpass filters in its library.</p>
+<p>For comparing our code conversion with Ehlers&rsquo; charts in his article, we can apply the functions to an ES chart from 2022&ndash;2024, using the following code:</p>
+<pre>
+void run() 
+{
+  BarPeriod = 1440; 
+   StartDate = 20221001; 
+   EndDate = 20240401;
+   LookBack = 250;
+   assetAdd(&quot;ES&quot;,&quot;YAHOO:ES=F&quot;);
+   asset(&quot;ES&quot;);
+   plot(&quot;HP&quot;,HighPass3(seriesC(),250),NEW,RED);
+   plot(&quot;Trend&quot;,Trend(seriesC(),250,40),NEW,RED);
+   plot(&quot;ROC&quot;,TROC,0,BLUE);
+}
+</pre>
+<p>The resulting chart is shown in Figure 5. We can see that the highpass, trend, and ROC lines perfectly replicate Ehlers&rsquo; charts given in his article.</p>
+<div class="figBorder">
+<img src="images/TT-Zorro.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: ZORRO. Here is an example of the highpass, trend, and ROC lines plotted on a chart of ES.</p></div>
+<p>The code can be downloaded from the 2024 script repository on <a href="https://financial-hacker.com" target="_blank">https://financial-hacker.com</a>. The Zorro platform can be downloaded from <a href="https://zorro-project.com" target="_blank">https://zorro-project.com</a>.</p>
+<p class="authorTips">
+&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_blank">https://zorro-project.com</a></p>
+	<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: September 2024</h3></div>
+<p>John Ehlers&rsquo; trend indicator and ROC can be easily implemented in NeuroShell Trader by combining some of NeuroShell Trader&rsquo;s 800+ indicators. To implement the indicators, select &ldquo;new indicator&rdquo; from the <em>insert</em> menu and use the indicator wizard to create the following indicators:</p>
+<pre>
+TREND	Subtract( Highpass(Close, 250), Highpass(Close, 40) )
+ROC:	Mul2(Divide(40, 6.28), Momentum( TREND, 1 ) )
+</pre>
+	<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: NEUROSHELL TRADER. This NeuroShell Trader chart shows the trend indicator and ROC for the S&amp;P emini futures (ES).</p></div>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p>The highpass and SuperSmoother indicators are available for download on the free technical support website with the Traders&rsquo; Tip.</p>
+<p class="authorTips">
+&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_blank">www.neuroshell.com</a>
+</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: September 2024</h3></div>
+<p>In his article in this issue, &ldquo;Precision Trend Analysis,&rdquo; John Ehlers combines a pair of his high-pass filters at two different cutoff settings to create a new trend analysis indicator that shows the relative strength of a trend in either direction. </p>
+<p>Calculating and plotting a rate of change line over this indicator will rather precisely locate points of price trend change (trend analysis indicator inflection points) when the rate of change plot crosses zero.</p>
+<p>In Figure 7 you see plots of the longer and shorter high-pass filters and the trend analysis, which is the difference between the high-pass filters.</p>
+<div class="figBorder">
+<img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: EXCEL. Here you see the trend analysis indicator with its components.</p></div>
+<p>In the bottom of Figure 8 we have our trend indicator with its rate of change. I have positioned the cursor on the most recent bar, where the ROC has just crossed above zero, indicating a positive change of trend.</p>
+<div class="figBorder">
+<img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: EXCEL. Here is a demonstration of the trend indicator with its rate of change.</p></div>
+<p>In his article, Ehlers acknowledges that the ROC can become a bit choppy (whipsaw) in longer trends and in sideways (nontrending) intervals. He suggests the possibility of applying hysteresis bands to the trend indicator to stand as overbought and oversold levels to help filter entries and exits. He also suggests applying the SuperSmoother to the rate of change indicator to perhaps filter some of the chop.</p>
+<p>In Figure 9, I have added the SuperSmoother ROC in green (the checkbox at right controls the SuperSmoother ROC display). As he notes in his article, the SuperSmoother adds a bit of lag proportional to the smoothing length. At a SuperSmoother length of 12 as used here, several of the choppy zero crossings (at the left side) have been eliminated at the cost of the remaining up or down zero crossings lagging by about three bars.</p>
+<div class="figBorder">
+<img src="images/TT-Excel3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: EXCEL. Here you see the trend indicator, rate of change, and SuperSmoother (SS) rate of change plotted. </p></div>
+<p>In his article, Ehlers also suggests that the bandpass filtering technique can be applied to other indicators and layered on top of itself to deal with shorter-term bulges.</p>
+<p>So, lots to play with here!</p>
+<p><strong><em>To download this spreadsheet:</em></strong> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="http://www.traders.com/Documentation/FEEDbk_docs/2024/09/images/code/PrecisionTrendAnalysis.xlsm">here</a>. To successfully download it, follow these steps:</p>
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2024/09/images/code/PrecisionTrendAnalysis.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>	
+	
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the September 2024 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2024, Technical Analysis, Inc.</p>
+
+</body>
+</html>

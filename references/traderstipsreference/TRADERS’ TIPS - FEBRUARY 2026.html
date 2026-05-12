@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: A Portfolio Diversification Strategy by Markos Katsanos. Contributions from: Realtest; Wealth-Lab.com; TradingView; Python; NeuroShell Trader; NinjaTrader.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - FEBRUARY 2026</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">February 2026</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2026/02/images/TT-Katsanos.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Markos Katsanos&rsquo; article in this issue, &ldquo;A Portfolio Diversification Strategy.&rdquo; Here, we present the February 2026 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">Realtest: February 2026</a></li>
+  <li><a href="#item2">Wealth-Lab.com: February 2026</a></li>
+  <li><a href="#item3">TradingView: February 2026</a></li>
+  <li><a href="#item4">Python: February 2026</a></li>
+  <li><a href="#item5">NeuroShell Trader: February 2026</a></li>
+  <li><a href="#item6">NinjaTrader: February 2026</a></li>
+</ul>
+<!--TIPS START HERE-->
+	<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Realtest.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Realtest: February 2026</h3></div>
+ <p>Following is coding for use in the RealTest platform to implement Markos Katsanos&rsquo; concepts as described in his article in this issue, &ldquo;A Portfolio Diversification Strategy.&rdquo; Two RealTest scripts are provided here, one for the author&rsquo;s asset allocation strategy and the other for the statistical exploration discussed in the article.</p>
+<pre>
+Notes:
+	Markos Katsanos &quot;A Portfolio Diversification Strategy&quot;, TASC February 2026.
+	&quot;Dynamic Asset Allocation Strategy&quot; script
+	
+Import:
+	DataSource:	Norgate
+	IncludeList:	AGG, BIL, EFA, GBTC, GLD, QQQ, SHY, SPY
+	StartDate:	2015-01-01 // earliest year all symbols had data
+	EndDate:	Latest
+	SaveAs:	tasc_aug_25.rtd
+	
+Settings:
+	DataFile:	tasc_aug_25.rtd
+	StartDate:	2023-09-01
+	EndDate:	2025-09-01
+	BarSize:	Weekly
+	AccountSize:	100500
+
+Parameters: 
+	// system parameters
+	EXITBARS:	from 26 to 39 step 13 def 26
+	
+	// asset allocation percentage parameters
+	AGG_PS:	from 0 to 10 step 5 def 0
+	EFA_PS:	from 5 to 10 step 5 def 5
+	GBTC_PS:	from 5 to 10 step 5 def 10
+	GLD_PS:	from 15 to 25 step 5 def 25
+	QQQ_PS:	from 15 to 30 step 5 def 30
+	SHY_PS:	from 5 to 10 step 5 def 5
+	SPY_PS:	from 15 to 30 step 5 def 20
+
+Library:
+	TOTAL_PS:	AGG_PS + GBTC_PS + EFA_PS + GLD_PS + QQQ_PS + SHY_PS + SPY_PS
+	BIL_PS:	IF(TOTAL_PS &lt; 100, 100 - TOTAL_PS, 0)
+	
+OptimizeSettings:
+	SkipTestIf:	TOTAL_PS + BIL_PS &gt; 100
+
+Strategy: dynamic_asset
+	Side:	Long
+	EntrySetup:	1
+	ExitRule:	BarsHeld = EXITBARS
+	ExitTime:	ThisClose
+	Quantity:	Item(&quot;{?}_PS&quot;, ?Symbol) // looks up the percentage parameter for each symbol
+	QtyType:	Percent
+	QtyPrice:	FillPrice
+	Commission:	0.01 * Shares
+</pre><br><br>
+<pre>
+Notes:
+	Markos Katsanos &quot;A Portfolio Diversification Strategy&quot;, TASC February 2026.
+	&quot;Statistics Exploration&quot; script
+	
+Import:
+	DataSource:	Norgate 
+	// symbols from table in Figure 3
+	IncludeList:	SPY, QQQ, EFA, EEM, XLE, IYR, AGG, SHY, TLT, BIL, SHV, FXE, 
+		UUP, DBA, DBC, FTGC, GDX, GLD, GSG, USO, BTCUSD, GBTC
+	StartDate:	2005-01-01
+	EndDate:	Latest
+	SaveAs:	tasc_aug_25_a.rtd
+	
+Settings:
+	DataFile:	tasc_aug_25_a.rtd
+	StartDate:	2005-09-30
+	EndDate:	2025-09-30
+	BarSize:	Weekly
+	TestOutput:	Scan
+	ScanNoDefCols:	True
+
+Data:
+	barcount:	SinceTrue(BarNum = 1 or BarDate &lt;= ToDate(?StartDate))
+	maxPrice:	Highest(C, barcount)
+	drawdown:	c / maxPrice - 1
+	ddmax:	Lowest(drawdown, barcount)
+	
+Scan:
+	Filter:	BarsLeft = 0 or BarDate[-1] &gt; ToDate(?EndDate)
+	ETF:	?Symbol
+	Name:	?Name
+	Start:	BarDate[barcount] {//}
+	End:	BarDate {//}
+	StartPrice:	Close[barcount]
+	EndPrice:	Close
+	Yrs:	barcount / 52 {#1}
+	CAR:	(EndPrice/StartPrice)^(52/barcount)-1 {%2}
+	WorstDD:	ddmax {%2}
+	ROC3MO:	C/C[13]-1 {%2}
+	RSI5:	RSI(5) {#2}
+	Pain:	Abs(Sum(100 * drawdown, barcount) / Sum(drawdown &lt; 0, barcount)) {#2}
+	Ulcer:	Sqr(SumSq(100 * drawdown, barcount) / barcount) {#2}
+	DDDate:	whentrue(drawdown=ddmax,BarDate) {//}
+	StDev:	StdDev(ROC(C,1), barcount)
+	CorSpy:	Correl(ROC(C,1), Extern($SPY, ROC(C,1)), barcount)
+</pre>
+<p class="authorTips">&mdash;Marsten Parker<br>
+MHP Trading<br>
+<a href="mailto:mhp@mhptrading.com">mhp@mhptrading.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+	<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: February 2026</h3></div>
+ <p>Markos Katsanos&rsquo; article in this issue, &ldquo;A Portfolio Diversification Strategy,&rdquo; discusses dynamic portfolio allocation based on walk-forward optimization of the rebalancing of the portfolio assets.</p>
+<p>This kind of portfolio manipulation is the bread and butter of WealthLab. We approached it by creating two WealthLab strategies. The first&mdash;the baseline strategy&mdash;simply buys a portion of each symbol in the portfolio, with the amount purchased based on an optimizable parameter. The WealthLab <strong>Rebalance</strong> method makes this kind of portfolio rebalancing a breeze.</p>
+<p>The second strategy uses WealthLab&rsquo;s <strong>StrategyRunner</strong> class, which allows you to run and even optimize other strategies within WealthLab strategy code. Here, we use the <strong>PerformOptimization</strong> method of <strong>StrategyRunner</strong> to optimize the allocation values of the baseline strategy every six months. We use our built-in <strong>Shrinking Window</strong> optimizer as a &ldquo;solver,&rdquo; so no need to drop down to Excel. It can all just be done in WealthLab.</p>
+<p>The resulting strategy takes a bit of time to run, since it must perform a sequence of optimizations, but the selected optimizer runs in parallel and will use all available CPU cores. WealthLab&rsquo;s architecture is extensible, so other optimizers, even those developed by third parties, can be plugged in by replacing the &ldquo;Shrinking Window&rdquo; in the method call with the name of the desired optimizer. The solution provides a full dynamic allocation model all within the WealthLab strategy, with minimal required code.</p>
+<pre>
+<strong>Code for Part 1 (Baseline Strategy)</strong>
+Note: Save this Strategy with a name of 2026-02-Part1, as it is referred to by name in Part 2
+using WealthLab.Backtest;
+using System;
+using WealthLab.Core;
+using WealthLab.Data;
+using WealthLab.Indicators;
+using System.Collections.Generic;
+
+namespace WealthScript2 
+{
+    public class MyStrategy : UserStrategyBase
+    {
+		//create parameter instances
+		public MyStrategy() : base()
+		{
+			paramAGG = AddParameter(&quot;AGG&quot;, ParameterType.Double, 0, 0, 10, 1);
+			paramEFA = AddParameter(&quot;EFA&quot;, ParameterType.Double, 5, 5, 10, 1);
+			paramGBTC = AddParameter(&quot;GBTC&quot;, ParameterType.Double, 10, 5, 10, 1);
+			paramGLD = AddParameter(&quot;GLD&quot;, ParameterType.Double, 25, 15, 25, 1);
+			paramQQQ = AddParameter(&quot;QQQ&quot;, ParameterType.Double, 30, 15, 30, 1);
+			paramSHY = AddParameter(&quot;SHY&quot;, ParameterType.Double, 5, 5, 10, 1);
+			paramSPY = AddParameter(&quot;SPY&quot;, ParameterType.Double, 20, 15, 30, 1);
+		}
+		
+        //create indicators and other objects here, this is executed prior to the main trading loop
+        public override void Initialize(BarHistory bars)
+        {
+        }
+
+        //execute the strategy rules here, this is executed once for each bar in the backtest history
+        public override void Execute(BarHistory bars, int idx)
+        {
+            if (idx == 0)
+			{
+				foreach(Parameter p in Parameters)
+				{
+					if (p.Name == bars.Symbol)
+					{
+						Rebalance(bars, p.AsDouble);
+					}
+				}
+			}
+        }
+
+	//declare private variables below
+	private Parameter paramAGG;
+	private Parameter paramEFA;
+	private Parameter paramGBTC;
+	private Parameter paramGLD;
+	private Parameter paramQQQ;
+	private Parameter paramSHY;
+	private Parameter paramSPY;
+    }
+}
+
+<strong>Code for Part 2</strong>
+
+using WealthLab.Backtest;
+using System;
+using WealthLab.Core;
+using WealthLab.Data;
+using WealthLab.Indicators;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace WealthScript1 
+{
+    public class MyStrategy : UserStrategyBase
+    {
+        //create indicators and other objects here, this is executed prior to the main trading loop
+        public override void Initialize(BarHistory bars)
+        {
+        }
+
+		//this execute prior to each individual component's Execute method, we perform ranking of participants here
+		public override void PreExecute(DateTime dt, List&lt;BarHistory&gt; participants)
+		{
+			//rebalance semiannually
+			if (dt.Month == 1 || dt.Month == 7)
+			{
+				//optimize for best annualized return for previous 3 years
+				runDate = dt;
+				StrategyRunner sr = new StrategyRunner();
+				List&lt;string&gt; symbols = participants.Select(bh =&gt; bh.Symbol).ToList();
+				WriteToStatusBar(&quot;Collecting history for optimization...&quot;); 
+				sr.Data = WLHost.Instance.GetHistories(symbols, HistoryScale.Monthly, dt.AddYears(-3), dt, 0, null);
+				WriteToStatusBar(&quot;Performing optimization...&quot;);
+				OptimizationResultList orl = sr.PerformOptimization(&quot;Shrinking Window&quot;, &quot;2026-02-Part1&quot;, runComplete);
+				OptimizationResult or = orl.FindBest(&quot;APR&quot;, true);
+				WriteToStatusBar(&quot;Rebalancing&quot;);
+				string s = dt.ToString(&quot;MMMyy&quot;);
+				foreach(BarHistory bh in participants)
+				{
+					int idx = masterSymbols.IndexOf(bh.Symbol);
+					double rebal = or.ParameterValues[idx];
+					s += &quot; &quot; + bh.Symbol + &quot;=&quot; + rebal.ToString(&quot;N2&quot;); 
+					Rebalance(bh, rebal);
+				}
+				WriteToDebugLog(s, false);
+			}
+        }
+
+        //execute the strategy rules here, this is executed once for each bar in the backtest history
+        public override void Execute(BarHistory bars, int idx)
+        {
+        }
+
+		//private members
+		private static List&lt;string&gt; masterSymbols = new List&lt;string&gt;() { &quot;AGG&quot;, &quot;EFA&quot;, &quot;GBTC&quot;, &quot;GLD&quot;, &quot;QQQ&quot;, &quot;SHY&quot;, &quot;SPY&quot; };
+		private static DateTime runDate;
+		
+		//delegate
+		private void runComplete(OptimizationResult or, double pctComplete)
+		{
+			WriteToStatusBar(runDate.ToString(&quot;MMMyy&quot;) + &quot; &quot; + pctComplete.ToString(&quot;N2&quot;) + &quot;%&quot;);
+		}
+	}
+}
+
+Strategy Part 2 outputs the dynamic allocations to the WealthLab Debug Window for your review:
+
+---Sequential Debug Log---
+Jan16 GLD=19.00 GBTC=10.00 EFA=7.00 QQQ=30.00 SPY=30.00 AGG=7.00 SHY=9.00
+Jul16 GLD=20.00 GBTC=10.00 EFA=6.00 QQQ=25.00 SPY=30.00 AGG=1.00 SHY=8.00
+Jan17 GLD=18.00 GBTC=10.00 EFA=9.00 QQQ=17.00 SPY=28.00 AGG=10.00 SHY=7.00
+Jul17 GLD=23.00 GBTC=10.00 EFA=5.00 QQQ=30.00 SPY=30.00 AGG=7.00 SHY=10.00
+Jan18 GLD=16.00 GBTC=10.00 EFA=6.00 QQQ=21.00 SPY=27.00 AGG=9.00 SHY=9.00
+Jul18 GLD=19.00 GBTC=10.00 EFA=10.00 QQQ=21.00 SPY=26.00 AGG=1.00 SHY=7.00
+Jan19 GLD=25.00 GBTC=10.00 EFA=6.00 QQQ=22.00 SPY=25.00 AGG=8.00 SHY=7.00
+Jul19 GLD=17.00 GBTC=10.00 EFA=9.00 QQQ=30.00 SPY=23.00 AGG=0.00 SHY=9.00
+Jan20 GLD=16.00 GBTC=9.00 EFA=9.00 QQQ=29.00 SPY=23.00 AGG=3.00 SHY=10.00
+Jul20 GLD=21.00 GBTC=9.00 EFA=10.00 QQQ=30.00 SPY=20.00 AGG=4.00 SHY=6.00
+Jan21 GLD=22.00 GBTC=10.00 EFA=7.00 QQQ=30.00 SPY=23.00 AGG=0.00 SHY=9.00
+Jul21 GLD=17.00 GBTC=8.00 EFA=6.00 QQQ=29.00 SPY=27.00 AGG=3.00 SHY=8.00
+Jan22 GLD=25.00 GBTC=9.00 EFA=8.00 QQQ=26.00 SPY=25.00 AGG=8.00 SHY=10.00
+Jul22 GLD=23.00 GBTC=7.00 EFA=10.00 QQQ=30.00 SPY=28.00 AGG=2.00 SHY=7.00
+Jan23 GLD=21.00 GBTC=6.00 EFA=7.00 QQQ=28.00 SPY=28.00 AGG=1.00 SHY=7.00
+Jul23 GLD=25.00 GBTC=8.00 EFA=7.00 QQQ=29.00 SPY=27.00 AGG=3.00 SHY=6.00
+Jan24 GLD=24.00 GBTC=7.00 EFA=8.00 QQQ=26.00 SPY=28.00 AGG=4.00 SHY=9.00
+Jul24 GLD=25.00 GBTC=9.00 EFA=7.00 QQQ=25.00 SPY=23.00 AGG=0.00 SHY=6.00
+Jan25 GLD=23.00 GBTC=9.00 EFA=8.00 QQQ=27.00 SPY=27.00 AGG=8.00 SHY=8.00
+Jul25 GLD=22.00 GBTC=9.00 EFA=6.00 QQQ=25.00 SPY=23.00 AGG=0.00 SHY=8.00
+</pre>
+<p>An example equity curve for the strategy is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: WEALTH-LAB. An example of an equity curve produced from a test of the dynamic asset allocation model is shown.</p></div>
+<p class="authorTips">&mdash;Dion Kurczek<br>
+Wealth-Lab team<br>
+<a href="http://www.wealth-lab.com" target="_blank">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+	<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/TradingView.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: February 2026</h3></div>
+ <p>The TradingView Pine Script code presented here creates a basic foundation for diversified portfolio analysis and weighting from concepts presented by Markos Katsanos in his article in this issue, &ldquo;A Portfolio Diversification Strategy.&rdquo;</p>
+<pre>
+//  TASC Issue: February 2026
+//     Article: Foundational Portfolio Design, Not Stock-Picking
+//              A Protfolio Diversification Strategy
+//  Article By: Markos Katsanos
+//    Language: TradingView's Pine Script® v6
+// Provided By: PineCoders, for tradingview.com
+
+//&#64;version=6
+indicator(&quot;TASC 2026.02 Portfolio Diversification&quot;, &quot;TASC&quot;)
+
+//#region Import Library
+
+import TradingView/ta/12 as TVta
+
+//#endregion
+
+//#region Inputs
+
+string TT_DD = &quot;Maximum Drawdown&quot;
+string TT_SD = &quot;Standard deviation&quot;
+string TT_SR = &quot;Sharpe ratio&quot;
+string TT_PI = &quot;Pain index&quot;
+string TT_UI = &quot;Ulcer index&quot;
+string TT_CR = &quot;Correlation&quot;
+string TT_TYPE = &quot;Pre-configured portfolios as specified in the article.&quot;
+
+// &#64;enum Portfolio type options.
+enum PRT_TYPE
+    C = &quot;Custom&quot;
+    LRISK = &quot;Low Risk&quot;
+    CONS = &quot;Conservative&quot;
+    AGGR = &quot;Aggressive&quot;
+    DYNM = &quot;Dynamic&quot;
+    
+GROUP1 = &quot;Portfolio&quot;
+GROUP2 = &quot;Display&quot;
+
+string benchSym = input.symbol(&quot;SPY&quot;, &quot;Benchmark Symbol&quot;, group = GROUP1)
+
+PRT_TYPE prtSelected = input.enum(PRT_TYPE.C, &quot;Portfolio Type:&quot;, 
+  group = GROUP1, tooltip = TT_TYPE)
+custom = prtSelected == PRT_TYPE.C
+
+bool   use00 = input.bool(  true, &quot;&quot;, inline=&quot;00&quot;, active = custom,
+  group = GROUP1)
+string sym00 = input.symbol(&quot;AGG&quot;, &quot;&quot;, inline=&quot;00&quot;, active = custom,
+  group = GROUP1)
+int    qty00 = input.int(       1, &quot;&quot;, inline=&quot;00&quot;, active = custom,
+  group = GROUP1)
+bool   use01 = input.bool(  true, &quot;&quot;, inline=&quot;01&quot;, active = custom,
+  group = GROUP1)
+string sym01 = input.symbol(&quot;BIL&quot;, &quot;&quot;, inline=&quot;01&quot;, active = custom,
+  group = GROUP1)
+int    qty01 = input.int(       1, &quot;&quot;, inline=&quot;01&quot;, active = custom,
+  group = GROUP1)
+bool   use02 = input.bool(  true, &quot;&quot;, inline=&quot;02&quot;, active = custom,
+  group = GROUP1)
+string sym02 = input.symbol(&quot;EFA&quot;, &quot;&quot;, inline=&quot;02&quot;, active = custom,
+  group = GROUP1)
+int    qty02 = input.int(       1, &quot;&quot;, inline=&quot;02&quot;, active = custom,
+  group = GROUP1)
+bool   use03 = input.bool(  true, &quot;&quot;, inline=&quot;03&quot;, active = custom,
+  group = GROUP1)
+string sym03 = input.symbol(&quot;GBTC&quot;, &quot;&quot;, inline=&quot;03&quot;, active = custom,
+  group = GROUP1)
+int    qty03 = input.int(       1, &quot;&quot;, inline=&quot;03&quot;, active = custom,
+  group = GROUP1)
+bool   use04 = input.bool(  true, &quot;&quot;, inline=&quot;04&quot;, active = custom,
+  group = GROUP1)
+string sym04 = input.symbol(&quot;GLD&quot;, &quot;&quot;, inline=&quot;04&quot;, active = custom,
+  group = GROUP1)
+int    qty04 = input.int(       1, &quot;&quot;, inline=&quot;04&quot;, active = custom,
+  group = GROUP1)
+bool   use05 = input.bool(  true, &quot;&quot;, inline=&quot;05&quot;, active = custom,
+  group = GROUP1)
+string sym05 = input.symbol(&quot;QQQ&quot;, &quot;&quot;, inline=&quot;05&quot;, active = custom,
+  group = GROUP1)
+int    qty05 = input.int(       1, &quot;&quot;, inline=&quot;05&quot;, active = custom,
+  group = GROUP1)
+bool   use06 = input.bool(  true, &quot;&quot;, inline=&quot;06&quot;, active = custom,
+  group = GROUP1)
+string sym06 = input.symbol(&quot;SHY&quot;, &quot;&quot;, inline=&quot;06&quot;, active = custom,
+  group = GROUP1)
+int    qty06 = input.int(       1, &quot;&quot;, inline=&quot;06&quot;, active = custom,
+  group = GROUP1)
+bool   use07 = input.bool(  true, &quot;&quot;, inline=&quot;07&quot;, active = custom,
+  group = GROUP1)
+string sym07 = input.symbol(&quot;SPY&quot;, &quot;&quot;, inline=&quot;07&quot;, active = custom,
+  group = GROUP1)
+int    qty07 = input.int(       1, &quot;&quot;, inline=&quot;07&quot;, active = custom,
+  group = GROUP1)
+bool   use08 = input.bool(  true, &quot;&quot;, inline=&quot;08&quot;, active = custom,
+  group = GROUP1)
+string sym08 = input.symbol(&quot;DBA&quot;, &quot;&quot;, inline=&quot;08&quot;, active = custom,
+  group = GROUP1)
+int    qty08 = input.int(       1, &quot;&quot;, inline=&quot;08&quot;, active = custom,
+  group = GROUP1)
+bool   use09 = input.bool(  true, &quot;&quot;, inline=&quot;09&quot;, active = custom,
+  group = GROUP1)
+string sym09 = input.symbol(&quot;USO&quot;, &quot;&quot;, inline=&quot;09&quot;, active = custom,
+  group = GROUP1)
+int    qty09 = input.int(       1, &quot;&quot;, inline=&quot;09&quot;, active = custom,
+  group = GROUP1)
+
+bool show_returns_table = input.bool(true, &quot;Show Return Table&quot;,
+  group = GROUP2)
+bool show_statistics_table = input.bool(true, &quot;Show Stat Table&quot;,
+  group = GROUP2)
+
+//#endregion
+
+//#region Symbol &amp; Pre-configured Portfolio Setup
+
+// &#64;function Create Custom symbol.
+CustomSymbol () =&gt;
+    string _sym = &quot;0&quot;
+    if use00
+        _sym += str.format(&quot;+{0}*{1}&quot;, sym00, qty00)
+    if use01
+        _sym += str.format(&quot;+{0}*{1}&quot;, sym01, qty01)
+    if use02
+        _sym += str.format(&quot;+{0}*{1}&quot;, sym02, qty02)
+    if use03
+        _sym += str.format(&quot;+{0}*{1}&quot;, sym03, qty03)
+    if use04
+        _sym += str.format(&quot;+{0}*{1}&quot;, sym04, qty04)
+    if use05
+        _sym += str.format(&quot;+{0}*{1}&quot;, sym05, qty05)
+    if use06
+        _sym += str.format(&quot;+{0}*{1}&quot;, sym06, qty06)
+    if use07
+        _sym += str.format(&quot;+{0}*{1}&quot;, sym07, qty07)
+    if use08
+        _sym += str.format(&quot;+{0}*{1}&quot;, sym08, qty08)
+    if use09
+        _sym += str.format(&quot;+{0}*{1}&quot;, sym09, qty09)
+    if _sym == &quot;0&quot;
+        _sym := &quot;&quot;
+    request.security(_sym, &quot;&quot;, close)
+
+string S00 = (&quot;AGG*02+BIL*30+EFA*07+GLD*17+QQQ*13+SHY*15&quot;+
+            &quot;+SPY*16&quot;)
+string S01 = (&quot;AGG*10+BIL*05+EFA*10+GBTC*03+GLD*17+QQQ*18&quot;+
+            &quot;+SHY*15+SPY*22&quot;)
+string S02 = (&quot;AGG*03+EFA*03+GBTC*07+GLD*17+QQQ*38+SHY*12&quot;+
+            &quot;+SPY*20&quot;)
+string S03 = (&quot;BIL*05+EFA*05+GBTC*10+GLD*25+QQQ*30+SHY*05&quot;+
+            &quot;+SPY*20&quot;)
+
+sec(_sym) =&gt; request.security(_sym, &quot;&quot;, close)
+
+float sym = switch prtSelected
+    PRT_TYPE.LRISK =&gt; sec(S00)
+    PRT_TYPE.CONS  =&gt; sec(S01)
+    PRT_TYPE.AGGR  =&gt; sec(S02)
+    PRT_TYPE.DYNM  =&gt; sec(S03)
+    PRT_TYPE.C     =&gt; CustomSymbol()
+    =&gt; float(na)
+float bench = sec(benchSym)
+
+//#endregion
+
+//#region Drawdown
+
+var float hh = nz(sym)
+var float ddm = 0.0
+var int ddd = 0
+var float ddc = 0.0
+float dd = (sym / hh) - 1.0
+if sym &gt;= hh
+    hh := sym
+if dd &lt;= ddm
+    ddm := dd
+if dd &lt; 0
+    ddd += 1
+    ddc += dd
+
+//#endregion
+
+//#region Portfolio &amp; Benchmark Returns
+
+bool is_new_year = year != year[1]
+
+var float prt_y_open = sym
+var float spy_y_open = bench
+if is_new_year
+    prt_y_open := sym
+    spy_y_open := bench
+float prt_y_perc = sym / prt_y_open - 1.0
+float spy_y_perc = bench / spy_y_open - 1.0
+var int[] years = array.new&lt;int&gt;(0)
+var float[] prt_y_returns = array.new&lt;float&gt;(0)
+var float[] spy_y_returns = array.new&lt;float&gt;(0)
+if is_new_year and not na(prt_y_perc[1])
+    prt_y_returns.unshift(prt_y_perc[1])
+    spy_y_returns.unshift(spy_y_perc[1])
+    years.unshift(year[1])
+
+//#endregion
+
+//#region Stat Calculations
+
+//Sharpe
+var er_ary = array.new_float()
+sym_r = (sym / sym[1]) - 1 
+//Risk-Free Return Rate
+rf = request.security(&quot;TVC:US10Y&quot;, timeframe.period, close/25200)
+if not na(rf)
+    er_ary.push(sym_r - rf)
+er_avg = er_ary.avg()
+std =  er_ary.stdev()
+
+float sharpe =  er_avg / std * math.sqrt(252)
+
+//Others
+float pain = ddc / (ddd + 0.000001)
+float ulcer = TVta.ulcerIndex(sym, 14)
+float corr = ta.correlation(sym , bench, 14)
+
+//#endregion
+
+
+//#region Display
+
+//Plots
+hline(0)
+plot(prt_y_perc, &quot;Annualized Portfolio P&amp;L %&quot;, color.blue, 
+  style = plot.style_linebr)
+plot(na(prt_y_perc)?na:ddm, &quot;Max Drawdown %&quot;, color.silver, 
+  style = plot.style_linebr)
+plot(na(prt_y_perc)?na:spy_y_perc, &quot;Annualized SPY P&amp;L %&quot;, color.red, 
+  style = plot.style_linebr)
+
+//Table Colors
+C0 = color.rgb(0,0,0,100)
+C1 = chart.fg_color
+P0 = position.bottom_right
+P1 = position.bottom_left
+
+//Method for Cell formatting
+method clabel (table T, int x, int y, string txt, 
+        color C=chart.fg_color, string tt=&quot;&quot;) =&gt;
+      T.cell(x, y, txt, 0,0, C1, tooltip = tt, 
+        text_formatting=text.format_bold)
+
+
+//Table
+if show_statistics_table
+    var table T = table.new(P0, 2, 8, C0, C1, 2, C1, 1)
+    T.clabel(0, 1, &quot;Value&quot;)
+    T.clabel(0, 2, &quot;Drawdown&quot;,tt=TT_DD)
+    T.clabel(0, 3, &quot;STD&quot;, tt=TT_SD)
+    T.clabel(0, 4, &quot;Sharpe&quot;, tt=TT_SR)
+    T.clabel(0, 5, &quot;Pain&quot;, tt=TT_PI)
+    T.clabel(0, 6, &quot;Ulcer&quot;, tt=TT_UI)
+    T.clabel(0, 7, &quot;Correlation&quot;, tt=TT_CR)
+    T.clabel(1, 1, str.format(&quot;{0}&quot;, sym))
+
+    T.cell(1, 2,str.format(&quot;{0,number,percent}&quot;,ddm),0,0,C1)
+    T.cell(1, 3, str.format(&quot;{0}&quot;, std), text_color=C1)
+    T.cell(1, 4, str.format(&quot;{0}&quot;, sharpe), text_color=C1)
+    T.cell(1, 5, str.format(&quot;{0}&quot;, pain), text_color=C1)
+    T.cell(1, 6, str.format(&quot;{0}&quot;, ulcer), text_color=C1)
+    T.cell(1, 7, str.format(&quot;{0}&quot;, corr), text_color=C1)
+
+y_sz = prt_y_returns.size()
+if show_returns_table and y_sz &gt; 0
+    var table T_returns = table.new(P1,22,3,C0, C1,2, C1,1)
+    T_returns.clabel(0, 0, &quot;Returns /Y&quot;)
+    T_returns.clabel(0, 1, &quot;Portfolio&quot;)
+    T_returns.clabel(0, 2, &quot;SPY&quot;)
+    index = math.min(20, prt_y_returns.size()-1)
+    if is_new_year
+        for _i = 0 to index
+            T_returns.clabel(index+1 - _i, 0, 
+                str.format(&quot;{0, number, 0000}&quot;, 
+                    years.get(_i)))
+            T_returns.cell(index+1 - _i, 1, 
+                str.format(&quot;{0, number, percent}&quot;, 
+                    prt_y_returns.get(_i)), 
+                text_color=C1)
+            T_returns.cell(index+1 - _i, 2, 
+                str.format(&quot;{0, number, percent}&quot;, 
+                    spy_y_returns.get(_i)), 
+                text_color=C1)
+
+//#endregion
+</pre>
+	<p>Example output is shown in Figure 2.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: TRADINGVIEW. In this example chart output, the bottom pane displays sample annualized returns from the low-risk profile of the allocation strategy along with annualized SPY returns for comparison. The top pane is a daily chart of ES. To the right is a display of risk metrics, and at the bottom are return values (profit &amp; loss) in tabular format.</p></div>
+<p>The indicator is available on TradingView from the PineCodersTASC account at: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="http://www.TradingView.com" target="_blank">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+	<p class="rules"></p>
+<div class="logoBorder" id="item4">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Python: February 2026</h3></div>
+ <p>To help Python users implement some of the concepts described in Markos Katsanos&rsquo; article in this issue, &ldquo;A Portfolio Diversification Strategy,&rdquo; Python code is provided below.</p>
+	<pre>&quot;&quot;&quot;
+
+# Import required python libraries
+
+%matplotlib inline
+
+import pandas as pd
+import numpy as np
+import yfinance as yf
+
+import math
+import datetime as dt
+import matplotlib.pyplot as plt
+import mplfinance as mpf
+
+print(yf.__version__)
+
+
+# The following are key building blocks and helper functions 
+# to test and implement associated article concepts
+
+def get_allocation_schemes():
+    
+    data = {
+        'Ticker': ['AGG', 'BIL', 'EFA', 'GBTC', 'GLD', 'QQQ', 'SHY', 'SPY'],
+        'Asset Class': ['Bonds', 'Cash', 'Equities', 'Alternative',
+                        'Commmodities', 'Equities', 'Bonds', 'Equities'],
+        'Adjusted':     [15, 0, 10, 0, 15, 20, 15, 20],
+        'Low Risk':     [2, 30, 7, 0, 17, 13, 15, 16],
+        'Conservative': [10, 5, 10, 3, 17, 18, 15, 22],
+        'Aggressive':   [3, 0, 3, 7, 17, 38, 12, 20],
+        'Dynamic':      [0, 5, 5, 10, 25, 30, 5, 20]
+    }
+
+    df = pd.DataFrame(data).set_index('Ticker')
+
+    # ensure numeric allocations
+    alloc_cols = df.columns.difference(['Asset Class'])
+    df[alloc_cols] = df[alloc_cols].astype(float)
+
+    return df
+
+    
+def get_scheme_weights(
+    alloc_df: pd.DataFrame,
+    scheme: str
+) -&gt; dict[str, float]:
+    &quot;&quot;&quot;
+    Return normalized ticker weights for a given allocation scheme.
+
+    Parameters
+    ----------
+    alloc_df : pd.DataFrame
+        Allocation table indexed by Ticker.
+    scheme : str
+        Allocation scheme name (e.g. 'Aggressive').
+
+    Returns
+    -------
+    dict
+        {ticker: weight} where weights sum to 1.0
+    &quot;&quot;&quot;
+
+    if scheme not in alloc_df.columns:
+        raise ValueError(f&quot;Scheme '{scheme}' not found in allocation table.&quot;)
+
+    # Extract raw weights
+    w = alloc_df[scheme].astype(float)
+
+    # Replace NaN with zero (explicitly no allocation)
+    w = w.fillna(0.0)
+
+    total = w.sum()
+    if total &lt;= 0:
+        raise ValueError(f&quot;Scheme '{scheme}' has zero total weight.&quot;)
+
+    # Normalize
+    w = w / total
+
+    return w.to_dict()
+
+
+# Use Yahoo Finance python package to obtain OHLCV data for desired tickers
+
+def get_yahoo_ohlcv(
+    tickers: list[str],
+    start: str,
+    end: str
+) -&gt; pd.DataFrame:
+    &quot;&quot;&quot;
+    Download historical OHLCV price data from Yahoo Finance.
+
+    Parameters
+    ----------
+    tickers : list[str] or str
+        One or more ticker symbols accepted by Yahoo Finance.
+        Examples: ['SPY','AGG','GLD'] or 'SPY'
+    start : str or pd.Timestamp
+        Start date for historical data (inclusive).
+        Format: 'YYYY-MM-DD' or pandas Timestamp.
+    end : str or pd.Timestamp
+        End date for historical data (inclusive).
+        Format: 'YYYY-MM-DD' or pandas Timestamp.
+
+    Returns
+    -------
+    pd.DataFrame
+        OHLCV price data as returned by yfinance.
+        - Index: DatetimeIndex
+        - Columns: MultiIndex (Price field × Ticker)
+        - Price fields typically include:
+          ['Open','High','Low','Close','Volume']
+        - Prices are adjusted if auto_adjust=True
+    &quot;&quot;&quot;
+
+    ohlcv = yf.download(
+        tickers,
+        start,
+        end,
+        auto_adjust=True,     # adjusts prices for splits/dividends
+        progress=False        # suppress download progress output
+    )
+
+    return ohlcv
+
+def resample_ohlcv(df, tsagg='W'):
+    &quot;&quot;&quot;
+    Resample yfinance-style OHLCV DataFrame to a new time aggregation.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Daily OHLCV with MultiIndex columns (Price × Ticker)
+    tsagg : str
+        'W' = weekly (Fri close)
+        'M' = business month-end
+        'Q' = business quarter-end
+        'Y' = business year-end
+
+    Returns
+    -------
+    pd.DataFrame
+        Resampled OHLCV with same MultiIndex structure
+    &quot;&quot;&quot;
+
+    if not isinstance(df.columns, pd.MultiIndex):
+        raise TypeError(&quot;df must have MultiIndex columns (Price × Ticker)&quot;)
+
+    freq_map = {
+        'W': 'W-FRI',
+        'M': 'BM',
+        'Q': 'BQ',
+        'Y': 'BA'
+    }
+    tsagg = freq_map.get(tsagg, tsagg)
+
+    resampled = []
+
+    # Vectorized across tickers (FAST)
+    for price, how in {
+        'Open': 'first',
+        'High': 'max',
+        'Low': 'min',
+        'Close': 'last',
+        'Volume': 'sum'
+    }.items():
+
+        tmp = getattr(df[price].resample(tsagg), how)()
+
+        tmp.columns = pd.MultiIndex.from_product([[price], tmp.columns])
+        resampled.append(tmp)
+
+    return pd.concat(resampled, axis=1).sort_index(axis=1)
+
+
+def get_data_coverage(close_df: pd.DataFrame) -&gt; pd.DataFrame:
+    &quot;&quot;&quot;
+    Return start and end dates of valid data for each ticker, sorted by start date.
+
+    Parameters
+    ----------
+    close_df : pd.DataFrame
+        Close prices (index = DatetimeIndex, columns = tickers)
+
+    Returns
+    -------
+    pd.DataFrame
+        Columns: ['Ticker', 'Start', 'End'], sorted by Start
+    &quot;&quot;&quot;
+
+    if not isinstance(close_df.index, pd.DatetimeIndex):
+        raise TypeError(&quot;close_df index must be a DatetimeIndex&quot;)
+
+    records = []
+
+    for ticker in close_df.columns:
+        s = close_df[ticker].dropna()
+        if s.empty:
+            start, end = pd.NaT, pd.NaT
+        else:
+            start, end = s.index[0], s.index[-1]
+
+        records.append({
+            'Ticker': ticker,
+            'Start': start,
+            'End': end
+        })
+
+    coverage_df = pd.DataFrame(records)
+
+    # Sort by start date
+    coverage_df = coverage_df.sort_values('Start').reset_index(drop=True)
+
+    return coverage_df
+
+def get_rebalance_dates(prices: pd.DataFrame, rebalance_freq: str = 'M') -&gt; pd.DatetimeIndex:
+    &quot;&quot;&quot;
+    Determine rebalance dates based on weekly prices and desired frequency.
+    Validates that all rebalance dates exist in the prices index.
+
+    Parameters
+    ----------
+    prices : pd.DataFrame
+        Cleaned weekly prices. Index = DatetimeIndex
+    rebalance_freq : str
+        'W', 'M', 'Q', 'H', 'Y'
+
+    Returns
+    -------
+    pd.DatetimeIndex
+        Last weekly date of each period for rebalancing.
+    &quot;&quot;&quot;
+    freq_map = {'W':'W-FRI', 'M':'M', 'Q':'Q', 'H':'2Q', 'Y':'A'}
+    freq = freq_map.get(rebalance_freq, rebalance_freq)
+
+    # Group by period, take last available weekly date
+    rebalance_dates = prices.groupby(pd.Grouper(freq=freq)).apply(lambda x: x.index[-1])
+    rebalance_dates = pd.to_datetime(rebalance_dates.drop_duplicates().values)
+
+    # Sanity check: ensure all dates exist in prices index
+    missing_dates = rebalance_dates.difference(prices.index)
+    if not missing_dates.empty:
+        raise ValueError(f&quot;The following rebalance dates are missing in prices index: {missing_dates}&quot;)
+
+    return rebalance_dates
+
+def open_portfolio_positions(close_df: pd.DataFrame,
+                              real_date: pd.Timestamp,
+                              weights_dict: dict,
+                              capital_to_invest: float) -&gt; pd.DataFrame:
+    &quot;&quot;&quot;
+    Compute portfolio positions given close prices, target weights, and capital.
+
+    Parameters
+    ----------
+    close_df : pd.DataFrame
+        Weekly closing prices. Index: DatetimeIndex, columns: tickers.
+    real_date : pd.Timestamp
+        Date at which to take the prices.
+    weights_dict : dict
+        Target weights {ticker: weight}.
+    capital_to_invest : float
+        Total capital to invest.
+
+    Returns
+    -------
+    pd.DataFrame
+        Columns: ['symbol','qty','buy_price','cost_basis','target_weight']
+    &quot;&quot;&quot;
+    # Align real_date to last available date &lt;= real_date
+    if real_date not in close_df.index:
+        real_date = close_df.index[close_df.index.get_loc(real_date, method='pad')]
+    
+    prices = close_df.loc[real_date]
+
+    # Keep only tickers that have valid prices and are in weights_dict
+    tickers = [t for t in close_df.columns if t in weights_dict and not np.isnan(prices[t])]
+    
+    data = []
+    for t in tickers:
+        w = weights_dict[t]
+        price = prices[t]
+        dollar_allocation = capital_to_invest * w
+        qty = int(dollar_allocation // price)  # round down to integer shares
+        cost_basis = qty * price
+        data.append([ t, qty, real_date,price, cost_basis, w])
+    
+    positions_df = pd.DataFrame(data, columns=['symbol','qty','buy_date','buy_price','cost_basis','target_weight'])
+    return positions_df.round(2)
+
+def portfolio_value_on_date(positions_df: pd.DataFrame,
+                            close_df: pd.DataFrame,
+                            date: pd.Timestamp) -&gt; pd.DataFrame:
+    &quot;&quot;&quot;
+    Compute portfolio value and PnL for given positions on a specific date.
+
+    Parameters
+    ----------
+    positions_df : pd.DataFrame
+        Positions with columns ['symbol','qty','buy_price','cost_basis','target_weight'].
+    close_df : pd.DataFrame
+        Weekly closing prices. Index: DatetimeIndex, columns: tickers.
+    date : pd.Timestamp
+        Date at which to compute portfolio value and PnL.
+
+    Returns
+    -------
+    pd.DataFrame
+        positions_df with additional columns: 'date', 'close', 'pnl'
+    &quot;&quot;&quot;
+    # Align date to last available date &lt;= date
+    if date not in close_df.index:
+        date = close_df.index[close_df.index.get_loc(date, method='pad')]
+
+    close_prices = close_df.loc[date]
+
+    # Compute current close and PnL
+    positions_df = positions_df.copy()
+    positions_df['date'] = date
+    positions_df['close'] = positions_df['symbol'].map(close_prices)
+    positions_df['market_value'] = positions_df['close'] * positions_df['qty']
+    positions_df['unrealized_pnl'] = (positions_df['close'] - positions_df['buy_price']) * positions_df['qty']
+
+    return positions_df.round(2)
+
+def close_portfolio_positions(
+    positions_df: pd.DataFrame,
+    close_df: pd.DataFrame,
+    sell_date: pd.Timestamp
+) -&gt; pd.DataFrame:
+    &quot;&quot;&quot;
+    Close all portfolio positions at market close and compute realized PnL.
+
+    Parameters
+    ----------
+    positions_df : pd.DataFrame
+        Open positions with columns:
+        ['symbol','qty','buy_price','buy_date','cost_basis','target_weight']
+    close_df : pd.DataFrame
+        Weekly closing prices. Index: DatetimeIndex, columns: tickers.
+    sell_date : pd.Timestamp
+        Desired sell date (aligned to last available close).
+
+    Returns
+    -------
+    pd.DataFrame
+        Closed positions with columns:
+        ['symbol','qty','buy_date','buy_price','sell_date','sell_price',
+         'cost_basis','proceeds','realized_pnl',
+         'target_weight','actual_weight']
+    &quot;&quot;&quot;
+
+    # ---- Align sell date ----
+    if sell_date not in close_df.index:
+        sell_date = close_df.index[close_df.index.get_loc(sell_date, method='pad')]
+
+    sell_prices = close_df.loc[sell_date]
+
+    closed = positions_df.copy()
+    closed['sell_date'] = sell_date
+    closed['sell_price'] = closed['symbol'].map(sell_prices)
+
+    # ---- Proceeds and realized PnL ----
+    closed['proceeds'] = closed['qty'] * closed['sell_price']
+    closed['realized_pnl'] = closed['proceeds'] - closed['cost_basis']
+
+    # ---- Actual weights at liquidation ----
+    total_proceeds = closed['proceeds'].sum()
+    closed['actual_weight'] = (
+        closed['proceeds'] / total_proceeds if total_proceeds &gt; 0 else 0.0
+    )
+
+    # ---- Clean column order ----
+    closed = closed[
+        ['symbol','qty','buy_date','buy_price',
+         'sell_date','sell_price',
+         'cost_basis','proceeds','realized_pnl',
+         'target_weight','actual_weight']
+    ]
+
+    return closed.round(2)
+
+def normalized_returns_between_dates(
+    close_df: pd.DataFrame,
+    start_date: pd.Timestamp,
+    end_date: pd.Timestamp
+) -&gt; pd.DataFrame:
+    &quot;&quot;&quot;
+    Normalize close prices to 1.0 at start_date for comparison.
+
+    Parameters
+    ----------
+    close_df : pd.DataFrame
+        Weekly close prices. Index: DatetimeIndex, columns: tickers.
+    start_date : pd.Timestamp
+        Start date for normalization.
+    end_date : pd.Timestamp
+        End date for normalization.
+
+    Returns
+    -------
+    pd.DataFrame
+        Normalized close prices (start = 1.0) for each ticker.
+    &quot;&quot;&quot;
+
+    df = close_df[buy_date:sell_date].copy()
+    df = (1+df.pct_change()).cumprod()
+    df[:1] = 1
+    
+    return df
+
+def plot_normalized_returns(
+    normalized_df: pd.DataFrame,
+    title: str = &quot;Normalized Returns Plot&quot;,
+    figsize: tuple = (10, 6)
+):
+    &quot;&quot;&quot;
+    Plot normalized returns with legend outside and columns ordered
+    by final cumulative return (largest gain first).
+
+    Parameters
+    ----------
+    normalized_df : pd.DataFrame
+        Normalized return series (index: dates, columns: tickers).
+    title : str
+        Plot title.
+    figsize : tuple
+        Figure size.
+    &quot;&quot;&quot;
+
+    if normalized_df.empty:
+        raise ValueError(&quot;normalized_df is empty&quot;)
+
+    # ---- Sort columns by final value (descending) ----
+    final_values = normalized_df.iloc[-1]
+    sorted_cols = final_values.sort_values(ascending=False).index
+    plot_df = normalized_df[sorted_cols]
+
+    # ---- Plot ----
+    fig, ax = plt.subplots(figsize=figsize)
+    plot_df.plot(ax=ax, linewidth=2)
+
+    ax.set_title(title)
+    ax.set_ylabel(&quot;Growth Multiplier (aka value * amount_invested&quot;)
+    ax.grid(True)
+
+    # ---- Legend outside right ----
+    ax.legend(
+        loc=&quot;center left&quot;,
+        bbox_to_anchor=(1.02, 0.5),
+        frameon=False
+    )
+
+    plt.tight_layout()
+    plt.show()
+def get_allocation_schemes():
+    
+    data = {
+        'Ticker': ['AGG', 'BIL', 'EFA', 'GBTC', 'GLD', 'QQQ', 'SHY', 'SPY'],
+        'Asset Class': ['Bonds', 'Cash', 'Equities', 'Alternative',
+                        'Commmodities', 'Equities', 'Bonds', 'Equities'],
+        'Adjusted':     [15, 0, 10, 0, 15, 20, 15, 20],
+        'Low Risk':     [2, 30, 7, 0, 17, 13, 15, 16],
+        'Conservative': [10, 5, 10, 3, 17, 18, 15, 22],
+        'Aggressive':   [3, 0, 3, 7, 17, 38, 12, 20],
+        'Dynamic':      [0, 5, 5, 10, 25, 30, 5, 20]
+    }
+
+    df = pd.DataFrame(data).set_index('Ticker')
+
+    # ensure numeric allocations
+    alloc_cols = df.columns.difference(['Asset Class'])
+    df[alloc_cols] = df[alloc_cols].astype(float)
+
+    return df
+
+    
+def get_scheme_weights(
+    alloc_df: pd.DataFrame,
+    scheme: str
+) -&gt; dict[str, float]:
+    &quot;&quot;&quot;
+    Return normalized ticker weights for a given allocation scheme.
+
+    Parameters
+    ----------
+    alloc_df : pd.DataFrame
+        Allocation table indexed by Ticker.
+    scheme : str
+        Allocation scheme name (e.g. 'Aggressive').
+
+    Returns
+    -------
+    dict
+        {ticker: weight} where weights sum to 1.0
+    &quot;&quot;&quot;
+
+    if scheme not in alloc_df.columns:
+        raise ValueError(f&quot;Scheme '{scheme}' not found in allocation table.&quot;)
+
+    # Extract raw weights
+    w = alloc_df[scheme].astype(float)
+
+    # Replace NaN with zero (explicitly no allocation)
+    w = w.fillna(0.0)
+
+    total = w.sum()
+    if total &lt;= 0:
+        raise ValueError(f&quot;Scheme '{scheme}' has zero total weight.&quot;)
+
+    # Normalize
+    w = w / total
+
+    return w.to_dict()
+
+
+# Use Yahoo Finance python package to obtain OHLCV data for desired tickers
+
+def get_yahoo_ohlcv(
+    tickers: list[str],
+    start: str,
+    end: str
+) -&gt; pd.DataFrame:
+    &quot;&quot;&quot;
+    Download historical OHLCV price data from Yahoo Finance.
+
+    Parameters
+    ----------
+    tickers : list[str] or str
+        One or more ticker symbols accepted by Yahoo Finance.
+        Examples: ['SPY','AGG','GLD'] or 'SPY'
+    start : str or pd.Timestamp
+        Start date for historical data (inclusive).
+        Format: 'YYYY-MM-DD' or pandas Timestamp.
+    end : str or pd.Timestamp
+        End date for historical data (inclusive).
+        Format: 'YYYY-MM-DD' or pandas Timestamp.
+
+    Returns
+    -------
+    pd.DataFrame
+        OHLCV price data as returned by yfinance.
+        - Index: DatetimeIndex
+        - Columns: MultiIndex (Price field × Ticker)
+        - Price fields typically include:
+          ['Open','High','Low','Close','Volume']
+        - Prices are adjusted if auto_adjust=True
+    &quot;&quot;&quot;
+
+    ohlcv = yf.download(
+        tickers,
+        start,
+        end,
+        auto_adjust=True,     # adjusts prices for splits/dividends
+        progress=False        # suppress download progress output
+    )
+
+    return ohlcv
+
+def resample_ohlcv(df, tsagg='W'):
+    &quot;&quot;&quot;
+    Resample yfinance-style OHLCV DataFrame to a new time aggregation.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Daily OHLCV with MultiIndex columns (Price × Ticker)
+    tsagg : str
+        'W' = weekly (Fri close)
+        'M' = business month-end
+        'Q' = business quarter-end
+        'Y' = business year-end
+
+    Returns
+    -------
+    pd.DataFrame
+        Resampled OHLCV with same MultiIndex structure
+    &quot;&quot;&quot;
+
+    if not isinstance(df.columns, pd.MultiIndex):
+        raise TypeError(&quot;df must have MultiIndex columns (Price × Ticker)&quot;)
+
+    freq_map = {
+        'W': 'W-FRI',
+        'M': 'BM',
+        'Q': 'BQ',
+        'Y': 'BA'
+    }
+    tsagg = freq_map.get(tsagg, tsagg)
+
+    resampled = []
+
+    # Vectorized across tickers (FAST)
+    for price, how in {
+        'Open': 'first',
+        'High': 'max',
+        'Low': 'min',
+        'Close': 'last',
+        'Volume': 'sum'
+    }.items():
+
+        tmp = getattr(df[price].resample(tsagg), how)()
+
+        tmp.columns = pd.MultiIndex.from_product([[price], tmp.columns])
+        resampled.append(tmp)
+
+    return pd.concat(resampled, axis=1).sort_index(axis=1)
+
+
+def get_data_coverage(close_df: pd.DataFrame) -&gt; pd.DataFrame:
+    &quot;&quot;&quot;
+    Return start and end dates of valid data for each ticker, sorted by start date.
+
+    Parameters
+    ----------
+    close_df : pd.DataFrame
+        Close prices (index = DatetimeIndex, columns = tickers)
+
+    Returns
+    -------
+    pd.DataFrame
+        Columns: ['Ticker', 'Start', 'End'], sorted by Start
+    &quot;&quot;&quot;
+
+    if not isinstance(close_df.index, pd.DatetimeIndex):
+        raise TypeError(&quot;close_df index must be a DatetimeIndex&quot;)
+
+    records = []
+
+    for ticker in close_df.columns:
+        s = close_df[ticker].dropna()
+        if s.empty:
+            start, end = pd.NaT, pd.NaT
+        else:
+            start, end = s.index[0], s.index[-1]
+
+        records.append({
+            'Ticker': ticker,
+            'Start': start,
+            'End': end
+        })
+
+    coverage_df = pd.DataFrame(records)
+
+    # Sort by start date
+    coverage_df = coverage_df.sort_values('Start').reset_index(drop=True)
+
+    return coverage_df
+
+def get_rebalance_dates(prices: pd.DataFrame, rebalance_freq: str = 'M') -&gt; pd.DatetimeIndex:
+    &quot;&quot;&quot;
+    Determine rebalance dates based on weekly prices and desired frequency.
+    Validates that all rebalance dates exist in the prices index.
+
+    Parameters
+    ----------
+    prices : pd.DataFrame
+        Cleaned weekly prices. Index = DatetimeIndex
+    rebalance_freq : str
+        'W', 'M', 'Q', 'H', 'Y'
+
+    Returns
+    -------
+    pd.DatetimeIndex
+        Last weekly date of each period for rebalancing.
+    &quot;&quot;&quot;
+    freq_map = {'W':'W-FRI', 'M':'M', 'Q':'Q', 'H':'2Q', 'Y':'A'}
+    freq = freq_map.get(rebalance_freq, rebalance_freq)
+
+    # Group by period, take last available weekly date
+    rebalance_dates = prices.groupby(pd.Grouper(freq=freq)).apply(lambda x: x.index[-1])
+    rebalance_dates = pd.to_datetime(rebalance_dates.drop_duplicates().values)
+
+    # Sanity check: ensure all dates exist in prices index
+    missing_dates = rebalance_dates.difference(prices.index)
+    if not missing_dates.empty:
+        raise ValueError(f&quot;The following rebalance dates are missing in prices index: {missing_dates}&quot;)
+
+    return rebalance_dates
+
+def open_portfolio_positions(close_df: pd.DataFrame,
+                              real_date: pd.Timestamp,
+                              weights_dict: dict,
+                              capital_to_invest: float) -&gt; pd.DataFrame:
+    &quot;&quot;&quot;
+    Compute portfolio positions given close prices, target weights, and capital.
+
+    Parameters
+    ----------
+    close_df : pd.DataFrame
+        Weekly closing prices. Index: DatetimeIndex, columns: tickers.
+    real_date : pd.Timestamp
+        Date at which to take the prices.
+    weights_dict : dict
+        Target weights {ticker: weight}.
+    capital_to_invest : float
+        Total capital to invest.
+
+    Returns
+    -------
+    pd.DataFrame
+        Columns: ['symbol','qty','buy_price','cost_basis','target_weight']
+    &quot;&quot;&quot;
+    # Align real_date to last available date &lt;= real_date
+    if real_date not in close_df.index:
+        real_date = close_df.index[close_df.index.get_loc(real_date, method='pad')]
+    
+    prices = close_df.loc[real_date]
+
+    # Keep only tickers that have valid prices and are in weights_dict
+    tickers = [t for t in close_df.columns if t in weights_dict and not np.isnan(prices[t])]
+    
+    data = []
+    for t in tickers:
+        w = weights_dict[t]
+        price = prices[t]
+        dollar_allocation = capital_to_invest * w
+        qty = int(dollar_allocation // price)  # round down to integer shares
+        cost_basis = qty * price
+        data.append([ t, qty, real_date,price, cost_basis, w])
+    
+    positions_df = pd.DataFrame(data, columns=['symbol','qty','buy_date','buy_price','cost_basis','target_weight'])
+    return positions_df.round(2)
+
+def portfolio_value_on_date(positions_df: pd.DataFrame,
+                            close_df: pd.DataFrame,
+                            date: pd.Timestamp) -&gt; pd.DataFrame:
+    &quot;&quot;&quot;
+    Compute portfolio value and PnL for given positions on a specific date.
+
+    Parameters
+    ----------
+    positions_df : pd.DataFrame
+        Positions with columns ['symbol','qty','buy_price','cost_basis','target_weight'].
+    close_df : pd.DataFrame
+        Weekly closing prices. Index: DatetimeIndex, columns: tickers.
+    date : pd.Timestamp
+        Date at which to compute portfolio value and PnL.
+
+    Returns
+    -------
+    pd.DataFrame
+        positions_df with additional columns: 'date', 'close', 'pnl'
+    &quot;&quot;&quot;
+    # Align date to last available date &lt;= date
+    if date not in close_df.index:
+        date = close_df.index[close_df.index.get_loc(date, method='pad')]
+
+    close_prices = close_df.loc[date]
+
+    # Compute current close and PnL
+    positions_df = positions_df.copy()
+    positions_df['date'] = date
+    positions_df['close'] = positions_df['symbol'].map(close_prices)
+    positions_df['market_value'] = positions_df['close'] * positions_df['qty']
+    positions_df['unrealized_pnl'] = (positions_df['close'] - positions_df['buy_price']) * positions_df['qty']
+
+    return positions_df.round(2)
+
+def close_portfolio_positions(
+    positions_df: pd.DataFrame,
+    close_df: pd.DataFrame,
+    sell_date: pd.Timestamp
+) -&gt; pd.DataFrame:
+    &quot;&quot;&quot;
+    Close all portfolio positions at market close and compute realized PnL.
+
+    Parameters
+    ----------
+    positions_df : pd.DataFrame
+        Open positions with columns:
+        ['symbol','qty','buy_price','buy_date','cost_basis','target_weight']
+    close_df : pd.DataFrame
+        Weekly closing prices. Index: DatetimeIndex, columns: tickers.
+    sell_date : pd.Timestamp
+        Desired sell date (aligned to last available close).
+
+    Returns
+    -------
+    pd.DataFrame
+        Closed positions with columns:
+        ['symbol','qty','buy_date','buy_price','sell_date','sell_price',
+         'cost_basis','proceeds','realized_pnl',
+         'target_weight','actual_weight']
+    &quot;&quot;&quot;
+
+    # ---- Align sell date ----
+    if sell_date not in close_df.index:
+        sell_date = close_df.index[close_df.index.get_loc(sell_date, method='pad')]
+
+    sell_prices = close_df.loc[sell_date]
+
+    closed = positions_df.copy()
+    closed['sell_date'] = sell_date
+    closed['sell_price'] = closed['symbol'].map(sell_prices)
+
+    # ---- Proceeds and realized PnL ----
+    closed['proceeds'] = closed['qty'] * closed['sell_price']
+    closed['realized_pnl'] = closed['proceeds'] - closed['cost_basis']
+
+    # ---- Actual weights at liquidation ----
+    total_proceeds = closed['proceeds'].sum()
+    closed['actual_weight'] = (
+        closed['proceeds'] / total_proceeds if total_proceeds &gt; 0 else 0.0
+    )
+
+    # ---- Clean column order ----
+    closed = closed[
+        ['symbol','qty','buy_date','buy_price',
+         'sell_date','sell_price',
+         'cost_basis','proceeds','realized_pnl',
+         'target_weight','actual_weight']
+    ]
+
+    return closed.round(2)
+
+def normalized_returns_between_dates(
+    close_df: pd.DataFrame,
+    start_date: pd.Timestamp,
+    end_date: pd.Timestamp
+) -&gt; pd.DataFrame:
+    &quot;&quot;&quot;
+    Normalize close prices to 1.0 at start_date for comparison.
+
+    Parameters
+    ----------
+    close_df : pd.DataFrame
+        Weekly close prices. Index: DatetimeIndex, columns: tickers.
+    start_date : pd.Timestamp
+        Start date for normalization.
+    end_date : pd.Timestamp
+        End date for normalization.
+
+    Returns
+    -------
+    pd.DataFrame
+        Normalized close prices (start = 1.0) for each ticker.
+    &quot;&quot;&quot;
+
+    df = close_df[buy_date:sell_date].copy()
+    df = (1+df.pct_change()).cumprod()
+    df[:1] = 1
+    
+    return df
+
+def plot_normalized_returns(
+    normalized_df: pd.DataFrame,
+    title: str = &quot;Normalized Returns Plot&quot;,
+    figsize: tuple = (10, 6)
+):
+    &quot;&quot;&quot;
+    Plot normalized returns with legend outside and columns ordered
+    by final cumulative return (largest gain first).
+
+    Parameters
+    ----------
+    normalized_df : pd.DataFrame
+        Normalized return series (index: dates, columns: tickers).
+    title : str
+        Plot title.
+    figsize : tuple
+        Figure size.
+    &quot;&quot;&quot;
+
+    if normalized_df.empty:
+        raise ValueError(&quot;normalized_df is empty&quot;)
+
+    # ---- Sort columns by final value (descending) ----
+    final_values = normalized_df.iloc[-1]
+    sorted_cols = final_values.sort_values(ascending=False).index
+    plot_df = normalized_df[sorted_cols]
+
+    # ---- Plot ----
+    fig, ax = plt.subplots(figsize=figsize)
+    plot_df.plot(ax=ax, linewidth=2)
+
+    ax.set_title(title)
+    ax.set_ylabel(&quot;Growth Multiplier (aka value * amount_invested&quot;)
+    ax.grid(True)
+
+    # ---- Legend outside right ----
+    ax.legend(
+        loc=&quot;center left&quot;,
+        bbox_to_anchor=(1.02, 0.5),
+        frameon=False
+    )
+
+    plt.tight_layout()
+    plt.show()
+
+ 
+
+
+# Example usages
+
+
+# Get allocation schemes
+alloc_df = get_allocation_schemes()
+alloc_df
+
+# get weights for a specific scheme
+scheme = 'Aggressive'
+weights_dict = get_scheme_weights(alloc_df, scheme)  
+weights_dict
+
+{'AGG': 0.03,
+ 'BIL': 0.0,
+ 'EFA': 0.03,
+ 'GBTC': 0.07,
+ 'GLD': 0.17,
+ 'QQQ': 0.38,
+ 'SHY': 0.12,
+ 'SPY': 0.2}
+
+
+# Use Yahoo Finance python package to obtain OHLCV data for desired tickers
+tickers = alloc_df.index.tolist()
+start = &quot;1990-01-01&quot;
+end = '2025-12-18'
+ohlcv = get_yahoo_ohlcv(tickers, start, end)
+
+# resample to weekly ohlcv
+weekly_ohlcv = resample_ohlcv(ohlcv, tsagg='W')
+weekly_ohlcv
+
+# extract weekly close values
+close_df = weekly_ohlcv['Close'].copy()
+
+
+# show coverage of price data
+get_data_coverage(close_df)
+
+# set rebalance_freq to monthly, quarterly, half-year and full year
+rebalance_dates = get_rebalance_dates(close_df['2021':], rebalance_freq = 'Y')
+rebalance_dates
+
+DatetimeIndex(['2021-12-31', '2022-12-30', '2023-12-29', '2024-12-27',
+               '2025-12-19'],
+              dtype='datetime64[ns]', freq=None)
+
+
+# open a portfolio based on capital to invest and desired allocation scheme. 
+# Change values and see portfolio change accordingly
+capital_to_invest = 100000
+buy_date = '2021-12-31'
+scheme = 'Low Risk'
+
+weights_dict = get_scheme_weights(alloc_df, scheme = 'Low Risk')  
+positions_df = open_portfolio_positions(close_df, buy_date, weights_dict, capital_to_invest)
+positions_df
+
+# see how portfolio has changed since the open date by used a future date
+
+cur_date = '2022-12-30'
+positions_df = portfolio_value_on_date(positions_df, close_df, cur_date)
+positions_df
+
+# close the positions as part of the next rebalancing process
+sell_date = '2022-12-30'
+closed_positions_df = close_portfolio_positions(positions_df, close_df, sell_date)
+closed_positions_df
+
+# get a visual of how the individual instruments performed between a start date and a end date
+
+normalized = normalized_returns_between_dates(close_df,start_date=buy_date,end_date=sell_date)
+plot_normalized_returns(normalized, figsize=(9,6))
+
+</pre>
+<p>The code implements a subset of building blocks and functions that could be used as part of a backtest of Katsanos&rsquo; strategy. The user can use the code to test and assess various performance aspects of the allocation strategy offered in the article. The code can be used to test different symbol sets and test different allocation schemes.</p>
+<p>Example usages of the code include:</p>
+<ol><li>To open a portfolio using the allocation schemes offered</li>
+	<li>To see portfolio performance on any given date</li>
+	<li>To close a position and open a new set of positions (such as to rebalance the portfolio)</li>
+	<li>To plot individual ticker performances between any two dates using the plotter function</li>
+	<li>Many other usages are also available once details of the building blocks are understood.</li>
+	</ol>
+<div class="figBorder">
+<img src="images/TT-Python.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: PYTHON. Shown here is an example plot of returns from a test of the allocation strategy. This type of plot helps the user see how individual instruments performed in a given date range when the user enters a start and end date.</p></div>
+<p>A Jupyter notebook for this and previous Traders&rsquo; Tips articles can be found on GitHub at: <a href="https://github.com/jainraje/TraderTipArticles" target="_blank">https://github.com/jainraje/TraderTipArticles</a>.</p>
+<p class="authorTips">&mdash;Rajeev Jain<br>
+<a href="mailto:jainraje@yahoo.com">jainraje@yahoo.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+	<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NeuroShell Trader: February 2026</h3></div>
+ <p>Markos Katsanos&rsquo; article in this issue, &ldquo;A Portfolio Diversification Strategy,&rdquo; highlights a simple reality: what keeps investors up at night isn&rsquo;t day-to-day volatility&mdash;it&rsquo;s the depth and duration of drawdowns. While NeuroShell Trader doesn&rsquo;t implement the article&rsquo;s rolling, dynamic allocation model directly, it does provide a practical way to pursue the same goal: improving risk-adjusted performance by optimizing trading systems across a portfolio of instruments using objective functions that directly measure drawdown stress.</p>
+<p>NeuroShell Trader lets you optimize a trading system using a wide set of objective functions&mdash;including Sharpe ratio, ulcer index, ulcer performance index, and many others&mdash;so you can explicitly target what matters most for your risk profile, whether that is return, equity-curve smoothness, drawdown severity, or a combination of these. This is accomplished by simply selecting the desired optimization goal from the <em>optimization</em> tab of the trading strategy wizard when creating a trading system.</p>
+<p>Where NeuroShell Trader truly excels for multi-asset strategies is its ability to optimize across chart pages (multiple symbols). Instead of tuning parameters that perform well on a single ETF but degrade elsewhere, you can optimize across a set of instruments representing your intended portfolio and have NeuroShell Trader search for parameters that maximize the average objective value across the entire group. In effect, this allows traders to optimize explicitly for portfolio robustness&mdash;not just single-market performance&mdash;using the same drawdown-aware risk metrics highlighted in the article, such as the Sharpe ratio and ulcer index. This capability is enabled by selecting &ldquo;optimize across chart pages&rdquo; on the <em>optimization</em> tab of the trading strategy wizard.</p>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_blank">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+	<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: February 2026</h3></div>
+ <p>In &ldquo;A Portfolio Diversification Strategy,&rdquo; in this issue, Markos Katsanos presents some concepts related to portfolio diversification and asset allocation.</p>
+<p>Files for a NinjaTrader indicator and a NinjaTrader strategy, for helping to implement or explore some of the author&rsquo;s logic described in his article, are available for download at the following link for NinjaTrader 8:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://ninjatrader.com/SC/February2026SCNT8.zip" target="_blank">ninjatrader.com/SC/February2026SCNT8.zip</a></li>
+</ul>
+<p>Once the files are downloaded, you can import them into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded files for NinjaTrader 8.</p>
+<p>You can review the source code in NinjaTrader 8 by selecting New &rarr; NinjaScript Editor &rarr; Indicators from within the control center window and selecting the file.</p>
+<p>Example charts in NinjaTrader are shown in Figures 4 and 5. Figure 4 demonstrates a statistical exploration, and Figure 5 demonstrates an asset allocation approach with rebalancing using a set of symbols.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: NINJATRADER. A statistical exploration is demonstrated on a weekly chart of the ETF GLD over about a decade of data.</p></div>
+<div class="figBorder">
+<img src="images/TT-Ninja2.gif" alt="Sample FIGURE" class="shadow1" style="width: 610px;">
+<p class="figCaption" style="width: 550px;">FIGURE 5: NINJATRADER. An approach to asset allocation is demonstrated on a weekly chart of emini S&amp;P 500 futures (ES) over about a decade of data.</p></div>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">&mdash;NinjaTrader_JesseN<br>
+NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_blank">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the February 2026 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+All rights reserved. &copy;&nbsp;Copyright&nbsp;2025, Technical Analysis, Inc.</p>
+</body>
+</html>

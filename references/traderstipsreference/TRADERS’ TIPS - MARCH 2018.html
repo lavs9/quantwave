@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine.">
+<meta name="description" content="This month: Recursive Median Filters by John Ehlers. Contributions from: TradeStation, eSignal, thinkorswim, Neuroshell Trader, NinjaTrader, Wealth-Lab.com, updata, Quantacula, Amibroker, Microsoft Excel and TradersStudio.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - MARCH 2018</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">March 2018</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/03/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John Ehlers&rsquo; article in this issue, &ldquo;Recursive Median Filters.&rdquo; Here, we present the March 2018 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<!--<p>Code in ZZZZZZZZZZZZ is already provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Subscriber Area of our website <a target="_parent" href="https://technical.traders.com/sub/sublogin.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TRADESTATION: MARCH 2018</a></li>
+  <li><a href="#item2"><span style="text-transform:lowercase;">e</span>SIGNAL: MARCH 2018</a></li>
+  <li><a href="#item3">THINKORSWIM: MARCH 2018</a></li>
+  <li><a href="#item4">NEUROSHELL TRADER: MARCH 2018</a></li>
+  <li><a href="#item5">WEALTH-LAB: MARCH 2018</a></li>
+  <li><a href="#item6">NINJATRADER: MARCH 2018</a></li>
+  <li><a href="#item7">QUANTACULA: MARCH 2018</a></li>
+  <li><a href="#item8">AMIBROKER: MARCH 2018</a></li>
+  <li><a href="#item9">TRADERSSTUDIO: MARCH 2018</a></li>
+  <li><a href="#item10">UPDATA: MARCH 2018</a></li>
+  <li><a href="#item11">MICROSOFT EXCEL: MARCH 2018</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new1.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+TRADESTATION: MARCH 2018</h3></div>
+<p>In &ldquo;Recursive Median Filters&rdquo; in this issue, author John Ehlers presents an approach for filtering out extreme price and volume data that can throw off typical averaging calculations. Ehlers goes on to present a novel oscillator using this technique, comparing its response to the well-known RSI. He notes that by being able to smooth the data with the least amount of lag, the recursive median oscillator may give the trader a better view of the bigger picture.</p> 
+<p>Here, we are providing the TradeStation EasyLanguage code for the recursive median oscillator.</p>
+<pre>
+Indicator: Recursive Median Oscillator
+
+{
+Recursive Median Oscillator
+(c) 2017 John F. Ehlers
+TASC March 2018
+}
+
+inputs:
+	Price( Close ),
+	LPPeriod( 12 ),
+	HPPeriod( 30 ) ;
+variables:
+	Alpha1( 0 ),
+	Alpha2( 0 ),
+	RM( 0 ),
+	RMO( 0 ) ;
+	
+// Set EMA constant from LPPeriod input
+Alpha1 = ( Cosine( 360 / LPPeriod ) 
+	+ Sine( 360 / LPPeriod ) - 1 ) 
+	/ Cosine( 360 / LPPeriod ) ;
+
+// Recursive Median (EMA of a 5 
+// bar Median filter)
+RM = Alpha1 * Median( Price, 5 ) 
+	+ ( 1 - Alpha1 ) * RM[1] ;
+
+// Highpass filter cyclic components 
+// whose periods are shorter than 
+// HPPeriod to make an oscillator
+
+Alpha2 = ( Cosine( .707 * 360 / HPPeriod ) 
+	+ Sine( .707 * 360 / HPPeriod ) - 1 ) 
+	/ Cosine( .707 * 360 / HPPeriod ) ;
+
+RMO = ( 1 - Alpha2 / 2 ) * ( 1 - Alpha2 / 2 ) 
+	* ( RM - 2 * RM[1] + RM[2] ) 
+	+ 2 * ( 1 - Alpha2 ) * RMO[1] 
+	- ( 1 - Alpha2 ) * ( 1 - Alpha2 ) * RMO[2] ;
+
+Plot1( RMO, &quot;RMO&quot; ) ;
+Plot2( 0, &quot;ZeroLine&quot; );
+</pre>
+<p>To download the EasyLanguage code, please visit our TradeStation and EasyLanguage support forum. The files based on this article can be found here: <a href="https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=142776" target="_parent">https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=142776</a>. The filename is &ldquo;TASC_MAR2018.ZIP.&rdquo;</p>
+<p>For more information about EasyLanguage in general, please see <a href="https://www.tradestation.com/EL-FAQ" target="_parent">https://www.tradestation.com/EL-FAQ</a>.</p> 
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/03/images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This shows a daily chart of SPY with the recursive median oscillator applied.</p></div> 
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;Doug McCrary<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+eSIGNAL: MARCH 2018</h3></div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;ve provided the study <a href="https://www.traders.com/Documentation/FEEDbk_docs/2018/03/images/code/RecursiveMedianOscillator.efs" target="_blank">RecursiveMedianOscillator.efs</a> based on the article by John Ehlers in this issue, &ldquo;Recursive Median Filters.&rdquo; The study is designed to filter out extreme price or volume data spikes.</p>
+<p>The study contains formula parameters that may be configured through the <em>edit chart</em> window (right-click on the chart and select &ldquo;edit chart&rdquo;). A sample chart is shown in Figure 2.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/03/images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: eSIGNAL. Here is an example of the RecursiveMedianOscillator study plotted on a daily chart of SPY.</p></div>
+<p>To discuss this study or download a complete copy of the formula code, please visit the EFS Library Discussion Board forum under the <em>forums</em> link from the support menu at <a href="https://www.esignal.com" target="_parent">www.esignal.com</a> or visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs/" target="_parent">www.esignal.com/support/kb/efs/</a>. The eSignal formula script (EFS) is also available for copying &amp; pasting below.</p>
+<pre>
+/*********************************
+Provided By:  
+eSignal (Copyright c eSignal), a division of Interactive Data 
+Corporation. 2016. All rights reserved. This sample eSignal 
+Formula Script (EFS) is for educational purposes only and may be 
+modified and saved under a new file name.  eSignal is not responsible
+for the functionality once modified.  eSignal reserves the right 
+to modify and overwrite this EFS file with each new release.
+
+Description:        
+    Recursive Median Filters by John F. Ehlers
+
+Version:            1.00  01/10/2018
+
+Formula Parameters:                     Default:
+LPPeriod                                12
+HPPeriod                                30
+MedPeriod                               5
+
+
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+
+var fpArray = new Array();
+
+function preMain(){
+    setPriceStudy(false);
+    setStudyTitle(&quot;RMO&quot;);
+    
+    var x = 0;
+    fpArray[x] = new FunctionParameter(&quot;LPPeriod&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1);
+        setDefault(12);
+    }
+    fpArray[x] = new FunctionParameter(&quot;HPPeriod&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1);
+        setDefault(30);
+    }
+    fpArray[x] = new FunctionParameter(&quot;MedPeriod&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1);
+        setDefault(5);
+    }
+}
+
+var bInit = false;
+var bVersion = null;
+var xRM = null;
+var xRMO = null;
+
+
+function main(LPPeriod, HPPeriod, MedPeriod){
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return;
+    
+    if (getCurrentBarCount() &lt;= HPPeriod + LPPeriod) return;
+
+    if (getBarState() == BARSTATE_ALLBARS){
+        bInit = false;
+    }
+    
+    if (!bInit){
+        var alpha1 = (Math.cos(Math.PI / 180 * (360 / LPPeriod)) 
+                    + Math.sin(Math.PI / 180 * (360 / LPPeriod)) - 1) 
+                    / Math.cos(Math.PI / 180 * (360 / LPPeriod));
+        var alpha2 = (Math.cos(Math.PI / 180 * (0.707 * 360 / HPPeriod)) 
+                    + Math.sin(Math.PI / 180 * (0.707 * 360 / HPPeriod)) - 1) 
+                    / Math.cos(Math.PI / 180 * (0.707 * 360 / HPPeriod));
+        xRM = efsInternal(&quot;calc_RM&quot;, close(), MedPeriod, alpha1);
+        xRMO = efsInternal(&quot;calc_RMO&quot;, xRM, alpha2);
+        addBand(0, PS_DASH, 1, Color.grey, 1);
+        bInit = true;
+    }
+
+    if (xRMO.getValue(0) != null) return xRMO.getValue(0);
+
+}
+
+function calc_RM(xClose, MedPeriod, alpha1){
+    var nRM = 0;
+    var nRM_1 = ref(-1) == null ? 0 : ref(-1);
+    var aMedian = new Array(MedPeriod);
+        
+    for (var i = 0; i &lt; MedPeriod; i++){
+        aMedian[i] = xClose.getValue(-i);
+    }
+    aMedian.sort(_ASC);
+
+    var nMedianPrice = (MedPeriod % 2 &gt; 0) ? aMedian[Math.ceil(MedPeriod / 2) - 1] 
+                                           : (aMedian[(MedPeriod / 2 - 1)] + aMedian[(MedPeriod / 2 )]) / 2
+
+    nRM = alpha1 * nMedianPrice + (1 - alpha1) * nRM_1;
+    return nRM;
+}
+
+function calc_RMO(xRM, alpha2){
+    var nRM = xRM.getValue(0);
+    var nRM_1 = xRM.getValue(-1);
+    var nRM_2 = xRM.getValue(-2);
+    
+    if (nRM_2 == null) return;
+    
+    var nRMO = 0;
+    var nRMO_1 = ref(-1) == null ? 0 : ref(-1);
+    var nRMO_2 = ref(-2) == null ? 0 : ref(-2);
+    
+    nRMO = (1 - alpha2 / 2) * (1 - alpha2 /2) * (nRM - 2 * nRM_1 + nRM_2) 
+            + 2 * (1 - alpha2) * nRMO_1 - (1 - alpha2) * (1 - alpha2) * nRMO_2;
+    return nRMO;
+}
+
+function _ASC(a, b){
+    return (a - b);
+}
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+</pre>
+<p class="authorTips">&mdash;Eric Lippert<br>
+eSignal, an Interactive Data company<br>
+800 779-6555, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/thinkorswim.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+THINKORSWIM: MARCH 2018</h3></div>
+<p>thinkorswim has prepared our implementation of the recursive median filter studies that are featured in John Ehlers&rsquo; article in this issue, &ldquo;Recursive Median Filters.&rdquo;</p> 
+<p>We built these two studies using our proprietary scripting language, <em>thinkscript</em>. We have made the loading process extremely easy; simply click on the following links: <a href="https://tos.mx/PwwT66" target="_parent">https://tos.mx/PwwT66</a> and <a href="https://tos.mx/fIdM6z" target="_parent">https://tos.mx/fIdM6z</a>, then choose to <em>view thinkScript study</em>, and name the studies &ldquo;RecursiveMeanFilter&rdquo; and &ldquo;RecursiveMeanFilterOscillator.&rdquo;</p> 
+<p>The image shown in Figure 3 is of the RecursiveMeanFilter as well as the RecursiveMedianOscillator plotted on a one-year daily chart of SPY (S&amp;P 500 ETF). For details on how to interpret these studies, please refer to Ehlers&rsquo; article.</p> 
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/03/images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: THINKORSWIM. Here is an example of the RecursiveMeanFilter and RecursiveMedianOscillator studies plotted on a daily chart of SPY. </p></div>
+<p class="authorTips">&mdash;thinkorswim<br>
+A division of TD Ameritrade, Inc.<br>
+<a href="https://www.thinkorswim.com" target="_parent">www.thinkorswim.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+NEUROSHELL TRADER: MARCH 2018</h3></div>
+<p>John Ehlers&rsquo; recursive median filter and oscillator indicators described in his article in this issue (&ldquo;Recursive Median Filters&rdquo;) can be easily implemented in NeuroShell Trader using NeuroShell Trader&rsquo;s ability to call external dynamic linked libraries. Dynamic linked libraries can be written in C, C++, or Power Basic.</p> 
+<p>After moving the EasyLanguage code given in Ehlers&rsquo; article to your preferred compiler and creating a DLL, you can insert the resulting indicators as follows:</p>
+<ol><li>Select &ldquo;new indicator&rdquo; from the <em>insert</em> menu.</li>
+<li>Choose the <em>external program &amp; library calls</em> category.</li>
+<li>Select the appropriate <em>external DLL call</em> indicator.</li>
+<li>Setup the parameters to match your DLL.</li>
+<li>Select the <em>finished</em> button.</li></ol>
+<p>Similar filter and cycle-based indicators can also be created using indicators found in John Ehlers&rsquo; Cybernetic and MESA91 NeuroShell Trader Add-ons to the NeuroShell Trader program.</p> 
+<p>Users of  NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p>A sample chart is shown in Figure 4.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/03/images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: NEUROSHELL TRADER. This sample NeuroShell Trader chart displays the recursive median filter and recursive median oscillator.</p></div>
+
+<p class="authorTips">&mdash;Marge Sherald, Ward Systems Group, Inc.<br>
+301 662-7950, <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+WEALTH-LAB: MARCH 2018</h3></div>
+In &ldquo;Recursive Median Filters&rdquo; in this issue, author John Ehlers presents two new indicators. The <em>recursive median filter</em> ignores the spiking-types of the price noise. The <em>recursive median oscillator</em> has less lag and a faster response to the larger moves in the price data. 
+A sample chart showing the oscillator on a daily SPY chart is shown in Figure 5.
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/03/images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: WEALTH-LAB. The recursive median oscillator is applied to a daily chart of the SPY (SPDR S&amp;P 500 ETF).</p></div>
+ 
+<p>After updating the TASCIndicators library to v2018.02 (or higher), the RMF and RMO indicators can be found under the TASC Magazine Indicators group. You can plot them on the chart or use them as an entry or exit condition in a rule-based strategy, all without having to program any code yourself.</p>
+<p>The C# strategy code provided here will help you plot the indicators on a chart.</p> 
+<pre>
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Drawing;
+using WealthLab;
+using WealthLab.Indicators;
+using TASCIndicators;
+
+namespace WealthLab.Strategies
+{
+	public class TASC201803: WealthScript
+	{
+		private StrategyParameter slider1;
+		private StrategyParameter slider2;
+		private StrategyParameter slider3;
+		private StrategyParameter slider4;
+		private StrategyParameter slider5;
+
+		public TASC201803()
+		{
+			slider1 = CreateParameter(&quot;RMO LPPeriod&quot;,16,2,300,20);
+			slider2 = CreateParameter(&quot;RMO HPPeriod&quot;,40,2,300,20);
+			slider3 = CreateParameter(&quot;RMO Median&quot;,5,2,300,20);
+			
+			slider4 = CreateParameter(&quot;RSI Period&quot;,14,2,200,20);
+			slider5 = CreateParameter(&quot;EMA(RSI) Period&quot;,16,2,200,20);
+		}
+		
+		protected override void Execute()
+		{
+			var rmf = RMF.Series( Close, slider1.ValueInt,slider3.ValueInt);
+			var rmo = RMO.Series( Close, slider1.ValueInt,slider2.ValueInt,slider3.ValueInt);
+			var rsi = EMA.Series(RSI.Series( Close, slider4.ValueInt),slider5.ValueInt,EMACalculation.Modern) / 100d;
+
+			ChartPane paneRSI = CreatePane( 30,false,true);
+			ChartPane paneRMO = CreatePane( 30,false,true);
+			HideVolume();
+			PlotSeries( paneRSI,rsi,Color.Blue,LineStyle.Solid,2);
+			PlotSeries( paneRMO,rmo,Color.Red,LineStyle.Solid,2);
+			PlotSeries( PricePane, rmf,Color.Black,LineStyle.Solid,2);
+		}
+	}
+}
+</pre>
+
+
+<p class="authorTips">&mdash;Eugene (Gene Geren), Wealth-Lab team<br>
+MS123, LLC<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+NINJATRADER: MARCH 2018</h3></div>
+<p>In &ldquo;Recursive Median Filters&rdquo; in this issue, author John Ehlers discusses the recursive median filter and recursive median oscillator. We are making available for download the RecursiveMedianFilter and RecursiveMedianOscillator indicators at the following links for NinjaTrader 8 and for NinjaTrader 7:</p>
+
+<ul style="list-style-type:none;"><li><strong>NinjaTrader 8:</strong> <a href="https://www.ninjatrader.com/SC/March2018SCNT8.zip" target="_parent">www.ninjatrader.com/SC/March2018SCNT8.zip</a></li>
+<li><strong>NinjaTrader 7:</strong> <a href="https://www.ninjatrader.com/SC/March2018SCNT7.zip" target="_parent">www.ninjatrader.com/SC/March2018SCNT7.zip</a></li></ul>
+
+<p>Once the file is downloaded, you can import the indicator into NinjaTader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import into NinjaTrader 7, from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicators&rsquo; source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control center window and selecting the RecursiveMedianFilter and RecursiveMedianOscillator files. You can review the indicators&rsquo; source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the control center window and selecting the RecursiveMedianFilter and RecursiveMedianOscillator files.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted. to provide with the highest performance possible.</p>
+<p>A sample chart with the oscillator is shown in Figure 6.</p> 
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/03/images/TT-Ninjatrader.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: NINJATRADER. The RecursiveMedianOscillator is displayed along with the RSI on a daily chart of the SPY for 2017, showing the faster response to fast movement over the RSI. </p></div>
+<p class="authorTips">&mdash;Raymond Deux &amp; Jim Dooms<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Quantacula.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+QUANTACULA: MARCH 2018</h3></div>
+<p>In &ldquo;Recursive Median Filters&rdquo; in this issue, author John Ehlers introduces two indicators: the recursive median filter (RMF) and the recursive median oscillator (RMO).</p> 
+<p>RMF uses an exponential moving average of the five-period median of the source data to produce a smoothing of the signal while avoiding spikes. The RMO is an oscillator built along the same principles.</p> 
+<p>We&rsquo;ve included both indicators at Quantacula.com in our free <em>Stocks &amp; Commodities Extensions</em> package that you can obtain by following the <em>MarketPlace</em> link on <a href="https://www.quantacula.com" target="_parent">www.quantacula.com</a>.</p>
+<p>Once you acquire the extension, you can use the RMF and RMO indicators for models that you build on Quantacula.com, or in our Quantacula Studio desktop product. In Figure 7, we&rsquo;ve mocked up a simple crossover model using a fast (50-period) RMF and a slow (200-period) RMF. The model was created using Web Studio at www.quantacula.com.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/03/images/TT-Quantacula1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: Quantacula, DRAG-AND-DROOP BUILDING BLOCKS. Here is an example RMF trading model built using drag-and-drop building blocks on <a href="https://www.quantacula.com" target="_parent">www.quantacula.com</a>.</p></div>
+<p>We backtested this model (Figure 8) on the Nasdaq 100 stocks using our Q-Premium data. This data contains the historical symbols of the Nasdaq 100, even for companies that have been delisted. It intelligently responds to historical changes to the index over time, producing an accurate backtest result, free of survivorship bias. We chose a starting capital of $100,000 with 1.1 margin, and 5% of equity per position.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/03/images/TT-Quantacula2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: Quantacula, BACKTEST REPORT. Here is a sample backtest report for an RMF crossover model run against the Nasdaq 100 stocks.</p></div>
+<p>Over a 10-year period, the model returned an annualized percentage return (APR) of 21.61%, compared to 6.69% annualized for the S&amp;P 500 benchmark for the same period. Furthermore, the trend-following nature of this crossover model reduced drawdown. The model experienced a maximum drawdown of 23.03%, while the benchmark experienced a maximum drawdown of 52.75%.</p>
+<p class="authorTips">&mdash;Dion Kurczek, Quantacula LLC<br>
+<a href="mailto:info@quantacula.com">info@quantacula.com</a><br>
+<a href="https://www.quantacula.com" target="_parent">www.quantacula.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Amibroker.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+AMIBROKER: MARCH 2018</h3></div>
+<p>In &ldquo;Recursive Median Filters&rdquo; in this issue, author John Ehlers presents a very nice oscillator based on a median filter. The AmiBroker code listing shown here provides a ready-to-use formula to implement the oscillator. To adjust the parameters, right-click on the chart and select <em>parameters</em> from the context menu.</p>
+<pre>
+// Recursive Median Oscillator 
+Version( 6.0 ); 
+
+LPPeriod = Param(&quot;LPPeriod&quot;, 12 ); 
+HPPeriod = Param(&quot;HPPeriod&quot;, 30 ); 
+
+PI = 3.1415926; 
+
+angle = 2 * PI / LPPeriod; 
+alpha1 = ( cos( angle ) + sin( angle ) - 1 )/cos( angle ); 
+
+mp = Median( Close, 5 ); 
+
+rm = AMA( mp, alpha1 ); 
+
+angle2 = 0.707 * 2 * PI / HPPeriod; 
+alpha2 = ( cos( angle2 ) + sin( angle2 ) - 1 ) / cos( angle2 ); 
+
+b0 = ( 1 - alpha2 / 2 ) * ( 1 - alpha2 / 2 ); 
+b1 = - 2 * b0; 
+b2 = b0; 
+a1 = 2 * ( 1 - alpha2 ); 
+a2 = - ( 1 - alpha2 ) * ( 1 - alpha2 ); 
+
+// recursive second order filter 
+RMO = IIR( rm, b0, a1, b1, a2, b2 ); 
+
+Plot( RMO, &quot;RMO&quot; + _PARAM_VALUES(), colorRed ); 
+Plot( 0, &quot;&quot;, colorBlue );
+</pre>
+<p>A sample chart implementing the formula is shown in Figure 9.</p> 
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/03/images/TT-Amibroker.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: AMIBROKER. Shown here is a daily chart of the S&amp;P 500 in the upper pane, with the recursive median oscillator in the lower pane, replicating the chart from John Ehlers&rsquo; article in this issue.</p></div>
+<p class="authorTips">&mdash;Tomasz Janeczko, AmiBroker.com<br>
+<a href="https://www.amibroker.com" target="_parent">www.amibroker.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+TRADERSSTUDIO: MARCH 2018</h3></div>
+<p>The TradersStudio code based on John Ehlers&rsquo; article in this issue, &ldquo;Recursive Median Filters,&rdquo; is provided at <a href="https://www.TradersEdgeSystems.com/traderstips.htm" target="_parent">www.TradersEdgeSystems.com/traderstips.htm</a> as well as below.</p> 
+<p>Figure 10 shows the recursive median (RM) and recursive median oscillator (RMO) indicators on a chart of the S&amp;P 500 futures contract (SP) during part of 2013.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/03/images/TT-Tradersstudio.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 10: TRADERSSTUDIO. Here, the RM (recursive median) and RMO (recursive median oscillator) indicators are shown on a chart of the S&amp;P 500 futures contract (SP) during 2013.</p></div>
+
+<p>The TradersStudio code is shown here:</p>
+<pre>
+'Recursive Median Filters
+'Author: John Ehlers, TASC March 2018
+'Coded by: Richard Denning, 1/11/2018
+'www.TradersEdgeSystems.com
+
+Function EHLERS_RM(Price As BarArray,LPPeriod)
+    Dim alpha1
+    Dim n
+    Dim RM As BarArray
+    Dim MP As Array
+    ReDim(MP,5)
+    
+    If BarNumber=FirstBar Then
+        'Price = C
+        'LPPeriod = 12
+        alpha1 = 0
+        RM = 0
+    End If
+
+    'Set EMA constant from LPPeriod input
+    alpha1 = (Cos(DegToRad(360/LPPeriod))+Sin(DegToRad(360/LPPeriod))-1)/Cos(DegToRad(360/LPPeriod))
+    
+    'Recursive Median
+    'EMA Of 5 bar Median filter
+    For n=0 To 4
+        MP[n]=Price[n]
+    Next
+    RM = alpha1*Median(MP) + (1-alpha1)*RM[1]
+EHLERS_RM = RM
+End Function
+'----------------------------------------------
+'Indicator plot for RM function
+Sub EHLERS_RM_IND(LPPeriod)
+     plot1(EHLERS_RM(C,LPPeriod))
+End Sub
+'-----------------------------------------------
+Function EHLERS_RMO(Price As BarArray,LPPeriod,HPPeriod)
+    Dim alpha2
+    Dim RM As BarArray
+    Dim RMO As BarArray
+    
+    If BarNumber=FirstBar Then
+        'Price = C
+        'LPPeriod = 12
+        'HPPeriod = 30
+        alpha2 = 0
+        RM = 0
+        RMO = 0
+    End If
+    
+    'Get recursive median fllter
+    RM = EHLERS_RM(Price,LPPeriod)
+    
+    'Highpass filter cyclic components whose periods are shorter than HPPeriod to make an oscillator
+    alpha2 = (Cos(DegToRad(.707*360/HPPeriod))+Sin(DegToRad(.707*360/HPPeriod)-1))/Cos(DegToRad(.707*360/HPPeriod))
+    RMO = (1-alpha2/2)*(1-alpha2/2)*(RM-2*RM[1]+RM[2])+2*(1-alpha2)*RMO[1]-(1-alpha2)*(1-alpha2)*RMO[2]
+EHLERS_RMO = RMO 
+End Function
+'-----------------------------------------------
+Sub EHLERS_RMO_IND(LPPeriod,HPPeriod)
+    plot1(EHLERS_RMO(C,LPPeriod,HPPeriod))
+    plot2(0)
+End Sub
+'-----------------------------------------------
+</pre>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for TradersStudio</p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Updata.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+UPDATA: MARCH 2018</h3></div>
+<p>Our Traders&rsquo; Tip this month is based on the article &ldquo;Recursive Median Filters&rdquo; in this issue by John Ehlers.</p> 
+<p>The author&rsquo;s line in digital signal processing extends to removing extreme spikes in financial data, but utilizing the median average value in the recursive filter calculations. By removing these extremities, the actual extremities that occur in the underlying data may be better determined. Two sets of code based on this premise are provided by the author in his article, one for a median filter and one for an oscillator.</p>
+<p>The Updata code based on this article is now in the Updata library and may be downloaded by clicking the <em>custom</em> menu and <em>indicator library</em>. Those who cannot access the library due to a firewall may paste the code shown here into the Updata custom editor and save it.</p> 
+<pre>
+Median Filter
+PARAMETER &quot;Period&quot; #PERIOD=12  
+NAME &quot;Recursive Median Filter&quot; &quot;&quot; 
+&#64;ALPHA=0
+&#64;RM=0 
+FOR #CURDATE=0 TO #LASTDATE
+    &#64;ALPHA=(-1+COS(2*CONST_PI/12)+SIN(2*CONST_PI/12))/COS(2*CONST_PI/12)
+    &#64;RM=&#64;ALPHA*0.5*(PHIGH(Close,5)+PLOW(Close,5))+(1-&#64;ALPHA)*&#64;RM
+    &#64;PLOT=&#64;RM   
+NEXT
+
+'Recursive Median Osc
+PARAMETER &quot;Period&quot; #PERIOD=12 
+NAME &quot;Recursive Median Osc&quot; &quot;&quot; 
+&#64;ALPHA=0 
+&#64;ALPHA2=0
+&#64;RM=0
+&#64;RMO=0 
+FOR #CURDATE=0 TO #LASTDATE
+    &#64;ALPHA=(-1+COS(2*CONST_PI/12)+SIN(2*CONST_PI/12))/COS(2*CONST_PI/12)
+    &#64;RM=&#64;ALPHA*0.5*(PHIGH(Close,5)+PLOW(Close,5))+(1-&#64;ALPHA)*&#64;RM
+    &#64;ALPHA2=(-1+COS(0.707*2*CONST_PI/12)+SIN(0.707*2*CONST_PI/12))/COS(0.707*2*CONST_PI/12) 
+    &#64;RMO=(1-&#64;ALPHA2/2)*(1-&#64;ALPHA2/2)*(&#64;RM-2*HIST(&#64;RM,1)+HIST(&#64;RM,2))+2*(1-&#64;ALPHA2)*HIST(&#64;RMO,1)-EXPBASE(1-&#64;ALPHA2,2)*HIST(&#64;RMO,2)
+    &#64;PLOT=&#64;RMO   
+NEXT
+</pre>
+
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/03/images/TT-Updata.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 11: UPDATA. Here, the daily recursive median filter is applied to the daily SPY.</p></div>
+<p class="authorTips">&mdash;Updata support team<br>
+<a href="mailto:support@updata.co.uk">support@updata.co.uk</a><br>
+<a href="https://www.updata.co.uk" target="_parent">www.updata.co.uk</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item11">
+
+ <h3 class="newsTitle grey_blue">
+MICROSOFT EXCEL: MARCH 2018</h3></div>
+<p>John Ehlers&rsquo; article in this issue, &ldquo;Recursive Median Filters,&rdquo; demonstrates the unique capabilities of recursive median filters.</p>
+<p>In Figure 12, I defined the recursive median filter as Ehlers defines it in his article, and I&rsquo;ve plotted it on a price chart. You can see its smooth tracking and minimal jitter.</p> 
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2018/03/images/TT-Excel.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 12: EXCEL. This sample chart shows the recursive median filter plotted on price. The subcharts are plots of the recursive median oscillator and an unfiltered RSI.</p></div>
+
+<p>Subchart 2 in Figure 12 is the oscillator Ehlers discusses in his article that is derived from the recursive median filter. Subchart 3 shows an unfiltered RSI.</p> 
+The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2018/03/images/code/RecursiveMedianFilters.xlsm">here</a>. To successfully download it, follow these steps:
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2018/03/images/code/RecursiveMedianFilters.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+
+<p style="text-align:center; color:#FFF; background-color:#F00; padding:1em;"><a style="color:#fff;" href="https://traders.com/files/Tips-ExcelFix.html" target="_parent"><strong>A fix for previous Excel spreadsheets, required due to Yahoo modifications, can be found here: https://traders.com/files/Tips-ExcelFix.html</strong></a></p>
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the March 2018 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2018, Technical Analysis, Inc.</p>
+
+</body>
+</html>

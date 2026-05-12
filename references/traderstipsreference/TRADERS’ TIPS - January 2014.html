@@ -1,0 +1,1714 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "https://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="https://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+<meta name="Author" content="Technical Analysis, Inc." />
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine." />
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - January 2014</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc." />
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2012.css" rel="stylesheet" type="text/css" />
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">January 2014</h1>
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div id="top"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2014/01/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail"/>
+  <p class="lead"> For this month&rsquo;s Traders&rsquo; Tips, the focus is mainly
+    John Ehlers&rsquo; article in this issue, &ldquo;Predictive And Successful
+    Indicators.&rdquo;  Here we present the January 2014 Traders&rsquo; Tips
+    code with possible implementations in various software. </p>
+  <p class="lead">Code for TradeStation is already provided in Ehlers&rsquo; article.
+    Subscribers will find that code at the Subscriber Area of our website, www.Traders.com.
+    (Click on &ldquo;Article Code&rdquo; from the S&amp;C menu.) Presented here
+    is an overview of possible implementations for other software. </p>
+  <p class="lead">Traders&rsquo; Tips code is provided to help the reader implement
+    a selected technique from an article in this issue. The entries are contributed
+    by various software developers or programmers for software that is capable
+    of customization. </p>
+  <br class="clearfloat" />
+</div>
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TRADESTATION: JANUARY 2014 TRADERS&rsquo; TIPS CODE</a></li>
+  <li><a href="#item2"><span style="text-transform:lowercase;">e</span>SIGNAL:
+      JANUARY 2014 TRADERS&rsquo; TIPS CODE</a></li>
+  <li><a href="#item3">THINKORSWIM: JANUARY 2014 TRADERS&rsquo; TIPS CODE</a></li>
+  <li><a href="#item4">METASTOCK: JANUARY 2014 TRADERS&rsquo; TIPS CODE</a></li>
+  <li><a href="#item5">WEALTH-LAB: JANUARY 2014 TRADERS&rsquo; TIPS CODE</a></li>
+  <li><a href="#item6">AMIBROKER: JANUARY 2014 TRADERS&rsquo; TIPS CODE</a></li>
+  <li><a href="#item7">NEUROSHELL TRADER: JANUARY 2014 TRADERS&rsquo; TIPS CODE</a></li>
+  <li><a href="#item8">AIQ: JANUARY 2014 TRADERS&rsquo; TIPS CODE</a></li>
+  <li><a href="#item9">TRADERSSTUDIO: JANUARY 2014 TRADERS&rsquo; TIPS CODE</a></li>
+  <li><a href="#item10">NINJATRADER: JANUARY 2014 TRADERS&rsquo; TIPS CODE</a></li>
+  <li><a href="#item11">UPDATA: JANUARY 2014 TRADERS&rsquo; TIPS CODE</a></li>
+  <li><a href="#item12">TRADECISION: JANUARY 2014 TRADERS&rsquo; TIPS CODE</a></li>
+  <li><a href="#item13">MICROSOFT EXCEL: JANUARY 2014 TRADERS&rsquo; TIPS CODE</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/TradeStation.gif" alt="logo" />
+  <h3 class="newsTitle grey_blue"> TRADESTATION: JANUARY 2014 TRADERS&rsquo; TIPS
+    CODE</h3>
+</div>
+<p>In &ldquo;Predictive And Successful Indicators&rdquo; in this issue, author
+  John Ehlers describes a new method for smoothing market data while reducing
+  the lag that most other smoothing techniques have. Ehlers has provided some
+  TradeStation code in his article for several indicators and describes an approach
+  for creating a strategy. For convenience, we will make the same code available
+  at our EasyLanguage support forum as well as an example strategy based on Ehlers&rsquo; description.</p>
+<p>To download the EasyLanguage code, please visit our TradeStation and EasyLanguage
+  support forum. The code can be found here: <a target="_parent" href="https://www.tradestation.com/TASC-2014">www.tradestation.com/TASC-2014</a>.
+  The ELD filename is &ldquo;_TASC_PredictiveIndicators.ELD.&rdquo; For more
+  information about EasyLanguage in general, please see <a target="_parent" href="https://www.tradestation.com/EL-FAQ">www.tradestation.com/EL-FAQ</a>.</p>
+<p>The code is also shown below.</p>
+<pre>_Ehlers_SuperSmoother Filter (Indicator)
+
+variables:
+	a1( 0 ), 
+	b1( 0 ), 
+	c1( 0 ), 
+	c2( 0 ), 
+	c3( 0 ),
+	Filt( 0 ) ; 
+
+a1 = ExpValue( -1.414 * 3.14159 / 10 ) ;
+b1 = 2 * a1 * Cosine( 1.414 * 180 / 10 ) ;
+c2 = b1 ;
+c3 = -a1 * a1 ;
+c1 = 1 - c2 - c3 ;
+Filt = c1 * ( Close + Close[1] ) 
+	/ 2 + c2 * Filt[1] + c3 * Filt[2] ;
+
+Plot1( Filt, &quot;SuperSmooth&quot; ) ;
+
+
+_Ehlers_Roofing Filter (Indicator)
+
+variables:
+	alpha1( 0 ), 
+	HP( 0 ), 
+	a1( 0 ), 
+	b1( 0 ), 
+	c1( 0 ), 
+	c2( 0 ), 
+	c3( 0 ),
+	Filt( 0 ) ; 
+	
+alpha1 = ( Cosine( .707 * 360 / 48 ) 
+	+ Sine ( .707 * 360 / 48 ) - 1 )
+	/ Cosine( .707 * 360 / 48 ) ;
+	
+HP = ( 1 - alpha1 / 2 ) * ( 1 - alpha1 / 2 )
+	* ( Close - 2 * Close[1] + Close[2] ) 
+	+ 2 * ( 1 - alpha1 ) * HP[1] - ( 1 - alpha1 ) 
+	* ( 1 - alpha1 ) * HP[2] ;
+
+a1 = ExpValue( -1.414 * 3.14159 / 10 ) ;
+b1 = 2 * a1 * Cosine( 1.414 * 180 / 10 ) ;
+c2 = b1 ;
+c3 = -a1 * a1 ;
+c1 = 1 - c2 - c3 ;
+Filt = c1 *( HP + HP[1] ) / 2 
+	+ c2 * Filt[1] + c3 * Filt[2] ;	
+
+Plot1( Filt, &quot;SS Filter&quot; ) ;
+Plot2( 0, &quot;Zero Line&quot; ) ;
+
+
+_Ehlers_SuperSmoothStoch (Indicator)
+
+inputs:
+	Length( 20 ), 
+	OBLevel( .8 ), 
+	OSLevel( .2 ) ;
+		
+variables:
+	alpha1( 0 ), 
+	HP( 0 ), 
+	a1( 0 ), 
+	b1( 0 ), 
+	c1( 0 ), 
+	c2( 0 ), 
+	c3( 0 ),
+	Filt( 0 ), 
+	HighestC( 0 ), 
+	LowestC( 0 ), 
+	count( 0 ), 
+	Stoc( 0 ), 
+	MyStochastic( 0 ) ;
+
+alpha1 = ( Cosine( .707 * 360 / 48 ) 
+	+ Sine ( .707 * 360 / 48 ) - 1 )
+	/ Cosine( .707 * 360 / 48 ) ;
+	
+HP = ( 1 - alpha1 / 2 ) * ( 1 - alpha1 / 2 )
+	* ( Close - 2 * Close[1] + Close[2] ) 
+	+ 2 * ( 1 - alpha1 ) * HP[1] - ( 1 - alpha1 ) 
+	* ( 1 - alpha1 ) * HP[2] ;
+
+a1 = ExpValue( -1.414 * 3.14159 / 10 ) ;
+b1 = 2 * a1 * Cosine( 1.414 * 180 / 10 ) ;
+c2 = b1 ;
+c3 = -a1 * a1 ;
+c1 = 1 - c2 - c3 ;
+Filt = c1 *( HP + HP[1] ) / 2 
+	+ c2 * Filt[1] + c3 * Filt[2] ;
+
+HighestC = Filt ;
+LowestC = Filt ;
+
+For count = 0 to Length - 1 
+	begin
+	if Filt[count] &gt; HighestC then 
+		HighestC = Filt[count] ;
+	if Filt[count] &lt; LowestC then 
+		LowestC = Filt[count] ;
+	end;
+
+Stoc = ( Filt - LowestC ) / ( HighestC - LowestC ) ;
+MyStochastic = c1 * ( Stoc + Stoc[1] ) / 2 +
+	c2 * MyStochastic[1] + c3 * MyStochastic[2] ;
+
+Plot1( MyStochastic, &quot;Stoch&quot; ) ;
+Plot2( OBLevel, &quot;OverBought&quot; ) ;
+Plot6( OSLevel, &quot;OverSold&quot; ) ;
+
+
+_Ehlers_SuperSmoothStoch (Strategy)
+
+inputs:
+	Length( 20 ), 
+	OBLevel( .8 ), 
+	OSLevel( .2 ) ;
+		
+variables:
+	alpha1( 0 ), 
+	HP( 0 ), 
+	a1( 0 ), 
+	b1( 0 ), 
+	c1( 0 ), 
+	c2( 0 ), 
+	c3( 0 ),
+	Filt( 0 ), 
+	HighestC( 0 ), 
+	LowestC( 0 ), 
+	count( 0 ), 
+	Stoc( 0 ), 
+	MyStochastic( 0 ) ;
+
+alpha1 = ( Cosine( .707 * 360 / 48 ) 
+	+ Sine ( .707 * 360 / 48 ) - 1 )
+	/ Cosine( .707 * 360 / 48 ) ;
+	
+HP = ( 1 - alpha1 / 2 ) * ( 1 - alpha1 / 2 )
+	* ( Close - 2 * Close[1] + Close[2] ) 
+	+ 2 * ( 1 - alpha1 ) * HP[1] - ( 1 - alpha1 ) 
+	* ( 1 - alpha1 ) * HP[2] ;
+
+a1 = ExpValue( -1.414 * 3.14159 / 10 ) ;
+b1 = 2 * a1 * Cosine( 1.414 * 180 / 10 ) ;
+c2 = b1 ;
+c3 = -a1 * a1 ;
+c1 = 1 - c2 - c3 ;
+Filt = c1 *( HP + HP[1] ) / 2 
+	+ c2 * Filt[1] + c3 * Filt[2] ;
+
+HighestC = Filt ;
+LowestC = Filt ;
+
+For count = 0 to Length - 1 
+	begin
+	if Filt[count] &gt; HighestC then 
+		HighestC = Filt[count] ;
+	if Filt[count] &lt; LowestC then 
+		LowestC = Filt[count] ;
+	end;
+
+Stoc = ( Filt - LowestC ) / ( HighestC - LowestC ) ;
+MyStochastic = c1 * ( Stoc + Stoc[1] ) / 2 +
+	c2 * MyStochastic[1] + c3 * MyStochastic[2] ;
+
+if MyStochastic crosses over ObLevel then
+	SellShort next bar at Market 
+else if MyStochastic crosses under OsLevel then
+	Buy next bar at Market ;
+</pre>
+<p>A sample chart is shown in Figure 1. </p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2014/01/images/TT1-Tradestation.gif" alt="Image 1" class="shadow1" style="width: 610px;" />
+  <p class="figCaption">FIGURE 1: TRADESTATION. This daily chart of IBM shows
+    the indicators and strategy from John Ehlers&rsquo; article in this issue. </p>
+</div>
+<p><em>This article is for informational purposes. No type of trading or investment
+    recommendation, advice, or strategy is being made, given, or in any manner
+    provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;Doug McCrary<br />
+  TradeStation Securities, Inc.<br />
+  <a target="_parent" href="https://www.TradeStation.com">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item2"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo" />
+  <h3 class="newsTitle grey_blue"> eSIGNAL: JANUARY 2014 TRADERS&rsquo; TIPS
+    CODE</h3>
+</div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;ve provided the formulas
+  MESA_Stochastic_Indicator.efs, Roofing_Filter.efs, and SuperSmoother_Filter.efs,
+  based on the formulas described in John Ehlers&rsquo; article in this isuse, &ldquo;Predictive
+  And Successful Indicators.&rdquo;</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2014/01/images/TT2-eSignal.gif" alt="Image 1" class="shadow1" style="width: 610px;" />
+  <p class="figCaption">FIGURE 2: eSIGNAL, MESA STOCHASTIC</p>
+</div>
+<p>The MESA_Stochastic_Indicator study (Figure 2) contains one formula parameter, <em>length</em>,
+  which may be configured through the <em>edit chart</em> window (right-click
+  on <em>chart</em> and <em>select edit chart</em>). The roofing filter is shown
+  in Figure 3.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2014/01/images/TT3-eSignal.gif" alt="Image 1" class="shadow1" style="width: 610px;" />
+  <p class="figCaption">FIGURE 3: eSIGNAL, ROOFING FILTER</p>
+</div>
+<p>To discuss this study or download a complete copy of the formula code, please
+  visit the EFS Library Discussion Board forum under the Forums link from the
+  support menu at <a target="_parent" href="https://www.esignal.com">www.esignal.com</a> or visit
+  our EFS KnowledgeBase at <a target="_parent" href="https://www.esignal.com/support/kb/efs/">https://www.esignal.com/support/kb/efs/</a>.
+  The eSignal formula scripts (EFS) are also available for copying &amp; pasting
+  below.</p>
+<p><strong>MESA_Stochastic_Indicator.efs</strong></p>
+<pre>/*********************************
+Provided By:
+    Interactive Data Corporation (Copyright Â&copy; 2013)
+    All rights reserved. This sample eSignal Formula Script (EFS)
+    is for educational purposes only. Interactive Data Corporation
+    reserves the right to modify and overwrite this EFS file with
+    each new release.
+
+Description:
+    Stochastic Indicator by John F. Ehlers
+
+Formula Parameters:                     Default:
+Length                                  20
+
+Version:            1.00  11/07/2013
+
+Notes:
+    The related article is copyrighted material. If you are not a subscriber
+    of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+
+var fpArray = new Array();
+
+function preMain()
+{
+    setStudyTitle(&quot;MESA_Stochastic_Indicator&quot;);
+
+    setCursorLabelName(&quot;BandLine1&quot;, 0);
+    setCursorLabelName(&quot;BandLine2&quot;, 1);
+    setCursorLabelName(&quot;MyStochastic&quot;, 2);
+
+    setDefaultBarFgColor(Color.grey, 0);
+    setDefaultBarFgColor(Color.grey, 1);
+    setDefaultBarFgColor(Color.red, 2);
+
+    setDefaultBarThickness(1, 0);
+    setDefaultBarThickness(1, 1);
+    setDefaultBarThickness(2, 2);
+
+    setShowCursorLabel(false, 0);
+    setShowCursorLabel(false, 1);
+    setShowCursorLabel(true, 2);
+
+    var x = 0;
+
+    fpArray[x] = new FunctionParameter(&quot;fpLength&quot;, FunctionParameter.NUMBER);
+    with(fpArray[x++])
+    {
+        setName(&quot;Length&quot;);
+        setLowerLimit(2);
+        setDefault(20);
+    }
+}
+
+var bInit = false;
+var bVersion = null;
+
+var xHP = null;
+var xFilt = null;
+var xStoc = null;
+var xMyStochastic = null;
+
+var nBandLine1 = 0;
+var nBandLine2 = 0;
+
+function main(fpLength)
+{
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return;
+
+    if (!bInit)
+    {
+        xHP = efsInternal(&quot;Calc_HPSeries&quot;);
+        xFilt = efsInternal(&quot;Calc_FiltSeries&quot;, xHP);
+        xStoc = efsInternal(&quot;Calc_Stoc&quot;, xFilt, fpLength);
+        xMyStochastic = efsInternal(&quot;Calc_MyStochastic&quot;, xStoc);
+
+        nBandLine1 = 0.8;
+        nBandLine2 = 0.2;
+
+        bInit = true;
+    }
+
+    var nMyStochastic = xMyStochastic.getValue(0);
+
+    return [nBandLine1, nBandLine2, nMyStochastic];
+}
+
+var xClose = null;
+
+var alpha1 = 0;
+
+function Calc_HPSeries()
+{
+    if (getBarState() == BARSTATE_ALLBARS)
+    {
+        xClose = close();
+
+        alpha1 = (Math.cos((.707*360 / 48) * Math.PI / 180) +
+                  Math.sin((.707*360 / 48) * Math.PI / 180) - 1) /
+                  Math.cos((.707*360 / 48) * Math.PI / 180);
+    }
+
+    var nClose_0 = xClose.getValue(0);
+    var nClose_1 = xClose.getValue(-1);
+    var nClose_2 = xClose.getValue(-2);
+
+    if (nClose_1 == null || nClose_2 == null)
+        return;
+
+    var nHP_1 = ref(-1);
+    var nHP_2 = ref(-2);
+
+    var nReturnValue = (1 - alpha1 / 2) * (1 - alpha1 / 2) * (nClose_0 - 2 * nClose_1 + nClose_2)
+                       + 2 * (1 - alpha1) * nHP_1 - (1 - alpha1) * (1 - alpha1) * nHP_2;
+
+    return nReturnValue;
+}
+
+var a1 = 0;
+var b1 = 0;
+var c1 = 0;
+var c2 = 0;
+var c3 = 0;
+
+function Calc_FiltSeries(xHP)
+{
+    if (getBarState() == BARSTATE_ALLBARS)
+    {
+        a1 = Math.exp(-1.414 * 3.14159 / 10);
+        b1 = 2 * a1 * Math.cos((1.414 * 180 / 10)* Math.PI / 180);
+        c2 = b1;
+        c3 = -a1 * a1;
+        c1 = 1 - c2 - c3;
+    }
+
+    var nHP_0 = xHP.getValue(0);
+    var nHP_1 = xHP.getValue(-1);
+
+    if (nHP_0 == null || nHP_1 == null)
+        return;
+
+    var nFilt_1 = ref(-1);
+    var nFilt_2 = ref(-2);
+
+    var nReturnValue = c1 * (nHP_0 + nHP_1) / 2 + c2 * nFilt_1 + c3 * nFilt_2;
+
+    return nReturnValue;
+}
+
+function Calc_Stoc(xFilt, nLength)
+{
+    var nFilt = xFilt.getValue(0);
+    var nHighestC = xFilt.getValue(0);
+    var nLowestC = xFilt.getValue(0);
+
+    if (nHighestC == null || nLowestC == null || nFilt == null)
+        return;
+
+    for (var i = 0; i &lt; nLength; i++)
+    {
+       nFilt_i = xFilt.getValue(-i);
+
+       if (nFilt_i == null)
+           return;
+
+       if (nFilt_i &gt; nHighestC)
+           nHighestC =  nFilt_i;
+       if (nFilt_i &lt; nLowestC)
+           nLowestC =  nFilt_i;
+    }
+
+    var nReturnValue = (nFilt - nLowestC) / (nHighestC - nLowestC);
+
+    return nReturnValue;
+}
+
+function Calc_MyStochastic(xStoc)
+{
+    if (getBarState() == BARSTATE_ALLBARS)
+    {
+        a1 = Math.exp(-1.414 * 3.14159 / 10);
+        b1 = 2 * a1 * Math.cos((1.414 * 180 / 10)* Math.PI / 180);
+        c2 = b1;
+        c3 = -a1 * a1;
+        c1 = 1 - c2 - c3;
+    }
+
+    var nStoc_0 = xStoc.getValue(0);
+    var nStoc_1 = xStoc.getValue(-1);
+
+    if (nStoc_0 == null || nStoc_1 == null)
+        return;
+
+    var nMyStochastic_1 = ref(-1);
+    var nMyStochastic_2 = ref(-2);
+
+    var nReturnValue = c1 * (nStoc_0 + nStoc_1) / 2 + c2 * nMyStochastic_1 + c3 * nMyStochastic_2;
+
+    return nReturnValue;
+}
+
+function verify()
+{
+    var b = false;
+    if (getBuildNumber() &lt; 779)
+    {
+        drawTextAbsolute(5, 35, &quot;This study requires version 8.0 or later.&quot;,
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;,
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    }
+    else
+    {
+        b = true;
+    }
+
+    return b;
+}
+</pre>
+<p><strong>Roofing_Filter.efs</strong></p>
+<pre>/*********************************
+Provided By:  
+    Interactive Data Corporation (Copyright &copy; 2013) 
+    All rights reserved. This sample eSignal Formula Script (EFS)
+    is for educational purposes only. Interactive Data Corporation
+    reserves the right to modify and overwrite this EFS file with 
+    each new release. 
+
+Description:        
+    Roofing Filter by John F. Ehlers
+    
+Version:            1.00  11/07/2013
+
+Notes:
+    The related article is copyrighted material. If you are not a subscriber
+    of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+
+function preMain()
+{   
+    setStudyTitle(&quot;Roofing_Filter&quot;);
+
+    setCursorLabelName(&quot;ZeroLine&quot;, 0);
+    setCursorLabelName(&quot;Roofing_Filter&quot;, 1);
+    
+    setDefaultBarFgColor(Color.grey, 0);
+    setDefaultBarFgColor(Color.red, 1);
+
+    setDefaultBarThickness(1, 0);
+    setDefaultBarThickness(2, 1);
+
+    setShowCursorLabel(false, 0);
+    setShowCursorLabel(true, 1);
+}
+
+var bInit = false;
+var bVersion = null;
+
+var xHP = null;
+var xFilt = null;
+
+function main() 
+{
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return;
+
+    if (!bInit)
+    {                   
+        xHP = efsInternal(&quot;Calc_HPSeries&quot;);
+        xFilt = efsInternal(&quot;Calc_FiltSeries&quot;, xHP);
+
+        bInit = true;
+    }
+
+    var nZeroLine = 0;
+
+    var nFilt = xFilt.getValue(0);
+
+    return [nZeroLine, nFilt];
+}
+
+var xClose = null;
+
+var alpha1 = 0;
+
+function Calc_HPSeries()
+{
+    if (getBarState() == BARSTATE_ALLBARS)
+    {
+        xClose = close();
+
+        alpha1 = (Math.cos((.707*360 / 48) * Math.PI / 180) + 
+                  Math.sin((.707*360 / 48) * Math.PI / 180) - 1) / 
+                  Math.cos((.707*360 / 48) * Math.PI / 180);
+    } 
+
+    var nClose_0 = xClose.getValue(0);
+    var nClose_1 = xClose.getValue(-1);
+    var nClose_2 = xClose.getValue(-2);
+    
+    if (nClose_1 == null || nClose_2 == null)
+        return; 
+    
+    var nHP_1 = ref(-1);
+    var nHP_2 = ref(-2);   
+
+    var nReturnValue = (1 - alpha1 / 2) * (1 - alpha1 / 2) * (nClose_0 - 2 * nClose_1 + nClose_2)
+                       + 2 * (1 - alpha1) * nHP_1 - (1 - alpha1) * (1 - alpha1) * nHP_2;
+
+    return nReturnValue;
+}
+
+var a1 = 0;
+var b1 = 0;
+var c1 = 0;
+var c2 = 0;
+var c3 = 0;
+
+function Calc_FiltSeries(xHP)
+{
+    if (getBarState() == BARSTATE_ALLBARS)
+    {
+        a1 = Math.exp(-1.414 * 3.14159 / 10);
+        b1 = 2 * a1 * Math.cos((1.414 * 180 / 10)* Math.PI / 180);
+        c2 = b1;
+        c3 = -a1 * a1;
+        c1 = 1 - c2 - c3;
+    } 
+
+    var nHP_0 = xHP.getValue(0);
+    var nHP_1 = xHP.getValue(-1);
+
+    if (nHP_0 == null || nHP_1 == null)
+        return; 
+
+    var nFilt_1 = ref(-1);
+    var nFilt_2 = ref(-2);
+
+    var nReturnValue = c1 * (nHP_0 + nHP_1) / 2 + c2 * nFilt_1 + c3 * nFilt_2;
+
+    return nReturnValue;
+}
+
+function verify() 
+{
+    var b = false;
+    if (getBuildNumber() &lt; 779) 
+    {
+        drawTextAbsolute(5, 35, &quot;This study requires version 8.0 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else 
+    {
+        b = true;
+    }
+
+    return b;
+}
+</pre>
+<p><strong>SuperSmoother_Filter.efs</strong></p>
+<pre>/*********************************
+Provided By:  
+    Interactive Data Corporation (Copyright &copy; 2013) 
+    All rights reserved. This sample eSignal Formula Script (EFS)
+    is for educational purposes only. Interactive Data Corporation
+    reserves the right to modify and overwrite this EFS file with 
+    each new release. 
+
+Description:        
+    The Super Smoother Filter by John F. Ehlers
+    
+Version:            1.00  11/07/2013
+
+Notes:
+    The related article is copyrighted material. If you are not a subscriber
+    of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+
+function preMain()
+{   
+    setStudyTitle(&quot;SuperSmoother_Filter&quot;);
+}
+
+var bInit = false;
+var bVersion = null;
+
+var xFilt = null;
+
+function main() 
+{
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return;
+
+    if (!bInit)
+    {                   
+        xFilt = efsInternal(&quot;Calc_FiltSeries&quot;);
+
+        bInit = true;
+    }
+
+    var nFilt = xFilt.getValue(0);
+
+    return nFilt;
+}
+
+var xClose = null;
+
+var a1 = 0;
+var b1 = 0;
+var c1 = 0;
+var c2 = 0;
+var c3 = 0;
+
+function Calc_FiltSeries()
+{
+    if (getBarState() == BARSTATE_ALLBARS)
+    {
+        xClose = close();
+
+        a1 = Math.exp(-1.414 * 3.14159 / 10);
+        b1 = 2 * a1 * Math.cos((1.414 * 180 / 10) * Math.PI / 180);
+        c2 = b1;
+        c3 = -a1 * a1;
+        c1 = 1 - c2 - c3;
+    } 
+
+    var nClose_0 = xClose.getValue(0);
+    var nClose_1 = xClose.getValue(-1);
+
+    if (nClose_1 == null)
+        return; 
+
+    var nFilt_1 = ref(-1);
+    var nFilt_2 = ref(-2);  
+
+    var nReturnValue = c1 * (nClose_0 + nClose_1) / 2 + c2 * nFilt_1 + c3 * nFilt_2;
+
+    return nReturnValue;
+}
+
+function verify() 
+{
+    var b = false;
+    if (getBuildNumber() &lt; 779) 
+    {
+        drawTextAbsolute(5, 35, &quot;This study requires version 8.0 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else 
+    {
+        b = true;
+    }
+
+    return b;
+}
+</pre>
+<p class="authorTips">&mdash;Jason Keck<br />
+  eSignal, an Interactive Data company<br />
+  800 779-6555, <a target="_parent" href="https://www.eSignal.com">www.eSignal.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item3"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Thinkorswim.gif" alt="logo" />
+  <h3 class="newsTitle grey_blue"> THINKORSWIM: JANUARY 2014 TRADERS&rsquo; TIPS
+    CODE</h3>
+</div>
+<p>In &ldquo;Predictive And Successful Indicators&rdquo; in this issue, author
+  John Ehlers presents another innovative way to eliminate noise from classic
+  indicators and introduces some new smoothing indicators. For thinkorswim users,
+  we have created three new studies and a strategy in our proprietary scripting
+  language, thinkScript. You can adjust the parameters within the <em>edit studies</em> window
+  to fine-tune your variables.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2014/01/images/TT4-Tos.gif" alt="Image 1" class="shadow1" style="width: 610px;" />
+  <p class="figCaption">FIGURE 4: THINKORSWIM. A sample chart of IBM displays
+    the roofing indicator and John Ehlers&rsquo; MESA Stochastic indicator described
+    in his article in this issue.</p>
+</div>
+<p>Thinkorswim users can find the formulas for each indicator below:</p>
+<ul>
+  <li>Strategy: <a target="_parent" href="https://tos.mx/Jiea7j">https://tos.mx/Jiea7j</a><br />
+    <br />
+    <ol>
+      <li>From our TOS Charts, Select &ldquo;<strong>Studies</strong>&rdquo; &rarr; &ldquo;Edit <strong>Studies</strong>&rdquo;. </li>
+      <li>Select the &ldquo;<strong>Strategy</strong>&rdquo; tab in the upper
+        left hand corner.</li>
+      <li>Select &ldquo;<strong>New</strong>&rdquo; in the lower left hand corner.</li>
+      <li>Name the strategy (i.e. EhlersStoch)</li>
+      <li>Click in the script editor window, remove &ldquo;<strong>addOrder(OrderType.BUY_AUTO,
+          no);</strong>&rdquo; and paste the following:
+        <pre>
+        
+script EhlersSuperSmootherFilter {
+    input price = close;
+
+    def a1 = Exp(-Double.Pi * Sqrt(2) / 10);
+    def coeff2 = 2 * a1 * Cos(Sqrt(2) * Double.Pi / 10);
+    def coeff3 = - Sqr(a1);
+    def coeff1 = 1 - coeff2 - coeff3;
+    def filt = coeff1 * (price + price[1]) / 2 + coeff2 * filt[1] + coeff3 * filt[2];
+
+    plot SuperSmootherFilter = filt;
+}
+
+script EhlersRoofingFilter {
+    input price = close;
+
+    def alpha1 = (Cos(Sqrt(2) * Double.Pi / 48) + Sin (Sqrt(2) * Double.Pi / 48) - 1) / Cos(Sqrt(2) * Double.Pi / 48);
+    def highpass = Sqr(1 - alpha1 / 2) * (price - 2 * price[1] + price[2]) + 2 * (1 - alpha1) * highpass[1] - Sqr(1 - alpha1) * highpass[2];
+
+    plot RoofingFilter = reference EhlersSuperSmootherFilter(highpass);
+}
+
+script EhlersStochastic {
+    input price = close;
+    input length = 20;
+    input over_bought = .8;
+    input over_sold = .2;
+    input mode = {default Predictive, Conventional};
+
+    def filt = reference EhlersRoofingFilter(price);
+    def highestP = Highest(filt, length);
+    def lowestP = Lowest(filt, length);
+    def stoch = if (highestP - lowestP) != 0 then (filt - lowestP) / (highestP - lowestP) else 0;
+
+    plot Stochastic = reference EhlersSuperSmootherFilter(stoch);
+    plot OverBought = over_bought;
+    plot OverSold = over_sold;
+    plot Buy;
+    plot Sell;
+    switch (mode) {
+    case Predictive:
+        Buy = if Stochastic crosses below OverSold then OverSold + .05 else Double.NaN;
+        Sell = if Stochastic crosses above OverBought then OverBought - .05 else Double.NaN;
+    case Conventional:
+        Buy = if Stochastic crosses above OverSold then OverSold + .05 else Double.NaN;
+        Sell = if Stochastic crosses below OverBought then OverBought - .05 else Double.NaN;
+    }
+}
+
+input price = close;
+input length = 20;
+input over_bought = .8;
+input over_sold = .2;
+input mode = {default Predictive, Conventional};
+
+def buy = reference EhlersStochastic(price, length, over_bought, over_sold, mode).Buy;
+def sell = reference EhlersStochastic(price, length, over_bought, over_sold, mode).Sell;
+
+AddOrder(OrderType.BUY_AUTO, !IsNaN(buy), tickColor = Color.UPTICK, arrowColor = Color.UPTICK, name = &quot;EhlersStochLE&quot;);
+AddOrder(OrderType.SELL_AUTO, !IsNaN(sell), tickColor = Color.DOWNTICK, arrowColor = Color.DOWNTICK, name = &quot;EhlersStochSE&quot;);
+        
+        </pre>
+      </li>
+    </ol>
+  </li>
+  <li>EhlersSuperSmootherFilter: <a target="_parent" href="https://tos.mx/uRNvch">https://tos.mx/uRNvch</a><br />
+    <br />
+    <ol>
+      <li>From our TOS Charts, Select &ldquo;<strong>Studies</strong>&rdquo; &rarr; &ldquo;<strong>Edit
+          Studies</strong>&rdquo;.</li>
+      <li>Select the &ldquo;<strong>Strategies</strong>&rdquo; tab in the upper
+        left hand corner.</li>
+      <li>Select &ldquo;<strong>New</strong>&rdquo; in the lower left hand corner.</li>
+      <li>Name the study (i.e. EhlersSuperSmootherFilter)</li>
+      <li>Click in the script editor window, remove &ldquo;<strong>plot data
+          = close;</strong>&rdquo; and paste the following:
+        <pre>
+
+input price = close;
+
+def a1 = Exp(-Double.Pi * Sqrt(2) / 10);
+def coeff2 = 2 * a1 * Cos(Sqrt(2) * Double.Pi / 10);
+def coeff3 = - Sqr(a1);
+def coeff1 = 1 - coeff2 - coeff3;
+def filt = coeff1 * (price + price[1]) / 2 + coeff2 * filt[1] + coeff3 * filt[2];
+
+plot SuperSmootherFilter = filt;
+SuperSmootherFilter.SetDefaultColor(GetColor(5));
+
+
+</pre>
+      </li>
+    </ol>
+  </li>
+  <li>EhlersRoofingFilter study: <a target="_parent" href="https://tos.mx/dcQPdE">https://tos.mx/dcQPdE</a><br />
+    <br />
+    <ol>
+      <li>From our TOS Charts, Select &ldquo;<strong>Studies</strong>&rdquo; &rarr; &ldquo;<strong>Edit
+          Studies</strong>&rdquo;.</li>
+      <li>Select the &ldquo;<strong>Strategies</strong>&rdquo; tab in the upper
+        left hand corner.</li>
+      <li>Select &ldquo;<strong>New</strong>&rdquo; in the lower left hand corner.</li>
+      <li>Name the study (i.e. EhlersRoofingFilter)</li>
+      <li>Click in the script editor window, remove &ldquo;<strong>plot data
+          = close;</strong>&rdquo; and paste the following:
+        <pre>
+
+script EhlersSuperSmootherFilter {
+    input price = close;
+
+    def a1 = Exp(-Double.Pi * Sqrt(2) / 10);
+    def coeff2 = 2 * a1 * Cos(Sqrt(2) * Double.Pi / 10);
+    def coeff3 = - Sqr(a1);
+    def coeff1 = 1 - coeff2 - coeff3;
+    def filt = coeff1 * (price + price[1]) / 2 + coeff2 * filt[1] + coeff3 * filt[2];
+
+    plot SuperSmootherFilter = filt;
+}
+
+declare lower;
+
+input price = close;
+
+def alpha1 = (Cos(Sqrt(2) * Double.Pi / 48) + Sin (Sqrt(2) * Double.Pi / 48) - 1) / Cos(Sqrt(2) * Double.Pi / 48);
+def highpass = Sqr(1 - alpha1 / 2) * (price - 2 * price[1] + price[2]) + 2 * (1 - alpha1) * highpass[1] - Sqr(1 - alpha1) * highpass[2];
+
+plot RoofingFilter = reference EhlersSuperSmootherFilter(highpass);
+plot ZeroLine = 0;
+
+RoofingFilter.SetDefaultColor(GetColor(5));
+ZeroLine.SetDefaultColor(GetColor(7));
+
+</pre>
+      </li>
+    </ol>
+  </li>
+  <li>EhlersStochastic study: <a target="_parent" href="https://tos.mx/yVruCn">https://tos.mx/yVruCn</a><br />
+    <br />
+    <ol>
+      <li>From our TOS Charts, Select &ldquo;<strong>Studies</strong>&rdquo; &rarr; &ldquo;<strong>Edit
+          Studies</strong>&rdquo;.</li>
+      <li>Select the &ldquo;<strong>Strategies</strong>&rdquo; tab in the upper
+        left hand corner.</li>
+      <li>Select &ldquo;<strong>New</strong>&rdquo; in the lower left hand corner.</li>
+      <li>Name the study (i.e. EhlersStochastic)</li>
+      <li>Click in the script editor window, remove &ldquo;<strong>plot data
+          = close;</strong>&rdquo; and paste the following:
+        <pre>
+
+script EhlersSuperSmootherFilter {
+    input price = close;
+
+    def a1 = Exp(-Double.Pi * Sqrt(2) / 10);
+    def coeff2 = 2 * a1 * Cos(Sqrt(2) * Double.Pi / 10);
+    def coeff3 = - Sqr(a1);
+    def coeff1 = 1 - coeff2 - coeff3;
+    def filt = coeff1 * (price + price[1]) / 2 + coeff2 * filt[1] + coeff3 * filt[2];
+
+    plot SuperSmootherFilter = filt;
+}
+
+script EhlersRoofingFilter {
+    input price = close;
+
+    def alpha1 = (Cos(Sqrt(2) * Double.Pi / 48) + Sin (Sqrt(2) * Double.Pi / 48) - 1) / Cos(Sqrt(2) * Double.Pi / 48);
+    def highpass = Sqr(1 - alpha1 / 2) * (price - 2 * price[1] + price[2]) + 2 * (1 - alpha1) * highpass[1] - Sqr(1 - alpha1) * highpass[2];
+
+    plot RoofingFilter = reference EhlersSuperSmootherFilter(highpass);
+}
+
+declare lower;
+
+input price = close;
+input length = 20;
+input over_bought = .8;
+input over_sold = .2;
+input mode = {default Predictive, Conventional};
+
+def filt = reference EhlersRoofingFilter(price);
+def highestP = Highest(filt, length);
+def lowestP = Lowest(filt, length);
+def stoch = if (highestP - lowestP) != 0 then (filt - lowestP) / (highestP - lowestP) else 0;
+
+plot Stochastic = reference EhlersSuperSmootherFilter(stoch);
+plot OverBought = over_bought;
+plot OverSold = over_sold;
+plot Buy;
+plot Sell;
+switch (mode) {
+case Predictive:
+    Buy = if Stochastic crosses below OverSold then OverSold + .05 else Double.NaN;
+    Sell = if Stochastic crosses above OverBought then OverBought - .05 else Double.NaN;
+case Conventional:
+    Buy = if Stochastic crosses above OverSold then OverSold + .05 else Double.NaN;
+    Sell = if Stochastic crosses below OverBought then OverBought - .05 else Double.NaN;
+}
+
+Stochastic.SetDefaultColor(GetColor(5));
+OverBought.SetDefaultColor(GetColor(7));
+OverSold.SetDefaultColor(GetColor(7));
+Buy.SetDefaultColor(Color.UPTICK);
+Buy.SetPaintingStrategy(PaintingStrategy.ARROW_UP);
+Buy.HideBubble();
+Sell.SetDefaultColor(Color.DOWNTICK);
+Sell.SetPaintingStrategy(PaintingStrategy.ARROW_DOWN);
+Sell.HideBubble();
+
+</pre>
+      </li>
+    </ol>
+  </li>
+</ul>
+<p class="authorTips">&mdash;thinkorswim<br />
+  A division of TD Ameritrade, Inc.<br />
+  <a target="_parent" href="https://www.thinkorswim.com">www.thinkorswim.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item4"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Metastock.gif" alt="logo" />
+  <h3 class="newsTitle grey_blue"> METASTOCK: JANUARY 2014 TRADERS&rsquo; TIPS
+    CODE</h3>
+</div>
+<p>John Ehlers&rsquo; article in this issue, &ldquo;Predictive And Successful
+  Indicators,&rdquo; presents the reader with three new indicators. The MetaStock
+  formulas for these indicators are given here:</p>
+<pre>
+
+SuperSmoother filter:
+a1:= Exp(-1.414 * 3.14159 / 10);
+b1:= 2*a1 * Cos(1.414*180 /10);
+c2:= b1;
+c3:= -a1 * a1;
+c1:= 1 - c2 - c3;
+c1 * (C + Ref(C, -1))/2 + c2*PREV + c3*Ref(PREV,-1)
+
+Roofing filter:
+alpha1:= (Cos(.707*360/48) + Sin(.707*360/48) -1)/Cos(.707*360/48);
+HP:= (1-alpha1/2)*(1-alpha1/2)*(C - Ref(2*C,-1) + Ref(C,-2)) + 
+2*(1-alpha1)*PREV - (1-alpha1)*(1-alpha1)*Ref(PREV,-1);
+a1:= Exp(-1.414 * 3.14159 / 10);
+b1:= 2*a1 * Cos(1.414*180 /10);
+c2:= b1;
+c3:= -a1 * a1;
+c1:= 1 - c2 - c3;
+c1 * (HP + Ref(HP, -1))/2 + c2*PREV + c3*Ref(PREV,-1)
+
+MESA Stochastic:
+alpha1:= (Cos(.707*360/48) + Sin(.707*360/48) -1)/Cos(.707*360/48);
+HP:= (1-alpha1/2)*(1-alpha1/2)*(C - Ref(2*C,-1) + Ref(C,-2)) + 
+2*(1-alpha1)*PREV - (1-alpha1)*(1-alpha1)*Ref(PREV,-1);
+a1:= Exp(-1.414 * 3.14159 / 10);
+b1:= 2*a1 * Cos(1.414*180 /10);
+c2:= b1;
+c3:= -a1 * a1;
+c1:= 1 - c2 - c3;
+filt:= c1 * (HP + Ref(HP, -1))/2 + c2*PREV + c3*Ref(PREV,-1);
+stoc:= (filt-LLV(filt,20))/(HHV(filt,20)-LLV(filt,20));
+c1 * (stoc + Ref(stoc, -1))/2 + c2*PREV + c3*Ref(PREV,-1);
+
+</pre>
+<p class="authorTips">&mdash;William Golson<br />
+  MetaStock Technical Support<br />
+  <a target="_parent" href="https://www.metastock.com">www.metastock.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item5"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo" />
+  <h3 class="newsTitle grey_blue"> WEALTH-LAB: JANUARY 2014 TRADERS&rsquo; TIPS
+    CODE</h3>
+</div>
+<p>In his article in this issue, &ldquo;Predictive And Successful Indicators,&rdquo; author
+  John Ehlers presents two new indicators: the <em>SuperSmoother filter</em>,
+  which is superior to moving averages for removing aliasing noise, and the <em>MESA
+  Stochastic</em> oscillator, a stochastic successor that removes the effect
+  of spectral dilation through the use of a roofing filter.</p>
+<p>To demonstrate the effects of using the new indicators, Ehlers introduces
+  a simple countertrend system that goes long when MESA Stochastic crosses below
+  the oversold value and reverses the trade by taking a short position when the
+  oscillator exceeds the overbought threshold.</p>
+<p>To execute the trading system that Ehlers includes in his article, Wealth-Lab
+  users need to install (or update) the latest version of our TASCIndicators
+  library from the Extensions section of our website if they haven&rsquo;t already
+  done so, and restart Wealth-Lab.</p>
+<p>A sample chart is shown in Figure 5.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2014/01/images/TT5-Wealthlab.gif" alt="Image 1" class="shadow1" style="width: 610px;" />
+  <p class="figCaption">FIGURE 5: WEALTH-LAB. Here is a sample Wealth-Lab 6 chart
+    illustrating application of the system&rsquo;s rules on a daily chart of
+    USD/CHF (US dollar to Swiss franc exchange rate).</p>
+</div>
+<pre>
+
+Wealth-Lab 6 strategy code (C#):
+
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Drawing;
+using WealthLab;
+using WealthLab.Indicators;
+using TASCIndicators;
+
+namespace WealthLab.Strategies
+{
+	public class Ehlers201401 : WealthScript
+	{
+		private StrategyParameter paramPeriod;
+		
+		public Ehlers201401()
+		{
+			paramPeriod = CreateParameter(&quot;MESAStoch.Period&quot;,20,5,100,5);
+		}
+		
+		protected override void Execute()
+		{
+			int period = paramPeriod.ValueInt;
+			RoofingFilter rf = RoofingFilter.Series(Close);
+			MESAStochastic ms = MESAStochastic.Series(Close,period);
+			
+			for(int bar = period; bar &lt; Bars.Count; bar++)
+			{
+				// Detect crossover/crossunder and store state in a variable
+				bool maXo = CrossOver(bar, ms, 0.8);
+				bool maXu = CrossUnder(bar, ms, 0.2);
+					
+				// The first trade
+				if (Positions.Count == 0){
+					if ( maXu ) 
+						BuyAtMarket( bar + 1 );
+					else if( maXo )
+						ShortAtMarket( bar + 1 );
+				}
+					// Subsequent trades
+				else 
+				{
+					Position p = LastPosition;				
+					if ( p.PositionType == PositionType.Long ) 
+					{
+						if ( maXo ) 
+						{
+							SellAtMarket( bar + 1, p );
+							ShortAtMarket( bar + 1 );
+						}
+					}
+					else if ( maXu ) 
+					{
+						CoverAtMarket( bar + 1, p );
+						BuyAtMarket( bar + 1 );
+					}
+				}	
+			}
+
+			HideVolume();
+			ChartPane pMS = CreatePane(40,false,true);
+			ChartPane pRF = CreatePane(20,true,true);
+			PlotSeries(PricePane,SuperSmoother.Series(Close),Color.Red,LineStyle.Solid,1);
+			PlotSeries(pRF,rf,Color.FromArgb(255,0,0,139),LineStyle.Solid,1);
+			PlotSeries(pMS,ms,Color.FromArgb(255,255,0,128),LineStyle.Solid,2);
+			DrawHorzLine(pMS,0.8,Color.Red,LineStyle.Dashed,1);
+			DrawHorzLine(pMS,0.2,Color.DarkGreen,LineStyle.Dashed,1);
+		}
+	}
+}
+
+</pre>
+<p class="authorTips">&mdash;Wealth-Lab team<br />
+  MS123, LLC<br />
+  <a target="_parent" href="https://www.wealth-lab.com">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item6"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Amibroker.gif" alt="logo" />
+  <h3 class="newsTitle grey_blue"> AMIBROKER: JANUARY 2014 TRADERS&rsquo; TIPS
+    CODE</h3>
+</div>
+<p>In &ldquo;Predictive And Successful Indicators&rdquo; in this issue, author
+  John Ehlers presents his SuperSmooth filter and uses it to create a better
+  stochastic indicator.</p>
+<p>Ready-to-use AmiBroker code for the indicator is shown below. Note that SuperSmooth
+  filter and high-pass filter have been written as reusable, general-purpose
+  functions so users can easily include them in their own systems and/or indicators.
+  To display the indicators on a chart, simply input or paste the code into the
+  formula editor and press <em>apply indicator</em>. To backtest a trading system,
+  choose <em>backtest</em> from <em>Tools</em> menu in the formula editor.</p>
+<p>A sample chart is shown in Figure 6.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2014/01/images/TT6-Amibroker.gif" alt="Image 1" class="shadow1" style="width: 610px;" />
+  <p class="figCaption">FIGURE 6: AMIBROKER. Here is a sample price chart of
+    DG with a SuperSmoothed stochastic indicator.</p>
+</div>
+<pre>
+
+PI = 3.1415926; 
+SQ2 = sqrt( 2 ); 
+
+function SuperSmoother( array, periods ) 
+{ 
+    a1 = exp( -SQ2 * PI / periods ); 
+    b1 = 2 * a1 * cos( SQ2 * PI / periods ); 
+    c2 = b1; 
+    c3 = -a1 * a1; 
+    c1 = 1 - c2 - c3; 
+
+    Filt = Nz( array ); 
+
+    for ( i = 2; i &lt; BarCount; i++ ) 
+    { 
+         Filt[ i ] = c1 * ( array[ i ] + array[ i - 1 ] ) / 2 + 
+                     c2 * Filt[ i - 1 ] + 
+                     c3 * Filt[ i - 2]; 
+    } 
+
+    return Filt; 
+} 
+
+function HighpassFilter( array, periods ) 
+{ 
+    alpha1 = ( cos( SQ2 * PI / periods ) + sin ( SQ2 * PI / periods ) - 1 ) /  cos( SQ2 * PI / periods ); 
+
+    HP = Nz( array ); 
+
+    C1 = ( 1 - alpha1 / 2 ) ^ 2; 
+    C2 = 2 * ( 1 - alpha1 ); 
+    C3 = - ( ( 1 - alpha1 ) ^ 2 ); 
+
+    for ( i = 2; i &lt; BarCount; i++ ) 
+    { 
+        HP[ i ] =  C1 * ( array[ i ] - 2 * array[i-1] + array[i-2] ) + 
+                   C2 * HP[ i - 1] + 
+                   C3 * HP[ i - 2]; 
+    } 
+
+    return HP; 
+} 
+
+ss = SuperSmoother( HighpassFilter( Close, 48 ), 10 ); 
+
+Length = 20; 
+
+
+HighestC = HHV( ss, Length ); 
+LowestC = LLV( ss, Length ); 
+
+Stoc = ( ss - LowestC ) / ( HighestC - LowestC ); 
+
+MyStochastic = 100 * SuperSmoother( Stoc, 10 ); 
+
+Plot( MyStochastic, &quot;MyStochastic&quot;, colorRed, styleThick ); 
+PlotGrid( 20, colorBlue ); 
+PlotGrid( 80, colorBlue ); 
+
+Buy = Cross( 20, MyStochastic ); 
+Sell = Cross( MyStochastic, 80 ); 
+
+Buy = ExRem( Buy, Sell ); 
+Sell = ExRem( Sell, Buy ); 
+PlotShapes( Buy * shapeUpArrow, colorGreen, 0, 20, 8 ); 
+PlotShapes( Sell * shapeDownArrow, colorRed, 0, 80, 8 );
+
+</pre>
+<p class="authorTips">&mdash;Tomasz Janeczko, AmiBroker.com<br />
+  <a target="_parent" href="https://www.amibroker.com">www.amibroker.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item7"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Neuroshell_Ward.gif" alt="logo" />
+  <h3 class="newsTitle grey_blue"> NEUROSHELL TRADER: JANUARY 2014 TRADERS&rsquo; TIPS
+    CODE</h3>
+</div>
+<p>John Ehlers&rsquo; SuperSmoother filter, roofing filter, and MESA Stochastic
+  indicator presented in his article in this issue, &ldquo;Predictive And Successful
+  Indicators,&rdquo; can be easily implemented in NeuroShell Trader using NeuroShell
+  Trader&rsquo;s ability to call external dynamic linked libraries. Dynamic linked
+  libraries can be written in C, C++, Power Basic, or Delphi.</p>
+<p>After moving the EasyLanguage code provided in Ehlers&rsquo; article to your
+  preferred compiler and creating a DLL, you can insert the resulting indicators
+  as follows:</p>
+<ol>
+  <li>Select &ldquo;New Indicator...&rdquo; from the <strong>Insert</strong> menu.</li>
+  <li>Choose the <strong>External Program &amp; Library Calls</strong> category.</li>
+  <li>Select the appropriate <strong>External DLL Call</strong> indicator.</li>
+  <li>Setup the parameters to match your DLL.</li>
+  <li>Select the <strong>Finished</strong> button.</li>
+</ol>
+<p>Dynamic trading systems can be easily created in NeuroShell Trader by combining
+  the MESA Stochastic indicator with NeuroShell Trader&rsquo;s genetic optimizer
+  to find optimal lengths. Similar filter and cycle-based strategies can also
+  be created using indicators found in John Ehlers&rsquo; Cybernetic and MESA91
+  NeuroShell Trader add-ons. Users of NeuroShell Trader can go to the STOCKS &amp; COMMODITIES
+  section of the NeuroShell Trader free technical support website to download
+  a copy of this or any previous Traders&rsquo; Tips.</p>
+<p>A sample chart is shown in Figure 7.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2014/01/images/TT7-Neuroshell.gif" alt="Image 1" class="shadow1" style="width: 610px;" />
+  <p class="figCaption">FIGURE 7: NEUROSHELL TRADER. This NeuroShell Trader chart
+    displays John Ehlers&rsquo; SuperSmoother filter, roofing filter, and MESA
+    Stochastic indicator.</p>
+</div>
+<p class="authorTips">&mdash;Marge Sherald, Ward Systems Group, Inc.<br />
+  301 662-7950, <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br />
+  <a target="_parent" href="https://www.neuroshell.com">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item8"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo" />
+  <h3 class="newsTitle grey_blue"> AIQ: JANUARY 2014 TRADERS&rsquo; TIPS CODE</h3>
+</div>
+<p>This Traders&rsquo; Tip is based on Ajay Pankhania&rsquo;s September 2013
+  article in STOCKS &amp; COMMODITIES, &ldquo;Muscle
+  Up Those Averages.&rdquo;</p>
+<p>The AIQ code for the moving averages and the MACD indicator discussed in the
+  article is provided at <a target="_parent" href="https://www.TradersEdgeSystems.com/traderstips.htm">www.TradersEdgeSystems.com/traderstips.htm</a>.</p>
+<p>This code may be useful to beginning AIQ Expert Design Studio users since
+  it illustrates how to code multiple versions of the simple and the exponential
+  moving averages as well as the MACD indicator. In addition, I have coded the
+  simple moving average crossover system and the MACD crossover system.</p>
+<p>The code and EDS file can be downloaded from <a target="_parent" href="https://www.TradersEdgeSystems.com/traderstips.htm">www.TradersEdgeSystems.com/traderstips.htm</a>.</p>
+<p class="authorTips">&mdash;Richard Denning<br />
+  <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br />
+  for AIQ Systems</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item9"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo" />
+  <h3 class="newsTitle grey_blue"> TRADERSSTUDIO: JANUARY 2014 TRADERS&rsquo; TIPS
+    CODE</h3>
+</div>
+<p>The TradersStudio code based on John Ehlers&rsquo; article in this issue, &ldquo;Predictive
+  And Successful Indicators,&rdquo; is provided at the following websites:</p>
+<ul>
+  <li><a target="_parent" href="https://www.TradersEdgeSystems.com/traderstips.htm">www.TradersEdgeSystems.com/traderstips.htm</a></li>
+  <li><a target="_parent" href="https://www.tradersstudio.com/TradersResources/TradersTips.aspx">www.TradersStudio.com &rarr; Traders
+      Resources &rarr; Traders&rsquo; Tips</a></li>
+</ul>
+<p>The following code files are provided in the download:</p>
+<ul>
+  <li>Function: SUPSMO&mdash;The SuperSmoother filter returns a smoothed value
+    for the input <em>price</em></li>
+  <li>Function: ROOF&mdash;The roofing filter returns a two-pole high-pass filtered
+    value, which is then smoothed by the first function, the &ldquo;SUPSMO&rdquo; for
+    the input <em>price</em></li>
+  <li>Function: MESASTOC&mdash;Calculates a stochastic of the <em>price</em> input
+    that uses both the roofing filter and the SuperSmoother filters and returns
+    a super-smoothed value for the stochastic</li>
+  <li>Indicator: EHLERS_SUPSMO_IND is used to plot the SuperSmoother on a chart</li>
+  <li>Indicator: EHLERS_ROOF_IND is used to plot the roofing filter on a chart</li>
+  <li>Indicator: EHLERS_MESASTOC_IND is used to plot the MESA Stochastic on a
+    chart</li>
+  <li>System: EHLERS_MESASTOC_SYS is a system that I created (not found in Ehlers&rsquo; article)
+    to show an example of how to use the MESA Stochastic indicator in a system.</li>
+</ul>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2014/01/images/TT8-Tradersstudio.gif" alt="Image 1" class="shadow1" style="width: 610px;" />
+  <p class="figCaption">FIGURE 8: TRADERSSTUDIO, FUTURES CONTRACT. Here is a
+    sample chart of the S&amp;P 500 futures contract with the three indicators
+    described by John Ehlers in his article in this issue, SuperSmoothing, roofing,
+    and MESA Stochastic.</p>
+</div>
+<p>In Figure 8, I show a chart of the S&amp;P 500 futures contract using Pinnacle
+  Data, symbol &ldquo;SP,&rdquo; with the three indicators discussed by Ehlers
+  in his article. In the main panel, we see the SuperSmoother filter using the
+  close as the price input. In the second panel, we see the MESA Stochastic indicator,
+  and in the bottom panel, we see the roofing filter. In Figure 9, I show the
+  equity curve and underwater equity curve for the example system I wrote trading
+  one contract, long only.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2014/01/images/TT9-Tradersstudio.gif" alt="Image 1" class="shadow1" style="width: 610px;" />
+  <p class="figCaption">FIGURE 9: TRADERSSTUDIO, EQUITY CURVE. Here are equity
+    and underwater curves for the example system I wrote trading one contract
+    of the SP long-only.</p>
+</div>
+<pre>
+'PREDICTIVE INDICATORS FOR EFFECTIVE TRADING STRATEGIES
+'Author: John Ehlers, TASC January 2014
+'Coded by: Richard Denning 11/02/2013
+'www.TradersEdgeSystems.com
+
+'SuperSmoother filter
+' 2013 John F. Ehlers
+Function SUPSMO(Price As BarArray)
+Dim a1, b1, c1, c2, c3, Filt As BarArray
+a1 = Exp(-1.414*3.14159 / 10)
+b1 = 2*a1*Cos(DegToRad(1.414*180 / 10))
+c2 = b1
+c3 = -a1*a1
+c1 = 1 - c2 - c3
+Filt = c1*(Price + Price[1]) / 2 + c2*Filt[1] + c3*Filt[2]
+SUPSMO = Filt
+End Function
+'----------------------------------------------------------
+'Roofing filter
+' 2013 John F. Ehlers
+Function ROOF(Price As BarArray)
+Dim alpha1
+Dim HP As BarArray
+'Highpass filter cyclic components whose periods are shorter than 48 bars
+  alpha1 = (Cos(DegToRad(.707*360 / 48) + Sin(DegToRad(.707*360 / 48) - 1))) /Cos(DegToRad(.707*360 / 48))
+  HP = (1 - alpha1 / 2)*(1 - alpha1 /2)*(Price - 2*Price[1] + Price[2]) + 2*(1 - alpha1)*HP[1] - (1 - alpha1)*(1 - alpha1)*HP[2]
+'Smooth with a Super Smoother Filter
+  'assert(false)
+  ROOF = SUPSMO(HP)
+  End Function
+'----------------------------------------------------------
+'MesaStochastic Indicator
+' 2013 John F. Ehlers
+Function MESASTOC(Price as bararray,stoLen)
+  Dim count  
+  Dim HighestC As BarArray
+  Dim LowestC As BarArray
+  Dim stoc As BarArray
+  Dim filtSmoPrice As BarArray
+  Dim myStochastic As BarArray
+
+'Highpass filter cyclic components whose periods are shorter than 48 bars 
+' then smooted with a super smother filter
+  filtSmoPrice = ROOF(Price)
+  HighestC = filtSmoPrice
+  LowestC = filtSmoPrice
+  For count = 0 To stoLen - 1 
+    If filtSmoPrice[count] &gt; HighestC Then HighestC = filtSmoPrice[count]
+    If filtSmoPrice[count] &lt; LowestC Then LowestC = filtSmoPrice[count]
+  Next
+  stoc = (filtSmoPrice - LowestC) / (HighestC - LowestC)
+'Smooth with a Super Smoother Filter
+  myStochastic = SUPSMO(stoc)
+MESASTOC = myStochastic
+End Function
+'----------------------------------------------------------
+'Indicator plot for SuperSmoother Filter
+Sub EHLERS_SUPSMO_IND()
+Plot1(SUPSMO(Close))
+End Sub
+'-----------------------------------------------------------
+'Indicator plot for Roofing Filter
+Sub EHLERS_ROOF_IND()
+plot1(ROOF(Close))
+plot2(0)
+End Sub
+'------------------------------------------------------------
+'MesaStochastic Indicator Plot
+' 2013 John F. Ehlers
+Sub EHLERS_MESASTOC_IND(stoLen)
+  Plot1(MesaStoc(Close,stoLen))
+  Plot2(.8)
+  Plot3(.2)
+End Sub
+'-----------------------------------------------------------
+'Example of how one micht use Ehler's MesaStochastic Indicator in a system (long only)
+Sub EHLERS_MESASTOC_SYS(stoLen,upperVal,lowerVal,trndLen)
+  'default parameter values: stoLen=20,upperVal=0.8,lowerVal=0.2,trndLen=25
+  Dim smoFiltSto
+  Dim smoFiltClose As BarArray
+  smoFiltSto = MESASTOC(Close,stoLen)
+  smoFiltClose = SUPSMO(Close)
+  'buy and exit rules (long only system)
+    If CrossesOver(smoFiltSto , lowerVal) And smoFiltClose &gt; smoFiltClose[trndLen] Then Buy(&quot;LE&quot;,1,0,Market,Day)
+    If CrossesOver(smoFiltSto, upperVal) Then ExitLong(&quot;LXob&quot;,&quot;&quot;,1,0,Market,Day)
+End Sub
+
+'------------------------------------------------------------
+</pre>
+<p class="authorTips">&mdash;Richard Denning<br />
+  <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br />
+  for TradersStudio</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item10"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo" />
+  <h3 class="newsTitle grey_blue"> NINJATRADER: JANUARY 2014 TRADERS&rsquo; TIPS
+    CODE</h3>
+</div>
+<p>The MESA Stochastic, as discussed in &ldquo;Predictive And Successful Indicators&rdquo; in
+  this issue by John Ehlers, has been implemented as an indicator available for
+  download at <a href="https://www.ninjatrader.com/SC/January2014SC.zip">www.ninjatrader.com/SC/January2014SC.zip</a>.</p>
+<p>Once it has been downloaded, from within the NinjaTrader Control Center window,
+  select the menu File &rarr; Utilities &rarr; Import NinjaScript and select
+  the downloaded file. This file is for NinjaTrader version 7 or greater.</p>
+<p>You can review the strategy source code by selecting the menu Tools &rarr; Edit
+  NinjaScript &rarr; Indicator from within the NinjaTrader Control Center window
+  and selecting the &ldquo;MESA Stochastic&rdquo; file.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, which provides
+  you with the highest performance possible.</p>
+<p>A sample chart implementing the strategy is shown in Figure 10.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2014/01/images/TT10-Ninjatrader.gif" alt="Image 1" class="shadow1" style="width: 610px;" />
+  <p class="figCaption">FIGURE 10: NINJATRADER. This screenshot shows the MESA
+    Stochastic applied to a 15-minute chart of the S&amp;P 500 index CFD.</p>
+</div>
+<p class="authorTips">&mdash;Raymond Deux &amp; Cal Hueber<br />
+  NinjaTrader, LLC<br />
+  <a target="_parent" href="https://www.ninjatrader.com">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item11"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Updata.gif" alt="logo" />
+  <h3 class="newsTitle grey_blue"> UPDATA: JANUARY 2014 TRADERS&rsquo; TIPS CODE</h3>
+</div>
+<p>This tip is based on &ldquo;Predictive And Successful Indicators&rdquo; by
+  John Ehlers in this issue. In the article, Ehlers seeks to develop a filter
+  with the optimum smoothing and minimal lag effect, and which mitigates the
+  fractal distortion of the underlying data. A stochastic measure is applied
+  to the resultant series to create an oscillator such that values 0.2 and 0.8
+  become extremes from which entry signals may be generated. (See Figure 11.)</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2014/01/images/TT11-Updata.gif" alt="Image 1" class="shadow1" style="width: 610px;" />
+  <p class="figCaption">FIGURE 11: UPDATA. This chart shows the stochastic indicator-based
+    system with 0.8/0.2 crossing entries, as applied to Dollar General, in daily
+    resolution data.</p>
+</div>
+<p>The Updata code based on this article is in the Updata Library and may be
+  downloaded by clicking the <em>custom menu</em> and <em>system library</em>.
+  The code is also shown below and can be pasted into the Updata custom editor
+  and saved.</p>
+<pre>
+
+
+'John F. Ehlers,PhD
+'Stocks &amp; Commodities Magazine,January 2014 
+
+DISPLAYSTYLE 3LINES
+INDICATORTYPE CHART  
+COLOUR RGB(200,0,0)
+COLOUR2 RGB(0,0,200)   
+COLOUR3 RGB(0,0,200)
+PARAMETER &quot;Length&quot; #LENGTH=20
+PARAMETER &quot;Upper&quot; &#64;UPPER=0.8
+PARAMETER &quot;Lower&quot; &#64;LOWER=0.2
+NAME &quot;MESA Stochastic Indicator&quot; &quot;&quot; 
+&#64;ALPHA1=0 
+&#64;HP=0
+&#64;A1=0
+&#64;B1=0
+&#64;C1=0
+&#64;C2=0
+&#64;C3=0
+&#64;FILTER=0
+&#64;STOCHASTIC=0
+&#64;MESASTOCH=0 
+FOR #CURDATE=0 TO #LASTDATE
+    &#64;ALPHA1=1+(SIN(0.707*2*CONST_PI/48)-1)/COS(0.707*2*CONST_PI/48) 
+    &#64;HP=(1-&#64;ALPHA1/2)*(1-&#64;ALPHA1/2)*(CLOSE-2*CLOSE(1)+CLOSE(2))+2*(1-&#64;ALPHA1)*HIST(&#64;HP,1)-(1-&#64;ALPHA1)*(1-&#64;ALPHA1)*HIST(&#64;HP,2)
+    &#64;A1=EXP(-1.414*CONST_PI/10)
+    &#64;B1=2*&#64;A1*COS(1.414*CONST_PI/10) 
+    &#64;C2=&#64;B1
+    &#64;C3=-&#64;A1*&#64;A1
+    &#64;C1=1-&#64;C2-&#64;C3
+    &#64;FILTER=&#64;C1*0.5*(&#64;HP+HIST(&#64;HP,1))+&#64;C2*HIST(&#64;FILTER,1)+&#64;C3*HIST(&#64;FILTER,2)  
+    &#64;STOCHASTIC=(&#64;FILTER-PLOW(&#64;FILTER,#LENGTH))/(PHIGH(&#64;FILTER,#LENGTH)-PLOW(&#64;FILTER,#LENGTH)) 
+    &#64;MESASTOCH=&#64;C1*0.5*(&#64;STOCHASTIC+HIST(&#64;STOCHASTIC,1))+&#64;C2*HIST(&#64;STOCHASTIC,1)+&#64;C3*HIST(&#64;STOCHASTIC,2)  
+    'OPTIONAL ENTRY RULES
+    IF HASX(&#64;MESASTOCH,&#64;UPPER,DOWN)
+       SELL CLOSE
+       SHORT CLOSE 
+    ELSEIF HASX(&#64;MESASTOCH,&#64;LOWER,UP)   
+       COVER CLOSE
+       BUY CLOSE
+    ENDIF
+    &#64;PLOT=&#64;MESASTOCH
+    &#64;PLOT2=&#64;UPPER
+    &#64;PLOT3=&#64;LOWER
+NEXT
+
+</pre>
+<p class="authorTips">&mdash;Updata support team<br />
+  <a href="mailto:support@updata.co.uk">support@updata.co.uk</a><br />
+  <a target="_parent" href="https://www.updata.co.uk">www.updata.co.uk</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item12"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradecision.gif" alt="logo" />
+  <h3 class="newsTitle grey_blue"> TRADECISION: JANUARY 2014 TRADERS&rsquo; TIPS
+    CODE</h3>
+</div>
+<p>In &ldquo;Predictive And Successful Indicators&rdquo; in this issue, author
+  John Ehlers investigates predictive indicators for more effective trading strategies.
+  We are providing code for the three indicators discussed in the article: the
+  SuperSmoother filter, the roofing filter, and the MESA Stochastic indicator.</p>
+<pre>
+
+SuperSmoother filter code:
+var
+a1:=0;
+b1:=0;
+c1:=0;
+c2:=0;
+c3:=0;
+Filt:=0;
+end_var
+if HISTORYSIZE &lt; 2 then return 0;
+
+a1:=Exp(-1.414 * 3.14159 / 10);
+b1:=2 * a1 * Cos(1.414 * 180 / 10);
+c2:=b1;
+c3:=-a1 * a1;
+c1:=1 - c2 - c3;
+Filt:=c1 * (Close + Close\1\) / 2 + c2 * Filt\1\ + c3 * Filt\2\;
+
+return Filt;
+
+Roofing filter code:
+var
+a1:=0;
+b1:=0;
+c1:=0;
+c2:=0;
+c3:=0;
+alpha1:=0;
+HP:=0;
+Filt:=0;
+end_var
+
+if HISTORYSIZE &lt; 2 then return 0;
+
+alpha1:=(Cos(0.707 * 360 / 48) + Sin(0.707 * 360 / 48) - 1) / Cos(0.707 * 360 / 48);
+HP:=(1 - alpha1 / 2) * (1 - alpha1 / 2) * (Close - 2 * Close\1\ + Close\2\) + 2 * (1 - alpha1) * HP\1\ - (1 - alpha1) * (1 - alpha1) * HP\2\;
+
+a1:=Exp(-1.414 * 3.14159 / 10);
+b1:=2 * a1 * Cos(1.414 * 180 / 10);
+c2:=b1;
+c3:=-a1 * a1;
+c1:=1 - c2 - c3;
+Filt:=c1 * (HP + HP\1\) / 2 + c2 * Filt\1\ + c3 * Filt\2\;
+
+return Filt;
+
+
+MESA Stochastic indicator code:
+input
+Length:&quot;Enter the length:&quot;, 20;
+end_in
+var
+a1:=0;
+b1:=0;
+c1:=0;
+c2:=0;
+c3:=0;
+alpha1:=0;
+HP:=0;
+Filt:=0;
+HighestC:=0;
+LowestC:=0;
+count:=0;
+Stoc:=0;
+MESAStochastic:=0;
+end_var
+
+if HISTORYSIZE &lt; 2 then return 0;
+
+alpha1:=(Cos(0.707 * 360 / 48) + Sin(0.707 * 360 / 48) - 1) / Cos(0.707 * 360 / 48);
+HP:=(1 - alpha1 / 2) * (1 - alpha1 / 2) * (Close - 2 * Close\1\ + Close\2\) + 2 * (1 - alpha1) * HP\1\ - (1 - alpha1) * (1 - alpha1) * HP\2\;
+
+a1:=Exp(-1.414 * 3.14159 / 10);
+b1:=2 * a1 * Cos(1.414 * 180 / 10);
+c2:=b1;
+c3:=-a1 * a1;
+c1:=1 - c2 - c3;
+Filt:=c1 * (HP + HP\1\) / 2 + c2 * Filt\1\ + c3 * Filt\2\;
+
+HighestC:=Filt;
+LowestC:=Filt;
+for count:=0 to Length - 1 do begin
+	if Filt\count\ &gt;HighestC then
+		HighestC:=Filt\count\;
+	if Filt\count\ &lt; LowestC then
+		LowestC:=Filt\count\;
+end;
+
+Stoc:=(Filt - LowestC) / (HighestC - LowestC);
+MESAStochastic:=c1 * (Stoc + Stoc\1\) / 2 + c2 * MESAStochastic\1\ + c3 * MESAStochastic\2\;
+return MESAStochastic;
+
+</pre>
+<p>A sample chart plotting the indicators is shown in Figure 12.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2014/01/images/TT12-Tradecision.gif" alt="Image 1" class="shadow1" style="width: 610px;" />
+  <p class="figCaption">FIGURE 12: TRADECISION. Here is a sample chart of Google
+    with the roofing filter and John Ehlers&rsquo; MESA Stochastic indicator
+    plotted. </p>
+</div>
+<p class="authorTips">&mdash;Tradecision support <br />
+  <a target="_parent" href="https://Tradecision.com">Tradecision.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+<p class="rules"></p>
+<div class="logoBorder" id="item13">
+  <h3 class="newsTitle grey_blue"> MICROSOFT EXCEL: JANUARY 2014 TRADERS&rsquo; TIPS
+    CODE</h3>
+</div>
+<p>John Ehlers&rsquo; formulations given in his article in this issue, &ldquo;Predictive
+  And Successful Indicators,&rdquo; are straightforward to set up in Excel. The
+  chart shown in Figure 13 approximates Ehlers&rsquo; Figure 8 in his article.</p>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2014/01/images/TT13-Excel.gif" alt="Image 1" class="shadow1" style="width: 610px;" />
+  <p class="figCaption">FIGURE 13: EXCEL, SAMPLE SIGNALS. Here is a sample chart
+    of Dollar General with predictive trade signals and one-bar delayed trades.</p>
+</div>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2014/01/images/TT14-Excel.gif" alt="Image 1" class="shadow1" style="width: 610px;" />
+  <p class="figCaption">FIGURE 14: EXCEL, InputPriceData tab. The InputPriceData
+    tab shows details of the last trade price bar in the second row. This data
+    is inserted into the price history.</p>
+</div>
+<div class="figBorder"> <img src="https://www.traders.com/Documentation/FEEDbk_docs/2014/01/images/TT15-Excel.gif" alt="Image 1" class="shadow1" style="width: 610px;" />
+  <p class="figCaption">FIGURE 15: EXCEL, INTRADAY PRICE BAR TIME STAMP. When
+    the last intraday bar (input data offset = zero) is on the chart, it will
+    be displayed as &ldquo;Last:&rdquo; with a time stamp.</p>
+</div>
+<p>Since this indicator is built on bar closes, transactions cannot logically
+  take place any sooner than the next bar. For trade simulation in this spreadsheet,
+  I enter or exit trades using the open of the next bar after a signal.</p>
+<p>This Traders&rsquo; Tip also introduces a new feature of my Excel templates:
+  an intraday price bar for use with daily price history downloads from Yahoo!
+  Finance.</p>
+<p>If bar 1 is an intraday bar, it will have a time stamp to the right.</p>
+<p>The intraday bar warning only appears when the bar is on the chart (data window
+  offset = zero).</p>
+<p>The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2014/01/images/code/PredictiveIndicators.xlsm">here</a>.
+  To successfully download it, follow these steps:</p>
+<ul>
+  <li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2014/01/images/code/PredictiveIndicators.xlsm">Excel
+      file link</a>, then</li>
+  <li>Select &ldquo;save as&rdquo; to place a copy of the spreadsheet file on
+    your hard drive.</li>
+</ul>
+<p class="authorTips">&mdash;Ron McAllister<br />
+  Excel and VBA programmer<br />
+  <a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#top">BACK TO LIST</a></p>
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the January 2014 issue of<br />
+  <em>Technical Analysis of</em> <span class="smallCaps">Stocks &amp; Commodities</span> magazine. <br />
+  All rights reserved. &copy;&nbsp;Copyright 2013, Technical Analysis, Inc.</p>
+<!--<p class="jac-add-button" style="float:none;"><a href="content.html">Return to
+    Contents</a></p>-->
+</body>
+</html>

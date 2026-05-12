@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine.">
+<meta name="description" content="This month: Trend Persistence by Richard Poster. Contributions from: eSignal; thinkorswim; Wealth-Lab.com; NinjaTrader; TradersStudio; AIQ; Neuroshell Trader; The Zorro Project; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - FEBRUARY 2021</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">February 2021</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2021/02/images/TT-Poster.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Richard Poster&rsquo;s article in this issue, &ldquo;Trend Strength: Measuring The Duration
+Of A Trend.&rdquo; Here, we present the February 2021 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1"><span style="text-transform:lowercase;">e</span>SIGNAL: FEBRUARY 2021</a></li>
+  <li><a href="#item2">THINKORSWIM: FEBRUARY 2021</a></li>
+  <li><a href="#item3">WEALTH-LAB.COM: FEBRUARY 2021</a></li>
+  <li><a href="#item4">NINJATRADER: FEBRUARY 2021</a></li>
+  <li><a href="#item5">TRADERSSTUDIO: FEBRUARY 2021</a></li>
+  <li><a href="#item6">AIQ: FEBRUARY 2021</a></li>
+  <li><a href="#item7">NEUROSHELL TRADER: FEBRUARY 2021</a></li>
+  <li><a href="#item8">THE ZORRO PROJECT: FEBRUARY 2021</a></li>
+  <li><a href="#item9">MICROSOFT EXCEL: FEBRUARY 2021</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">eSIGNAL: FEBRUARY 2021</h3></div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;ve provided the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/02/images/code/TrendPersistenceRate.efs" target="_blank">Trend Persistence.efs</a> study based on the article by Richard Poster in this issue, &ldquo;Trend Strength: Measuring The Duration Of A Trend.&rdquo; The study measures trend strength by its duration.</p>
+<p>The study contains formula parameters that may be configured through the edit chart window (right-click on the chart and select &ldquo;edit chart&rdquo;). A sample chart is shown in Figure 1.</p>
+<pre>
+/**********************************
+Provided By:  
+Copyright 2019 Intercontinental Exchange, Inc. All Rights Reserved. 
+eSignal is a service mark and/or a registered service mark of Intercontinental Exchange, Inc. 
+in the United States and/or other countries. This sample eSignal Formula Script (EFS) 
+is for educational purposes only. 
+Intercontinental Exchange, Inc. reserves the right to modify and overwrite this EFS file with each new release. 
+
+Description:        
+   Trend Strength: Measuring the Duration Of A Trend
+   by Richard Poster, PhD
+    
+
+Version:            1.00  12/14/2020
+
+Formula Parameters:                     Default:
+TPR Period                              20
+SMA Period for TPR                      5
+Threshold                               1.0
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+var fpArray = new Array();
+var bInit = false;
+
+function preMain() {
+    setStudyTitle(&quot;Trend Persistence Rate Indicator&quot;);
+    setCursorLabelName(&quot;TPR&quot;, 0);
+    setPriceStudy(false);
+    setDefaultBarFgColor(Color.RGB(0x00,0x94,0xFF), 0);
+    setPlotType( PLOTTYPE_LINE , 0 );
+    
+    
+    var x=0;
+    fpArray[x] = new FunctionParameter(&quot;TPRPeriod&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setName(&quot;TPR Period&quot;);
+        setLowerLimit(1);		
+        setDefault(20);
+    }
+    fpArray[x] = new FunctionParameter(&quot;SMAPeriod&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setName(&quot;SMA Period for TPR&quot;);
+        setLowerLimit(1);
+        setDefault(5);            
+    }
+    fpArray[x] = new FunctionParameter(&quot;Threshold&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(0);		
+        setDefault(1.0);            
+    }
+    fpArray[x] = new FunctionParameter(&quot;joff&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setName(&quot;Bar offset&quot;);
+        setLowerLimit(0);		
+        setDefault(0);            
+    }
+        
+}
+
+var bVersion = null;
+var TPR = null;
+var sma1 = null; 
+var sma2 = null; 
+var smadiff = null; 
+var ctrT = null;
+var ctrP = null;
+var ctrM = null;
+var Mult = null;
+var _point = null;
+var SMAPeriod = null;
+var TPRPeriod = null;
+var Threshold = null;
+var joff = null;
+
+function main(TPRPeriod, SMAPeriod, Threshold, joff) {
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return; 
+    
+    if ( bInit == false ) { 
+        Mult = 10; 
+        _point = getMinTick();
+        
+        bInit = true; 
+    }      
+    if (getCurrentBarCount() &lt;= TPRPeriod) return;
+    if (getBarState() == BARSTATE_NEWBAR) {
+        ctrP = 0;
+        ctrM = 0;
+        ctrT = 0;    
+    
+        for (var i = 0; i &lt; TPRPeriod; i++) {
+            sma1 = sma(SMAPeriod, -i - 1 - joff);
+            sma2 = sma(SMAPeriod, -i - 2 - joff);
+            smadiff = (sma1 - sma2) / (Mult * _point);
+            ctrT += 1;
+            if (smadiff &gt; Threshold) ctrP += 1;
+            if (smadiff &lt; -Threshold) ctrM += 1;
+                        
+        }
+    }
+    TPR = Math.abs(100 * (ctrP - ctrM)/ctrT);
+
+    return TPR;
+}
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+ </pre>
+<div class="figBorder">
+<img src="images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 1: eSIGNAL. Here is an example of the study plotted on a daily chart of SPY.</p></div>
+ <p>To discuss this study or download a complete copy of the formula code, please visit the EFS Library Discussion Board forum under the forums link from the support menu at <a href="https://www.esignal.com" target="_parent">www.esignal.com</a> or visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs" target="_parent">https://www.esignal.com/support/kb/efs</a>.</p> 
+<p class="authorTips">&mdash;Eric Lippert<br>
+eSignal, an Interactive Data company<br>
+800 779-6555, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+     <!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Thinkorswim.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">THINKORSWIM: FEBRUARY 2021</h3></div>
+<p>We have put together a study based on the article in this issue by Richard Poster, &ldquo;Trend Strength: Measuring The Duration Of A Trend.&rdquo;</p>
+<p>We built the study referenced by using our proprietary scripting language, thinkscript. To ease the loading process, simply click on <a href="https://tos.mx/uwHWY0a" target="_parent">https://tos.mx/uwHWY0a</a> or enter the address into <em>setup&rarr;open shared item</em> from within thinkorswim, then choose <em>view thinkScript study</em> and name it &ldquo;TrendPersistanceRate&rdquo; or a name you can identify it by. You can then add this study to your charts from the <em>edit studies</em> menu from within the <em>charts</em> tab.</p>
+<div class="figBorder">
+<img src="images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 2: THINKORSWIM. Here is an example of the study. Here, a smoothed TPR plot is shown with trend direction disabled (upper pane) and enabled (middle pane).</p></div>
+<p>The chart in Figure 2 contains a smoothed TPR plot with trend direction disabled (the upper study pane) and enabled (the middle study pane). This is controlled via the correspondent &ldquo;trend direction&rdquo; input. The TPR plot is hidden by default, but it can be made visible in the <em>plots</em> panel. The screenshot is meant to resemble Figure 4 from the article. Please refer to the article in this issue for more details about the indicator.</p>
+<p class="authorTips">&mdash;thinkorswim<br>
+A division of TD Ameritrade, Inc.<br>
+<a href="https://www.thinkorswim.com" target="_parent">www.thinkorswim.com</a></p>
+    <!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">WEALTH-LAB.COM: FEBRUARY 2021</h3></div>
+<p>We&rsquo;ve recreated Richard Poster&rsquo;s TPR indicator for use in the newly available Wealth-Lab version 7 and have added the indicator to our TASCI­ndicators library for easy access in any strategy.</p>
+<p>With our new Building Blocks feature, traders can easily set up a strategy. In the example here, users could enter when TPR turns up and exit on the opposite movement in just a few easy steps, as demonstrated in Figure 3. Figure 4 illustrates a few characteristic trades taken by the sample system on the booming TTD stock.</p>
+    <div class="figBorder">
+<img src="images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: WEALTH-LAB. This illustrates laying out strategy rules in a drag-and-drop manner using building blocks in Wealth-Lab.</p></div>
+    <div class="figBorder">
+<img src="images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: WEALTH-LAB. Sample entries are shown on a daily chart of TTD. Data provided by Yahoo! Finance.</p></div>
+ <p>Motivated readers can generate the code behind the indicator by clicking on the button &ldquo;Open as C# coded model.&rdquo;</p>
+<p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">NINJATRADER: FEBRUARY 2021</h3></div>
+<p>The TPR indicator, as introduced by Richard Poster in his article in this issue, &ldquo;Trend Strength: Measuring The Duration Of A Trend,&rdquo; is available for download at the following links for NinjaTrader 8 and NinjaTrader 7:</p>
+    <ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8:</strong> <a href="https://ninjatrader.com/SC/February2021SCNT8.zip" target="_blank">ninjatrader.com/SC/February2021SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7:</strong> <a href="https://ninjatrader.com/SC/February2021SCNT7.zip">ninjatrader.com/SC/February2021SCNT7.zip</a></li>
+</ul>
+   <p>Once the file is downloaded, you can import the indicator into NinjaTader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import in NinjaTrader 7 from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p> 
+    <p>You can review the indicator&rsquo;s source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control center window and selecting the TPR file. You can review the indicator&rsquo;s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the control center window and selecting the TPR file.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, which provides you with the highest performance possible.</p>
+<p>A sample chart with the indicator is shown in Figure 5.</p>
+    <div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: NINJATRADER. The TPR indicator counts the number of bars that an SMA slope exceeds a threshold for a specified period on a 60-minute EURUSD chart with data from June 2, 2020 to June 5, 2020.</p></div>
+    
+<p class="authorTips">&mdash;Brandon Haulk<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+ <!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">TRADERSSTUDIO: FEBRUARY 2021</h3></div>
+<p>The importable TradersStudio file based on Richard Poster&rsquo;s article, &ldquo;Trend Strength: Measuring The Duration Of A Trend,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also shown below.</p>
+    <pre>
+'Trend Strength: Measuring The Duratioin of A Trend
+'Author: Richard Poster, TASC Feb 2021
+'Coded by: Richard Denning 12/15/2020
+
+'FUNCTION THAT RETURNS THE VALUE OF THE TPR:
+Function TPR(TPRlen,SMAlen,MULT)
+'INPUTS:
+'TPRlen = 20 
+'SMAlen = 5
+'MULT = 10 
+
+Dim ThrshFixed,_point,countP,countM
+Dim sma1 As BarArray
+Dim sma2 As BarArray
+Dim smadiff As BarArray
+Dim up As BarArray
+Dim dn As BarArray
+
+ThrshFixed = 1.0  
+_point = 0.01 
+
+'FORMULAS:
+sma1 = Average(C,SMAlen,0) 
+sma2 = Average(C,SMAlen,1) 
+smadiff = (sma1 - sma2)/(MULT*_point) 
+up = smadiff&gt;ThrshFixed 
+dn = smadiff&lt;-ThrshFixed 
+countP = countof(up,TPRlen,0) 
+countM = countof(dn,TPRlen,0) 
+TPR = Abs(100*(countP-countM)/TPRlen) 
+
+End Function
+'--------------------------------------------------------------------------
+'COUNTOF Function 
+'returns how many times a rule is true in the lookback length
+'coded by Richard Denning 01/04/08
+
+Function COUNTOF(rule As BarArray, countLen As Integer, offset As Integer)
+Dim count As Integer
+Dim counter As Integer
+    For counter = 0 + offset To countLen + offset - 1 
+        If rule[counter] Then 
+            count = count + 1
+        End If
+    Next
+COUNTOF = count
+End Function
+'--------------------------------------------------------------------------
+
+'INDICATOR PLOT FOR TPR:
+Sub TPR_IND(TPRlen,SMAlen,MULT)
+Dim theTPR As BarArray
+theTPR = TPR(TPRlen,SMAlen,MULT)
+plot1(theTPR)
+End Sub
+</pre>
+    
+    
+<p>Code for the TPR indicator is provided in the function &ldquo;TPR&rdquo; along with the plot indicator &ldquo;TPR_IND&rdquo; and the helper function &ldquo;COUNTOF.&rdquo; The code is set up for stocks (point value equal to 0.01). Figure 6 demonstrates the indicator on a chart of Amazon (AMZN).</p>
+<div class="figBorder">
+<img src="images/TT-Tradersstudio.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: TRADERSSTUDIO. Shown here is the TPR indicator on a chart of Amazon (AMZN).</p></div>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for TradersStudio
+</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">AIQ: FEBRUARY 2021</h3></div>
+<p>The importable AIQ EDS file based on Richard Poster&rsquo;s article in this issue, &ldquo;Trend Strength: Measuring The Duration Of A Trend,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also shown here:</p>
+   <pre>
+!Trend Strength: Measuring The Duratioin of A Trend
+!Author: Richard Poster, TASC Feb 2021
+!Coded by: Richard Denning 12/12/2020
+
+!INPUTS:
+TPRlen is 20.
+SMAlen is 5.
+ThrshFixed is 1.0.
+MULT is 10.
+C is [close].
+_point is 0.01.
+
+!FORMULAS:
+sma1 is simpleavg(C,SMAlen,0).
+sma2 is simpleavg(C,SMAlen,1).
+smadiff is (sma1 - sma2)/(MULT*_point).
+up if smadiff&gt;ThrshFixed.
+dn if smadiff&lt;-ThrshFixed.
+countP is countof(up,TPRlen).
+countM is countof(dn,TPRlen).
+tpr is abs(100*(countP-countM)/TPRlen).
+
+ListValues if 1.
+</pre> 
+      
+<p>Code for the TPR indicator is set up in the AIQ code file for stocks with point value equal to 0.01. Figure 7 shows the indicator on a chart of Apple Inc. (AAPL).</p>
+<div class="figBorder">
+<img src="images/TT-Aiq.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 7: AIQ. The TPR indicator is shown on a chart of Apple Inc. (AAPL).</p></div>
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for AIQ Systems</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">NEUROSHELL TRADER: FEBRUARY 2021</h3></div>
+<p>The <em>trend persistance rate</em> indicator (TPR) presented by Richard Poster in his article in this issue can be easily implemented in NeuroShell Trader by combining a few of NeuroShell Trader&rsquo;s 800+ indicators. To implement the TPR, select <em>new indicator</em> from the <em>insert</em> menu and use the indicator wizard to create the following indicators:</p>
+
+    <pre>SMADIFF	Divide( Momentum( Avg( Close, 5), 1), Mul2( 10, 0.0001) )
+ctrP		Sum( A&gt;B( SMADIFF ), 1.0), 20 )
+ctrM		Sum( A&lt;B( SMADIFF ), 1.0 ), 20)
+TPR		Abs( Mul2( 100, Divide( Sub( ctrP, ctrM ), 20) ) )</pre>
+    <div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: NEUROSHELL TRADER. This NeuroShell Trader chart shows the TPR for EUR/USD.</p></div>
+    <p>NeuroShell Trader users can go to the Stocks & Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p class="authorTips">&mdash;Marge Sherald, Ward Systems Group, Inc.<br>
+301 662-7950, <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+    
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">THE ZORRO PROJECT: FEBRUARY 2021</h3></div>
+<p>Financial markets are not stationary; price curves can swing all the time between trending, mean-reverting, or entire randomness. Without a filter for detecting trend regime, any trend-following strategy will bite the dust sooner or later. In his article in this issue, Richard Poster offers a trend persistence indicator (TPR) for helping to avoid unprofitable market periods.</p>
+<p>The TPR indicator measures the steepness of a SMA (simple moving average) slope and counts the bars where the slope exceeds a threshold. The more steep bars, the more trending the market. The C code of this indicator is as follows:</p>
+    
+    <pre>
+var TPR(vars Data,var Threshold,int TPRPeriod,int SMAPeriod)
+{
+  vars SMAs = series(SMA(Data,SMAPeriod));
+  int i, CtrP=0, CtrM = 0;
+  for(i=0; i&lt;TPRPeriod; i++) {
+    var Slope = SMAs[i]-SMAs[i+1];
+    if(Slope &gt; Threshold) CtrP++;
+    else if(Slope &lt; -Threshold) CtrM++;
+  }
+  return 100. * abs(CtrP-CtrM)/TPRPeriod;
+}
+</pre>
+  <p><em>Threshold</em>, <em>counting period</em>, and <em>SMA period</em> are the parameters of the TPR indicator. The author shows a sample chart of the TPR applied to EUR/USD 1-hour bars. The TPR output is smoothed with an unspecified filter. For replicating his chart, I used a simple EMA(5) and a 1-pip threshold. The resulting chart is shown in Figure 9.</p>
+  
+    <div class="figBorder">
+<img src="images/TT-Zorro1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: ZORRO PROJECT. Used here is a simple EMA(5) and a 1-pip threshold on EUR/USD 1-hour bars.</p></div>
+    <p>The article shows some sample results from an SMA crossover system with the TPR in comparison to several other filters, with the TPR having better results. The filter parameters were optimized.</p>
+    <p>The user should ensure an out-of-sample optimization is used in their tests. I&rsquo;ll first provide code for an in-sample test:
+</p>
+    <pre>
+void run() 
+{
+   BarPeriod = 60;
+   StartDate = 2010;
+   EndDate = 2020;
+   LookBack = 2500; 
+   set(PARAMETERS);
+   asset(&quot;EUR/USD&quot;);
+
+   while(algo(loop(&quot;None&quot;,&quot;TPR&quot;,&quot;CCY&quot;))) 
+   {
+     vars Smas = series(SMA(seriesC(),2500));
+     int Color = BLACK;
+     bool Filter = 1;
+     if(Algo == &quot;TPR&quot;) {
+       int Period = optimize(15,10,20,1);
+       var Threshold = optimize(10,0,20,2);
+       var Tpr = TPR(seriesC(),1*PIP,Period,5);
+       Filter = Tpr &gt; Threshold;
+       Color = BLUE;
+     } else if(Algo == &quot;CCY&quot;) {
+       Int Period = optimize(15,10,30,5);
+       var Threshold = optimize(10,0,40,5);
+       Filter = CCYIState(seriesC(),Period,Threshold);
+       Color = PURPLE;
+    }
+
+    if(Filter &amp;&amp; crossOver(Smas,seriesC()))
+      enterLong();
+    else if(Filter &amp;&amp; crossUnder(Smas,seriesC()))
+      enterShort();
+    plot(Algo,ProfitClosed+ProfitOpen,MAIN|LINE|AXIS2,Color);
+  }
+}
+</pre>
+ <p>For out-of-sample optimization, you would need the following two additional commands in the script:
+</p>   
+<pre>
+NumWFOCycles = 10;
+DataSplit = 75;
+</pre>
+    
+ <p>This activates 10 walk-forward cycles split into 75% training data and 25% test data. 
+For a comprehensive comparison of trend filters, we had to repeat this out-of-sample test with many other assets and many different time periods, and possibly other trend-following methods than a SMA crossing could also be tested.</p>
+<p>The TPR indicator and the trading system can be downloaded from the 2020 script repository on <a href="https://financial-hacker.com" target="_parent">https://financial-hacker.com</a>.</p>
+<p>The Zorro platform can be downloaded from <a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a>.</p>
+<p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://www.zorro-project.com" target="_parent">www.zorro-project.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+
+ <h3 class="newsTitle grey_blue">MICROSOFT EXCEL: FEBRUARY 2021</h3></div>
+<p>In his article in this issue, Richard Poster outlines several common ways to evaluate the strength and duration of trends. Then he evaluates their sensitivity to volatility. Next, he steps up our game a bit by proposing an indicator that seeks to measure a trend&rsquo;s persistence rate, or TPR for short. TPR turns out to be relatively insensitive to the influence of volatility.</p>
+<p>The article is focused around the forex market. The TPR example in the article&rsquo;s Figure 4 uses a little over three days of hourly (H1) historical data for the euro versus US dollar futures (EURUSD,H1). My spreadsheets can only access end-of-day history using symbol EURUSD=X. So it is not possible for me to replicate his Figure 4 in Excel. However, that does not preclude using this indicator in other timeframes or other equities.</p> 
+<p>I will use NVIDIA (NVDA), a stock that has been in play recently, to explore TPR. With my example coming from the equity and ETF space, I set a penny as the point value.</p>
+<p>To the right of the chart, three buttons control the TPR display. The &ldquo;ABS TPR&rdquo; option displays TPR as defined by the MQL4 code in the article&rsquo;s sidebar.</p>
+   <div class="figBorder">
+<img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 10: EXCEL. TPR with settings similar to those used in the article.</p></div> 
+    
+    
+<p>The TPR plot in Figure 10 looks &ldquo;late&rdquo; to my eye, so in Figure 11 I tried again with &ldquo;joff&rdquo; set to zero.</p>
+  <div class="figBorder">
+<img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 11: EXCEL. TPR with joff=0 shifts the plot left to more closely align with the price chart.</p></div>  
+    
+    
+<p>Raw TPR is the difference between a positive and negative component, as shown in Figure 12. The finished TPR is the absolute value of this raw computation.</p>
+<div class="figBorder">
+<img src="images/TT-Excel3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 12: EXCEL. TPR in its raw form is the difference of the positive and negative components.</p></div>    
+    
+<p>In Figure 13 I played a bit with the TPR period, which altered the shape of the chart.</p>
+<div class="figBorder">
+<img src="images/TT-Excel4.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 13: EXCEL. Adjusting the TPRPer value downward makes TPR a bit more reactive.</p></div>
+    
+    <p>To successfully download a working version of this spreadsheet:</p>
+  <ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/02/images/code/TrendPersistenceRate.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>  
+    
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+    
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the February 2021 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2021, Technical Analysis, Inc.</p>
+
+</body>
+</html>

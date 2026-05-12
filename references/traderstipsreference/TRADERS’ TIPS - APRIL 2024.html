@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: The Ultimate Smoother by John F. Ehlers. Contributions from: TradeStation; Wealth-Lab.com; NinjaTrader; TradingView; Neuroshell Trader; RealTest; Optuma; The Zorro Platform; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - APRIL 2024</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">April 2024</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2024/04/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John F. Ehlers&rsquo; article in this issue, &ldquo;The Ultimate Smoother.&rdquo; Here, we present the April 2024 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: April 2024</a></li>
+  <li><a href="#item2">Wealth-Lab.com: April 2024</a></li>
+  <li><a href="#item3">NinjaTrader: April 2024</a></li>
+  <li><a href="#item4">TradingView: April 2024</a></li>
+  <li><a href="#item5">Neuroshell Trader: April 2024</a></li>
+  <li><a href="#item6">RealTest: April 2024</a></li>
+  <li><a href="#item7">Optuma: April 2024</a></li>
+  <li><a href="#item8">The Zorro Platform: April 2024</a></li>
+  <li><a href="#item9">Microsoft Excel: April 2024</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: April 2024</h3></div>
+<p>In his article in this issue, &ldquo;The Ultimate Smoother,&rdquo; John Ehlers introduces an enhanced smoother, termed the UltimateSmoother, as an evolution of his previously developed SuperSmoother. The UltimateSmoother is not limited to price data and can be applied to other indicators.</p>
+<p>The $UltimateSmoother function and accompanying indicator are provided here. The UltimateSmoother example filter from Ehlers’ article has been slightly modified here to accept a user-defined price as an input.</p>
+<pre>
+Function: $UltimateSmoother
+
+{
+	TASC APR 2024
+	UltimateSmoother Function
+	(C) 2004-2024 John F. Ehlers
+}
+
+inputs:
+	Price( numericseries ),
+	Period( numericsimple );
+	
+variables:
+	a1( 0 ),
+	b1( 0 ),
+	c1( 0 ),
+	c2( 0 ),
+	c3( 0 ),
+	US( 0 );
+	
+a1 = ExpValue(-1.414*3.14159 / Period);
+b1 = 2 * a1 * Cosine(1.414*180 / Period);
+c2 = b1;
+c3 = -a1 * a1;
+c1 = (1 + c2 - c3) / 4;
+
+if CurrentBar &gt;= 4 then 
+ US = (1 - c1)*Price + (2 * c1 - c2) * Price[1] 
+ - (c1 + c3) * Price[2] + c2*US[1] + c3 * US[2];
+ 
+if CurrentBar &lt; 4 then 
+	US = Price;
+
+$UltimateSmoother = US;
+
+Indicator: Ultimate Smoother
+
+{
+	TASC APR 2024
+	UltimateSmoother
+	(C) 2004-2024 John F. Ehlers
+}
+
+inputs:
+	Period( 20 ),
+	Price( Close );
+
+variables:
+	US( 0 );
+
+US = $UltimateSmoother(Price, Period);
+Plot1(US, &quot;US&quot;);
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This TradeStation daily chart of the continuous emini S&amp;P 500 futures contract displays a segment from 2023 and 2024 with the UltimateSmoother applied.</p></div>
+
+<p>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="http://www.TradeStation.com" target="_blank">www.TradeStation.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: April 2024</h3></div>
+<p>In his article in this issue, titled &ldquo;The Ultimate Smoother,&rdquo; John Ehlers introduces an &ldquo;EMA killer&rdquo;&mdash;a smoothing indicator with one of its highlights being zero lag in the passband.</p>
+<p>To demonstrate how easy it is to verify whether a concept of a trading idea works or not, we can construct a quick-and-dirty system using Wealth-Lab’s Building Blocks. Knowing that the UltimateSmoother runs circles around its same-period counterpart, we’ll take their bullish and bearish crossovers as entry points for trades. Drag and drop two crossover rules onto the design surface and we’re ready:</p>
+
+<ul><li><strong>Entry.</strong> UltimateSmoother (Close,20) crosses above the 20-period EMA</li>
+	<li><strong>Exit.</strong> UltimateSmoother (Close,20) crosses under the 20-period EMA</li>
+	</ul>
+<p>Figure 2 demonstrates prototyping a trading system, which is a simple task for Wealth-Lab 8.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: WEALTH-LAB. This demonstrates prototyping a trading system in Wealth-Lab 8 using its Building Blocks feature.</p></div>
+<p>Freeing our time for something more creative than coding, we sketched a trading system in a few clicks of the mouse. Figure 3 shows characteristic trades in recent uptrends and market corrections. As always, any trading idea should be scrutinized with out-of-sample backtesting and walk-forward optimization.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: WEALTH-LAB. Trade signals given by the example trading system based on the UltimateSmoother are applied here to a daily chart of ES=F (emini S&amp;P 500 continuous futures contract). Data provided by Yahoo! Finance.</p></div>
+<p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="http://www.wealth-lab.com" target="_blank">www.wealth-lab.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: April 2024</h3></div>
+<p>The UltimateSmoother, which is introduced in the article &ldquo;The Ultimate Smoother&rdquo; in this issue by John Ehlers, is available for download at the following link for NinjaTrader 8:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://www.ninjatrader.com/SC/APRIL2024SCNT8.zip" target="_blank">www.ninjatrader.com/SC/APRIL2024SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the file.</p>
+<p>A chart displaying the indicator is shown in Figure 4.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: NINJATRADER. This chart demonstrates the UltimateSmoother on a chart of the continuous emini S&amp;P 500 futures contract. </p></div>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">&mdash;NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_blank">www.ninjatrader.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: April 2024</h3></div>
+<p>The TradingView Pine Script code shown here implements the UltimateSmoother, a filter introduced in John Ehlers’ article in this issue, &ldquo;The Ultimate Smoother.&rdquo;</p>
+<pre>
+//  TASC Issue: April 2024 - Vol. 42, Issue 4
+//     Article: The Ultimate Smoother.
+//              Smoothing data with less lag.
+//  Article By: John F. Ehlers
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//&#64;version=5
+string title  = 'TASC 2024.04 The Ultimate Smoother'
+string stitle = 'US'
+indicator(title, stitle, true)
+
+
+// --- Inputs ---
+float  src = input.source(close, 'Source Series:')
+int period = input.int(      20, 'Critical Period:')
+
+
+// --- Functions ---
+// &#64;function      The UltimateSmoother is a filter created
+//                by subtracting the response of a high-pass 
+//                filter from that of an all-pass filter.
+// &#64;param src     Source series.
+// &#64;param period  Critical period.
+// &#64;returns       Smoothed series.
+UltimateSmoother (float src, int period) =&gt;
+    float a1 = math.exp(-1.414 * math.pi / period)
+    float c2 = 2.0 * a1 * math.cos(1.414 * math.pi / period)
+    float c3 = -a1 * a1
+    float c1 = (1.0 + c2 - c3) / 4.0
+    float us = src
+    if bar_index &gt;= 4
+        us := (1.0 - c1) * src + 
+              (2.0 * c1 - c2) * src[1] - 
+              (c1 + c3) * src[2] + 
+              c2 * nz(us[1]) + c3 * nz(us[2])
+    us
+
+
+// --- Plotting ---
+plot(UltimateSmoother(src, period), 'US', color.blue, 2)
+</pre>
+<p>The indicator is available on TradingView from the PineCodersTASC account: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart is shown in Figure 5.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: TRADINGVIEW. This chart demonstrates the UltimateSmoother on a chart of the continuous emini S&amp;P 500 futures contract.</p></div>
+<p class="authorTips">
+&mdash;PineCoders, for TradingView<br>
+<a href="http://www.TradingView.com" target="_blank">www.TradingView.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: April 2024</h3></div>
+<p>The SuperSmoother, bandpass filter, and UltimateSmoother indicators presented in John Ehlers’ article in this issue, &ldquo;The Ultimate Smoother,&rdquo; can be easily implemented in NeuroShell Trader using NeuroShell Trader’s ability to call external dynamic linked libraries. Dynamic linked libraries can be written in C, C++, or Power Basic.</p>
+<p>After moving the code given in Ehlers’ article to your preferred compiler and creating a DLL, you can insert the resulting indicator as follows:</p>
+<ol>
+	<li>Select &ldquo;<strong>New Indicator...&rdquo;</strong> from the <strong>Insert</strong> menu.</li>
+	<li>Choose the <strong>External Program &amp; Library Calls</strong> category.</li>
+	<li>Select the appropriate <strong>External DLL Call</strong> indicator.</li>
+	<li>Set up the parameters to match your DLL.</li>
+	<li>Select the <em>finished</em> button.</li>
+	</ol>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">Figure 6: NEUROSHELL TRADER. This NeuroShell Trader chart shows the SuperSmoother, UltimateSmoother, and bandpass filter on a chart of ES (continuous emini S&amp;P 500 futures contract).</p></div>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders’ Tips.</p>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_blank">www.neuroshell.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Realtest.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">RealTest: April 2024</h3></div>
+<p>In &ldquo;The Ultimate Smoother&rdquo; in this issue, John Ehlers presents several of his smoothing techniques, including his latest technique he named his UltimateSmoother, which builds on and surpasses the SuperSmoother filter he had developed earlier.</p>
+<p>The following is coding in text format for use in RealTest (mhptrading.com) to implement the author’s technique:</p>
+<pre>
+Parameters:
+    period:    20
+    
+Data:
+    // SuperSmoother calculation
+    a1:    exp(-1.414*3.14159 / period)
+    b1:    2 * a1 * Cosine(1.414*180 / period)
+    c2:    b1
+    c3:    -a1 * a1
+    c1:    1 - c2 - c3
+    price:    close
+    super:    if(BarNum &gt;= 4, c1 * (Price + Price[1]) / 2 + c2 * super[1] + c3 * super[2], price)
+
+    // UltimateSmoother calculation
+    c4:    (1 + c2 - c3) / 4
+    ultimate:    if(BarNum &gt;= 4, (1 - c4) * price + (2 * c4 - c2) * price[1] - (c4 + c3) * price[2] + c2 * ultimate[1] + c3 * ultimate[2], price)
+    
+Charts:
+    super:    super
+    ultimate:    ultimate
+    </pre>
+
+<div class="figBorder">
+<img src="images/TT-Realtest.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: REALTEST. Here, John Ehlers’ UltimateSmoother filter is demonstrated on a chart of ES (continuous emini S&amp;P 500 futures contract).</p></div>
+<p class="authorTips">&mdash;Marsten Parker<br>
+MHP Trading, <a href="http://www.Mhptrading.com" target="_blank">Mhptrading.com</a><br>
+<a href="mailto:mhp@mhptrading.com">mhp@mhptrading.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+	
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Optuma.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Optuma: April 2024</h3></div>
+<p>The Optuma software already includes more than 20 of John Ehlers’ tools, including his SuperSmoother filter and bandpass filter (<a href="https://www.optuma.com/kb/optuma/tools/ehlers" target="_blank">https://www.optuma.com/kb/optuma/tools/ehlers</a>). Users can choose to use and combine these tools to implement and replicate the technique Ehlers describes in his article in this issue, &ldquo;The Ultimate Smoother.&rdquo; An example chart in Optuma demonstrating his smoothing technique and some of the available tools in Optuma is in Figure 8.</p>
+<div class="figBorder">
+<img src="images/TT-Optuma.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: OPTUMA. This sample chart demonstrates some of the tools available in Optuma to implement John Ehlers’ smoothing techniques.</p></div>
+<p class="authorTips">&mdash;<a href="mailto:support@optuma.com">support@optuma.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" alt="logo" style="width: 90px">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Platform: April 2024</h3></div>
+<p>In his article in this issue, &ldquo;The Ultimate Smoother,&rdquo; John Ehlers presents several functions for smoothing a price curve without lag, smoothing it even more, and applying a high-pass and band-pass filter. No-lag smoothing, high-pass, and band-pass filters are already available in the indicator library of the Zorro platform. This makes my task easy, since I need only implement Ehlers’ latest invention, the ultimate smoother. It achieves its smoothing power by subtracting the high-frequency components from the curve using a high-pass filter.</p>
+<p>The function shown here is a straightforward conversion of Ehlers’ EasyLanguage code given in his article to C:</p>
+	<pre>
+var UltimateSmoother (var *Data, int Length)
+{
+  var f = (1.414*PI) / Length;
+  var a1 = exp(-f);
+  var c2 = 2*a1*cos(f);
+  var c3 = -a1*a1;
+  var c1 = (1+c2-c3)/4;
+  vars US = series(*Data,4);
+  return US[0] = (1-c1)*Data[0] + (2*c1-c2)*Data[1] - (c1+c3)*Data[2]
+   + c2*US[1] + c3*US[2];
+}
+</pre>
+<p>For comparing lag and smoothing power, we can apply the UltimateSmoother, the SuperSmoother, and a standard EMA to a chart of ES from 2023 using the following code:</p>
+<pre>
+void run() 
+{
+  BarPeriod = 1440;
+  StartDate = 20230201;
+  EndDate = 20231201;
+  assetAdd(&quot;ES&quot;,&quot;YAHOO:ES=F&quot;);
+  asset(&quot;ES&quot;);
+  int Length = 30;
+  plot(&quot;UltSmooth&quot;, UltimateSmoother(seriesC(),Length),LINE,MAGENTA);
+  plot(&quot;Smooth&quot;,Smooth(seriesC(),Length),LINE,RED);
+  plot(&quot;EMA&quot;,EMA(seriesC(),3./Length),LINE,BLUE);}
+}
+</pre>
+<p>The resulting chart, Figure 9, replicates the chart shown in the article. The EMA is shown in blue, the SuperSmoother filter in red, and the UltimateSmoother in magenta. We can see that the UltimateSmoother indeed produces the best, albeit smoothed, representation of the price curve.</p>
+<div class="figBorder">
+<img src="images/TT-Zorro.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: ZORRO. The EMA is shown in blue, the SuperSmoother filter is in red, and the UltimateSmoother is in magenta on a 2023 chart of ES (continuous emini S&amp;P 500 futures contract).</p></div>
+<p>The code can be downloaded from the 2023 script repository on <a href="https://financial-hacker.com" target="_blank">https://financial-hacker.com</a>. The Zorro platform can be downloaded from <a href="https://zorro-project.com" target="_blank">https://zorro-project.com</a>.</p>
+<p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_blank">https://zorro-project.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: April 2024</h3></div>
+<p>In his article in this issue, &ldquo;The Ultimate Smoother,&rdquo; John Ehlers takes us another step into his realm of interesting filters as smoothers.</p>
+<p>He opens his article with a review of his SuperSmoother filter and compares that with an EMA that uses a nonstandard alpha value calculation of 3 over length.</p>
+<p>That led me make the <em>alpha numerator</em> into a user control value (cell F17) that we can play with. (It can be quite interesting to see what changing the numerator of <em>alpha</em> does to the EMA plot…) See Figure 10, which compares the Ehlers SuperSmoother with an EMA using a custom alpha defined as &ldquo;3 / length.&rdquo;</p>
+<div class="figBorder">
+<img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 10: EXCEL. In this chart, you can compare Ehlers’ SuperSmoother filter to an EMA that uses a custom alpha defined as 3 / length. </p></div>
+<p>Next, Ehlers walks us through the lag problem inherent in low-pass filters and offers the alternative of subtracting high-pass filters, with their inherent minimal lag, from our input, thus leaving as a residue our low-pass signal with the same minimal lag as the high-pass filter.</p>
+<p>First, I’ll show the high-pass output (Figure 11), which tends to reflect our frequent stepwise close differences without the longer trending implications.</p>
+<div class="figBorder">
+<img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 11: EXCEL. The high-pass output is shown here. The high-pass result tends to reflect frequent stepwise close differences without the longer trending implications, making the close plot look jittery.</p></div>
+<p>Ehlers refines the output of the high-pass filter with his SuperSmoother to create his band-pass result.</p>
+<p>When high-pass and band-pass are plotted on the same chart, as in Figure 12, things get a little messy. To spread things out a bit vertically, I added the &ldquo;tall chart&rdquo; option button. Or you may zero in on the band-pass by way of the &ldquo;band-pass-only&rdquo; button to the right of the charts.</p>
+<div class="figBorder">
+<img src="images/TT-Excel3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 12: EXCEL. When the high-pass and band-pass are plotted on the same chart, the chart gets hard to read. As a solution, a &ldquo;tall chart&rdquo; option has been custom-added to the spreadsheet as an easy-to-use button you can click to spread out the chart vertically. Alternatively, you can use the button on the right to select to show only the band-pass filter in order to zero in on the band-pass.</p></div>
+<p>In Figure 13, we can see the improved lag and signal fidelity of the UltimateSmoother compared with the SuperSmoother.</p>
+<div class="figBorder">
+<img src="images/TT-Excel4.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 13: EXCEL. Here, the SuperSmoother (red line) and UltimateSmoother (blue line) are both plotted on a daily chart of Antero Resources Corp. (AR) for comparison. You can see the improved lag and signal fidelity of the UltimateSmoother compared with the SuperSmoother.</p></div>	
+<p><strong><em>To download this spreadsheet:</em></strong> The spreadsheet file for this Traders&rsquo; Tip can be downloaded <a href="http://www.traders.com/Documentation/FEEDbk_docs/2024/04/images/code/EhlersUltimateSmoother.xlsm">here</a>. To successfully download it, follow these steps:</p>
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2024/04/images/code/EhlersUltimateSmoother.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>	
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>	
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the April 2024 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2024, Technical Analysis, Inc.</p>
+
+</body>
+</html>

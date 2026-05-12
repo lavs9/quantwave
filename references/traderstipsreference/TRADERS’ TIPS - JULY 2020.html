@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine.">
+<meta name="description" content="This month: Truncated Indicators by John F. Ehlers. Contributions from: Tradestation; Wealth-Lab; eSignal; NinjaTrader; Quantacula Studio; NeuroShell Trader; The Zorro Project; TradersStudio; TradeNavigator; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - JULY 2020</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">July 2020</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John F. Ehlers&rsquo; article in this issue, &ldquo;Truncated Indicators.&rdquo; Here, we present the July 2020 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TRADESTATION: JULY 2020</a></li>
+  <li><a href="#item2">WEALTH-LAB: JULY 2020</a></li>
+  <li><a href="#item3"><span style="text-transform:lowercase;">e</span>SIGNAL: JULY 2020</a></li>
+  <li><a href="#item4">NINJATRADER: JULY 2020</a></li>
+  <li><a href="#item5">QUANTACULA STUDIO: JULY 2020</a></li>
+  <li><a href="#item6">NEUROSHELL TRADER: JULY 2020</a></li>
+  <li><a href="#item7">THE ZORRO PROJECT: JULY 2020</a></li>
+  <li><a href="#item8">TRADERSSTUDIO: JULY 2020</a></li>
+  <li><a href="#item9">TRADENAVIGATOR: JULY 2020</a></li>
+  <li><a href="#item10">MICROSOFT EXCEL: JULY 2020</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+TRADESTATION: JULY 2020</h3></div>
+<p>In his article &ldquo;Truncated Indicators&rdquo; in this issue, author John Ehlers introduces a method that can be used to modify some indicators, improving how accurately they are able to track and respond to price action. By limiting the data range, that is, <em>truncating</em> the data, indicators may be able to better handle extreme price events. A reasonable goal, especially during times of high volatility.</p>
+<p>Here, we are providing TradeStation EasyLanguage code for both an indicator and strategy based on the author&rsquo;s work.</p>
+<pre>
+<strong>Indicator: Truncated BP Filter</strong>
+// Truncated BP Filter
+// John F. Ehlers
+// TASC JUL 2020
+
+inputs: 
+	Period( 20 ), 
+	Bandwidth( .1 ), 
+	Length( 10 ) ; 
+variables: 
+	L1( 0 ), G1( 0 ), S1( 0 ), 
+	count( 0 ), BP( 0 ), BPT( 0 ) ;
+arrays: 
+	Trunc[100]( 0 ) ; 
+
+//Standard Bandpass 
+L1 = Cosine( 360 / Period ) ; 
+G1 = Cosine( Bandwidth * 360 / Period ) ; 
+S1 = 1 / G1 - SquareRoot( 1 / ( G1 * G1 ) - 1 ) ;
+BP = .5 * ( 1 - S1 ) * ( Close - Close[2] )
+	 + L1 * ( 1 + S1 ) * BP[1] - S1 * BP[2] ; 
+
+If CurrentBar &lt;= 3 then 
+	BP = 0 ; 
+	
+//Stack the Trunc Array 
+for Count = 100 downto 2 
+begin 
+	Trunc[count] = Trunc[count - 1] ; 
+end ; 
+
+//Truncated Bandpass 
+Trunc[Length + 2] = 0 ; 
+Trunc[Length + 1] = 0 ; 
+
+for count = Length downto 1 
+begin 
+	Trunc[count] = .5 * ( 1 - S1 ) 
+		* ( Close[count - 1] - Close[count + 1] ) 
+		+ L1 * ( 1 + S1 ) * Trunc[count + 1] 
+		- S1 * Trunc[count + 2] ; 
+end ; 
+
+BPT = Trunc[1]; //convert to a variable 
+
+Plot1(BP, &quot;BP Filt&quot; ) ; 
+Plot2( BPT, &quot;Trunc BP Filt&quot;) ;
+Plot4( 0, &quot;ZL&quot; ) ;
+
+Strategy: Truncated BP Filter
+
+// Truncated BP Filter
+// John F. Ehlers
+// TASC JUL 2020
+
+inputs: 
+	Period( 20 ), 
+	Bandwidth( .1 ), 
+	Length( 10 ) ; 
+variables: 
+	L1( 0 ), G1( 0 ), S1( 0 ), 
+	count( 0 ), BP( 0 ), BPT( 0 ) ;
+arrays: 
+	Trunc[100]( 0 ) ; 
+
+//Standard Bandpass 
+L1 = Cosine( 360 / Period ) ; 
+G1 = Cosine( Bandwidth * 360 / Period ) ; 
+S1 = 1 / G1 - SquareRoot( 1 / ( G1 * G1 ) - 1 ) ;
+BP = .5 * ( 1 - S1 ) * ( Close - Close[2] )
+	 + L1 * ( 1 + S1 ) * BP[1] - S1 * BP[2] ; 
+
+If CurrentBar &lt;= 3 then 
+	BP = 0 ; 
+	
+//Stack the Trunc Array 
+for Count = 100 downto 2 
+begin 
+	Trunc[count] = Trunc[count - 1] ; 
+end ; 
+
+//Truncated Bandpass 
+Trunc[Length + 2] = 0 ; 
+Trunc[Length + 1] = 0 ; 
+
+for count = Length downto 1 
+begin 
+	Trunc[count] = .5 * ( 1 - S1 ) 
+		* ( Close[count - 1] - Close[count + 1] ) 
+		+ L1 * ( 1 + S1 ) * Trunc[count + 1] 
+		- S1 * Trunc[count + 2] ; 
+end ; 
+
+BPT = Trunc[1]; //convert to a variable 
+
+
+if BPT crosses over 0  then 
+	Buy next bar at Market 
+else if BPT crosses under 0  Then
+	SellShort next bar at Market ;
+
+</pre>
+<p>To download the EasyLanguage code, please visit our TradeStation and EasyLanguage support forum. The files for this article can be found here: <a href="https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=168100" target="_parent">https://community.tradestation.com/Discussions/Topic.aspx?Topic_ID=168100</a>. The filename is &ldquo;TASC_JUL2020.ZIP.&rdquo; For more information about EasyLanguage in general, please see <a href="https://www.tradestation.com/EL-FAQ" target="_parent">https://www.tradestation.com/EL-FAQ</a>.</p>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. The truncated bandpass filter indicator and strategy are applied to a daily chart of the SPY ETF.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;Doug McCrary<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">WEALTH-LAB: JULY 2020
+</h3></div>
+<p>In his article in this issue, &ldquo;Truncated Indicators,&rdquo; author John Ehlers shows how to improve a bandpass filter&rsquo;s ability to reflect price by limiting the data range. Filtering out the temporary spikes and price extremes should positively affect the indicator stability. Enter a new indicator&mdash;the TruncatedBandPass filter.</p>
+<p>Despite the math behind it may not appear as easy to some, Wealth-Lab proves that prototyping a trading system should not be a complex task. In fact, our <em>strategy from rules</em> feature makes it possible for everyone to achieve without having to invest much effort.</p>
+<p>For example, crossovers of the truncated bandpass with zero could indicate a trend change. Let&rsquo;s see if the idea has merit:</p>
+<ul style="list-style:none;">
+	<li><strong><em>Step 1.</em></strong> Install (or update) the TASCIndicators library to its most-recent version from our website or using the built-in Extension Manager.
+</li>
+	<li><strong><em>Step 2.</em></strong> Add an entry and exit block, then drag and drop &ldquo;Indicator crosses above (below) value&rdquo; from <em>general indicators</em> under the <em>conditions</em> tab on top of each one (respectively).
+</li>
+	<li><strong><em>Step 3.</em></strong> For each entry and exit, choose the TruncatedBandPass as <em>Indicator</em> and zero as the value to cross where prompted.</li>
+</ul>
+<p>Figure 2 shows an example of creating a rules-based strategy in Wealth-Lab.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: WEALTH-LAB. Here is an example of creating a rule-based strategy with the truncated bandpass in Wealth-Lab.</p></div>
+<p>A quick test shows we&rsquo;re onto something, and with some more tweaking, we may be able to make a trading system out of it, as we&rsquo;ve done in Figure 3.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: WEALTH-LAB. The example trading system is applied to a daily chart of TQQQ. (Data provided by AlphaVantage)
+</p></div>
+<p>Whether you&rsquo;ve prototyped the trading system code using our <em>strategy from rules</em> feature described above or whether you&rsquo;ve downloaded the code from Wealth-Lab (hit Ctrl-O and choose <em>download</em>...), to peek into the code behind it, simply click &ldquo;Open code in new strategy window.&rdquo;</p>
+<pre>
+<strong>Wealth-Lab strategy code (C#):</strong>
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Drawing;
+using WealthLab;
+using WealthLab.Indicators;
+using TASCIndicators;
+
+namespace WealthLab.Strategies
+{
+	public class TASC2020_07 : WealthScript	
+	{		
+		protected override void Execute()
+		{
+			var tbp = TruncatedBandPass.Series(Close, 20, 0.10, 10);
+
+			HideVolume();
+			ChartPane pane1 = CreatePane( 25,true,true);
+			PlotSeries( pane1,tbp,Color.MidnightBlue,LineStyle.Solid,1);
+
+			for(int bar = GetTradingLoopStartBar( 21); bar &lt; Bars.Count; bar++)
+			{
+				if (IsLastPositionActive)
+				{
+					Position p = LastPosition;
+					
+					if (CrossUnder(bar, tbp, 0))
+						SellAtMarket( bar + 1, p);
+				}
+				else
+				{
+					if (CrossOver(bar, tbp, 0))
+						BuyAtMarket( bar + 1);
+				}
+			}
+		}
+	}
+}
+</pre>
+<p class="authorTips">&mdash;Robert Sucher &amp; Gene (Eugene) Geren, Wealth-Lab team<br>
+MS123, LLC<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">eSIGNAL: JULY 2020
+</h3></div>
+<p>For this month&rsquo;s Traders&rsquo; Tip, we&rsquo;ve provided the study &ldquo;<a href="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/code/TruncatedIndicators.efs" target="_blank">TruncatedIndicators.efs</a>&rdquo; based on the article in this issue by John Ehlers, &ldquo;Truncated Indicators.&rdquo; The study is designed to improve cycle indicators by introducing truncation.</p>
+<p>The study contains formula parameters that may be configured through the <em>edit chart</em> window (right-click on the chart and select &ldquo;edit chart&rdquo;). A sample chart is shown in Figure 4.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: ESIGNAL. Here is an example of the study plotted on a daily chart of the SPY.</p></div>
+
+ <p>To discuss this study or download a complete copy of the formula code, please visit the EFS Library Discussion Board forum under the <em>forums</em> link from the support menu at <a href="https://www.esignal.com" target="_parent">www.esignal.com</a> or visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs/" target="_parent">https://www.esignal.com/support/kb/efs/</a>.</p>
+<p>The eSignal formula script (EFS) is also available for copying &amp; pasting below.
+</p>
+<pre>
+/**********************************
+Provided By:  
+Copyright 2019 Intercontinental Exchange, Inc. All Rights Reserved. 
+eSignal is a service mark and/or a registered service mark of Intercontinental Exchange, Inc. 
+in the United States and/or other countries. This sample eSignal Formula Script (EFS) 
+is for educational purposes only. 
+Intercontinental Exchange, Inc. reserves the right to modify and overwrite this EFS file with each new release. 
+
+Description:        
+   Truncated Indicators
+   by John F. Ehlers
+    
+
+Version:            1.00  05/13/2020
+
+Formula Parameters:                     Default:
+Period                                  20
+Length                                  10
+Bandwidth                               0.1
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+var fpArray = new Array();
+var bInit = false;
+
+function preMain() {
+    setStudyTitle(&quot;Bandpass and Truncated&quot;);
+    setCursorLabelName(&quot;Standard&quot;, 0);
+    setCursorLabelName(&quot;Truncated&quot;, 1);
+    setPriceStudy(false);
+    setDefaultBarFgColor(Color.RGB(0x00,0x94,0xFF), 0);
+    setDefaultBarFgColor(Color.RGB(0xFE,0x69,0x00), 1);
+    setPlotType( PLOTTYPE_LINE , 0 );
+    setPlotType( PLOTTYPE_LINE , 1 );
+    addBand( 0, PLOTTYPE_DOT, 1, Color.grey); 
+    
+    
+    var x=0;
+    fpArray[x] = new FunctionParameter(&quot;Period&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1);		
+        setDefault(20);
+    }
+    fpArray[x] = new FunctionParameter(&quot;Length&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1);
+        setUpperLimit(98);  
+        setDefault(10);            
+    }
+    fpArray[x] = new FunctionParameter(&quot;Bandwidth&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(0);		
+        setDefault(.1);            
+    }
+        
+}
+
+var bVersion = null;
+var L1 = null;
+var G1 = null; 
+var S1 = null; 
+var BP = null; 
+var BP_1 = null;
+var BP_2 = null;
+var BPT = null; 
+var Trunc = [];
+var xClose = null;
+
+
+function main(Period,Length,Bandwidth) {
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return; 
+    
+    if ( bInit == false ) { 
+        L1 = Math.cos(2 * Math.PI / Period)
+        G1 = Math.cos(Bandwidth * 2 * Math.PI / Period)
+        S1 = 1 / G1 - Math.sqrt(1 / (G1*G1) - 1)
+        xClose = close();  
+        BP_1 = 0;
+        BP = 0;       
+        for (var i = 0; i &lt;= 100; i++){
+            Trunc[i] = 0
+        } 
+        
+        bInit = true; 
+    }      
+
+    if (getCurrentBarCount() &lt;= Length) return;
+    if (getBarState() == BARSTATE_NEWBAR) {
+        BP_2 = BP_1;
+        BP_1 = BP;
+    }
+    
+    if (getCurrentBarCount() &lt;= 3) BP = 0;
+    else BP = .5 * (1 - S1) * (xClose.getValue(0) - xClose.getValue(-2)) + L1 * (1 + S1) * BP_1 - S1 * BP_2;
+    
+    //Stack the Trunc Array
+    for (var i = 100; i &gt; 1; i--) {
+        Trunc[i] = Trunc[i-1]
+    }
+
+    //Truncated Bandpass
+    Trunc[Length + 2] = 0;
+    Trunc[Length + 1] = 0;
+    for (var i = Length; i &gt; 0; i--) {
+        Trunc[i] = .5 * (1 - S1) * (xClose.getValue(-i + 1) - xClose.getValue(-i - 1)) + L1 * (1 + S1) * Trunc[i + 1] - S1 * Trunc[i + 2]; 
+    } 
+
+    BPT = Trunc[1] //convert to a variable
+
+    return [BP, BPT]
+}
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+ </pre>
+<p class="authorTips">&mdash;Eric Lippert<br>
+eSignal, an Interactive Data company<br>
+800 779-6555, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+NINJATRADER: JULY 2020</h3></div>
+<p>The BandPassFilter indicator discussed in John Ehlers&rsquo; article in this issue, &ldquo;Truncated Indicators,&rdquo; is available for download at the following links for NinjaTrader 8 and for NinjaTrader 7:
+</p>
+<ul style="list-style:none;">
+	<li><strong>NinjaTrader 8:</strong> <a href="https://www.ninjatrader.com/SC/July2020SCNT8.zip" target="_parent">www.ninjatrader.com/SC/July2020SCNT8.zip</a></li>
+	<li><strong>NinjaTrader 7:</strong> <a href="https://www.ninjatrader.com/SC/July2020SCNT7.zip" target="_parent">www.ninjatrader.com/SC/July2020SCNT7.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTader 8 from within the Control Center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import in NinjaTrader 7, from within the Control Center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the indicator&rsquo;s source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the Control Center window and selecting the BandPassFilter file. You can review the indicator&rsquo;s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the Control Center window and selecting the BandPassFilter file.</p>
+<p>A sample chart is shown in Figure 5.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: NINJATRADER. The BandPassFilter indicator is shown on SPY from December 2018 to December 2019.</p></div>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.
+</p>
+<p class="authorTips">&mdash;Jim Dooms<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Quantacula.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">QUANTACULA STUDIO: JULY 2020
+</h3></div>
+<p>John Ehlers&rsquo; article in this issue, &ldquo;Truncated Indicators,&rdquo; features his bandpass indicator, which we&rsquo;ve already integrated into the Quantacula TASC library. This means the indicator is ready for use both in Quantacula Studio and the Quantacula.com website.</p>
+<p>We decided to test the indicator out by creating a trading model using drag &amp; drop building blocks in Quantacula Studio. This type of model is composed of <em>entry</em>, <em>exit</em>, <em>condition</em>, and <em>qualifier</em> blocks. You drop <em>conditions</em> onto <em>entries</em> and <em>exits</em> to specify when to get into and out of a trade. You can drop <em>qualifiers</em> onto <em>conditions</em> to give them more specific criteria (see Figure 6)</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/TT-Quantacula1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: QUANTACULA. Shown here is the TruncBandPass trading model mocked up in Quantacula Studio Building Blocks.</p></div>
+<p>We used two conditions for the entry here, <em>indicator new high/low</em> to specify that TruncBandPass should make a 100-bar new low. The second condition we used is <em>indicator turns up/down</em>, to specify that TruncBandPass should turn up, that is, move up after having moved down. We used the qualifier <em>within the past N bars</em> to give the first condition some flexibility. This results in a buy after the TruncBandPass turns up after having hit a 100-bar low <em>sometime within the past 10 bars</em>. We exit the trade when TruncBandPass hits a 50-bar new high.</p>
+<p>We backtested the trading model on the Nasdaq 100 stocks, using the QPremium universe that automatically accounts for symbols that dropped into and out of the index over time. We used $100,000 starting capital, a trade size of 15% of equity, and 1.5:1 margin. Over the past 10 years, the model performed quite well, returning an annualized gain of 19.84% (see Figure 7).</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/TT-Quantacula2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: QUANTACULA. The resulting equity curve for the example TruncBandPass trading model is shown.</p></div>
+<p class="authorTips">&mdash;Dion Kurczek, Quantacula LLC<br>
+<a href="mailto:info@quantacula.com">info@quantacula.com</a><br>
+<a href="https://www.quantacula.com" target="_parent">www.quantacula.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+NEUROSHELL TRADER: JULY 2020</h3></div>
+<p>The truncated bandpass filter described by John Ehlers in his article in this issue, &ldquo;Truncated Indicators,&rdquo; can be easily implemented in NeuroShell Trader using NeuroShell Trader&rsquo;s ability to call external dynamic linked libraries (DLLs). DLLs can be written in C, C++, and Power Basic.</p>
+<p>After moving the code given in Ehlers&rsquo; article to your preferred compiler and creating a DLL, you can insert the resulting indicator as follows:</p>
+<ol>
+<li>Select <em>new indicator</em> from the <strong>insert</strong> menu.</li>
+<li>Choose the <strong>external program &amp; library</strong> calls category.</li>
+<li>Select the appropriate <em>external DLL call</em> indicator.</li>
+<li>Set up the parameters to match your DLL.</li>
+<li>Select the <strong>finished</strong> button.</li>
+</ol>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p>A sample chart is shown in Figure 8.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: NEUROSHELL TRADER. This NeuroShell Trader chart shows the standard bandpass and truncated bandpass filters.</p></div>
+
+
+<p class="authorTips">&mdash;Marge Sherald, Ward Systems Group, Inc.<br>
+301 662-7950, <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+THE ZORRO PROJECT: JULY 2020</h3></div>
+<p>Cumulative indicators, such as the EMA or MACD, are affected not only by previous candles, but by a theoretically infinite history of candles. Although this effect is often assumed to be negligible, John Ehlers demonstrates in his article in this issue that it is not so. Or at least not for a narrow-band bandpass filter.</p>
+<p>Bandpass filters are normally used for detecting cycles in price curves. But they do not work well with steep edges in the price curve. Sudden price jumps cause a narrow-band filter to &ldquo;ring like a bell&rdquo; and generate artificial cycles that can cause false triggers. As a solution, Ehlers proposes to truncate the candle history of the filter. Limiting the history to 10 bars effectively dampened the filter output and produced a better representation of the cycles in the price curve.</p>
+<p>For limiting the history of a cumulative indicator, we&rsquo;re not using Ehlers&rsquo; code here, but instead we&rsquo;ll write a general &ldquo;truncate&rdquo; function that works for any indicator:</p>
+<pre>
+var indicator(vars Data,int Period,var Param);
+
+var truncate(function Indicator,vars Data,int Period,var Param)
+{
+  indicator = Indicator;
+  var *Trunc = zalloc(UnstablePeriod*sizeof(var));
+  var Ret;
+  int i;
+  for(i = UnstablePeriod-1; i &gt;= 0; i--) {
+    SeriesBuffer = Trunc;
+    Ret = indicator(Data+i,Period,Param);
+    shift(Trunc,0,UnstablePeriod);
+  }
+  return Ret;
+}
+</pre>
+<p>This function does basically the same as Ehlers&rsquo; code for his bandpass filter. It accesses the internal history buffer of the cumulative indicator that&rsquo;s passed as the first argument. The <strong>SeriesBuffer</strong> variable replaces that buffer with an external array that&rsquo;s temporarily allocated on the C heap. <strong>UnstablePeriod</strong> is a global variable already used for limiting the history range of traditional indicators, such as EMA or MACD.</p>
+<p>The following code shows how the truncate function is used with our narrow bandpass filter:</p>
+<pre>
+function run() 
+{
+   BarPeriod = 1440;
+   StartDate = 20181101;
+
+   assetAdd(&quot;SPY&quot;,&quot;STOOQ:SPY.US&quot;); // load price history from Stooq
+   asset(&quot;SPY&quot;);
+   
+  UnstablePeriod = 10;
+  vars Prices = series(priceClose());
+  var PB = BandPass(Prices, 20, 0.1);
+  var Trunc = truncate(BandPass, Prices, 20, 0.1);
+  plot(&quot;Bandpass&quot;,BP,NEW|LINE,RED);
+  plot(&quot;Truncated&quot;,Trunc,LINE,BLUE);
+}
+</pre>
+<p>The chart shown in Figure 9 confirms Ehlers&rsquo; observation that the truncated narrow bandpass (blue line) represents cycles better than the original bandpass (red line). For comparison I&rsquo;ve added a medium-wide bandpass filter as it is normally used in trading systems (green line). This filter doesn&rsquo;t &ldquo;ring&rdquo; either, truncated or not. So what&rsquo;s the better choice for detecting cycles, a truncated narrow bandpass or a nontruncated wide bandpass?</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/TT-Zorro1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: ZORRO PROJECT. The chart displays a truncated narrow bandpass (blue line). For comparison, the green line is a nontruncated medium-wide bandpass filter.</p></div>
+
+<p>To find out, we feed the three bandpass variants with a sine chirp and compare their responses. The resulting plots are shown in Figure 10.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/TT-Zorro2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 10: ZORRO PROJECT. Shown for comparison are sine chirp responses from three bandpass variants (the original narrow bandpass, the truncated narrow bandpass, and the wide bandpass).</p></div>
+
+<p>The top panel is the chirp, a sine wave with a period rising from 5 to 60 cycles. The panels below that show the chirp responses of the original narrow bandpass, the truncated narrow bandpass, and the wide bandpass. We can see that the truncated bandpass got a wider bandwidth, artifacts at low cycles, and a shifted center frequency. A nontruncated filter with an already wider bandwidth seems here the better solution.</p>
+<p>The advantage of truncating is that the indicator output is clearly defined, regardless of the lookback period of the trading system. A disadvantage is speed&mdash;truncating makes indicators much slower because they run in a loop. Not very relevant for normal trading systems, but relevant for HFT (high-frequency trading) systems.</p>
+<p>The truncate function and the test scripts can be downloaded from the 2020 script repository on <a href="https://financial-hacker.com" target="_parent">https://financial-hacker.com</a>. The Zorro platform can be downloaded from <a href="https://zorro-project.com" target="_parent">zorro-project.com</a>. Zorro version 2.27 or above is needed.</p>
+<p class="authorTips">&mdash;Petra Volkova<br>
+The Zorro Project by oP group GmbH<br>
+<a href="https://zorro-project.com" target="_parent">www.zorro-project.com</a></p> 
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+TRADERSSTUDIO: JULY 2020</h3></div>
+<p>The importable TradersStudio files based on John Ehlers&rsquo; article in this issue, &ldquo;Truncated Indicators,&rdquo; can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also available below.</p>
+<pre>
+'TRUNCATED INDICATORS
+'Author: John F. Ehlers, TASC July 2020
+'Coded by Richard Denning, 5/17/2020
+'www.TradersEdgeSystems.com
+
+'FUNCTION THAT CALCULATES BP:
+Function Ehlers_BP(Period, Bandwidth, Length)
+'LENGTH must be less than 98 due to array size
+    Dim L1 As BarArray
+    Dim G1 As BarArray
+    Dim S1 As BarArray
+    Dim count
+    Dim BP As BarArray
+    'Dim BPT As BarArray
+    Dim Trunc As Array
+
+    If BarNumber=FirstBar Then
+        'Period = 20
+        'Bandwidth = .1
+        'Length = 10
+        L1 = 0
+        G1 = 0
+        S1 = 0
+        count = 0
+        BP = 0
+        'BPT = 0
+    End If
+
+    ReDim (Trunc, 101)
+    
+'Standard Bandpass
+    L1 = TStation_Cosine(360 / Period)
+    G1 = TStation_Cosine(Bandwidth*360 / Period)
+    S1 = 1 / G1 - Sqr(1 / (G1*G1) - 1)
+    BP = .5*(1 - S1)*(Close - Close[2]) + L1*(1 + S1)*BP[1] - S1*BP[2]
+Ehlers_BP = BP
+End Function
+'----------------------------------------------------------------------
+'FUNCTION THAT CALCULATES BPT:
+Function Ehlers_BPT(Period, Bandwidth, Length)  ', byref BP as bararray)
+'LENGTH must be less than 98 due to array size
+    Dim L1 As BarArray
+    Dim G1 As BarArray
+    Dim S1 As BarArray
+    Dim count
+    Dim BP As BarArray
+    Dim BPT As BarArray
+    Dim Trunc As Array
+
+    If BarNumber=FirstBar Then
+        'Period = 20
+        'Bandwidth = .1
+        'Length = 10
+        L1 = 0
+        G1 = 0
+        S1 = 0
+        count = 0
+        'BP = 0
+        BPT = 0
+    End If
+
+    ReDim (Trunc, 101)
+   
+'Standard Bandpass
+    L1 = TStation_Cosine(360 / Period)
+    G1 = TStation_Cosine(Bandwidth*360 / Period)
+    S1 = 1 / G1 - Sqr(1 / (G1*G1) - 1)
+    'See separate function (Ehlers_BP) for BP calculation:
+    'BP = .5*(1 - S1)*(Close - Close[2]) + L1*(1 + S1)*BP[1] - S1*BP[2]
+
+'Stack the Trunc Array   
+For count=100 To 2 Step -1
+    Trunc[count] = Trunc[count-1]
+Next
+
+'Truncated Bandpass
+Trunc[Length + 2] = 0
+Trunc[Length + 1] = 0
+For count = Length To 1 Step -1
+    Trunc[count] = .5*(1 - S1)*(Close[count - 1] - Close[count + 1]) + L1*(1 + S1)*Trunc[count + 1] - S1*Trunc[count + 2]
+Next
+
+'Convert to a variable
+BPT = Trunc[1]
+Ehlers_BPT = BPT
+End Function
+'------------------------------------------------------------------------------------------------------------------------
+'INDICATOR PLOT THAT PLOTS BP AND BPT:
+Sub Ehlers_BPT_IND(Period, Bandwidth, Length)
+Dim BP As BarArray
+Dim BPT As BarArray
+If BarNumber = FirstBar Then BP = 0
+BP = EHLERS_BP(Period, Bandwidth, Length)
+BPT = EHLERS_BPT(Period, Bandwidth, Length)
+plot1(BP)
+plot2(BPT)
+End Sub
+'---------------------------------------------
+</pre>
+<p>I coded the indicators described by the author. Figure 11 shows the bandpass (BP) and truncated bandpass (BPT) indicators using the default lengths of 20, 0.1, 10 on a chart of Google (GOOGL).</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/TT-Tradersstudio.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 11: TRADERSSTUDIO. The bandpass (BP) and truncated bandpass (BPT) indicators are shown on a chart of MSFT.</p></div>
+
+<p class="authorTips">&mdash;Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for TradersStudio</p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Genesis.gif" alt="logo">
+ <h3 class="newsTitle grey_blue">
+TRADENAVIGATOR: JULY 2020</h3></div>
+<p>In &ldquo;Truncated Indicators&rdquo; in this issue, author John Ehlers presents a truncation technique for cycle indicators and demonstrates the technique using a truncated bandpass filter.</p>
+<p>To install these new tools into Trade Navigator, first obtain the program update by clicking on the telephone button (or use the <em>file</em> pulldown menu, then select <em>update data</em>). Then select <em>download special file</em>, and click on the <em>start</em> button. You will then be guided through an upgrade of your Trade Navigator. If prompted to &ldquo;re-import libraries,&rdquo; please do so. This will import the new tools into the software. Once that is completed, you will find a study named &ldquo;Ehlers BandPass filters.&rdquo;</p>
+<p>You can insert these indicators onto your chart by opening the <em>charting</em> dropdown menu, selecting the <em>add to chart</em> command, then on the <em>studies</em> tab, finding the new study, selecting it, then clicking on the <em>add</em> button.</p>
+<p>If you need assistance with upgrading or applying the study, our technical support staff is happy to help via phone or via live chat through our website.</p>
+<p>A sample chart is shown in Figure 12.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/TT-Tradenavigator.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 12: TRADE NAVIGATOR. This chart displays the Ehlers truncated bandpass filter.</p></div>
+<p class="authorTips">&mdash;Genesis Financial Data<br>
+Tech support 719 884-0245<br>
+<a href="https://www.TradeNavigator.com" target="_parent">www.TradeNavigator.com</a></p>
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+ <h3 class="newsTitle grey_blue">
+MICROSOFT EXCEL: JULY 2020</h3></div>
+<p>In his article in this issue, &ldquo;Truncated Indicators,&rdquo; John Ehlers takes us aside to look at the impact of sharp price movements on two fundamentally different types of filters: finite impulse response, and infinite impulse response filters. Given recent market conditions, this is a very well timed subject.</p>
+<p>In this article, Ehlers suggests &ldquo;truncation&rdquo; as an approach to the way the trader calculates filters. He explains why truncation is not appropriate for finite impulse response filters but why truncation can be beneficial to infinite impulse response filters. He then explains how to apply truncation to infinite impulse response filters using his bandpass filter as an example.</p>
+<p>Figure 13 replicates the figure from his article using Excel.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 13: EXCEL. Bandpass and truncated bandpass filters.</p></div>
+<p>Next, it seemed appropriate to take a look at this concept within a filter or indicator that uses the normal bandpass filter as a starting point.</p>
+<p>A quick dive into my Traders&rsquo; Tips spreadsheet archive brought me to an <a href="https://technical.traders.com/archive/article.asp?file=\V37\C08\894EHLE.pdf" target="_parent">August 2019 S&amp;C article by John Ehlers titled &ldquo;A Peek Into The Future.&rdquo;</a> That article introduced the Voss predictive filter, where the first step in the Voss computation is the bandpass filter.</p>
+<p>Three columns of cell formulas make up the Voss filter and I already have the bandpass column. So it is a simple exercise to port the Voss filter forward to the current spreadsheet to demonstrate the result of bandpass truncation in a more complex environment.
+</p>
+<p>Figure 14 replicates the chart from Ehlers&rsquo; August 2019 article. Figure 15 is the same chart using the truncated bandpass filter as the first stage of Voss calculations. Figure 16 below puts the two Voss calculations side by side.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 14: EXCEL. Voss predictive filter. Note: The Voss article used a wider bandwidth setting of 0.25.</p></div>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/TT-Excel3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 15: EXCEL. Voss filter calculated using the truncated bandpass filter. </p></div>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/TT-Excel4.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 16: EXCEL. Voss filter and truncated Voss filter.</p></div>
+<p>At this writing, we are well into the impact that Covid-19 is having on the world economy. Figure 17 takes a look at the recent S&amp;P 500 index with the Voss filter and the truncated Voss filter.</p>
+<div class="figBorder">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/TT-Excel5.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 17: EXCEL. Forward space the chart in Figure 16 to today.</p></div>
+<p><strong><em>Some technical explanations behind the creation of this spreadsheet</em></strong><br>
+User-defined function: BPTrunc&mdash;A VBA code implementation of Ehlers&rsquo; truncated bandpass filter.</p>
+<p>In his article in this issue, Ehlers mentions &ldquo;mathematical sleight of hand tricks.&rdquo;</p>
+<p>In the time available, I have not been able to come up with any mathematical jujitsu that would keep an implementation of the truncated bandpass filter entirely within native Excel cell formula capabilities. The problem is due to the bandpass filter formulation requiring two of its previous output values as a feedback input.</p>
+<p>Truncation requires that we break that backward reference at the specified truncation length. The EasyLanguage code given in the sidebar in his article introduces a pair of zero feedback values just beyond the truncation length to provide that break.</p> 
+<p>Between the truncated version needing the two oldest feedback values to be zero, the complexity of the bandpass filter formula itself, and the requirement that it be calculated fresh at each bar, I was stymied as to how to create a purely Excel cell formula computation for this.</p>
+<p>Perhaps a better mathematician than I could figure out a refactoring of the bandpass filter, similar to Ehlers&rsquo; discussion in his article of the &ldquo;transfer response of a filter,&rdquo; that would allow this bandpass truncation to be coded with native Excel cell formula capabilities.</p>
+<p>Instead, I have used VBA to create a user-defined function (UDF)&mdash;&ldquo;BPTrunc&rdquo;&mdash;that can be used directly in complex cell formulas.</p>
+<p>The only real drawback to the UDF approach is that it is inherently slower to calculate than a native cell formula solution. Thus, for this spreadsheet, there is a noticeable delay in response when the user changes any of the control values or buttons.</p>
+<p>For this spreadsheet, I have chosen to use BPTrunc in a column by itself to facilitate on-chart side by side comparisons. But it is not a requirement of BPTrunc to be used standalone in a cell formula. The BPTrunc function is portable.</p>
+<p>The following is for those comfortable with VBA and who might wish to try the truncated bandpass filter in other spreadsheets that have used the bandpass filter.</p>
+<p>The easiest approach is to have the VBA editor export a copy of the module from this spreadsheet to your hard drive.</p>
+<p>Close this spreadsheet. Open your target spreadsheet and use the VBA editor to import the &ldquo;truncated bandpass&rdquo; module from where you stored it. Then modify cell formulas that use the bandpass filter, similar to what I have done here for the Voss filter calculation.</p>
+<p><strong><em>To download this spreadsheet</em></strong><br>
+The spreadsheet file for this Traders&rsquo; Tip can be downloaded from Traders.com in the Traders&rsquo; Tips area. To successfully download it, follow these steps:</p>
+<ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2020/07/images/code/TruncatedBandPass.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>
+<p class="authorTips">&mdash;Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>
+
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the July 2020 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2020, Technical Analysis, Inc.</p>
+
+</body>
+</html>

@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: Linear Predictive Filters And Instantaneous Frequency by John F. Ehlers. Contributions from: TradeStation; Wealth-Lab.com; NeuroShell Trader; TradingView; NinjaTrader.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - JANUARY 2025</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">January 2025</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2025/01/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John F. Ehlers&rsquo; article in this issue, &ldquo;Linear Predictive Filters And Instantaneous Frequency.&rdquo; Here, we present the January 2025 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p>
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">TradeStation: January 2025</a></li>
+  <li><a href="#item2">Wealth-Lab.com: January 2025</a></li>
+  <li><a href="#item3">NeuroShell Trader: January 2025</a></li>
+  <li><a href="#item4">TradingView: January 2025</a></li>
+  <li><a href="#item5">NinjaTrader: January 2025</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: January 2025</h3></div>
+<p>In &ldquo;Linear Predictive Filters And Instantaneous Frequency,&rdquo; John Ehlers explores the use of linear predictive filters, applying the Griffiths approach and key digital signal processing principles to tackle the challenge of adaptively tuning indicators for evolving market conditions. He discusses how this approach can identify and adjust to the dominant cycle within market data.</p>
+<p>Code in EasyLanguage for the Ehlers&rsquo; approach can be found in Ehlers article in this issue, and is also shown below.</p>
+<pre>
+Function: $HighPass
+{
+	$HighPass Function
+ 	(C) 2004-2024 John F. Ehlers
+}
+
+inputs:
+	Price(numericseries),
+	Period(numericsimple);
+	
+variables:
+	a1( 0 ),
+	b1( 0 ),
+	c1( 0 ),
+	c2( 0 ),
+	c3( 0 );
+
+a1 = ExpValue(-1.414 * 3.14159 / Period);
+b1 = 2 * a1 * Cosine(1.414 * 180 / Period);
+c2 = b1;
+c3 = -a1 * a1;
+c1 = (1 + c2 - c3) / 4;
+
+if CurrentBar &gt;= 4 then 
+ 	$HighPass = c1*(Price - 2 * Price[1] + Price[2]) +
+	 c2 * $HighPass[1] + c3 * $HighPass[2];
+if Currentbar &lt; 4 then 
+	$HighPass = 0;
+
+Function: $SuperSmoother
+{
+	SuperSmoother Function
+ 	(C) 2004-2024 John F. Ehlers
+}
+
+inputs:
+	Price(numericseries),
+	Period(numericsimple);
+
+variables:
+	a1( 0 ),
+	b1( 0 ),
+	c1( 0 ),
+	c2( 0 ),
+	c3( 0 );
+
+a1 = ExpValue(-1.414 * 3.14159 / Period);
+b1 = 2 * a1 * Cosine(1.414 * 180 / Period);
+c2 = b1;
+c3 = -a1 * a1;
+c1 = 1 - c2 - c3;
+
+if CurrentBar &gt;= 4 then 
+	$SuperSmoother = c1*(Price + Price[1]) / 2 
+	 + c2 * $SuperSmoother[1] + c3 * $SuperSmoother[2];
+if CurrentBar &lt; 4 then 
+	$SuperSmoother = Price;
+
+Indicator: Griffiths Predictor 
+{
+	TASC JAN 2025
+	Griffiths Predictor Indicator
+	(C) 2024 John F. Ehlers
+	From &quot;Rapid Measurement of Digital Instantaneous 
+	Frequency&quot;, IEEE Transactions ASSP-23
+}
+inputs:
+	LowerBound( 18 ),
+	UpperBound( 40 ),
+	Length( 18 ),
+	BarsFwd( 2 );
+
+variables:
+	Mu( 0 ),
+	HP( 0 ),
+	LP( 0 ),
+	HH( 0 ),
+	LL( 0 ),
+	Signal( 0 ),
+	Peak( .1 ),
+	XBar( 0 ),
+	count( 0 ),
+	XPred( 0 ),
+	Advance( 0 );
+
+arrays:
+	XX[200](0),
+	Coef[200](0),
+	Pwr[200,2](0);
+	
+Mu = 1 / Length;
+HP = $HighPass(Close, UpperBound);
+LP = $SuperSmoother(HP, LowerBound);
+Peak = .991 * Peak[1];
+
+if AbsValue(LP) &gt; Peak then 
+	Peak = AbsValue(LP);
+
+if Peak &lt;&gt; 0 then 
+	Signal = LP / Peak;
+	
+//Perfect cycle test signal
+//Signal = Sine(360*currentbar / 30);
+
+for Count = 1 to Length 
+begin
+	XX[count] = Signal[Length - count];
+end;
+
+XBar = 0;
+
+for Count = 1 to Length 
+begin
+	XBar = XBar + XX[Length - count] * Coef[count];
+end;
+
+for count = 1 to Length
+begin
+	coef[count] = coef[count] + Mu*(XX[Length] 
+	 - XBar)*XX[Length - count];
+end;
+
+//Prediction
+for Advance = 1 to BarsFwd 
+begin
+	XPred = 0;
+
+	for count = 1 to Length 
+	begin
+		XPred = XPred + XX[Length + 1 - count]*coef[count];
+	end;
+	
+	for count = advance to Length - advance 
+	begin
+		XX[count] = XX[count + 1];
+	end;
+	
+	for count = 1 to Length - 1 
+	begin
+		XX[count] = XX[count + 1];
+	end;
+	
+	XX[Length] = XPred;
+end;
+
+Plot1( Signal, &quot;Signal&quot; );
+Plot2( 0, &quot;Zero Line&quot; );
+Plot3( XPred, &quot;XPred&quot; );
+
+Indicator: Griffiths Dominant Cycle
+{
+	TASC JAN 2025
+	Griffiths Dominant Cycle Indicator
+	(C) 2024 John F. Ehlers
+	from &quot;Rapid Measurement of Digital Instantaneous 
+	Frequency&quot;, IEEE Transactions ASSP-23
+}
+
+inputs:
+	LowerBound( 18 ),
+	UpperBound( 40 ),
+	Length( 40 );
+	
+variables:
+	Mu( 0 ),
+	HP( 0 ),
+	LP( 0 ),
+	HH( 0 ),
+	LL( 0 ),
+	Signal( 0 ),
+	Peak( .1 ),
+	XBar( 0 ),
+	Count( 0 ),
+	Advance( 0 ),
+	Period( 0 ),
+	Real( 0 ),
+	Imag( 0 ),
+	Denom( 0 ),
+	MaxPwr( 0 ),
+	Cycle( 0 );
+	
+arrays:
+	XX[200]( 0 ),
+	coef[200]( 0 ),
+	Pwr[200,2]( 0 );
+	
+Mu = 1 / Length;
+HP = $HighPass(Close, UpperBound);
+LP = $SuperSmoother(HP, LowerBound);
+Peak = .991*Peak[1];
+
+if AbsValue(LP) &gt; Peak then 
+	Peak = AbsValue(LP);
+	
+if Peak &lt;&gt; 0 then 
+	Signal = LP / Peak;
+
+//Signal = Sine(360*currentbar / 30);
+for Count = 1 to Length 
+begin
+	XX[count] = Signal[Length - count];
+end;
+
+XBar = 0;
+
+for Count = 1 to Length 
+begin
+	XBar = XBar + XX[Length - Count] * coef[count];
+end;
+
+For count = 1 to Length
+begin
+	coef[count] = coef[count] + Mu*(XX[Length] 
+	 - XBar) * XX[Length - count];
+end;
+
+//Instantaneous Frequency
+for Period = LowerBound to UpperBound 
+begin
+	Real = 0;
+	Imag = 0;
+
+	for count = 1 to Length 
+	begin
+		Real = Real + coef[count] 
+		 * Cosine(360*count / Period);
+		Imag = Imag + coef[count] 
+		 * Sine(360*count / Period);
+	end;
+	
+	Denom = (1 - Real)*(1 - Real) + Imag*Imag;
+	Pwr[Period, 1] = .1 / Denom;
+end;
+
+MaxPwr = 0;
+
+for Period = LowerBound to UpperBound 
+begin
+	If Pwr[Period, 1] &gt; MaxPwr then 
+	begin
+		MaxPwr = Pwr[Period, 1];
+		Cycle = Period;
+	end;
+end;
+
+if Cycle &gt; Cycle[1] + 2 then 
+	Cycle = Cycle[1] + 2;
+if Cycle &lt; Cycle[1] - 2 then 
+	Cycle = Cycle[1] - 2;
+	
+Plot1(Cycle, &quot;Cycle&quot; ); 
+
+Indicator: Griffiths Spectrum
+{
+	TASC JAN 2025
+	Griffiths Spectrum Indicator
+	(C) 2024 John F. Ehlers
+	From &quot;Rapid Measurement of Digitial Instantaneous 
+	Frequency&quot;, IEEE Transactions ASSP-23
+}
+
+inputs:
+	LowerBound( 10 ),
+	UpperBound( 40 ),
+	Length( 40 );
+
+variables:
+	Mu( 0 ) ,
+	HP( 0 ),
+	LP( 0 ),
+	HH( 0 ),
+	LL( 0 ),
+	Signal( 0 ),
+	Peak( .1 ),
+	XBar( 0 ),
+	Count( 0 ),
+	advance( 0 ),
+	Period( 0 ),
+	Real( 0 ),
+	Imag( 0 ),
+	Denom( 0 ),
+	MaxPwr( 0 ),
+	Color1( 0 ),
+	Color2( 0 ),
+	PlotColor( 0 );
+
+arrays:
+	XX[100]( 0 ),
+	coef[100]( 0 ),
+	Pwr[100, 2]( 0 );
+
+Mu = 1 / Length;
+HP = $HighPass(Close, UpperBound);
+LP = $SuperSmoother(HP, LowerBound);
+Peak = .991 * Peak[1];
+
+if AbsValue(LP) &gt; Peak then 
+	Peak = AbsValue(LP);
+
+if Peak &lt;&gt; 0 then 
+	Signal = LP / Peak;
+
+for count = 1 to Length 
+begin
+	XX[count] = Signal[Length - count];
+end;
+
+XBar = 0;
+
+for count = 1 to Length 
+begin
+	XBar = XBar + XX[Length - count]*coef[count];
+end;
+
+for count = 1 to Length 
+begin
+	coef[count] = coef[count] + Mu*(XX[Length] -
+	 XBar)*XX[Length - count];
+end;
+
+//Instantaneous Frequency
+For Period = LowerBound to UpperBound 
+begin
+	Pwr[Period, 2] = Pwr[Period, 1];
+	Real = 0;
+	Imag = 0;
+	for count = 1 to Length 
+	begin
+		Real = Real + coef[count] 
+		 * Cosine(360 * Count / Period);
+		Imag = Imag + coef[count] 
+		 * Sine(360 * Count / Period);
+	end;
+	Denom = (1 - Real)*(1 - Real) + Imag*Imag;
+	Pwr[Period, 1] = .1 / Denom + .9*Pwr[Period, 2];
+end;
+
+MaxPwr = 0;
+
+For Period = LowerBound to UpperBound 
+begin
+	if Pwr[Period, 1] &gt; MaxPwr then 
+		MaxPwr = Pwr[Period, 1];
+end;
+
+for Period = LowerBound to UpperBound 
+begin
+	if MaxPwr &lt;&gt; 0 then 
+		Pwr[Period, 1] = Pwr[Period, 1] / MaxPwr;
+end;
+
+//Plot the Spectrum as a Heatmap
+for Period = LowerBound to UpperBound 
+begin
+	//Convert Power to RGB Color for Display
+	if Pwr[Period, 1] &gt;= .5 then 
+	begin
+		Color1 = 255;
+		Color2 = 255*(2*Pwr[Period, 1] - 1);
+	end
+	else 
+	begin
+		Color1 = 255*2*Pwr[Period, 1];
+		Color2 = 0;
+	End;
+	
+	PlotColor = RGB(Color1, Color2, 0);
+
+	if period = 3 then Plot3(3, &quot;S5&quot;, PlotColor, 0, 4);
+	if period = 4 then Plot4(4, &quot;S4&quot;, PlotColor, 0, 4);
+	if period = 5 then Plot5(5, &quot;S5&quot;, PlotColor, 0, 4);
+	if period = 6 then Plot6(6, &quot;S6&quot;, PlotColor, 0, 4);
+	if period = 7 then Plot7(7, &quot;S7&quot;, PlotColor, 0, 4);
+	if period = 8 then Plot8(8, &quot;S8&quot;, PlotColor, 0, 4);
+	if period = 9 then Plot9(9, &quot;S9&quot;, PlotColor, 0, 4);
+	if period = 10 then Plot10(10, &quot;S10&quot;, PlotColor, 0, 4);
+	if period = 11 then Plot11(11, &quot;S11&quot;, PlotColor, 0, 4);
+	if period = 12 then Plot12(12, &quot;S12&quot;, PlotColor, 0, 4);
+	if period = 13 then Plot13(13, &quot;S13&quot;, PlotColor, 0, 4);
+	if period = 14 then Plot14(14, &quot;S14&quot;, PlotColor, 0, 4);
+	if period = 15 then Plot15(15, &quot;S15&quot;, PlotColor, 0, 4);
+	if period = 16 then Plot16(16, &quot;S16&quot;, PlotColor, 0, 4);
+	if period = 17 then Plot17(17, &quot;S17&quot;, PlotColor, 0, 4);
+	if period = 18 then Plot18(18, &quot;S18&quot;, PlotColor, 0, 4);
+	if period = 19 then Plot19(19, &quot;S19&quot;, PlotColor, 0, 4);
+	if period = 20 then Plot20(20, &quot;S20&quot;, PlotColor, 0, 4);
+	if period = 21 then Plot21(21, &quot;S21&quot;, PlotColor, 0, 4);
+	if period = 22 then Plot22(22, &quot;S22&quot;, PlotColor, 0, 4);
+	if period = 23 then Plot23(23, &quot;S23&quot;, PlotColor, 0, 4);
+	if period = 24 then Plot24(24, &quot;S24&quot;, PlotColor, 0, 4);
+	if period = 25 then Plot25(25, &quot;S25&quot;, PlotColor, 0, 4);
+	if period = 26 then Plot26(26, &quot;S26&quot;, PlotColor, 0, 4);
+	if period = 27 then Plot27(27, &quot;S27&quot;, PlotColor, 0, 4);
+	if period = 28 then Plot28(28, &quot;S28&quot;, PlotColor, 0, 4);
+	if period = 29 then Plot29(29, &quot;S29&quot;, PlotColor, 0, 4);
+	if period = 30 then Plot30(30, &quot;S30&quot;, PlotColor, 0, 4);
+	if period = 31 then Plot31(31, &quot;S31&quot;, PlotColor, 0, 4);
+	if period = 32 then Plot32(32, &quot;S32&quot;, PlotColor, 0, 4);
+	if period = 33 then Plot33(33, &quot;S33&quot;, PlotColor, 0, 4);
+	if period = 34 then Plot34(34, &quot;S34&quot;, PlotColor, 0, 4);
+	if period = 35 then Plot35(35, &quot;S35&quot;, PlotColor, 0, 4);
+	if period = 36 then Plot36(36, &quot;S36&quot;, PlotColor, 0, 4);
+	if period = 37 then Plot37(37, &quot;S37&quot;, PlotColor, 0, 4);
+	if period = 38 then Plot38(38, &quot;S38&quot;, PlotColor, 0, 4);
+	if period = 39 then Plot39(39, &quot;S39&quot;, PlotColor, 0, 4);
+	if period = 40 then Plot40(40, &quot;S40&quot;, PlotColor, 0, 4);
+	if period = 41 then Plot41(41, &quot;S41&quot;, PlotColor, 0, 4);
+	if period = 42 then Plot42(42, &quot;S42&quot;, PlotColor, 0, 4);
+	if period = 43 then Plot43(43, &quot;S43&quot;, PlotColor, 0, 4);
+	if period = 44 then Plot44(44, &quot;S44&quot;, PlotColor, 0, 4);
+	if period = 45 then Plot45(45, &quot;S45&quot;, PlotColor, 0, 4);
+	if period = 46 then Plot46(46, &quot;S46&quot;, PlotColor, 0, 4);
+	if period = 47 then Plot47(47, &quot;S47&quot;, PlotColor, 0, 4);
+	if period = 48 then Plot48(48, &quot;S48&quot;, PlotColor, 0, 4);
+	if period = 49 then Plot49(49, &quot;S49&quot;, PlotColor, 0, 4);
+	if period = 50 then Plot50(50, &quot;S50&quot;, PlotColor, 0, 4);
+	if period = 51 then Plot51(51, &quot;S51&quot;, PlotColor, 0, 4);
+	if period = 52 then Plot52(52, &quot;S52&quot;, PlotColor, 0, 4);
+	if period = 53 then Plot53(53, &quot;S53&quot;, PlotColor, 0, 4);
+	if period = 54 then Plot54(54, &quot;S54&quot;, PlotColor, 0, 4);
+	if period = 55 then Plot55(55, &quot;S55&quot;, PlotColor, 0, 4);
+	if period = 56 then Plot56(56, &quot;S56&quot;, PlotColor, 0, 4);
+	if period = 57 then Plot57(57, &quot;S57&quot;, PlotColor, 0, 4);
+	if period = 58 then Plot58(58, &quot;S58&quot;, PlotColor, 0, 4);
+	if period = 59 then Plot59(59, &quot;S59&quot;, PlotColor, 0, 4);
+	if period = 60 then Plot60(60, &quot;S60&quot;, PlotColor, 0, 4);
+	if period = 61 then Plot61(61, &quot;S61&quot;, PlotColor, 0, 4);
+	if period = 62 then Plot62(62, &quot;S62&quot;, PlotColor, 0, 4);
+	if period = 63 then Plot63(63, &quot;S63&quot;, PlotColor, 0, 4);
+	if period = 64 then Plot64(64, &quot;S64&quot;, PlotColor, 0, 4);
+	if period = 65 then Plot65(65, &quot;S65&quot;, PlotColor, 0, 4);
+	if period = 66 then Plot66(66, &quot;S66&quot;, PlotColor, 0, 4);
+	if period = 67 then Plot67(67, &quot;S67&quot;, PlotColor, 0, 4);
+	if period = 68 then Plot68(68, &quot;S68&quot;, PlotColor, 0, 4);
+	if period = 69 then Plot69(69, &quot;S69&quot;, PlotColor, 0, 4);
+	if period = 70 then Plot70(70, &quot;S70&quot;, PlotColor, 0, 4);
+	if period = 71 then Plot71(71, &quot;S71&quot;, PlotColor, 0, 4);
+	if period = 72 then Plot72(72, &quot;S72&quot;, PlotColor, 0, 4);
+	if period = 73 then Plot73(73, &quot;S73&quot;, PlotColor, 0, 4);
+	if period = 74 then Plot74(74, &quot;S74&quot;, PlotColor, 0, 4);
+	if period = 75 then Plot75(75, &quot;S75&quot;, PlotColor, 0, 4);
+	if period = 76 then Plot76(76, &quot;S76&quot;, PlotColor, 0, 4);
+	if period = 77 then Plot77(77, &quot;S77&quot;, PlotColor, 0, 4);
+	if period = 78 then Plot78(78, &quot;S78&quot;, PlotColor, 0, 4);
+	if period = 79 then Plot79(79, &quot;S79&quot;, PlotColor, 0, 4);
+	if period = 80 then Plot80(80, &quot;S80&quot;, PlotColor, 0, 4);
+	if period = 81 then Plot81(81, &quot;S81&quot;, PlotColor, 0, 4);
+	if period = 82 then Plot82(82, &quot;S82&quot;, PlotColor, 0, 4);
+	if period = 83 then Plot83(83, &quot;S83&quot;, PlotColor, 0, 4);
+	if period = 84 then Plot84(84, &quot;S84&quot;, PlotColor, 0, 4);
+	if period = 85 then Plot85(85, &quot;S85&quot;, PlotColor, 0, 4);
+	if period = 86 then Plot86(86, &quot;S86&quot;, PlotColor, 0, 4);
+	if period = 87 then Plot87(87, &quot;S87&quot;, PlotColor, 0, 4);
+	if period = 88 then Plot88(88, &quot;S88&quot;, PlotColor, 0, 4);
+	if period = 89 then Plot89(89, &quot;S89&quot;, PlotColor, 0, 4);
+	if period = 90 then Plot90(90, &quot;S90&quot;, PlotColor, 0, 4);
+	if period = 91 then Plot91(91, &quot;S91&quot;, PlotColor, 0, 4);
+	if period = 92 then Plot92(92, &quot;S92&quot;, PlotColor, 0, 4);
+	if period = 93 then Plot93(93, &quot;S93&quot;, PlotColor, 0, 4);
+	if period = 94 then Plot94(94, &quot;S94&quot;, PlotColor, 0, 4);
+	if period = 95 then Plot95(95, &quot;S95&quot;, PlotColor, 0, 4);
+	if period = 96 then Plot96(96, &quot;S96&quot;, PlotColor, 0, 4);
+	if period = 97 then Plot97(97, &quot;S97&quot;, PlotColor, 0, 4);
+	if period = 98 then Plot98(98, &quot;S98&quot;, PlotColor, 0, 4);
+	if period = 99 then Plot99(99, &quot;S99&quot;, PlotColor, 0, 4);
+end; 
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: TRADESTATION. This shows a daily chart of the continuous emini S&amp;P 500 showing a portion of 2024 with all three indicators applied. </p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="http://www.TradeStation.com" target="_blank">www.TradeStation.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: January 2025</h3></div>
+<p>Leave it John Ehlers to remind former electrical engineers how much we&rsquo;ve forgotten! In &ldquo;Linear Predictive Filters And Instantaneous Frequency&rdquo; in this issue, Ehlers uses the Griffiths approach with elements of digital signal processing to offer coding for some indicators to help solve the challenge of adaptively tuning indicators and strategy algorithms to the dominant cycle of the data. The article includes several code listings to calculate and plot the indicators on a chart. Just to translate all the code presented in the article took the better part of a day, but the result is worth it.</p>
+<p>Atop the Griffiths spectrum in Figure 2, you&rsquo;ll see the &ldquo;white hot&rdquo; dominant cycle (DC) indicator snapping to the frequency with the most energy. Note however that it&rsquo;s constrained to change only by two cycles per bar to prevent &ldquo;bouncing.&rdquo; The heat map is primarily eye candy (useful to impress your spouse and friends), but the Griffith DC indicator is the key to &ldquo;adaptively tune indicators and strategy algorithms,&rdquo; as Ehlers states in his article. The GriffithsDC and GriffithsPredictor indicators can now be found in our WealthLab.TASC indicator library.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: WEALTH-LAB. This example daily chart of the emini S&amp;P 500 futures (ES) displays the Griffiths spectrum with the dominant cycle indicator. The GriffithsDC and GriffithsPredictor indicators can now be found in the WealthLab.TASC indicator library.</p></div>
+<pre>
+using System;
+using WealthLab.Backtest;
+using WealthLab.Core;
+using WealthLab.TASC;
+
+namespace WealthScript
+{
+    public class GriffithSpectrum : UserStrategyBase
+    {
+		Parameter _ub, _lb, _length;
+		
+		public GriffithSpectrum()
+		{
+			_lb = AddParameter(&quot;Lowerbound&quot;, ParameterType.Int32, 18, 5, 40, 5);
+			_ub = AddParameter(&quot;Upperbound&quot;, ParameterType.Int32, 40, 20, 125, 5);
+			_length = AddParameter(&quot;Length&quot;, ParameterType.Int32, 54, 30, 60, 1);
+		}
+		
+        public override void Initialize(BarHistory bars)
+		{			
+			TimeSeries ds = bars.Close;
+			int ubound = _ub.AsInt;
+			if (ubound &gt; ds.Count) ubound = ds.Count;
+
+			//initialize raster series
+			SetPaneDrawingOptions(&quot;GrSp&quot;, 20);
+			int nser = ubound - _lb.AsInt + 1;
+			TimeSeries[] Raster = new TimeSeries[nser];
+			for (int n = 0; n &lt; nser; n++)
+			{
+				Raster[n] = new TimeSeries(bars.DateTimes, n + _lb.AsInt);
+				PlotTimeSeriesLine(Raster[n], &quot;&quot;, &quot;GrSp&quot;, WLColor.Black, 8, suppressLabels:true);
+			}
+
+			double[] XX = new double[_length.AsInt];
+			double[] coef = new double[_length.AsInt];
+			double[,] Pwr = new double[nser, 2];
+			int L1 = _length.AsInt - 1;
+
+			double Mu = 1.0 / _length.AsInt;
+			TimeSeries HP = new HighPass(ds, ubound);
+			TimeSeries LP = new SuperSmoother(HP, _lb.AsInt);
+			TimeSeries Peak = new TimeSeries(ds.DateTimes, 0.1);
+			TimeSeries Signal = new TimeSeries(ds.DateTimes, 0);
+			
+			for (int bar = Math.Max(ubound, _length.AsInt); bar &lt; ds.Count; bar++)
+			{
+				Peak[bar] = 0.991 * Peak[bar - 1];
+				if (Math.Abs(LP[bar]) &gt; Peak[bar])
+					Peak[bar] = Math.Abs(LP[bar]);
+
+				Signal[bar] = Peak[bar] != 0 ? LP[bar] / Peak[bar] : Signal[bar - 1];
+
+				for (int count = 0; count &lt; _length.AsInt; count++)
+					XX[count] = Signal[bar - (L1 - count)];
+
+				double XBar = 0;
+				for (int count = 0; count &lt; _length.AsInt; count++)
+					XBar += XX[L1 - count] * coef[count];
+
+				for (int count = 0; count &lt; _length.AsInt; count++)
+					coef[count] += Mu * (XX[L1] - XBar) * XX[L1 - count];
+
+				//instantaneous frequency
+				for (int pidx = 0; pidx &lt; nser; pidx++)
+				{
+					double period = pidx + _lb.AsInt;
+					Pwr[pidx, 1] = Pwr[pidx, 0];
+					double real = 0;
+					double imag = 0;
+
+					for (int count = 0; count &lt; _length.AsInt; count++)
+					{
+						real += coef[count] * Math.Cos(2 * Math.PI * count / period);
+						imag += coef[count] * Math.Sin(2 * Math.PI * count / period);
+					}
+					double denom = (1 - real) * (1 - real) + imag * imag;
+					Pwr[pidx, 0] = 0.1 / denom + 0.9 * Pwr[pidx, 1];
+				}
+
+				double maxPwr = 0;
+				for (int pidx = 0; pidx &lt; nser; pidx++)
+					if (Pwr[pidx, 0] &gt; maxPwr) 
+						maxPwr = Pwr[pidx, 0];
+					
+				for (int pidx = 0; pidx &lt; nser; pidx++)
+					if (maxPwr != 0) Pwr[pidx, 0] = Pwr[pidx, 0] / maxPwr;
+
+				//convert power to RGB color
+				for (int pidx = 0; pidx &lt; nser; pidx++)
+				{
+					double clr1 = Pwr[pidx, 0] &gt;= 0.5 ? 255 : 255 * 2 * Pwr[pidx, 0]; 
+					double clr2 = Pwr[pidx, 0] &gt;= 0.5 ? 255 * (2 * Pwr[pidx, 0] - 1) : 0; 
+					SetSeriesBarColor(Raster[pidx], bar, WLColor.FromRgb((byte)clr1, (byte)clr2, 0));
+				}				
+			}
+
+			//Plot the Dominant Cycle
+			GriffithsDC gdc = GriffithsDC.Series(ds, _lb.AsInt, _ub.AsInt, _length.AsInt);
+			PlotTimeSeriesLine(gdc, gdc.Description, &quot;GrSp&quot;, WLColor.WhiteSmoke, 4);
+        }
+
+        public override void Execute(BarHistory bars, int idx)
+        {  }
+    }
+}
+</pre>
+<p class="authorTips">&mdash;Robert Sucher<br>
+Wealth-Lab team<br>
+<a href="http://www.wealth-lab.com" target="_blank">www.wealth-lab.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NeuroShell Trader: January 2025</h3></div>
+<p>The highpass, SuperSmoother, 2-pole predictor and Griffiths indicators presented in John Ehlers&rsquo; article in this issue, In &ldquo;Linear Predictive Filters And Instantaneous Frequency,&rdquo; can be easily implemented in NeuroShell Trader using NeuroShell Trader&rsquo;s ability to call external dynamic linked libraries (DLLs). Dynamic linked libraries can be written in C, C++ and Power Basic.</p>
+<p>After moving the code given in the article to your preferred compiler and creating a DLL, you can insert the resulting indicator as follows:</p>
+<ol>
+	<li>Select &ldquo;new indicator&rdquo; from the <em>insert</em> menu.</li>
+	<li>Choose the <strong>External Program &amp; Library Calls</strong> category.</li>
+	<li>Select the appropriate <strong>External DLL Call</strong> indicator.</li>
+	<li>Set up the parameters to match your DLL.</li>
+	<li>Select the <em>finished</em> button.</li>
+	</ol>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: NEUROSHELL TRADER. This NeuroShell Trader chart shows the highpass, SuperSmoother, 2-pole predictor, Griffiths predictor, and Griffiths dominant cyle on a chart of the S&amp;P Emini futures (ES).</p></div>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_blank">www.neuroshell.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: January 2025</h3></div>
+<p>The TradingView Pine Script code presented here implements the Griffiths predictor, Griffiths dominant cycle indicator, and Griffiths spectrum, as discussed in John Ehlers&rsquo; article in this issue, &ldquo;Linear Predictive Filters And Instantaneous Frequency.&rdquo;</p>
+<pre>
+//  TASC Issue: January 2025
+//     Article: Linear Predictive Filters And
+//              Instantaneous Frequency
+//  Article By: John F. Ehlers
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//&#64;version=5
+title ='TASC 2025.01 Linear Predictive Filters'
+stitle = 'LPF'
+indicator(title, stitle, false)
+
+
+//#region Inputs and Constants:
+
+
+// &#64;variable Overload for plot `display.all`.
+DSPA = display.all
+// &#64;variable Overload for plot `display.none`.
+DSPN = display.none
+// &#64;variable Overload for plot style `plot.style_columns`.
+PSH = plot.style_columns
+// &#64;variable Full Angle Rotation `360`.
+float FROT = 2.0 * math.pi
+// &#64;variable Square Root of 2 `1.414`.
+float SQRT2 = math.sqrt(2.0)
+// &#64;variable Perfect Cycle Test signal.
+// `Signal = math.sin(360.0 * bar_index / 30.0)`.
+float TS = math.sin(FROT * bar_index / 30.0)
+
+
+// &#64;enum Indicator Display Choice Enumerator.
+enum eID
+    SMP = 'Simple 2-Pole Predictor'
+    GP = 'Griffiths Predictor'
+    GS = 'Griffiths Spectrum'
+    GD = 'Griffiths Dominant Cycle'
+    GSD = 'Griffiths Spectrum and Dominant Cycle'
+
+
+// &#64;variable Indicator Display Choice.
+eID iChoice = input.enum(eID.SMP, 'Select Indicator:')
+// &#64;variable Use Test Signal.
+bool iTest = input.bool(false, 'Use Test Signal:')
+
+
+// Parameters:
+float Src  = input.source(close, 'Source:')
+int LBound = input.int(18, 'Lower Bound:')
+int UBound = input.int(40, 'Upper Bound:')
+int Length = input.int(40, 'Length:')
+float Q = input.float(0.35, 'Simple Predictor Q:')
+int BarsF = input.int(2,'Griffiths Predictor Bars Forward:')
+//#endregion
+//#region Filter functions
+
+
+// &#64;function High Pass Filter.
+HP (float Source, int Period) =&gt;
+    float a0 = math.pi * math.sqrt(2.0) / Period
+    float a1 = math.exp(-a0)
+    float c2 = 2.0 * a1 * math.cos(a0)
+    float c3 = -a1 * a1
+    float c1 = (1.0 + c2 - c3) * 0.25
+    float hp = 0.0
+    if bar_index &gt;= 4
+        hp := c1 * (Source - 2.0 * Source[1] + Source[2]) + 
+              c2 * nz(hp[1]) + c3 * nz(hp[2])
+    hp
+
+
+// &#64;function Super Smoother
+SS (float Source, int Period) =&gt;
+    float a0 = math.pi * math.sqrt(2.0) / Period
+    float a1 = math.exp(-a0)
+    float c2 = 2.0 * a1 * math.cos(a0)
+    float c3 = -a1 * a1
+    float c1 = 1.0 - c2 - c3
+    float ss = Source
+    if bar_index &gt;= 4
+        ss := c1 * ((Source + Source[1]) / 2.0) + 
+              c2 * nz(ss[1]) + c3 * nz(ss[2])
+    ss
+
+
+// &#64;function Common function.
+CF (float Source=close, int LowerB=18, int UpperB=40, 
+ bool Test=false ) =&gt;
+    float HP = HP(Source, UpperB)
+    float LP = SS(HP, LowerB)
+    float Peak = 0.1
+    Peak := .991 * nz(Peak[1])
+    if math.abs(LP) &gt; Peak
+        Peak := math.abs(LP)
+    if Test
+        TS
+    else
+        float Signal = 0.0
+        if Peak != 0.0
+            Signal := LP / Peak
+        Signal
+
+
+//#endregion
+//#region Simple 2 Pole Predictor
+
+
+SP (float Source=close, int lengthHP=15, int lengthLP=30, 
+ float Q=0.35, bool Test=false) =&gt;
+    float HP = HP(Source, lengthHP)
+    float LP = SS(HP, lengthLP)
+    float Signal = Test ? TS : LP
+    float c0 = 1.0 , float c1 = 1.8 * Q , float c2 = -Q * Q
+    float sum = 1.0 - c1 - c2
+    c0 := (c0 / sum) * Signal
+    c1 := (c1 / sum) * Signal[1]
+    c2 := (c2 / sum) * Signal[2]
+    float Predict = c0 - c1 - c2
+    [Signal, Predict]
+
+
+//#endregion
+//#region Griffiths Predictor
+
+
+GP (float source=close, int lowerB=18, int upperB=40,
+ int length=18, int barsF=2, bool Test=false) =&gt;
+    float MU = 1.0 / length
+    float Signal = CF(source, lowerB, upperB, Test)
+    float[] XX = array.new&lt;float&gt;(length+1, 0.0)
+    var float[] Coef = array.new&lt;float&gt;(length+1, 0.0)
+    float XBar = 0.0
+    XX.set(length, Signal)
+    for count = 1 to length - 1
+        XX.set(count, nz(Signal[length - count]))
+    for count = 1 to length
+        XBar += XX.get(length-count) * Coef.get(count)
+    for count = 1 to length
+        Coef.set(count, Coef.get(count) + 
+                 MU * (XX.get(length) - XBar) *
+                 XX.get(length-count))
+    // Prediction
+    float XPred = 0.0
+    for advance = 1 to barsF
+        XPred := 0.0
+        for count = 1 to length
+            XPred += XX.get(length+1-count)*Coef.get(count)
+        for count = advance to length - advance
+            XX.set(count, XX.get(count + 1))
+        for count = 1 to length - 1
+            XX.set(count, XX.get(count + 1))
+        XX.set(length, XPred)
+    [Signal, XPred]
+
+
+//#endregion
+//#region Griffiths Spectrum
+
+
+GS (float source=close, int lowerB=10, int upperB=40, 
+ int length=40, bool Test=false) =&gt;
+    int LP1 = length + 1 , float MU = 1.0 / length
+    float Signal = CF(source, lowerB, upperB, Test)
+    float[] XX = array.new&lt;float&gt;(LP1, 0.0)
+    var float[] Coef = array.new&lt;float&gt;(LP1, 0.0)
+    var matrix&lt;float&gt; Pwr = matrix.new&lt;float&gt;(LP1, 2, 0.0)
+    float XBar = 0.0
+    XX.set(length, Signal)
+    for count = 1 to length - 1
+        XX.set(count, nz(Signal[length - count]))
+    for count = 1 to length
+        XBar += XX.get(length-count) * Coef.get(count)
+    for count = 1 to length
+        Coef.set(count, Coef.get(count) + 
+                 MU * (XX.get(length) - XBar) *
+                 XX.get(length-count))
+    // Instantaneous Frequency
+    for period = lowerB to upperB
+        Pwr.set(period, 1, Pwr.get(period, 0))
+        float re = 0.0 , float im = 0.0
+        for count = 1 to length
+            float a0 = FROT * count / period
+            re += Coef.get(count) * math.cos(a0)
+            im += Coef.get(count) * math.sin(a0)
+        denom = math.pow(1.0 - re, 2.0) + math.pow(im, 2.0)
+        Pwr.set(period, 0, 0.1 / denom)
+    float MaxPwr = Pwr.col(0).max()
+    if MaxPwr != 0 
+        for period = lowerB to upperB
+            Pwr.set(period, 0, Pwr.get(period, 0) / MaxPwr)
+    // Plot the Spectrum Colors
+    color[] Spectrum = array.new&lt;color&gt;(100, #000000)
+    for period = lowerB to upperB
+        // Convert Power to RGB Color for display
+        float p0 = Pwr.get(period, 0)
+        float r = p0 &gt;= 0.5 ? 255.0 : 255.0 * 2.0 * p0
+        float g = p0 &gt;= 0.5 ? 255.0 * (2.0 * p0 - 1.0) : 0.0
+        Spectrum.set(period, color.rgb(r, g, 0.0))
+    Spectrum
+
+
+//#endregion
+//#region Griffiths Dominant Cycle
+
+
+GD (float source=close, int lowerB=18, int upperB=40,
+ int length=40, bool Test=false) =&gt;
+    int LP1 = length + 1 , float MU = 1.0 / length
+    float Signal = CF(source, lowerB, upperB, Test)
+    float[] XX = array.new&lt;float&gt;(LP1, 0.0)
+    var float[] Coef = array.new&lt;float&gt;(LP1, 0.0)
+    var matrix&lt;float&gt; Pwr = matrix.new&lt;float&gt;(LP1, 2, 0.0)
+    float XBar = 0.0
+    XX.set(length, Signal)
+    for count = 1 to length - 1
+        XX.set(count, nz(Signal[length - count]))
+    for count = 1 to length
+        XBar += XX.get(length-count) * Coef.get(count)
+    for count = 1 to length
+        Coef.set(count, Coef.get(count) + 
+                 MU * (XX.get(length) - XBar) *
+                 XX.get(length-count))
+    // Instantaneous Frequency
+    for period = lowerB to upperB
+        Pwr.set(period, 1, Pwr.get(period, 0))
+        float re = 0.0 , float im = 0.0
+        for count = 1 to length
+            float a0 = FROT * count / period
+            re += Coef.get(count) * math.cos(a0)
+            im += Coef.get(count) * math.sin(a0)
+        denom = math.pow(1.0 - re, 2.0) + math.pow(im, 2.0)
+        // float _p1 = Pwr.get(period, 1)
+        Pwr.set(period, 0, 0.1 / denom)// + 0.9 * _p1)
+    float MaxPwr = Pwr.col(0).max()
+    float cycle = Pwr.col(0).indexof(MaxPwr)
+    cycle := switch
+        cycle &gt;= cycle[1] + 2.0 =&gt; cycle[1] + 2.0
+        cycle &lt;= cycle[1] - 2.0 =&gt; cycle[1] - 2.0
+        =&gt; cycle
+    cycle
+
+
+//#endregion
+//#region Plots:
+
+
+// Indicator IO Conditionals:
+D0 = iChoice == eID.SMP ? DSPA : DSPN
+D1 = iChoice == eID.GP ? DSPA : DSPN
+D2 = iChoice == eID.GS or iChoice == eID.GSD ? DSPA : DSPN
+D3 = iChoice == eID.GD or iChoice == eID.GSD ? DSPA : DSPN
+// Simple 2-Pole Predictor
+[s1, p1] = SP(Src, LBound, UBound, 0.35, iTest)
+plot(s1, 'Signal', color.blue, display=D0)
+hline(0, display=D0)
+plot(p1, 'Predict', color.red, display=D0)
+// Griffiths Predictor
+[s2, p2] = GP(Src, LBound, UBound, Length, 2, iTest)
+plot(s2, 'Signal', color.blue, display=D1)
+hline(0, display=D1)
+plot(p2, 'Predict', color.red, display=D1)
+// Griffiths Spectrum
+SP = GS(Src, LBound, UBound, Length, iTest)
+plot(19, '', SP.get(18), 1, PSH, false, 18, display=D2)
+plot(20, '', SP.get(19), 1, PSH, false, 19, display=D2)
+plot(21, '', SP.get(20), 1, PSH, false, 20, display=D2)
+plot(22, '', SP.get(21), 1, PSH, false, 21, display=D2)
+plot(23, '', SP.get(22), 1, PSH, false, 22, display=D2)
+plot(24, '', SP.get(23), 1, PSH, false, 23, display=D2)
+plot(25, '', SP.get(24), 1, PSH, false, 24, display=D2)
+plot(26, '', SP.get(25), 1, PSH, false, 25, display=D2)
+plot(27, '', SP.get(26), 1, PSH, false, 26, display=D2)
+plot(28, '', SP.get(27), 1, PSH, false, 27, display=D2)
+plot(29, '', SP.get(28), 1, PSH, false, 28, display=D2)
+plot(30, '', SP.get(29), 1, PSH, false, 29, display=D2)
+plot(31, '', SP.get(30), 1, PSH, false, 30, display=D2)
+plot(32, '', SP.get(31), 1, PSH, false, 31, display=D2)
+plot(33, '', SP.get(32), 1, PSH, false, 32, display=D2)
+plot(34, '', SP.get(33), 1, PSH, false, 33, display=D2)
+plot(35, '', SP.get(34), 1, PSH, false, 34, display=D2)
+plot(36, '', SP.get(35), 1, PSH, false, 35, display=D2)
+plot(37, '', SP.get(36), 1, PSH, false, 36, display=D2)
+plot(38, '', SP.get(37), 1, PSH, false, 37, display=D2)
+plot(39, '', SP.get(38), 1, PSH, false, 38, display=D2)
+plot(40, '', SP.get(39), 1, PSH, false, 39, display=D2)
+// Griffiths Dominant Cycle
+cycle = GD(Src, LBound, UBound, Length, iTest)
+plot(cycle, 'Dominant Cycle', color.blue, 3, display=D3)
+//#endregion
+</pre>
+<p>The indicator is available on TradingView from the PineCodersTASC account: <a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts" target="_blank">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>.</p>
+<p>An example chart is shown in Figure 4.</p>
+
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: TRADINGVIEW. Here is an example of the indicator and heatmap on a daily chart of the emini S&amp;P 500 futures (ES).</p></div>	
+	
+	<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="https://TradingView.com" target="_blank">https://TradingView.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>	
+	
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: January 2025</h3></div>
+<p>In the article &ldquo;Linear Predictive Filters And Instantaneous Frequency&rdquo; in this issue, John Ehlers discusses some digital signal processing techniques and an approach using Griffiths spectrum. Several of the indicators discussed in the article are available for download at the following link for NinjaTrader 8:</p>
+<a href="http://www.ninjatrader.com/SC/January2025SCNT8.zip" target="_blank">www.ninjatrader.com/SC/January2025SCNT8.zip</a>
+<p>Once the file is downloaded, you can import it into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the file.</p>
+<p>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</p>
+<p class="authorTips">&mdash;Chelsea Bell<br>
+NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_blank">www.ninjatrader.com</a></p>
+
+
+
+
+
+
+
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+	
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the January 2025 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+All rights reserved. &copy;&nbsp;Copyright&nbsp;2024, Technical Analysis, Inc.</p>
+
+</body>
+</html>

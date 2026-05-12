@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine.">
+<meta name="description" content="This month: The MAD Indicator, Enhanced by John Ehlers. Contributions from: TradeStation; thinkorswim by TDAmeritrade; eSignal; Wealth-Lab.com; Neuroshell Trader; Optuma; TradersStudio; TradingView; The Zorro Project; NinjaTrader; Microsoft Excel.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - NOVEMBER 2021</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">November 2021</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2021/11/images/TT-Ehlers.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is John Ehlers&rsquo; article in this issue, &ldquo;The MAD Indicator, Enhanced.&rdquo; Here, we present the November 2021 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList" style="text-transform: uppercase;">
+  <li><a href="#item1">TradeStation: November 2021</a></li>
+  <li><a href="#item2">thinkorswim: November 2021</a></li>
+  <li><a href="#item3"><span style="text-transform:lowercase;">e</span>SIGNAL: November 2021</a></li>
+  <li><a href="#item4">Wealth-Lab.com: November 2021</a></li>
+  <li><a href="#item5">Neuroshell Trader: November 2021</a></li>
+  <li><a href="#item6">Optuma: November 2021</a></li>
+  <li><a href="#item7">TradersStudio: November 2021</a></li>
+  <li><a href="#item8">TradingView: November 2021</a></li>
+  <li><a href="#item9">The Zorro Project: November 2021</a></li>
+  <li><a href="#item10">NinjaTrader: November 2021</a></li>
+  <li><a href="#item11">Microsoft Excel: November 2021</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: November 2021</h3></div>
+<p>Last month in his October 2021 article in S&amp;C, “Cycle/Trend Analytics And The MAD Indicator,” John Ehlers presented the MAD (moving average difference) indicator, an oscillator developed out of his research into understanding cycles data better. The MAD indicator effectively took the difference between two simple moving averages. While the MAD is said to offer an improvement over the classic, well-known MACD, the MADH (moving average difference with Hann) that Ehlers presents in his article in this issue, “The MADH: The MAD Indicator, Enhanced,” is said to offer an improvement over the MAD indicator. The enhancement comes from the utilization of the Hann windowing technique and takes the difference of two finite impulse response filters. Ehlers explains that excellent buy and sell indications can be seen in the indicator’s valleys and peaks, respectively.</p>
+<pre>
+Indicator:  TASC NOV 2021 MADH
+// TASC NOV 2021
+// MADH (Moving Average Difference - Hann) Indicator
+// (C) 2021 John F. Ehlers
+
+inputs:
+	ShortLength(8),
+	DominantCycle(27);
+
+variables:
+	LongLength(20),
+	Filt1(0),
+	Filt2(0), 
+	coef(0),
+	count(0),
+	MADH(0);
+
+LongLength = IntPortion(ShortLength + DominantCycle / 2);
+Filt1 = 0;
+coef = 0;
+
+for count = 1 to ShortLength 
+begin
+	Filt1 = Filt1 + (1 - Cosine(360*count / (ShortLength + 
+	 1)))*Close[count - 1];
+	coef = coef + (1 - Cosine(360*count / (ShortLength + 1)));
+end;
+
+If coef &lt;&gt; 0 then Filt1 = Filt1 / coef;
+
+Filt2 = 0;
+coef = 0;
+
+for count = 1 to LongLength 
+begin
+	Filt2 = Filt2 + (1 - Cosine(360*count / (LongLength + 
+	 1)))*Close[count - 1];
+	coef = coef + (1 - Cosine(360*count / (LongLength + 1)));
+end;
+
+If coef &lt;&gt; 0 Then Filt2 = Filt2 / coef;
+
+// Computed as percentage of price
+If Filt2 &lt;&gt; 0 then MADH = 100*(Filt1 - Filt2) / Filt2;
+
+Plot1(MADH, &quot;MADH&quot;);
+Plot2(0, &quot;Zero&quot;);
+</pre>
+<p>A sample chart is shown in Figure 1.</p>
+    <div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 1: TRADESTATION. This TradeStation daily chart of the continuous emini S&amp;P 500 shows the MADH indicator applied.</p></div>
+<p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+<p class="authorTips">—John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="https://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/thinkorswim.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">thinkorswim: November 2021</h3></div>
+<p>We put together a study based on the article by John Ehlers in this issue titled “The MADH: The MAD Indicator, Enhanced.” We built the strategy referenced by using our proprietary scripting language, thinkscript. To ease the loading process, simply click on <a href="https://tos.mx/zq1AI6I" target="_parent">https://tos.mx/zq1AI6I</a> or enter it into the address into <em>setup</em>&rarr;<em>open shared item</em> from within thinkorswim then choose <em>view thinkScript study</em> and name it “MADH” or whatever you like and can identify. You can then add the strategy to your charts from the <em>edit studies</em> menu from within the <em>charts</em> tab and then select <em>studies</em>.</p>
+<p>The chart in Figure 2 shows the study added to a one-year daily chart of SPY. Please see John Ehlers’ article for more information on how to utilize the study.</p>
+<div class="figBorder">
+<img src="images/TT-Tos.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 2: THINKORSWIM. This sample chart shows the MADH study added to a one-year daily chart of SPY.</p></div>
+    <p class="authorTips">—thinkorswim<br>
+A division of TD Ameritrade, Inc.<br>
+<a href="https://www.thinkorswim.com" target="_parent">www.thinkorswim.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/eSignal.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;"><span style="text-transform:lowercase;">e</span>SIGNAL: November 2021</h3></div>
+<p>For this month’s Traders’ Tip, we’ve provided the study <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/11/images/code/MovingAverageDifference-HannIndicator.efs" target="_blank">Moving Average Difference - Hann Indicator.efs</a>  based on the article in this issue by John Ehlers titled “The MADH: The MAD Indicator, Enhanced.” This study offers an improvement over the classic MACD study by Gerald Appel by optimizing the lengths of the moving averages.</p>   
+<p>The study contains formula parameters that may be configured through the <em>edit chart</em> window (right-click on the chart and select “edit chart”). A sample chart is shown in Figure 3.</p>
+   <div class="figBorder">
+<img src="images/TT-eSignal.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 3: eSIGNAL. Here is an example of the study plotted on a daily chart of SPY.</p></div> 
+<p>To discuss this study or download a complete copy of the formula code, please visit the EFS library discussion board forum under the <em>forums</em> link from the support menu at <a href="https://www.esignal.com" target="_parent">www.esignal.com</a> or visit our EFS KnowledgeBase at <a href="https://www.esignal.com/support/kb/efs" target="_parent">https://www.esignal.com/support/kb/efs</a>. The eSignal formula script (EFS) is also available for copying &amp; pasting below.</p>
+<pre>
+/**********************************
+Provided By:  
+Copyright 2019 Intercontinental Exchange, Inc. All Rights Reserved. 
+eSignal is a service mark and/or a registered service mark of Intercontinental Exchange, Inc. 
+in the United States and/or other countries. This sample eSignal Formula Script (EFS) 
+is for educational purposes only. 
+Intercontinental Exchange, Inc. reserves the right to modify and overwrite this EFS file with each new release. 
+
+Description:      
+    The MAD Indicator, Enhanced
+    by John F. Ehlers
+    
+
+Version:            1.00  09/13/2021
+
+Formula Parameters:                    Default:
+ShortLength                            8
+DominantCycle                          27
+ 
+
+Notes:
+The related article is copyrighted material. If you are not a subscriber
+of Stocks &amp; Commodities, please visit www.traders.com.
+
+**********************************/
+var fpArray = new Array();
+var bInit = false;
+
+function preMain() {
+    setStudyTitle(&quot;Moving Average Difference - Hann Indicator&quot;);
+    setCursorLabelName(&quot;MADH&quot;, 0);
+    setPriceStudy(false);
+    setDefaultBarFgColor(Color.RGB(0x00,0x94,0xFF), 0);
+    setPlotType( PLOTTYPE_LINE , 0 );
+    
+    
+    var x=0;
+    fpArray[x] = new FunctionParameter(&quot;ShortLength&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1);  
+        setDefault(8);
+    }    
+    fpArray[x] = new FunctionParameter(&quot;DominantCycle&quot;, FunctionParameter.NUMBER);
+	with(fpArray[x++]){
+        setLowerLimit(1); 
+        setDefault(27);
+    }   
+}
+
+var bVersion = null;
+var xClose = null;
+var xMADH = null;
+var LongLength = null;
+var Filt1 = null;
+var coef = null;
+var Filt2 = null;
+
+
+function main(ShortLength, DominantCycle) {
+    if (bVersion == null) bVersion = verify();
+    if (bVersion == false) return; 
+    
+    if ( bInit == false ) { 
+        xClose = close(); 
+        LongLength = Math.trunc(ShortLength + DominantCycle / 2);
+        addBand(0, PS_DASH, 1, Color.grey, 1);
+        xMADH = efsInternal('Calc_MAD', xClose, ShortLength, LongLength);
+                        
+        bInit = true; 
+    }      
+    
+    if (getCurrentBarCount() &lt; LongLength || getCurrentBarCount() &lt; ShortLength) return;
+
+
+    return xMADH.getValue(0);        
+}
+
+function Calc_MAD(xClose, ShortLength, LongLength){
+    Filt1 = 0;
+    coef = 0;
+    for (var i = 1; i &lt;= ShortLength; i++){
+        Filt1 = Filt1 + (1 - Math.cos(2 * Math.PI * i / (ShortLength + 1))) * xClose.getValue(-i + 1);
+        coef = coef + (1 - Math.cos(2 * Math.PI * i / (ShortLength + 1)));
+    }
+    if (coef != 0) Filt1 = Filt1 / coef;
+        
+    Filt2 = 0;
+    coef = 0;
+    for (var i = 1; i &lt;= LongLength; i++){
+        Filt2 = Filt2 + (1 - Math.cos(2 * Math.PI * i / (LongLength + 1))) * xClose.getValue(-i + 1);
+        coef = coef + (1 - Math.cos(2 * Math.PI * i / (LongLength + 1)));
+    }
+    if (coef != 0) Filt2 = Filt2 / coef;
+    if (Filt2 != 0) ret = 100 * (Filt1 - Filt2) / Filt2;
+    
+    return ret;
+}
+
+function verify(){
+    var b = false;
+    if (getBuildNumber() &lt; 779){
+        
+        drawTextAbsolute(5, 35, &quot;This study requires version 10.6 or later.&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;error&quot;);
+        drawTextAbsolute(5, 20, &quot;Click HERE to upgrade.&#64;URL=https://www.esignal.com/download/default.asp&quot;, 
+            Color.white, Color.blue, Text.RELATIVETOBOTTOM|Text.RELATIVETOLEFT|Text.BOLD|Text.LEFT,
+            null, 13, &quot;upgrade&quot;);
+        return b;
+    } 
+    else
+        b = true;
+    
+    return b;
+}
+</pre>     
+<p class="authorTips">—Eric Lippert<br>
+eSignal, an Interactive Data company<br>
+800 779-6555, <a href="https://www.eSignal.com" target="_parent">www.eSignal.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: November 2021</h3></div>
+<p>We have added John Ehlers’ MADH indicator to Wealth-Lab 7 for the convenience of our users. In his article in this issue, Ehlers suggests that the valleys and peaks of the indicator can signal buy and sell opportunities. To test this trading idea, Wealth-Lab users can simply add the “indicator turns” building block or use the sample code provided below.</p> 
+
+<p><strong><em>System rules</em></strong></p>
+<ul><li>Enter when the MADH indicator turns up (that is, its value increases after a decline)</li>
+<li>Exit when the MADH indicator turns down (that is, its value decreases after an advance)</li></ul> 
+<pre>
+using WealthLab.Backtest;
+using System;
+using WealthLab.Core;
+using WealthLab.Indicators;
+using WealthLab.TASC;
+using System.Drawing;
+using System.Collections.Generic;
+
+namespace WealthScript1 
+{
+	public class MyStrategy1 : UserStrategyBase
+	{
+		/* create indicators and other objects here, this is executed prior to the main trading loop */
+		public override void Initialize(BarHistory bars)
+		{
+			mad = MAD.Series(bars.Close, 8, 20);
+			madh = MADH.Series(bars.Close, 8, 20);
+
+			PlotIndicator(mad, Color.Red, PlotStyles.Line, false, &quot;MAD&quot;);
+			PlotIndicator(madh, Color.Yellow, PlotStyles.Line, false, &quot;MADH&quot;);
+
+			ChartDisplaySettings cds = new ChartDisplaySettings();
+			cds.ColorGridLines = Color.Transparent;
+			cds.ColorWatermark = Color.White;
+			cds.ColorUpBar = Color.Green;
+			cds.ColorDownBar = Color.Red;
+			cds.ColorBackground = Color.Black;
+			SetChartDrawingOptions(cds);
+
+			SetPaneDrawingOptions(&quot;MAD&quot;, 20, 50);
+			SetPaneDrawingOptions(&quot;MADH&quot;, 20, 51);
+		}
+
+		/* execute the strategy rules here, this is executed once for each bar in the backtest history */
+		public override void Execute(BarHistory bars, int idx)
+		{
+			if(madh.TurnsUp(idx))
+				PlaceTrade(bars, TransactionType.Buy, OrderType.Market);
+			if (madh.TurnsDown(idx))
+				ClosePosition(LastPosition, OrderType.Market);
+		}
+
+		/* declare private variables below */
+		MAD mad; MADH madh;
+	}
+}
+</pre>
+    
+<p>Figure 4 illustrates application of the MADH to a chart of SPY.</p>
+
+<div class="figBorder">
+<img src="images/TT-Wealthlab.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 4: WEALTH-LAB. This chart shows an example of trade signals produced by the system if applied to a daily chart of SPY.</p></div>
+<p class="authorTips">—Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="https://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: November 2021</h3></div>
+<p>John Ehlers’ MADH indicator, presented in his article in this issue, can be easily implemented in NeuroShell Trader using NeuroShell Trader’s ability to call external dynamic linked libraries. Dynamic linked libraries can be written in C, C++ and Power Basic.</p>
+<p>After moving the code given in the article to your preferred compiler and creating a DLL, you can insert the resulting indicator as follows:</p>
+<ol>
+  <li>Select “new indicator” from the <em>insert</em> menu.</li>
+<li>Choose the <em>external program &amp; library calls</em> category.</li>
+<li>Select the appropriate <strong>external DLL call</strong> indicator.</li>
+<li>Set up the parameters to match your DLL.</li>
+<li>Select the <em>finished</em> button.</li>
+    </ol>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 5: NEUROSHELL TRADER. This NeuroShell Trader chart shows the MAD and MADH indicators. </p></div>
+<p>NeuroShell Trader users can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders’ Tips.</p> 
+<p class="authorTips">—Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="https://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Optuma.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Optuma: November 2021</h3></div>
+<p>In his article in this issue, “The MADH: The MAD Indicator, Enhanced,” John Ehlers introduces his MADH indicator. To calculate the MADH indicator in Optuma, you can wrap the MAD formula in the prebuilt FIR() function available to all clients with our Ehlers module (<a href="https://www.optuma.com/ehlers" target="_parent">www.optuma.com/ehlers</a>).</p>
+<pre>
+//Calculate MAD Oscillator;
+//MA Inputs;
+#$Short = 8;
+#$Long = 23;
+//Calc MAD;
+S1 = MA(BARS=$Short, CALC=Close);
+L1 = MA(BARS=$Long, CALC=Close);
+MAD1 =100 * ((S1 - L1)/L1);
+//Wrap MAD in the FIR Hann function to calculate MADH;
+FIR(MAD1, SMOOTHSTYLE=Hann, BARS=20)
+</pre>
+<div class="figBorder">
+<img src="images/TT-Optuma.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 6: OPTUMA. This sample chart displays the MADH oscillator.</p></div>
+<p class="authorTips">—support@optuma.com</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradersstudio.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradersStudio: November 2021</h3></div>
+<p>The importable TradersStudio files based on John Ehlers’ article in this issue, “The MADH: The MAD Indicator, Enhanced,” can be obtained on request via email to <a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a>. The code is also available below.</p>
+<p>Code for the author’s indicator is provided in following files:</p>
+<ul><li>Function <strong>EHLERS_MADH</strong>: Computes MADH indicator</li><li>Indicator plot <strong>EHLERS_MADH_IND</strong>: Plots the MADH indicator on a chart</li></ul>
+<pre>
+'The MAD Indicator, Enhanced
+'Author: John F. Ehlers, TASC Nov 2021
+'Coded by: Richard Denning, 9/14/2021
+
+Function EHLERS_MADH(ShortLength, DominantCycle)
+'ShortLength=8, DominantCycle=27
+    Dim LongLength
+    Dim Filt1
+    Dim Filt2
+    Dim coef
+    Dim count
+    Dim MADH As BarArray
+
+    If BarNumber=FirstBar Then
+        LongLength = 20
+        Filt1 = 0
+        Filt2 = 0
+        coef = 0
+        count = 0
+        MADH = 0
+    End If
+
+    LongLength = CInt(ShortLength + DominantCycle / 2)
+    Filt1 = 0
+    coef = 0
+    For count = 1 To ShortLength
+        Filt1 = Filt1 + (1 - TStation_Cosine(360*count / (ShortLength + 1)))*Close[count - 1]
+        coef = coef + (1 - TStation_Cosine(360*count / (ShortLength + 1)))
+    Next
+    If coef &lt;&gt; 0 Then
+        Filt1 = Filt1 / coef
+    End If
+    Filt2 = 0
+    coef = 0
+    For count = 1 To LongLength
+        Filt2 = Filt2 + (1 - TStation_Cosine(360*count / (LongLength + 1)))*Close[count - 1]
+        coef = coef + (1 - TStation_Cosine(360*count / (LongLength + 1)))
+    Next
+    If coef &lt;&gt; 0 Then
+        Filt2 = Filt2 / coef
+    End If
+    If Filt2 &lt;&gt; 0 Then
+        MADH = 100*(Filt1 - Filt2)/Filt2
+    End If
+    EHLERS_MADH = MADH
+End Function
+'-------------------------------------------------------------------------------------------
+'INDICATOR PLOT
+Sub EHLERS_MADH_IND(ShortLength,DominantCycle)
+Dim MADH As BarArray
+MADH = EHLERS_MADH(ShortLength,DominantCycle)
+plot1(MADH)
+plot2(0)
+End Sub
+</pre>
+
+<p>A sample chart displaying the oscillator is shown in Figure 7.</p>
+<div class="figBorder">
+<img src="images/TT-Traderstudio.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 7: TRADERSSTUDIO. The MADH indicator is shown on a chart of Cisco Systems Inc. (CSCO) during 2012.</p></div>
+<p class="authorTips">
+—Richard Denning<br>
+<a href="mailto:info@TradersEdgeSystems.com">info@TradersEdgeSystems.com</a><br>
+for TradersStudio
+</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: November 2021</h3></div>
+<p>Here is TradingView Pine code for implementing the MADH indicator (moving average difference with Hann windowing) as presented by John Ehlers in his article in this issue.</p>
+<pre>
+// TASC Issue: November 2021
+// Article: &quot;Moving Average Difference with Hann Windowing (MADH)&quot; by John Ehlers
+// Language: TradingView's Pine Script
+// Provided by: PineCoders, for tradingview.com
+
+//&#64;version=4
+study(&quot;TASC 2021.11 - Moving Average Diff. with Hann Windowing (MADH)&quot;, &quot;MADH&quot;)
+
+float sourceInput        = input(close, &quot;Source:&quot;)
+int   shortLengthInput   = input(8,     &quot;Short Length:&quot;,   minval = 2)
+int   dominantCycleInput = input(27,    &quot;Dominant Cycle:&quot;, minval = 4)
+
+madh(source, shortLength, dominantCycle) =&gt;
+	var float PIx2 = math.pi * 2.0
+	float filt1 = 0.0
+	float coeffs = 0.0
+	for count = 1 to shortLength
+		float hannCoeff = 1.0 - cos(PIx2 * count / (shortLength + 1))
+		filt1 += hannCoeff * source[count - 1]
+		coeffs += hannCoeff
+	filt1 := nz(filt1 / coeffs)
+	int longLength = int(shortLength + dominantCycle * 0.5)
+	float filt2 = 0.0
+	coeffs := 0.0
+	for count = 1 to longLength
+		float hannCoeff = 1.0 - cos(PIx2 * count / (longLength + 1))
+		filt2 += hannCoeff * source[count - 1]
+		coeffs += hannCoeff
+	filt2 := nz(filt2 / coeffs)
+	nz(100.0 * (filt1 - filt2) / filt2)
+
+madhSignal = madh(sourceInput, shortLengthInput, dominantCycleInput)
+
+plot(madhSignal, &quot;MADH&quot;, color.orange, 3)
+hline(0, &quot;Zero&quot;, color.gray)
+</pre>
+
+<p>The indicator is available on TradingView from the PineCodersTASC account at:
+<a href="https://tradingview.com/u/PineCodersTASC/#published-scripts" target="_parent">tradingview.com/u/PineCodersTASC/#published-scripts</a></p>    
+ <div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 8: TRADINGVIEW. The MADH indicator is shown on a chart of the S&amp;P 500 Index.</p></div>   
+    
+    
+    <p class="authorTips">—TradingView<br>
+<a href="https://www.tradingview.com" target="_parent">https://www.tradingview.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Zorro.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">The Zorro Project: November 2021</h3></div>
+<p>Last month in his October 2021 article in S&C, John Ehlers described his MAD indicator. In his article this month, he presents the MADH oscillator, which is the MAD enhanced with a Hann window applied. Here again is the code in C for Zorro for the MAD and Hann from previus issues.</p>
+<pre>
+var MAD(vars Data, int ShortPeriod, int LongPeriod) 
+{ 
+   return 100*(SMA(Data,ShortPeriod)
+    /SMA(Data,LongPeriod)-1.);
+}
+
+vars hann(vars Data,int Length)
+{
+   vars Out = series(0,Length);
+   int i;
+  for(i=0; i&lt;Length; i++)
+  Out[i] = Data[i] * (1-cos(2*PI*(i+1)/(Length+1)));
+  return Out;
+}
+</pre>
+<p>For creating the MADH, we just glue both functions together:</p>
+<pre>
+var MADH(vars Data, int ShortPeriod, int LongPeriod) 
+{ 
+   return 100*(SMA(hann(Data,ShortPeriod),ShortPeriod)
+      /SMA(hann(Data,LongPeriod),LongPeriod)-1.);
+}
+</pre>
+<p>Here is a script for replicating Ehlers’ chart in this issue of the MADH using SPY data from the STOOQ website:</p>
+<pre>
+void run()
+{
+  StartDate = 20191201;
+  EndDate = 20210701;
+  BarPeriod = 1440;
+
+  assetAdd(&quot;SPY&quot;,&quot;STOOQ:*&quot;);
+  asset(&quot;SPY&quot;);
+  plot(&quot;MAD&quot;,MAD(seriesC(),8,23),NEW,RED);
+  plot(&quot;MADH&quot;,MADH(seriesC(),8,23),NEW,BLUE);
+}
+</pre>
+<p>The resulting chart is shown in Figure 9.</p>
+ <div class="figBorder">
+<img src="images/TT-Zorro.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 9: ZORRO PROJECT. Here is the MADH indicator applied to SPY data from the STOOQ website. </p></div>   
+    
+<p>The MADH oscillator and scripts can be downloaded from the 2021 script repository on <a href="https://financial-hacker.com" target="_parent">https://financial-hacker.com</a>. The Zorro platform can be downloaded from <a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a>.</p> 
+
+    
+    <p class="authorTips">—Petra Volkova<br>
+The Zorro Project by oP group Germany<br>
+<a href="https://zorro-project.com" target="_parent">https://zorro-project.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item10">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: November 2021</h3></div>
+<p>The MADH (moving average distance—Hann) indicator, as discussed in the article in this issue by John Ehlers, “The MAD Indicator, Enhanced,” is available for download at the following links for NinjaTrader 8 and for NinjaTrader 7:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong> <a href="https://www.ninjatrader.com/SC/November2021SCNT8.zip" target="_blank">www.ninjatrader.com/SC/November2021SCNT8.zip</a></li>
+  <li><strong>NinjaTrader 7: </strong> <a href="https://www.ninjatrader.com/SC/November2021SCNT7.zip">www.ninjatrader.com/SC/November2021SCNT7.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8. To import into NinjaTrader 7, from within the control center window, select the menu File &rarr; Utilities &rarr; Import NinjaScript and select the downloaded file.</p>
+<p>You can review the source code for this indicator in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators from within the control center window and selecting the MADH file. You can review the indicator’s source code in NinjaTrader 7 by selecting the menu Tools &rarr; Edit NinjaScript &rarr; Indicator from within the control center window and selecting the MADH file.</p>
+<p>A sample chart displaying the indicator is shown in Figure 10.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 10: NINJATRADER. The chart displays the MADH indicator on the emini S&P 500.</p></div>
+<p><em>NinjaScript uses compiled DLLs that run native, not interpreted, which provides you with the highest performance possible.</em></p>
+<p class="authorTips">—Kate Windheuser<br>
+NinjaTrader, LLC<br>
+<a href="https://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a></p>
+
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+
+<p class="rules"></p>
+<div class="logoBorder" id="item11">
+
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Microsoft Excel: November 2021</h3></div>
+<p>In his article in this issue, “The MADH: The MAD Indicator, Enhanced,” John Ehlers combines two concepts presented in his previous articles in this series.</p>
+<p>By replacing the two moving averages used in the basic MAD indicator with two Hann windowing averages, we get an indicator that is smoother as determined by looking at the rate of change (ROC) of the original MAD and the enhanced MADH (see Figure 11).</p>
+<div class="figBorder">
+<img src="images/TT-Excel1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 11: EXCEL. This shows a chart comparing MAD and MADH oscillators along with their respective ROC (rate of change) plots.</p></div>
+<p>Ehlers suggests that “excellent buy and sell indications are at the valleys and peaks” of the MADH indicator. These valleys and peaks occur at the points where the MADH ROC crosses zero.</p>
+<p>ROC crossovers are a bit easier to see in Figure 12 with the focus narrowed to approximately six months centered on the March 2020 market downturn.</p>
+<div class="figBorder">
+<img src="images/TT-Excel2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 12: EXCEL. Here is a closer look at three months on either side of the March 2020 market downturn.</p></div>
+<p>To explore the ROC crossover buy and sell indications, scroll slightly to the right of the charts (shown in Figure 13) to see a one-share trading simulation.</p>
+<div class="figBorder">
+<img src="images/TT-Excel3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 13: EXCEL. This shows a trading simulation using zero crossings of the MADH ROC.</p></div>
+<p>The transaction summary tab (Figure 14) provides transaction details for the trading simulation along with a few more statistics for this trading simulation.</p>
+<div class="figBorder">
+<img src="images/TT-Excel4.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">
+FIGURE 14: EXCEL. Here you can see the transaction summary tab for the trading simulation.</p></div>
+  <p><strong><em>To download this spreadsheet:</em></strong><br>
+      The spreadsheet file for this Traders’ Tip can be downloaded <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/11/images/code/MadH.xlsm">here</a>. To successfully download it, follow these steps:</p>  
+ <ul>	<li>Right-click on the <a href="https://www.traders.com/Documentation/FEEDbk_docs/2021/11/images/code/MadH.xlsm">Excel file link</a>, then</li> 
+<li>Select &ldquo;save as&rdquo; (or &ldquo;save target as&rdquo;) to place a copy of the spreadsheet file on your hard drive.</li></ul>   
+ <p class="authorTips">—Ron McAllister<br>
+Excel and VBA programmer<br>
+<a href="mailto:rpmac_xltt@sprynet.com">rpmac_xltt@sprynet.com</a></p>   
+    
+    
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+    
+    
+    
+<!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the November 2021 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2021, Technical Analysis, Inc.</p>
+
+</body>
+</html>

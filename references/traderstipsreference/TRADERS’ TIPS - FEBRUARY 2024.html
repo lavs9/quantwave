@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<meta name="description" content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: Trend Identification By Price And Time Filtering by Alfred François Tagher. Contributions from: RealTest; TradeStation; Wealth-Lab.com; MetaStock; NinjaTrader; TradingView; Neuroshell Trader; Optuma; Trade Navigator.">
+<!--ARTICLE TITLE HERE-->
+<title>TRADERS&rsquo; TIPS - FEBRUARY 2024</title>
+<!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+<meta name="author" content="Technical Analysis, Inc.">
+<!--LINK TO EXTERNAL STYLE SHEET-->
+<link href="../../../../CSS/S_C_BIA_2013.css" rel="stylesheet" type="text/css">
+</head>
+<body style="width: 730px;">
+<!--INSERT DATE HERE-->
+<p class="theme">TRADERS&rsquo; TIPS</p>
+<h1 class="articleTitle grey_blue">February 2024</h1>
+
+<p class="rules"></p>
+<!--MONTHLY INTRO AND IMAGE-->
+<div>
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/2024/02/images/TT-Tagher.gif" class="letterImg shadow1" alt="Tips Article Thumbnail">
+<p>For this month&rsquo;s Traders&rsquo; Tips, the focus is Alfred François Tagher&rsquo; article in this issue, &ldquo;Trend Identification By Price And Time Filtering.&rdquo; Here, we present the February 2024 Traders&rsquo; Tips code with possible implementations in various software.</p> 
+<p><strong>You can right-click on any chart to open it in a new tab or window and view it at it&rsquo;s originally supplied size, often much larger than the version printed in the magazine.</strong></p><!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+<p>The Traders&rsquo; Tips section is provided to help the reader implement a selected technique from an article in this issue or another recent issue. The entries here are contributed by software developers or programmers for software that is capable of customization.</p>
+<br class="clearfloat"></div>
+
+<!--LIST ITEMS HERE-->
+<ul class="bookList">
+  <li><a href="#item1">RealTest: February 2024</a></li>
+  <li><a href="#item2">TradeStation: February 2024</a></li>
+  <li><a href="#item3">Wealth-Lab.com: February 2024</a></li>
+  <li><a href="#item4">MetaStock: February 2024</a></li>
+  <li><a href="#item5">NinjaTrader: February 2024</a></li>
+  <li><a href="#item6">TradingView: February 2024</a></li>
+  <li><a href="#item7">Neuroshell Trader: February 2024</a></li>
+  <li><a href="#item8">Optuma: February 2024</a></li>
+  <li><a href="#item9">Trade Navigator: February 2024</a></li>
+</ul>
+<!--TIPS START HERE-->
+<p class="rules"></p>
+<div class="logoBorder" id="item1">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Realtest.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">RealTest: February 2024</h3></div>
+<p>Here is coding based on the article in this issue, &ldquo;Trend Identification By Price And Time Filtering&rdquo; by Alfred François Tagher, for use in RealTest (mhptrading.com).</p>
+<p>Code in text format:</p>
+<pre>
+Data:
+    trendUpW:    Extern(~Weekly, C &gt; H[1])
+    trendDnW:    Extern(~Weekly, C &lt; L[1])
+    trendW:    Select(IsNaN(trendUpW), 0,
+            trendUpW, Max(1, trendW[1] + 1),
+            trendDnW, Min(-1, trendW[1] - 1),
+            trendW[1] + Sign(trendW[1]))
+
+    trendUpM:    Extern(~Monthly, C &gt; H[1])
+    trendDnM:    Extern(~Monthly, C &lt; L[1])
+    trendM:    Select(IsNaN(trendUpM), 0,
+            trendUpM, Max(1, trendM[1] + 1),
+            trendDnM, Min(-1, trendM[1] - 1),
+            trendM[1] + Sign(trendM[1]))
+           
+Charts:
+    trendW:    trendW {|}
+    trendM:    trendM {|}
+    </pre>
+<p>A sample RealTest chart showing both indicators in the lower pane can be seen in Figure 1.</p>
+<div class="figBorder">
+<img src="images/TT-Realtest.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 1: REALTEST. This example chart shows both the weekly and monthly versions of the indicator in the lower pane.</p></div>
+<p class="authorTips">&mdash;Marsten Parker<br>
+MHP Trading, <a href="https://Mhptrading.com" target="_parent">Mhptrading.com</a><br>
+<a href="mailto:mhp@mhptrading.com">mhp@mhptrading.com</a>
+</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+<p class="rules"></p>
+<div class="logoBorder" id="item2">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/TradeStation-New.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradeStation: February 2024</h3></div>
+<p>In the article &ldquo;Trend Identification By Price And Time Filtering&rdquo; in this issue, author Alfred François Tagher formulates rules for trend identification. By utilizing price and time filters centered on weekly and monthly price action, one can effectively reduce market noise. This technique aims to capture, sustain, and benefit from prolonged price trends. The studies provided consist of a PaintBar and two indicators.</p>
+<pre>
+<b>PaintBar: Price-Time Filtering PB (Weekly)</b>
+
+{ 
+TASC TASC FEB 2024
+PaintBar
+Price-Time Filtering PB (Weekly) 
+&copy; 2023 Alfred François Tagher
+
+AFT Strong Trend Weekly 
+
+If Friday's close is greater than last week's high then 
+the trend is up. If Friday's close is less than last week's 
+low then the trend is down.
+}
+
+inputs: 
+	UpColor( Green ), 
+	DnColor( Red );
+	
+variables:
+	WeekHi( 0 ), 
+	WeekLo( 0 ), 
+	WeekCl( 0 ), 
+	WeekKnt( 0 ), 
+	PriorWeekHi( 0 ), 
+	PriorWeekLo( 0 ), 
+	PriorWeekCl( 0 ), 
+	PlotColor( 0 ),
+	Trend( 0 );
+
+if (DayOfWeek(Date) &lt; DayOfWeek(Date[1]) and
+ DayOfWeek(Date[1]) &lt;&gt; 5) or (DayOfWeek(Date) = 5) then 
+begin
+	{This uses Monday if there was no Friday}
+	if DayOfWeek(Date) = 5 then 
+	begin
+		Value1 = Close;
+		if High &gt; WeekHi then 
+			WeekHi = High;
+		if Low &lt; WeekLo then 
+			WeekLo = Low;
+	end
+	else 
+		Value1 = Close[1];
+	
+	{Need to check if Close exceeds prior Week}
+	if Value1 &gt; PriorWeekHi then 
+		Trend = 1;
+	if Value1 &lt; PriorWeekLo then 
+		Trend = -1;
+	
+	PriorWeekHi = WeekHi;
+	PriorWeekLo = WeekLo;
+	WeekKnt = WeekKnt+1;
+end;
+
+if DayOfWeek(Date) &lt; DayOfWeek(Date[1]) then 
+begin
+	WeekHi = High;
+	WeekLo = Low;
+end;
+
+if High &gt; WeekHi then 
+	WeekHi = High;
+if Low &lt; WeekLo then 
+	WeekLo = Low;
+
+if WeekKnt &gt; 1 then 
+begin	
+	PlotColor = Iff(Trend = 1, UpColor, DnColor);
+	PlotPB( High, Low, Open, Close, &quot;Trend&quot;, PlotColor );
+ end;
+
+ 
+
+<b>Indicator: Price-Time Filtering PB (Weekly)</b>
+
+{ 
+TASC FEB 2024
+Price-Time Filtering (Weekly) 
+&copy; 2023 Alfred François Tagher
+
+AFT Strong Trend Weekly 
+
+If Friday's close is greater than last week's high then 
+the trend is up. If Friday's close is less than last week's 
+low then the trend is down.
+}
+
+inputs: 
+	UpColor( Green ), 
+	DnColor( Red );
+	
+variables:
+	WeekHi( 0 ), 
+	WeekLo( 0 ), 
+	WeekCl( 0 ), 
+	WeekKnt( 0 ), 
+	PriorWeekHi( 0 ), 
+	PriorWeekLo( 0 ), 
+	PriorWeekCl( 0 ), 
+	Trend( 0 ),
+	NumBarsUp( 0 ),
+	NumBarsDn( 0 );
+
+if (DayOfWeek(Date) &lt; DayOfWeek(Date[1]) and
+ DayOfWeek(Date[1]) &lt;&gt; 5) or (DayOfWeek(Date) = 5) then 
+begin
+	{this uses Monday if there was no Friday}
+	if DayOfWeek(Date) = 5 then 
+	begin
+		Value1 = Close;
+		if High &gt; WeekHi then 
+			WeekHi = High;
+		if Low &lt; WeekLo then 
+			WeekLo = Low;
+	end
+	else 
+		Value1 = Close[1];
+	
+	{Need to check if Close exceeds prior Week}
+	if Value1 &gt; PriorWeekHi then 
+		Trend = 1;
+	if Value1 &lt; PriorWeekLo then 
+		Trend = -1;
+	
+	PriorWeekHi = WeekHi;
+	PriorWeekLo = WeekLo;
+	WeekKnt = WeekKnt+1;
+end;
+
+if DayOfWeek(Date) &lt; DayOfWeek(Date[1]) then 
+begin
+	WeekHi = High;
+	WeekLo = Low;
+end;
+
+if High &gt; WeekHi then 
+	WeekHi = High;
+if Low &lt; WeekLo then 
+	WeekLo = Low;
+
+if Trend &lt;&gt; Trend[1] then
+begin
+	NumBarsUp = 0;
+	NumBarsDn = 0;
+end;
+
+if Trend = 1 then 
+	NumBarsUp += 1
+else if Trend = -1 then
+	NumBarsDn -= 1;
+
+if WeekKnt &gt; 1 then 
+begin	
+	if Trend = 1 then 
+		Plot1(NumBarsUp, &quot;Week UP&quot;, UpColor);
+	if Trend = -1 then 
+		Plot2(NumBarsDn, &quot;Week UP&quot;, DnColor);	
+end;
+
+ 
+
+<b>Indicator: Price-Time Filtering PB (Monthly)</b>
+
+{ 
+TASC FEB 2024
+Price-Time Filtering (Monthly) 
+&copy; 2023 Alfred François Tagher
+
+AFT Strong Trend Monthly - Format as Histogram
+}
+
+inputs:
+	Lkbk( 500 ), 
+	UpColor( Green ), 
+	DnColor( Magenta );
+	
+variables:
+	WeekHi( 0 ), 
+	WeekLo( 0 ), 
+	WeekCl( 0 ), 
+	WeekKnt( 0 ),
+	PriorWeekHi( 0 ), 
+	PriorWeekLo( 0 ), 
+	PriorWeekCl( 0 ), 
+	Trend( 0 ),
+	NumBarsUp( 0), 
+	NumBarsDn( 0 ),
+	Cnt( 0 ), 
+	Dir( 0 );
+
+if Month(Date) &lt;&gt; Month(Date[1]) then 
+begin
+	if High &gt; WeekHi then 
+		WeekHi = High;
+	if Low &lt; WeekLo then 
+		WeekLo = Low;
+	
+	if Close[1] &gt; PriorWeekHi then 
+		Trend = 1;
+	if Close[1] &lt; PriorWeekLo then 
+		Trend = -1;
+	
+	PriorWeekHi = WeekHi;
+	PriorWeekLo = WeekLo;
+	WeekKnt = WeekKnt + 1;
+end;
+
+if Month(Date) &lt;&gt; Month(Date[1]) then 
+begin
+	WeekHi = High;
+	WeekLo = Low;
+end;
+
+if High &gt; WeekHi then 
+	WeekHi = High;
+if Low &lt; WeekLo then 
+	WeekLo = Low ;
+
+if WeekKnt &gt; 1 then 
+begin
+	NumBarsUp = MRO(Trend = 1, Lkbk, 1);
+	NumBarsDn = MRO(Trend = -1, Lkbk, 1);
+	Plot1(-NumBarsUp, &quot;NumBarsDn&quot;, DnColor);
+	Plot2(NumBarsDn, &quot;NumBarsUp&quot;, UpColor);
+end;
+</pre>
+<p>A sample chart is shown in Figure 2.</p> 
+<div class="figBorder">
+<img src="images/TT-Tradestation.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 2: TRADESTATION. This shows a TradeStation daily chart of the NASDAQ-100 index continuous futures showing 2023 with the studies applied.</p></div>
+    
+    <p><em>This article is for informational purposes. No type of trading or investment recommendation, advice, or strategy is being made, given, or in any manner provided by TradeStation Securities or its affiliates.</em></p>
+
+<p class="authorTips">&mdash;John Robinson<br>
+TradeStation Securities, Inc.<br>
+<a href="http://www.TradeStation.com" target="_parent">www.TradeStation.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+
+ <p class="rules"></p>
+<div class="logoBorder" id="item3">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/WealthLab.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Wealth-Lab.com: February 2024</h3></div>
+<p>We&rsquo;ve added our own rendition of the StrongTrend indicator from Alfred François Tagher&rsquo;s article in this issue, &ldquo;Trend Identification By Price And Time Filtering,&rdquo; to Wealth-Lab 8, exposing it to the gamut of tools and extensions of the software.</p>
+<p>Wealth-Lab&rsquo;s ability to compress time series and bar data into higher scales simplified our coding greatly, automatically making the indicator available to any supported bar scale from intraday to yearly.</p>
+<p>In under a minute, a quick demo system is created without any programming, buying when the ST (weekly) indicator is at its high and selling when it crosses under its signal line. The screenshot on Figure 3 illustrates the gist of composing the system using Wealth-Lab&rsquo;s Building Blocks feature.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 3: WEALTH-LAB. This shows an outline of the system&rsquo;s trading logic expressed with Building Blocks.</p></div>
+<p>Figure 4 shows the system applied to the Nasdaq 100 index.</p>
+<div class="figBorder">
+<img src="images/TT-Wealthlab2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 4: WEALTH-LAB. Here you can see the system&rsquo;s latest trades as applied to ^NDX, Nasdaq 100 index. Data provided by Yahoo! Finance.</p></div>
+<p>The Nasdaq-100 has a trending nature, having not spend a lot of time in consolidations, making it a suitable candidate for this kind of trend indicator.</p>
+<p class="authorTips">&mdash;Gene Geren (Eugene)<br>
+Wealth-Lab team<br>
+<a href="http://www.wealth-lab.com" target="_parent">www.wealth-lab.com</a>
+</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+
+ <p class="rules"></p>
+<div class="logoBorder" id="item4">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/MetaStock.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">MetaStock: February 2024</h3></div>
+<p>Alfred François Tagher&rsquo;s article in this issue, &ldquo;Trend Identification By Price And Time Filtering,&rdquo; introduces his price-time filtering indicator. Here are three formulas you can use to add that indicator to MetaStock:</p>
+<pre>
+<b>Price &amp; Time Filter (Monthly on Daily):</b>
+
+{a monthly Price &amp; Time Filter calculated on daily data}
+{expects to be plotted on a daily chart}
+new:= ROC(DayOfMonth(),1,$)&lt;1;
+mhi:= HighestSince(1, new, H);
+mlo:= LowestSince(1, new, L);
+up:= new AND C &gt; Ref(mhi, -1);
+dn:= new AND C &lt; Ref(mlo, -1);
+trend:= If( up, Max(1, PREV+1), If(dn, Min(-1, PREV-1), 
+If(new, If(PREV&gt;0, PREV+1, PREV-1), PREV)));
+If(trend&gt;0, trend, 0);
+If(trend&lt;0, trend, 0)
+
+
+<b>Price &amp; Time Filter (Weekly on Daily):</b>
+
+{a weekly Price &amp; Time Filter calculated on daily data}
+{expects to be plotted on a daily chart}
+fri:= DayOfWeek() = 5;
+new:= ROC(DayOfWeek(),1,$)&lt;1;
+recalc:= fri OR (new AND Ref(fri=0, -1));
+hi:= HighestSince(1, new, H);
+lo:= LowestSince(1, new, L);
+whi:= If(fri, hi, Ref(hi, -1));
+wlo:= If(fri, lo, Ref(lo, -1));
+up:= recalc AND C &gt; Ref(whi, -1);
+dn:= recalc AND C &lt; Ref(wlo, -1);
+trend:= If( up, Max(1, PREV+1), If(dn, Min(-1, PREV-1), 
+If(recalc, If(PREV&gt;0, PREV+1, PREV-1), PREV)));
+If(trend&gt;0, trend, 0);
+If(trend&lt;0, trend, 0)
+
+<b>Price &amp; Time Filter (native):</b>
+
+{calculates the Price &amp; Time Filter on the data interval of the chart}
+up:= C &gt; Ref(H, -1);
+dn:= C &lt; Ref(L, -1);
+trend:= If( up, Max(1, PREV+1), If(dn, Min(-1, PREV-1), If(PREV&gt;0, PREV+1, PREV-1)));
+If(trend&gt;0, trend, 0);
+If(trend&lt;0, trend, 0)
+</pre>
+<p class="authorTips">&mdash;William Golson<br>
+MetaStock Technical Support<br>
+<a href="http://www.MetaStock.com" target="_parent">www.MetaStock.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+ <p class="rules"></p>
+<div class="logoBorder" id="item5">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ninja.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">NinjaTrader: February 2024</h3></div>
+<p>The weekly and monthly time-price filters, which are introduced in the article &ldquo;Trend Identification By Price And Time Filtering&rdquo; by Alfred François Tagher in this issue, are available for download at the following link for NinjaTrader 8:</p>
+<ul style="list-style-type:none;">
+  <li><strong>NinjaTrader 8: </strong><a href="https://ninjatrader.com/SC/February2024SCNT8.zip" target="_blank">ninjatrader.com/SC/February2024SCNT8.zip</a></li>
+</ul>
+<p>Once the file is downloaded, you can import the indicator into NinjaTrader 8 from within the control center by selecting Tools &rarr; Import &rarr; NinjaScript Add-On and then selecting the downloaded file for NinjaTrader 8.</p>
+<p>You can review the indicator source code in NinjaTrader 8 by selecting the menu New &rarr; NinjaScript Editor &rarr; Indicators folder from within the control center window and selecting the &ldquo;AFTStrongTrend&rdquo; file.</p>
+<p>A sample chart displaying the indicator is shown in Figure 5.</p>
+<div class="figBorder">
+<img src="images/TT-Ninja.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 5: NINJATRADER. The AFTStrongTrendWK and AFTStrongTrendMO indicators are displayed here on a daily CL 01-24 chart from June 2023 through December 2023.</p></div>
+<p><em>NinjaScript uses compiled DLLs that run native, not interpreted, to provide you with the highest performance possible.</em></p>
+<p class="authorTips">&mdash;Emily Christoph<br>
+NinjaTrader, LLC<br>
+<a href="http://www.ninjatrader.com" target="_parent">www.ninjatrader.com</a>
+</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item6">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/TradingView.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">TradingView: February 2024</h3></div>
+<p>This TradingView Pine Script code implements the price-and-time filter introduced in the article in this issue titled &ldquo;Trend Identification By Price And Time Filtering&rdquo; by Alfred François Tagher. The script visualizes identified trends by coloring price bars in the main chart. Additionally, it plots the trend filter in the subchart by counting the number of bars in uptrends and downtrends on the price chart.</p>
+<pre>
+//  TASC Issue: February 2024 - Vol. 42, Issue 2
+//     Article: Trend Identification By Price
+//              And Time Filtering.
+//              Riding Sustained Price Trends.
+//  Article By: Alfred François Tagher
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//&#64;version=5
+string title  = 'TASC 2024.01 Price-Time Filtering'
+string stitle = 'PTF'
+indicator(title, stitle, false)
+
+
+// --- Inputs ---
+string t       = input.string('weekly', 'Period', 
+                     options = ['weekly', 'monthly'])
+color  ColUp   = input.color(color.green, 'Uptrend Color')
+color  ColDn   = input.color(color.red, 'Downtrend Color')
+bool   BarCol  = input.bool(true, 'Bar Color')
+bool   ShowTab = input.bool(true, 'Show Table')
+
+
+// --- Calculations ---
+if not timeframe.isdaily
+	string eMsg = 'Use daily timeframe for this indicator'
+	runtime.error(eMsg)
+
+
+bool isNewWeek  = ta.change(weekofyear) != 0
+bool isNewMonth = ta.change(month)      != 0
+bool isFriday   = dayofweek == dayofweek.friday
+
+
+AFTOverlay (string period = 'weekly') =&gt;
+	var float Value1      = na
+	var float WeekHi      = na
+	var float WeekLo      = na
+	var int   WeekKnt     = na
+	var float PriorWeekHi = na
+	var float PriorWeekLo = na
+	var int Trend         = na
+	switch period
+		'weekly' =&gt;
+			if isNewWeek and (not isFriday[1]) or isFriday
+				// Use monday if there is no friday
+				if isFriday
+					Value1 := close
+					if high &gt; WeekHi
+						WeekHi := high
+					if low &lt; WeekLo
+						WeekLo := low
+				else
+					Value1 := close[1]
+				// Need to check if close exceeds prior week
+				if Value1 &gt; PriorWeekHi
+					Trend := +1
+				if Value1 &lt; PriorWeekLo
+					Trend := -1
+				PriorWeekHi := WeekHi
+				PriorWeekLo := WeekLo
+				WeekKnt += 1
+			if isNewWeek
+				WeekHi := high
+				WeekLo := low
+			if high &gt; WeekHi
+				WeekHi := high
+			if low &lt; WeekLo
+				WeekLo := low
+			[Trend, WeekHi, WeekLo]
+		'monthly' =&gt;
+			if isNewMonth
+				if high &gt; WeekHi
+					WeekHi := high
+				if low &lt; WeekLo
+					WeekLo := low
+				Value1 := close[1]
+				if Value1 &gt; PriorWeekHi
+					Trend := +1
+				if Value1 &lt; PriorWeekLo
+					Trend := -1
+				PriorWeekHi := WeekHi
+				PriorWeekLo := WeekLo
+				WeekKnt += 1
+			if isNewMonth
+				WeekHi := high
+				WeekLo := low
+			if high &gt; WeekHi
+				WeekHi := high
+			if low &lt; WeekLo
+				WeekLo := low
+			[Trend, WeekHi, WeekLo]
+		=&gt;
+			runtime.error('Period was not specified!')
+			[0, 0.0, 0.0]
+
+
+[Trend, WeekHi, WeekLo] = AFTOverlay(t)
+
+
+// --- Output ---
+// Bar Coloring:
+color    col = Trend&gt;0 ? ColUp  : ColDn
+barcolor(BarCol ? col : na)
+
+
+// Trend Oscillator:
+ph           = plot.style_histogram
+int TUpCount = ta.barssince(Trend&lt;0)
+int TDnCount = ta.barssince(Trend&gt;0)
+plot(TUpCount&lt;1?na: TUpCount, '', ColUp, 2, ph)
+plot(TDnCount&lt;1?na:-TDnCount, '', ColDn, 2, ph)
+
+
+// Summary Table:
+var table tbl = table.new(position.top_right, 2, 3, 
+		 color.yellow, color.navy, 1, color.white, 2)
+if ShowTab and barstate.islast
+	string tFormat = t == &quot;weekly&quot;  ? &quot;Weeks&quot;  : 
+	                 t == &quot;monthly&quot; ? &quot;Months&quot; : &quot;Count&quot;
+	tbl.cell(0, 0, &quot;Up &quot; + tFormat + &quot;:&quot;,  text_color=ColUp)
+	tbl.cell(0, 1, &quot;Down &quot; + tFormat + &quot;:&quot;,text_color=ColDn)
+	tbl.cell(0, 2, &quot;Total &quot; + tFormat + &quot;:&quot;)
+	tbl.cell(1, 0, str.tostring(TUpCount), text_color=ColUp)
+	tbl.cell(1, 1, str.tostring(TDnCount), text_color=ColDn)
+	tbl.cell(1, 2, str.tostring(TUpCount + TDnCount))
+</pre>
+<p>The indicator is available on TradingView from the PineCodersTASC account:</p>
+<a href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts">https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a>
+<p>An example chart displaying the indicator in TradingView is shown in Figure 6.</p>
+<div class="figBorder">
+<img src="images/TT-Tradingview.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 6: TRADINGVIEW. Here&rsquo;s an example of the weekly and monthly StrongTrend indicator on a chart of Nasdaq-100 futures. The TradingView script visualizes identified trends by coloring price bars in the main chart and it plots the trend filter in a subchart by counting the number of bars in uptrends and downtrends on the price chart.</p></div>
+<p class="authorTips">&mdash;PineCoders, for TradingView<br>
+<a href="http://www.TradingView.com" target="_parent">www.TradingView.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+    
+ <p class="rules"></p>
+<div class="logoBorder" id="item7">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Neuroshell Trader: February 2024</h3></div>
+<p>To implement the trend identification indicators that are described by Alfred François Tagher in his article in this issue, &ldquo;Trend Identification By Price And Time Filtering,&rdquo; in NeuroShell Trader, here are the steps.</p>
+<p>For the weekly indicator, select &ldquo;new indicator&rdquo; from the <em>insert</em> menu and use the indicator wizard to create the following indicators:
+</p>
+    
+    <pre>
+BarFlag:	Friday(Date)
+UpTrend:	And2( BarFlag, A&gt;B(Close, Lag( PriceHigh(High,5),5)) )
+DownTrend:	And2( BarFlag, A&lt;B(Close, Lag( PriceLow(Low,5),5)) )
+Signal:		Remember2( Add2(1,0), UpTrend, Sub(0,1), DownTrend )
+BarsSince:	Add2( BarsSinceCond( A not equal B( Momentum(Signal,1), 0), 0), 1 )
+TrendID:	Mul2(Signal, BarsSince)
+</pre>
+<p>To implement the monthly trend identification indicator in NeuroShell Trader, calculate <em>Signal</em>, <em>BarsSince</em>, <em>TrendID</em> above using the <em>BarFlag</em>, <em>UpTrend</em> and <em>DownTrend</em> calculations as follows:</p>
+<pre>
+BarFlag:	A&lt;B( Momentum( DayOfMonth(Date), 1 ), 0 )
+UpTrend:	And2( BarFlag, A&gt;B(Close, Lag( PriceHigh(High,20),20)) )
+DownTrend:	And2( BarFlag, A&lt;B(Close, Lag( PriceLow(Low,20),20)) )
+</pre>
+<p>The <em>BarsSince</em> and <em>remember</em> indicators can be found in Advanced Indicator Set 2 and 3, respectively.</p>
+<div class="figBorder">
+<img src="images/TT-Neuroshell.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 7: NEUROSHELL TRADER. This NeuroShell Trader chart shows the trend identification indicator on the S&amp;P 500.</p></div>
+<p>Users of NeuroShell Trader can go to the Stocks &amp; Commodities section of the NeuroShell Trader free technical support website to download a copy of this or any previous Traders&rsquo; Tips.</p>
+<p class="authorTips">&mdash;Ward Systems Group, Inc.<br>
+<a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a><br>
+<a href="http://www.neuroshell.com" target="_parent">www.neuroshell.com</a></p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+ <p class="rules"></p>
+<div class="logoBorder" id="item8">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Optuma.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Optuma: February 2024</h3></div>
+<p>Here is an Optuma script formula based on the article in this issue, &ldquo;Trend Identification By Price And Time Filtering,&rdquo; to color the bars green for the weekly version of the filter:</p>
+<pre>
+//Get previous week's high;
+H1=HIGH(Week(PERIODAMOUNT=1)[1]);
+//Get previous week's low;
+L1=LOW(Week(PERIODAMOUNT=1)[1]);
+//Get current week's close;
+C1=CLOSE(Week(PERIODAMOUNT=1));
+//Use the switch function to turn on when close &gt; previous high until the close &lt; previous low;
+SWITCH(C1&gt;H1, C1&lt;L1)
+</pre>
+<p>When the above isn&rsquo;t true, the bars will be red by default.</p>
+
+    <div class="figBorder">
+<img src="images/TT-Optuma1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 8: OPTUMA. This sample chart displays the weekly trend identification indicator on a chart of NASDAQ-100 emini futures.</p></div>
+    
+    <p>Here is an Optuma script to color the bars green for the monthly filter histogram:</p>
+<pre>
+//Get previous month's high;
+H1=HIGH(MONTH(PERIODAMOUNT=1)[1]);
+//Get previous month's low;
+L1=LOW(MONTH(PERIODAMOUNT=1)[1]);
+//Get current month's close;
+C1=CLOSE(MONTH(PERIODAMOUNT=1));
+//Use the switch function to turn on when close &gt; previous high until the close &lt; previous low;
+R1=SWITCH(C1&gt;H1, C1&lt;L1);
+//Count the bars since the switch was false;
+TIMESINCESIGNAL(R1==0)
+</pre>
+ 
+
+<p>For the red trend down histogram change the last line to:</p>
+
+ 
+<pre>
+TIMESINCESIGNAL(R1==1) * -1
+</pre>
+<div class="figBorder">
+<img src="images/TT-Optuma2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 9: OPTUMA. This sample chart displays the monthly trend identification indicator on a chart of crude oil futures.</p></div>
+<p class="authorTips">&mdash;<a href="mailto:support@optuma.com">support@optuma.com</a>
+</p>
+<!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>   
+    
+<p class="rules"></p>
+<div class="logoBorder" id="item9">
+<img src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Genesis.gif" alt="logo">
+ <h3 class="newsTitle grey_blue" style="text-transform: uppercase;">Trade Navigator: February 2024</h3></div>
+<p>We have created a downloadable file to make it easy to download the library based on the article in this issue, &ldquo;Trend Identification By Price And Time Filtering&rdquo; by Alfred François Tagher. The file name is &ldquo;SC202402.&rdquo;</p>
+<p>To download it, click on Trade Navigator&rsquo;s blue telephone button, select <em>download special file</em>, then erase the word &ldquo;upgrade&rdquo; and type in &ldquo;SC202402.&rdquo; Then click the <em>start</em> button. When prompted to upgrade, click the <em>yes</em> button. If prompted to close all software, click on the <em>continue</em> button. Your library will now download.</p>
+<p>This library contains two indicators: <em>PriceTime Filter W</em> and <em>PriceTime Filter M</em>. (Figures 10 and 11 show a screenshot of the coding for these two indicators.)</p>
+<div class="figBorder">
+<img src="images/TT-Tradenav1.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 10: TRADE NAVIGATOR. The code shown is for the indicator named &ldquo;PriceTime Filter W&rdquo; for the weekly indicator.</p></div>
+<div class="figBorder">
+<img src="images/TT-Tradenav2.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 11: TRADE NAVIGATOR. The code shown is for the indicator named &ldquo;PriceTime Filter M&rdquo; for the monthly indicator.</p></div>
+<p>There are four highlight bars:</p>
+<pre>
+PriceTime Filter W Dn
+PriceTime Filter W Up
+PriceTime Filter M Dn
+PriceTime Filter M Up
+</pre>
+<p>(See Figures 12&ndash;15 for a screenshot of the coding for these four functions.)</p>
+<div class="figBorder">
+<img src="images/TT-Tradenav3.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 12: TRADE NAVIGATOR. The code shown is for the indicator named &ldquo;PriceTime Filter W Dn.&rdquo;</p></div>
+<div class="figBorder">
+<img src="images/TT-Tradenav4.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 13: TRADE NAVIGATOR. The code shown is for the indicator named &ldquo;PriceTime Filter W Up.&rdquo;</p></div>
+<div class="figBorder">
+<img src="images/TT-Tradenav5.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 14: TRADE NAVIGATOR. The code shown is for the indicator named &ldquo;PriceTime Filter M Dn.&rdquo;</p></div>
+<div class="figBorder">
+<img src="images/TT-Tradenav6.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 15: TRADE NAVIGATOR. The code shown is for the indicator named &ldquo;PriceTime Filter M Up.&rdquo;</p></div>
+<p>It also comes with two studies, &ldquo;Monthly PriceTime Filter&rdquo; and &ldquo;Weekly PriceTime Filter,&rdquo; as well as a template named &ldquo;S&amp;C PriceTime Filter&rdquo; that can be applied to your chart (see Figure 16).</p>    
+<div class="figBorder">
+<img src="images/TT-Tradenav7.gif" alt="Sample Chart" class="shadow1" style="width: 610px;"><p class="figCaption" style="width: 550px;">FIGURE 16: TRADE NAVIGATOR. Here, the S&amp;C PriceTime Filter template is shown applied to a chart.</p></div>    
+ <p><strong>Manually creating indicators</strong><br>
+If you would like to create these indicators manually, click on the <em>edit</em> dropdown menu and open the trader&rsquo;s toolbox (or use CTRL + T) and click on the <em>functions</em> tab. Now click on the <em>new</em> button, and a <em>new function</em> dialog window will open. In its text box, input the code. Ensure that there are no extra spaces at the end of each line. When completed, click on the <em>verify</em> button. If all is well, when you click on the <em>function</em> tab, the code you entered will convert to italic font. Now click on the <em>save</em> button and type a name for the function.</p>   
+<p><strong>Adding to your chart</strong><br>
+You can insert these indicators onto your chart by opening the <em>charting</em> dropdown menu, selecting the &ldquo;add to chart&rdquo; command, then on the <em>indicators</em> tab, find your named indicator, select it, then click on the &ldquo;add&rdquo; button. Repeat this procedure for additional indicators if you wish.</p>    
+<p><strong>Template</strong><br>
+The template can be inserted onto your chart by opening the <em>charting</em> dropdown menu, then select the <em>templates</em> command, then select the &ldquo;S&amp;C PriceTime Filter&rdquo; template.</p>
+ <p>If you need assistance using the indicators and/or template, our friendly technical support staff would be happy to help. Call 719 284-1616 or click on the live chat tool located under Trade Navigator&rsquo;s help menu or near the top of the homepage. Our support hours are M&ndash;F 7am&ndash;5pm US Mountain Time. Happy Trading!
+</p>   
+ <p class="authorTips">&mdash;Genesis Financial Data<br>
+Tech support 719 884-0245<br>
+<a href="http://www.TradeNavigator.com" target="_parent">www.TradeNavigator.com</a></p>   
+    <!--BACK TO TOP LINK-->
+<p class="bookReturn"><a href="#">BACK TO LIST</a></p>    
+     <!--ORIGINALLY FOOTER HERE-->
+<p class="footerarticle">Originally published in the February 2024 issue of<br>
+  <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine. <br>
+  All rights reserved. &copy;&nbsp;Copyright&nbsp;2024, Technical Analysis, Inc.</p>
+
+</body>
+</html>
