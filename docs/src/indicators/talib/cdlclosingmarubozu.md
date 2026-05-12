@@ -1,4 +1,0 @@
-# Closing Marubozu (CDLCLOSINGMARUBOZU)
-
-TA-Lib `CDLCLOSINGMARUBOZU` indicator.
-

@@ -1,4 +1,0 @@
-# Separating Lines (CDLSEPARATINGLINES)
-
-TA-Lib `CDLSEPARATINGLINES` indicator.
-

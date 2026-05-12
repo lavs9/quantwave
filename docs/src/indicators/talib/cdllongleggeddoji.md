@@ -1,4 +1,0 @@
-# Long Legged Doji (CDLLONGLEGGEDDOJI)
-
-TA-Lib `CDLLONGLEGGEDDOJI` indicator.
-

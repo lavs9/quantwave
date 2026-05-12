@@ -26,13 +26,7 @@ fn main() -> Result<()> {
         }
     }
 
-    let talib_docs = generate_talib_docs(&docs_dir)?;
-    if !talib_docs.is_empty() {
-        summary.push_str("    - [TA-Lib Wrappers](indicators/talib/README.md)\n");
-        for doc in talib_docs {
-            summary.push_str(&format!("        - [{}](indicators/talib/{}.md)\n", doc.0, doc.1));
-        }
-    }
+    let talib_list = generate_talib_docs()?;
 
     let main_intro = r#"# QuantWave 🌊
 
@@ -69,12 +63,18 @@ These algorithms are compiled as native Polars Expressions, allowing them to ben
 Here you will find our implementations of algorithms like `SuperTrend`, `WaveTrend`, `ALMA`, and more.
 "#;
 
-    let talib_intro = r#"# TA-Lib Wrappers
+    let mut talib_intro = String::from(r#"# TA-Lib Wrappers
 
 QuantWave seamlessly integrates with the industry standard TA-Lib via `talib-rs`.
 
 We have wrapped all 158 technical analysis functions provided by TA-Lib so that they adhere to the QuantWave Universal Indicator pattern. This means you can use classic indicators like RSI, MACD, and Bollinger Bands natively within your Polars dataframes.
-"#;
+
+For more information, visit the [official TA-Lib website](https://ta-lib.org/) or the [talib-rs repository](https://github.com/0xcjun/talib-rs.git).
+
+## Available Indicators
+
+"#);
+    talib_intro.push_str(&talib_list);
 
     fs::write(docs_dir.join("SUMMARY.md"), summary)?;
     fs::write(docs_dir.join("README.md"), main_intro)?;
@@ -193,8 +193,8 @@ fn generate_native_docs(docs_dir: &Path) -> Result<Vec<(String, String)>> {
     Ok(generated)
 }
 
-fn generate_talib_docs(docs_dir: &Path) -> Result<Vec<(String, String)>> {
-    let mut generated = Vec::new();
+fn generate_talib_docs() -> Result<String> {
+    let mut list = String::new();
     println!("Fetching TA-Lib API XML...");
     
     let xml_url = "https://raw.githubusercontent.com/TA-Lib/ta-lib/master/ta_func_api.xml";
@@ -202,7 +202,7 @@ fn generate_talib_docs(docs_dir: &Path) -> Result<Vec<(String, String)>> {
         Ok(resp) => resp.text()?,
         Err(e) => {
             println!("Warning: Could not fetch TA-Lib XML: {}", e);
-            return Ok(generated);
+            return Ok(list);
         }
     };
 
@@ -210,26 +210,24 @@ fn generate_talib_docs(docs_dir: &Path) -> Result<Vec<(String, String)>> {
         Ok(doc) => doc,
         Err(e) => {
             println!("Warning: Could not parse TA-Lib XML: {}", e);
-            return Ok(generated);
+            return Ok(list);
         }
     };
 
+    let mut indicators = Vec::new();
     for node in doc.descendants().filter(|n| n.has_tag_name("FinancialFunction")) {
         let abbr = node.children().find(|n| n.has_tag_name("Abbreviation")).and_then(|n| n.text()).unwrap_or("");
         let name = node.children().find(|n| n.has_tag_name("ShortDescription")).and_then(|n| n.text()).unwrap_or("");
         
         if abbr.is_empty() { continue; }
-        
-        let filename = abbr.to_lowercase();
-        let mut md = String::new();
-        md.push_str(&format!("# {} ({})\n\n", name, abbr));
-        md.push_str(&format!("TA-Lib `{}` indicator.\n\n", abbr));
-        
-        // This can be expanded to parse parameters and inputs from the XML
-        
-        fs::write(docs_dir.join(format!("indicators/talib/{}.md", filename)), md)?;
-        generated.push((abbr.to_string(), filename));
+        indicators.push((abbr.to_string(), name.to_string()));
     }
     
-    Ok(generated)
+    indicators.sort_by(|a, b| a.0.cmp(&b.0));
+    
+    for (abbr, name) in indicators {
+        list.push_str(&format!("- **`{}`**: {}\n", abbr, name));
+    }
+    
+    Ok(list)
 }
