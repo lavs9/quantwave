@@ -1,0 +1,167 @@
+      ULTIMATE CHANNEL and ULTIMATE BANDS
+                 By John Ehlers
+
+A key element in the construction of Kelner Channels and Bollinger Bands is the use of
+moving averages to determine the nominal center of their ranges. Use of moving
+averages in the indicators introduces lag, and lag leads to delayed entry and exit signals.
+In this article I explore the use of the Ultimate Smoother¹ instead of moving averages to
+mitigate indicator lag.
+
+ULTIMATE CHANNEL
+
+The Keltner Channel uses an Exponential Moving Average (EMA) to determine the center
+of the channel and Average True Range (ATR) to establish the width of the channel. The
+ATR has lag due to averaging as well as the lag due to the EMA. With reference to Code
+Listing 1, both averages are replaced with Ultimate Smoothers
+
+ Code Listing 1. EasyLanguage Code for the Ultimate Channel Indicator
+ {
+      Ultimate Channel
+      (c) 2024   John F. Ehlers
+ }
+
+ Inputs:
+      STRLength(20),
+      Length(20),
+      NumSTRs(1);
+
+ Vars:
+      TH(0),
+      TL(0),
+      ROC(0),
+      STR(0),
+      UpperChnl(0),
+      LowerChnl(0);
+
+ If Close[1] > High Then TH = Close[1] Else TH = High;
+ If Close[1] < Low Then TL = Close[1] Else TL = Low;
+ STR = $UltimateSmoother(TH - TL, STRLength);
+
+ UpperChnl = $UltimateSmoother(Close, Length) + NumSTRs*STR;
+ LowerChnl = $UltimateSmoother(Close, Length) - NumSTRs*STR;
+
+
+1 John F. Ehlers, “The Ultimate Smoother”, S&C, April 2024
+
+     Plot1(UpperChnl, "", Blue, 4, 4);
+     Plot2(LowerChnl, "", Blue, 4. 4);
+
+    The True High (TH) is the Close of the previous bar if it is higher than the High of the
+    current bar, otherwise it is the High of the current bar.                    Similarly, the True Low (TL) is
+                   the close of the previous bar if it is lower than the Low of the current bar, otherwise it is
+                          the Low of the current bar. The True Range is the difference between the True High and
+    the True Low.                           Rather than compute the ATR, the code mitigates lag by computing the
+                         Smooth True Range (STR) using the UltimateSmoother Function. For flexibility the length
+    of the data used to compute the STR is an input variable.                         The Upper Channel value is
+                             computed as the UltimateSmoother of Closes plus the STR times the input multiplier.
+                          Similarly, the Lower Channel value is computed as the UltimateSmoother of Closes minus
+    the STR times the input multiplier.
+
+                           An example Ultimate Channel indicator is shown in Figure 1, where the both Length and
+                        STRLength is set to 20 and the NumSTRs is set to 1. Clearly, the channel has nearly zero
+    lag.                            The channel limits can be smoothed by increasing the input Length parameter.
+    Doing this will moderately increase the indicator lag.
+
+     @ES- Daily CME   27.00   0.55%  B=4,955.25 A=4,955.50 0=4,952.75  Hi=4,956.25 L0=4,950.00 V=24,010  ...
+                                                                                                      H  4,955.5
+
+                                                                                                         4,800.9
+
+                                      /         fas                        (]
+                                                iu \                       17                             4,600.
+         J            if /                         A381 Wi[            §                                 4,400.4
+         1                                                                                               4,200.9
+
+                                     |
+     Figure 1.     The Ultimate Channel Indicator Has Minimal Lag Compared to a Keltner
+     Channel
+
+
+ULTIMATE BANDS
+
+Bollinger Bands use a Simple Moving Average to determine the center of the Band and
+the Standard Deviations from it to establish the indicator band. Both increase the lag of
+
+    the indicator. With reference to Code Listing 2, both averages are replaced with Ultimate
+    Smoothers.
+
+     Code Listing 2. EasyLanguage Code for the Ultimate Band Indicator
+     {
+          Ultimate Bands
+          (c) 2024   John F. Ehlers
+     }
+
+     Inputs:
+          Length(20),
+          NumSDs(1);
+
+     Vars:
+          Smooth(0),
+          Sum(0),
+          count(0),
+          SD(0),
+          UpperBand(0),
+          LowerBand(0);
+
+     Smooth = $UltimateSmoother(Close, Length);
+
+     Sum = 0;
+     For count = 0 to Length - 1 Begin
+          Sum = Sum + (Close[count] - Smooth[count])*(Close[count] - Smooth[count]);
+     End;
+     If Sum <> 0 Then SD = SquareRoot(Sum / Length);
+
+     UpperBand = Smooth + NumSDs*SD;
+     LowerBand = Smooth - NumSDs*SD;
+
+     Plot1(UpperBand, "", Blue, 4, 4);
+     Plot2(LowerBand, "", Blue, 4, 4);
+
+
+Smooth is the center of the indicator band, and is computed using the Ultimate Smoother
+Function. The deviation at each data sample is the difference between Smooth and the
+Close at that data point. The Standard Deviation (SD) is computed as the square root of
+the average of the squares of the individual deviations. The bands are computed as
+Smooth plus or minus the input variable NumSDs times the SDs.
+
+An example Ultimate Band indicator is shown in Figure 2, where the Length is set to 20
+and the NumSDs is set to 1. Clearly, the indicator band has nearly zero lag. The band
+
+limits can be smoothed by increasing the input Length parameter. Doing this will
+moderately increase the indicator lag. Interestingly, the Ultimate Band indicator does not
+differ from the Ultimate Channel indicator in any major fashion.
+
+ @ES-Daily CME 27.00 0.55% B=4,955.25 A=4,955.50 0=4,952.75 Hi=4,956.25 L0=4,950.00 V=24,010 ...
+
+
+                    /a         4,800.4
+    J        |  |  WS \  J     4,600.4
+    yVa 500  Cantinuousy 3
+
+                               4,200.4
+
+
+
+
+    Figure 2. The Ultimate Band Also Has Minimum Lag Compared to Bollinger Bands
+
+
+USE AND APPLICATION
+
+The Ultimate Channel and Ultimate Band indicators can be used about the same way
+Keltner Channels and Bollinger Bands are used to interpret price action. There is sufficient
+variation in the indicator displays over a wide range of instruments through the use of
+the input variables to make the indicators be a useful addition to your technical trading
+library. The main difference is that indicator lag is greatly reduced compared to the
+standard indicators.
+
+A simple trading strategy is to hold a position in the direction of the Ultimate Smoother
+and exit that position when the price pops outside the channel or band in the opposite
+direction. This is basically a trend following strategy with an automatic following stop.
+
+
+
+
+
+    John Ehlers is a retired electrical engineer and a retired technical analyst, specializing in
+    the application of DSP to trading. For more information, see www.mesasoftware.com.

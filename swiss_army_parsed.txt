@@ -1,0 +1,514 @@
+                        SWISS ARMY KNIFE INDICATOR
+                              John F. Ehlers
+
+    The indicator I describe in this article does all the common functions of the usual
+    indicators, such as smoothing and momentum generation.              It also does some
+    unusual things, such as band stop and band reject filtering.         Once you program
+    this indicator into your trading platform you can do virtually any technical analysis
+    technique with it.         This unique general indicator results from general Digital
+    Signal Processing (DSP) concepts for discrete signal networks that appear in
+    various forms in technical analysis.¹
+
+The description of this indicator involves Z Transforms. Z Transforms are a
+convenient way of solving difficult difference equations in much the same way as
+LaPlace Transforms are used to solve differential equations in calculus.
+Difference equations arise from the use of sampled data, such as we have in
+technical analysis. That is, daily bars sample price data once a day. Intraday
+bars sample price data every minute, hour, or whatever. The concept is the
+same regardless of the sampling rate. In Z Transforms, Z⁻¹ stands for one
+sample period of delay. For simplicity, I will always refer to daily bars as the
+sample rate.
+
+    The Transfer Function of a discrete linear system is the ratio of the output of the
+    system divided by the input.      Since both the output and input can be described in
+    terms of polynomials in the Z domain, we can write the Transfer Function of a
+    very simple indicator where as:
+
+    Output               b⁰  b¹ Z ¹
+    Input               a 0      a₁ Z 1
+
+    In this case, both the input and output involve only a constant term and a term
+    having one unit of delay. By cross multiplying and factoring, we can describe the
+    output in terms of the input as:
+     Output  a1₀ *b₀ * Input  b₁Z 1 * Input  a₁Z 1 *Output
+
+    This equation is easily converted to indicator programming languages.             For
+    example, in EasyLanguage, “N” units of delay is denoted by [N] after the variable.
+    Thus the Transfer Function programs to:
+
+     Output  a1₀ * b₀ * Input  b₁ * Input[1]  a₁ * Output[1]
+
+
+
+    1 This article was inspired by “The Swiss Army Knife of Digital Networks”, Richard Lyons and Amy
+    Bell, IEEE Signal Processing Magazine, May 2004, pp 90-100
+
+Suppose that a₀=1, b₀=, b₁=0, and a1=-(1-). In this case, the programmed
+equation is:
+        Output  * Input  (1  ) * Output [1]
+
+    In other words, the generalized simple expression programs to become the
+    familiar exponential moving average.         Note that the coefficients for the input term
+    and the output term sum to one.                This means that the DC (Direct Current), or
+    zero frequency, value of the filter is unity so that if the input is constant for a long
+    time, the output is (nearly) equal to the input.
+
+    With this introduction, you are ready for the Swiss Army Knife Indicator.              The
+    transfer response is a rational expression of two second order polynomials as:
+
+          Output         c    b 0  b₁ Z  1  b    2 Z  2  
+          Input             0    1  a 1 Z  1   a    Z  2      c 1 Z  N
+                                                     2           
+
+    Converting this to a programmable equation, we obtain:
+         Output  c₀ * b₀ * Input        b₁ * Input [1]  b₂ * Input [ 2]
+
+                          a₁ * Output  [1]  a 2 * Output        [ 2 ]  c₁ * Input [ N ]
+
+All we have to do now is to establish a table for the various coefficients to
+implement the Swiss Army Knife Indicator. The equation need be only
+programmed once, and each of the coefficient sets can be “remarked out” except
+for the coefficient set desired in any instance.
+
+    Exponential Moving Average (EMA)
+
+    You have already been exposed to the EMA. The complete coefficient set is
+
+          c₀              c₁          N      b₀      b            b₂     a₁     a₂
+                                                        1
+    EMA   1               0           0            0            0     (1-)   0
+
+    But what does  mean?                Alpha is commonly related to the equivalent smoothing
+    of a Simple Moving Average (SMA) of length L as:
+              L 2 1
+    If you tend to think of the market data in terms of its frequency content as I do,
+    the relationship between alpha and the cycle period where the corner of the
+    attenuation starts is:
+
+                     Cos    2    Sin     2       1 
+                      Period           2       Period     
+                                   Cos           
+                                         Period     
+    In EasyLanguage, Sines and Cosines are computed in degrees rather than in
+    radians, and therefore 360 should be substituted for 2.              As a check on your
+    math, if we want to attenuate all cycle components shorter than 20 bars, we
+    compute  = .2735. This is roughly equivalent to a six bar SMA.
+
+    Simple Moving Average (SMA)
+
+    A simple moving average sums “N” samples of data and divides the sum by N. A
+    more efficient method of computing a SMA is to drop off the oldest term and add
+    the newest data value divided by N.             To implement this method of computing an
+    SMA of length N, the coefficients of the Swiss Army Knife Indicator are:
+
+            c₀      c₁             N  b₀    b         B₂               a₁       a₂
+                                               1
+    SMA     1       1/N            N        0         0                1        0
+
+    Be careful of using this implementation of the SMA is initialization.       For example,
+    if you start with a zero value of the SMA and you are averaging a Stock whose
+    price is approximately 30, it will take quite some time for the SMA to recover from
+    the incorrect initial value.    Initialization error recovery time can be reduced with a
+    line of code something like:
+        If CurrentBar < N then SMA = Price;
+
+    Two Pole Gaussian Filter
+
+A Gaussian Filter offers a very low lag compared to other smoothing filters of like
+order. (The order is the largest exponent in the transfer equation). It can be
+implemented by taking an EMA of an EMA, but that method leaves the
+computation of the correct alpha to be a little nebulous. The double EMA is the
+equivalent of squaring the Transfer Response of an EMA. Therefore, the
+coefficients of the Swiss Army Knife Indicator for the two pole Gaussian Filter
+are:
+
+            c₀      c₁             N   b₀   b         B₂               a₁       a₂
+                                                 1
+    Gauss         0              0      0         0                2(1-)   -(1-)²
+
+    The correct value of alpha is related to the cutoff period that you wish to
+    attenuate. It can be computed as²:
+
+
+
+    2 John Ehlers, “Rocket Science for Traders”, John Wiley & Sons, page 161
+
+             2  2 
+                                      2
+     where   2 . 415   1  Cos          
+                                      Period    
+
+    Please note that alpha has a different meaning than it did in the EMA equation.
+    The same is true for beta in subsequent calculations.
+
+Figure 1 shows a theoretical “chirped” sinewave whose period is slowly
+increasing from a 10 bar cycle at the left of the screen to a 40 bar cycle at the
+right of the screen. The Period for the Gaussian Filter is set at 20, which is near
+the center of the screen. Figure 1 shows that the Gaussian Filter is a Low Pass
+filter, allowing the lower frequencies to pass and attenuating the higher
+frequencies.
+
+      Figure 1. Gaussian Filter Attenuates Shorter Cycles
+
+
+
+
+
+
+
+
+
+
+    Two Pole Butterworth Filter
+
+The response of a two pole Butterworth Filter can be approximated by
+introducing a second order polynomial with binomial coefficients in the numerator
+of the Transfer Response of the Gaussian Filter. The alpha is computed the
+same as for the Gaussian Filter. Doing this, the Swiss Army Knife Indicator
+coefficients are:
+
+         c₀       c₁           N   b₀   b   b₂   a₁     a₂
+                                           1
+    Butter    0            0      2
+                                            1    2(1-) -(1-)² |
+
+While trivial, but shown for completeness, a low lag three tap smoothing filter is
+obtained by eliminating the higher order terms in the denominator of the Transfer
+Response. This smoother is implemented using the coefficients:
+
+    c₀              c₁    N            b₀     b    b₂   a₁      a₂
+                                                 1
+Smooth              0     0                 2    1    0       0
+
+The smoothing realized from this filter is extremely modest, rejecting only the 2
+bar cycle component.
+
+High Pass Filter
+
+A High Pass Filter is the more general version of a momentum function.     Its
+purpose is to eliminate the constant (DC) term and lower frequency (longer
+period) terms that do not contribute to the shorter term cycles in the data.
+
+    c₀              c₁    N            b₀     b    b₂   a₁      a₂
+                                                 1
+HP     1-/2        0     0                 -1   0    (1-)   0
+
+Alpha for the High Pass Filter is computed exactly the same as it is for the EMA.
+That is:
+
+         Cos 2     Sin 2          
+                                              1
+           Period   2 Period         
+                      Cos Period 
+
+Two Pole High Pass Filter
+
+Just as we got sharper filtering by squaring the Transfer Response of the EMA to
+get a Gaussian Low Pass Filter, we can square the Transfer Response of the
+High Pass filter to improve the filtering.   In general, there is an approximate one
+bar lag penalty for obtaining the improved filtering.           The Swiss Army Knife
+Indicator coefficients are:
+
+       c₀       c₁         N    b₀         b    b₂                   a₁     a₂
+                                              1
+2PHP   (1- )²   0          0             -2   1                    2(1-) -(1-)²
+
+Alpha is computed exactly the same as for the Gaussian response. That is:
+
+                 2    2 
+       where     2 . 415  1                 Cos  2   
+                                               Period           
+
+Figure 2 shows the same theoretical “chirped” sinewave and the 2PHP response.
+The Period for the 2PHP Filter is set at 20, which is near the center of the screen.
+Figure 2 shows that the 2PHP Filter is a High Pass filter, allowing the higher
+frequencies to pass and attenuating the lower frequencies.
+
+                                Figure 2. 2PHP Filter Attenuates Longer Cycles
+
+    BandPass Filter
+
+    This is where the Swiss Army Knife Indicator really starts to get interesting!    It
+    can generate bandpass response to extract only the frequency component of
+    interest.     For example, if you want to examine the weekly cycle in the data, just
+    set the period to 5. Monthly data can be extracted by setting the period to 20, 21,
+    or 22.   Since the passband of the filter is finite, the exact setting of the center
+    period is not crucial.
+
+    Another way to use the BandPass Filter is to create a bank of them, separated by
+    a fixed percentage, and display all of the filter outputs as an indicator set. Doing
+    this, you can see at which filter the data peaks the strongest. For filters tuned to
+    periods shorter than the dominant cycle in the data, the filter response will peak
+    before the peak in the data.       Filters tuned to periods longer than the dominant
+    cycle in the data, the filter response will peak after the peak in the data.    This
+    way, you can estimate the current dominant cycle and, if the data are stationary,
+    you can even predict the turning point.
+
+    The Swiss Army Knife Indicator coefficients for the BandPass Filter are:
+
+        c₀                  c₁      N    b₀    b   b₂        a₁     a₂
+                                                  1
+    BP     (1-)/2          0       0        0   -1        (1-) 
+
+    In this case,
+          Cos     2   
+                    Period  
+    Don’t forget to substitute 360 for 2 in some languages.        So, if you wanted to
+    examine monthly data, the value of Beta would be 0.951.
+
+The selectivity of the BandPass filter is established by the variable alpha. Alpha
+is a function of the center frequency of the filter as well as the width of the
+passband. Letting  be the descriptor of the filter passband, where  is a
+percentage of the center, we can compute alpha as:
+
+                  1       1    1
+                            2
+        where               Cos     4   
+                                        Period 
+    It is easy to get carried away with trying to make the BandPass Filter passband
+    either be too narrow or too wide.         As a guideline, I suggest keeping the half
+    bandwidth between 5 percent and 50 percent. That is 0.05 <  < 0.5.
+
+    Figure 3 shows the same theoretical “chirped” sinewave and the Bandpass
+    response of the Swiss Army Knife Indicator. The Period for the BandPass Filter is
+
+set at 20, which is near the center of the screen. The BandPass response
+speaks for itself.
+
+Figure 3. BandPass Response Allows only a Range of Frequencies to Pass
+
+
+
+
+
+
+
+
+
+
+    BandStop Filter
+
+It might be interesting to also examine the data if the weekly or monthly
+components were removed, leaving all the other components in place. The
+alpha and beta variables are computed exactly as they were for the BandPass
+filter. The Swiss Army Knife coefficients are:
+
+       c₀          c₁       N       b₀ b
+                                        1
+    BS (1+)/2     0        0        -2   b₂   a₁     a₂   |
+                                             1    (1+)    |
+
+    An interesting set of indicators would be to compute a bank of BandStop Filters,
+    each having a percentage increase in the value of the center period, and plot
+    them overlaid on your barchart.    The smoothest curve would be the one with the
+    dominant cycle removed. The shorter and longer filters can also give you insight
+    into the market action.
+
+Figure 4 again shows the same theoretical “chirped” sinewave, but with the
+BandStop response of the Swiss Army Knife Indicator. The Period for the
+BandStop Filter is set at 20, which is near the center of the screen. The
+BandStop response speaks for itself.
+
+    Figure 4. BandStop Response Blocks a Range of Frequencies
+
+
+
+
+
+
+
+
+
+
+    Sliding Digital Fourier Transform (DFT)
+
+    Fourier Transforms are useless for Technical Analysis because the data are
+    simply not stationary for a sufficient duration to make a valid estimate of the
+    spectrum.          Vastly superior spectrum estimates can be made with the MESA³
+    algorithm or measurements of the dominant cycle can be made using the Hilbert
+    Transform⁴. I include the description of the DFT here simply to show that it can
+    be done with the Swiss Army Knife Indicator. The coefficients are:
+
+        c₀         c₁        N b₀          b
+    DFT     rej   rᴺ rej   N              1   b₂   a₁             a₂  |
+                                           0      0                  0   |
+
+For stability, r is any number slightly less than unity – like 0.999. As with all
+Fourier Transforms, analysis is performed only at discrete periods. Those
+periods are “k” where k <= N, and the variable theta is computed as  = 2k/N.
+
+The programming solution involves complex arithmetic. Since the DFT is
+useless for trading, I have not included it in the Swiss Army Knife EasyLanguage
+code. If you try to contact me for the code, you do so at the peril of being
+branded an idiot for trying to use a DFT in the first place.
+
+
+
+    3 John Ehlers, “MESA, and Trading Market Cycles, 2nd Ed”, John Wiley and Sons
+
+    4 John Ehlers, “Cybernetic Analysis for Stocks and Futures”, John Wiley and Sons
+
+SUMMARY
+
+The Swiss Army Knife Indicator is a versatile approach that creates a wide
+variety of responses that range from smoothers to oscillators. Novel BandPass
+and BandStop filters can also be produced. All of this can be done with one line
+of code in most platforms. The various responses come from the coefficients
+that can be called – as functions if you prefer. In Figure 5 the EasyLanguage
+formulation shows the coefficients as variables that are initialized to the default
+values and are changed in block conditional statements. This makes indicator
+programming extremely simple. Table 1 summarizes the coefficients for the ten
+separate and distinct responses that can be generated from the single Swiss
+Army Knife Indicator.
+
+
+
+                  Table 1. Swiss Army Knife Coefficients
+              c₀            c₁        N   b₀   b     b₂   a₁       a₂
+                                                  1
+    default   1             0         0      0     0    0        0
+    EMA       1             0         0      0     0    (1-)    0
+    SMA       1             1/N       N        0     0    1        0
+    Gauss                 0         0      0     0    2(1-)   -(1-)²
+    Butter              0         0      2     1    2(1-)   -(1-)²
+    Smooth                  0         0      2     1    0        0
+    HP        1-/2         0         0      -1    0    (1-)    0
+    2PHP      (1-     )²    0         0      -2    1    2(1-)   -(1-)²
+    BP        (1-)/2       0         0      0     -1   (1-)   
+    BS        (1+)/2       0         0      -2   1    (1+)   
+    DFT       rej          rᴺ rej   N      0     0            0
+
+                  Figure 5. Swiss Army Knife EasyLanguage Code
+    {
+    SWISS ARMY KNIFE INDICATOR
+    by John Ehlers
+    }
+
+    Inputs:
+             Price((H+L)/2),
+             Type("BP"),
+             N(0),
+             Period(20),
+             delta1(.1);
+
+    Vars:
+             c0(1),
+             c1(0),
+
+    b0(1),
+    b1(0),
+    b2(0),
+    a1(0),
+    a2(0),
+    alpha(0),
+    beta1(0),
+    gamma1(0),
+    Filt(0);
+
+If Type = "EMA" Then Begin
+    If CurrentBar <= N then Filt = Price;
+    alpha = (Cosine(360/Period) + Sine(360/Period) - 1) / Cosine(360/Period);
+    b0 = alpha;
+    a1 = 1 - alpha;
+End;
+
+If Type = "SMA" Then Begin
+    If CurrentBar <= N then Filt = Price;
+    c1 = 1 / N;
+    b0 = 1 / N;
+    a1 = 1;
+End;
+
+If Type = "Gauss" Then Begin
+    If CurrentBar <= N then Filt = Price;
+    beta1 = 2.415*(1 - Cosine(360 / Period));
+    alpha = -beta1 + SquareRoot(beta1*beta1 + 2*beta1);
+    c0 = alpha*alpha;
+    a1 = 2*(1 - alpha);
+    a2 = -(1 - alpha)*(1 - alpha);
+End;
+
+If Type = "Butter" Then Begin
+    If CurrentBar <= N then Filt = Price;
+    beta1 = 2.415*(1 - Cosine(360 / Period));
+    alpha = -beta1 + SquareRoot(beta1*beta1 + 2*beta1);
+    c0 = alpha*alpha / 4;
+    b1 = 2;
+    b2 = 1;
+    a1 = 2*(1 - alpha);
+    a2 = -(1 - alpha)*(1 - alpha);
+End;
+
+If Type = "Smooth" Then Begin
+    c0 = 1 / 4;
+    b1 = 2;
+    b2 = 1;
+End;
+
+If Type = "HP" Then Begin
+
+    If CurrentBar <= N then Filt = 0;
+    alpha = (Cosine(360/Period) + Sine(360/Period) - 1) / Cosine(360/Period);
+    c0 = 1 - alpha / 2;
+    b1 = -1;
+    a1 = 1 - alpha;
+End;
+
+If Type = "2PHP" Then Begin
+    If CurrentBar <= N then Filt = 0;
+    beta1 = 2.415*(1 - Cosine(360 / Period));
+    alpha = -beta1 + SquareRoot(beta1*beta1 + 2*beta1);
+    c0 = (1 - alpha / 2)*(1 - alpha / 2);
+    b1 = -2;
+    b2 = 1;
+    a1 = 2*(1 - alpha);
+    a2 = -(1 - alpha)*(1 - alpha);
+End;
+
+If Type = "BP" Then Begin
+    If CurrentBar <= N then Filt = Price;
+    beta1 = Cosine(360 / Period);
+    gamma1 = 1 / Cosine(720*delta1 / Period);
+    alpha = gamma1 - SquareRoot(gamma1*gamma1 - 1);
+    c0 = (1 - alpha) / 2;
+    b2 = -1;
+    a1 = beta1*(1 + alpha);
+    a2 = -alpha;
+End;
+
+If Type = "BS" Then Begin
+    If CurrentBar <= N then Filt = Price;
+    beta1 = Cosine(360 / Period);
+    gamma1 = 1 / Cosine(720*delta1 / Period);
+    alpha = gamma1 - SquareRoot(gamma1*gamma1 - 1);
+    c0 = (1 + alpha) / 2;
+    b1 = -2*beta1;
+    b2 = 1;
+    a1 = beta1*(1 + alpha);
+    a2 = -alpha;
+End;
+
+If CurrentBar > N Then Begin
+    Filt = c0*(b0*price + b1*Price[1] + b2*Price[2]) + a1*Filt[1] + a2*Filt[2] - c1*Price[N];
+    Plot1(Filt, "Swiss");
+End;
+
+
+
+Combinations of several Swiss Army Knife outputs can also make a wide variety
+of new and unique indicators. For example, a MACD is just the difference of two
+
+EMAs. Why not try the difference of two Gaussian Filters to get sharper filtering
+in the indicators? Even more interesting, why not try the difference of two
+BandPass filters – one a longer period center and the other a shorter period
+center – to eliminate even more unwanted junk from the data? An interesting
+predictive oscillator can be obtained by plotting two BandPass filter differences,
+one having a slightly shorter set of periods than the other. The list goes on and
+on. For example, the difference of two BandStop filters is exactly out of phase
+with the difference of two BandPass filters with the same settings. Novel
+combinations of BandPass and BandStop filters could produce some highly
+illuminating indicators.
+
+I hope I have met my goal of giving you an interesting new tool to use in your
+Technical Analysis, and perhaps some ideas on how you can make your own
+unique indicator.

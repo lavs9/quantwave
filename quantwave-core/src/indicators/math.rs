@@ -30,6 +30,47 @@ impl Default for TAN { fn default() -> Self { Self::new() } }
 talib_1_in_1_out_no_result!(TANH, talib_rs::math_transform::tanh);
 impl Default for TANH { fn default() -> Self { Self::new() } }
 
+
+/// Root Mean Square (RMS)
+#[derive(Debug, Clone)]
+pub struct RMS {
+    period: usize,
+    history: std::collections::VecDeque<f64>,
+    sum_sq: f64,
+}
+
+impl RMS {
+    pub fn new(period: usize) -> Self {
+        Self {
+            period,
+            history: std::collections::VecDeque::with_capacity(period),
+            sum_sq: 0.0,
+        }
+    }
+}
+
+impl crate::traits::Next<f64> for RMS {
+    type Output = f64;
+
+    fn next(&mut self, input: f64) -> Self::Output {
+        let input_sq = input * input;
+        self.sum_sq += input_sq;
+        self.history.push_back(input_sq);
+
+        if self.history.len() > self.period {
+            if let Some(old) = self.history.pop_front() {
+                self.sum_sq -= old;
+            }
+        }
+
+        if self.history.is_empty() {
+            0.0
+        } else {
+            (self.sum_sq / self.history.len() as f64).sqrt()
+        }
+    }
+}
+
 // Math Operators
 talib_2_in_1_out!(ADD, talib_rs::math_operator::add);
 impl Default for ADD { fn default() -> Self { Self::new() } }
@@ -94,6 +135,25 @@ mod tests {
                 } else {
                     approx::assert_relative_eq!(s, b, epsilon = 1e-6);
                 }
+            }
+        }
+
+        #[test]
+        fn test_rms_parity(input in prop::collection::vec(0.1..100.0, 10..100)) {
+            let period = 10;
+            let mut rms = RMS::new(period);
+            let streaming_results: Vec<f64> = input.iter().map(|&x| rms.next(x)).collect();
+            
+            let mut batch_results = Vec::with_capacity(input.len());
+            for i in 0..input.len() {
+                let start = if i + 1 > period { i + 1 - period } else { 0 };
+                let window = &input[start..i+1];
+                let sum_sq: f64 = window.iter().map(|&x| x*x).sum();
+                batch_results.push((sum_sq / window.len() as f64).sqrt());
+            }
+            
+            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+                approx::assert_relative_eq!(s, b, epsilon = 1e-10);
             }
         }
     }
