@@ -13,6 +13,12 @@ fn main() -> Result<()> {
             .unwrap()
             .to_path_buf();
     let docs_dir = workspace_root.join("docs/src");
+    let indicators_dir = workspace_root.join("quantwave-core/src/indicators");
+
+    println!("Workspace Root: {:?}", workspace_root);
+    println!("Docs Dir: {:?}", docs_dir);
+    println!("Indicators Dir: {:?}", indicators_dir);
+
     fs::create_dir_all(&docs_dir.join("indicators/native")).context("Failed to create indicators/native directory")?;
     fs::create_dir_all(&docs_dir.join("indicators/talib")).context("Failed to create indicators/talib directory")?;
 
@@ -22,7 +28,7 @@ fn main() -> Result<()> {
     summary.push_str("- [Introduction](README.md)\n");
     summary.push_str("- [Indicators](indicators/README.md)\n");
 
-    let native_docs = generate_native_docs(&docs_dir)?;
+    let native_docs = generate_native_docs(&docs_dir, &indicators_dir)?;
     if !native_docs.is_empty() {
         let mut categories: std::collections::BTreeMap<String, Vec<(String, String)>> =
             std::collections::BTreeMap::new();
@@ -115,16 +121,10 @@ For more information, visit the [official TA-Lib website](https://ta-lib.org/) o
     Ok(())
 }
 
-fn generate_native_docs(docs_dir: &Path) -> Result<Vec<(String, String, String)>> {
+fn generate_native_docs(docs_dir: &Path, indicators_dir: &Path) -> Result<Vec<(String, String, String)>> {
     let mut generated = Vec::new();
-    let indicators_dir = docs_dir
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .join("quantwave-core/src/indicators");
 
-    for entry in fs::read_dir(&indicators_dir).with_context(|| format!("Failed to read indicators directory: {:?}", indicators_dir))? {
+    for entry in fs::read_dir(indicators_dir).with_context(|| format!("Failed to read indicators directory: {:?}", indicators_dir))? {
         let entry = entry?;
         let path = entry.path();
         if path.extension().unwrap_or_default() == "rs" {
