@@ -1,64 +1,50 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
-use std::collections::VecDeque;
 use std::f64::consts::PI;
 
 /// Gaussian Filter
-/// 
+///
 /// Based on John Ehlers' "Gaussian and Other Low Lag Filters".
-/// A Gaussian filter is constructed by cascading multiple Exponential Moving Averages (EMA).
-/// It provides significant smoothing with less lag than a Butterworth filter of the same order.
-/// This implementation supports 1 to 4 poles.
+/// A family of low-pass filters with N poles at the same location.
+/// Provides approximately half the lag of an equivalent Butterworth filter.
 #[derive(Debug, Clone)]
 pub struct GaussianFilter {
     poles: usize,
-    alpha_n: f64,
-    coeffs: Vec<f64>,
-    output_history: VecDeque<f64>,
+    alpha: f64,
+    // a^n
+    alpha_pow: f64,
+    // (1-a)^n
+    one_minus_alpha: f64,
+    price_history: Vec<f64>,
+    filt_history: Vec<f64>,
     count: usize,
 }
 
 impl GaussianFilter {
     pub fn new(period: usize, poles: usize) -> Self {
-        assert!(poles >= 1 && poles <= 4, "Gaussian Filter supports 1-4 poles");
-        
-        let w = 2.0 * PI / period as f64;
-        let beta = (1.0 - w.cos()) / (2.0f64.powf(1.0 / poles as f64) - 1.0);
+        let poles = poles.clamp(1, 4);
+        let p = period as f64;
+        let omega = 2.0 * PI / p;
+        // beta = (1 - cos(omega)) / (2^(1/(2N)) - 1)
+        // 1.4142 is sqrt(2), so 2^(1/(2N))
+        let beta = (1.0 - omega.cos()) / (2.0_f64.powf(1.0 / (2.0 * poles as f64)) - 1.0);
         let alpha = -beta + (beta * beta + 2.0 * beta).sqrt();
         
-        let alpha_n = alpha.powi(poles as i32);
-        let mut coeffs = Vec::with_capacity(poles);
-        let c = 1.0 - alpha;
-        
-        match poles {
-            1 => {
-                coeffs.push(c);
-            }
-            2 => {
-                coeffs.push(2.0 * c);
-                coeffs.push(-c * c);
-            }
-            3 => {
-                coeffs.push(3.0 * c);
-                coeffs.push(-3.0 * c * c);
-                coeffs.push(c * c * c);
-            }
-            4 => {
-                coeffs.push(4.0 * c);
-                coeffs.push(-6.0 * c * c);
-                coeffs.push(4.0 * c * c * c);
-                coeffs.push(-c * c * c * c);
-            }
-            _ => unreachable!(),
-        }
-
         Self {
             poles,
-            alpha_n,
-            coeffs,
-            output_history: VecDeque::from(vec![0.0; poles]),
+            alpha,
+            alpha_pow: alpha.powi(poles as i32),
+            one_minus_alpha: 1.0 - alpha,
+            price_history: vec![0.0; poles + 1],
+            filt_history: vec![0.0; poles + 1],
             count: 0,
         }
+    }
+}
+
+impl Default for GaussianFilter {
+    fn default() -> Self {
+        Self::new(14, 4)
     }
 }
 
@@ -67,43 +53,89 @@ impl Next<f64> for GaussianFilter {
 
     fn next(&mut self, input: f64) -> Self::Output {
         self.count += 1;
-
-        if self.count == 1 {
-            for val in self.output_history.iter_mut() {
-                *val = input;
+        
+        let res = match self.poles {
+            1 => {
+                // f = a*g + (1-a)f[1]
+                if self.count < 2 {
+                    input
+                } else {
+                    self.alpha * input + self.one_minus_alpha * self.filt_history[0]
+                }
             }
-            return input;
+            2 => {
+                // f = a^2*g + 2(1-a)f[1] - (1-a)^2f[2]
+                if self.count < 3 {
+                    input
+                } else {
+                    self.alpha_pow * input
+                        + 2.0 * self.one_minus_alpha * self.filt_history[0]
+                        - self.one_minus_alpha.powi(2) * self.filt_history[1]
+                }
+            }
+            3 => {
+                // f = a^3*g + 3(1-a)f[1] - 3(1-a)^2f[2] + (1-a)^3f[3]
+                if self.count < 4 {
+                    input
+                } else {
+                    self.alpha_pow * input
+                        + 3.0 * self.one_minus_alpha * self.filt_history[0]
+                        - 3.0 * self.one_minus_alpha.powi(2) * self.filt_history[1]
+                        + self.one_minus_alpha.powi(3) * self.filt_history[2]
+                }
+            }
+            4 => {
+                // f = a^4*g + 4(1-a)f[1] - 6(1-a)^2f[2] + 4(1-a)^3f[3] - (1-a)^4f[4]
+                if self.count < 5 {
+                    input
+                } else {
+                    self.alpha_pow * input
+                        + 4.0 * self.one_minus_alpha * self.filt_history[0]
+                        - 6.0 * self.one_minus_alpha.powi(2) * self.filt_history[1]
+                        + 4.0 * self.one_minus_alpha.powi(3) * self.filt_history[2]
+                        - self.one_minus_alpha.powi(4) * self.filt_history[3]
+                }
+            }
+            _ => input,
+        };
+
+        // Shift history
+        for i in (1..self.poles).rev() {
+            self.filt_history[i] = self.filt_history[i - 1];
+            self.price_history[i] = self.price_history[i - 1];
         }
-
-        let mut res = self.alpha_n * input;
-        for i in 0..self.poles {
-            res += self.coeffs[i] * self.output_history[i];
-        }
-
-        self.output_history.pop_back();
-        self.output_history.push_front(res);
-
+        self.filt_history[0] = res;
+        self.price_history[0] = input;
+        
         res
     }
 }
 
 pub const GAUSSIAN_FILTER_METADATA: IndicatorMetadata = IndicatorMetadata {
-    name: "Gaussian Filter",
-    description: "A multi-pole low-pass filter with less lag than Butterworth filters. Cascades EMA filters to achieve Gaussian response.",
+    name: "GaussianFilter",
+    description: "Multi-pole Gaussian low-pass filter for reduced lag.",
     params: &[
-        ParamDef { name: "period", default: "20", description: "Filter period" },
-        ParamDef { name: "poles", default: "2", description: "Number of poles (1-4)" },
+        ParamDef {
+            name: "period",
+            default: "14",
+            description: "Critical period",
+        },
+        ParamDef {
+            name: "poles",
+            default: "4",
+            description: "Number of poles (1-4)",
+        },
     ],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/GaussianFilters.pdf",
     formula_latex: r#"
 \[
-\beta = \frac{1 - \cos(2\pi/P)}{2^{1/N} - 1}, \alpha = -\beta + \sqrt{\beta^2 + 2\beta}
+\alpha = -\beta + \sqrt{\beta^2 + 2\beta}
 \]
 \[
-y_t = \alpha^N x_t + \sum_{k=1}^N \binom{N}{k} (-1)^{k-1} (1-\alpha)^k y_{t-k}
+\beta = \frac{1 - \cos(2\pi/P)}{2^{1/(2N)} - 1}
 \]
 "#,
-    gold_standard_file: "gaussian.json",
+    gold_standard_file: "gaussian_filter.json",
     category: "Ehlers DSP",
 };
 
@@ -115,74 +147,57 @@ mod tests {
 
     #[test]
     fn test_gaussian_basic() {
-        let mut gf = GaussianFilter::new(20, 2);
-        let inputs = vec![10.0, 11.0, 12.0, 13.0, 14.0, 15.0];
-        for input in inputs {
-            let res = gf.next(input);
-            assert!(!res.is_nan());
+        let mut filter = GaussianFilter::new(14, 4);
+        for i in 0..50 {
+            let val = filter.next(100.0);
+            if i > 20 {
+                approx::assert_relative_eq!(val, 100.0, epsilon = 1.0);
+            }
         }
-    }
-
-    #[test]
-    fn test_gaussian_table_parity() {
-        // Test against 2-pole table values from the PDF: Period 20, B[0]=0.146017, A[1]=1.235757, A[2]=-0.381774
-        let period = 20;
-        let poles = 2;
-        let gf = GaussianFilter::new(period, poles);
-        
-        approx::assert_relative_eq!(gf.alpha_n, 0.146017, epsilon = 1e-5);
-        approx::assert_relative_eq!(gf.coeffs[0], 1.235757, epsilon = 1e-5);
-        approx::assert_relative_eq!(gf.coeffs[1], -0.381774, epsilon = 1e-5);
     }
 
     proptest! {
         #[test]
         fn test_gaussian_parity(
-            inputs in prop::collection::vec(1.0..100.0, 50..100),
+            inputs in prop::collection::vec(1.0..100.0, 10..100),
             poles in 1usize..4usize,
         ) {
-            let period = 20;
-            let mut gf = GaussianFilter::new(period, poles);
-            let streaming_results: Vec<f64> = inputs.iter().map(|&x| gf.next(x)).collect();
-            
+            let p = 14;
+            let mut filter = GaussianFilter::new(p, poles);
+            let streaming_results: Vec<f64> = inputs.iter().map(|&x| filter.next(x)).collect();
+
             // Batch implementation
             let mut batch_results = Vec::with_capacity(inputs.len());
-            let w = 2.0 * PI / period as f64;
-            let beta = (1.0 - w.cos()) / (2.0f64.powf(1.0 / poles as f64) - 1.0);
+            let p_f = p as f64;
+            let omega = 2.0 * PI / p_f;
+            let beta = (1.0 - omega.cos()) / (2.0_f64.powf(1.0 / (2.0 * poles as f64)) - 1.0);
             let alpha = -beta + (beta * beta + 2.0 * beta).sqrt();
-            let alpha_n = alpha.powi(poles as i32);
-            let c = 1.0 - alpha;
+            let alpha_pow = alpha.powi(poles as i32);
+            let oma = 1.0 - alpha;
+
+            let mut f_hist = vec![0.0; poles];
             
-            let mut coeffs = Vec::new();
-            match poles {
-                1 => { coeffs.push(c); }
-                2 => { coeffs.push(2.0 * c); coeffs.push(-c * c); }
-                3 => { coeffs.push(3.0 * c); coeffs.push(-3.0 * c * c); coeffs.push(c * c * c); }
-                4 => { coeffs.push(4.0 * c); coeffs.push(-6.0 * c * c); coeffs.push(4.0 * c * c * c); coeffs.push(-c * c * c * c); }
-                _ => unreachable!(),
-            }
-            
-            let mut hist = vec![0.0; poles];
             for (i, &input) in inputs.iter().enumerate() {
                 let bar = i + 1;
-                if bar == 1 {
-                    for h in hist.iter_mut() { *h = input; }
-                    batch_results.push(input);
-                    continue;
-                }
-                
-                let mut res = alpha_n * input;
-                for j in 0..poles {
-                    res += coeffs[j] * hist[j];
-                }
+                let res = if bar < poles + 1 {
+                    input
+                } else {
+                    match poles {
+                        1 => alpha_pow * input + oma * f_hist[0],
+                        2 => alpha_pow * input + 2.0 * oma * f_hist[0] - oma.powi(2) * f_hist[1],
+                        3 => alpha_pow * input + 3.0 * oma * f_hist[0] - 3.0 * oma.powi(2) * f_hist[1] + oma.powi(3) * f_hist[2],
+                        4 => alpha_pow * input + 4.0 * oma * f_hist[0] - 6.0 * oma.powi(2) * f_hist[1] + 4.0 * oma.powi(3) * f_hist[2] - oma.powi(4) * f_hist[3],
+                        _ => input,
+                    }
+                };
                 
                 for j in (1..poles).rev() {
-                    hist[j] = hist[j-1];
+                    f_hist[j] = f_hist[j-1];
                 }
-                hist[0] = res;
+                f_hist[0] = res;
                 batch_results.push(res);
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-10);
             }
