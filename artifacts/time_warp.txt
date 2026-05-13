@@ -1,0 +1,327 @@
+        TIME WARP – WITHOUT SPACE TRAVEL
+        John F. Ehlers
+
+One of the most frustrating aspects of technical analysis is avoidance of whipsaw
+trades. When the moving averages are made smoother to avoid these whipsaws the
+lag produced by the smoothing often renders the signals to be ineffective. The dilemma
+is therefore how to strike a balance between the amount of smoothing that can be
+obtained and the amount of lag that can be tolerated. In this article, you will receive
+new tools to address the smoothing versus lag problem more effectively. In particular,
+you will learn about better smoothing filters, and a brand new, fast-acting RSI indicator.
+
+A moving average is a simple concept involving sampled data. One averages the data
+over the last “N” samples, moves forward one sample and averages over the new set of
+“N” samples, and so on. Actually, of each new set of N samples, only the oldest sample
+is discarded and one new sample is added. In any event, the average is done over a
+fixed number of samples and moved forward one sample at a time. In this way the
+average “moves”. An engineer views the process differently. He sees the data moving
+down a fixed delay line that is tapped to get the output of each sample, and the tap
+outputs are added together to produce the moving average. This process is depicted in
+the schematic of Figure 1 for a 4 bar moving average. In Figure 1, the symbol Z⁻¹
+means that there is one unit of delay. In the case of daily data, the delay would be one
+day. The filter response in terms of the Z Transform is:
+      H(z) = 1 + Z⁻¹ + Z⁻² + Z⁻³
+
+
+    =
+
+
+
+
+    iz)
+
+    Figure 1. Schematic of a Moving Average
+
+The equation for the moving average, in EasyLanguage format, is:
+      Filt = (Price + Price[1] + Price[2] + Price[3]) / 4;
+That is, successively older data samples from the newest sample are averaged to attain
+the filtered output. The tapped delay line concept is favored by Engineers because
+more generalized FIR filters can be developed by changing the relative amplitudes of
+the samples. For example, if we wanted the middle two samples to have twice the
+weight as the newest sample and oldest sample in our 4 sample example, the
+schematic diagram would be as shown in Figure 2.
+
+        X(2) 23% =]
+
+        Figure 2. Schematic of a Four Element FIR Filter
+
+The equation of the FIR filter, in EasyLanguage format, is:
+       Filt = (Price + 2*Price[1] + 2*Price[2] + Price[3]) / 6;
+The multipliers on price are called the coefficients of the filter. Please note that the filter
+is always normalized to the sum of the coefficients. This normalization is done so that
+the output will be the same as the input if all the samples have the same value. In
+engineering terms, the DC gain is equal to unity.
+
+The best way to compare the outputs of a moving average and a FIR filter is by
+examining their frequency response. Since we are dealing with sampled data, the
+highest frequency that we can consider has two samples per cycle. This is called the
+Nyquist frequency. So, on daily data, a two bar cycle is at the Nyquist frequency, which
+is a normalized frequency of 1. A cycle having a four bar period has a normalized
+frequency of 0.5. The general relationship between the cycle period and normalized
+frequency is:
+       Frequency = 2 / Period
+With this relationship in mind, the frequency response of the four bar moving average is
+shown in Figure 3. The amplitude is in decibels, a logarithmic scale where 0 is the
+largest unattenuated amplitude. Since this occurs at the left of the frequency range, we
+know the zero frequency gain of the filter is zero. Note the 2 bar cycle and 4 bar cycle
+are exactly notched out by the moving average. The filtering between the 2 bar and 4
+bar cycle is down only a little more than 10 dB from zero gain.
+
+        a 0 —
+        =
+        1
+
+
+
+
+
+=
+= 601 0.1 02 03 04 05 06 07 08 09 1
+        Normalized frequency (Nyquist == 1
+     Figure 3. Four Bar Moving Average Frequency Response
+
+    The frequency response of the FIR filter of Figure 2 is shown in Figure 4.    Manipulating
+    the coefficients has improved the filtering to be greater than 20 dB.         However, the
+    frequency notch has moved up to be at a 3 bar cycle. That is, the bandwidth of the filter
+    is wider than the bandwidth of the moving average.            A wider bandwidth means that
+    more high frequency components are allowed through the filter, and thus the FIR has
+    less smoothing than the same length moving average.          The FIR filter can be made to
+    have additional smoothing by making the filter longer. However, the lag of a FIR filter is
+    approximately half the filter length.   The result is that if we want greater smoothing we
+    must accept the additional lag in conventional filters.
+
+              a  0
+              =
+              iJ]
+              2
+              =      I|  |                              7
+
+              g     H    :   H      H  H            H
+              = 801  01  02  03     04 05     06        07   08     09      1
+                       Normalized frequency (Nyquist == 1
+                  Figure 4. Four Element FIR Filter Frequency Response
+
+Conventional filters use the Z transform to describe the filter transfer characteristic,
+where Z⁻¹ denoted a unit delay. There are a semi-infinite number of orthonormal
+    functions for transform arithmetic.   One such  function is formed     from       Laguerre
+    Polynomials.        The mathematical expression for a kᵗʰ order Laguerre transfer response
+    is:
+
+    The Laguerre Transform can be represented as a EMA low pass filter ( the first term),
+
+        H (z)  1 1   Z 1   k 1
+         Z 1 1  Z 1 
+followed by a succession of all-pass elements instead of unit delays (the k-1 terms). All
+terms have exactly the same damping factor . We see these are all pass networks by
+examining the frequency response. When frequency is zero, the Z⁻¹ term has a value of
+1, and therefore the element evaluates to (1-)/(1-) = 1. Similarly, when frequency is
+infinite, Z⁻¹ has a value of –1, and therefore the element evaluates to (-1-)/(1+) = -1.
+The element has a unity gain at all frequencies between zero and infinity, and therefore
+is an all pass network. However, the phase from input to output shifts over the
+frequency range, causing the lag to be variable as a function of frequency. The degree
+to which the lag is variable depends upon the value of the damping factor . For
+example, the lag, or group delay, for  = 0.6 and  = 0.8 are shown in Figure 5.
+
+    (NI
+
+
+
+
+
+
+
+    53 Normalized 05 be   07  05 i    53   54     05   07  08 1
+        (Nyauist          ==  1       Normalized       == 1
+        = 0.6                              = 0.8
+    Figure 5. All Pass Network Lag is a Function of Frequency and Damping Factor
+
+
+Therefore, we can make a filter using the Laguerre elements instead of the unit delay
+whose coefficients are also [1 2 2 1]/6 as with the FIR filter. The difference is that we
+have warped the time between the delay line times. The schematic of the Laguerre
+filter is shown in Figure 6.
+
+
+                          ™
+    X                     27
+
+
+                          ®    ®                       ® Y(2)
+
+    Figure 6. Laguerre Filter Schematic
+
+The EasyLanguage code for a four element Laguerre Filter is given in Figure 7.         L0 is
+the output of the first section, and is just an EMA.        The following three sections are
+identical in their form.     The four sections of the Laguerre delay line are summed exactly
+the same way as one would sum a linear delay line for a FIR filter. The Laguerre output
+is the “Filt” variable. An identical length FIR filter is also computed for comparison.
+
+Inputs:         Price((H+L)/2),
+                gamma(.8);
+
+Vars:    L0(0),
+         L1(0),
+         L2(0),
+         L3(0),
+         Filt(0)
+         FIR(0);
+
+L0 = (1 - gamma)*Price + gamma*L0[1];
+L1 = -gamma*L0 + L0[1] + gamma*L1[1];
+L2 = -gamma*L1 + L1[1] + gamma*L2[1];
+L3 = -gamma*L2 + L2[1] + gamma*L3[1];
+
+Filt = (L0 + 2*L1 + 2*L2 + L3) / 6;
+FIR = (Price + 2*Price[1] + 2*Price[2] + Price[3]) / 6;
+
+Plot1(Filt, "Filt");
+Plot2(FIR, "FIR");
+
+                    Figure 7. Laguerre Filter EasyLanguage Code
+
+The results of the Laguerre and FIR filter are shown in Figure 8.      Remember both filters
+have identical lengths. The FIR filter (the green line) has a lag of only 1.5 bars and only
+moderately smoothes the price data.          On the other hand, the Laguerre filter (the red
+line) is dramatically smoother and also has significant lag.            You can decrease the
+smoothing and the lag by decreasing the damping factor.           When the damping factor is
+reduced to zero, the Laguerre filter is identical to the FIR filter. This is a simple way to
+control the action of a moving average and still use only a few data samples in the
+calculation.
+
+         03/01/1996 C-116.03  +1.19 +1.04% 0-114.91  H=116.16 L=114.78 V=0 !Laguerre    12200
+                                                                A be     i) ii ft i    120.00
+                                  [i     i i         I  if       I]                    118.00
+hy                            |     Il i                 liHi                          116.00
+                                                                                       114.00
+    i                  Hl
+             I                   P                                                     112.00
+
+                                                                                       110.00
+         10
+           H]
+          Figure 8. Four Element Laguerre Filter is Dramatically Smoother than a Conventional
+                                Four Element FIR Filter
+
+The story does not end with conventional filters.           As I am fond of saying “Truth and
+science always triumphs over ignorance and superstition”.         If we can generate superior
+smoothing with very short filters, it follows that we should be able to create superior
+indicators using very short data lengths also. The use of shorter data lengths mean that
+we can make the indicators more responsive to changes in the price.            As an example,
+the Laguerre RSI will be used.
+
+Welles Wilder defined the RSI as
+         RSI = 100 - 100 / (1 + RS)
+         where RS = (Closes Up) / (Closes Down)
+             = CU / CD
+RS is shorthand for Relative Strength.            That is, CU is the sum of the difference in
+closing prices over the observation period where that difference is positive.     Similarly,
+CD is the sum of the difference in closing prices over the observation period where that
+difference is negative, but the sum is expressed as a positive number.                When we
+substitute CU/CD for RS and simplify the RSI equation, we get
+
+          RSI  100  1  100
+                        CU CD
+
+                100   100CD
+                   CU  CD
+                100CU 100CD 100CD
+                        CU  CD
+          RSI  100CU
+               CU  CD
+
+In other words, the RSI is the percentage of the sum of the delta closes up to the sum of
+all the delta closes over the observation period.   In the EasyLanguage code of Figure 9,
+I have generated an RSI over Laguerre time rather than linear time, using only four data
+samples.        In this case, I used a 0.5 damping factor, but you can adjust the damping
+factor that best suits your own data.
+
+Inputs:       gamma(.5);
+
+Vars:   L0(0),
+        L1(0),
+        L2(0),
+        L3(0),
+        CU(0),
+        CD(0),
+        RSI(0);
+
+L0 = (1 – gamma)*Close + gamma*L0[1];
+L1 = - gamma *L0 + L0[1] + gamma *L1[1];
+L2 = - gamma *L1 + L1[1] + gamma *L2[1];
+L3 = - gamma *L2 + L2[1] + gamma *L3[1];
+
+CU = 0;
+CD = 0;
+If L0 >= L1 then CU = L0 - L1 Else CD = L1 - L0;
+If L1 >= L2 then CU = CU + L1 - L2 Else CD = CD + L2 - L1;
+If L2 >= L3 then CU = CU + L2 - L3 Else CD = CD + L3 - L2;
+
+If CU + CD <> 0 then RSI = CU / (CU + CD);
+
+Plot1(RSI, "RSI");
+Plot2(.8);
+Plot3(.2);
+
+              Figure 9. EasyLanguage Code for a Laguerre RSI Indicator
+
+    An example of the results of the 4 element Laguerre RSI are shown in Figure 10 as a
+    subgraph below the price charts.          The 20% and 80% signal levels are also plotted.
+    Note that the excursions of the RSI are typically lock-to-lock and that the recovery is
+    rapid at each major price reversal. A typical use of the Laguerre RSI is to buy after the
+    line crosses back over the 20% level and sell after the price crosses back down over the
+    80% level.     Of course, just as with the conventional RSI, more elaborate trading rules
+    can be created.
+
+US___96H.PRN-Daily 03/01/1996 C-116.03 +1.19 +1.04% 0-114.91 H=116.16 L=114.78 V=0
+                                          hi  , pil         122.00
+                                                            120.00
+
+                                      Ji                 by 118.00
+                                                            116.00
+     I+      pl                                             114.00
+                                                            112.00
+      th                  whl                                  tom
+     |Fay
+
+        RSI(.5) 0.1249 0.8000    0.2000
+         Ni     FN                                          0.9000
+                                                            0.6000
+                     ”        ON                    \       0.3000
+     E0000
+     Jul
+         Figure 10. A Laguerre RSI Reacts Rapidly to Price Changes
+
+      More elaborate rules are not necessarily required because the Laguerre RSI
+system was found to be the top performer of all systems registered at
+www.wellinvested.com with 118.3% annualized return on AKSYS Ltd.
+WellInvested.com is a website where a wide variety of automatic trading systems are
+applied across most listed stocks and futures. Several searches are interesting. The
+highest performing systems can be found for a given symbol or the highest performing
+symbols can be found for a given system, for example. It turns out that the two Laguerre
+systems were the highest performers on the popular DIA contract for calendar 2002, as
+shown in Figure 11.
+
+ Welllnvested  Strategy        Strategy Profit    Sharpe Ratio   Profitable.  Number of   Current
+                                                ¥                Trades       Trades      Position
+©              Fite      obo lors di ors 0  NN                    ess
+©                  by      vas           ©  NN      oe ome
+                                            EEeo     es me 1
+                                                     ow
+                                                     em           wes
+                                                     ese                        ez
+
+                                                     oe           ee
+ mss
+Figure 11. Screen Capture from www.wellinvested.com, Showing the Laguerre
+Trading Systems were the top performers on the popular DIA contract in 2002
+
+CONCLUSIONS
+
+The Laguerre Transform provides a time warp such that the low frequency components
+of price are delayed much more than the high frequency components.                      This feature
+enables smoothing filters to be created using only a small amount of data.                Similarly,
+indicators using only a few data samples can also be created using the time warp.
+Since these indicators use only a few data samples, they can be made to be much more
+responsive to recent price data.                   More responsiveness translates to faster reaction
+times in placing the trades and, consequently, improved profitability due to the reduction
+in signal lag.

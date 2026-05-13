@@ -109,7 +109,7 @@ mod tests {
             // Batch implementation
             let mut batch_results = Vec::with_capacity(inputs.len());
             let beta = (2.0 * PI / period as f64).cos();
-            let gamma = 1.0 / (2.0 * PI * 2.0 * bandwidth / period as f64).cos(); // Ehlers uses 720*delta
+            let _gamma = 1.0 / (2.0 * PI * 2.0 * bandwidth / period as f64).cos(); // Ehlers uses 720*delta
             // Wait, Ehlers uses 360/P for Cosine (degrees) which is 2*PI/P for cos (radians).
             // Ehlers uses 720*delta/P for Cosine which is 4*PI*delta/P for cos.
             // My alpha/beta in code:

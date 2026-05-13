@@ -63,7 +63,15 @@ RSI = \text{Wilder's RSI}(Input, Period)
 mod tests {
     use super::*;
     use crate::traits::Next;
+    use crate::test_utils::{load_gold_standard_oc, assert_indicator_parity_oc};
     use proptest::prelude::*;
+
+    #[test]
+    fn test_oc_price_rsi_gold_standard() {
+        let case = load_gold_standard_oc("oc_price_rsi");
+        let ocrsi = OCPriceRSI::new(14);
+        assert_indicator_parity_oc(ocrsi, &case.input, &case.expected);
+    }
 
     #[test]
     fn test_oc_price_rsi_basic() {

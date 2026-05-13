@@ -60,7 +60,7 @@ impl Next<(f64, f64)> for AMDetector {
 /// price spectrum using a hard limiter and a SuperSmoother filter.
 #[derive(Debug, Clone)]
 pub struct FMDemodulator {
-    period: usize,
+    _period: usize,
     c1: f64,
     c2: f64,
     c3: f64,
@@ -77,7 +77,7 @@ impl FMDemodulator {
         let c1 = 1.0 - c2 - c3;
         
         Self {
-            period,
+            _period: period,
             c1,
             c2,
             c3,

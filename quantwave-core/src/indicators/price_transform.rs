@@ -1,3 +1,5 @@
+use crate::traits::Next;
+
 talib_4_in_1_out!(AVGPRICE, talib_rs::price_transform::avgprice);
 impl Default for AVGPRICE {
     fn default() -> Self {
@@ -20,6 +22,26 @@ talib_3_in_1_out!(WCLPRICE, talib_rs::price_transform::wclprice);
 impl Default for WCLPRICE {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// (Open + Close) / 2
+/// 
+/// Based on John Ehlers' "Every Little Bit Helps" (2023).
+/// Used to reduce noise in technical indicators by averaging the open and close.
+#[derive(Debug, Clone, Default)]
+pub struct OC2;
+
+impl OC2 {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl Next<(f64, f64)> for OC2 {
+    type Output = f64;
+    fn next(&mut self, input: (f64, f64)) -> Self::Output {
+        (input.0 + input.1) / 2.0
     }
 }
 
@@ -71,6 +93,23 @@ mod tests {
                 } else {
                     approx::assert_relative_eq!(s, b, epsilon = 1e-6);
                 }
+            }
+        }
+
+        #[test]
+        fn test_oc2_parity(
+            o in prop::collection::vec(0.1..100.0, 1..100),
+            c in prop::collection::vec(0.1..100.0, 1..100)
+        ) {
+            let len = o.len().min(c.len());
+            if len == 0 { return Ok(()); }
+
+            let mut oc2 = OC2::new();
+            let streaming_results: Vec<f64> = (0..len).map(|i| oc2.next((o[i], c[i]))).collect();
+            let batch_results: Vec<f64> = (0..len).map(|i| (o[i] + c[i]) / 2.0).collect();
+
+            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+                approx::assert_relative_eq!(s, b, epsilon = 1e-10);
             }
         }
     }

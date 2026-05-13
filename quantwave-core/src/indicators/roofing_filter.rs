@@ -10,8 +10,8 @@ use std::f64::consts::PI;
 /// The Roofing Filter removes spectral dilation and aliasing noise.
 #[derive(Debug, Clone)]
 pub struct RoofingFilter {
-    hp_period: usize,
-    ss_period: usize,
+    _hp_period: usize,
+    _ss_period: usize,
     
     // HighPass coefficients
     hp_c1: f64,
@@ -43,8 +43,8 @@ impl RoofingFilter {
         let ss_c1 = 1.0 - ss_c2 - ss_c3;
         
         Self {
-            hp_period,
-            ss_period,
+            _hp_period: hp_period,
+            _ss_period: ss_period,
             hp_c1,
             hp_c2,
             hp_c3,

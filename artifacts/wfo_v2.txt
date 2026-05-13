@@ -1,0 +1,96 @@
+          WALK FORWARD OPTIMIZATION
+                By John Ehlers
+    BeYourOwnHedgeFund.com Chief Scientist
+
+    I am sending you these tips about Walk Forward Optimization (WFO) because I think
+    they will be helpful to you for your use with MESA Intraday and MESA Phasor.
+
+I have been working with TradeStation’s WFO a lot recently, and it has taken me quite a
+while to trust the results. It actually works pretty neat when you understand all its foibles.
+Because so much can go wrong, I thought for a while that the tool had bugs. One of the
+things that surprised me is the vast difference between insample tests and WFO tests for
+some strategies. The basic answer to these differences lie within the strategies
+themselves. If there are multiple indicators or rules comprising the strategy it is well
+possible that these rules interact during the walk forward test, whereas the indicators
+and rules are fixed across the entire data set for insample tests.
+
+First, let’s establish the way the TradeStation WFO must be used to be helpful. You can
+do the optimization run either with the exhaustive or genetic method. When you prepare
+your optimization run you must establish a name for that run. It is important that the
+name is absolutely unique. TradeStation does not (correctly, at least) overwrite an
+existing file in the WFO folder. I routinely erase files in my C:\ProgramFiles
+(x86)\Tradestation9.5\WFO\Data folder. It is absolutely necessary that you click
+Advanced Settings the very last thing you do before you click Optimize, and insert 0% of
+the last data to exclude during optimization. For some unknown reason, TradeStation
+always inserts 30% to be excluded. OK. Do the optimization run.
+
+Now for the fun part – using the Walk Forward Optimizer with MESA Intraday. Forget
+about all that cluster stuff! You cannot make a good strategy out of a bad one just by
+testing it. First, click Setup….Optimization Settings. Unclick the prescribed number of
+runs box. Set the insample bars to 1080 and the out-of-sample bars to 135. Using 15
+minute bars on the index Futures, there are 27 bars per day. So 135 bars is equivalent
+to 5 days (one week), and 1080 bars is equivalent to 40 days (2 months). So, in a
+nutshell, you are using 2 months of insample data and walking forward one week at a
+time. All this is approximate because the data gets messed up due to half day trading,
+etc. Further, you need to recognize that at least the first three days of your insample
+data will give no trades or incorrect trades because of startup issues with the indicators.
+The startup issue can be substantially larger with poorly designed strategies. In my
+opinion, 1080 bars gives adequate opportunity for the initialization errors to be averaged
+out in MESA Intraday. If you get an error message during the run that you do not have
+enough samples for good resolution, just ignore it because that message doesn’t apply
+to our methodology.
+
+    MESA Phasor only trades about 16 times a year on the average. So, in order to get an
+    adequate insample test, you need to include a year’s worth of data for the insample test.
+
+Similarly, it is a good idea to walk forward about 3 months at a time to get a reasonable
+display without inadvertently terminating too many out of sample trades.
+
+In interpreting the results, just ignore all the messages. They are basically meaningless.
+I think the equity chart tells you everything you want to know. Your OOS equity growth
+should look similar to your insample equity growth and the OOS net profit should be a
+healthy percentage of the insample net profit. The trading summary can be interesting.
+Just remember to keep your tongue in your cheek because of all the approximations and
+errors that are made in doing the WFO.
+
+With respect to MESA Intraday V3B, I had a couple of surprises as a result of the WFO.
+First, the Risk should be optimized between $200 and $1500 for ES. The best setting for
+the Risk parameter basically makes it a Disaster Stop. Setting it lower may make you
+feel good, but it works against you in setting other parameters for the walk forward. The
+Reward parameter is basically useless. Just set it at $100,000, which just deactivates it.
+I also found Long Thresh and Short Thresh adversely interacted with the other strategy
+parameters. It is best to set the Long Thresh at a fixed 0.3 and the Short Thresh at a
+fixed -0.5. These settings provide a slight upside bias for market movement.
+
+Having done all those things, here is the Out-Of-Sample results of my walk forward test
+on MESA Intraday V3B from 1 January 2017 to 19 June 2018.
+
+  @ES.D_15min_MESAV3B_Fitness1 Continuously Re-optimized 00S=00S135bars INS=INS1080bar
+        5
+
+
+
+
+
+      Iv     15000
+
+   |  V      10000
+   i
+
+
+
+
+
+
+
+In summary, you should limit the range of your parameters to be optimized using the
+procedure described in my paper “A Procedure to Evaluate Trading Strategy Robustness”.
+Then, perform the backtest ensuring that there is 0% of the last data to be excluded.
+Ensure that your WFO file name is absolutely unique. Forget the cluster stuff in the Walk
+
+Forward optimizer, and set your insample and out of sample bars for a single walk forward
+test. I think your trading will be greatly enhanced by the proper use of this tool.
+
+WFO will be one of the topics during my October 12-14 workshop. Please sign up, or tell
+a friend about the workshop if you think he could benefit. Here is a link for more
+information: http://www.mesasoftware.com/workshop.htm.

@@ -75,7 +75,15 @@ Stoch = 100 \times \frac{Roof - \min(Roof, L)}{\max(Roof, L) - \min(Roof, L)}
 mod tests {
     use super::*;
     use crate::traits::Next;
+    use crate::test_utils::{load_gold_standard, assert_indicator_parity};
     use proptest::prelude::*;
+
+    #[test]
+    fn test_ehlers_stochastic_gold_standard() {
+        let case = load_gold_standard("ehlers_stochastic");
+        let es = EhlersStochastic::new(48, 10, 20);
+        assert_indicator_parity(es, &case.input, &case.expected);
+    }
 
     #[test]
     fn test_ehlers_stochastic_basic() {

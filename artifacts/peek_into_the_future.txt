@@ -1,0 +1,146 @@
+        A PEEK INTO THE FUTURE
+        By John Ehlers
+
+Trading would be considerably less difficult if we could look into the future. Of course
+that is literally impossible, but signal processing can provide a filter with negative group
+delay. That filter is described in this article. While it really cannot look into the future, it
+can provide signals in advance of signals used by other traders – and that may be enough
+to create a successful trading edge.
+
+There are two kinds of delay associated with signal processing filters: These are group
+delay and phase delay. It is perhaps easiest to understand them by considering a five
+bar simple moving average. Signals at the output of this moving average are delayed by
+exactly two bars at all frequencies. That is group delay. If we examine the filter output
+relative to an input of a cycle having a 20 bar period, the two bar group delay becomes
+a phase delay that is 10% of the cycle period, or 36 degrees. If we examine the filter
+output relative to an input cycle having a 10 bar period, the phase delay is 20% of the
+cycle period, or 72 degrees.
+
+An Exponential Moving Average (EMA) filter, on the other hand, has a large group delay
+at very long signal periods, reducing to a minimum delay at the highest possible sample
+frequency (Nyquist frequency). This group delay is nonlinear across the spectrum,
+making the phase delay even more nonlinear. In signal processing, group delay is used
+as a measure of signal distortion because signals arrive at the filter output in different
+phase relationships than existed at the filter input. Parenthetically, since market data is
+generally noisy with a wide spectral bandwidth, filter group and phase distortions have
+led to some interesting interpretations of technical indicators.
+
+In general, it is best to minimize group and phase delays in technical indicators because
+minimization naturally improves indicator robustness in different market conditions. I
+discovered “a Universal Negative Group Delay Filter for the Prediction of Band-Limited
+Signals”¹, which I have renamed the Voss predictive filter. The derivation of the filter is
+complicated and long, but the filter itself is very simple. I will describe it in code in Code
+Listing 1.
+
+There is a qualification required by the Voss predictive filter that the input signal be band
+limited. Market data can reasonably be described as having an unlimited bandwidth, and
+so the Voss predictive filter must be preceded by a band limiting filter to be useful in
+technical analysis. The simplest filter to use for this application is my two pole bandpass
+filter². This filter is also described in Code Listing 1. Please remember that this Bandpass
+filter is also subject to nonlinear group and phase delays. Because a band limited input
+
+1 Henning U. Voss, "A universal negative group delay filter for the prediction of band-limited signals"
+https://arxiv.org/abs/1706.07326
+2 John Ehlers, “Cycle Analytics for Traders”, Chapter 5, John Wiley & Sons
+
+signal is a requirement for the Voss filter, a true overall prediction is not possible. But
+reducing lag is always a good thing for technical analysis.
+
+The Voss predictive filter is described with reference to the EasyLanguage code in Code
+Listing 1.
+
+ Code Listing 1. Voss Predictive Filter
+ Inputs:
+      Period(20),
+      Predict(3);
+
+ Vars:
+      Order(0),
+      F1(0), G1(0), S1(0), Bandwidth(.25),
+      count(0),
+      SumC(0),
+      Filt(0),
+      Voss(0);
+
+ If CurrentBar = 1 Then Begin
+      Order = 3*Predict;
+      F1 = Cosine(360 / Period);
+      G1 = Cosine(Bandwidth*360 / Period);
+      S1 = 1 / G1 - SquareRoot( 1 / (G1*G1) - 1);
+ End;
+
+ //Band Limit the input data with a wide band BandPass Filter
+ Filt = .5*(1 - S1)*(Close - Close[2]) + F1*(1 + S1)*Filt[1] - S1*Filt[2];
+ If CurrentBar <= 5 Then Filt = 0;
+
+ //Compute Voss predictor
+ SumC = 0;
+ For count = 0 to Order - 1 Begin
+      SumC = SumC + ((count + 1) / Order)*Voss[Order - count];
+ End;
+ Voss = ((3 + Order) / 2)*Filt - SumC;
+
+ Plot1(Filt);
+ Plot2(Voss);
+
+The input variables are the center period of the band-limiting Bandpass filter and the
+number of bars forward of prediction to be produced. You can experiment with the inputs
+for your application, but I recommend that you do not exceed 3 bars of prediction.      The
+reason is that the output becomes noisier as the prediction is increased.      The only way
+
+to reduce the output noise is to reduce the bandwidth of the Bandpass filter. Of course,
+reducing the bandwidth increases the group and phase lags of the filter with the result
+that it is a no-win solution.
+
+After the variables are declared, the filter constants are computed once on the first bar
+on the chart. The Voss predictive filter constant called “Order” is approximately three
+times the desired prediction.
+
+Next, the two pole Bandpass filter I describe in my book is computed as “Filt”. Filt then
+becomes the input into the Voss predictive filter.
+
+The Voss predictive filter consists of multiple time-delayed feedback terms in order to
+accomplish anticipatory coupling, leading to negative group delay for frequency
+components within the passband of the Bandpass filter.
+
+The prediction of the Voss predictive filter is plotted relative to the output of the Bandpass
+filter so the prediction of the filter is obvious. The relationship between the two plots and
+be used to develop trading rules, which is beyond the scope of this article.
+
+The performance of the Voss predictive filter is shown in Figure 1, where it is applied to
+a little more than a year’s worth of data of SPY. The red indicator line is the output of
+the Bandpass Filter and the blue indicator line is the Voss predictive filter output. It is
+obvious that the blue line precedes the red line in its motion, and is therefore predictive.
+During the Spring of 2018 SPY was in a cyclic mode with an approximate monthly (20
+bar) cycle period. The Bandpass filter accurately tracked the peaks and valleys of the
+market movement. Thus, the crossings of the blue line relative to the red line at is peaks
+and valleys were excellent sell and buy signals, respectively. The performance of the
+filter can be estimated by lining the indicator crossovers relative to the peaks and valleys
+in the price action of the barchart.
+
+On the other hand, SPY went into a trend mode in January 2019, and the cycle signal
+failed miserably, signaling a short position during the runup. This failure was not due to
+a failure of the prediction. Rather, the failure was basically a result of no information
+being within the passband of the Bandpass filter. The only way to minimize the impact
+of this condition is to employ an additional trend detector.
+
+The Voss predictive filter is another new tool that can improve your trading edge by giving
+you a peek into the future when the conditions are right. I hope it works well for you.
+
+SPY(D)- Daily ARCX L=275.04 0.03 0.01% B=27499 A=275.04 0=27294 Hi=274.65 Lo=272.42 V=85795,799
+                                      hai                                                          290.00
+                                  a
+    £  JAy            Wo ayfoxyi      nee    |                           }     Ix|[]   |   /ⁱᶠ     274.4
+                                                                                                   250.00
+                                                                                   [               240.00
+
+    1  Voss 20,3  0.03 -1.43
+
+                                                                                                   4.00
+
+                                                                                               10.03
+                                                                                                   -1.43
+                                                                                                   -4.00
+
+       Feb        Mar  Apr  May Jun Jul                        Aug Sep Ot   Nov Dec   19   Feb  Mar
+    Figure 1.                     Voss Predictive Filter Anticipates Cyclic Turns in the Market

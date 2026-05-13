@@ -176,7 +176,7 @@ mod tests {
                 let mut p2 = 0.0;
                 let mut p3 = 0.0;
                 let start = if i >= fundamental - 1 { i + 1 - fundamental } else { 0 };
-                let count = i + 1 - start;
+                let _count = i + 1 - start;
                 for j in start..=i {
                     p1 += bp1_vals[j] * bp1_vals[j] + q1_vals[j] * q1_vals[j];
                     p2 += bp2_vals[j] * bp2_vals[j] + q2_vals[j] * q2_vals[j];
