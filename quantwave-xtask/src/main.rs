@@ -234,8 +234,14 @@ fn generate_native_docs(docs_dir: &Path, indicators_dir: &Path) -> Result<Vec<(S
                                     }
                                 }
 
-                                let filename =
-                                    name.to_lowercase().replace(" ", "_").replace("-", "_").replace("/", "_");
+                                let filename = name.to_lowercase()
+                                    .chars()
+                                    .map(|c| if c.is_alphanumeric() { c } else { '_' })
+                                    .collect::<String>()
+                                    .split('_')
+                                    .filter(|s| !s.is_empty())
+                                    .collect::<Vec<_>>()
+                                    .join("_");
 
                                 let mut md = String::new();
                                 md.push_str(&format!("# {}\n\n", name));
