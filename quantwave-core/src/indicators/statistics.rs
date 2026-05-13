@@ -5,19 +5,47 @@ use std::collections::VecDeque;
 talib_1_in_1_out!(TaSTDDEV, talib_rs::statistic::stddev, timeperiod: usize, nbdev: f64);
 talib_1_in_1_out!(TaVAR, talib_rs::statistic::var, timeperiod: usize, nbdev: f64);
 talib_2_in_1_out!(TaBETA, talib_rs::statistic::beta, timeperiod: usize);
-impl From<usize> for TaBETA { fn from(p: usize) -> Self { Self::new(p) } }
+impl From<usize> for TaBETA {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
 talib_2_in_1_out!(TaCORREL, talib_rs::statistic::correl, timeperiod: usize);
-impl From<usize> for TaCORREL { fn from(p: usize) -> Self { Self::new(p) } }
+impl From<usize> for TaCORREL {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
 talib_1_in_1_out!(TaLINEARREG, talib_rs::statistic::linearreg, timeperiod: usize);
-impl From<usize> for TaLINEARREG { fn from(p: usize) -> Self { Self::new(p) } }
+impl From<usize> for TaLINEARREG {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
 talib_1_in_1_out!(TaLINEARREG_SLOPE, talib_rs::statistic::linearreg_slope, timeperiod: usize);
-impl From<usize> for TaLINEARREG_SLOPE { fn from(p: usize) -> Self { Self::new(p) } }
+impl From<usize> for TaLINEARREG_SLOPE {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
 talib_1_in_1_out!(TaLINEARREG_INTERCEPT, talib_rs::statistic::linearreg_intercept, timeperiod: usize);
-impl From<usize> for TaLINEARREG_INTERCEPT { fn from(p: usize) -> Self { Self::new(p) } }
+impl From<usize> for TaLINEARREG_INTERCEPT {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
 talib_1_in_1_out!(TaLINEARREG_ANGLE, talib_rs::statistic::linearreg_angle, timeperiod: usize);
-impl From<usize> for TaLINEARREG_ANGLE { fn from(p: usize) -> Self { Self::new(p) } }
+impl From<usize> for TaLINEARREG_ANGLE {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
 talib_1_in_1_out!(TaTSF, talib_rs::statistic::tsf, timeperiod: usize);
-impl From<usize> for TaTSF { fn from(p: usize) -> Self { Self::new(p) } }
+impl From<usize> for TaTSF {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
 
 /// Standard Deviation (Population)
 #[derive(Debug, Clone)]
@@ -63,7 +91,7 @@ impl Next<f64> for StandardDeviation {
         let n = self.window.len() as f64;
         let mean = self.sum / n;
         let variance = (self.sum_sq / n) - (mean * mean);
-        
+
         // Handle floating point precision issues
         variance.max(0.0).sqrt()
     }
@@ -116,7 +144,7 @@ impl Next<f64> for LinearRegression {
         }
 
         if self.window.len() < self.period {
-            // For partial windows, we could recalculate x sums, 
+            // For partial windows, we could recalculate x sums,
             // but for TTM Squeeze, we'll wait for full window or return partial.
             // Standard approach: wait for full window or adjust n.
             let n = self.window.len() as f64;
@@ -131,12 +159,12 @@ impl Next<f64> for LinearRegression {
                 sum_y += y;
                 sum_xy += x * y;
             }
-            
+
             let denominator = n * sum_x2 - sum_x * sum_x;
             if denominator == 0.0 {
                 return input;
             }
-            
+
             let b = (n * sum_xy - sum_x * sum_y) / denominator;
             let a = (sum_y - b * sum_x) / n;
             return a + b * (n - 1.0);
@@ -158,7 +186,7 @@ impl Next<f64> for LinearRegression {
 
         let b = (n * sum_xy - self.sum_x * sum_y) / denominator;
         let a = (sum_y - b * self.sum_x) / n;
-        
+
         a + b * (n - 1.0)
     }
 }
@@ -186,7 +214,7 @@ mod tests {
         lr.next(2.0);
         let res = lr.next(3.0);
         approx::assert_relative_eq!(res, 3.0);
-        
+
         // Line y = 2x + 5. x in [0, 1, 2]. y = [5, 7, 9]
         let mut lr2 = LinearRegression::new(3);
         lr2.next(5.0);
@@ -204,7 +232,7 @@ mod tests {
             let mut ta_stddev = TaSTDDEV::new(period, nbdev);
             let streaming_results: Vec<f64> = input.iter().map(|&x| ta_stddev.next(x)).collect();
             let batch_results = talib_rs::statistic::stddev(&input, period, nbdev).unwrap_or_else(|_| vec![f64::NAN; input.len()]);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 if s.is_nan() {
                     assert!(b.is_nan());
@@ -220,7 +248,7 @@ mod tests {
             let mut ta_lr = TaLINEARREG::new(period);
             let streaming_results: Vec<f64> = input.iter().map(|&x| ta_lr.next(x)).collect();
             let batch_results = talib_rs::statistic::linearreg(&input, period).unwrap_or_else(|_| vec![f64::NAN; input.len()]);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 if s.is_nan() {
                     assert!(b.is_nan());
@@ -232,13 +260,14 @@ mod tests {
     }
 }
 
-
 pub const STDDEV_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Standard Deviation",
     description: "Standard Deviation is a statistical measure of market volatility.",
-    params: &[
-        ParamDef { name: "period", default: "14", description: "Period" },
-    ],
+    params: &[ParamDef {
+        name: "period",
+        default: "14",
+        description: "Period",
+    }],
     formula_source: "https://www.investopedia.com/terms/s/standarddeviation.asp",
     formula_latex: r#"
 \[
@@ -249,13 +278,14 @@ pub const STDDEV_METADATA: IndicatorMetadata = IndicatorMetadata {
     category: "Classic",
 };
 
-
 pub const LINREG_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Linear Regression",
     description: "Linear Regression plots a straight line that best fits the data prices.",
-    params: &[
-        ParamDef { name: "period", default: "14", description: "Period" },
-    ],
+    params: &[ParamDef {
+        name: "period",
+        default: "14",
+        description: "Period",
+    }],
     formula_source: "https://www.investopedia.com/terms/l/linearregression.asp",
     formula_latex: r#"
 \[

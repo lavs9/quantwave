@@ -1,9 +1,9 @@
-use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
-use crate::indicators::smoothing::SMA;
-use crate::indicators::volatility::ATR;
-use crate::indicators::statistics::{StandardDeviation, LinearRegression};
 use crate::indicators::donchian::DonchianChannels;
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
+use crate::indicators::smoothing::SMA;
+use crate::indicators::statistics::{LinearRegression, StandardDeviation};
+use crate::indicators::volatility::ATR;
+use crate::traits::Next;
 
 /// TTM Squeeze Indicator
 /// Combines Bollinger Bands and Keltner Channels to identify volatility compression.
@@ -66,10 +66,10 @@ impl Next<(f64, f64, f64)> for TTMSqueeze {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
     use serde::Deserialize;
     use std::fs;
     use std::path::Path;
-    use proptest::prelude::*;
 
     #[derive(Debug, Deserialize)]
     struct TTMCase {
@@ -88,7 +88,10 @@ mod tests {
         let path = if path.exists() {
             path
         } else {
-            manifest_path.parent().unwrap().join("tests/gold_standard/ttm_squeeze_20_2_15.json")
+            manifest_path
+                .parent()
+                .unwrap()
+                .join("tests/gold_standard/ttm_squeeze_20_2_15.json")
         };
         let content = fs::read_to_string(path).unwrap();
         let case: TTMCase = serde_json::from_str(&content).unwrap();
@@ -101,7 +104,12 @@ mod tests {
         }
     }
 
-    fn ttm_batch(data: Vec<(f64, f64, f64)>, period: usize, multiplier_bb: f64, multiplier_kc: f64) -> Vec<f64> {
+    fn ttm_batch(
+        data: Vec<(f64, f64, f64)>,
+        period: usize,
+        multiplier_bb: f64,
+        multiplier_kc: f64,
+    ) -> Vec<f64> {
         let mut ttm = TTMSqueeze::new(period, multiplier_bb, multiplier_kc);
         data.into_iter().map(|x| ttm.next(x).0).collect()
     }
@@ -118,7 +126,7 @@ mod tests {
                 let low = l_f.min(h_f).min(c_f);
                 adj_input.push((high, low, c_f));
             }
-            
+
             let period = 20;
             let m_bb = 2.0;
             let m_kc = 1.5;
@@ -129,7 +137,7 @@ mod tests {
             }
 
             let batch_results = ttm_batch(adj_input, period, m_bb, m_kc);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-6);
             }
@@ -139,7 +147,7 @@ mod tests {
     #[test]
     fn test_ttm_squeeze_basic() {
         let mut ttm = TTMSqueeze::new(20, 2.0, 1.5);
-        
+
         // Feed some data to warm up
         for i in 0..50 {
             let val = 100.0 + (i as f64).sin() * 5.0;
@@ -151,15 +159,30 @@ mod tests {
     }
 }
 
-
 pub const TTM_SQUEEZE_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "TTM Squeeze",
     description: "TTM Squeeze measures the relationship between Bollinger Bands and Keltner Channels to identify volatility consolidations.",
     params: &[
-        ParamDef { name: "bb_period", default: "20", description: "Bollinger Bands Period" },
-        ParamDef { name: "bb_mult", default: "2.0", description: "Bollinger Bands Multiplier" },
-        ParamDef { name: "kc_period", default: "20", description: "Keltner Channel Period" },
-        ParamDef { name: "kc_mult", default: "1.5", description: "Keltner Channel Multiplier" },
+        ParamDef {
+            name: "bb_period",
+            default: "20",
+            description: "Bollinger Bands Period",
+        },
+        ParamDef {
+            name: "bb_mult",
+            default: "2.0",
+            description: "Bollinger Bands Multiplier",
+        },
+        ParamDef {
+            name: "kc_period",
+            default: "20",
+            description: "Keltner Channel Period",
+        },
+        ParamDef {
+            name: "kc_mult",
+            default: "1.5",
+            description: "Keltner Channel Multiplier",
+        },
     ],
     formula_source: "https://www.investopedia.com/articles/active-trading/110714/intro-ttm-squeeze-indicator.asp",
     formula_latex: r#"

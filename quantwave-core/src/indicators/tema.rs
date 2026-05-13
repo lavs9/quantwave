@@ -1,6 +1,6 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::smoothing::EMA;
+use crate::traits::Next;
 
 /// Triple Exponential Moving Average (TEMA)
 /// TEMA = (3 * EMA1) - (3 * EMA2) + EMA3
@@ -66,10 +66,10 @@ impl Next<f64> for ZLEMA {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
     use serde::Deserialize;
     use std::fs;
     use std::path::Path;
-    use proptest::prelude::*;
 
     #[derive(Debug, Deserialize)]
     struct TemaCase {
@@ -86,14 +86,17 @@ mod tests {
         let path = if path.exists() {
             path
         } else {
-            manifest_path.parent().unwrap().join("tests/gold_standard/tema_14.json")
+            manifest_path
+                .parent()
+                .unwrap()
+                .join("tests/gold_standard/tema_14.json")
         };
         let content = fs::read_to_string(path).unwrap();
         let case: TemaCase = serde_json::from_str(&content).unwrap();
 
         let mut tema = TEMA::new(14);
         let mut zlema = ZLEMA::new(14);
-        
+
         for i in 0..case.close.len() {
             let t = tema.next(case.close[i]);
             let z = zlema.next(case.close[i]);
@@ -123,7 +126,7 @@ mod tests {
             }
 
             let batch_results = tema_batch(input, period);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-6);
             }
@@ -139,7 +142,7 @@ mod tests {
             }
 
             let batch_results = zlema_batch(input, period);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-6);
             }
@@ -147,13 +150,14 @@ mod tests {
     }
 }
 
-
 pub const TEMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Triple Exponential Moving Average",
     description: "TEMA reduces the lag of traditional EMAs.",
-    params: &[
-        ParamDef { name: "period", default: "14", description: "Smoothing period" },
-    ],
+    params: &[ParamDef {
+        name: "period",
+        default: "14",
+        description: "Smoothing period",
+    }],
     formula_source: "https://www.investopedia.com/terms/t/triple-exponential-moving-average.asp",
     formula_latex: r#"
 \[
@@ -164,13 +168,14 @@ TEMA = (3 \times EMA_1) - (3 \times EMA_2) + EMA_3
     category: "Classic",
 };
 
-
 pub const ZLEMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Zero Lag Exponential Moving Average",
     description: "ZLEMA attempts to eliminate the inherent lag associated with moving averages.",
-    params: &[
-        ParamDef { name: "period", default: "14", description: "Smoothing period" },
-    ],
+    params: &[ParamDef {
+        name: "period",
+        default: "14",
+        description: "Smoothing period",
+    }],
     formula_source: "https://en.wikipedia.org/wiki/Zero_lag_exponential_moving_average",
     formula_latex: r#"
 \[

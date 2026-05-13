@@ -1,0 +1,336 @@
+            EMPIRICAL MODE DECOMPOSITION
+A novel approach for cycle and trend mode detection
+                         by
+             John F. Ehlers and Ric Way
+
+
+    INTRODUCTION
+
+    Even the most casual chart reader will be able to spot times when the market is
+    cycling and other times when longer-term trends are in play.      Cycling markets
+    are ideal for swing trading however attempting to “trade the swing” in a trending
+    market can be a recipe for disaster. Similarly, applying trend trading techniques
+    during a cycling market can equally wreak havoc in your account. Cycle or trend
+    modes can readily be identified in hindsight. But it would be useful to have an
+    objective scientific approach to guide you as to the current market mode.
+
+There are a number of tools already available to differentiate between cycle and
+trend modes. For example, measuring the trend slope over the cycle period to
+the amplitude of the cyclic swing¹ is one possibility. This article describes a
+unique new approach to determining the market mode.
+
+    CYCLE MODE
+
+We begin by thinking of cycle mode in terms of frequency or its inverse,
+periodicity. Since the markets are fractal; daily, weekly, and intraday charts are
+pretty much indistinguishable when time scales are removed. Thus it is useful to
+think of the cycle period in terms of its bar count. For example, a 20 bar cycle
+using daily data corresponds to a cycle period of approximately one month.
+
+When viewed as a waveform, slow-varying price trends constitute the
+waveform’s low frequency components and day-to-day fluctuations (noise)
+constitute the high frequency components. The objective in cycle mode is to
+filter out the unwanted components – both low frequency trends and the high
+frequency noise – and retain only the range of frequencies over the desired
+swing period. A filter for doing this is called a bandpass filter and the range of
+frequencies passed is the filter’s bandwidth. The bandpass filter code² in
+EasyLanguage is repeated in Figure 1 for convenience. The input variable delta
+is the approximate half-bandwidth of the filter. For the default settings with
+delta = 0.1, the filter will pass periods centered at 20 bars +/- 2 bars. In other
+words, the filter passes cycle components ranging between 18 and 22 bar
+periods while attenuating frequencies above and below this range. The
+
+    1 John F. Ehlers, “Corona Charts”, Stocks & Commodities, November 2008, page 19
+    2 John F. Ehlers, IBID
+
+    bandwidth can be expanded by increasing delta. This has the advantage that the
+    filtered prices are more responsive to rapid changes in the cycle periodicity. On
+    the other hand, a tradeoff occurs if delta becomes too small.    In this case the
+    filter has a long memory and can ring out like a bell having once been energized.
+
+    Inputs:
+         Price((H+L)/2),
+         Period(20),
+         delta(.1);
+
+    Vars:
+         gamma(0),
+         alpha(0),
+         beta(0),
+         BP(0);
+
+    beta = Cosine(360 / Period);
+    gamma = 1 / Cosine(720*delta / Period);
+    alpha = gamma - SquareRoot(gamma*gamma - 1);
+    BP = .5*(1 - alpha)*(Price - Price[2]) + beta*(1 + alpha)*BP[1] - alpha*BP[2];
+
+    Plot1(BP);
+    Plot2(0);
+
+             Figure 1. Bandpass Filter Code
+
+Figure 2 demonstrates the action of the bandpass filter. The data is an idealized
+sinewave whose frequency varies continuously from high to low. The bottom
+subgraph shows the measured cycle period³. The sub-graph immediately below
+the input data is the bandpass-filtered output. This shows how the desired cycle
+components are passed unattenuated while the undesired low and high
+frequency components are greatly reduced in amplitude. Note that the input
+data average value of 40 has been removed by the filter, but the full amplitude
+swing has been retained where the period is 20 bars.
+
+
+
+
+
+
+
+
+
+
+    3 John F. Ehlers, “Corona Charts”, IBID
+
+    A
+    Ly! THUR 11    [=
+    hn      |       -
+                    :
+
+
+
+
+
+
+
+
+
+
+        Figure 2. A Chirp Waveform Demonstrates
+        the Selectivity of the Bandpass Filter
+
+Figure 3 demonstrates how the filter works on actual market data. In this case
+the data are MSFT prices over approximately one year. The period of the market
+cycles has not been measured in advance. We therefore choose to increase delta
+to 0.5 so that cycle periods from approximately 10 bars to 30 bars are passed.
+Additionally, increasing the filter bandwidth increases the responsiveness to more
+rapid changes in the data. It is clear that the filtered output clearly identifies
+cyclic turning points (I’ll let you line them up with a straightedge) and other
+times when the trend swamps out any possibility of successful swing trading.
+
+    NASDAQ L=25.28 0.48 1.93%  0=24.93
+
+    / a, Pr                           2000
+                                      200
+
+
+
+
+
+    |        yp                       ah
+
+    |    1.04 0.00
+    Pa AN                             1.04
+    1
+
+        TE
+
+
+
+    Figure 3. MSFT Data and its Bandpass Filtered Output (delta = 0.5)
+
+
+Returning to the theoretical aspects of a cycle, one way to picture the sinewave
+is as being generated by a phasor. The phasor is a unit vector that rotates
+uniformly about the origin, as shown in Figure 4. A sinewave results from the
+horizontal projection of the phasor on the vertical axis. This can be visualized as
+a pen tied to the end of a string with the other end anchored with a nail. The
+string is rotated counter-clockwise while the paper moves beneath the pen like a
+seismograph or EKG. We will use a variation of this phasor diagram to identify
+the trends in the market.
+
+        Figure 4. Phasor Generation of a Sinewave
+
+TREND MODE
+
+Market data is seldom as well behaved as we technicians would prefer. For
+example, an uptrend is marked by higher swing highs and higher swing lows.
+This means that our ideal sine wave generated by the phasor cannot be used
+without modification because a waveform with higher highs and higher lows will
+necessarily have a non-zero mean.
+
+However, the non-zero mean of filtered trending data changes relatively slowly
+compared to the cycle period. Therefore, if we measure the mean (or more
+approximately, the average) of the cycle, this slow variation is a true reflection of
+the trend. To see that this is true, let’s return to the phasor diagram this time
+with the anchored end of the phasor at a slight positive vertical offset from the
+origin. This case is shown in Figure 5.
+
+
+
+
+
+
+
+
+
+
+        Figure 5. Phasor Generation of a Sinewave in a Trend
+
+So we now have a method to empirically decompose the market data into a cycle
+component and a trend component. The cycle component is extracted by
+bandpass filtering the data. The trend component is extracted by averaging the
+
+    bandpass filtered data over the most recent two cycle periods (to get smoothing
+    without too much lag). This averaging recovers the mean offset of the cycle and
+    is a scaled and smoothed version of the trend.
+
+    The EasyLanguage code to decompose to the trend is given in Figure 6.      Note
+    this code is exactly the same as the bandpass code with the addition of the
+    averaging of the bandpass filtered data.
+
+The cycle and trend components of MSFT are shown together in Figure 7.
+Basically, if the trendline is above zero the market is in an uptrend and if the
+trendline is below zero the market is in a downtrend. Cycle mode signals work
+best when the mean is near zero.
+
+    Inputs:
+           Price((H+L)/2),
+           Period(20),
+           Delta(.1);
+
+    Vars:
+           gamma(0),
+           alpha(0),
+           beta(0),
+           BP(0),
+           Trend(0);
+
+    beta = Cosine(360 / Period);
+    gamma = 1 / Cosine(720*delta / Period);
+    alpha = gamma - SquareRoot(gamma*gamma - 1);
+    BP = .5*(1 - alpha)*(Price - Price[2]) + beta*(1 + alpha)*BP[1] - alpha*BP[2];
+    Trend = Average(BP, 2*Period);
+
+    Plot1(Trend);
+    Plot2(0);
+
+               Figure 6. EasyLanguage Code to Extract the Trend
+
+    NASDAQ L=25.28 0.48 1.92%  0=24.93    200
+
+
+    |    "Ws,hy  wy un
+
+
+    1.04 0.00
+
+
+
+
+        |
+        0.3192 0.0000
+
+
+
+
+
+        Figure 7. Cycle and Trend Components of MSFT
+
+MODE IDENTIFICATION
+
+There just has to be a better way to determine whether the market is in a cycle
+mode or trend mode other than gazing at squiggly lines on your computer
+screen. One approach is to compare the peak swings of the cycle mode to the
+amplitude of the trend mode. We do this by capturing the peaks and averaging
+these peaks in a relatively long moving average. Correspondingly, one can
+capture the valleys and also average the valleys in a relatively long moving
+average. We then take a fraction of these averages as the thresholds between a
+trend mode and a cycle mode. If the trend is above the upper threshold the
+market is in an uptrend. If the trend is below the lower threshold the market is
+in a downtrend. When the trend falls between the two threshold levels the
+market is in a cycle mode.
+
+The setting of the fraction of the averaged peaks and valleys to be used to
+establish the thresholds is somewhat subjective and can be adjusted to fit your
+trading style. Personally, we prefer to trade in the cycle mode and therefore
+tend to set the thresholds relatively far apart. In this way one can stop swing
+trading when the market is clearly in a trend.
+
+The market mode indicator for the MSFT example is shown in Figure 8, where
+we have set the Fraction input to 0.25. The code for this mode indicator is given
+in Figure 9. Note that except for the addition of the two threshold levels, this
+code has the same components as the Bandpass filter and the Trend indicator.
+
+        NASDAQ L=25.45 0.65 2.62% 0=24.93
+
+
+
+
+
+    |    | {vy  =
+
+
+
+        |    0.3194 0.1155 -0.0088
+
+
+
+
+
+
+
+
+
+
+    Apr Figure 8. Trend and Mode Thresholds for MSFT (Fraction = .25):    :    :
+
+Inputs:
+     Price((H+L)/2),
+     Period(20),
+     delta(.5),
+     Fraction(.1);
+
+Vars:
+     alpha(0),
+     beta(0),
+     gamma(0),
+     //delta(.4),
+     BP(0),
+     I(0),
+     Mean(0),
+     Peak(0),
+     Valley(0),
+     AvgPeak(0),
+     AvgValley(0);
+
+beta = Cosine(360 / Period);
+gamma = 1 / Cosine(720*delta / Period);
+alpha = gamma - SquareRoot(gamma*gamma - 1);
+BP = .5*(1 - alpha)*(Price - Price[2]) + beta*(1 + alpha)*BP[1] - alpha*BP[2];
+Mean = Average(BP, 2*Period);
+Peak = Peak[1];
+Valley = Valley[1];
+If BP[1] > BP and BP[1] > BP[2] Then Peak = BP[1];
+If BP[1] < BP and BP[1] < BP[2] Then Valley = BP[1];
+
+AvgPeak = Average(Peak, 50);
+AvgValley = Average(Valley, 50);
+
+Plot1(Mean);
+Plot2(Fraction*AvgPeak);
+Plot6(Fraction*AvgValley);
+
+Figure 9. EasyLanguage Code for Empirical Mode Decomposition
+
+CONCLUSIONS
+
+We have shown that the cycle mode component of market activity can be clearly
+identified using a bandpass filter. The bandwidth of the filter can be narrowed if
+the cycle period is known with relative accuracy. Otherwise, the filter bandwidth
+can be widened to capture a wider range of cyclic activity. Since higher swing
+highs and higher swing lows are often experienced in uptrending markets, the
+uptrend can be identified by the positive average of the filtered data over an
+integer number of cycle periods. Similarly, lower swing highs and lower swing
+lows are typical in downtrending markets. Thus downtrends can be identified by
+the negative average of the filtered data over an integer number of cycle
+periods. The delineation between the cycle mode and trend mode can be made
+by comparing a fraction of the averaged cycle peaks and valleys to the trend line
+derived using Empirical Mode Decomposition.

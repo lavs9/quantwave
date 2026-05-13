@@ -1,6 +1,6 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::smoothing::WMA;
+use crate::traits::Next;
 
 #[derive(Debug, Clone)]
 pub struct HMA {
@@ -33,10 +33,10 @@ impl Next<f64> for HMA {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
     use serde::Deserialize;
     use std::fs;
     use std::path::Path;
-    use proptest::prelude::*;
 
     #[derive(Debug, Deserialize)]
     struct HMACase {
@@ -52,7 +52,10 @@ mod tests {
         let path = if path.exists() {
             path
         } else {
-            manifest_path.parent().unwrap().join("tests/gold_standard/hma_14.json")
+            manifest_path
+                .parent()
+                .unwrap()
+                .join("tests/gold_standard/hma_14.json")
         };
         let content = fs::read_to_string(path).unwrap();
         let case: HMACase = serde_json::from_str(&content).unwrap();
@@ -80,7 +83,7 @@ mod tests {
             }
 
             let batch_results = hma_batch(input, period);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-6);
             }
@@ -100,13 +103,14 @@ mod tests {
     }
 }
 
-
 pub const HMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Hull Moving Average",
     description: "The Hull Moving Average (HMA) aims to reduce lag while maintaining smoothness.",
-    params: &[
-        ParamDef { name: "period", default: "14", description: "Smoothing period" },
-    ],
+    params: &[ParamDef {
+        name: "period",
+        default: "14",
+        description: "Smoothing period",
+    }],
     formula_source: "https://alanhull.com/hull-moving-average",
     formula_latex: r#"
 \[

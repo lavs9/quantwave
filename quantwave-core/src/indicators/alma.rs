@@ -19,7 +19,7 @@ impl ALMA {
         let mut sum_w = 0.0;
 
         for i in 0..period {
-            let weight = (-( (i as f64 - m).powi(2) / (2.0 * s.powi(2)) )).exp();
+            let weight = (-((i as f64 - m).powi(2) / (2.0 * s.powi(2)))).exp();
             weights.push(weight);
             sum_w += weight;
         }
@@ -56,7 +56,11 @@ impl Next<f64> for ALMA {
                 weighted_val_sum += val * weight;
                 sum_w += weight;
             }
-            if sum_w == 0.0 { 0.0 } else { weighted_val_sum / sum_w }
+            if sum_w == 0.0 {
+                0.0
+            } else {
+                weighted_val_sum / sum_w
+            }
         } else {
             let mut weighted_val_sum = 0.0;
             for (i, &val) in self.window.iter().enumerate() {
@@ -70,7 +74,9 @@ impl Next<f64> for ALMA {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::{load_gold_standard, assert_indicator_parity, check_batch_streaming_parity};
+    use crate::test_utils::{
+        assert_indicator_parity, check_batch_streaming_parity, load_gold_standard,
+    };
     use proptest::prelude::*;
 
     #[test]
@@ -108,14 +114,25 @@ mod tests {
     }
 }
 
-
 pub const ALMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Arnaud Legoux Moving Average",
     description: "ALMA is designed to reduce lag while providing high smoothness.",
     params: &[
-        ParamDef { name: "period", default: "9", description: "Period" },
-        ParamDef { name: "offset", default: "0.85", description: "Offset" },
-        ParamDef { name: "sigma", default: "6.0", description: "Sigma" },
+        ParamDef {
+            name: "period",
+            default: "9",
+            description: "Period",
+        },
+        ParamDef {
+            name: "offset",
+            default: "0.85",
+            description: "Offset",
+        },
+        ParamDef {
+            name: "sigma",
+            default: "6.0",
+            description: "Sigma",
+        },
     ],
     formula_source: "https://www.prorealcode.com/prorealtime-indicators/arnaud-legoux-moving-average-alma/",
     formula_latex: r#"

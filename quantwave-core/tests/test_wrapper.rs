@@ -7,7 +7,10 @@ pub struct DEMA {
 
 impl DEMA {
     pub fn new(period: usize) -> Self {
-        Self { period, history: Vec::new() }
+        Self {
+            period,
+            history: Vec::new(),
+        }
     }
 }
 

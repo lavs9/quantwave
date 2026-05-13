@@ -1,7 +1,7 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::smoothing::EMA;
 use crate::indicators::volatility::ATR;
+use crate::traits::Next;
 
 #[derive(Debug, Clone)]
 pub struct KeltnerChannels {
@@ -27,7 +27,7 @@ impl Next<(f64, f64, f64)> for KeltnerChannels {
         let typical_price = (high + low + close) / 3.0;
         let middle = self.ema.next(typical_price);
         let atr = self.atr.next((high, low, close));
-        
+
         let upper = middle + self.multiplier * atr;
         let lower = middle - self.multiplier * atr;
 
@@ -38,10 +38,10 @@ impl Next<(f64, f64, f64)> for KeltnerChannels {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
     use serde::Deserialize;
     use std::fs;
     use std::path::Path;
-    use proptest::prelude::*;
 
     #[derive(Debug, Deserialize)]
     struct KeltnerCase {
@@ -61,7 +61,10 @@ mod tests {
         let path = if path.exists() {
             path
         } else {
-            manifest_path.parent().unwrap().join("tests/gold_standard/keltner_20_20_15.json")
+            manifest_path
+                .parent()
+                .unwrap()
+                .join("tests/gold_standard/keltner_20_20_15.json")
         };
         let content = fs::read_to_string(path).unwrap();
         let case: KeltnerCase = serde_json::from_str(&content).unwrap();
@@ -75,7 +78,12 @@ mod tests {
         }
     }
 
-    fn keltner_batch(data: Vec<(f64, f64, f64)>, ema_period: usize, atr_period: usize, multiplier: f64) -> Vec<(f64, f64, f64)> {
+    fn keltner_batch(
+        data: Vec<(f64, f64, f64)>,
+        ema_period: usize,
+        atr_period: usize,
+        multiplier: f64,
+    ) -> Vec<(f64, f64, f64)> {
         let mut kc = KeltnerChannels::new(ema_period, atr_period, multiplier);
         data.into_iter().map(|x| kc.next(x)).collect()
     }
@@ -92,7 +100,7 @@ mod tests {
                 let low = l_f.min(h_f).min(c_f);
                 adj_input.push((high, low, c_f));
             }
-            
+
             let ema_period = 20;
             let atr_period = 20;
             let multiplier = 1.5;
@@ -103,7 +111,7 @@ mod tests {
             }
 
             let batch_results = keltner_batch(adj_input, ema_period, atr_period, multiplier);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-6);
                 approx::assert_relative_eq!(s.1, b.1, epsilon = 1e-6);
@@ -118,7 +126,7 @@ mod tests {
         // Typical price = (H+L+C)/3
         // bar 1: H=12, L=8, C=10 -> TP=10. ATR=4 (since TR=4). EMA=10.
         // Upper = 10 + 2*4 = 18. Lower = 10 - 2*4 = 2.
-        
+
         let (upper, middle, lower) = kc.next((12.0, 8.0, 10.0));
         approx::assert_relative_eq!(middle, 10.0);
         approx::assert_relative_eq!(upper, 18.0);
@@ -126,13 +134,20 @@ mod tests {
     }
 }
 
-
 pub const KELTNER_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Keltner Channels",
     description: "Keltner Channels are volatility-based envelopes set above and below an exponential moving average.",
     params: &[
-        ParamDef { name: "period", default: "20", description: "EMA Period" },
-        ParamDef { name: "multiplier", default: "2.0", description: "ATR Multiplier" },
+        ParamDef {
+            name: "period",
+            default: "20",
+            description: "EMA Period",
+        },
+        ParamDef {
+            name: "multiplier",
+            default: "2.0",
+            description: "ATR Multiplier",
+        },
     ],
     formula_source: "https://www.investopedia.com/terms/k/keltnerchannel.asp",
     formula_latex: r#"

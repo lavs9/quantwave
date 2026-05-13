@@ -1,0 +1,119 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s
+────────────
+ Nextest run ID 6719a96e-9ca5-4871-9ae5-a2fc161ef47e with nextest profile: default
+    Starting 113 tests across 2 binaries
+        PASS [   0.007s] (  1/113) quantwave-core indicators::atr_ts::tests::test_atr_ts_gold_standard
+        PASS [   0.007s] (  2/113) quantwave-core indicators::alma::tests::test_alma_basic
+        PASS [   0.007s] (  3/113) quantwave-core indicators::cg::tests::test_cg_basic
+        PASS [   0.008s] (  4/113) quantwave-core indicators::atr_ts::tests::test_atr_ts_basic
+        PASS [   0.009s] (  5/113) quantwave-core indicators::alma::tests::test_alma_gold_standard
+        PASS [   0.010s] (  6/113) quantwave-core indicators::continuation_index::tests::test_continuation_index_basic
+        PASS [   0.011s] (  7/113) quantwave-core indicators::dmh::tests::test_dmh_basic
+        PASS [   0.009s] (  8/113) quantwave-core indicators::donchian::tests::test_donchian_gold_standard
+        PASS [   0.013s] (  9/113) quantwave-core indicators::donchian::tests::test_donchian_basic
+        PASS [   0.008s] ( 10/113) quantwave-core indicators::fisher::tests::test_fisher_basic
+        PASS [   0.029s] ( 11/113) quantwave-core indicators::cyber_cycle::tests::test_cyber_cycle_parity
+        PASS [   0.033s] ( 12/113) quantwave-core indicators::cg::tests::test_cg_parity
+        PASS [   0.007s] ( 13/113) quantwave-core indicators::fractals::tests::test_fractals_basic
+        PASS [   0.011s] ( 14/113) quantwave-core indicators::fractals::tests::test_fractals_gold_standard
+        PASS [   0.043s] ( 15/113) quantwave-core indicators::alma::tests::test_alma_parity
+        PASS [   0.051s] ( 16/113) quantwave-core indicators::continuation_index::tests::test_continuation_index_parity
+        PASS [   0.029s] ( 17/113) quantwave-core indicators::fisher::tests::test_fisher_parity
+        PASS [   0.011s] ( 18/113) quantwave-core indicators::generalized_laguerre::tests::test_generalized_laguerre_basic
+        PASS [   0.051s] ( 19/113) quantwave-core indicators::cycle::tests::test_ht_dcperiod_parity
+        PASS [   0.009s] ( 20/113) quantwave-core indicators::heikin_ashi::tests::test_heikin_ashi_basic
+        PASS [   0.053s] ( 21/113) quantwave-core indicators::cycle::tests::test_ht_trendmode_parity
+        PASS [   0.053s] ( 22/113) quantwave-core indicators::cycle::tests::test_ht_phasor_parity
+        PASS [   0.011s] ( 23/113) quantwave-core indicators::heikin_ashi::tests::test_heikin_ashi_gold_standard
+        PASS [   0.011s] ( 24/113) quantwave-core indicators::high_pass::tests::test_high_pass_basic
+        PASS [   0.009s] ( 25/113) quantwave-core indicators::hma::tests::test_hma_gold_standard
+        PASS [   0.050s] ( 26/113) quantwave-core indicators::donchian::tests::test_donchian_parity
+        PASS [   0.009s] ( 27/113) quantwave-core indicators::hma::tests::test_hma_basic
+        PASS [   0.010s] ( 28/113) quantwave-core indicators::ichimoku::tests::test_ichimoku_basic
+        PASS [   0.073s] ( 29/113) quantwave-core indicators::atr_ts::tests::test_atr_ts_parity
+        PASS [   0.009s] ( 30/113) quantwave-core indicators::inverse_fisher::tests::test_inverse_fisher_basic
+        PASS [   0.010s] ( 31/113) quantwave-core indicators::ichimoku::tests::test_ichimoku_gold_standard
+        PASS [   0.006s] ( 32/113) quantwave-core indicators::keltner::tests::test_keltner_basic
+        PASS [   0.072s] ( 33/113) quantwave-core indicators::dmh::tests::test_dmh_parity
+        PASS [   0.050s] ( 34/113) quantwave-core indicators::fractals::tests::test_fractals_parity
+        PASS [   0.007s] ( 35/113) quantwave-core indicators::keltner::tests::test_keltner_gold_standard
+        PASS [   0.009s] ( 36/113) quantwave-core indicators::laguerre_filter::tests::test_laguerre_filter_basic
+        PASS [   0.048s] ( 37/113) quantwave-core indicators::generalized_laguerre::tests::test_generalized_laguerre_parity
+        PASS [   0.009s] ( 38/113) quantwave-core indicators::laguerre_oscillator::tests::test_laguerre_oscillator_basic
+        PASS [   0.036s] ( 39/113) quantwave-core indicators::high_pass::tests::test_high_pass_parity
+        PASS [   0.037s] ( 40/113) quantwave-core indicators::hma::tests::test_hma_parity
+        PASS [   0.012s] ( 41/113) quantwave-core indicators::mama::tests::test_mama_basic
+        PASS [   0.031s] ( 42/113) quantwave-core indicators::inverse_fisher::tests::test_inverse_fisher_parity
+        PASS [   0.040s] ( 43/113) quantwave-core indicators::laguerre_filter::tests::test_laguerre_filter_parity
+        PASS [   0.093s] ( 44/113) quantwave-core indicators::frama::tests::test_frama_parity
+        PASS [   0.035s] ( 45/113) quantwave-core indicators::math::tests::test_rms_parity
+        PASS [   0.043s] ( 46/113) quantwave-core indicators::mama::tests::test_mama_parity
+        PASS [   0.089s] ( 47/113) quantwave-core indicators::heikin_ashi::tests::test_heikin_ashi_parity
+        PASS [   0.045s] ( 48/113) quantwave-core indicators::math::tests::test_sqrt_parity
+        PASS [   0.076s] ( 49/113) quantwave-core indicators::ichimoku::tests::test_ichimoku_parity
+        PASS [   0.047s] ( 50/113) quantwave-core indicators::momentum::tests::test_macd_parity
+        PASS [   0.062s] ( 51/113) quantwave-core indicators::math::tests::test_add_parity
+        PASS [   0.081s] ( 52/113) quantwave-core indicators::keltner::tests::test_keltner_parity
+        PASS [   0.066s] ( 53/113) quantwave-core indicators::momentum::tests::test_adx_parity
+        PASS [   0.050s] ( 54/113) quantwave-core indicators::momentum::tests::test_rsi_parity
+        PASS [   0.045s] ( 55/113) quantwave-core indicators::overlap::tests::test_bbands_parity
+        PASS [   0.010s] ( 56/113) quantwave-core indicators::pivot_points::tests::test_pivot_points_basic
+        PASS [   0.041s] ( 57/113) quantwave-core indicators::overlap::tests::test_dema_parity
+        PASS [   0.010s] ( 58/113) quantwave-core indicators::pivot_points::tests::test_pivot_points_gold_standard
+        PASS [   0.096s] ( 59/113) quantwave-core indicators::laguerre_oscillator::tests::test_laguerre_oscillator_parity
+        PASS [   0.046s] ( 60/113) quantwave-core indicators::overlap::tests::test_kama_parity
+        PASS [   0.041s] ( 61/113) quantwave-core indicators::overlap::tests::test_t3_parity
+        PASS [   0.007s] ( 62/113) quantwave-core indicators::reversion_index::tests::test_reversion_index_basic
+        PASS [   0.008s] ( 63/113) quantwave-core indicators::smoothing::tests::test_ema_basic
+        PASS [   0.009s] ( 64/113) quantwave-core indicators::smoothing::tests::test_sma_gold_standard
+        PASS [   0.012s] ( 65/113) quantwave-core indicators::smoothing::tests::test_wma_basic
+        PASS [   0.053s] ( 66/113) quantwave-core indicators::overlap::tests::test_trima_parity
+        PASS [   0.063s] ( 67/113) quantwave-core indicators::overlap::tests::test_sar_parity
+        PASS [   0.011s] ( 68/113) quantwave-core indicators::statistics::tests::test_stdev_basic
+        PASS [   0.013s] ( 69/113) quantwave-core indicators::statistics::tests::test_linreg_basic
+        PASS [   0.010s] ( 70/113) quantwave-core indicators::supertrend::tests::test_supertrend_gold_standard
+        PASS [   0.014s] ( 71/113) quantwave-core indicators::super_smoother::tests::test_super_smoother_basic
+        PASS [   0.099s] ( 72/113) quantwave-core indicators::momentum::tests::test_stoch_parity
+        PASS [   0.045s] ( 73/113) quantwave-core indicators::reversion_index::tests::test_reversion_index_parity
+        PASS [   0.052s] ( 74/113) quantwave-core indicators::price_transform::tests::test_medprice_parity
+        PASS [   0.010s] ( 75/113) quantwave-core indicators::swiss_army_knife::tests::test_sak_ema_basic
+        PASS [   0.011s] ( 76/113) quantwave-core indicators::tema::tests::test_tema_zlema_gold_standard
+        PASS [   0.037s] ( 77/113) quantwave-core indicators::super_smoother::tests::test_super_smoother_parity
+        PASS [   0.042s] ( 78/113) quantwave-core indicators::statistics::tests::test_ta_stddev_parity
+        PASS [   0.097s] ( 79/113) quantwave-core indicators::pattern::tests::test_cdl_doji_parity
+        PASS [   0.008s] ( 80/113) quantwave-core indicators::ttm_squeeze::tests::test_ttm_squeeze_basic
+        PASS [   0.092s] ( 81/113) quantwave-core indicators::pattern::tests::test_cdl_hammer_parity
+        PASS [   0.057s] ( 82/113) quantwave-core indicators::statistics::tests::test_ta_linearreg_parity
+        PASS [   0.012s] ( 83/113) quantwave-core indicators::ttm_squeeze::tests::test_ttm_squeeze_gold_standard
+        PASS [   0.083s] ( 84/113) quantwave-core indicators::pivot_points::tests::test_pivot_points_parity
+        PASS [   0.031s] ( 85/113) quantwave-core indicators::tema::tests::test_zlema_parity
+        PASS [   0.034s] ( 86/113) quantwave-core indicators::swiss_army_knife::tests::test_sak_parity
+        PASS [   0.010s] ( 87/113) quantwave-core indicators::ultimate_bands::tests::test_ultimate_bands_basic
+        PASS [   0.036s] ( 88/113) quantwave-core indicators::tema::tests::test_tema_parity
+        PASS [   0.011s] ( 89/113) quantwave-core indicators::ultimate_channel::tests::test_ultimate_channel_basic
+        PASS [   0.008s] ( 90/113) quantwave-core indicators::ultimate_smoother::tests::test_ultimate_smoother_basic
+        PASS [   0.007s] ( 91/113) quantwave-core indicators::usi::tests::test_usi_basic
+        PASS [   0.092s] ( 92/113) quantwave-core indicators::price_transform::tests::test_avgprice_parity
+        PASS [   0.007s] ( 93/113) quantwave-core indicators::vortex::tests::test_vortex_gold_standard
+        PASS [   0.019s] ( 94/113) quantwave-core indicators::vortex::tests::test_vortex_basic
+        PASS [   0.010s] ( 95/113) quantwave-core indicators::vwap::tests::test_anchored_vwap_reset
+        PASS [   0.044s] ( 96/113) quantwave-core indicators::ultimate_smoother::tests::test_ultimate_smoother_parity
+        PASS [   0.090s] ( 97/113) quantwave-core indicators::supertrend::tests::test_supertrend_parity
+        PASS [   0.055s] ( 98/113) quantwave-core indicators::ultimate_bands::tests::test_ultimate_bands_parity
+        PASS [   0.049s] ( 99/113) quantwave-core indicators::usi::tests::test_usi_parity
+        PASS [   0.014s] (100/113) quantwave-core indicators::vwap::tests::test_basic_vwap_no_reset
+        PASS [   0.009s] (101/113) quantwave-core indicators::wavetrend::tests::test_wavetrend_basic
+        PASS [   0.010s] (102/113) quantwave-core indicators::wavetrend::tests::test_wavetrend_gold_standard
+        PASS [   0.008s] (103/113) quantwave-core::test_wrapper test_dema
+        PASS [   0.010s] (104/113) quantwave-core indicators::zero_lag::tests::test_zero_lag_basic
+        PASS [   0.059s] (105/113) quantwave-core indicators::volume::tests::test_obv_parity
+        PASS [   0.066s] (106/113) quantwave-core indicators::volatility::tests::test_ta_trange_parity
+        PASS [   0.076s] (107/113) quantwave-core indicators::volatility::tests::test_ta_atr_parity
+        PASS [   0.099s] (108/113) quantwave-core indicators::ttm_squeeze::tests::test_ttm_parity
+        PASS [   0.084s] (109/113) quantwave-core indicators::ultimate_channel::tests::test_ultimate_channel_parity
+        PASS [   0.084s] (110/113) quantwave-core indicators::volume::tests::test_ad_parity
+        PASS [   0.076s] (111/113) quantwave-core indicators::vortex::tests::test_vortex_parity
+        PASS [   0.048s] (112/113) quantwave-core indicators::zero_lag::tests::test_zero_lag_parity
+        PASS [   0.064s] (113/113) quantwave-core indicators::wavetrend::tests::test_wavetrend_parity
+────────────
+     Summary [   0.372s] 113 tests run: 113 passed, 0 skipped

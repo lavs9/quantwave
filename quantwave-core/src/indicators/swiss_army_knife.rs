@@ -16,9 +16,9 @@ pub enum SwissArmyKnifeMode {
 }
 
 /// Swiss Army Knife Indicator
-/// 
+///
 /// Based on John Ehlers' "Swiss Army Knife Indicator".
-/// A versatile general-purpose filter that can be configured as various 
+/// A versatile general-purpose filter that can be configured as various
 /// low-pass, high-pass, band-pass, and band-stop filters.
 #[derive(Debug, Clone)]
 pub struct SwissArmyKnife {
@@ -32,8 +32,8 @@ pub struct SwissArmyKnife {
     b2: f64,
     a1: f64,
     a2: f64,
-    x: [f64; 3], // x[t], x[t-1], x[t-2]
-    f: [f64; 2], // f[t-1], f[t-2]
+    x: [f64; 3],         // x[t], x[t-1], x[t-2]
+    f: [f64; 2],         // f[t-1], f[t-2]
     history_x: Vec<f64>, // For SMA mode only (c1 * Price[N])
     count: usize,
 }
@@ -159,8 +159,10 @@ impl Next<f64> for SwissArmyKnife {
                 0.0
             };
 
-            self.c0 * (self.b0 * self.x[0] + self.b1 * self.x[1] + self.b2 * self.x[2]) 
-                + self.a1 * self.f[0] + self.a2 * self.f[1] - self.c1 * x_n
+            self.c0 * (self.b0 * self.x[0] + self.b1 * self.x[1] + self.b2 * self.x[2])
+                + self.a1 * self.f[0]
+                + self.a2 * self.f[1]
+                - self.c1 * x_n
         };
 
         self.f[1] = self.f[0];
@@ -174,9 +176,21 @@ pub const SWISS_ARMY_KNIFE_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Swiss Army Knife Indicator",
     description: "A versatile indicator that can be configured as EMA, SMA, Gaussian, Butterworth, High Pass, Band Pass, or Band Stop filter.",
     params: &[
-        ParamDef { name: "mode", default: "BandPass", description: "Filter mode (EMA, SMA, Gauss, Butter, Smooth, HP, 2PHP, BP, BS)" },
-        ParamDef { name: "period", default: "20", description: "Filter period" },
-        ParamDef { name: "delta", default: "0.1", description: "Bandwidth parameter for BP and BS modes" },
+        ParamDef {
+            name: "mode",
+            default: "BandPass",
+            description: "Filter mode (EMA, SMA, Gauss, Butter, Smooth, HP, 2PHP, BP, BS)",
+        },
+        ParamDef {
+            name: "period",
+            default: "20",
+            description: "Filter period",
+        },
+        ParamDef {
+            name: "delta",
+            default: "0.1",
+            description: "Bandwidth parameter for BP and BS modes",
+        },
     ],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/SwissArmyKnifeIndicator.pdf",
     formula_latex: r#"
@@ -213,14 +227,14 @@ mod tests {
             let delta = 0.1;
             let mode = SwissArmyKnifeMode::Gauss;
             let mut sak = SwissArmyKnife::new(mode, period, delta);
-            
+
             let streaming_results: Vec<f64> = inputs.iter().map(|&x| sak.next(x)).collect();
-            
+
             // Batch implementation
             let mut batch_results = Vec::with_capacity(inputs.len());
             let mut x = [0.0; 3];
             let mut f = [0.0; 2];
-            
+
             // Re-calculate coefficients for verification
             let angle = 2.0 * std::f64::consts::PI / (period as f64);
             let beta = 2.415 * (1.0 - angle.cos());
@@ -228,23 +242,23 @@ mod tests {
             let c0 = alpha * alpha;
             let a1 = 2.0 * (1.0 - alpha);
             let a2 = -(1.0 - alpha) * (1.0 - alpha);
-            
+
             for (i, &input) in inputs.iter().enumerate() {
                 x[2] = x[1];
                 x[1] = x[0];
                 x[0] = input;
-                
+
                 let filt = if i + 1 <= period {
                     input
                 } else {
                     c0 * x[0] + a1 * f[0] + a2 * f[1]
                 };
-                
+
                 f[1] = f[0];
                 f[0] = filt;
                 batch_results.push(filt);
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-10);
             }

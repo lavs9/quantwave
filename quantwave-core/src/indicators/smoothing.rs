@@ -136,7 +136,7 @@ impl Next<f64> for WMA {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::{load_gold_standard, assert_indicator_parity};
+    use crate::test_utils::{assert_indicator_parity, load_gold_standard};
 
     #[test]
     fn test_sma_gold_standard() {
@@ -162,13 +162,14 @@ mod tests {
     }
 }
 
-
 pub const SMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Simple Moving Average",
     description: "The Simple Moving Average calculates the unweighted mean of the previous N data points.",
-    params: &[
-        ParamDef { name: "period", default: "14", description: "Smoothing period" },
-    ],
+    params: &[ParamDef {
+        name: "period",
+        default: "14",
+        description: "Smoothing period",
+    }],
     formula_source: "https://www.investopedia.com/terms/s/sma.asp",
     formula_latex: r#"
 \[
@@ -179,13 +180,14 @@ SMA = \frac{1}{n} \sum_{i=1}^{n} P_i
     category: "Classic",
 };
 
-
 pub const EMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Exponential Moving Average",
     description: "The Exponential Moving Average gives more weight to recent prices.",
-    params: &[
-        ParamDef { name: "period", default: "14", description: "Smoothing period" },
-    ],
+    params: &[ParamDef {
+        name: "period",
+        default: "14",
+        description: "Smoothing period",
+    }],
     formula_source: "https://www.investopedia.com/terms/e/ema.asp",
     formula_latex: r#"
 \[
@@ -196,13 +198,14 @@ EMA = P_t \times \alpha + EMA_{t-1} \times (1 - \alpha)
     category: "Classic",
 };
 
-
 pub const WMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Weighted Moving Average",
     description: "The Weighted Moving Average assigns linearly decreasing weights.",
-    params: &[
-        ParamDef { name: "period", default: "14", description: "Smoothing period" },
-    ],
+    params: &[ParamDef {
+        name: "period",
+        default: "14",
+        description: "Smoothing period",
+    }],
     formula_source: "https://www.investopedia.com/articles/technical/060401.asp",
     formula_latex: r#"
 \[

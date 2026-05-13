@@ -1,11 +1,11 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::ultimate_smoother::UltimateSmoother;
+use crate::traits::Next;
 
 /// Generalized Laguerre Filter
-/// 
+///
 /// Based on John Ehlers' "The Continuation Index" (TASC September 2025).
-/// This is a generalized Laguerre filter of arbitrary order (up to 10), 
+/// This is a generalized Laguerre filter of arbitrary order (up to 10),
 /// using an UltimateSmoother as the first Laguerre component.
 #[derive(Debug, Clone)]
 pub struct GeneralizedLaguerre {
@@ -36,7 +36,7 @@ impl Next<f64> for GeneralizedLaguerre {
 
     fn next(&mut self, input: f64) -> Self::Output {
         self.count += 1;
-        
+
         // Update previous values
         for i in 1..=self.order {
             self.lg_prev[i] = self.lg_curr[i];
@@ -47,9 +47,9 @@ impl Next<f64> for GeneralizedLaguerre {
 
         // Calculate subsequent components LG[2..order]
         for i in 2..=self.order {
-            self.lg_curr[i] = -self.gamma * self.lg_prev[i - 1] 
-                             + self.lg_prev[i - 1] 
-                             + self.gamma * self.lg_prev[i];
+            self.lg_curr[i] = -self.gamma * self.lg_prev[i - 1]
+                + self.lg_prev[i - 1]
+                + self.gamma * self.lg_prev[i];
         }
 
         if self.count == 1 {
@@ -75,9 +75,21 @@ pub const GENERALIZED_LAGUERRE_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Generalized Laguerre",
     description: "A generalized Laguerre filter of arbitrary order using an UltimateSmoother as the primary component.",
     params: &[
-        ParamDef { name: "length", default: "40", description: "UltimateSmoother period" },
-        ParamDef { name: "gamma", default: "0.8", description: "Smoothing factor (0.0 to 1.0)" },
-        ParamDef { name: "order", default: "8", description: "Filter order (1 to 10)" },
+        ParamDef {
+            name: "length",
+            default: "40",
+            description: "UltimateSmoother period",
+        },
+        ParamDef {
+            name: "gamma",
+            default: "0.8",
+            description: "Smoothing factor (0.0 to 1.0)",
+        },
+        ParamDef {
+            name: "order",
+            default: "8",
+            description: "Filter order (1 to 10)",
+        },
     ],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/traderstipsreference/TRADERS%E2%80%99%20TIPS%20-%20SEPTEMBER%202025.html",
     formula_latex: r#"
@@ -121,33 +133,33 @@ mod tests {
             let order = 8;
             let mut gl = GeneralizedLaguerre::new(length, gamma, order);
             let streaming_results: Vec<f64> = inputs.iter().map(|&x| gl.next(x)).collect();
-            
+
             // Reference implementation
             let mut us = UltimateSmoother::new(length);
             let mut lg_curr = vec![0.0; order + 1];
             let mut lg_prev = vec![0.0; order + 1];
             let mut batch_results = Vec::with_capacity(inputs.len());
-            
+
             for (t, &input) in inputs.iter().enumerate() {
                 for i in 1..=order {
                     lg_prev[i] = lg_curr[i];
                 }
-                
+
                 lg_curr[1] = us.next(input);
-                
+
                 for i in 2..=order {
                     lg_curr[i] = -gamma * lg_prev[i-1] + lg_prev[i-1] + gamma * lg_prev[i];
                 }
-                
+
                 if t == 0 {
                     let first = lg_curr[1];
                     for i in 1..=order { lg_curr[i] = first; }
                 }
-                
+
                 let res = lg_curr[1..=order].iter().sum::<f64>() / (order as f64);
                 batch_results.push(res);
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-10);
             }

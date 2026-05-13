@@ -4,13 +4,13 @@ use std::collections::VecDeque;
 
 /// Fractal Adaptive Moving Average (FRAMA)
 /// As described by John Ehlers.
-/// 
-/// The FRAMA uses the fractal dimension of prices to dynamically adapt its smoothing 
-/// constant (alpha). It rapidly follows major changes in price and slows down when 
+///
+/// The FRAMA uses the fractal dimension of prices to dynamically adapt its smoothing
+/// constant (alpha). It rapidly follows major changes in price and slows down when
 /// prices are in congestion.
-/// 
-/// The `length` parameter specifies the period `N`. If an odd length is provided, 
-/// it will be automatically converted to an even number (by adding 1) because the 
+///
+/// The `length` parameter specifies the period `N`. If an odd length is provided,
+/// it will be automatically converted to an even number (by adding 1) because the
 /// fractal dimension calculation requires splitting the period into two equal halves.
 #[derive(Debug, Clone)]
 pub struct FRAMA {
@@ -29,7 +29,7 @@ impl FRAMA {
             length += 1;
         }
         let half_length = length / 2;
-        
+
         Self {
             length,
             half_length,
@@ -49,10 +49,10 @@ impl Next<(f64, f64, f64)> for FRAMA {
             self.high_history.pop_back();
             self.low_history.pop_back();
         }
-        
+
         self.high_history.push_front(high);
         self.low_history.push_front(low);
-        
+
         // Not enough data to compute the fractal dimension
         if self.high_history.len() < self.length {
             self.filt = price;
@@ -106,9 +106,11 @@ impl Next<(f64, f64, f64)> for FRAMA {
 pub const FRAMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Fractal Adaptive Moving Average",
     description: "An adaptive moving average that uses the fractal dimension of prices to dynamically change its smoothing constant.",
-    params: &[
-        ParamDef { name: "length", default: "16", description: "Length (must be an even number; odd values will be incremented by 1)." },
-    ],
+    params: &[ParamDef {
+        name: "length",
+        default: "16",
+        description: "Length (must be an even number; odd values will be incremented by 1).",
+    }],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/implemented/FRAMA.pdf",
     formula_latex: r#"
 \[
@@ -152,7 +154,7 @@ mod tests {
             let mut streaming_ind = FRAMA::new(length);
             let streaming_results: Vec<f64> = adj_input.iter().map(|&x| streaming_ind.next(x)).collect();
             let batch_results = frama_batch(&adj_input, length);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(*s, *b, epsilon = 1e-6);
             }

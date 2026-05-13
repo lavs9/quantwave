@@ -1,0 +1,176 @@
+        DEVIATION SCALED MOVING AVERAGE (DSMA)
+        By John Ehlers
+
+The idea of an adaptive moving average is not new to technical analysis. Most adaptive
+techniques start with an Exponential Moving Average (EMA). The EMA is a smoothing
+filter that takes a fraction of the current price and adds the compliment of that fraction
+times the value of the EMA one bar ago. The EMA equation is:
+
+       EMA = *Close + (1 – )*EMA[1];
+
+The alpha term is a number that can vary between 0 and 1. When  is smaller, only a
+small fraction of the current price is used and a large fraction of the previous calculation
+is used, with the result that the EMA provides considerable smoothing. Conversely, when
+ is relatively large, a big fraction of the current price is used with the result that there
+is very little smoothing provided by the EMA. The idea of an adaptive moving average is
+to modify the alpha term according to another independently measured market condition.
+
+Two of the more popular adaptive moving averages are VIDYA and KAMA. VIDYA, by
+Tushar Chande, uses the equivalent of an RSI to adjust the alpha term. KAMA, by Perry
+Kaufman, uses an Effectiveness Ratio to adjust the alpha term. The Effectiveness Ratio
+is the total price change over a calculation period divided by the sum of the bar-to-bar
+price changes over the same period. Both of these adaptive moving averages require
+the calculation of the alpha modifier to be accomplished over a number of bars of data,
+with the result of induced computational lag.
+
+The Deviation Scaled Moving Average (DSMA) modifies the alpha of the EMA in terms of
+the amplitude of an oscillator scaled to the standard deviation from the mean. Since the
+oscillator almost directly follows the price, the computational lag of the DSMA is minimal.
+Therefore, the DSMA rapidly adapts to price variations. Additionally, when the standard
+deviation from the mean is small the effective alpha term of the EMA is made to be small.
+The result is there is considerable smoothing by the DSMA when the price variations are
+small.
+
+The DMSA is probably best described with reference to Code Listing 1 which computes it
+in EasyLanguage. The user input for the indicator is the “Critical Period” of a filter. The
+critical period of a smoothing filter is the cycle period at which the power of the signal
+allowed through the filter is reduced by half. Shorter cycle periods are reduced even
+more, so the filter achieves its smoothing function by not allowing the short cycle
+components in the spectrum to pass through to its output. The alpha term of the EMA is
+often described with reference to the length of a Simple Moving Average. I prefer to
+relate the EMA alpha term to the filter Critical Period. The approximate relationship is
+simple, and can be expressed as:
+
+ = 5 / Period
+
+Code Listing 1. DEVIATION SCALED MOVING AVERAGE
+// Deviation Scaled Moving Average (DSMA)
+// (c) 2013 - 2018 John F. Ehlers
+
+Inputs:
+     Period(40);
+
+Vars:
+     a1(0),
+     b1(0),
+     c1(0),
+     c2(0),
+     c3(0),
+     Zeros(0),
+     Filt(0),
+     ScaledFilt(0),
+     RMS(0),
+     count(0),
+     alpha1(0),
+     DSMA(0);
+
+If CurrentBar = 1 Then Begin
+     //Smooth with a Super Smoother
+     a1 = expvalue(-1.414*3.14159 / (.5*Period));
+     b1 = 2*a1*Cosine(1.414*180 / (.5*Period));
+     c2 = b1;
+     c3 = -a1*a1;
+     c1 = 1 - c2 - c3;
+End;
+
+//Produce Nominal zero mean with zeros in the transfer response at DC and Nyquist
+with no spectral distortion
+//Nominally whitens the spectrum because of 6 dB per octave rolloff
+Zeros = Close - Close[2];
+
+//SuperSmoother Filter
+Filt = c1*(Zeros + Zeros[1]) / 2 + c2*Filt[1] + c3*Filt[2];
+
+//Compute Standard Deviation
+RMS = 0;
+For count = 0 to Period - 1 Begin
+    RMS = RMS + Filt[count]*Filt[count];
+End;
+RMS = SquareRoot(RMS / Period);
+
+    //Rescale Filt in terms of Standard Deviations
+    If RMS <> 0 Then ScaledFilt = Filt / RMS;
+
+    alpha1 = AbsValue(ScaledFilt)*5 / Period;
+    DSMA = alpha1*Close + (1 - alpha1)*DSMA[1];
+
+    Plot1(DSMA);
+
+
+
+In the DMSA, its alpha term is exactly equal to an EMA using the same Critical Period if
+the scaled amplitude deviation of the oscillator is 1.
+
+After inputs and declaration of variables, the computation of the Standard Deviation starts
+with an oscillator called “Zeros” that is a simple two bar difference of prices. This
+oscillator is important because of two characteristics in its transfer response.
+
+First, when the cycle periods are very long and, at the limit there is no change in price,
+the transfer response is zero. It is this characteristic that provides the nominal zero mean
+in the oscillator output. Further, its filter rolloff from shorter cycle periods is -6 dB per
+octave. Market data are fractal, meaning the cycle amplitudes in its spectrum increase
+in direct proportion to their cycle periods. That means the data cycle amplitudes increase
+statistically at the rate of 6 dB per octave. Since the oscillator rolloff is -6 dB per octave
+and spectrum amplitudes are statistically increasing at the rate of +6 dB per octave, the
+result is that the Zeros oscillator whitens the price spectrum. This is a good thing.
+
+Secondly, when the cycle period is exactly at twice the sampling rate, the samples are
+exactly one cycle period apart. This is called the Nyquist frequency period, and is the
+shortest possible period in sampled data. In the Zeros oscillator the transfer response is
+zero at the Nyquist period because the samples are exactly one period apart for that
+spectral component. Having a zero in the transfer response at the Nyquist period
+eliminates the 6 dB increase in noise produced by a simple one bar difference. Having a
+zero in the transfer response at the Nyquist period also reduces the impact of aliased
+data in the oscillator output.
+
+The Zeros oscillator output is smoothed in my two pole SuperSmoother¹ filter. The critical
+period of the SuperSmoother filter is the half the input Period to retain responsiveness of
+the oscillator, and the filter coefficients are calculated only on the first bar of data for
+computational efficiency.
+
+
+
+
+    1 John F. Ehlers, “Cycle Analytics for Traders”, John Wiley & Sons
+
+Since the Zeros oscillator has a nominally zero mean, the SuperSmoother filter output
+also has a nominally zero mean. Therefore, the Standard Deviation can be calculated as
+the square root of the average sum of the squares of the smoothed filter waveform over
+the input Period. This is commonly called the Root Mean Square (RMS).
+
+Dividing the RMS into the smoothed filter waveform scales the waveform in terms of
+Standard Deviations. Starting with alpha computed in terms of the input period, then
+multiplying by the variable deviations, scales alpha both in terms of the input and in terms
+of the current volatility. The scaling goes in the right direction at the right time. When
+the price deviation of the oscillator is large, the RMS is large, and consequently alpha is
+large. When alpha is large there is very little EMA filtering and the filter quickly adapts
+to current prices. Conversely, when the price deviation of the oscillator is small, the RMS
+is small and alpha is small. When alpha is small the EMA produces heavy smoothing.
+
+The action of the DSMA speaks for itself in Figure 1. The data used in Figure 1 is SPY for
+the calendar year 2017. The responsiveness of the DSMA can be changed simply by
+changing the input “Period”.
+
+      Dally ARCK 053 0.19% | DMA 40 76630
+
+        g 260.00
+
+
+                                                                                     2000
+         a
+
+                                                                                     240.00
+         ul
+                                                                                     235.00
+
+                                                                                     230.00
+
+     ag
+
+     Figure 1. The DSMA Is a Smoothing Filter That Adapts Rapidly to Price Variations
+
+    In summary, the DSMA is an adaptive moving average that features rapid adaptation to
+    volatility in price movement. It accomplishes this adaptation by modifying the alpha term
+    of an EMA by the amplitude of an oscillator scaled in Standard Deviations from the mean.
+    The responsiveness of the DSMA can be changed by using different values for the input
+    parameter “Period”.

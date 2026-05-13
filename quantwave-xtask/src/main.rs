@@ -6,12 +6,16 @@ use std::path::{Path, PathBuf};
 
 fn main() -> Result<()> {
     println!("Generating documentation...");
-    
-    let workspace_root = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string())).parent().unwrap().to_path_buf();
+
+    let workspace_root =
+        PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string()))
+            .parent()
+            .unwrap()
+            .to_path_buf();
     let docs_dir = workspace_root.join("docs/src");
     fs::create_dir_all(&docs_dir.join("indicators/native"))?;
     fs::create_dir_all(&docs_dir.join("indicators/talib"))?;
-    
+
     // We will generate the SUMMARY.md dynamically based on the parsed indicators
     let mut summary = String::new();
     summary.push_str("# Summary\n\n");
@@ -20,16 +24,30 @@ fn main() -> Result<()> {
 
     let native_docs = generate_native_docs(&docs_dir)?;
     if !native_docs.is_empty() {
-        let mut categories: std::collections::BTreeMap<String, Vec<(String, String)>> = std::collections::BTreeMap::new();
+        let mut categories: std::collections::BTreeMap<String, Vec<(String, String)>> =
+            std::collections::BTreeMap::new();
         for (name, filename, category) in native_docs {
-            categories.entry(category).or_default().push((name, filename));
+            categories
+                .entry(category)
+                .or_default()
+                .push((name, filename));
         }
 
         summary.push_str("    - [Native Indicators](indicators/native/README.md)\n");
         for (category, indicators) in categories {
-            summary.push_str(&format!("        - [{}]()\n", if category.is_empty() { "General" } else { &category }));
+            summary.push_str(&format!(
+                "        - [{}]()\n",
+                if category.is_empty() {
+                    "General"
+                } else {
+                    &category
+                }
+            ));
             for (name, filename) in indicators {
-                summary.push_str(&format!("            - [{}](indicators/native/{}.md)\n", name, filename));
+                summary.push_str(&format!(
+                    "            - [{}](indicators/native/{}.md)\n",
+                    name, filename
+                ));
             }
         }
     }
@@ -72,7 +90,8 @@ These algorithms are compiled as native Polars Expressions, allowing them to ben
 Here you will find our implementations of algorithms like `SuperTrend`, `WaveTrend`, `ALMA`, and more.
 "#;
 
-    let mut talib_intro = String::from(r#"# TA-Lib Wrappers
+    let mut talib_intro = String::from(
+        r#"# TA-Lib Wrappers
 
 QuantWave seamlessly integrates with the industry standard TA-Lib via `talib-rs`.
 
@@ -82,7 +101,8 @@ For more information, visit the [official TA-Lib website](https://ta-lib.org/) o
 
 ## Available Indicators
 
-"#);
+"#,
+    );
     talib_intro.push_str(&talib_list);
 
     fs::write(docs_dir.join("SUMMARY.md"), summary)?;
@@ -97,8 +117,13 @@ For more information, visit the [official TA-Lib website](https://ta-lib.org/) o
 
 fn generate_native_docs(docs_dir: &Path) -> Result<Vec<(String, String, String)>> {
     let mut generated = Vec::new();
-    let indicators_dir = docs_dir.parent().unwrap().parent().unwrap().join("quantwave-core/src/indicators");
-    
+    let indicators_dir = docs_dir
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("quantwave-core/src/indicators");
+
     for entry in fs::read_dir(indicators_dir)? {
         let entry = entry?;
         let path = entry.path();
@@ -109,11 +134,12 @@ fn generate_native_docs(docs_dir: &Path) -> Result<Vec<(String, String, String)>
                     if let syn::Item::Const(item_const) = item {
                         let is_metadata = match &*item_const.ty {
                             syn::Type::Path(type_path) => {
-                                type_path.path.segments.last().map(|s| s.ident.to_string()) == Some("IndicatorMetadata".to_string())
-                            },
+                                type_path.path.segments.last().map(|s| s.ident.to_string())
+                                    == Some("IndicatorMetadata".to_string())
+                            }
                             _ => false,
                         };
-                        
+
                         if is_metadata {
                             if let syn::Expr::Struct(expr_struct) = &*item_const.expr {
                                 let mut name = String::new();
@@ -122,7 +148,7 @@ fn generate_native_docs(docs_dir: &Path) -> Result<Vec<(String, String, String)>
                                 let mut source = String::new();
                                 let mut category = String::new();
                                 let mut params_str = String::new();
-                                
+
                                 for field in &expr_struct.fields {
                                     if let syn::Member::Named(ident) = &field.member {
                                         let field_name = ident.to_string();
@@ -139,27 +165,57 @@ fn generate_native_docs(docs_dir: &Path) -> Result<Vec<(String, String, String)>
                                             }
                                         } else if field_name == "params" {
                                             if let syn::Expr::Reference(expr_ref) = &field.expr {
-                                                if let syn::Expr::Array(expr_array) = &*expr_ref.expr {
+                                                if let syn::Expr::Array(expr_array) =
+                                                    &*expr_ref.expr
+                                                {
                                                     for elem in &expr_array.elems {
-                                                        if let syn::Expr::Struct(param_struct) = elem {
+                                                        if let syn::Expr::Struct(param_struct) =
+                                                            elem
+                                                        {
                                                             let mut p_name = String::new();
                                                             let mut p_def = String::new();
                                                             let mut p_desc = String::new();
                                                             for p_field in &param_struct.fields {
-                                                                if let syn::Member::Named(p_ident) = &p_field.member {
-                                                                    if let syn::Expr::Lit(p_expr_lit) = &p_field.expr {
-                                                                        if let syn::Lit::Str(p_lit_str) = &p_expr_lit.lit {
-                                                                            match p_ident.to_string().as_str() {
-                                                                                "name" => p_name = p_lit_str.value(),
-                                                                                "default" => p_def = p_lit_str.value(),
-                                                                                "description" => p_desc = p_lit_str.value(),
+                                                                if let syn::Member::Named(p_ident) =
+                                                                    &p_field.member
+                                                                {
+                                                                    if let syn::Expr::Lit(
+                                                                        p_expr_lit,
+                                                                    ) = &p_field.expr
+                                                                    {
+                                                                        if let syn::Lit::Str(
+                                                                            p_lit_str,
+                                                                        ) = &p_expr_lit.lit
+                                                                        {
+                                                                            match p_ident
+                                                                                .to_string()
+                                                                                .as_str()
+                                                                            {
+                                                                                "name" => {
+                                                                                    p_name =
+                                                                                        p_lit_str
+                                                                                            .value()
+                                                                                }
+                                                                                "default" => {
+                                                                                    p_def =
+                                                                                        p_lit_str
+                                                                                            .value()
+                                                                                }
+                                                                                "description" => {
+                                                                                    p_desc =
+                                                                                        p_lit_str
+                                                                                            .value()
+                                                                                }
                                                                                 _ => {}
                                                                             }
                                                                         }
                                                                     }
                                                                 }
                                                             }
-                                                            params_str.push_str(&format!("- `{}` (default: {}): {}\n", p_name, p_def, p_desc));
+                                                            params_str.push_str(&format!(
+                                                                "- `{}` (default: {}): {}\n",
+                                                                p_name, p_def, p_desc
+                                                            ));
                                                         }
                                                     }
                                                 }
@@ -167,29 +223,31 @@ fn generate_native_docs(docs_dir: &Path) -> Result<Vec<(String, String, String)>
                                         }
                                     }
                                 }
-                                
-                                let filename = name.to_lowercase().replace(" ", "_").replace("-", "_");
-                                
+
+                                let filename =
+                                    name.to_lowercase().replace(" ", "_").replace("-", "_");
+
                                 let mut md = String::new();
                                 md.push_str(&format!("# {}\n\n", name));
                                 md.push_str(&format!("{}\n\n", desc));
-                                
+
                                 if !params_str.is_empty() {
                                     md.push_str("## Parameters\n\n");
                                     md.push_str(&params_str);
                                     md.push_str("\n");
                                 }
-                                
+
                                 md.push_str("## Formula\n\n");
                                 // latex string already contains \\[ \\] formatting from python script injection
                                 md.push_str(&latex);
                                 md.push_str("\n\n");
-                                
+
                                 if !source.is_empty() {
                                     md.push_str(&format!("[Source]({})\n", source));
                                 }
-                                
-                                let out_path = docs_dir.join(format!("indicators/native/{}.md", filename));
+
+                                let out_path =
+                                    docs_dir.join(format!("indicators/native/{}.md", filename));
                                 fs::write(&out_path, md)?;
                                 generated.push((name, filename, category));
                             }
@@ -199,7 +257,7 @@ fn generate_native_docs(docs_dir: &Path) -> Result<Vec<(String, String, String)>
             }
         }
     }
-    
+
     generated.sort_by(|a, b| a.0.cmp(&b.0));
     Ok(generated)
 }
@@ -207,7 +265,7 @@ fn generate_native_docs(docs_dir: &Path) -> Result<Vec<(String, String, String)>
 fn generate_talib_docs() -> Result<String> {
     let mut list = String::new();
     println!("Fetching TA-Lib API XML...");
-    
+
     let xml_url = "https://raw.githubusercontent.com/TA-Lib/ta-lib/master/ta_func_api.xml";
     let xml_data = match get(xml_url) {
         Ok(resp) => resp.text()?,
@@ -226,19 +284,32 @@ fn generate_talib_docs() -> Result<String> {
     };
 
     let mut indicators = Vec::new();
-    for node in doc.descendants().filter(|n| n.has_tag_name("FinancialFunction")) {
-        let abbr = node.children().find(|n| n.has_tag_name("Abbreviation")).and_then(|n| n.text()).unwrap_or("");
-        let name = node.children().find(|n| n.has_tag_name("ShortDescription")).and_then(|n| n.text()).unwrap_or("");
-        
-        if abbr.is_empty() { continue; }
+    for node in doc
+        .descendants()
+        .filter(|n| n.has_tag_name("FinancialFunction"))
+    {
+        let abbr = node
+            .children()
+            .find(|n| n.has_tag_name("Abbreviation"))
+            .and_then(|n| n.text())
+            .unwrap_or("");
+        let name = node
+            .children()
+            .find(|n| n.has_tag_name("ShortDescription"))
+            .and_then(|n| n.text())
+            .unwrap_or("");
+
+        if abbr.is_empty() {
+            continue;
+        }
         indicators.push((abbr.to_string(), name.to_string()));
     }
-    
+
     indicators.sort_by(|a, b| a.0.cmp(&b.0));
-    
+
     for (abbr, name) in indicators {
         list.push_str(&format!("- **`{}`**: {}\n", abbr, name));
     }
-    
+
     Ok(list)
 }

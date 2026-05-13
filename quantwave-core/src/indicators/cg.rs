@@ -3,7 +3,7 @@ use crate::traits::Next;
 use std::collections::VecDeque;
 
 /// Center of Gravity (CG) Oscillator
-/// 
+///
 /// Based on John Ehlers' "The CG Oscillator".
 /// The CG Oscillator is a smoothed oscillator with essentially zero lag.
 /// It identifies turning points by calculating the balance point of prices over a window.
@@ -40,20 +40,18 @@ impl Next<f64> for CenterOfGravity {
             denom += price;
         }
 
-        if denom == 0.0 {
-            0.0
-        } else {
-            -num / denom
-        }
+        if denom == 0.0 { 0.0 } else { -num / denom }
     }
 }
 
 pub const CG_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Center of Gravity Oscillator",
     description: "The CG Oscillator identifies price turning points with essentially zero lag by calculating the balance point of prices.",
-    params: &[
-        ParamDef { name: "period", default: "10", description: "Observation window length" },
-    ],
+    params: &[ParamDef {
+        name: "period",
+        default: "10",
+        description: "Observation window length",
+    }],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/TheCGOscillator.pdf",
     formula_latex: r#"
 \[
@@ -89,15 +87,15 @@ mod tests {
         ) {
             let period = 10;
             let mut cg = CenterOfGravity::new(period);
-            
+
             let streaming_results: Vec<f64> = inputs.iter().map(|&x| cg.next(x)).collect();
-            
+
             // Batch implementation
             let mut batch_results = Vec::with_capacity(inputs.len());
             for i in 0..inputs.len() {
                 let start = if i >= period { i + 1 - period } else { 0 };
                 let window = &inputs[start..=i];
-                
+
                 let mut num = 0.0;
                 let mut denom = 0.0;
                 for (j, &price) in window.iter().rev().enumerate() {
@@ -107,7 +105,7 @@ mod tests {
                 }
                 batch_results.push(if denom == 0.0 { 0.0 } else { -num / denom });
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-10);
             }

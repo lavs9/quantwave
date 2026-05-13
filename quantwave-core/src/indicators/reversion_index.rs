@@ -1,12 +1,12 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::super_smoother::SuperSmoother;
+use crate::traits::Next;
 use std::collections::VecDeque;
 
 /// The Reversion Index
-/// 
+///
 /// Based on John Ehlers' "The Reversion Index" (TASC January 2026).
-/// This indicator identifies peaks and valleys in ranging markets by summing 
+/// This indicator identifies peaks and valleys in ranging markets by summing
 /// bar-to-bar price changes and normalizing them by their absolute values.
 /// It uses two SuperSmoother filters (Length 4 and 8) as trigger and signal lines.
 #[derive(Debug, Clone)]
@@ -76,9 +76,11 @@ impl Next<f64> for ReversionIndex {
 pub const REVERSION_INDEX_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Reversion Index",
     description: "A mean-reversion oscillator that normalizes price changes by their absolute magnitude and applies SuperSmoother filtering.",
-    params: &[
-        ParamDef { name: "length", default: "20", description: "Summation period (approx. half dominant cycle)" },
-    ],
+    params: &[ParamDef {
+        name: "length",
+        default: "20",
+        description: "Summation period (approx. half dominant cycle)",
+    }],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/traderstipsreference/TRADERS%E2%80%99%20TIPS%20-%20JANUARY%202026.html",
     formula_latex: r#"
 \[
@@ -125,30 +127,30 @@ mod tests {
             let length = 20;
             let mut ri = ReversionIndex::new(length);
             let streaming_results: Vec<(f64, f64)> = inputs.iter().map(|&x| ri.next(x)).collect();
-            
+
             // Reference implementation
             let mut deltas = Vec::new();
             let mut smooth = SuperSmoother::new(8);
             let mut trigger = SuperSmoother::new(4);
             let mut batch_results = Vec::with_capacity(inputs.len());
-            
+
             for i in 0..inputs.len() {
                 let d = if i == 0 { 0.0 } else { inputs[i] - inputs[i-1] };
                 deltas.push(d);
-                
+
                 let start = if deltas.len() > length { deltas.len() - length } else { 0 };
                 let window = &deltas[start..];
-                
+
                 let d_sum: f64 = window.iter().sum();
                 let ad_sum: f64 = window.iter().map(|x| x.abs()).sum();
-                
+
                 let ratio = if ad_sum != 0.0 { d_sum / ad_sum } else { 0.0 };
-                
+
                 let sm = smooth.next(ratio);
                 let tr = trigger.next(ratio);
                 batch_results.push((sm, tr));
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-10);
                 approx::assert_relative_eq!(s.1, b.1, epsilon = 1e-10);

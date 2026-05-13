@@ -2,12 +2,12 @@ use crate::indicators::metadata::IndicatorMetadata;
 use crate::traits::Next;
 
 /// Inverse Fisher Transform (IFT)
-/// 
+///
 /// Based on John Ehlers' "The Inverse Fisher Transform".
-/// The Inverse Fisher Transform is a compressive transform that alters the 
-/// Probability Distribution Function (PDF) of an oscillator to produce clear 
+/// The Inverse Fisher Transform is a compressive transform that alters the
+/// Probability Distribution Function (PDF) of an oscillator to produce clear
 /// black-or-white signals.
-/// 
+///
 /// It is mathematically equivalent to the Hyperbolic Tangent (tanh) function.
 #[derive(Debug, Clone, Default)]
 pub struct InverseFisherTransform;

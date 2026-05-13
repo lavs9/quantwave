@@ -26,7 +26,7 @@ impl Next<(f64, f64, f64, f64)> for HeikinAshi {
 
     fn next(&mut self, (open, high, low, close): (f64, f64, f64, f64)) -> Self::Output {
         let ha_close = (open + high + low + close) / 4.0;
-        
+
         let ha_open = match (self.prev_ha_open, self.prev_ha_close) {
             (Some(prev_open), Some(prev_close)) => (prev_open + prev_close) / 2.0,
             _ => (open + close) / 2.0,
@@ -45,10 +45,10 @@ impl Next<(f64, f64, f64, f64)> for HeikinAshi {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
     use serde::Deserialize;
     use std::fs;
     use std::path::Path;
-    use proptest::prelude::*;
 
     #[derive(Debug, Deserialize)]
     struct HACase {
@@ -70,7 +70,10 @@ mod tests {
         let path = if path.exists() {
             path
         } else {
-            manifest_path.parent().unwrap().join("tests/gold_standard/heikin_ashi.json")
+            manifest_path
+                .parent()
+                .unwrap()
+                .join("tests/gold_standard/heikin_ashi.json")
         };
         let content = fs::read_to_string(path).unwrap();
         let case: HACase = serde_json::from_str(&content).unwrap();
@@ -103,7 +106,7 @@ mod tests {
                 let low = l_f.min(o_f).min(h_f).min(c_f);
                 adj_input.push((o_f, high, low, c_f));
             }
-            
+
             let mut ha = HeikinAshi::new();
             let mut streaming_results = Vec::with_capacity(adj_input.len());
             for &val in &adj_input {
@@ -111,7 +114,7 @@ mod tests {
             }
 
             let batch_results = heikin_ashi_batch(adj_input);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-6);
                 approx::assert_relative_eq!(s.1, b.1, epsilon = 1e-6);
@@ -124,7 +127,7 @@ mod tests {
     #[test]
     fn test_heikin_ashi_basic() {
         let mut ha = HeikinAshi::new();
-        
+
         // Bar 1: O=10, H=12, L=8, C=11
         // HA_Close = (10+12+8+11)/4 = 41/4 = 10.25
         // HA_Open = (10+11)/2 = 10.5
@@ -149,12 +152,10 @@ mod tests {
     }
 }
 
-
 pub const HEIKIN_ASHI_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Heikin-Ashi",
     description: "Heikin-Ashi candles filter market noise to reveal the underlying trend.",
-    params: &[
-    ],
+    params: &[],
     formula_source: "https://www.investopedia.com/trading/heikin-ashi-better-candlestick/",
     formula_latex: r#"
 \[

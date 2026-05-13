@@ -1,6 +1,6 @@
+use crate::indicators::donchian::DonchianChannels;
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
-use crate::indicators::donchian::DonchianChannels;
 
 /// Ichimoku Cloud (Ichimoku Kinko Hyo)
 /// Outputs: (Tenkan-sen, Kijun-sen, Senkou Span A, Senkou Span B)
@@ -41,10 +41,10 @@ impl Next<(f64, f64)> for IchimokuCloud {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
     use serde::Deserialize;
     use std::fs;
     use std::path::Path;
-    use proptest::prelude::*;
 
     #[derive(Debug, Deserialize)]
     struct IchimokuCase {
@@ -64,7 +64,10 @@ mod tests {
         let path = if path.exists() {
             path
         } else {
-            manifest_path.parent().unwrap().join("tests/gold_standard/ichimoku.json")
+            manifest_path
+                .parent()
+                .unwrap()
+                .join("tests/gold_standard/ichimoku.json")
         };
         let content = fs::read_to_string(path).unwrap();
         let case: IchimokuCase = serde_json::from_str(&content).unwrap();
@@ -79,7 +82,12 @@ mod tests {
         }
     }
 
-    fn ichimoku_batch(data: Vec<(f64, f64)>, p1: usize, p2: usize, p3: usize) -> Vec<(f64, f64, f64, f64)> {
+    fn ichimoku_batch(
+        data: Vec<(f64, f64)>,
+        p1: usize,
+        p2: usize,
+        p3: usize,
+    ) -> Vec<(f64, f64, f64, f64)> {
         let mut ic = IchimokuCloud::new(p1, p2, p3);
         data.into_iter().map(|x| ic.next(x)).collect()
     }
@@ -95,7 +103,7 @@ mod tests {
                 let low = l_f.min(h_f);
                 adj_input.push((high, low));
             }
-            
+
             let p1 = 9;
             let p2 = 26;
             let p3 = 52;
@@ -106,7 +114,7 @@ mod tests {
             }
 
             let batch_results = ichimoku_batch(adj_input, p1, p2, p3);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-6);
                 approx::assert_relative_eq!(s.1, b.1, epsilon = 1e-6);
@@ -127,14 +135,25 @@ mod tests {
     }
 }
 
-
 pub const ICHIMOKU_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Ichimoku Cloud",
     description: "Ichimoku Kinko Hyo is a comprehensive indicator that defines support and resistance, identifies trend direction, gauges momentum and provides trading signals.",
     params: &[
-        ParamDef { name: "tenkan_period", default: "9", description: "Tenkan-sen period" },
-        ParamDef { name: "kijun_period", default: "26", description: "Kijun-sen period" },
-        ParamDef { name: "senkou_span_b_period", default: "52", description: "Senkou Span B period" },
+        ParamDef {
+            name: "tenkan_period",
+            default: "9",
+            description: "Tenkan-sen period",
+        },
+        ParamDef {
+            name: "kijun_period",
+            default: "26",
+            description: "Kijun-sen period",
+        },
+        ParamDef {
+            name: "senkou_span_b_period",
+            default: "52",
+            description: "Senkou Span B period",
+        },
     ],
     formula_source: "https://www.investopedia.com/terms/i/ichimoku-cloud.asp",
     formula_latex: r#"

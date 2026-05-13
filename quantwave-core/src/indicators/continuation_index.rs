@@ -1,14 +1,14 @@
-use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
-use crate::indicators::ultimate_smoother::UltimateSmoother;
 use crate::indicators::generalized_laguerre::GeneralizedLaguerre;
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::smoothing::SMA;
+use crate::indicators::ultimate_smoother::UltimateSmoother;
+use crate::traits::Next;
 
 /// Continuation Index
-/// 
+///
 /// Based on John Ehlers' "The Continuation Index" (TASC September 2025).
 /// The indicator is designed to signal both the early onset and potential exhaustion of a trend.
-/// It uses a Laguerre filter and UltimateSmoother to reduce lag, then compresses the result 
+/// It uses a Laguerre filter and UltimateSmoother to reduce lag, then compresses the result
 /// using an Inverse Fisher Transform (tanh).
 #[derive(Debug, Clone)]
 pub struct ContinuationIndex {
@@ -33,10 +33,10 @@ impl Next<f64> for ContinuationIndex {
     fn next(&mut self, input: f64) -> Self::Output {
         let us_val = self.us.next(input);
         let lg_val = self.lg.next(input);
-        
+
         let diff = us_val - lg_val;
         let variance = self.variance_sma.next(diff.abs());
-        
+
         let ref_val = if variance != 0.0 {
             2.0 * diff / variance
         } else {
@@ -52,9 +52,21 @@ pub const CONTINUATION_INDEX_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Continuation Index",
     description: "An oscillator that identifies trend onset and exhaustion by comparing a fast UltimateSmoother with a Generalized Laguerre filter.",
     params: &[
-        ParamDef { name: "gamma", default: "0.8", description: "Laguerre gamma parameter" },
-        ParamDef { name: "order", default: "8", description: "Laguerre filter order" },
-        ParamDef { name: "length", default: "40", description: "Base smoothing length" },
+        ParamDef {
+            name: "gamma",
+            default: "0.8",
+            description: "Laguerre gamma parameter",
+        },
+        ParamDef {
+            name: "order",
+            default: "8",
+            description: "Laguerre filter order",
+        },
+        ParamDef {
+            name: "length",
+            default: "40",
+            description: "Base smoothing length",
+        },
     ],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/traderstipsreference/TRADERS%E2%80%99%20TIPS%20-%20SEPTEMBER%202025.html",
     formula_latex: r#"
@@ -105,27 +117,27 @@ mod tests {
             let length = 40;
             let mut ci = ContinuationIndex::new(gamma, order, length);
             let streaming_results: Vec<f64> = inputs.iter().map(|&x| ci.next(x)).collect();
-            
+
             // Reference implementation
             let mut us = UltimateSmoother::new(length / 2);
             let mut lg = GeneralizedLaguerre::new(length, gamma, order);
             let mut diffs = Vec::new();
             let mut batch_results = Vec::with_capacity(inputs.len());
-            
+
             for &input in &inputs {
                 let u = us.next(input);
                 let l = lg.next(input);
                 let d = u - l;
                 diffs.push(d.abs());
-                
+
                 let start = if diffs.len() > length { diffs.len() - length } else { 0 };
                 let window = &diffs[start..];
                 let variance = window.iter().sum::<f64>() / window.len() as f64;
-                
+
                 let ref_val = if variance != 0.0 { 2.0 * d / variance } else { 0.0 };
                 batch_results.push(ref_val.tanh());
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-10);
             }

@@ -10,9 +10,9 @@ use crate::traits::Next;
 #[derive(Debug, Clone)]
 pub struct CyberCycle {
     alpha: f64,
-    x: [f64; 4],     // X[t], X[t-1], X[t-2], X[t-3]
-    x_s: [f64; 3],   // X_S[t], X_S[t-1], X_S[t-2]
-    cc: [f64; 3],    // CC[t], CC[t-1], CC[t-2]
+    x: [f64; 4],   // X[t], X[t-1], X[t-2], X[t-3]
+    x_s: [f64; 3], // X_S[t], X_S[t-1], X_S[t-2]
+    cc: [f64; 3],  // CC[t], CC[t-1], CC[t-2]
     trigger: f64,
     t: usize,
 }
@@ -55,7 +55,8 @@ impl Next<f64> for CyberCycle {
         if self.t < 6 {
             self.cc[0] = (self.x[0] - 2.0 * self.x[1] + self.x[2]) / 4.0;
         } else {
-            let part1 = (1.0 - 0.5 * self.alpha).powi(2) * (self.x_s[0] - 2.0 * self.x_s[1] + self.x_s[2]);
+            let part1 =
+                (1.0 - 0.5 * self.alpha).powi(2) * (self.x_s[0] - 2.0 * self.x_s[1] + self.x_s[2]);
             let part2 = 2.0 * (1.0 - self.alpha) * self.cc[1];
             let part3 = (1.0 - self.alpha).powi(2) * self.cc[2];
             self.cc[0] = part1 + part2 - part3;
@@ -70,9 +71,11 @@ impl Next<f64> for CyberCycle {
 pub const CYBER_CYCLE_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Cyber Cycle",
     description: "An oscillator introduced by John Ehlers that models the cyclical component of a time series using FIR smoothing.",
-    params: &[
-        ParamDef { name: "length", default: "14", description: "Alpha smoothing length parameter" },
-    ],
+    params: &[ParamDef {
+        name: "length",
+        default: "14",
+        description: "Alpha smoothing length parameter",
+    }],
     formula_source: "Cybernetic Analysis for Stocks and Futures, John Ehlers, 2004, Chapter 4",
     formula_latex: r#"
 \[
@@ -106,7 +109,7 @@ mod tests {
             let mut streaming_cc = CyberCycle::new(length);
             let streaming_results: Vec<(f64, f64)> = input.iter().map(|&x| streaming_cc.next(x)).collect();
             let batch_results = cyber_cycle_batch(&input, length);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-6);
                 approx::assert_relative_eq!(s.1, b.1, epsilon = 1e-6);

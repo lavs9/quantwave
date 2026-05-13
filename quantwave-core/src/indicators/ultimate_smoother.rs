@@ -3,7 +3,7 @@ use crate::traits::Next;
 use std::f64::consts::PI;
 
 /// UltimateSmoother Filter
-/// 
+///
 /// Based on John Ehlers' "The Ultimate Smoother"
 /// It conceptually has zero lag in the Pass Band and has minimum lag in the transition band.
 /// It is constructed by subtracting the High Pass response from the input data (cancellation).
@@ -48,7 +48,7 @@ impl Next<f64> for UltimateSmoother {
                 + self.c2 * self.us_history[0]
                 + self.c3 * self.us_history[1]
         };
-        
+
         self.us_history[1] = self.us_history[0];
         self.us_history[0] = res;
         self.price_history[1] = self.price_history[0];
@@ -60,9 +60,11 @@ impl Next<f64> for UltimateSmoother {
 pub const ULTIMATE_SMOOTHER_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "UltimateSmoother",
     description: "An Ehlers filter with zero lag in the Pass Band, constructed by subtracting High Pass response from the input data.",
-    params: &[
-        ParamDef { name: "period", default: "20", description: "Critical period (wavelength)" },
-    ],
+    params: &[ParamDef {
+        name: "period",
+        default: "20",
+        description: "Critical period (wavelength)",
+    }],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/implemented/UltimateSmoother.pdf",
     formula_latex: r#"
 \[
@@ -110,7 +112,7 @@ mod tests {
             let period = 20;
             let mut us = UltimateSmoother::new(period);
             let streaming_results: Vec<f64> = inputs.iter().map(|&x| us.next(x)).collect();
-            
+
             // Batch implementation
             let mut batch_results = Vec::with_capacity(inputs.len());
             let period_f = period as f64;
@@ -118,10 +120,10 @@ mod tests {
             let c2 = 2.0 * a1 * (1.414 * PI / period_f).cos();
             let c3 = -a1 * a1;
             let c1 = (1.0 + c2 - c3) / 4.0;
-            
+
             let mut us_hist = [0.0; 2];
             let mut price_hist = [0.0; 2];
-            
+
             for (i, &input) in inputs.iter().enumerate() {
                 let bar = i + 1;
                 let res = if bar < 4 {
@@ -135,7 +137,7 @@ mod tests {
                 price_hist[0] = input;
                 batch_results.push(res);
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-10);
             }

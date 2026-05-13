@@ -79,7 +79,10 @@ mod tests {
         let path = if path.exists() {
             path
         } else {
-            manifest_path.parent().unwrap().join("tests/gold_standard/donchian_5.json")
+            manifest_path
+                .parent()
+                .unwrap()
+                .join("tests/gold_standard/donchian_5.json")
         };
         let content = fs::read_to_string(path).unwrap();
         let case: DonchianCase = serde_json::from_str(&content).unwrap();
@@ -94,7 +97,7 @@ mod tests {
     #[test]
     fn test_donchian_basic() {
         let mut dc = DonchianChannels::new(3);
-        
+
         // bar 1: H=10, L=8 -> U=10, M=9, L=8
         let (u1, m1, l1) = dc.next((10.0, 8.0));
         assert_eq!(u1, 10.0);
@@ -122,7 +125,7 @@ mod tests {
 
     fn donchian_batch(data: Vec<(f64, f64)>, period: usize) -> Vec<f64> {
         let mut dc = DonchianChannels::new(period);
-        // We'll just return the middle band for parity check to simplify, 
+        // We'll just return the middle band for parity check to simplify,
         // or we could change the parity helper to handle tuples.
         data.into_iter().map(|x| dc.next(x).1).collect()
     }
@@ -139,7 +142,7 @@ mod tests {
                 let l = lows[i].min(h); // Ensure low <= high
                 input.push((h, l));
             }
-            
+
             let period = 5;
             let mut dc = DonchianChannels::new(period);
             let mut streaming_results = Vec::with_capacity(len);
@@ -148,7 +151,7 @@ mod tests {
             }
 
             let batch_results = donchian_batch(input, period);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 assert_eq!(s, b);
             }
@@ -156,13 +159,14 @@ mod tests {
     }
 }
 
-
 pub const DONCHIAN_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Donchian Channels",
     description: "Donchian Channels are volatility indicators formed by taking the highest high and the lowest low of the last N periods.",
-    params: &[
-        ParamDef { name: "period", default: "20", description: "Channel period" },
-    ],
+    params: &[ParamDef {
+        name: "period",
+        default: "20",
+        description: "Channel period",
+    }],
     formula_source: "https://www.investopedia.com/terms/d/donchianchannels.asp",
     formula_latex: r#"
 \[

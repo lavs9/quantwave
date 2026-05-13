@@ -80,17 +80,20 @@ impl Next<(f64, f64, f64)> for VortexIndicator {
         if self.sum_tr == 0.0 {
             (1.0, 1.0)
         } else {
-            (self.sum_vm_plus / self.sum_tr, self.sum_vm_minus / self.sum_tr)
+            (
+                self.sum_vm_plus / self.sum_tr,
+                self.sum_vm_minus / self.sum_tr,
+            )
         }
     }
 }
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
     use serde::Deserialize;
     use std::fs;
     use std::path::Path;
-    use proptest::prelude::*;
 
     #[derive(Debug, Deserialize)]
     struct VortexCase {
@@ -109,7 +112,10 @@ mod tests {
         let path = if path.exists() {
             path
         } else {
-            manifest_path.parent().unwrap().join("tests/gold_standard/vortex_14.json")
+            manifest_path
+                .parent()
+                .unwrap()
+                .join("tests/gold_standard/vortex_14.json")
         };
         let content = fs::read_to_string(path).unwrap();
         let case: VortexCase = serde_json::from_str(&content).unwrap();
@@ -163,7 +169,7 @@ mod tests {
         // Bar 1: H=12, L=10, C=11. Prev H=10, L=8, C=9.
         // vmp = |12-8|=4, vmm=|10-10|=0, tr=max(2, |12-9|=3, |10-9|=1)=3
         // sum_vmp=4, sum_vmm=0, sum_tr=3. Output (4/3, 0/3) = (1.333, 0)
-        
+
         let (p0, m0) = vi.next((10.0, 8.0, 9.0));
         assert_eq!(p0, 1.0);
         assert_eq!(m0, 1.0);
@@ -174,13 +180,14 @@ mod tests {
     }
 }
 
-
 pub const VORTEX_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Vortex Indicator",
     description: "The Vortex Indicator helps identify the start of a new trend or the continuation of an existing one.",
-    params: &[
-        ParamDef { name: "period", default: "14", description: "Period" },
-    ],
+    params: &[ParamDef {
+        name: "period",
+        default: "14",
+        description: "Period",
+    }],
     formula_source: "https://www.investopedia.com/terms/v/vortex-indicator-vi.asp",
     formula_latex: r#"
 \[

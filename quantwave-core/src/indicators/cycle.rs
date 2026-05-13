@@ -1,13 +1,33 @@
 talib_1_in_1_out!(HT_DCPERIOD, talib_rs::cycle::ht_dcperiod);
-impl Default for HT_DCPERIOD { fn default() -> Self { Self::new() } }
+impl Default for HT_DCPERIOD {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 talib_1_in_2_out!(HT_PHASOR, talib_rs::cycle::ht_phasor);
-impl Default for HT_PHASOR { fn default() -> Self { Self::new() } }
+impl Default for HT_PHASOR {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 talib_1_in_1_out!(HT_DCPHASE, talib_rs::cycle::ht_dcphase);
-impl Default for HT_DCPHASE { fn default() -> Self { Self::new() } }
+impl Default for HT_DCPHASE {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 talib_1_in_2_out!(HT_SINE, talib_rs::cycle::ht_sine);
-impl Default for HT_SINE { fn default() -> Self { Self::new() } }
+impl Default for HT_SINE {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 talib_1_in_1_out_i32!(HT_TRENDMODE, talib_rs::cycle::ht_trendmode);
-impl Default for HT_TRENDMODE { fn default() -> Self { Self::new() } }
+impl Default for HT_TRENDMODE {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -21,7 +41,7 @@ mod tests {
             let mut ht = HT_DCPERIOD::new();
             let streaming_results: Vec<f64> = input.iter().map(|&x| ht.next(x)).collect();
             let batch_results = talib_rs::cycle::ht_dcperiod(&input).unwrap_or_else(|_| vec![f64::NAN; input.len()]);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 if s.is_nan() {
                     assert!(b.is_nan());
@@ -38,7 +58,7 @@ mod tests {
             let (b_inphase, b_quadrature) = talib_rs::cycle::ht_phasor(&input).unwrap_or_else(|_| {
                 (vec![f64::NAN; input.len()], vec![f64::NAN; input.len()])
             });
-            
+
             for (i, (s_in, s_quad)) in streaming_results.into_iter().enumerate() {
                 if s_in.is_nan() {
                     assert!(b_inphase[i].is_nan());
@@ -58,7 +78,7 @@ mod tests {
             let mut ht = HT_TRENDMODE::new();
             let streaming_results: Vec<f64> = input.iter().map(|&x| ht.next(x)).collect();
             let batch_results = talib_rs::cycle::ht_trendmode(&input).unwrap_or_else(|_| vec![0; input.len()]);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 assert_eq!(*s as i32, *b);
             }

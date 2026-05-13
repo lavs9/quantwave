@@ -2,11 +2,11 @@ use crate::indicators::metadata::IndicatorMetadata;
 use crate::traits::Next;
 
 /// Fisher Transform
-/// 
+///
 /// Based on John Ehlers' "Using The Fisher Transform".
-/// The Fisher Transform changes the Probability Density Function (PDF) of any 
+/// The Fisher Transform changes the Probability Density Function (PDF) of any
 /// waveform so that the transformed output has an approximately Gaussian PDF.
-/// This accentuates the largest deviations from the mean, providing sharp 
+/// This accentuates the largest deviations from the mean, providing sharp
 /// and easy to identify turning points.
 #[derive(Debug, Clone, Default)]
 pub struct FisherTransform;

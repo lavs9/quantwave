@@ -5,7 +5,7 @@ use std::collections::VecDeque;
 /// Bill Williams Fractals
 /// Identifies a bearish (up) fractal if High[t-2] is greater than High[t-4, t-3, t-1, t].
 /// Identifies a bullish (down) fractal if Low[t-2] is less than Low[t-4, t-3, t-1, t].
-/// The output is (Bearish, Bullish) meaning (Up Fractal, Down Fractal) at the current bar 
+/// The output is (Bearish, Bullish) meaning (Up Fractal, Down Fractal) at the current bar
 /// which validates the fractal that formed 2 bars ago.
 #[derive(Debug, Clone)]
 pub struct BillWilliamsFractals {
@@ -44,15 +44,15 @@ impl Next<(f64, f64)> for BillWilliamsFractals {
             return (false, false);
         }
 
-        let bearish = self.highs[2] > self.highs[0] &&
-                      self.highs[2] > self.highs[1] &&
-                      self.highs[2] > self.highs[3] &&
-                      self.highs[2] > self.highs[4];
+        let bearish = self.highs[2] > self.highs[0]
+            && self.highs[2] > self.highs[1]
+            && self.highs[2] > self.highs[3]
+            && self.highs[2] > self.highs[4];
 
-        let bullish = self.lows[2] < self.lows[0] &&
-                      self.lows[2] < self.lows[1] &&
-                      self.lows[2] < self.lows[3] &&
-                      self.lows[2] < self.lows[4];
+        let bullish = self.lows[2] < self.lows[0]
+            && self.lows[2] < self.lows[1]
+            && self.lows[2] < self.lows[3]
+            && self.lows[2] < self.lows[4];
 
         (bearish, bullish)
     }
@@ -61,10 +61,10 @@ impl Next<(f64, f64)> for BillWilliamsFractals {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
     use serde::Deserialize;
     use std::fs;
     use std::path::Path;
-    use proptest::prelude::*;
 
     #[derive(Debug, Deserialize)]
     struct FractalCase {
@@ -82,7 +82,10 @@ mod tests {
         let path = if path.exists() {
             path
         } else {
-            manifest_path.parent().unwrap().join("tests/gold_standard/fractals.json")
+            manifest_path
+                .parent()
+                .unwrap()
+                .join("tests/gold_standard/fractals.json")
         };
         let content = fs::read_to_string(path).unwrap();
         let case: FractalCase = serde_json::from_str(&content).unwrap();
@@ -111,7 +114,7 @@ mod tests {
                 let low = l_f.min(h_f);
                 adj_input.push((high, low));
             }
-            
+
             let mut fractals = BillWilliamsFractals::new();
             let mut streaming_results = Vec::with_capacity(adj_input.len());
             for &val in &adj_input {
@@ -119,7 +122,7 @@ mod tests {
             }
 
             let batch_results = fractals_batch(adj_input);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 assert_eq!(s.0, b.0);
                 assert_eq!(s.1, b.1);
@@ -132,25 +135,23 @@ mod tests {
         let mut f = BillWilliamsFractals::new();
         let h = vec![10.0, 11.0, 15.0, 12.0, 10.0];
         let l = vec![5.0, 6.0, 2.0, 6.0, 7.0];
-        
+
         for i in 0..4 {
             let (bear, bull) = f.next((h[i], l[i]));
             assert!(!bear);
             assert!(!bull);
         }
-        
+
         let (bear, bull) = f.next((h[4], l[4]));
         assert!(bear); // 15.0 > all
         assert!(bull); // 2.0 < all
     }
 }
 
-
 pub const FRACTALS_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Bill Williams Fractals",
     description: "Fractals are indicators on candlestick charts that identify reversal points in the market.",
-    params: &[
-    ],
+    params: &[],
     formula_source: "https://www.investopedia.com/terms/f/fractal.asp",
     formula_latex: r#"
 \[

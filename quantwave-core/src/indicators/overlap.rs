@@ -1,21 +1,45 @@
 talib_1_in_1_out!(DEMA, talib_rs::overlap::dema, timeperiod: usize);
-impl From<usize> for DEMA { fn from(p: usize) -> Self { Self::new(p) } }
+impl From<usize> for DEMA {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
 talib_1_in_1_out!(TRIMA, talib_rs::overlap::trima, timeperiod: usize);
-impl From<usize> for TRIMA { fn from(p: usize) -> Self { Self::new(p) } }
+impl From<usize> for TRIMA {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
 talib_1_in_1_out!(KAMA, talib_rs::overlap::kama, timeperiod: usize);
-impl From<usize> for KAMA { fn from(p: usize) -> Self { Self::new(p) } }
+impl From<usize> for KAMA {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
 talib_1_in_1_out!(T3, talib_rs::overlap::t3, timeperiod: usize, v_factor: f64);
 talib_1_in_2_out!(MAMA, talib_rs::overlap::mama, fastlimit: f64, slowlimit: f64);
 talib_1_in_3_out!(BBANDS, talib_rs::overlap::bbands, timeperiod: usize, nbdevup: f64, nbdevdn: f64, matype: talib_rs::MaType);
 talib_2_in_1_out!(SAR, talib_rs::overlap::sar, acceleration: f64, maximum: f64);
 talib_2_in_1_out!(SAREXT, talib_rs::overlap::sar_ext, startvalue: f64, offsetonreverse: f64, accelerationinitlong: f64, accelerationlong: f64, accelerationmaxlong: f64, accelerationinitshort: f64, accelerationshort: f64, accelerationmaxshort: f64);
 talib_1_in_1_out!(MIDPOINT, talib_rs::overlap::midpoint, timeperiod: usize);
-impl From<usize> for MIDPOINT { fn from(p: usize) -> Self { Self::new(p) } }
+impl From<usize> for MIDPOINT {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
 talib_2_in_1_out!(MIDPRICE, talib_rs::overlap::midprice, timeperiod: usize);
-impl From<usize> for MIDPRICE { fn from(p: usize) -> Self { Self::new(p) } }
+impl From<usize> for MIDPRICE {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
 talib_2_in_1_out!(MAVP, talib_rs::overlap::mavp, minperiod: usize, maxperiod: usize, matype: talib_rs::MaType);
 talib_1_in_1_out!(HT_TRENDLINE, talib_rs::overlap::ht_trendline);
-impl Default for HT_TRENDLINE { fn default() -> Self { Self::new() } }
+impl Default for HT_TRENDLINE {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -30,7 +54,7 @@ mod tests {
             let mut dema = DEMA::new(period);
             let streaming_results: Vec<f64> = input.iter().map(|&x| dema.next(x)).collect();
             let batch_results = talib_rs::overlap::dema(&input, period).unwrap_or_else(|_| vec![f64::NAN; input.len()]);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 if s.is_nan() {
                     assert!(b.is_nan());
@@ -46,7 +70,7 @@ mod tests {
             let mut trima = TRIMA::new(period);
             let streaming_results: Vec<f64> = input.iter().map(|&x| trima.next(x)).collect();
             let batch_results = talib_rs::overlap::trima(&input, period).unwrap_or_else(|_| vec![f64::NAN; input.len()]);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 if s.is_nan() {
                     assert!(b.is_nan());
@@ -62,7 +86,7 @@ mod tests {
             let mut kama = KAMA::new(period);
             let streaming_results: Vec<f64> = input.iter().map(|&x| kama.next(x)).collect();
             let batch_results = talib_rs::overlap::kama(&input, period).unwrap_or_else(|_| vec![f64::NAN; input.len()]);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 if s.is_nan() {
                     assert!(b.is_nan());
@@ -79,7 +103,7 @@ mod tests {
             let mut t3 = T3::new(period, v_factor);
             let streaming_results: Vec<f64> = input.iter().map(|&x| t3.next(x)).collect();
             let batch_results = talib_rs::overlap::t3(&input, period, v_factor).unwrap_or_else(|_| vec![f64::NAN; input.len()]);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 if s.is_nan() {
                     assert!(b.is_nan());
@@ -100,7 +124,7 @@ mod tests {
             let (b_upper, b_middle, b_lower) = talib_rs::overlap::bbands(&input, period, nbdevup, nbdevdn, matype).unwrap_or_else(|_| {
                 (vec![f64::NAN; input.len()], vec![f64::NAN; input.len()], vec![f64::NAN; input.len()])
             });
-            
+
             for (i, (s_upper, s_middle, s_lower)) in streaming_results.into_iter().enumerate() {
                 if s_upper.is_nan() {
                     assert!(b_upper[i].is_nan());

@@ -1,9 +1,9 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::ultimate_smoother::UltimateSmoother;
+use crate::traits::Next;
 
 /// Ultimate Channel
-/// 
+///
 /// Based on John Ehlers' "Ultimate Channel and Ultimate Bands" (S&C 2024).
 /// Replaces the EMA in Keltner Channels with UltimateSmoothers to mitigate lag.
 #[derive(Debug, Clone)]
@@ -53,9 +53,21 @@ pub const ULTIMATE_CHANNEL_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Ultimate Channel",
     description: "A Keltner-style channel using UltimateSmoothers for both the center line and the volatility range to minimize lag.",
     params: &[
-        ParamDef { name: "length", default: "20", description: "Center line smoothing period" },
-        ParamDef { name: "str_length", default: "20", description: "Smooth True Range (STR) period" },
-        ParamDef { name: "num_strs", default: "1.0", description: "Channel width multiplier" },
+        ParamDef {
+            name: "length",
+            default: "20",
+            description: "Center line smoothing period",
+        },
+        ParamDef {
+            name: "str_length",
+            default: "20",
+            description: "Smooth True Range (STR) period",
+        },
+        ParamDef {
+            name: "num_strs",
+            default: "1.0",
+            description: "Channel width multiplier",
+        },
     ],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/UltimateChannel.pdf",
     formula_latex: r#"
@@ -91,11 +103,7 @@ mod tests {
     #[test]
     fn test_ultimate_channel_basic() {
         let mut uc = UltimateChannel::new(20, 20, 1.0);
-        let inputs = vec![
-            (10.0, 9.0, 9.5),
-            (11.0, 10.0, 10.5),
-            (12.0, 11.0, 11.5),
-        ];
+        let inputs = vec![(10.0, 9.0, 9.5), (11.0, 10.0, 10.5), (12.0, 11.0, 11.5)];
         for input in inputs {
             let (u, c, l) = uc.next(input);
             assert!(!u.is_nan());
@@ -115,28 +123,28 @@ mod tests {
             let str_length = 20;
             let num_strs = 1.0;
             let mut uc = UltimateChannel::new(length, str_length, num_strs);
-            
+
             let mut streaming_results = Vec::with_capacity(inputs.len());
             for &val in &inputs {
                 streaming_results.push(uc.next(val));
             }
-            
+
             // Reference implementation
             let mut center_sm = UltimateSmoother::new(length);
             let mut str_sm = UltimateSmoother::new(str_length);
             let mut prev_close = None;
             let mut batch_results = Vec::with_capacity(inputs.len());
-            
+
             for &(h, l, c) in &inputs {
                 let th = prev_close.map(|pc: f64| h.max(pc)).unwrap_or(h);
                 let tl = prev_close.map(|pc: f64| l.min(pc)).unwrap_or(l);
                 prev_close = Some(c);
-                
+
                 let str_val = str_sm.next(th - tl);
                 let center = center_sm.next(c);
                 batch_results.push((center + num_strs * str_val, center, center - num_strs * str_val));
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-10);
                 approx::assert_relative_eq!(s.1, b.1, epsilon = 1e-10);

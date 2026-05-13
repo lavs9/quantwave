@@ -1,6 +1,6 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::volatility::ATR;
+use crate::traits::Next;
 
 /// ATR Trailing Stop
 /// A volatility-based trailing stop.
@@ -69,10 +69,10 @@ impl Next<(f64, f64, f64)> for ATRTrailingStop {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
     use serde::Deserialize;
     use std::fs;
     use std::path::Path;
-    use proptest::prelude::*;
 
     #[derive(Debug, Deserialize)]
     struct ATRTSCase {
@@ -91,7 +91,10 @@ mod tests {
         let path = if path.exists() {
             path
         } else {
-            manifest_path.parent().unwrap().join("tests/gold_standard/atr_ts_14_25.json")
+            manifest_path
+                .parent()
+                .unwrap()
+                .join("tests/gold_standard/atr_ts_14_25.json")
         };
         let content = fs::read_to_string(path).unwrap();
         let case: ATRTSCase = serde_json::from_str(&content).unwrap();
@@ -121,7 +124,7 @@ mod tests {
                 let low = l_f.min(h_f).min(c_f);
                 adj_input.push((high, low, c_f));
             }
-            
+
             let period = 14;
             let multiplier = 2.5;
             let mut atr_ts = ATRTrailingStop::new(period, multiplier);
@@ -131,7 +134,7 @@ mod tests {
             }
 
             let batch_results = atr_ts_batch(adj_input, period, multiplier);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-6);
                 assert_eq!(s.1, b.1);
@@ -142,20 +145,27 @@ mod tests {
     #[test]
     fn test_atr_ts_basic() {
         let mut atr_ts = ATRTrailingStop::new(14, 2.5);
-        
+
         let (stop1, dir1) = atr_ts.next((10.0, 8.0, 9.0));
         assert!(stop1 < 9.0);
         assert_eq!(dir1, 1);
     }
 }
 
-
 pub const ATR_TS_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "ATR Trailing Stop",
     description: "A trailing stop based on Average True Range to keep trades in a trend.",
     params: &[
-        ParamDef { name: "period", default: "10", description: "ATR period" },
-        ParamDef { name: "multiplier", default: "3.0", description: "ATR Multiplier" },
+        ParamDef {
+            name: "period",
+            default: "10",
+            description: "ATR period",
+        },
+        ParamDef {
+            name: "multiplier",
+            default: "3.0",
+            description: "ATR Multiplier",
+        },
     ],
     formula_source: "https://www.tradingview.com/support/solutions/43000589105-average-true-range-atr/",
     formula_latex: r#"

@@ -1,13 +1,21 @@
-use crate::traits::Next;
-use crate::indicators::volatility::ATR;
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
+use crate::indicators::volatility::ATR;
+use crate::traits::Next;
 
 pub const METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "SuperTrend",
     description: "Trend-following indicator that combines ATR for volatility bands to identify the primary market direction.",
     params: &[
-        ParamDef { name: "period", default: "10", description: "ATR length" },
-        ParamDef { name: "multiplier", default: "3.0", description: "ATR multiplier" },
+        ParamDef {
+            name: "period",
+            default: "10",
+            description: "ATR length",
+        },
+        ParamDef {
+            name: "multiplier",
+            default: "3.0",
+            description: "ATR multiplier",
+        },
     ],
     formula_source: "https://www.tradingview.com/script/7zF0a4f8-SuperTrend-by-Mobius/",
     formula_latex: r#"
@@ -52,7 +60,7 @@ impl Next<(f64, f64, f64)> for SuperTrend {
     fn next(&mut self, (high, low, close): (f64, f64, f64)) -> Self::Output {
         let atr = self.atr.next((high, low, close));
         let mid = (high + low) / 2.0;
-        
+
         let basic_upper = mid + self.multiplier * atr;
         let basic_lower = mid - self.multiplier * atr;
 
@@ -101,10 +109,10 @@ impl Next<(f64, f64, f64)> for SuperTrend {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
     use serde::Deserialize;
     use std::fs;
     use std::path::Path;
-    use proptest::prelude::*;
 
     #[derive(Debug, Deserialize)]
     struct SuperTrendCase {
@@ -123,7 +131,10 @@ mod tests {
         let path = if path.exists() {
             path
         } else {
-            manifest_path.parent().unwrap().join("tests/gold_standard/supertrend_10_3.json")
+            manifest_path
+                .parent()
+                .unwrap()
+                .join("tests/gold_standard/supertrend_10_3.json")
         };
         let content = fs::read_to_string(path).unwrap();
         let case: SuperTrendCase = serde_json::from_str(&content).unwrap();
@@ -136,7 +147,11 @@ mod tests {
         }
     }
 
-    fn supertrend_batch(data: Vec<(f64, f64, f64)>, period: usize, multiplier: f64) -> Vec<(f64, i8)> {
+    fn supertrend_batch(
+        data: Vec<(f64, f64, f64)>,
+        period: usize,
+        multiplier: f64,
+    ) -> Vec<(f64, i8)> {
         let mut st = SuperTrend::new(period, multiplier);
         data.into_iter().map(|x| st.next(x)).collect()
     }
@@ -153,7 +168,7 @@ mod tests {
                 let low = l_f.min(h_f).min(c_f);
                 adj_input.push((high, low, c_f));
             }
-            
+
             let period = 10;
             let multiplier = 3.0;
             let mut st = SuperTrend::new(period, multiplier);
@@ -163,7 +178,7 @@ mod tests {
             }
 
             let batch_results = supertrend_batch(adj_input, period, multiplier);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-6);
                 assert_eq!(s.1, b.1);

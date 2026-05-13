@@ -1,13 +1,25 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::smoothing::EMA;
+use crate::traits::Next;
 
 talib_3_in_1_out!(TaATR, talib_rs::volatility::atr, timeperiod: usize);
-impl From<usize> for TaATR { fn from(p: usize) -> Self { Self::new(p) } }
+impl From<usize> for TaATR {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
 talib_3_in_1_out!(TaNATR, talib_rs::volatility::natr, timeperiod: usize);
-impl From<usize> for TaNATR { fn from(p: usize) -> Self { Self::new(p) } }
+impl From<usize> for TaNATR {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
 talib_3_in_1_out!(TaTRANGE, talib_rs::volatility::trange);
-impl Default for TaTRANGE { fn default() -> Self { Self::new() } }
+impl Default for TaTRANGE {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 /// True Range (TR)
 #[derive(Debug, Clone, Default)]
@@ -134,12 +146,10 @@ mod tests {
     }
 }
 
-
 pub const TRUE_RANGE_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "True Range",
     description: "True Range measures daily volatility.",
-    params: &[
-    ],
+    params: &[],
     formula_source: "https://www.investopedia.com/terms/a/atr.asp",
     formula_latex: r#"
 \[
@@ -150,13 +160,14 @@ TR = \max(H - L, |H - C_{t-1}|, |L - C_{t-1}|)
     category: "Classic",
 };
 
-
 pub const ATR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Average True Range",
     description: "ATR represents the average of true ranges over a specified period.",
-    params: &[
-        ParamDef { name: "period", default: "14", description: "Smoothing period" },
-    ],
+    params: &[ParamDef {
+        name: "period",
+        default: "14",
+        description: "Smoothing period",
+    }],
     formula_source: "https://www.investopedia.com/terms/a/atr.asp",
     formula_latex: r#"
 \[

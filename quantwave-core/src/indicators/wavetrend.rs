@@ -1,6 +1,6 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::smoothing::{EMA, SMA};
+use crate::traits::Next;
 
 /// WaveTrend Oscillator
 /// Often referred to as "LazyBear's WaveTrend" on TradingView.
@@ -55,10 +55,10 @@ impl Next<(f64, f64, f64)> for WaveTrend {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
     use serde::Deserialize;
     use std::fs;
     use std::path::Path;
-    use proptest::prelude::*;
 
     #[derive(Debug, Deserialize)]
     struct WaveTrendCase {
@@ -77,7 +77,10 @@ mod tests {
         let path = if path.exists() {
             path
         } else {
-            manifest_path.parent().unwrap().join("tests/gold_standard/wavetrend_10_21_4.json")
+            manifest_path
+                .parent()
+                .unwrap()
+                .join("tests/gold_standard/wavetrend_10_21_4.json")
         };
         let content = fs::read_to_string(path).unwrap();
         let case: WaveTrendCase = serde_json::from_str(&content).unwrap();
@@ -90,7 +93,12 @@ mod tests {
         }
     }
 
-    fn wavetrend_batch(data: Vec<(f64, f64, f64)>, n1: usize, n2: usize, n3: usize) -> Vec<(f64, f64)> {
+    fn wavetrend_batch(
+        data: Vec<(f64, f64, f64)>,
+        n1: usize,
+        n2: usize,
+        n3: usize,
+    ) -> Vec<(f64, f64)> {
         let mut wt = WaveTrend::new(n1, n2, n3);
         data.into_iter().map(|x| wt.next(x)).collect()
     }
@@ -107,7 +115,7 @@ mod tests {
                 let low = l_f.min(h_f).min(c_f);
                 adj_input.push((high, low, c_f));
             }
-            
+
             let n1 = 10;
             let n2 = 21;
             let n3 = 4;
@@ -118,7 +126,7 @@ mod tests {
             }
 
             let batch_results = wavetrend_batch(adj_input, n1, n2, n3);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-6);
                 approx::assert_relative_eq!(s.1, b.1, epsilon = 1e-6);
@@ -129,7 +137,7 @@ mod tests {
     #[test]
     fn test_wavetrend_basic() {
         let mut wt = WaveTrend::new(10, 21, 4);
-        
+
         // Feed some dummy data
         for i in 0..50 {
             let val = 100.0 + (i as f64).sin() * 5.0;
@@ -142,13 +150,20 @@ mod tests {
     }
 }
 
-
 pub const WAVETREND_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "WaveTrend Oscillator",
     description: "WaveTrend is an oscillator that helps identify overbought and oversold conditions.",
     params: &[
-        ParamDef { name: "n1", default: "10", description: "Channel Length" },
-        ParamDef { name: "n2", default: "21", description: "Average Length" },
+        ParamDef {
+            name: "n1",
+            default: "10",
+            description: "Channel Length",
+        },
+        ParamDef {
+            name: "n2",
+            default: "21",
+            description: "Average Length",
+        },
     ],
     formula_source: "https://www.tradingview.com/script/2KE8wTuF-Indicator-WaveTrend-Oscillator-WT/",
     formula_latex: r#"

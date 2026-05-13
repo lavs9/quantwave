@@ -29,7 +29,12 @@ macro_rules! talib_cdl {
                 self.history_high.push(high);
                 self.history_low.push(low);
                 self.history_close.push(close);
-                if let Ok(res) = $talib_func(&self.history_open, &self.history_high, &self.history_low, &self.history_close) {
+                if let Ok(res) = $talib_func(
+                    &self.history_open,
+                    &self.history_high,
+                    &self.history_low,
+                    &self.history_close,
+                ) {
                     *res.last().unwrap_or(&0) as f64
                 } else {
                     0.0

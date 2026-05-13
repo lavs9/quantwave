@@ -1,0 +1,148 @@
+        CORRELATION AS A TREND INDICATOR
+        By John F. Ehlers
+
+While straightforward, I have not seen a description of using correlation directly as an
+indicator. Just imagine correlating prices with a straight line having a positive slope. If
+the price trend is up, the correlation is nearly +1. If the price trend is down, there is
+anticorrelation and the correlation is nearly -1. If the price trend is sideways, or if prices
+are oscillating, there is no correlation over the span of the correlation period. These
+conditions pretty much describe an ideal trend indicator. The indicator output is even
+limited in its range between -1 and +1, so it can be applied universally to any security
+symbol.
+
+If the correlation period is shortened to be approximately a half cycle length, then the
+correlation indicator can also be used to extract the cyclic component. This is because
+the correlation is positive during the upswing part of the cycle and is negative during the
+downswing part. However, similar to a moving average, the lag of a correlation indicator
+is approximately half the correlation length. So, if the correlation length is half of a cycle
+period, the lag will be at least a quarter of cycle. In the case of band limited signals, this
+lag can be mitigated by using the rate of change of the correlation as being the real
+indicator, but there are other cycle indicators that work better.
+
+The correlation trend indicator can be adjusted to accommodate the expected trade
+holding period. For example, if you want to hold a trade for about a month you could
+use a 20 bar correlation period. If your expected holding period is on the order of a
+quarter year you could use a 40 to 60 bar correlation period. Since the lag of the
+correlation indicator is approximately half the correlation period, a trader could identify
+the onset of a trend with a shorter correlation period and then extend the correlation
+period as the trend develops. Correspondingly, a trader could detect the failure of the
+trend sooner by decreasing the correlation period.
+
+Figure 1 shows the Correlation Trend Indicator with a 20 bar correlation period applied
+to approximately one year’s worth of daily data on SPY. The action of the indicator is
+self-explanatory. The indicator can be further smoothed by using a 40 bar correlation
+period as shown in Figure 2. While the indicator is smoother than in Figure 1, the
+increased lag is apparent. The lag can be reduced to 10 bars or less for the decision
+regarding the onset or failure of the trend. The shorter correlation period response is
+shown in Figure 3.
+
+  SPY(D)- Daily ARCX L=314.93 0.85 0.27% B=314.93   A=314.94  0=314.61 Hi=315.01 Lo=314.37 V=21,734,679      314.97
+                                                                                                             310.00
+                        ema      ad                                                                          300.00
+                        Roy                                1at        Ve                                     290.00
+    "                   —              v      LAL                                                            280.00
+  rh                 nt                                                                                      270.00
+      y  pe                                                                                                  260.00
+      [                                                                                                      250.00
+                                                                                                             240.00
+
+  1 Correlation 20  0.94 0.00                                                                                0.94
+
+                                                                                                             0.60
+
+                                                                                                             0.00
+
+                                                                                                             -0.60
+
+      '    19       Feb    Mar                          "aun      Jul      '        Nov
+  Figure 1.     Trends Are Clearly Identified Using a 20 bar Correlation Period
+
+  SPY(D)- Daily ARCX   L=314.98 0.90 0.29% B=314.97 A=314.98  0=314.61 Hi=315.01 Lo=314.37 V=21,989,307  a   314.98
+                                                                                                             310.00
+
+
+
+
+290.00
+pry  LF  PCaSey TIC[J AyWe  300.00
+rh  5  v  280.00
+270.00
+
+4  y₁ ot  260.00
+250.00
+
+240.00
+
+! Correlation 40  0.98 0.00  0.98
+10.60
+
+0.00
+
+
+
+
+      '    19       Feb    Mar    "aun     Jul      '        Nov
+  Figure 2. The Correlation Trend Indicator is Smoother Using a 40 bar Correlation Period
+
+    SPY(D)- Daily   ARCX    L=314.94 0.87 0.28% B=314.94 A=314.95 0-314.61 Hi=315.01    Lo=314.37 V=21,650,127  lem
+                             sey                                               ad                                =
+                                                                                                               300.00
+                                                                                                                 on
+    I                    td                              CREE)    id       HWLf                                280.00
+                                                                                                               270.00
+                       a                                                                                       260.00
+                                                                                                               250.00
+                                                                                                               240.00
+    1    Correlation 10  0.73 0.00
+
+         \   /                        J        \        /    |             \       J        J                [os
+         '   19   '      'Feb     Mar                   '  Jun    Jul          '        '
+    Figure 3.         Trend Onsets and Failures Are More Quickly Identified Using a 10 bar
+    Correlation Period
+
+The EasyLanguage code for the Correlation Trend Indicator is given in Code Listing 1.
+The indicator is a Spearman Correlation of closing prices against a straight line with a
+positive slope. That straight line is created at the variable Y. It has a negative value in
+the code because the counting in the code goes backwards in time, i.e. from right to left.
+The rest of the code is almost directly out of a textbook.
+
+    Code Listing 1.          EasyLanguage Code for the Correlation Trend Indicator
+    {
+            Correlation Trend Indicator
+            (c) 2013-2019     John F. Ehlers
+    }
+
+    Inputs:
+                  Length(20);
+
+    Vars:
+                  Sx(0),
+                  Sy(0),
+                  Sxx(0),
+                  Sxy(0),
+                  Syy(0),
+                  count(0),
+                  X(0),
+                  Y(0),
+                  Corr(0);
+
+    Sx = 0;
+
+Sy = 0;
+Sxx = 0;
+Sxy = 0;
+Syy = 0;
+For count = 0 to Length - 1 Begin
+    X = Close[count];
+    Y = -count;
+    Sx = Sx + X;
+    Sy = Sy + Y;
+    Sxx = Sxx + X*X;
+    Sxy = Sxy + X*Y;
+    Syy = Syy + Y*Y;
+End;
+If (Length*Sxx - Sx*Sx > 0) and (Length*Syy - Sy*Sy > 0) Then Corr = (Length*Sxy
+- Sx*Sy) / SquareRoot((Length*Sxx - Sx*Sx)*(Length*Syy - Sy*Sy));
+
+Plot1(Corr);
+Plot2(0);

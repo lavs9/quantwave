@@ -13,16 +13,23 @@ pub struct TestCase {
 pub fn load_gold_standard(name: &str) -> TestCase {
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set");
     let manifest_path = Path::new(&manifest_dir);
-    
+
     // Try current dir, then parent (workspace root)
-    let path = manifest_path.join("tests/gold_standard").join(format!("{}.json", name));
+    let path = manifest_path
+        .join("tests/gold_standard")
+        .join(format!("{}.json", name));
     let path = if path.exists() {
         path
     } else {
-        manifest_path.parent().unwrap().join("tests/gold_standard").join(format!("{}.json", name))
+        manifest_path
+            .parent()
+            .unwrap()
+            .join("tests/gold_standard")
+            .join(format!("{}.json", name))
     };
 
-    let content = fs::read_to_string(&path).expect(&format!("Failed to read gold standard file at {:?}", path));
+    let content = fs::read_to_string(&path)
+        .expect(&format!("Failed to read gold standard file at {:?}", path));
     serde_json::from_str(&content).expect("Failed to parse gold standard JSON")
 }
 
@@ -51,7 +58,11 @@ where
         streaming_results.push(indicator.next(val));
     }
 
-    for (_i, (&s, &b)) in streaming_results.iter().zip(batch_results.iter()).enumerate() {
+    for (_i, (&s, &b)) in streaming_results
+        .iter()
+        .zip(batch_results.iter())
+        .enumerate()
+    {
         approx::assert_relative_eq!(s, b, epsilon = 1e-6, max_relative = 1e-6);
     }
 }

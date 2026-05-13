@@ -1,12 +1,12 @@
-use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
-use crate::indicators::ultimate_smoother::UltimateSmoother;
 use crate::indicators::math::RMS;
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
+use crate::indicators::ultimate_smoother::UltimateSmoother;
+use crate::traits::Next;
 
 /// Laguerre Oscillator
-/// 
+///
 /// Based on John Ehlers' "Laguerre Filters" (TASC July 2025).
-/// The Laguerre Oscillator is a low-lag trend indicator where values above zero 
+/// The Laguerre Oscillator is a low-lag trend indicator where values above zero
 /// generally correspond to upward movement and values below zero to downward movement.
 #[derive(Debug, Clone)]
 pub struct LaguerreOscillator {
@@ -47,15 +47,11 @@ impl Next<f64> for LaguerreOscillator {
 
         // L1 = -Gama * L0 + L0[1] + Gama * L1[1];
         let next_l1 = -self.gamma * l0 + self.prev_l0 + self.gamma * self.l1;
-        
+
         let diff = l0 - next_l1;
         let rms_val = self.rms.next(diff);
 
-        let res = if rms_val != 0.0 {
-            diff / rms_val
-        } else {
-            0.0
-        };
+        let res = if rms_val != 0.0 { diff / rms_val } else { 0.0 };
 
         self.l1 = next_l1;
         self.prev_l0 = l0;
@@ -68,9 +64,21 @@ pub const LAGUERRE_OSCILLATOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Laguerre Oscillator",
     description: "A low-lag trend oscillator derived from Laguerre polynomials and normalized by RMS volatility.",
     params: &[
-        ParamDef { name: "length", default: "30", description: "UltimateSmoother period" },
-        ParamDef { name: "gamma", default: "0.5", description: "Smoothing factor" },
-        ParamDef { name: "rms_period", default: "100", description: "RMS normalization period" },
+        ParamDef {
+            name: "length",
+            default: "30",
+            description: "UltimateSmoother period",
+        },
+        ParamDef {
+            name: "gamma",
+            default: "0.5",
+            description: "Smoothing factor",
+        },
+        ParamDef {
+            name: "rms_period",
+            default: "100",
+            description: "RMS normalization period",
+        },
     ],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/traderstipsreference/TRADERS%E2%80%99%20TIPS%20-%20JULY%202025.html",
     formula_latex: r#"
@@ -117,15 +125,15 @@ mod tests {
             let rms_period = 100;
             let mut lo = LaguerreOscillator::new(length, gamma, rms_period);
             let streaming_results: Vec<f64> = inputs.iter().map(|&x| lo.next(x)).collect();
-            
+
             // Reference implementation
             let mut us = UltimateSmoother::new(length);
             let l0_vals: Vec<f64> = inputs.iter().map(|&x| us.next(x)).collect();
-            
+
             let mut batch_results = Vec::with_capacity(inputs.len());
             let mut l1 = 0.0;
             let mut diffs = Vec::new();
-            
+
             for (i, &l0) in l0_vals.iter().enumerate() {
                 if i == 0 {
                     l1 = l0;
@@ -136,17 +144,17 @@ mod tests {
                     l1 = -gamma * l0 + prev_l0 + gamma * l1;
                     let diff = l0 - l1;
                     diffs.push(diff);
-                    
+
                     let start = if diffs.len() > rms_period { diffs.len() - rms_period } else { 0 };
                     let window = &diffs[start..];
                     let sum_sq: f64 = window.iter().map(|&x| x*x).sum();
                     let rms = (sum_sq / window.len() as f64).sqrt();
-                    
+
                     let res = if rms != 0.0 { diff / rms } else { 0.0 };
                     batch_results.push(res);
                 }
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-10);
             }

@@ -1,10 +1,10 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
-use crate::indicators::ultimate_smoother::UltimateSmoother;
 use crate::indicators::smoothing::SMA;
+use crate::indicators::ultimate_smoother::UltimateSmoother;
+use crate::traits::Next;
 
 /// Ultimate Strength Index (USI)
-/// 
+///
 /// Based on John Ehlers' article "Ultimate Strength Index (USI)" (TASC November 2024).
 /// An enhanced version of the RSI with significantly reduced lag and smoother response.
 /// It applies the UltimateSmoother to a 4-bar simple moving average of up and down moves.
@@ -70,9 +70,11 @@ impl Next<f64> for USI {
 pub const USI_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Ultimate Strength Index",
     description: "A lag-reduced version of the RSI using UltimateSmoother on smoothed up/down components.",
-    params: &[
-        ParamDef { name: "length", default: "14", description: "UltimateSmoother period" },
-    ],
+    params: &[ParamDef {
+        name: "length",
+        default: "14",
+        description: "UltimateSmoother period",
+    }],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/traderstipsreference/TRADERS%E2%80%99%20TIPS%20-%20NOVEMBER%202024.html",
     formula_latex: r#"
 \[
@@ -120,7 +122,7 @@ mod tests {
             let length = 14;
             let mut usi = USI::new(length);
             let streaming_results: Vec<f64> = inputs.iter().map(|&x| usi.next(x)).collect();
-            
+
             // Reference implementation
             let mut su_sma = SMA::new(4);
             let mut sd_sma = SMA::new(4);
@@ -128,7 +130,7 @@ mod tests {
             let mut usd = UltimateSmoother::new(length);
             let mut last_val = 0.0;
             let mut batch_results = Vec::with_capacity(inputs.len());
-            
+
             for i in 0..inputs.len() {
                 let (su, sd) = if i == 0 {
                     (0.0, 0.0)
@@ -136,20 +138,20 @@ mod tests {
                     let diff = inputs[i] - inputs[i-1];
                     if diff > 0.0 { (diff, 0.0) } else { (0.0, -diff) }
                 };
-                
+
                 let s_val = su_sma.next(su);
                 let d_val = sd_sma.next(sd);
-                
+
                 let u_smooth = usu.next(s_val);
                 let d_smooth = usd.next(d_val);
-                
+
                 let denom = u_smooth + d_smooth;
                 if denom.abs() > 1e-10 && u_smooth.abs() > 1e-12 && d_smooth.abs() > 1e-12 {
                     last_val = (u_smooth - d_smooth) / denom;
                 }
                 batch_results.push(last_val);
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-10);
             }

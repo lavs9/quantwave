@@ -1,10 +1,10 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
-use std::f64::consts::PI;
 use std::collections::VecDeque;
+use std::f64::consts::PI;
 
 /// The DMH: An Improved Directional Movement Indicator
-/// 
+///
 /// Based on John Ehlers' article "The DMH: An Improved Directional Movement Indicator" (TASC Dec 2021).
 /// This indicator modernizes Wilder's Directional Movement by applying Hann windowing to an EMA
 /// of the directional difference, significantly reducing lag and noise compared to the classic ADX/DMI.
@@ -24,12 +24,12 @@ pub struct DMH {
 impl DMH {
     pub fn new(length: usize) -> Self {
         let sf = 1.0 / (length as f64);
-        
+
         // Pre-calculate Hann coefficients
         let mut hann_coeffs = Vec::with_capacity(length);
         let mut sum_coeffs = 0.0;
         let length_plus_1 = (length + 1) as f64;
-        
+
         for i in 1..=length {
             let coef = 1.0 - (2.0 * PI * (i as f64) / length_plus_1).cos();
             hann_coeffs.push(coef);
@@ -60,17 +60,17 @@ impl Next<(f64, f64)> for DMH {
             (Some(ph), Some(pl)) => {
                 let upper_move = high - ph;
                 let lower_move = pl - low;
-                
+
                 let mut p_dm = 0.0;
                 let mut m_dm = 0.0;
-                
+
                 if upper_move > lower_move && upper_move > 0.0 {
                     p_dm = upper_move;
                 } else if lower_move > upper_move && lower_move > 0.0 {
                     m_dm = lower_move;
                 }
                 (p_dm, m_dm)
-            },
+            }
             _ => (0.0, 0.0),
         };
 
@@ -100,13 +100,21 @@ impl Next<(f64, f64)> for DMH {
                 dm_sum += coef * val;
                 partial_sum_coeffs += coef;
             }
-            if partial_sum_coeffs != 0.0 { dm_sum / partial_sum_coeffs } else { 0.0 }
+            if partial_sum_coeffs != 0.0 {
+                dm_sum / partial_sum_coeffs
+            } else {
+                0.0
+            }
         } else {
             let mut dm_sum = 0.0;
             for (i, &val) in self.ema_history.iter().enumerate() {
                 dm_sum += self.hann_coeffs[i] * val;
             }
-            if self.sum_coeffs != 0.0 { dm_sum / self.sum_coeffs } else { 0.0 }
+            if self.sum_coeffs != 0.0 {
+                dm_sum / self.sum_coeffs
+            } else {
+                0.0
+            }
         }
     }
 }
@@ -114,9 +122,11 @@ impl Next<(f64, f64)> for DMH {
 pub const DMH_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "DMH",
     description: "An improved Directional Movement indicator using Hann windowing for smoother signals and reduced lag.",
-    params: &[
-        ParamDef { name: "length", default: "14", description: "Smoothing period" },
-    ],
+    params: &[ParamDef {
+        name: "length",
+        default: "14",
+        description: "Smoothing period",
+    }],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/traderstipsreference/implemented/TRADERS%E2%80%99%20TIPS%20-%20DECEMBER%202021.html",
     formula_latex: r#"
 \[
@@ -171,16 +181,16 @@ mod tests {
                 let l: f64 = lows[i];
                 (h.max(l), h.min(l))
             }).collect();
-            
+
             let length = 14;
             let mut dmh = DMH::new(length);
             let streaming_results: Vec<f64> = inputs.iter().map(|&val| dmh.next(val)).collect();
-            
+
             // Reference implementation
             let mut ema = 0.0;
             let mut ema_hist = Vec::new();
             let mut batch_results = Vec::with_capacity(len);
-            
+
             let sf = 1.0 / length as f64;
             let mut hann_coeffs = Vec::new();
             for i in 1..=length {
@@ -200,31 +210,31 @@ mod tests {
                     else if lm > um && lm > 0.0 { m = lm; }
                     (p, m)
                 };
-                
+
                 let diff = plus_dm - minus_dm;
                 if i == 0 {
                     ema = diff;
                 } else {
                     ema = sf * diff + (1.0 - sf) * ema;
                 }
-                
+
                 ema_hist.push(ema);
-                
+
                 let mut dm_sum = 0.0;
                 let mut cur_sum_coeffs = 0.0;
-                
+
                 let start = if i + 1 > length { i + 1 - length } else { 0 };
                 let window = &ema_hist[start..i+1];
-                
+
                 for (j, &val) in window.iter().rev().enumerate() {
                     let c = hann_coeffs[j];
                     dm_sum += c * val;
                     cur_sum_coeffs += c;
                 }
-                
+
                 batch_results.push(dm_sum / cur_sum_coeffs);
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-10);
             }

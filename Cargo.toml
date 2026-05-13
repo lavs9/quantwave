@@ -26,3 +26,15 @@ rand = "0.8"
 serde_json = "1.0"
 log = "0.4"
 thiserror = "1.0"
+
+[profile.dev]
+opt-level = 0
+debug = 1 # Use line tables only to speed up linking
+codegen-units = 256 # More units = faster compilation, slightly slower code
+incremental = true
+
+[profile.test]
+opt-level = 0
+debug = 1 # Use line tables only to speed up linking
+codegen-units = 256
+incremental = true

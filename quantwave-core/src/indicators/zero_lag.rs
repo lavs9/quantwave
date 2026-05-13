@@ -1,9 +1,9 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::smoothing::EMA;
+use crate::traits::Next;
 
 /// ZeroLag Indicator
-/// 
+///
 /// Based on John Ehlers' "Zero Lag (well, almost)"
 /// The indicator acknowledgement that the EMA filter has an error term: Error = Price - EMA[1].
 /// It introduces this error term into the equation in addition to the value of the new data sample,
@@ -33,7 +33,7 @@ impl Next<f64> for ZeroLag {
 
     fn next(&mut self, input: f64) -> Self::Output {
         let ema_val = self.ema.next(input);
-        
+
         let ec_prev = match self.ec_prev {
             Some(prev) => prev,
             None => {
@@ -44,22 +44,24 @@ impl Next<f64> for ZeroLag {
 
         let mut least_error = f64::MAX;
         let mut best_gain = 0.0;
-        
+
         let gain_limit_steps = (self.gain_limit) as i32;
-        
+
         for i in -gain_limit_steps..=gain_limit_steps {
             let gain = i as f64 / 10.0;
-            let ec = self.alpha * (ema_val + gain * (input - ec_prev)) + (1.0 - self.alpha) * ec_prev;
+            let ec =
+                self.alpha * (ema_val + gain * (input - ec_prev)) + (1.0 - self.alpha) * ec_prev;
             let error = (input - ec).abs();
             if error < least_error {
                 least_error = error;
                 best_gain = gain;
             }
         }
-        
-        let ec = self.alpha * (ema_val + best_gain * (input - ec_prev)) + (1.0 - self.alpha) * ec_prev;
+
+        let ec =
+            self.alpha * (ema_val + best_gain * (input - ec_prev)) + (1.0 - self.alpha) * ec_prev;
         self.ec_prev = Some(ec);
-        
+
         (ec, ema_val)
     }
 }
@@ -68,8 +70,16 @@ pub const ZERO_LAG_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Zero Lag EC",
     description: "Zero Lag Error Corrected EMA attempts to eliminate lag by adding an error term to the EMA.",
     params: &[
-        ParamDef { name: "length", default: "20", description: "Equivalent SMA length" },
-        ParamDef { name: "gain_limit", default: "50.0", description: "Gain limit (divided by 10 for actual gain)" },
+        ParamDef {
+            name: "length",
+            default: "20",
+            description: "Equivalent SMA length",
+        },
+        ParamDef {
+            name: "gain_limit",
+            default: "50.0",
+            description: "Gain limit (divided by 10 for actual gain)",
+        },
     ],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/implemented/ZeroLag.pdf",
     formula_latex: r#"
@@ -113,22 +123,22 @@ mod tests {
             let length = 20;
             let gain_limit = 50.0;
             let mut zl = ZeroLag::new(length, gain_limit);
-            
+
             let streaming_results: Vec<(f64, f64)> = inputs.iter().map(|&x| zl.next(x)).collect();
-            
+
             // Batch implementation
             let mut batch_results = Vec::with_capacity(inputs.len());
             let alpha = 2.0 / (length as f64 + 1.0);
             let mut ema_prev = None;
             let mut ec_prev = None;
-            
+
             for &input in &inputs {
                 let ema = match ema_prev {
                     Some(prev) => alpha * input + (1.0 - alpha) * prev,
                     None => input,
                 };
                 ema_prev = Some(ema);
-                
+
                 let ec = match ec_prev {
                     Some(prev) => {
                         let mut least_err = f64::MAX;
@@ -149,7 +159,7 @@ mod tests {
                 ec_prev = Some(ec);
                 batch_results.push((ec, ema));
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-10);
                 approx::assert_relative_eq!(s.1, b.1, epsilon = 1e-10);

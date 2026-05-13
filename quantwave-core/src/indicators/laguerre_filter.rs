@@ -1,9 +1,9 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::ultimate_smoother::UltimateSmoother;
+use crate::traits::Next;
 
 /// Laguerre Filter
-/// 
+///
 /// Based on John Ehlers' "Laguerre Filters" (TASC July 2025).
 /// This version of the Laguerre Filter uses an UltimateSmoother as the input (L0)
 /// to provide enhanced trend-following characteristics with low lag.
@@ -69,8 +69,16 @@ pub const LAGUERRE_FILTER_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Laguerre Filter",
     description: "A trend-following filter that excels at smoothing long-wavelength components using Laguerre polynomials and an UltimateSmoother base.",
     params: &[
-        ParamDef { name: "length", default: "40", description: "UltimateSmoother period" },
-        ParamDef { name: "gamma", default: "0.8", description: "Smoothing factor (0.0 to 1.0)" },
+        ParamDef {
+            name: "length",
+            default: "40",
+            description: "UltimateSmoother period",
+        },
+        ParamDef {
+            name: "gamma",
+            default: "0.8",
+            description: "Smoothing factor (0.0 to 1.0)",
+        },
     ],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/traderstipsreference/TRADERS%E2%80%99%20TIPS%20-%20JULY%202025.html",
     formula_latex: r#"
@@ -116,18 +124,18 @@ mod tests {
             let gamma = 0.8;
             let mut lf = LaguerreFilter::new(length, gamma);
             let streaming_results: Vec<f64> = inputs.iter().map(|&x| lf.next(x)).collect();
-            
+
             // Reference implementation (simplified)
             let mut us = UltimateSmoother::new(length);
             let l0_vals: Vec<f64> = inputs.iter().map(|&x| us.next(x)).collect();
-            
+
             let mut batch_results = Vec::with_capacity(inputs.len());
             let mut l1 = 0.0;
             let mut l2 = 0.0;
             let mut l3 = 0.0;
             let mut l4 = 0.0;
             let mut l5 = 0.0;
-            
+
             for (i, &l0) in l0_vals.iter().enumerate() {
                 if i == 0 {
                     l1 = l0; l2 = l0; l3 = l0; l4 = l0; l5 = l0;
@@ -140,12 +148,12 @@ mod tests {
                     l3 = -gamma * pl2 + pl2 + gamma * pl3;
                     l4 = -gamma * pl3 + pl3 + gamma * pl4;
                     l5 = -gamma * pl4 + pl4 + gamma * l5;
-                    
+
                     let res = (l0 + 4.0 * l1 + 6.0 * l2 + 4.0 * l3 + l5) / 16.0;
                     batch_results.push(res);
                 }
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-10);
             }

@@ -2,7 +2,7 @@ use crate::indicators::metadata::IndicatorMetadata;
 use crate::traits::Next;
 
 /// Standard Pivot Points
-/// Uses the High, Low, and Close of the previous period to calculate 
+/// Uses the High, Low, and Close of the previous period to calculate
 /// the current period's Support and Resistance levels.
 /// Output: (P, R1, S1, R2, S2)
 #[derive(Debug, Clone, Default)]
@@ -45,10 +45,10 @@ impl Next<(f64, f64, f64)> for PivotPoints {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
     use serde::Deserialize;
     use std::fs;
     use std::path::Path;
-    use proptest::prelude::*;
 
     #[derive(Debug, Deserialize)]
     struct PivotCase {
@@ -70,7 +70,10 @@ mod tests {
         let path = if path.exists() {
             path
         } else {
-            manifest_path.parent().unwrap().join("tests/gold_standard/pivot_points.json")
+            manifest_path
+                .parent()
+                .unwrap()
+                .join("tests/gold_standard/pivot_points.json")
         };
         let content = fs::read_to_string(path).unwrap();
         let case: PivotCase = serde_json::from_str(&content).unwrap();
@@ -103,7 +106,7 @@ mod tests {
                 let low = l_f.min(h_f).min(c_f);
                 adj_input.push((high, low, c_f));
             }
-            
+
             let mut pivot = PivotPoints::new();
             let mut streaming_results = Vec::with_capacity(adj_input.len());
             for &val in &adj_input {
@@ -111,7 +114,7 @@ mod tests {
             }
 
             let batch_results = pivot_batch(adj_input);
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-6);
                 approx::assert_relative_eq!(s.1, b.1, epsilon = 1e-6);
@@ -136,12 +139,10 @@ mod tests {
     }
 }
 
-
 pub const PIVOT_POINTS_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Pivot Points",
     description: "Pivot Points are used to determine overall trend over different time frames.",
-    params: &[
-    ],
+    params: &[],
     formula_source: "https://www.investopedia.com/terms/p/pivotpoint.asp",
     formula_latex: r#"
 \[
