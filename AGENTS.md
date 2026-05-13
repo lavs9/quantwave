@@ -18,7 +18,7 @@ The project is structured as a Rust workspace to maximize modularity and perform
 
 ### Key Commands
 - **Build All**: `cargo build`
-- **Test All**: `cargo test`
+- **Test All**: `cargo nextest run` (MANDATORY: Use nextest only)
 - **Run Benchmarks**: `cargo bench`
 - **Check Linting**: `cargo clippy`
 
@@ -29,7 +29,8 @@ Every indicator must implement the `Next<Input>` trait. This single source of ma
 
 ### 2. Parity & Validation
 - **Streaming-Batch Parity**: Every indicator must have a `proptest` that asserts `Batch(data) == Streaming.collect(data)` using `approx` tolerances.
-- **Gold Standard**: Reference data is stored in `tests/gold_standard/*.json`. All implementations must match these industry-standard vectors.
+- **Gold Standard**: Reference data is stored in `quantwave-core/tests/gold_standard/*.json`. All implementations must match these industry-standard vectors.
+- **Tests Location**: ALL integration tests and gold standard files MUST reside in `quantwave-core/tests/`. Root-level `tests/` folders are prohibited.
 - SOURCE of calculation for all indicators must be recorded. IF you do not have a source do not assume, validate with the human before assuming the source. Research and give options for source.
 
 ### Indicator Formula References
@@ -123,9 +124,10 @@ bd close bd-42 --reason "Completed" --json
 1. **Check ready work**: `bd ready` shows unblocked issues
 2. **Claim your task atomically**: `bd update <id> --claim`
 3. **Work on it**: Implement, test, document
-4. **Discover new work?** Create linked issue:
+4. **Reference Management**: When a task is completed, move the source paper/documentation from the original folder to the `implemented/` subfolder (e.g., `references/Ehlers Papers/implemented/`).
+5. **Discover new work?** Create linked issue:
    - `bd create "Found bug" --description="Details about what was found" -p 1 --deps discovered-from:<parent-id>`
-5. **Complete**: `bd close <id> --reason "Done"`
+6. **Complete**: `bd close <id> --reason "Done"`
 
 ### Auto-Sync
 
