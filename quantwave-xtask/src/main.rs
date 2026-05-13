@@ -19,6 +19,16 @@ fn main() -> Result<()> {
     println!("Docs Dir: {:?}", docs_dir);
     println!("Indicators Dir: {:?}", indicators_dir);
 
+    if !workspace_root.exists() {
+        return Err(anyhow::anyhow!("Workspace root does not exist: {:?}", workspace_root));
+    }
+    if !docs_dir.exists() {
+        return Err(anyhow::anyhow!("Docs directory does not exist: {:?}. Make sure you are running from the workspace root.", docs_dir));
+    }
+    if !indicators_dir.exists() {
+        return Err(anyhow::anyhow!("Indicators directory does not exist: {:?}", indicators_dir));
+    }
+
     fs::create_dir_all(&docs_dir.join("indicators/native")).context("Failed to create indicators/native directory")?;
     fs::create_dir_all(&docs_dir.join("indicators/talib")).context("Failed to create indicators/talib directory")?;
 
