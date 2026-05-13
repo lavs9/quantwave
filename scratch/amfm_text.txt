@@ -1,0 +1,296 @@
+        A TECHNICAL DESCRIPTION OF MARKET DATA FOR TRADERS
+        By John Ehlers
+
+Most traders consider market data to be a continuous function. It is further assumed
+that smoothing this function with averages or squiggly line indicators will create patterns
+or conditions that are useful for predicting future market direction. These assumptions
+are very wrong on many levels.
+
+First of all, market data is a nonstationary random process.¹ Basically this means that
+whatever pattern you are observing, you will never see that pattern again. The process
+can be formulated as the classic Drunkards Walk problem. The results are partial
+differential equations called the Diffusion Equation or the Telegraphers Equation,
+depending on the selection of the random variable.² There is no direct solution to these
+equations because they are boundary value problems, and the boundaries cannot be
+defined for market data.
+
+Secondly, market data has a pink noise spectrum.³ Just like light waves, the term
+spectrum means that the data are comprised of cycle components having a wide range
+of frequencies, or periods. The colors of the spectrum comprise white light. The pink
+noise spectrum of market data means that the longer cycle periods have a greater
+amplitude. Without arguing about details, we can use the assumption that market data
+cycle amplitudes are in direct proportion to their cycle periods as a workable hypothesis.
+For example, if you look at a chart of daily data it is not easily discernable from a chart
+of weekly data if you remove the labels. This being the case, since the horizontal time
+scale varies 5:1, then it necessarily follows that the vertical amplitude scale must also
+vary in the ratio 5:1. Therefore cycle amplitudes statistically increase at the rate of 6 dB
+per octave. It must be noted that noise does not necessarily mean chaos. The cycles in
+market data can very well contain information. For example, pink noise implies memory
+in the data.
+
+Most of all, since the data is comprised of cycle components, the question is whether
+these components combine in the form of AM (amplitude modulation) or FM (frequency
+modulation). The modulation characteristics of market data can be determined by direct
+measurement.
+
+
+    MARKET DATA SPECTRUM
+
+    A high resolution estimate of the spectrum of market data can be made using the MESA
+    (Maximum Entropy Spectral Analysis) program. The MESA display of the spectrum of SPY
+    over the last year and a half is shown in Figure 1.     The spectrum display is a heatmap
+
+    1 https://www.investopedia.com/articles/trading/07/stationary.asp
+    2 http://www.mesasoftware.com/ehlers_cycles_tutorial.htm
+    3 https://en.wikipedia.org/wiki/Pink_noise
+
+    that is synchronous with the candlestick chart above it.   The period of the spectrum is
+    scaled from a 12 bar cycle period to a 54 cycle period in the vertical dimension.    The
+     intensity of the spectral components range from white hot, through red hot, to ice cold
+    in black. A single fixed period cycle would be depicted as a horizontal yellow line.
+
+    Clearly, market data does not contain a fixed cycle.   There is a strong tendency for an
+      approximately monthly 20 bar cycle period to be the dominant cycle. However, there are
+         other significant components, some appearing simultaneously with the monthly cycle.
+    There is also a strong tendency for the measured dominant cycle period to change rapidly
+    from bar to bar, analogous to a “chirp” in the audio range.
+
+        A
+                                   |                                                      as
+        oA                         oi Ww     i Lt
+                                                                                           =
+    Ayhi     3  WW a wt     |      A     i                                              2000
+        J                   0      ETF!
+
+                               1    |
+                               1                                                       240.0
+                                   |
+
+
+
+
+ Figure 1. MESA Spectrum for SPY
+
+Even with all the variations of a nonstationary random process the dominant cycles are
+easily identified by observation. Therefore, MESA has identified market data as a narrow
+band random process. A narrow band process is one where the width of a region of the
+spectral density is small compared with the center period of that region. Such a process
+can be mathematically modelled in the form:
+
+S(t) = A(t)*Sine(t + (t))
+
+In this expression A(t) is a time-variable function amplitude modulating the Sine wave.
+In other words, it is Amplitude Modulating (AM) a carrier waveform. The constant angular
+frequency of the carrier waveform Sine wave is . (t) is a time variable phase term
+that is phase modulating the constant angular frequency, making the net frequency
+variable with time. Phase modulation is fundamentally the same as frequency modulation
+(FM) since frequency is just the rate-change of phase.
+
+    We continue our study of the market data structure by analyzing the AM and FM
+    components of the narrow band nonstationary random process.
+
+
+AMPLITUDE MODULATION COMPONENT ANALYSIS
+
+We start our analysis by taking the one bar difference of the market data. This is
+analogous to taking the derivative of a continuous function in the calculus. This action
+has two major results; it places a zero in the transfer response and it whitens the pink
+noise spectrum. The zero is easy to understand because the value of the data is the
+same for the current bar and the previous bar at zero frequency. Now, consider moving
+away from zero frequency by a very, very small amount, e. Then the output of the
+difference can be expressed as:
+       Output = (1 + e) – 1 = e
+In other words, the output of the difference grows in direct proportion to its distance
+from zero frequency. Reversing the direction, that means the amplitude falls off at the
+rate of 6 dB per octave. Since the transfer response of the difference falls off at the rate
+of 6 dB per octave and since the data intensity of the pink noise spectrum increases at
+the rate of 6 dB per octave, the net effect of taking the difference whitens the spectrum.
+That is, the spectrum is now effectively white noise, and we can therefore see the shorter
+wavelength components more clearly.
+
+Figure 2 shows the signal of the whitened spectrum in the first subgraph. This is the
+classic picture of an Amplitude Modulated (AM) waveform. That is, the amplitude swings
+of both the positive and negative alternations are in proportion to the modulation
+waveform. In this case, an eyeball correlation allows me to assert that the AM is due to
+volatility. In fact, we can get a true measure of volatility by performing AM detection of
+this signal.
+
+AM detection is done by rectifying the carrier and recovering the envelopes of the
+amplitudes of the resulting peak swings. In code, this is done by taking the absolute
+value of the waveform and estimating the envelope by the largest amplitude over the last
+few samples. With reference to Code Listing 1, the derivative is the Close – Open because
+this is basically the same as Close – Close[1], particularly for intraday data. Plus, it has
+the added benefit of automatically removing gap openings for intraday data. The phase
+information is stripped from the rectified waveform by using only the highest value over
+the last four bars. The resulting envelope is lightly smoothed to form the Volatility
+indicator.
+
+The volatility indicator is shown in the lower subgraph in Figure 3. It compares favorably
+with an indicator constructed from the smoothed values of High – Low.
+
+                   A
+                   ra |                  - o
+REYlg          Wier  SY Bz i|      N     ed
+end,ⁱ    ooe   Wa           | |  |       ea
+    \                         |(Hl       260.04
+
+
+
+
+
+
+
+
+
+Figure 2. Signal of Whitened Spectrum is an Amplitude Modulated Waveform
+
+
+
+Code Listing 1.  AM Detector
+{
+ AM Detector
+ (C) 2020     John F. Ehlers
+}
+
+Vars:
+     Deriv(0),
+     Envel(0),
+     Volatil(0);
+
+Deriv = Close - Open;
+
+Envel = Highest(AbsValue(Deriv), 4);
+
+Volatil = Average(Envel, 8);
+
+Plot1(Volatil);
+Plot2(0);
+
+    RC Sa    Ge
+                                     =
+
+        x1     x  Woy
+
+                                    oe
+    re  Md,\ a,iF    1Ini /abil    sof
+                                   vod
+
+
+
+
+
+
+
+
+
+
+    Figure 3. Volatility is recovered from the AM of the Nonstationary Random Process
+
+
+FREQUENCY MODULATION COMPONENT ANALYSIS
+
+Classical FM detection techniques are used to extract the frequency modulating, or phase
+modulating, components of the narrow band nonstationary random process. In addition
+to its other functions, the derivative is also a phase detector because it is a Finite Impulse
+Response (FIR) difference filter having a linear phase shift across the entire signal
+spectrum.
+
+With reference to Code Listing 2, amplitude information is stripped from the whitened
+spectrum signal by running it through a hard limiter. The results of the hard limiter are
+shown in Figure 4.
+
+The final step of creating a FM Demodulator indicator is to integrate the amplitude limited
+waveform in a SuperSmoother⁴ filter. Figure 5 shows that the FM Demodulator Indicator
+accurately tracks timing of price variations. For example, you can correlate major swings
+in the price chart with peaks and valleys of the indicator in the subgraph.
+
+
+
+
+
+
+
+
+    4 John F. Ehlers, “Cycle Analytics for Traders”, John Wiley & Sons, 2013
+
+                                                                                      PR
+
+I po   \oA           ns wv        14               iW
+            wil,     Fah
+            \    aof    p                      J₁                                  20004
+                                               |hit                                2s00q
+
+                     OS                            11
+RA|                  BIR                       LD LL   I  LL “os
+Figure 4.   The Hard Limiter Removes All Amplitude Information from the Whitened
+Spectrum
+
+Code Listing 2.  FM Demodulator Indicator
+{
+     FM Demodulator Indicator
+     (C) 2013-2020   John F. Ehlers
+}
+
+Inputs:
+      Period(30);
+
+Vars:
+      Deriv(0), HL(0),
+      a1(0), b1(0), c1(0), c2(0), c3(0), SS(0);
+
+//Derivative to establish zero mean (Basically the same as Close - Close[1], but removes
+intraday gap openings)
+Deriv = Close - Open;
+
+//Hard limiter to remove AM noise
+HL = 10*Deriv;
+If HL > 1 Then HL = 1;
+If HL < -1 Then HL = -1;
+
+//Integrate with a SuperSmoother
+a1 = expvalue(-1.414*3.14159 / Period);
+
+    b1 = 2*a1*Cosine(1.414*180 / Period);
+    c2 = b1;
+    c3 = -a1*a1;
+    c1 = 1 - c2 - c3;
+    SS = c1*(HL + HL[1]) / 2 + c2*SS[1] + c3*SS[2];
+    If Currentbar < 3 Then SS = Deriv;
+
+    Plot1(SS);
+    Plot2(0);
+
+
+    TT            WT           Veer
+                                     ve    \wif\
+                           WD) B A    |    AW     =
+    As            art      wee   Js        Th
+        "wi,  i
+        \                      Ih1                26004
+
+                               I
+    NT        ive     /\   po        NA
+        PA Ap fog
+                               A
+        \                                         as
+
+
+Figure 5. The FM Demodulator Indicator Accurately Tracks the Timing of Price
+Variations
+
+
+CONCLUSIONS
+
+Entire books have been written about the pink noise spectral shape of market data. The
+fact that longer cycle periods have greater amplitude swings is an effect that I call
+Spectral Dilation. But, just because it is called noise, it does not mean that the cyclic
+components do not carry information. I showed by direct measurement using the MESA
+spectrum estimator that the data is a nonstationary narrow band random process, and
+therefore can be accurately modeled with AM and FM components. The AM components
+represent market volatility. The FM components contain market timing information.
+
+Since many, if not most, technical indicators contain a mish-mash of AM and FM
+components and/or disregard the consequences of Spectral Dilation, these indicators are
+
+distorted or give inaccurate timing signals. A careful review of the indicators you use is
+recommended.

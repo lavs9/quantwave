@@ -1,0 +1,404 @@
+     Predictive Indicators
+for Effective Trading Strategies
+         By John Ehlers
+
+    INTRODUCTION
+
+
+Technical traders understand that indicators need to smooth market data to be useful,
+and that smoothing introduces lag as an unwanted side-effect. We also know that the
+market is fractal; a weekly interval chart looks just like a monthly, daily, or intraday
+chart. What may not be quite as obvious is that as the time interval along the x-axis
+increases, the high-to-low price swings along the y-axis also increase, roughly in
+proportion. This “spectral dilatation” phenomena causes an undesirable distortion, one
+that has either not been recognized or has been largely ignored by indicator developers
+and market technicians.
+
+So, we have two challenges to address. 1) How to best smooth the data, and 2) how
+the fractal nature of the market distorts indicator interpretation.
+
+To address the smoothing problems I will show you a stunning new filter from my
+aerospace analog filter design experience translated to a digital filter useful for traders.
+To address the mitigating the effects of the fractal structure of the market I will show
+you the effects of a new filter seldom used in trading. By removing the noise and the
+indicator distortion I will then show you the core concept of getting consistent short
+term trading winners.
+
+MARKET DATA STRUCTURE
+
+There have been many academic studies about the market data structure. Figure 1
+captures the significant factors found in these studies. The horizontal axis is in terms of
+frequency, so that a frequency of 10⁻¹ means a cycle having a 10 bar period and a
+frequency of 10⁻² means a cycle having a 100 bar period, etc. The vertical scale is the
+power in the wave.
+
+Aliasing noise has the largest amplitude at the higher frequencies (i.e. the shortest
+cycle periods). This is the noise that must be removed by smoothing.
+
+Starting at periods somewhat shorter than a 10 bar cycle, a longer wave has more
+power in it than a shorter wave, which means the wave amplitude is larger for the
+longer wave. I call the shape of this Wave Amplitude versus frequency Spectral
+Dilation.
+
+Spectral Dilation increases at the rate of approximately 6 dB per octave. This means
+that each time the cycle period is doubled, the wave amplitude in that longer wave is
+also doubled.
+
+Although I knew about Spectral Dilation I was shocked to find that the phenomenon
+exists all the way down to shorter cycle periods – even below a 10 bar cycle period. At
+this point Spectral Dilation intercepts the aliasing noise resulting from using sampled
+
+data. If we just want to eliminate Aliasing noise, we do not need a smoothing filter
+longer than a 10 bar cycle period. In fact, using a smoothing filter longer than 10 bars
+attenuates the data we are trying to use in trading.
+
+
+
+    S(£)
+
+    10°    iasing
+
+
+    \)
+
+    10%
+Spectral
+Dilation
+
+
+    10?
+
+
+
+
+              1                 -  £
+              107% 107° 107% 107?
+
+    Figure 1. Market Data Contains Both Aliasing Noise and Spectral Dilation
+
+
+SMOOTHING FILTERS
+
+Most traders use a moving average for smoothing. The problem is that a moving
+average is just not a very efficient filter. In order to get the amount of smoothing
+desired, the moving average length must be made longer. But making the average
+length longer also causes more lag, with the result that the smoothed trading signals
+are not timely for a good trade. I have compared a 10 bar Exponential Moving Average
+(EMA) with my SuperSmoother filter set to a critical period of 10 bars for an apples-to-
+apples comparison in Figure 2. The horizontal scale is in terms of frequency, so that
+0.1 corresponds to a 10 bar cycle period and .5 corresponds to a 2 bar cycle period.
+0.5 is called the Nyquist frequency, and is the highest possible frequency component
+using daily sampled data.
+
+The EMA only reduces the amplitude at the Nyquist frequency by 13 dB. On the other
+hand, the SuperSmoother filter theoretically completely eliminates components at the
+
+    Nyquist Frequency. The added benefit is that the SuperSmoother filter has significantly
+    less lag than the EMA.
+
+        10 Bar EMA        10 Bar SuperSmoother
+
+        =
+      5      a        5
+    “10                              0    We
+     in        Only 13 dB Rejection g*
+                                    ia
+                                         Re.
+     30                              2        A
+      3                                            N
+        a                                03%  04   045 05
+
+    Figure 2. An EMA Has Only Modest Noise Attenuation While a SuperSmoother Virtually
+    Eliminates Aliasing Noise
+
+
+Code Listing 1 gives the EasyLanguage code to compute the Super Smoother filter. The
+a1 and b1 variables are computed for the 10 bar critical period. These are then used to
+compute the c1, c2, and c2 coefficients of the filter. If the reader is translating to
+another computer language, please note that the trigonometric arguments are in
+degrees whereas they are in radians in most other languages. Also please note the
+notation [N] is the value of that variable “N” bars ago.
+
+    Code Listing 1.  EasyLanguage Code to Compute the SuperSmoother Filter
+    {
+         SuperSmoother filter
+         © 2013      John F. Ehlers
+    }
+    Vars:
+         a1(0),
+         b1(0),
+         c1(0),
+         c2(0),
+         c3(0),
+         Filt(0);
+    a1 = expvalue(-1.414*3.14159 / BandEdge);
+    b1 = 2*a1*Cosine(1.414*180 / BandEdge);
+    c2 = b1;
+    c3 = -a1*a1;
+    c1 = 1 - c2 - c3;
+    Filt = c1*(Close + Close[1]) / 2 + c2*Filt[1] + c3*Filt[2];
+
+    Plot1(Filt);
+
+Having solved the problem of dealing with Aliasing Noise, we can now turn our
+attention to Spectral Dilation.
+
+SPECTRAL DILATION
+
+Most trading oscillators and “detrenders” perform basically the same way as a one pole
+HighPass filter because they only have one difference term in their calculation. For
+example, the difference term of a Stochastic Indicator subtracts the lowest closing price
+over the length of the indicator from the current closing price. The result of performing
+as a one pole HighPass filter is that the attenuation scales as 6 dB per octave for
+frequency components smaller than the critical frequency.
+
+But if Spectral Dilation is increasing the amplitude at the rate of 6 dB per octave and
+the oscillator is reducing the amplitude due to filtering at the rate of 6 dB per octave,
+the net result is that the longer period waves are not filtered out. The only effect of the
+single pole filter (or conventional indicator) is to flatten and equalize the Spectral
+Density. Figure 3 shows the output of a single pole HighPass filter that is smoother
+with a SuperSmoother.
+
+        I ht fr a
+        aPaᴵ Ma, j WY
+tog oi 47 680
+
+
+
+
+
+Figure 3. A Single Pole HighPass Filter (or Oscillator) Does Not Remove Low Frequency
+Components, Resulting in the Output Failing to Have a Zero Mean
+
+If the high pass filter complexity is increased to a two pole HighPass filter, then the
+filter response increases to 12 dB per octave, enabling the effects of Spectral Dilation to
+be removed. The result of using the two pole HighPass filter is compared to the
+response of the original one pole HighPass filter in Figure 4.
+
+The original one pole HighPass filter output is shown as the red dashed line and the two
+pole HighPass filter output shows the effects of Spectral Dilation have been removed.
+Now the output has a zero mean, allowing for a more accurate assessment of the
+turning points without the distortion of the long period offsets. In addition the
+waveform generally has less lag when longer wave components are removed.
+
+         [i|    uhJ a
+                    a
+
+    adeˡˡ          an
+                    -
+    Ba    ay
+    bed
+
+
+
+
+
+
+Figure 4. A Two Pole HighPass Filter Removes the Effects of Spectral Dilation. This
+Gives the Oscillator a Zero Mean to Accurately Asses Turning Points and Generally
+Reduces Indicator Lag.
+
+The combination of a two pole HighPass filter and a SuperSmoother filter can be used
+to precondition data before any additional calculations are performed. Since this filter
+combination limits the range of cycle periods in the output, it is called a “Roofing Filter”
+because it provides a roof over further calculations. The EasyLanguage code to
+compute the Roofing Filter is given in Code Listing 2.
+
+    Code Listing 2.  EasyLanguage Code to Compute the Roofing Filter
+    {
+         Roofing filter
+         © 2013      John F. Ehlers
+    }
+    Vars:
+         alpha1(0),
+         HP(0),
+         a1(0),
+         b1(0),
+         c1(0),
+         c2(0),
+         c3(0),
+         Filt(0),
+         Filt2(0);
+
+    //Highpass filter cyclic components whose periods are shorter than 48 bars
+    alpha1 = (Cosine(.707*360 / 48) + Sine (.707*360 / 48) - 1) / Cosine(.707*360 / 48);
+    HP = (1 - alpha1 / 2)*(1 - alpha1 / 2)*(Close - 2*Close[1] + Close[2]) + 2*(1 -
+    alpha1)*HP[1] - (1 - alpha1)*(1 - alpha1)*HP[2];
+    //Smooth with a Super Smoother Filter
+    a1 = expvalue(-1.414*3.14159 / 10);
+
+b1 = 2*a1*Cosine(1.414*180 / 10);
+c2 = b1;
+c3 = -a1*a1;
+c1 = 1 - c2 - c3;
+Filt = c1*(HP + HP[1]) / 2 + c2*Filt[1] + c3*Filt[2];
+
+Plot1(Filt);
+Plot2(0);
+
+In Code Listing 2, the variable alpha1 is computed for the HighPass critical period of 48
+bars. The HighPass filter will pass all spectral components having periods less than 48
+bars. The SuperSmoother filter passes all spectral components having period greater
+than 10 bars. The end result of the Roofing filter is that cyclic components having
+periods between 10 bars and 48 bars will be passed from the input to the output. If
+the reader is translating to another computer language, please note that the
+trigonometric arguments are in degrees whereas they are in radians in most other
+languages. Also please note the notation [N] is the value of that variable “N” bars ago.
+
+The impact of using the Roofing filter before computing a Stochastic is shown in Figure
+5. Clearly, the conventional Stochastic tends to hang near the upper bound when the
+prices are in an uptrend. Since this characteristic is caused by Spectral Dilation, the
+tired old explanations of how to use %K, %D, and when to enter a short position at the
+end of a trend are just plain silly. When the Roofing filter precedes the Stochastic, as
+shown in the second subgraph of Figure 5, the longer period waves have been removed
+and the swing waves are obvious by inspection.
+
+
+
+       fifoMa, 1                          en,wf:iaill
+                                                    i
+                                                    a
+
+    a  nd                                          an
+                                                    ™
+        onventional Stochastic                      =
+    1 My  Cycle 20 679                             {=
+                                                   Lo
+        Stochastic=     preceded by a Roofing Filter]
+
+
+    Figure 5. A Roofing Filter Preceding a Stochastic Removes Spectral Dilation Distortion
+
+EFFECTIVE SHORT TERM TRADING STRATEGIES
+
+Having successfully dealt with the Aliasing Noise issues as well as Spectral Dilation in
+the price data, we now have the tools to address trading strategies.
+
+Conventional wisdom dictates that a long position trade be entered after the oscillator
+indicator has reached a minimum and turns up. The thinking here is that the indicator
+is so unreliable that confirmation of the price movement must be obtained before the
+trade is made. We can test this hypothesis. I am going to describe a trading strategy
+using the Stochastic preceded by a Roofing filter of Figure 5. I want to emphasize this
+is not an explicit trading system, it is only a demonstration of a strategy. The strategy
+using confirmation is to buy when the indicator has reached a minimum value and then
+crosses over the 20% level. Also confirmation is used to sell short when the maximum
+value has been reached and then crosses below the 80% level. The equity curve
+applying this simple rule to the Stochastic oscillator on 10 years of S&P daily Futures
+data is shown in Figure 6. Clearly, one would not want to trade this rule in real life.
+
+
+
+
+          0[I
+
+    § a    \     \
+                                                      a
+
+        vases    12808      122310                    newz
+
+    Figure 6. Consistent Losses are Incurred When Trading the Stochastic Oscillator Using
+    the Conventional Rule of Waiting for Confirmation.
+
+
+The basic reason the confirmation strategy does not work is lag. If you are using an
+oscillator indicator, you are probably trying to make short term swing or momentum
+trades. You are most likely trying to trade a monthly cycle because that is a prevalent
+component in the data, since most companies have to make their numbers by the
+month. Therefore, you probably have 10 bars in an up-move to be long, and 10 bars in
+a down-move to be short or flat. All indicators have lag, even the SuperSmoother filter.
+A quick assessment gives several bars of lag to the SuperSmoother filter, several bars
+lag in computing the Stochastic, about 3 bars waiting for confirmation, AND then you
+have to wait another bar after confirmation to make your trade entry. Add all these
+lags together and you find you have about 8 bars total lag after the prices reached their
+swing low. The 10 bar up-move is almost over before you make your entry. Then, to
+exit the trade, you have the move against you for about 8 bars. This is why the wait
+for confirmation strategy cannot ever work for short term trading.
+
+On the other hand, if we have removed the effects of Aliasing Noise as well as Spectral
+Dilation from the indicator we can conquer lag by anticipating the cyclic turning points.
+In other words, we have established a predictive and forecasting indicator. For
+example, to anticipate the turning point using the Roofing filter and Stochastic indicator,
+we would take a long position when the indicator crosses below the 20% level, BEFORE
+the indicator reaches its minimum value. Accordingly, we would take a short position
+when the indicator crosses above its 80% level, BEFORE the indicator reaches its
+maximum value. Doing just this, with no other rules, we obtain the equity curve shown
+in Figure 7 when trading the S&P daily Futures over the last 10 years. Clearly,
+anticipating the turning points works! I want to emphasize again, that this is not a
+complete trading system. Rather, I have just demonstrated the efficacy of anticipating
+the indicator turning points.
+
+     i
+
+
+           =
+
+    1 300004             ||
+
+           [
+           i
+
+           I    Nea”     |
+
+Figure 7. Consistent Winners Occur When Trading the Stochastic Oscillator by
+Anticipating the Indicator Turning Points.
+
+
+    STOCKSPOTTER.COM
+
+The concept of anticipating the cyclic turning point is used at StockSpotter.com. Figure
+8 shows the Swing Trade Setup Analyzer. Two indicators form the basis of the
+predicted turning points, the MESA Cycle indicator and the MESA Momentum indicator.
+Note that both indicators have a zero mean and are also very smooth, showing that the
+effects of Spectral Dilation and Aliasing Noise have been removed. The MESA Cycle is
+virtually in synchronization with the cyclic moves in the price data, with troughs
+indicated by green bars and peaks indicated by red bars. The MESA Momentum
+behaves analogously to the Stochastic. That is, it has some lag. A swing trade setup
+occurs when the MESA Cycle indicator reaches a trough within the last few days and
+the MESA Momentum indicator is declining or at a minimum.
+
+Figure 8 is not a cherry-picked example. You can analyze any stock for FREE at
+StockSpotter.com using the Swing Trade Setup Analyzer for yourself. In fact, there are
+several more valuable indicators there for FREE. StockSpotter.com also features
+scanners that identify a variety of trading situations. Premium members receive explicit
+buy and sell signals at the end of the trading day for exercise at the market on the
+
+    open  of     the       next  trading                      day. All    signals are given IN    ADVANCE and then                  the
+    hypothetical trading performance is transparently tracked and reported.                                      Please give
+    StockSpotter.com a try.
+
+     Swing Trade Setup Analyzer                                                                       Tioker:   BY      | | submit
+     Thu May 09, 2013 :    Illinois Tool               Works Inc. (NYSE:  ITW)                    Swing Trade   Setup Analyzer  +.
+                                                                                                  Demo Video     Help for this  Chart
+         SwingA Trade Setup Analyzer- Summary              nt     a new
+              swing rade setup Gi not occur            dd      (ent) rading signal todsy. nats ie”
+
+      + MESA Indicator Analysis.
+          MESA Cycle        s igh.   A cycle   rough   expected todsy.
+          MESA Momentum has been at  a  maximum for the past7 days.
+
+      »  Social Buzz
+
+      »  Realtime Chart
+         Illinois Tool  Works Inc.   (ITW) — Wed, -May 08,     2013 — Close: 67.74                   ss, i           |          “
+                        I        iL                    il        Ua                               I                             sa
+                                                                    |]    I
+                                                                     +                                                          w
+
+
+
+         a                           1                 [ i  jy  ©                                 |             Nils
+
+                                                                                                                                »
+
+                                                                                                                                0
+
+
+
+
+          Wan            28.         nee               or 2 Mar  aor                                             say
+
+      Watchlists Settings
+     »    and
+          on the price chart show buy (green) and sll (ed) rading signals Premium Leve | members see al rads.  see  rades ony
+Figure 8. The MESA Cycle and MESA Momentum Indicators in the Swing Setup
+Analyzer Combine to Predict Price Turning Points.
