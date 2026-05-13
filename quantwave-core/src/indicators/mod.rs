@@ -3,6 +3,7 @@ pub mod talib_wrapper;
 
 pub mod metadata;
 
+pub mod amfm;
 pub mod alma;
 pub mod atr_ts;
 pub mod cg;
@@ -14,10 +15,12 @@ pub mod dmh;
 pub mod donchian;
 pub mod dsma;
 pub mod ehlers_filter;
+pub mod ehlers_stochastic;
 pub mod emd;
 pub mod fisher;
 pub mod fractals;
 pub mod frama;
+pub mod gaussian;
 pub mod generalized_laguerre;
 pub mod heikin_ashi;
 pub mod high_pass;
@@ -35,6 +38,7 @@ pub mod pattern;
 pub mod pivot_points;
 pub mod price_transform;
 pub mod reversion_index;
+pub mod roofing_filter;
 pub mod smoothing;
 pub mod statistics;
 pub mod super_smoother;
