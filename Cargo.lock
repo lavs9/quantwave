@@ -1884,7 +1884,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "quantwave-core",
  "quantwave-polars",
@@ -1892,7 +1892,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-core"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "approx",
  "log",
@@ -1907,7 +1907,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-plugins"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "polars",
  "quantwave-core",
@@ -1916,7 +1916,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-polars"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "polars",
  "polars-core",
@@ -1926,7 +1926,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-xtask"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "anyhow",
  "quick-xml",

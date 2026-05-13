@@ -68,7 +68,7 @@ fn main() -> Result<()> {
         }
     }
 
-    let talib_list = generate_talib_docs()?;
+    let talib_list = generate_talib_docs().context("Failed to generate TA-Lib docs")?;
     summary.push_str("    - [TA-Lib Wrappers](indicators/talib/README.md)\n");
 
     let main_intro = r#"# QuantWave 🌊
@@ -135,10 +135,10 @@ fn generate_native_docs(docs_dir: &Path, indicators_dir: &Path) -> Result<Vec<(S
     let mut generated = Vec::new();
 
     for entry in fs::read_dir(indicators_dir).with_context(|| format!("Failed to read indicators directory: {:?}", indicators_dir))? {
-        let entry = entry?;
+        let entry = entry.context("Failed to read directory entry")?;
         let path = entry.path();
         if path.extension().unwrap_or_default() == "rs" {
-            let content = fs::read_to_string(&path)?;
+            let content = fs::read_to_string(&path).with_context(|| format!("Failed to read indicator file: {:?}", path))?;
             if let Ok(ast) = syn::parse_file(&content) {
                 for item in ast.items {
                     if let syn::Item::Const(item_const) = item {
@@ -258,7 +258,7 @@ fn generate_native_docs(docs_dir: &Path, indicators_dir: &Path) -> Result<Vec<(S
 
                                 let out_path =
                                     docs_dir.join(format!("indicators/native/{}.md", filename));
-                                fs::write(&out_path, md)?;
+                                fs::write(&out_path, md).with_context(|| format!("Failed to write indicator documentation: {:?}", out_path))?;
                                 generated.push((name, filename, category));
                             }
                         }
