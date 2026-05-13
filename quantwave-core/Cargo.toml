@@ -5,6 +5,11 @@ edition.workspace = true
 license.workspace = true
 authors.workspace = true
 description.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "../README.md"
+categories.workspace = true
+keywords.workspace = true
 
 [features]
 default = []

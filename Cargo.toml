@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "quantwave",
     "quantwave-core",
     "quantwave-polars",
     "quantwave-plugins", "quantwave-xtask",
@@ -11,8 +12,12 @@ version = "0.1.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/mayanklavania/quantwave"
+homepage = "https://github.com/mayanklavania/quantwave"
 authors = ["Mayank Lavania"]
 description = "A high-performance, Polars-native technical analysis library for Rust."
+readme = "README.md"
+categories = ["science", "mathematics"]
+keywords = ["trading", "technical-analysis", "polars", "finance"]
 
 [workspace.dependencies]
 polars = { version = "0.46", features = ["lazy", "dtype-struct", "streaming"] }

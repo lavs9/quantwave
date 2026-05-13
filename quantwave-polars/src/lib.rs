@@ -2,6 +2,10 @@ use polars::prelude::*;
 use quantwave_core::traits::Next;
 use quantwave_core::*;
 
+pub mod prelude {
+    pub use crate::{QuantWaveExt, QuantWaveNamespace};
+}
+
 pub trait QuantWaveExt {
     fn ta(&self) -> QuantWaveNamespace<'_>;
 }

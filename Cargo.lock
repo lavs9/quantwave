@@ -1883,6 +1883,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "quantwave"
+version = "0.1.0"
+dependencies = [
+ "quantwave-core",
+ "quantwave-polars",
+]
+
+[[package]]
 name = "quantwave-core"
 version = "0.1.0"
 dependencies = [

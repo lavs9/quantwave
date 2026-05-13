@@ -38,7 +38,6 @@ Add QuantWave to your `Cargo.toml`:
 ```toml
 [dependencies]
 quantwave = "0.1"
-polars = "0.46"
 ```
 
 ---
@@ -53,13 +52,12 @@ Extend Polars with the `.ta()` namespace to rapidly compute indicators across yo
 
 ```rust
 use polars::prelude::*;
-use quantwave_polars::TA;
+use quantwave::prelude::*;
 
 let df = df.lazy()
     // Calculate SuperTrend with Period=10, Multiplier=3.0
-    .with_column(
-        col("close").ta().supertrend(10, 3.0).alias("supertrend")
-    )
+    .ta()
+    .supertrend("high", "low", "close", 10, 3.0)
     .collect()?;
 ```
 
@@ -68,15 +66,15 @@ let df = df.lazy()
 Use the core structs directly to process incoming ticks one by one without reallocating arrays or maintaining complex state buffers.
 
 ```rust
-use quantwave_core::indicators::SuperTrend;
-use quantwave_core::traits::Next;
+use quantwave::prelude::*;
 
 // Initialize state machine once
 let mut st = SuperTrend::new(10, 3.0);
 
 // Feed it tick by tick in your live event loop
-for price in live_price_stream {
-    let signal = st.next(price);
+for tick in live_price_stream {
+    // SuperTrend takes (high, low, close)
+    let signal = st.next((tick.high, tick.low, tick.close));
     println!("Latest SuperTrend Value: {:?}", signal);
 }
 ```

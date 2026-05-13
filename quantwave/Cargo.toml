@@ -1,5 +1,5 @@
 [package]
-name = "quantwave-plugins"
+name = "quantwave"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -11,11 +11,10 @@ readme = "../README.md"
 categories.workspace = true
 keywords.workspace = true
 
-[lib]
-name = "quantwave_plugins"
-crate-type = ["cdylib", "rlib"]
-
 [dependencies]
-quantwave-core = { path = "../quantwave-core" }
-polars = { workspace = true }
-serde = { workspace = true }
+quantwave-core = { path = "../quantwave-core", version = "0.1.0" }
+quantwave-polars = { path = "../quantwave-polars", version = "0.1.0", optional = true }
+
+[features]
+default = ["polars"]
+polars = ["quantwave-polars"]
