@@ -3,13 +3,13 @@ use crate::indicators::hilbert_transform::{HilbertFIR, EhlersWma4};
 use crate::traits::Next;
 use std::collections::VecDeque;
 
-/// Sine Wave Indicator
+/// Phasor Indicator
 ///
 /// Based on John Ehlers' "Rocket Science for Traders" (Chapter 9).
-/// Uses the phase of the Hilbert Transform to plot a sine wave and a lead-sine wave.
-/// Returns (Sine, LeadSine).
+/// Decomposes the signal into its In-Phase (I) and Quadrature (Q) components.
+/// Returns (InPhase, Quadrature).
 #[derive(Debug, Clone)]
-pub struct SineWave {
+pub struct Phasor {
     wma_price: EhlersWma4,
     hilbert_detrender: HilbertFIR,
     hilbert_q1: HilbertFIR,
@@ -19,7 +19,7 @@ pub struct SineWave {
     count: usize,
 }
 
-impl SineWave {
+impl Phasor {
     pub fn new() -> Self {
         Self {
             wma_price: EhlersWma4::new(),
@@ -31,19 +31,11 @@ impl SineWave {
             count: 0,
         }
     }
-}
 
-impl Default for SineWave {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Next<f64> for SineWave {
-    type Output = (f64, f64);
-
-    fn next(&mut self, price: f64) -> Self::Output {
+    /// Update with a specific period for the Hilbert FIR
+    pub fn next_with_period(&mut self, price: f64, period: f64) -> (f64, f64) {
         self.count += 1;
+        self.period_prev = period;
 
         if self.count < 7 {
             self.wma_price.next(price);
@@ -59,33 +51,38 @@ impl Next<f64> for SineWave {
         let q1 = self.hilbert_q1.next(detrender, self.period_prev);
         let i1 = self.detrender_history[3];
 
-        // Simple Phase calculation as per Chapter 9
-        let mut phase = 0.0;
-        if i1.abs() > 0.0001 {
-            phase = (q1 / i1).atan().to_degrees();
-        }
-
-        let sine = phase.to_radians().sin();
-        let lead_sine = (phase + 45.0).to_radians().sin();
-
-        (sine, lead_sine)
+        (i1, q1)
     }
 }
 
-pub const SINE_WAVE_METADATA: IndicatorMetadata = IndicatorMetadata {
-    name: "Sine Wave",
-    description: "Plots a sine wave and a lead-sine wave based on the cyclic phase of price movement.",
+impl Default for Phasor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Next<f64> for Phasor {
+    type Output = (f64, f64);
+
+    fn next(&mut self, price: f64) -> Self::Output {
+        self.next_with_period(price, self.period_prev)
+    }
+}
+
+pub const PHASOR_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Phasor",
+    description: "Extracts In-Phase (I) and Quadrature (Q) components using a Hilbert Transform.",
     params: &[],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/ROCKET%20SCIENCE%20FOR%20TRADER.pdf",
     formula_latex: r#"
 \[
-\text{Sine} = \sin(\text{Phase})
+I = \text{Detrender}_{t-3}
 \]
 \[
-\text{LeadSine} = \sin(\text{Phase} + 45^\circ)
+Q = \text{HilbertFIR}(\text{Detrender}, \text{Period})
 \]
 "#,
-    gold_standard_file: "sine_wave.json",
+    gold_standard_file: "phasor.json",
     category: "Rocket Science",
 };
 
@@ -96,26 +93,26 @@ mod tests {
     use proptest::prelude::*;
 
     #[test]
-    fn test_sine_wave_basic() {
-        let mut sw = SineWave::new();
+    fn test_phasor_basic() {
+        let mut p = Phasor::new();
         let prices = vec![10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0];
-        for p in prices {
-            let (s, l) = sw.next(p);
-            assert!(!s.is_nan());
-            assert!(!l.is_nan());
+        for price in prices {
+            let (i, q) = p.next(price);
+            assert!(!i.is_nan());
+            assert!(!q.is_nan());
         }
     }
 
     proptest! {
         #[test]
-        fn test_sine_wave_parity(
+        fn test_phasor_parity(
             inputs in prop::collection::vec(1.0..100.0, 50..100),
         ) {
-            let mut sw = SineWave::new();
-            let streaming_results: Vec<(f64, f64)> = inputs.iter().map(|&x| sw.next(x)).collect();
+            let mut p = Phasor::new();
+            let streaming_results: Vec<(f64, f64)> = inputs.iter().map(|&x| p.next(x)).collect();
 
-            let mut sw_batch = SineWave::new();
-            let batch_results: Vec<(f64, f64)> = inputs.iter().map(|&x| sw_batch.next(x)).collect();
+            let mut p_batch = Phasor::new();
+            let batch_results: Vec<(f64, f64)> = inputs.iter().map(|&x| p_batch.next(x)).collect();
 
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-10);

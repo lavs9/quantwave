@@ -3,20 +3,19 @@ use crate::indicators::hilbert_transform::{HilbertFIR, EhlersWma4};
 use crate::traits::Next;
 use std::collections::VecDeque;
 
-/// Instantaneous Trendline
+/// Homodyne Discriminator
 ///
-/// Based on John Ehlers' "Rocket Science for Traders" (Chapter 10).
-/// Removes the dominant cycle component to reveal the underlying trend
-/// with minimal lag.
+/// Based on John Ehlers' "Rocket Science for Traders" (Chapter 8).
+/// It estimates the dominant cycle period of the input signal using a homodyne approach
+/// (multiplying the signal by its delayed complex conjugate).
 #[derive(Debug, Clone)]
-pub struct InstantaneousTrendline {
+pub struct HomodyneDiscriminator {
     wma_price: EhlersWma4,
     hilbert_detrender: HilbertFIR,
     hilbert_q1: HilbertFIR,
     hilbert_ji: HilbertFIR,
     hilbert_jq: HilbertFIR,
     
-    price_history: VecDeque<f64>,
     detrender_history: VecDeque<f64>,
     i1_history: VecDeque<f64>,
     q1_history: VecDeque<f64>,
@@ -26,14 +25,10 @@ pub struct InstantaneousTrendline {
     re_prev: f64,
     im_prev: f64,
     period_prev: f64,
-    smooth_period_prev: f64,
-    
-    itrend_wma: EhlersWma4,
-    itrend_history: VecDeque<f64>,
     count: usize,
 }
 
-impl InstantaneousTrendline {
+impl HomodyneDiscriminator {
     pub fn new() -> Self {
         Self {
             wma_price: EhlersWma4::new(),
@@ -42,7 +37,6 @@ impl InstantaneousTrendline {
             hilbert_ji: HilbertFIR::new(),
             hilbert_jq: HilbertFIR::new(),
             
-            price_history: VecDeque::from(vec![0.0; 50]),
             detrender_history: VecDeque::from(vec![0.0; 7]),
             i1_history: VecDeque::from(vec![0.0; 7]),
             q1_history: VecDeque::from(vec![0.0; 7]),
@@ -52,33 +46,26 @@ impl InstantaneousTrendline {
             re_prev: 0.0,
             im_prev: 0.0,
             period_prev: 6.0,
-            smooth_period_prev: 6.0,
-            
-            itrend_wma: EhlersWma4::new(),
-            itrend_history: VecDeque::from(vec![0.0; 4]),
             count: 0,
         }
     }
 }
 
-impl Default for InstantaneousTrendline {
+impl Default for HomodyneDiscriminator {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Next<f64> for InstantaneousTrendline {
+impl Next<f64> for HomodyneDiscriminator {
     type Output = f64;
 
     fn next(&mut self, price: f64) -> Self::Output {
         self.count += 1;
 
-        self.price_history.pop_back();
-        self.price_history.push_front(price);
-
         if self.count < 7 {
             self.wma_price.next(price);
-            return price;
+            return 0.0;
         }
 
         let smooth = self.wma_price.next(price);
@@ -136,43 +123,21 @@ impl Next<f64> for InstantaneousTrendline {
         period = 0.2 * period + 0.8 * self.period_prev;
         self.period_prev = period;
 
-        let smooth_period = 0.33 * period + 0.67 * self.smooth_period_prev;
-        self.smooth_period_prev = smooth_period;
-
-        // DCPeriod = IntPortion(SmoothPeriod + .5);
-        let dc_period = (smooth_period + 0.5) as usize;
-        
-        let mut itrend = 0.0;
-        for i in 0..dc_period {
-            if i < self.price_history.len() {
-                itrend += self.price_history[i];
-            }
-        }
-        if dc_period > 0 {
-            itrend /= dc_period as f64;
-        }
-
-        let trendline = self.itrend_wma.next(itrend);
-
-        if self.count < 12 {
-            return price;
-        }
-        
-        trendline
+        period
     }
 }
 
-pub const INSTANTANEOUS_TRENDLINE_METADATA: IndicatorMetadata = IndicatorMetadata {
-    name: "Instantaneous Trendline",
-    description: "Removes the dominant cycle to reveal the underlying trend with minimal lag.",
+pub const HOMODYNE_DISCRIMINATOR_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Homodyne Discriminator",
+    description: "Estimates the dominant cycle period using a homodyne approach.",
     params: &[],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/ROCKET%20SCIENCE%20FOR%20TRADER.pdf",
     formula_latex: r#"
 \[
-Trendline = \text{WMA}(\text{SMA}(Price, DCPeriod), 4)
+\text{Period} = \frac{360}{\text{atan}(Im / Re)}
 \]
 "#,
-    gold_standard_file: "instantaneous_trendline.json",
+    gold_standard_file: "homodyne_discriminator.json",
     category: "Rocket Science",
 };
 
@@ -183,26 +148,27 @@ mod tests {
     use proptest::prelude::*;
 
     #[test]
-    fn test_instantaneous_trendline_basic() {
-        let mut it = InstantaneousTrendline::new();
-        let prices = vec![10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0];
-        for p in prices {
-            let res = it.next(p);
-            assert!(!res.is_nan());
+    fn test_homodyne_discriminator_basic() {
+        let mut hd = HomodyneDiscriminator::new();
+        for i in 0..100 {
+            // Sine wave with period 20
+            let val = hd.next((2.0 * std::f64::consts::PI * i as f64 / 20.0).sin());
+            if i > 50 {
+                assert!(val > 10.0 && val < 30.0);
+            }
         }
     }
 
     proptest! {
         #[test]
-        fn test_instantaneous_trendline_parity(
+        fn test_homodyne_discriminator_parity(
             inputs in prop::collection::vec(1.0..100.0, 50..100),
         ) {
-            let mut it = InstantaneousTrendline::new();
-            let streaming_results: Vec<f64> = inputs.iter().map(|&x| it.next(x)).collect();
+            let mut hd = HomodyneDiscriminator::new();
+            let streaming_results: Vec<f64> = inputs.iter().map(|&x| hd.next(x)).collect();
 
-            // Reference implementation (batch)
-            let mut it_batch = InstantaneousTrendline::new();
-            let batch_results: Vec<f64> = inputs.iter().map(|&x| it_batch.next(x)).collect();
+            let mut hd_batch = HomodyneDiscriminator::new();
+            let batch_results: Vec<f64> = inputs.iter().map(|&x| hd_batch.next(x)).collect();
 
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-10);

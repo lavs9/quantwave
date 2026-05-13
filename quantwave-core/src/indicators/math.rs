@@ -130,6 +130,43 @@ impl crate::traits::Next<f64> for RMS {
     }
 }
 
+/// Automatic Gain Control (AGC)
+///
+/// Normalizes a signal based on its decaying peak value.
+/// Commonly used in John Ehlers' oscillators to keep the signal within [-1, 1].
+#[derive(Debug, Clone)]
+pub struct AGC {
+    peak: f64,
+    decay: f64,
+}
+
+impl AGC {
+    pub fn new(decay: f64) -> Self {
+        Self {
+            peak: 0.0000001,
+            decay,
+        }
+    }
+}
+
+impl crate::traits::Next<f64> for AGC {
+    type Output = f64;
+
+    fn next(&mut self, input: f64) -> Self::Output {
+        self.peak *= self.decay;
+        let abs_input = input.abs();
+        if abs_input > self.peak {
+            self.peak = abs_input;
+        }
+
+        if self.peak != 0.0 {
+            input / self.peak
+        } else {
+            0.0
+        }
+    }
+}
+
 // Math Operators
 talib_2_in_1_out!(ADD, talib_rs::math_operator::add);
 impl Default for ADD {
