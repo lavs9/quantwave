@@ -13,8 +13,8 @@ fn main() -> Result<()> {
             .unwrap()
             .to_path_buf();
     let docs_dir = workspace_root.join("docs/src");
-    fs::create_dir_all(&docs_dir.join("indicators/native"))?;
-    fs::create_dir_all(&docs_dir.join("indicators/talib"))?;
+    fs::create_dir_all(&docs_dir.join("indicators/native")).context("Failed to create indicators/native directory")?;
+    fs::create_dir_all(&docs_dir.join("indicators/talib")).context("Failed to create indicators/talib directory")?;
 
     // We will generate the SUMMARY.md dynamically based on the parsed indicators
     let mut summary = String::new();
@@ -105,11 +105,11 @@ For more information, visit the [official TA-Lib website](https://ta-lib.org/) o
     );
     talib_intro.push_str(&talib_list);
 
-    fs::write(docs_dir.join("SUMMARY.md"), summary)?;
-    fs::write(docs_dir.join("README.md"), main_intro)?;
-    fs::write(docs_dir.join("indicators/README.md"), indicators_intro)?;
-    fs::write(docs_dir.join("indicators/native/README.md"), native_intro)?;
-    fs::write(docs_dir.join("indicators/talib/README.md"), talib_intro)?;
+    fs::write(docs_dir.join("SUMMARY.md"), summary).context("Failed to write SUMMARY.md")?;
+    fs::write(docs_dir.join("README.md"), main_intro).context("Failed to write README.md")?;
+    fs::write(docs_dir.join("indicators/README.md"), indicators_intro).context("Failed to write indicators/README.md")?;
+    fs::write(docs_dir.join("indicators/native/README.md"), native_intro).context("Failed to write indicators/native/README.md")?;
+    fs::write(docs_dir.join("indicators/talib/README.md"), talib_intro).context("Failed to write indicators/talib/README.md")?;
 
     println!("Documentation generation complete.");
     Ok(())
@@ -124,7 +124,7 @@ fn generate_native_docs(docs_dir: &Path) -> Result<Vec<(String, String, String)>
         .unwrap()
         .join("quantwave-core/src/indicators");
 
-    for entry in fs::read_dir(indicators_dir)? {
+    for entry in fs::read_dir(&indicators_dir).with_context(|| format!("Failed to read indicators directory: {:?}", indicators_dir))? {
         let entry = entry?;
         let path = entry.path();
         if path.extension().unwrap_or_default() == "rs" {
