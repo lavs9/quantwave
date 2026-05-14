@@ -109,3 +109,6 @@ pub mod truncated_bandpass;
 pub mod recursive_median;
 pub mod rocket_rsi;
 pub mod market_state;
+pub mod kalman;
+pub mod hurst;
+pub mod volume_profile;

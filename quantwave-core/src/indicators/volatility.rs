@@ -183,3 +183,20 @@ ATR = \frac{ATR_{t-1} \times (n-1) + TR_t}{n}
     gold_standard_file: "atr.json",
     category: "Classic",
 };
+
+pub const NATR_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Normalized Average True Range (NATR)",
+    description: "A normalized version of ATR that represents volatility as a percentage of price.",
+    usage: "Use to compare volatility across different securities with varying price levels. NATR allows for normalized risk assessment and position sizing.",
+    keywords: &["volatility", "atr", "normalization", "classic"],
+    ehlers_summary: "Normalized ATR (NATR) was developed to allow traders to compare the volatility of high-priced stocks with low-priced stocks. By dividing the ATR by the closing price and multiplying by 100, the result is a percentage that can be used consistently across all assets. — TA-Lib Documentation",
+    params: &[ParamDef { name: "timeperiod", default: "14", description: "Smoothing period" }],
+    formula_source: "https://www.tradingtechnologies.com/help/x-study/technical-indicator-definitions/normalized-average-true-range-natr/",
+    formula_latex: r#"
+\[
+NATR = \frac{ATR(n)}{Close} \times 100
+\]
+"#,
+    gold_standard_file: "natr.json",
+    category: "Classic",
+};
