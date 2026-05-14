@@ -1,6 +1,16 @@
 # Projected Moving Average
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">moving-average</span> <span class="kw-badge">prediction</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">zero-lag</span></div>
+
 A lag-compensated moving average that uses linear regression slope to project the average forward.
+
+## Usage
+
+Use as a predictive moving average that uses linear regression projection to anticipate where price will be rather than where it has been, reducing effective lag.
+
+## Background
+
+> The Projected Moving Average uses linear regression over the lookback window to project the best-fit line forward to the current bar. This predictive approach shifts the MA output toward the leading edge of price movement, achieving reduced lag compared to conventional MAs of the same period.
 
 ## Parameters
 

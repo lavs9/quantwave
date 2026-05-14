@@ -1,6 +1,16 @@
 # Ehlers Loops
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">cycle</span> <span class="kw-badge">phase</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">dsp</span> <span class="kw-badge">visualization</span></div>
+
 Converts price and volume into normalized standard deviation units for scatter plot analysis.
+
+## Usage
+
+Use to visualize cycle dynamics in phase-space by plotting the indicator value against its derivative. Loop patterns reveal cycle turns before they appear in the price chart.
+
+## Background
+
+> Ehlers describes phase-space loops in Cybernetic Analysis as a powerful visualization technique where an indicator is plotted against its first derivative. In cycle mode the path traces elliptical loops; in trend mode the path collapses to a line, enabling visual market mode identification.
 
 ## Parameters
 

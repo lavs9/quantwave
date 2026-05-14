@@ -1,6 +1,16 @@
 # Synthetic Oscillator
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">oscillator</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">dsp</span> <span class="kw-badge">cycle</span> <span class="kw-badge">synthetic</span></div>
+
 A nonlinear oscillator designed to reduce lag while maintaining smoothness by adapting to the dominant cycle.
+
+## Usage
+
+Use to construct a synthetic oscillator from dominant cycle sine components when direct price oscillators are too noisy. Most effective in clearly cyclical markets.
+
+## Background
+
+> Ehlers constructs a Synthetic Oscillator by generating a synthetic sine wave at the measured dominant cycle period and comparing it to price. The phase difference between the synthetic sine and actual price reveals whether the market is ahead of or behind its expected cycle position.
 
 ## Parameters
 

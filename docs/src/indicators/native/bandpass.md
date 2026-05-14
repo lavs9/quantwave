@@ -1,6 +1,16 @@
 # BandPass
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">filter</span> <span class="kw-badge">cycle</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">dsp</span> <span class="kw-badge">bandpass</span></div>
+
 A bandpass filter that isolates cycle components around a center period.
+
+## Usage
+
+Apply to isolate a specific cycle period in price, filtering out both trend and noise. Use zero crossings of the filtered output as entry and exit signals.
+
+## Background
+
+> Ehlers presents the BandPass filter in Cybernetic Analysis as a second-order IIR filter centred on a target cycle period with tunable bandwidth. It simultaneously attenuates lower and higher frequencies, leaving only the desired cycle band in the output.
 
 ## Parameters
 

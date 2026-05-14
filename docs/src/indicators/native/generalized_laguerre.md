@@ -1,6 +1,16 @@
 # Generalized Laguerre
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">filter</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">dsp</span> <span class="kw-badge">smoothing</span> <span class="kw-badge">laguerre</span></div>
+
 A generalized Laguerre filter of arbitrary order using an UltimateSmoother as the primary component.
+
+## Usage
+
+Use when the standard 4-element Laguerre filter needs further customization. The additional gamma2 parameter allows independent control of the pole spacing for more flexible frequency response shaping.
+
+## Background
+
+> The Generalized Laguerre Filter extends the classic 4-element Laguerre design with an additional parameter that controls the distribution of poles across the frequency spectrum. This gives finer control over the transition band slope and passband flatness, useful for specialized spectral analysis applications.
 
 ## Parameters
 

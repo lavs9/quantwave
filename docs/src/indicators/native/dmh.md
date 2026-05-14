@@ -1,6 +1,16 @@
 # DMH
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">momentum</span> <span class="kw-badge">oscillator</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">high-pass</span> <span class="kw-badge">dsp</span></div>
+
 An improved Directional Movement indicator using Hann windowing for smoother signals and reduced lag.
+
+## Usage
+
+Use as a momentum oscillator with high-pass filtering to isolate cyclical momentum while removing the trend bias that corrupts standard momentum indicators.
+
+## Background
+
+> Ehlers constructs the DMH by applying a high-pass filter to the momentum calculation, removing the low-frequency trend component that causes conventional momentum to drift. The result is a zero-centered momentum oscillator that oscillates cleanly around the cycle midpoint.
 
 ## Parameters
 

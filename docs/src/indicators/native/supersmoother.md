@@ -1,6 +1,16 @@
 # SuperSmoother
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">filter</span> <span class="kw-badge">smoothing</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">dsp</span> <span class="kw-badge">low-pass</span></div>
+
 A second-order IIR filter with a maximally flat Butterworth response for superior smoothing with minimal lag.
+
+## Usage
+
+Use as a drop-in replacement for any moving average when maximum smoothing with minimal lag is needed. Ideal as a pre-filter before oscillators to eliminate high-frequency noise.
+
+## Background
+
+> Ehlers describes the SuperSmoother as a two-pole Butterworth filter achieving the same smoothing as a longer SMA with far less lag. It uses a critically-damped design to eliminate Gibbs phenomenon overshoot while retaining cycle information. — Cybernetic Analysis for Stocks and Futures, 2004
 
 ## Parameters
 

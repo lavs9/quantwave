@@ -1,6 +1,16 @@
 # UndersampledDoubleMA
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">internal</span> <span class="kw-badge">utility</span></div>
+
 Undersampled price data smoothed by dual Hann filters to eliminate high frequency noise.
+
+## Usage
+
+Internal implementation module — not intended as a standalone trading indicator.
+
+## Background
+
+> This module contains internal utility functions used by other indicators in the library. It is not intended to be used directly as a standalone trading indicator.
 
 ## Parameters
 

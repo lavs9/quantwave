@@ -1,6 +1,16 @@
 # Swiss Army Knife Indicator
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">filter</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">dsp</span> <span class="kw-badge">multi-purpose</span> <span class="kw-badge">smoothing</span></div>
+
 A versatile indicator that can be configured as EMA, SMA, Gaussian, Butterworth, High Pass, Band Pass, or Band Stop filter.
+
+## Usage
+
+Use as a single configurable filter that can emulate SMA, EMA, Gaussian, Butterworth, or bandpass responses by switching mode flags. Ideal for prototyping different filter designs without code changes.
+
+## Background
+
+> Ehlers presents the Swiss Army Knife Indicator in Cycle Analytics for Traders as a unified filter framework. A set of boolean flags selects the operating mode, making it possible to compare multiple filter responses on the same data by simply toggling flags rather than reimplementing each filter.
 
 ## Parameters
 

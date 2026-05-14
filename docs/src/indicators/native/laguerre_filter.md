@@ -1,6 +1,16 @@
 # Laguerre Filter
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">filter</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">dsp</span> <span class="kw-badge">smoothing</span> <span class="kw-badge">laguerre</span></div>
+
 A trend-following filter that excels at smoothing long-wavelength components using Laguerre polynomials and an UltimateSmoother base.
+
+## Usage
+
+Use as a low-lag smoothing filter with only 4 elements of state. Ideal when memory-efficiency matters or when a highly responsive smoother for real-time streaming is needed.
+
+## Background
+
+> Ehlers introduces Laguerre filters in Cybernetic Analysis (2004), noting they achieve the response of much longer conventional filters using only four coefficients. The single gamma parameter controls the trade-off between lag and smoothness.
 
 ## Parameters
 

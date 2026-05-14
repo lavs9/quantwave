@@ -1,6 +1,16 @@
 # DSMA
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">moving-average</span> <span class="kw-badge">adaptive</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">dsp</span> <span class="kw-badge">dominant-cycle</span></div>
+
 Deviation Scaled Moving Average adapts to price variations using standard deviation scaled oscillators.
+
+## Usage
+
+Use as an adaptive moving average whose period synchronizes to the current dominant cycle, avoiding the over- or under-smoothing caused by fixed-period MAs in changing market conditions.
+
+## Background
+
+> The Dominant Cycle-Synchronized MA adapts its period to the measured dominant cycle, ensuring the smoothing window always spans exactly one full cycle. Ehlers presents this in Cycle Analytics for Traders as the mathematically correct way to apply moving averages to cyclic market data.
 
 ## Parameters
 

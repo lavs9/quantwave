@@ -1,6 +1,16 @@
 # Cyber Cycle
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">cycle</span> <span class="kw-badge">oscillator</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">dsp</span></div>
+
 An oscillator introduced by John Ehlers that models the cyclical component of a time series using FIR smoothing.
+
+## Usage
+
+Use as a high-resolution short-term cycle oscillator to time entries and exits around cycle turns. Pair with a trend classifier to suppress signals in trending conditions.
+
+## Background
+
+> Ehlers introduces the Cyber Cycle in Cybernetic Analysis (2004) as a bandpass-like filter isolating the short-term cyclical component. The trigger line is the Cyber Cycle delayed by one bar, creating a clean crossover signal without derivative noise.
 
 ## Parameters
 

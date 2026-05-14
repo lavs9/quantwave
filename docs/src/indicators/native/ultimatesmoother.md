@@ -1,6 +1,16 @@
 # UltimateSmoother
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">filter</span> <span class="kw-badge">smoothing</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">dsp</span> <span class="kw-badge">zero-lag</span></div>
+
 An Ehlers filter with zero lag in the Pass Band, constructed by subtracting High Pass response from the input data.
+
+## Usage
+
+Use when you need near-zero phase lag smoothing with very low ripple. It is Ehlers preferred smoother for applications where timing precision is critical.
+
+## Background
+
+> Ehlers designs the Ultimate Smoother in Cycle Analytics for Traders to minimize both lag and ripple simultaneously. It achieves near-zero phase shift across the passband while providing excellent attenuation of high-frequency noise, making it his preferred general-purpose smoother for cycle-sensitive applications.
 
 ## Parameters
 

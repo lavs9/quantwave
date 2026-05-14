@@ -1,6 +1,16 @@
 # FourierDominantCycle
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">cycle</span> <span class="kw-badge">spectral</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">dsp</span> <span class="kw-badge">dominant-cycle</span> <span class="kw-badge">fourier</span></div>
+
 Dominant cycle period estimation using resolution-enhanced DFT and center of gravity.
+
+## Usage
+
+Use to compute the dominant market cycle period via DFT. Feed the output period into adaptive indicators like DSMA or Ehlers Stochastic to make them cycle-synchronized.
+
+## Background
+
+> Ehlers implements a Discrete Fourier Transform cycle measurement in Cybernetic Analysis using a Hann-windowed data segment. The DFT computes power across periods from 6 to 50 bars, and the peak power identifies the dominant cycle period driving price movement.
 
 ## Parameters
 

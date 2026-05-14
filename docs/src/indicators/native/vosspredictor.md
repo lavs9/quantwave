@@ -1,6 +1,16 @@
 # VossPredictor
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">prediction</span> <span class="kw-badge">cycle</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">dsp</span> <span class="kw-badge">filter</span></div>
+
 A predictive filter with negative group delay for band-limited signals.
+
+## Usage
+
+Use for multi-bar price prediction based on a bandpass-filtered dominant cycle. More accurate than simple linear extrapolation due to its IIR filter pole placement.
+
+## Background
+
+> The Voss Predictor is a predictive filter developed by J.F. Voss and adapted by Ehlers in Cycle Analytics for Traders. Its IIR bandpass design inherently extrapolates the filtered signal several bars into the future by virtue of pole placement inside the unit circle, enabling lookahead without buffer access.
 
 ## Parameters
 

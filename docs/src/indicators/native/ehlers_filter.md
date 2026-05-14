@@ -1,6 +1,16 @@
 # Ehlers Filter
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">filter</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">dsp</span> <span class="kw-badge">smoothing</span></div>
+
 A non-linear FIR filter using distance coefficients to adapt to price transitions while maintaining smoothness.
+
+## Usage
+
+Use as a configurable digital filter from Ehlers DSP toolkit when you need a specific frequency response not covered by the standard smoother or Butterworth designs.
+
+## Background
+
+> The Ehlers Filter is a generalized IIR filter design drawn from Ehlers digital signal processing framework for markets. Its coefficients can be tuned to approximate different filter types (lowpass, highpass, bandpass), making it a flexible building block for custom indicator pipelines.
 
 ## Parameters
 

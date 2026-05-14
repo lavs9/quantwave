@@ -1,6 +1,16 @@
 # FourierSeriesModel
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">cycle</span> <span class="kw-badge">spectral</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">prediction</span> <span class="kw-badge">fourier</span></div>
+
 Synthesized market model using fundamental and harmonic frequency components.
+
+## Usage
+
+Use to model price as a sum of sine wave harmonics for short-term prediction. Most effective in clearly cyclical markets; combine with a cycle mode detector to disable it in trends.
+
+## Background
+
+> The Fourier Series Model fits harmonically related sine waves to recent price history using least-squares coefficients. Ehlers shows that projecting this model one bar forward gives a price forecast useful for anticipatory entry timing at predicted cycle turns.
 
 ## Parameters
 

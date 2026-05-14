@@ -1,6 +1,16 @@
 # Roofing Filter
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">filter</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">dsp</span> <span class="kw-badge">cycle</span> <span class="kw-badge">high-pass</span> <span class="kw-badge">low-pass</span></div>
+
 Combines a 2-pole HighPass filter and a SuperSmoother to isolate specific cyclic components.
+
+## Usage
+
+Apply before oscillators to remove both low-frequency trend drift and high-frequency noise, leaving only the tradable cycle band (roughly 10-48 bars).
+
+## Background
+
+> Introduced in Cycle Analytics for Traders (2013), the Roofing Filter first applies a high-pass filter to remove the dominant trend component, then a SuperSmoother to remove short-term noise. The result is a cycle-only signal with controlled bandwidth, ideal for use as input to oscillators and cycle indicators.
 
 ## Parameters
 

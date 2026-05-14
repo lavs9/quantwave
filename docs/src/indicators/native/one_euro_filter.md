@@ -1,6 +1,16 @@
 # One Euro Filter
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">filter</span> <span class="kw-badge">smoothing</span> <span class="kw-badge">adaptive</span> <span class="kw-badge">real-time</span> <span class="kw-badge">low-pass</span></div>
+
 A speed-based adaptive low-pass filter that dynamically adjusts its smoothing coefficient.
+
+## Usage
+
+Use in real-time systems where you need low lag at high speeds and low noise at low speeds. The adaptive cutoff frequency makes it self-tuning for different signal velocities.
+
+## Background
+
+> The One Euro Filter, developed by Casiez et al. (2012), is an adaptive lowpass filter that adjusts its cutoff frequency based on the signal derivative. When the signal changes quickly (high speed) the cutoff is raised to reduce lag; when it changes slowly the cutoff is lowered to reduce noise — automatically balancing the speed-accuracy trade-off.
 
 ## Parameters
 

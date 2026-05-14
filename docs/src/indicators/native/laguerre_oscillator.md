@@ -1,6 +1,16 @@
 # Laguerre Oscillator
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">oscillator</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">dsp</span> <span class="kw-badge">laguerre</span> <span class="kw-badge">momentum</span></div>
+
 A low-lag trend oscillator derived from Laguerre polynomials and normalized by RMS volatility.
+
+## Usage
+
+Use to detect overbought and oversold conditions with very low lag. The single gamma parameter lets you tune it from aggressive to smooth.
+
+## Background
+
+> Ehlers describes the Laguerre Oscillator in Cybernetic Analysis as measuring the difference between the first and last elements of a 4-element Laguerre filter bank, extracting the high-frequency component as a zero-lag momentum measure.
 
 ## Parameters
 

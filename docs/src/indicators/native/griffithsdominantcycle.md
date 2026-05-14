@@ -1,6 +1,16 @@
 # GriffithsDominantCycle
 
+<div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">cycle</span> <span class="kw-badge">dominant-cycle</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">dsp</span> <span class="kw-badge">spectral</span></div>
+
 Dominant cycle estimation using Griffiths adaptive spectral analysis.
+
+## Usage
+
+Use as a robust dominant cycle estimator less sensitive to amplitude changes than DFT-based methods, making it reliable across different market volatility regimes.
+
+## Background
+
+> The Griffiths method computes the dominant cycle by solving the real-roots of an autocorrelation polynomial. Adapted by Ehlers in Cycle Analytics for Traders, it remains stable even when market amplitude changes rapidly, unlike power-spectrum methods that can shift with volatility.
 
 ## Parameters
 
