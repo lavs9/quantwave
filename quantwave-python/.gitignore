@@ -5,8 +5,12 @@ __pycache__/
 .pytest_cache/
 *.py[cod]
 
-# C extensions
+# UniFFI generated files
+python/quantwave/quantwave_python/
+quantwave/quantwave_python/
+*.dylib
 *.so
+*.dll
 
 # Distribution / packaging
 .Python

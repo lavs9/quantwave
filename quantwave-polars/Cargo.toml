@@ -11,14 +11,9 @@ readme = "../README.md"
 categories.workspace = true
 keywords.workspace = true
 
-[features]
-default = []
-python = ["dep:pyo3-polars"]
-
 [dependencies]
-quantwave-core = { path = "../quantwave-core", version = "0.1.6" }
+quantwave-core = { path = "../quantwave-core", version = "0.1.8" }
 polars = { workspace = true }
 serde = { workspace = true }
-pyo3-polars = { workspace = true, optional = true }
 
 thiserror = { workspace = true }

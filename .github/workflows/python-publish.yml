@@ -21,8 +21,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install maturin
-        run: pip install maturin
+      - name: Install maturin and uniffi-bindgen
+        run: pip install maturin uniffi-bindgen==0.31.0
 
       - name: Build wheels
         uses: PyO3/maturin-action@v1

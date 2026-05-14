@@ -10,7 +10,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.1.7"
+version = "0.1.8"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/lavs9/quantwave"
@@ -22,9 +22,9 @@ categories = ["science", "mathematics"]
 keywords = ["trading", "technical-analysis", "polars", "finance"]
 
 [workspace.dependencies]
-polars = { version = "0.50", features = ["lazy", "dtype-struct"] }
-polars-core = { version = "0.50" }
-polars-arrow = { version = "0.50" }
+polars = { version = "0.46", features = ["lazy", "dtype-struct"] }
+polars-core = { version = "0.46" }
+polars-arrow = { version = "0.46" }
 talib-rs = "0.1"
 proptest = "1.0"
 approx = "0.5"
@@ -34,8 +34,6 @@ rand = "0.8"
 serde_json = "1.0"
 log = "0.4"
 thiserror = "1.0"
-pyo3 = { version = "0.25", features = ["extension-module", "abi3-py39"] }
-pyo3-polars = { version = "0.23", features = ["derive"] }
 
 [profile.dev]
 opt-level = 0
