@@ -22,9 +22,13 @@ fn main() -> Result<()> {
     if !workspace_root.exists() {
         return Err(anyhow::anyhow!("Workspace root does not exist: {:?}", workspace_root));
     }
+    
+    // Create docs/src if it doesn't exist (it is gitignored)
     if !docs_dir.exists() {
-        return Err(anyhow::anyhow!("Docs directory does not exist: {:?}. Make sure you are running from the workspace root.", docs_dir));
+        println!("Creating missing docs directory: {:?}", docs_dir);
+        fs::create_dir_all(&docs_dir).context("Failed to create docs directory")?;
     }
+
     if !indicators_dir.exists() {
         return Err(anyhow::anyhow!("Indicators directory does not exist: {:?}", indicators_dir));
     }

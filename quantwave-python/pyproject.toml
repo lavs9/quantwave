@@ -1,0 +1,28 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "quantwave"
+dynamic = ["version"]
+description = "High-performance Technical Analysis library (Rust core + UniFFI)"
+readme = "../README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Mayank Lavania" }]
+keywords = ["technical-analysis", "ta-lib", "trading", "quant", "rust"]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Office/Business :: Financial :: Investment",
+]
+requires-python = ">=3.9"
+
+[project.urls]
+Homepage = "https://github.com/lavs9/quantwave"
+Documentation = "https://lavs9.github.io/quantwave/"
+Repository = "https://github.com/lavs9/quantwave"
+
+[tool.maturin]
+module-name = "quantwave.quantwave_python"
+python-source = "python"

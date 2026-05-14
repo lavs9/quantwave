@@ -2242,3 +2242,12 @@ impl QuantWaveExt for LazyFrame {
         QuantWaveNamespace(self)
     }
 }
+
+// ====================== PYTHON PLUGIN REGISTRATION ======================
+
+#[cfg(feature = "python")]
+pub fn register_ta_plugins() {
+    // TODO: Once we implement the first plugins (sma, ema, etc.) in quantwave-plugins,
+    // we will register them here using polars' plugin macros.
+    // For now this is a no-op so the Python crate compiles.
+}

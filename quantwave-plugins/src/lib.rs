@@ -1,14 +1,24 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
+use polars::prelude::*;
+use pyo3_polars::derive::polars_expr;
+use quantwave_core::indicators::smoothing::SMA;
+use quantwave_core::traits::Next;
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize, Serialize)]
+pub struct SmaKwargs {
+    pub period: usize,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[polars_expr(output_type=Float64)]
+pub fn sma_plugin(inputs: &[Series], kwargs: SmaKwargs) -> PolarsResult<Series> {
+    let s = &inputs[0];
+    let ca = s.f64()?;
+    let mut indicator = SMA::new(kwargs.period);
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+    let out: Float64Chunked = ca
+        .into_iter()
+        .map(|opt_v| opt_v.map(|v| indicator.next(v)))
+        .collect();
+
+    Ok(out.into_series())
 }
