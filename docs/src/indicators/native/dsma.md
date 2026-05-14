@@ -6,11 +6,11 @@ Deviation Scaled Moving Average adapts to price variations using standard deviat
 
 ## Usage
 
-Use as an adaptive moving average whose period synchronizes to the current dominant cycle, avoiding the over- or under-smoothing caused by fixed-period MAs in changing market conditions.
+Use as a highly adaptive moving average that tracks price closely during trends and large moves but provides heavy filtering during consolidation. Ideal for trend-following entries and trailing stops.
 
 ## Background
 
-> The Dominant Cycle-Synchronized MA adapts its period to the measured dominant cycle, ensuring the smoothing window always spans exactly one full cycle. Ehlers presents this in Cycle Analytics for Traders as the mathematically correct way to apply moving averages to cyclic market data.
+> In 'The Deviation-Scaled Moving Average' (2018), Ehlers introduces an adaptive EMA where the alpha (smoothing factor) is dynamically adjusted based on a deviation-scaled oscillator. By scaling the SuperSmoother-filtered momentum by its RMS, the indicator becomes reactive to significant price deviations while remaining smooth during low-volatility periods.
 
 ## Parameters
 

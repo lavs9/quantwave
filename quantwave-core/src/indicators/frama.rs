@@ -25,7 +25,7 @@ pub struct FRAMA {
 impl FRAMA {
     pub fn new(mut length: usize) -> Self {
         // Ehlers notes that N must be an even number.
-        if length % 2 != 0 {
+        if !length.is_multiple_of(2) {
             length += 1;
         }
         let half_length = length / 2;

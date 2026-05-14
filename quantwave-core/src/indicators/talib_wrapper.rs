@@ -150,6 +150,7 @@ macro_rules! talib_2_in_1_out {
         }
 
         impl $name {
+            #[allow(clippy::too_many_arguments)]
             pub fn new($( $param: $ptype ),*) -> Self {
                 Self {
                     $( $param, )*

@@ -41,10 +41,8 @@ impl Next<f64> for UltimateBands {
         self.sum_diff_sq += diff_sq;
         self.diff_sq_history.push_back(diff_sq);
 
-        if self.diff_sq_history.len() > self.length {
-            if let Some(old) = self.diff_sq_history.pop_front() {
-                self.sum_diff_sq -= old;
-            }
+        if self.diff_sq_history.len() > self.length && let Some(old) = self.diff_sq_history.pop_front() {
+            self.sum_diff_sq -= old;
         }
 
         let sd = if self.sum_diff_sq > 0.0 {

@@ -10,7 +10,7 @@ Use to confirm whether price is trending or cycling before applying directional 
 
 ## Background
 
-> Ehlers uses the correlation between price and the best-fit sine wave as a trend indicator in Cycle Analytics for Traders. A high correlation coefficient (near 1.0) means price closely follows a sine wave and is cycling; a low coefficient indicates the dominant market mode is a trend.
+> In 'Correlation As A Trend Indicator' (2020), Ehlers uses the Pearson correlation coefficient between price and a linear ramp to identify trend strength. A coefficient near +1.0 indicates a consistent uptrend, while -1.0 indicates a consistent downtrend. Unlike standard moving averages, this approach is independent of price amplitude and focuses purely on the linearity of the move.
 
 ## Parameters
 

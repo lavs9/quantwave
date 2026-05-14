@@ -76,10 +76,8 @@ impl Next<f64> for SyntheticOscillator {
 
         self.lp_window.push_back(lp);
         self.lp_sum_sq += lp * lp;
-        if self.lp_window.len() > 100 {
-            if let Some(old) = self.lp_window.pop_front() {
-                self.lp_sum_sq -= old * old;
-            }
+        if self.lp_window.len() > 100 && let Some(old) = self.lp_window.pop_front() {
+            self.lp_sum_sq -= old * old;
         }
 
         let rms_lp = (self.lp_sum_sq / self.lp_window.len() as f64).sqrt();
@@ -89,10 +87,8 @@ impl Next<f64> for SyntheticOscillator {
         let roc = re - self.re_prev;
         self.roc_window.push_back(roc);
         self.roc_sum_sq += roc * roc;
-        if self.roc_window.len() > 100 {
-            if let Some(old) = self.roc_window.pop_front() {
-                self.roc_sum_sq -= old * old;
-            }
+        if self.roc_window.len() > 100 && let Some(old) = self.roc_window.pop_front() {
+            self.roc_sum_sq -= old * old;
         }
 
         let qrms = (self.roc_sum_sq / self.roc_window.len() as f64).sqrt();
@@ -127,9 +123,7 @@ impl Next<f64> for SyntheticOscillator {
         // Glitch removal
         // Normalize phase to [0, 2*PI] for quadrant checks
         let norm_phase = self.phase % (2.0 * PI);
-        if norm_phase > 0.0 && norm_phase < PI / 2.0 && synth < self.synth_prev {
-            synth = self.synth_prev;
-        } else if norm_phase > PI && norm_phase < 1.5 * PI && synth > self.synth_prev {
+        if (norm_phase > 0.0 && norm_phase < PI / 2.0 && synth < self.synth_prev) || (norm_phase > PI && norm_phase < 1.5 * PI && synth > self.synth_prev) {
             synth = self.synth_prev;
         }
 

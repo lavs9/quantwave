@@ -43,10 +43,8 @@ impl Next<f64> for EhlersUltimateOscillator {
 
         self.window.push_back(signal);
         self.sum_sq += signal * signal;
-        if self.window.len() > 100 {
-            if let Some(old) = self.window.pop_front() {
-                self.sum_sq -= old * old;
-            }
+        if self.window.len() > 100 && let Some(old) = self.window.pop_front() {
+            self.sum_sq -= old * old;
         }
 
         let rms = (self.sum_sq / self.window.len() as f64).sqrt();

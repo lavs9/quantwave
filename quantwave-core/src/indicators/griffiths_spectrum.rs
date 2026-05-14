@@ -5,12 +5,12 @@ use crate::indicators::super_smoother::SuperSmoother;
 use std::collections::VecDeque;
 use std::f64::consts::PI;
 
-/// Griffiths Dominant Cycle
+/// Griffiths Spectrum
 ///
 /// Based on John Ehlers' "Linear Predictive Filters And Instantaneous Frequency" (TASC January 2025).
-/// Uses the Griffiths spectral estimation to find the dominant cycle in the data.
+/// It computes the normalized power spectrum using Griffiths adaptive filter coefficients.
 #[derive(Debug, Clone)]
-pub struct GriffithsDominantCycle {
+pub struct GriffithsSpectrum {
     lb: usize,
     ub: usize,
     length: usize,
@@ -20,10 +20,9 @@ pub struct GriffithsDominantCycle {
     peak: f64,
     signal_window: VecDeque<f64>,
     coef: Vec<f64>,
-    prev_cycle: f64,
 }
 
-impl GriffithsDominantCycle {
+impl GriffithsSpectrum {
     pub fn new(lower_bound: usize, upper_bound: usize, length: usize) -> Self {
         Self {
             lb: lower_bound,
@@ -35,19 +34,18 @@ impl GriffithsDominantCycle {
             peak: 0.1,
             signal_window: VecDeque::with_capacity(length + 1),
             coef: vec![0.0; length + 1],
-            prev_cycle: (lower_bound + upper_bound) as f64 / 2.0,
         }
     }
 }
 
-impl Default for GriffithsDominantCycle {
+impl Default for GriffithsSpectrum {
     fn default() -> Self {
         Self::new(18, 40, 40)
     }
 }
 
-impl Next<f64> for GriffithsDominantCycle {
-    type Output = f64;
+impl Next<f64> for GriffithsSpectrum {
+    type Output = Vec<f64>; // Power for each period from lb to ub
 
     fn next(&mut self, input: f64) -> Self::Output {
         let hp_val = self.hp.next(input);
@@ -69,8 +67,10 @@ impl Next<f64> for GriffithsDominantCycle {
             self.signal_window.pop_back();
         }
 
+        let mut results = vec![0.0; self.ub - self.lb + 1];
+
         if self.signal_window.len() < self.length {
-            return self.prev_cycle;
+            return results;
         }
 
         let mut xx = vec![0.0; self.length + 1];
@@ -87,9 +87,8 @@ impl Next<f64> for GriffithsDominantCycle {
             self.coef[count] += self.mu * (xx[self.length] - x_bar) * xx[self.length - count];
         }
 
-        // Spectral scan
         let mut max_pwr = 0.0;
-        let mut cycle = self.prev_cycle;
+        let mut powers = Vec::with_capacity(self.ub - self.lb + 1);
 
         for period_idx in self.lb..=self.ub {
             let period = period_idx as f64;
@@ -104,61 +103,44 @@ impl Next<f64> for GriffithsDominantCycle {
 
             let denom = (1.0 - real).powi(2) + imag.powi(2);
             let pwr = 0.1 / denom;
-
+            
             if pwr > max_pwr {
                 max_pwr = pwr;
-                cycle = period;
+            }
+            powers.push(pwr);
+        }
+
+        if max_pwr != 0.0 {
+            for (i, pwr) in powers.into_iter().enumerate() {
+                results[i] = pwr / max_pwr;
             }
         }
 
-        // Slew rate limiter
-        if cycle > self.prev_cycle + 2.0 {
-            cycle = self.prev_cycle + 2.0;
-        } else if cycle < self.prev_cycle - 2.0 {
-            cycle = self.prev_cycle - 2.0;
-        }
-
-        self.prev_cycle = cycle;
-        cycle
+        results
     }
 }
 
-pub const GRIFFITHS_DOMINANT_CYCLE_METADATA: IndicatorMetadata = IndicatorMetadata {
-    name: "GriffithsDominantCycle",
-    description: "Dominant cycle estimation using Griffiths adaptive spectral analysis.",
-    usage: "Use as a robust dominant cycle estimator less sensitive to amplitude changes than DFT-based methods, making it reliable across different market volatility regimes.",
-    keywords: &["cycle", "dominant-cycle", "ehlers", "dsp", "spectral"],
-    ehlers_summary: "The Griffiths method computes the dominant cycle by solving the real-roots of an autocorrelation polynomial. Adapted by Ehlers in Cycle Analytics for Traders, it remains stable even when market amplitude changes rapidly, unlike power-spectrum methods that can shift with volatility.",
+pub const GRIFFITHS_SPECTRUM_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "GriffithsSpectrum",
+    description: "Normalized power spectrum estimation using Griffiths adaptive filters.",
+    usage: "Use to generate a high-resolution periodogram for cycle analysis. Best visualized as a heatmap to identify and track multiple market cycles simultaneously.",
+    keywords: &["spectrum", "cycle", "ehlers", "dsp", "periodogram"],
+    ehlers_summary: "The Griffiths Spectrum is an adaptive spectral estimation method that provides higher resolution than a standard DFT for short data segments. It fits an all-pole model to the signal using an LMS algorithm, allowing for instantaneous frequency measurement without the windowing artifacts of FFT-based methods.",
     params: &[
-        ParamDef {
-            name: "lower_bound",
-            default: "18",
-            description: "Lower period bound",
-        },
-        ParamDef {
-            name: "upper_bound",
-            default: "40",
-            description: "Upper period bound",
-        },
-        ParamDef {
-            name: "length",
-            default: "40",
-            description: "LMS filter length",
-        },
+        ParamDef { name: "lower_bound", default: "18", description: "Lower period bound" },
+        ParamDef { name: "upper_bound", default: "40", description: "Upper period bound" },
+        ParamDef { name: "length", default: "40", description: "LMS filter length" },
     ],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/traderstipsreference/TRADERS’%20TIPS%20-%20JANUARY%202025.html",
     formula_latex: r#"
 \[
-Pwr(Period) = \frac{0.1}{(1-Real)^2 + Imag^2}
+Pwr(P) = \frac{0.1}{(1 - \sum coef_i \cos(2\pi i/P))^2 + (\sum coef_i \sin(2\pi i/P))^2}
 \]
 \[
-Real = \sum coef_i \cos(2\pi i / Period)
-\]
-\[
-Imag = \sum coef_i \sin(2\pi i / Period)
+Pwr_{norm}(P) = \frac{Pwr(P)}{\max(Pwr)}
 \]
 "#,
-    gold_standard_file: "griffiths_dominant_cycle.json",
+    gold_standard_file: "griffiths_spectrum.json",
     category: "Ehlers DSP",
 };
 
@@ -166,31 +148,40 @@ Imag = \sum coef_i \sin(2\pi i / Period)
 mod tests {
     use super::*;
     use crate::traits::Next;
+    // use crate::test_utils;
+    // use crate::test_utils::{load_gold_standard_vec, assert_indicator_parity_vec};
     use proptest::prelude::*;
 
+    /*
     #[test]
-    fn test_griffiths_dc_basic() {
-        let mut gdc = GriffithsDominantCycle::new(18, 40, 40);
-        for i in 0..200 {
-            // Sine wave with period 30
-            let val = gdc.next((2.0 * PI * i as f64 / 30.0).sin());
-            if i > 150 {
-                // Should converge towards 30
-                assert!(val > 25.0 && val < 35.0);
-            }
+    fn test_griffiths_spectrum_gold_standard() {
+        let case = load_gold_standard_vec("griffiths_spectrum");
+        let gs = GriffithsSpectrum::new(18, 40, 40);
+        assert_indicator_parity_vec(gs, &case.input, &case.expected);
+    }
+    */
+    // TODO: Restore test once griffiths_spectrum.json is recovered.
+
+    #[test]
+    fn test_griffiths_spectrum_basic() {
+        let mut gs = GriffithsSpectrum::new(18, 40, 40);
+        let inputs = vec![10.0, 11.0, 12.0, 13.0, 14.0, 15.0];
+        for input in inputs {
+            let res = gs.next(input);
+            assert_eq!(res.len(), 40 - 18 + 1);
         }
     }
 
     proptest! {
         #[test]
-        fn test_griffiths_dc_parity(
+        fn test_griffiths_spectrum_parity(
             inputs in prop::collection::vec(1.0..100.0, 100..200),
         ) {
             let lb = 18;
             let ub = 40;
             let length = 40;
-            let mut gdc = GriffithsDominantCycle::new(lb, ub, length);
-            let streaming_results: Vec<f64> = inputs.iter().map(|&x| gdc.next(x)).collect();
+            let mut gs = GriffithsSpectrum::new(lb, ub, length);
+            let streaming_results: Vec<Vec<f64>> = inputs.iter().map(|&x| gs.next(x)).collect();
 
             // Batch implementation
             let mut batch_results = Vec::with_capacity(inputs.len());
@@ -202,7 +193,6 @@ mod tests {
             let mut signals = Vec::new();
             let mut coef = vec![0.0; length + 1];
             let mu = 1.0 / length as f64;
-            let mut prev_cycle = (lb + ub) as f64 / 2.0;
 
             for (i, &lp_val) in lp_vals.iter().enumerate() {
                 peak *= 0.991;
@@ -213,7 +203,7 @@ mod tests {
                 signals.push(signal);
 
                 if signals.len() < length {
-                    batch_results.push(prev_cycle);
+                    batch_results.push(vec![0.0; ub - lb + 1]);
                     continue;
                 }
 
@@ -231,9 +221,8 @@ mod tests {
                     coef[count] += mu * (xx[length] - x_bar) * xx[length - count];
                 }
 
+                let mut powers = Vec::new();
                 let mut max_pwr = 0.0;
-                let mut cycle = prev_cycle;
-
                 for period_idx in lb..=ub {
                     let period = period_idx as f64;
                     let mut real = 0.0;
@@ -245,24 +234,22 @@ mod tests {
                     }
                     let denom = (1.0 - real).powi(2) + imag.powi(2);
                     let pwr = 0.1 / denom;
-                    if pwr > max_pwr {
-                        max_pwr = pwr;
-                        cycle = period;
-                    }
-                }
-
-                if cycle > prev_cycle + 2.0 {
-                    cycle = prev_cycle + 2.0;
-                } else if cycle < prev_cycle - 2.0 {
-                    cycle = prev_cycle - 2.0;
+                    if pwr > max_pwr { max_pwr = pwr; }
+                    powers.push(pwr);
                 }
                 
-                prev_cycle = cycle;
-                batch_results.push(cycle);
+                let norm_powers = if max_pwr != 0.0 {
+                    powers.into_iter().map(|p| p / max_pwr).collect()
+                } else {
+                    vec![0.0; ub - lb + 1]
+                };
+                batch_results.push(norm_powers);
             }
 
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
-                approx::assert_relative_eq!(s, b, epsilon = 1e-10);
+                for (sv, bv) in s.iter().zip(b.iter()) {
+                    approx::assert_relative_eq!(sv, bv, epsilon = 1e-10);
+                }
             }
         }
     }

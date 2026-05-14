@@ -81,11 +81,9 @@ impl Next<f64> for StandardDeviation {
         self.sum += input;
         self.sum_sq += input * input;
 
-        if self.window.len() > self.period {
-            if let Some(oldest) = self.window.pop_front() {
-                self.sum -= oldest;
-                self.sum_sq -= oldest * oldest;
-            }
+        if self.window.len() > self.period && let Some(oldest) = self.window.pop_front() {
+            self.sum -= oldest;
+            self.sum_sq -= oldest * oldest;
         }
 
         let n = self.window.len() as f64;

@@ -78,8 +78,8 @@ impl Next<f64> for GriffithsPredictor {
         
         // Let's use Ehlers' indexing directly by copying to a temp vector
         let mut xx = vec![0.0; self.length + 1];
-        for i in 1..=self.length {
-            xx[i] = self.signal_window[self.length - i];
+        for (i, val) in xx.iter_mut().enumerate().skip(1).take(self.length) {
+            *val = self.signal_window[self.length - i];
         }
 
         let mut x_bar = 0.0;

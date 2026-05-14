@@ -2,7 +2,6 @@ use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use crate::indicators::high_pass::HighPass;
 use std::collections::VecDeque;
-use std::f64::consts::PI;
 
 /// Fourier Dominant Cycle
 ///
@@ -69,16 +68,16 @@ impl Next<f64> for FourierDominantCycle {
 
         // DFT
         let mut pwr = vec![0.0; 51]; // Periods 8 to 50
-        for period_idx in 8..=50 {
+        for (period_idx, p) in pwr.iter_mut().enumerate().take(51).skip(8) {
             let period = period_idx as f64;
             let mut cos_part = 0.0;
             let mut sin_part = 0.0;
             for n in 0..self.window_len {
-                let angle = 2.0 * PI * n as f64 / period;
+                let angle = std::f64::consts::TAU * n as f64 / period;
                 cos_part += self.cleaned_window[n] * angle.cos();
                 sin_part += self.cleaned_window[n] * angle.sin();
             }
-            pwr[period_idx] = cos_part * cos_part + sin_part * sin_part;
+            *p = cos_part * cos_part + sin_part * sin_part;
         }
 
         // Max Power
@@ -90,8 +89,7 @@ impl Next<f64> for FourierDominantCycle {
         // dB and CG
         let mut num = 0.0;
         let mut denom = 0.0;
-        for period_idx in 8..=50 {
-            let p = pwr[period_idx];
+        for (period_idx, &p) in pwr.iter().enumerate().take(51).skip(8) {
             let db = if max_pwr > 0.0 && p > 0.0 {
                 let val = 0.01 / (1.0 - 0.99 * p / max_pwr);
                 -10.0 * val.log10()
@@ -150,6 +148,7 @@ DC = \frac{\sum_{P=8}^{50} P \cdot (3 - DB(P)) \text{ where } DB(P) < 3}{\sum (3
 
 #[cfg(test)]
 mod tests {
+    use std::f64::consts::PI;
     use super::*;
     use crate::traits::Next;
     use proptest::prelude::*;

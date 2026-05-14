@@ -38,7 +38,7 @@ impl CorrelationCycle {
         }
     }
 
-    fn pearson_correlation(n: usize, x: &VecDeque<f64>, y: &Vec<f64>) -> f64 {
+    fn pearson_correlation(n: usize, x: &std::collections::VecDeque<f64>, y: &[f64]) -> f64 {
         let mut sx = 0.0;
         let mut sy = 0.0;
         let mut sxx = 0.0;
@@ -104,10 +104,8 @@ impl Next<f64> for CorrelationCycle {
 
         // Do not allow rate change of angle to go negative
         // If Angle[1] - Angle < 270 and Angle < Angle[1] Then Angle = Angle[1];
-        if self.count > self.period + 1 {
-            if self.prev_angle - angle < 270.0 && angle < self.prev_angle {
-                angle = self.prev_angle;
-            }
+        if self.count > self.period + 1 && self.prev_angle - angle < 270.0 && angle < self.prev_angle {
+            angle = self.prev_angle;
         }
 
         self.prev_angle = angle;

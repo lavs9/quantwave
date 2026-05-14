@@ -272,6 +272,7 @@ impl<'a> QuantWaveNamespace<'a> {
                 .alias("aroon")])
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn stoch(
         self,
         high: &str,

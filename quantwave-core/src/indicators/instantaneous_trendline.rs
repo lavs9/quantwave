@@ -29,7 +29,7 @@ pub struct InstantaneousTrendline {
     smooth_period_prev: f64,
     
     itrend_wma: EhlersWma4,
-    itrend_history: VecDeque<f64>,
+    _itrend_history: VecDeque<f64>,
     count: usize,
 }
 
@@ -55,7 +55,7 @@ impl InstantaneousTrendline {
             smooth_period_prev: 6.0,
             
             itrend_wma: EhlersWma4::new(),
-            itrend_history: VecDeque::from(vec![0.0; 4]),
+            _itrend_history: VecDeque::from(vec![0.0; 4]),
             count: 0,
         }
     }
@@ -127,12 +127,7 @@ impl Next<f64> for InstantaneousTrendline {
         if period < 0.67 * self.period_prev {
             period = 0.67 * self.period_prev;
         }
-        if period < 6.0 {
-            period = 6.0;
-        }
-        if period > 50.0 {
-            period = 50.0;
-        }
+        period = period.clamp(6.0, 50.0);
         period = 0.2 * period + 0.8 * self.period_prev;
         self.period_prev = period;
 

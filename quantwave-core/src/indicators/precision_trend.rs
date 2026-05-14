@@ -44,7 +44,7 @@ impl Next<f64> for PrecisionTrendAnalysis {
         let v_hp2 = self.hp2.next(input);
         let trend = v_hp1 - v_hp2;
         
-        let roc = (self.length2 / 6.28) * (trend - self.prev_trend);
+        let roc = (self.length2 / std::f64::consts::TAU) * (trend - self.prev_trend);
         
         self.prev_trend = trend;
         (trend, roc)
@@ -121,11 +121,11 @@ mod tests {
             let mut prev_trend = 0.0;
             let mut batch_results = Vec::with_capacity(inputs.len());
 
-            for &input in inputs.iter() {
+            for input in inputs {
                 let v_hp1 = hp1.next(input);
                 let v_hp2 = hp2.next(input);
                 let trend = v_hp1 - v_hp2;
-                let roc = (l2 as f64 / 6.28) * (trend - prev_trend);
+                let roc = (l2 as f64 / std::f64::consts::TAU) * (trend - prev_trend);
                 prev_trend = trend;
                 batch_results.push((trend, roc));
             }

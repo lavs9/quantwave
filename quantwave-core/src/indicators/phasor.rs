@@ -35,7 +35,7 @@ impl Phasor {
     /// Update with a specific period for the Hilbert FIR
     pub fn next_with_period(&mut self, price: f64, period: f64) -> (f64, f64) {
         self.count += 1;
-        self.period_prev = period;
+        self.period_prev = period.clamp(6.0, 50.0);
 
         if self.count < 7 {
             self.wma_price.next(price);

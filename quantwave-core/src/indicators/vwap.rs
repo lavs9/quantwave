@@ -1,7 +1,7 @@
 use crate::indicators::metadata::IndicatorMetadata;
 use crate::traits::Next;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct AnchoredVWAP {
     cumulative_tp_v: f64,
     cumulative_v: f64,
@@ -9,10 +9,7 @@ pub struct AnchoredVWAP {
 
 impl AnchoredVWAP {
     pub fn new() -> Self {
-        Self {
-            cumulative_tp_v: 0.0,
-            cumulative_v: 0.0,
-        }
+        Self::default()
     }
 }
 

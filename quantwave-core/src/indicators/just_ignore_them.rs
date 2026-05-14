@@ -41,9 +41,7 @@ impl Next<f64> for UndersampledDoubleMA {
         self.count += 1;
         
         // Ehlers: If CurrentBar / 5 = IntPortion(CurrentBar / 5) Then Sample = Close;
-        if self.count % self.sampling_period == 0 {
-            self.sample = input;
-        } else if self.count == 1 {
+        if self.count.is_multiple_of(self.sampling_period) || self.count == 1 {
             self.sample = input;
         }
 

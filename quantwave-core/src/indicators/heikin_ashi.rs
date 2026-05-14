@@ -12,6 +12,12 @@ pub struct HeikinAshi {
     prev_ha_close: Option<f64>,
 }
 
+impl Default for HeikinAshi {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl HeikinAshi {
     pub fn new() -> Self {
         Self {

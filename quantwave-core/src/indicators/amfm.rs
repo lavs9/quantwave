@@ -43,10 +43,8 @@ impl Next<(f64, f64)> for AMDetector {
         
         self.envelope_history.push_back(envelope);
         self.sum_envelope += envelope;
-        if self.envelope_history.len() > self.avg_len {
-            if let Some(old) = self.envelope_history.pop_front() {
-                self.sum_envelope -= old;
-            }
+        if self.envelope_history.len() > self.avg_len && let Some(old) = self.envelope_history.pop_front() {
+            self.sum_envelope -= old;
         }
 
         self.sum_envelope / self.envelope_history.len() as f64
@@ -94,9 +92,7 @@ impl Next<(f64, f64)> for FMDemodulator {
     fn next(&mut self, (close, open): (f64, f64)) -> Self::Output {
         self.count += 1;
         let deriv = close - open;
-        let mut hl = 10.0 * deriv;
-        if hl > 1.0 { hl = 1.0; }
-        if hl < -1.0 { hl = -1.0; }
+        let hl = (10.0 * deriv).clamp(-1.0, 1.0);
 
         let ss = if self.count < 3 {
             deriv

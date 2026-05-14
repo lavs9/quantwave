@@ -148,18 +148,8 @@ impl Next<f64> for MAMA {
         if im != 0.0 && re != 0.0 {
             period = 360.0 / (im / re).atan().to_degrees();
         }
-        if period > 1.5 * self.period_prev {
-            period = 1.5 * self.period_prev;
-        }
-        if period < 0.67 * self.period_prev {
-            period = 0.67 * self.period_prev;
-        }
-        if period < 6.0 {
-            period = 6.0;
-        }
-        if period > 50.0 {
-            period = 50.0;
-        }
+        period = period.clamp(0.67 * self.period_prev, 1.5 * self.period_prev);
+        period = period.clamp(6.0, 50.0);
         period = 0.2 * period + 0.8 * self.period_prev;
         self.period_prev = period;
 
@@ -178,13 +168,7 @@ impl Next<f64> for MAMA {
             delta_phase = 1.0;
         }
 
-        let mut alpha = self.fast_limit / delta_phase;
-        if alpha < self.slow_limit {
-            alpha = self.slow_limit;
-        }
-        if alpha > self.fast_limit {
-            alpha = self.fast_limit;
-        }
+        let alpha = (self.fast_limit / delta_phase).clamp(self.slow_limit, self.fast_limit);
 
         let mama = alpha * price + (1.0 - alpha) * self.mama_prev;
         let fama = 0.5 * alpha * mama + (1.0 - 0.5 * alpha) * self.fama_prev;

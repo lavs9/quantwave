@@ -19,7 +19,7 @@ pub struct GeneralizedLaguerre {
 
 impl GeneralizedLaguerre {
     pub fn new(length: usize, gamma: f64, order: usize) -> Self {
-        let order = order.min(10).max(1);
+        let order = order.clamp(1, 10);
         Self {
             us: UltimateSmoother::new(length),
             gamma,
