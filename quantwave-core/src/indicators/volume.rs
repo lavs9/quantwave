@@ -1,3 +1,6 @@
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
+use crate::traits::Next;
+
 talib_4_in_1_out!(AD, talib_rs::volume::ad);
 impl Default for AD {
     fn default() -> Self {
@@ -11,6 +14,60 @@ impl Default for OBV {
         Self::new()
     }
 }
+
+pub const AD_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Accumulation/Distribution Line (AD)",
+    description: "A volume-based indicator designed to measure the cumulative flow of money into and out of a security.",
+    usage: "Use to confirm price trends or identify potential reversals through divergences. Rising AD confirms an uptrend; falling AD confirms a downtrend.",
+    keywords: &["volume", "momentum", "classic", "accumulation", "distribution"],
+    ehlers_summary: "Developed by Marc Chaikin, the AD line uses the relationship between price and volume to determine whether a security is being accumulated or distributed. It is calculated by multiplying the Money Flow Multiplier by the period's volume and adding it to a cumulative total. — StockCharts ChartSchool",
+    params: &[],
+    formula_source: "https://www.investopedia.com/terms/a/accumulationdistributioncurve.asp",
+    formula_latex: r#"
+\[
+\text{MFM} = \frac{(Close - Low) - (High - Close)}{High - Low} \\ \text{MFV} = \text{MFM} \times Volume \\ AD_t = AD_{t-1} + \text{MFV}
+\]
+"#,
+    gold_standard_file: "ad.json",
+    category: "Classic",
+};
+
+pub const ADOSC_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "Chaikin Oscillator (ADOSC)",
+    description: "An indicator that measures the momentum of the Accumulation/Distribution Line using the difference between two exponential moving averages.",
+    usage: "Use to anticipate changes in the AD Line. Positive values indicate increasing buying pressure, while negative values indicate increasing selling pressure.",
+    keywords: &["volume", "oscillator", "momentum", "classic"],
+    ehlers_summary: "Marc Chaikin developed this oscillator to identify momentum shifts in the AD Line. By applying EMAs of different lengths to the AD Line, it highlights changes in money flow before they become apparent in the cumulative total, providing an early warning system for trend exhaustion. — StockCharts ChartSchool",
+    params: &[
+        ParamDef { name: "fastperiod", default: "3", description: "Fast EMA period" },
+        ParamDef { name: "slowperiod", default: "10", description: "Slow EMA period" },
+    ],
+    formula_source: "https://www.investopedia.com/terms/c/chaikinoscillator.asp",
+    formula_latex: r#"
+\[
+ADOSC = EMA(AD, 3) - EMA(AD, 10)
+\]
+"#,
+    gold_standard_file: "adosc.json",
+    category: "Classic",
+};
+
+pub const OBV_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "On-Balance Volume (OBV)",
+    description: "A momentum indicator that uses volume flow to predict changes in stock price.",
+    usage: "Use to identify accumulation by institutions. When price is flat but OBV is rising, a breakout to the upside is likely. Conversely, when price is flat but OBV is falling, a breakdown is likely.",
+    keywords: &["volume", "momentum", "classic", "accumulation", "distribution"],
+    ehlers_summary: "Introduced by Joe Granville in his 1963 book 'Granville's New Key to Stock Market Profits', OBV is one of the oldest and most respected volume indicators. It operates on the principle that volume precedes price, and that institutional money flow leaves a detectable trail in the volume data before the price move occurs. — StockCharts ChartSchool",
+    params: &[],
+    formula_source: "https://www.investopedia.com/terms/o/onbalancevolume.asp",
+    formula_latex: r#"
+\[
+OBV_t = OBV_{t-1} + \begin{cases} Volume & \text{if } Close_t > Close_{t-1} \\ 0 & \text{if } Close_t = Close_{t-1} \\ -Volume & \text{if } Close_t < Close_{t-1} \end{cases}
+\]
+"#,
+    gold_standard_file: "obv.json",
+    category: "Classic",
+};
 
 #[cfg(test)]
 mod tests {
