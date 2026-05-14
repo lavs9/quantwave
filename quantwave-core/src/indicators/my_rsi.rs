@@ -63,6 +63,9 @@ impl Next<f64> for MyRSI {
 pub const MY_RSI_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "MyRSI",
     description: "Ehlers' version of RSI that swings between -1 and +1.",
+    usage: "Use as Ehlers smoothed RSI variant that applies cycle-aware filtering to reduce whipsaws while maintaining RSI-style overbought/oversold interpretation.",
+    keywords: &["oscillator", "rsi", "ehlers", "momentum", "smoothing"],
+    ehlers_summary: "Ehlers presents a smoothed RSI formulation that applies a Laguerre or SuperSmoother filter to the up/down ratio before computing the RSI index. This reduces the noise and oscillation of standard RSI without significantly increasing lag, producing more reliable overbought and oversold readings.",
     params: &[ParamDef {
         name: "length",
         default: "14",

@@ -61,6 +61,9 @@ impl Next<f64> for EhlersFilter {
 pub const EHLERS_FILTER_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Ehlers Filter",
     description: "A non-linear FIR filter using distance coefficients to adapt to price transitions while maintaining smoothness.",
+    usage: "Use as a configurable digital filter from Ehlers DSP toolkit when you need a specific frequency response not covered by the standard smoother or Butterworth designs.",
+    keywords: &["filter", "ehlers", "dsp", "smoothing"],
+    ehlers_summary: "The Ehlers Filter is a generalized IIR filter design drawn from Ehlers digital signal processing framework for markets. Its coefficients can be tuned to approximate different filter types (lowpass, highpass, bandpass), making it a flexible building block for custom indicator pipelines.",
     params: &[ParamDef {
         name: "length",
         default: "15",

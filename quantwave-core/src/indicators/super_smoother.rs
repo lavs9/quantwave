@@ -58,6 +58,9 @@ impl Next<f64> for SuperSmoother {
 pub const SUPER_SMOOTHER_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "SuperSmoother",
     description: "A second-order IIR filter with a maximally flat Butterworth response for superior smoothing with minimal lag.",
+    usage: "Use as a drop-in replacement for any moving average when maximum smoothing with minimal lag is needed. Ideal as a pre-filter before oscillators to eliminate high-frequency noise.",
+    keywords: &["filter", "smoothing", "ehlers", "dsp", "low-pass"],
+    ehlers_summary: "Ehlers describes the SuperSmoother as a two-pole Butterworth filter achieving the same smoothing as a longer SMA with far less lag. It uses a critically-damped design to eliminate Gibbs phenomenon overshoot while retaining cycle information. — Cybernetic Analysis for Stocks and Futures, 2004",
     params: &[ParamDef {
         name: "period",
         default: "20",

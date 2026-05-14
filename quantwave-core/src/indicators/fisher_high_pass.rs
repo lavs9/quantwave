@@ -81,6 +81,9 @@ impl Next<f64> for FisherHighPass {
 pub const FISHER_HIGH_PASS_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "FisherHighPass",
     description: "Fisher Transform applied to normalized HighPass filtered prices.",
+    usage: "Use to isolate high-frequency momentum from the cyclical component of price after trend removal. Provides a purer momentum signal than standard Fisher Transform applied to raw price.",
+    keywords: &["oscillator", "ehlers", "dsp", "high-pass", "momentum"],
+    ehlers_summary: "FisherHighPass applies the Fisher Transform to the high-pass filtered price rather than raw price. By first removing the low-frequency trend component with a high-pass filter, the resulting Fisher output captures only the cycle-domain momentum, producing an oscillator that is unaffected by the prevailing trend direction.",
     params: &[
         ParamDef {
             name: "hp_len",

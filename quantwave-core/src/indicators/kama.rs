@@ -79,6 +79,9 @@ impl Next<f64> for Kama {
 pub const KAMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "KAMA",
     description: "Kaufman's Adaptive Moving Average adjusts its sensitivity based on market volatility.",
+    usage: "Use as an adaptive moving average that is fast in trending markets and slow in choppy, sideways conditions. Reduces whipsaws that plague fixed-period moving averages in ranging markets.",
+    keywords: &["moving-average", "adaptive", "smoothing", "classic"],
+    ehlers_summary: "Perry Kaufman designed KAMA using an Efficiency Ratio that measures how directionally price has moved versus total path length. A high ratio (strong trend) produces a fast-reacting EMA; a low ratio (choppy market) produces a near-flat line, dramatically reducing false signals during consolidation. — New Trading Systems and Methods, 4th ed.",
     params: &[
         ParamDef { name: "period", default: "10", description: "Efficiency Ratio lookback period" },
         ParamDef { name: "fast_period", default: "2", description: "Fastest smoothing period" },

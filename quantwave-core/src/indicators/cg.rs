@@ -47,6 +47,9 @@ impl Next<f64> for CenterOfGravity {
 pub const CG_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Center of Gravity Oscillator",
     description: "The CG Oscillator identifies price turning points with essentially zero lag by calculating the balance point of prices.",
+    usage: "Use as a zero-lag momentum oscillator to detect cycle turning points. Crossovers of the trigger line provide high-accuracy entry and exit signals.",
+    keywords: &["oscillator", "momentum", "ehlers", "dsp", "zero-lag"],
+    ehlers_summary: "Ehlers introduces the Center of Gravity oscillator in Cybernetic Analysis (2004) as a near-zero-lag indicator. It computes the center of mass of a price series over a lookback window, producing an oscillator whose turning points lead price turns — a reversal of the usual indicator lag relationship.",
     params: &[ParamDef {
         name: "period",
         default: "10",

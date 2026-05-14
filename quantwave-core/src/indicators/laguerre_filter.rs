@@ -68,6 +68,9 @@ impl Next<f64> for LaguerreFilter {
 pub const LAGUERRE_FILTER_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Laguerre Filter",
     description: "A trend-following filter that excels at smoothing long-wavelength components using Laguerre polynomials and an UltimateSmoother base.",
+    usage: "Use as a low-lag smoothing filter with only 4 elements of state. Ideal when memory-efficiency matters or when a highly responsive smoother for real-time streaming is needed.",
+    keywords: &["filter", "ehlers", "dsp", "smoothing", "laguerre"],
+    ehlers_summary: "Ehlers introduces Laguerre filters in Cybernetic Analysis (2004), noting they achieve the response of much longer conventional filters using only four coefficients. The single gamma parameter controls the trade-off between lag and smoothness.",
     params: &[
         ParamDef {
             name: "length",

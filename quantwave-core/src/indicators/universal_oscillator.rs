@@ -89,6 +89,9 @@ impl Next<f64> for UniversalOscillator {
 pub const UNIVERSAL_OSCILLATOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Universal Oscillator",
     description: "An adaptive oscillator that normalizes price momentum using a SuperSmoother filter and AGC.",
+    usage: "Use as a generic oscillator framework that works on any pre-filtered input. Feed it the output of any smoother or filter to produce a normalized zero-centered oscillator.",
+    keywords: &["oscillator", "ehlers", "dsp", "universal", "momentum"],
+    ehlers_summary: "Ehlers Universal Oscillator is a generic momentum computation that can be applied to any filtered price input. It computes the rate of change of the filtered series normalized by its RMS amplitude, producing a consistently scaled oscillator that works regardless of the underlying filter or price instrument.",
     params: &[
         ParamDef {
             name: "band_edge",

@@ -54,6 +54,9 @@ impl Next<f64> for PrecisionTrendAnalysis {
 pub const PRECISION_TREND_ANALYSIS_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Precision Trend Analysis",
     description: "Trend identification using the difference between two high-pass filters.",
+    usage: "Use as a high-precision trend indicator that applies DSP filtering to remove cycle noise before measuring trend direction, giving fewer but more reliable trend signals.",
+    keywords: &["trend", "ehlers", "dsp", "filter"],
+    ehlers_summary: "Ehlers Precision Trend analysis applies a roofing-filter style preprocessing to price before computing the trend indicator, removing the cyclical component that causes premature trend reversals in standard indicators. The result is a trend signal that changes state only when the genuine trend direction changes.",
     params: &[
         ParamDef {
             name: "length1",

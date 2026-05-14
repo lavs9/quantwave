@@ -122,6 +122,9 @@ impl Next<(f64, f64)> for DMH {
 pub const DMH_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "DMH",
     description: "An improved Directional Movement indicator using Hann windowing for smoother signals and reduced lag.",
+    usage: "Use as a momentum oscillator with high-pass filtering to isolate cyclical momentum while removing the trend bias that corrupts standard momentum indicators.",
+    keywords: &["momentum", "oscillator", "ehlers", "high-pass", "dsp"],
+    ehlers_summary: "Ehlers constructs the DMH by applying a high-pass filter to the momentum calculation, removing the low-frequency trend component that causes conventional momentum to drift. The result is a zero-centered momentum oscillator that oscillates cleanly around the cycle midpoint.",
     params: &[ParamDef {
         name: "length",
         default: "14",

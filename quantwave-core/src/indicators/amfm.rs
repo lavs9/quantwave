@@ -117,6 +117,9 @@ impl Next<(f64, f64)> for FMDemodulator {
 pub const AM_DETECTOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "AM Detector",
     description: "Recovers market volatility from the amplitude-modulated whitened price spectrum.",
+    usage: "Use to extract the instantaneous amplitude and frequency of market cycles. The AM output measures cycle energy for position sizing; the FM output tracks cycle period for adaptive indicator tuning.",
+    keywords: &["cycle", "ehlers", "dsp", "amplitude", "frequency"],
+    ehlers_summary: "Ehlers adapts AM and FM demodulation techniques from radio engineering in Cycle Analytics for Traders to extract cycle amplitude and instantaneous frequency from market data. The amplitude envelope measures how energetic the current cycle is, while FM reveals whether the cycle period is expanding or contracting.",
     params: &[
         ParamDef { name: "highest_len", default: "4", description: "Envelope lookback length" },
         ParamDef { name: "avg_len", default: "8", description: "Smoothing length" },
@@ -134,6 +137,9 @@ Deriv = |Close - Open|, Envel = \max(Deriv, 4), Volatil = \text{Avg}(Envel, 8)
 pub const FM_DEMODULATOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "FM Demodulator",
     description: "Extracts market timing information by demodulating the frequency-modulated price spectrum.",
+    usage: "Use to extract the instantaneous amplitude and frequency of market cycles. The AM output measures cycle energy for position sizing; the FM output tracks cycle period for adaptive indicator tuning.",
+    keywords: &["cycle", "ehlers", "dsp", "amplitude", "frequency"],
+    ehlers_summary: "Ehlers adapts AM and FM demodulation techniques from radio engineering in Cycle Analytics for Traders to extract cycle amplitude and instantaneous frequency from market data. The amplitude envelope measures how energetic the current cycle is, while FM reveals whether the cycle period is expanding or contracting.",
     params: &[
         ParamDef { name: "period", default: "30", description: "SuperSmoother period" },
     ],

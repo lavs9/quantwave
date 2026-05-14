@@ -32,6 +32,9 @@ impl Next<f64> for FisherTransform {
 pub const FISHER_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Fisher Transform",
     description: "Converts inputs to a nearly Gaussian probability distribution, creating sharp peaks at turning points.",
+    usage: "Apply to normalized prices or oscillators to sharpen turning-point signals. The near-Gaussian output makes extreme values statistically significant and easy to trade.",
+    keywords: &["oscillator", "ehlers", "normalization", "momentum"],
+    ehlers_summary: "Ehlers introduces the Fisher Transform in Cybernetic Analysis (2004) to convert any bounded indicator into a Gaussian normal distribution. Values beyond ±1.5 signal statistically significant price extremes, sharper than raw oscillators.",
     params: &[],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/UsingTheFisherTransform.pdf",
     formula_latex: r#"

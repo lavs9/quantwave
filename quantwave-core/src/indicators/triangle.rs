@@ -74,6 +74,9 @@ impl Next<f64> for TriangleFilter {
 pub const TRIANGLE_FILTER_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "TriangleFilter",
     description: "Triangle windowed FIR filter.",
+    usage: "Use as a pre-smoother to reduce noise before applying cycle or momentum indicators when a symmetric low-ripple response is needed.",
+    keywords: &["filter", "ehlers", "dsp", "smoothing", "triangle"],
+    ehlers_summary: "The Triangle (Bartlett) window is a linearly-tapered FIR filter equivalent to applying two rectangular windows in sequence. It provides moderate sidelobe suppression and is useful when computational simplicity is preferred over maximum spectral attenuation.",
     params: &[
         ParamDef {
             name: "length",

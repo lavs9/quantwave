@@ -138,6 +138,9 @@ mod tests {
 pub const ICHIMOKU_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Ichimoku Cloud",
     description: "Ichimoku Kinko Hyo is a comprehensive indicator that defines support and resistance, identifies trend direction, gauges momentum and provides trading signals.",
+    usage: "Use as a complete trend system providing support, resistance, momentum, and cloud-based bias in a single indicator. The Kumo cloud thickness indicates trend strength.",
+    keywords: &["trend", "support-resistance", "classic", "japanese", "momentum"],
+    ehlers_summary: "Ichimoku Kinko Hyo was developed by Goichi Hosoda in the 1960s. The system comprises five components: Tenkan-sen (9-period midpoint), Kijun-sen (26-period midpoint), Senkou Span A and B (cloud), and Chikou Span (lagged close). Price above the cloud is bullish; the cloud thickness quantifies the strength of support or resistance. — Ichimoku Charts, Nicole Elliott",
     params: &[
         ParamDef {
             name: "tenkan_period",

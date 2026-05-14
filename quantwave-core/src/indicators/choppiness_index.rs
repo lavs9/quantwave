@@ -87,6 +87,9 @@ impl Next<(f64, f64, f64)> for ChoppinessIndex {
 pub const CHOPPINESS_INDEX_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Choppiness Index",
     description: "Determines if the market is trending (low values) or ranging/choppy (high values).",
+    usage: "Use to determine whether a market is trending or choppy before selecting a trading strategy. Values above 61.8 indicate chop; values below 38.2 indicate a strong trend.",
+    keywords: &["volatility", "trend-strength", "classic", "range"],
+    ehlers_summary: "The Choppiness Index, developed by E.W. Dreiss, measures how much of the total ATR-based range is consumed by the actual net price move over N bars. A value near 100 means price wandered back and forth using all available range without net progress (maximum chop); near 0 means a straight directional move with minimal retracement. — StockCharts ChartSchool",
     params: &[
         ParamDef { name: "period", default: "14", description: "Lookback period" },
     ],

@@ -53,6 +53,9 @@ impl Next<f64> for EhlersStochastic {
 pub const EHLERS_STOCHASTIC_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Ehlers Stochastic",
     description: "A Stochastic oscillator applied to the output of a Roofing Filter to eliminate Spectral Dilation.",
+    usage: "Use as a cycle-aware stochastic oscillator that adapts its lookback window to the current dominant cycle period rather than using a fixed period.",
+    keywords: &["oscillator", "stochastic", "ehlers", "cycle", "adaptive"],
+    ehlers_summary: "Ehlers computes the stochastic oscillator using the measured dominant cycle period as the lookback window. This adaptive approach ensures the stochastic spans exactly one full market cycle, making overbought and oversold conditions consistently meaningful.",
     params: &[
         ParamDef { name: "hp_period", default: "48", description: "HighPass critical period" },
         ParamDef { name: "ss_period", default: "10", description: "SuperSmoother critical period" },

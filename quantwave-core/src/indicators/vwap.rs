@@ -73,6 +73,9 @@ mod tests {
 pub const VWAP_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Anchored VWAP",
     description: "Volume Weighted Average Price anchored to a specific starting point.",
+    usage: "Use as an intraday fair value benchmark. Institutional traders buy below VWAP and sell above it; breakouts above VWAP on heavy volume signal bullish institutional interest.",
+    keywords: &["trend", "volume", "classic", "support-resistance"],
+    ehlers_summary: "Volume Weighted Average Price calculates the average price weighted by volume transacted at each level throughout the trading session. It serves as the primary execution benchmark for institutional orders — TWAP and VWAP algorithms are the two most common order execution strategies in equity markets. — Investopedia",
     params: &[],
     formula_source: "https://www.investopedia.com/terms/v/vwap.asp",
     formula_latex: r#"

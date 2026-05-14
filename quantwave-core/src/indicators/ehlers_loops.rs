@@ -140,6 +140,9 @@ impl Next<(f64, f64)> for EhlersLoops {
 pub const EHLERS_LOOPS_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Ehlers Loops",
     description: "Converts price and volume into normalized standard deviation units for scatter plot analysis.",
+    usage: "Use to visualize cycle dynamics in phase-space by plotting the indicator value against its derivative. Loop patterns reveal cycle turns before they appear in the price chart.",
+    keywords: &["cycle", "phase", "ehlers", "dsp", "visualization"],
+    ehlers_summary: "Ehlers describes phase-space loops in Cybernetic Analysis as a powerful visualization technique where an indicator is plotted against its first derivative. In cycle mode the path traces elliptical loops; in trend mode the path collapses to a line, enabling visual market mode identification.",
     params: &[
         ParamDef {
             name: "lp_period",

@@ -57,6 +57,9 @@ impl Next<f64> for UndersampledDoubleMA {
 pub const UNDERSAMPLED_DOUBLE_MA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "UndersampledDoubleMA",
     description: "Undersampled price data smoothed by dual Hann filters to eliminate high frequency noise.",
+    usage: "Internal implementation module — not intended as a standalone trading indicator.",
+    keywords: &["internal", "utility"],
+    ehlers_summary: "This module contains internal utility functions used by other indicators in the library. It is not intended to be used directly as a standalone trading indicator.",
     params: &[
         ParamDef {
             name: "fast_len",

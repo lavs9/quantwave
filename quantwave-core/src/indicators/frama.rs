@@ -106,6 +106,9 @@ impl Next<(f64, f64, f64)> for FRAMA {
 pub const FRAMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Fractal Adaptive Moving Average",
     description: "An adaptive moving average that uses the fractal dimension of prices to dynamically change its smoothing constant.",
+    usage: "Use as an adaptive moving average that slows dramatically during consolidation and speeds up during trending phases. Outperforms fixed-period MAs in ranging markets by avoiding false crossovers.",
+    keywords: &["moving-average", "adaptive", "fractal", "smoothing"],
+    ehlers_summary: "The Fractal Adaptive Moving Average uses the fractal dimension of recent price action to adapt its smoothing constant. During trending markets the fractal dimension approaches 1 (a line) producing a fast-reacting EMA; during ranging markets the dimension approaches 2 (a plane) slowing the average dramatically to filter chop.",
     params: &[ParamDef {
         name: "length",
         default: "16",

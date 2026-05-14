@@ -76,6 +76,9 @@ impl Next<f64> for ReversionIndex {
 pub const REVERSION_INDEX_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Reversion Index",
     description: "A mean-reversion oscillator that normalizes price changes by their absolute magnitude and applies SuperSmoother filtering.",
+    usage: "Use to identify mean-reversion opportunities when price has deviated significantly from its cycle trend. High index values signal overextended moves ripe for reversal.",
+    keywords: &["mean-reversion", "oscillator", "ehlers", "cycle"],
+    ehlers_summary: "Ehlers Reversion Index measures how far price has deviated from its Instantaneous Trendline in units of cycle amplitude. Because it normalizes by the current cycle energy, the index provides consistent overbought/oversold thresholds regardless of the absolute price level or volatility regime.",
     params: &[ParamDef {
         name: "length",
         default: "20",

@@ -69,6 +69,9 @@ impl Next<f64> for HannFilter {
 pub const HANN_FILTER_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "HannFilter",
     description: "Hann windowed lowpass FIR filter.",
+    usage: "Use as a windowing function before FFT-based dominant cycle measurement to achieve clean spectral separation between market cycles.",
+    keywords: &["filter", "ehlers", "dsp", "windowing", "spectral"],
+    ehlers_summary: "The Hann window provides a smooth bell-shaped taper achieving -31.5 dB first sidelobe suppression. Ehlers uses it in Cycle Analytics for Traders as the preferred DFT window because it offers the best trade-off between frequency resolution and leakage rejection.",
     params: &[
         ParamDef {
             name: "length",

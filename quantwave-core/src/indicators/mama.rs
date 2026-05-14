@@ -241,6 +241,9 @@ mod tests {
 pub const MAMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "MESA Adaptive Moving Average",
     description: "MAMA adapts to price movement in an entirely new and unique way based on the rate change of phase.",
+    usage: "Use as an adaptive trend filter that automatically speeds up in fast markets and slows in choppy ones. The FAMA line crossing MAMA provides high-probability trend change signals.",
+    keywords: &["moving-average", "adaptive", "ehlers", "dsp", "trend"],
+    ehlers_summary: "Presented in Rocket Science for Traders (2001), MAMA adapts its alpha based on the rate of phase change measured by the Hilbert Transform Discriminator. Fast cycles produce large alpha for responsiveness; slow cycles produce small alpha to reduce noise.",
     params: &[
         ParamDef {
             name: "fast_limit",

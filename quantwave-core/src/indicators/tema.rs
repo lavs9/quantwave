@@ -153,6 +153,9 @@ mod tests {
 pub const TEMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Triple Exponential Moving Average",
     description: "TEMA reduces the lag of traditional EMAs.",
+    usage: "Use to reduce the lag of a standard EMA by approximately two thirds. Drop-in replacement for EMA in trend-following systems where responsiveness is more important than smoothness.",
+    keywords: &["moving-average", "low-lag", "ema", "smoothing", "classic"],
+    ehlers_summary: "Patrick Mulloy introduced Triple EMA in Technical Analysis of Stocks and Commodities (1994) as a practical lag-reduction technique. TEMA = 3*EMA - 3*EMA(EMA) + EMA(EMA(EMA)), subtracting out two orders of the EMA lag while preserving most of the noise reduction.",
     params: &[ParamDef {
         name: "period",
         default: "14",
@@ -171,6 +174,9 @@ TEMA = (3 \times EMA_1) - (3 \times EMA_2) + EMA_3
 pub const ZLEMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Zero Lag Exponential Moving Average",
     description: "ZLEMA attempts to eliminate the inherent lag associated with moving averages.",
+    usage: "Use to reduce the lag of a standard EMA by approximately two thirds. Drop-in replacement for EMA in trend-following systems where responsiveness is more important than smoothness.",
+    keywords: &["moving-average", "low-lag", "ema", "smoothing", "classic"],
+    ehlers_summary: "Patrick Mulloy introduced Triple EMA in Technical Analysis of Stocks and Commodities (1994) as a practical lag-reduction technique. TEMA = 3*EMA - 3*EMA(EMA) + EMA(EMA(EMA)), subtracting out two orders of the EMA lag while preserving most of the noise reduction.",
     params: &[ParamDef {
         name: "period",
         default: "14",

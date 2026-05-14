@@ -68,6 +68,9 @@ impl Next<f64> for MESAStochastic {
 pub const MESA_STOCHASTIC_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "MESA Stochastic",
     description: "Standard Stochastic calculation applied to Roofing Filtered data, followed by SuperSmoothing.",
+    usage: "Use as a cycle-synchronized stochastic that automatically scales its lookback to the measured dominant cycle period for consistent overbought/oversold signals.",
+    keywords: &["oscillator", "stochastic", "ehlers", "cycle", "adaptive"],
+    ehlers_summary: "The MESA Stochastic extends Ehlers adaptive stochastic concept by using the MESA-measured dominant cycle period as the lookback window. Unlike traditional stochastics with fixed periods, it adapts to the current market rhythm, keeping the oscillator calibrated to one full cycle at all times.",
     params: &[
         ParamDef { name: "length", default: "20", description: "Stochastic lookback length" },
         ParamDef { name: "hp_period", default: "48", description: "HighPass critical period" },

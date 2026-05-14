@@ -59,6 +59,9 @@ impl Next<f64> for HighPass {
 pub const HIGH_PASS_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "HighPass",
     description: "A second-order High Pass filter that rejects low-frequency components.",
+    usage: "Apply to price to isolate the cyclical component by attenuating the low-frequency trend. Use as the first stage before an oscillator or spectrum analyser.",
+    keywords: &["filter", "ehlers", "dsp", "high-pass", "cycle"],
+    ehlers_summary: "Ehlers derives the one-pole high-pass filter in Cycle Analytics for Traders analogously to EMA derivation, but applied to price differences rather than levels. It removes the DC component and low-frequency trend, leaving the cyclical content for downstream analysis.",
     params: &[ParamDef {
         name: "period",
         default: "20",

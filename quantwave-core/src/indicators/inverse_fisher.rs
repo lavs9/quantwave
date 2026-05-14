@@ -31,6 +31,9 @@ impl Next<f64> for InverseFisherTransform {
 pub const INVERSE_FISHER_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Inverse Fisher Transform",
     description: "A compressive transform that forces oscillator values towards +1 or -1, creating clear buy/sell signals.",
+    usage: "Apply to RSI or other oscillators to rescale them to a ±1 range with sharp threshold behaviour. Values near ±1 indicate high-confidence overbought/oversold conditions.",
+    keywords: &["oscillator", "ehlers", "normalization", "momentum"],
+    ehlers_summary: "The Inverse Fisher Transform maps input values to (-1, +1) via a hyperbolic tangent function. Ehlers uses it in Cybernetic Analysis to create oscillators whose output clusters near the extremes, making crossovers of fixed thresholds reliable trading signals.",
     params: &[],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/TheInverseFisherTransform.pdf",
     formula_latex: r#"

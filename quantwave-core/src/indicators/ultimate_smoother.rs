@@ -60,6 +60,9 @@ impl Next<f64> for UltimateSmoother {
 pub const ULTIMATE_SMOOTHER_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "UltimateSmoother",
     description: "An Ehlers filter with zero lag in the Pass Band, constructed by subtracting High Pass response from the input data.",
+    usage: "Use when you need near-zero phase lag smoothing with very low ripple. It is Ehlers preferred smoother for applications where timing precision is critical.",
+    keywords: &["filter", "smoothing", "ehlers", "dsp", "zero-lag"],
+    ehlers_summary: "Ehlers designs the Ultimate Smoother in Cycle Analytics for Traders to minimize both lag and ripple simultaneously. It achieves near-zero phase shift across the passband while providing excellent attenuation of high-frequency noise, making it his preferred general-purpose smoother for cycle-sensitive applications.",
     params: &[ParamDef {
         name: "period",
         default: "20",

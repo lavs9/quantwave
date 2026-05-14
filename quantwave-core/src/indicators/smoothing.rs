@@ -165,6 +165,9 @@ mod tests {
 pub const SMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Simple Moving Average",
     description: "The Simple Moving Average calculates the unweighted mean of the previous N data points.",
+    usage: "Use as the foundational smoothing module providing SMA, EMA, WMA, and SMMA implementations that power higher-level indicators across the library.",
+    keywords: &["moving-average", "smoothing", "classic", "ema"],
+    ehlers_summary: "The core smoothing algorithms — SMA, EMA, WMA — are the building blocks of nearly all technical indicators. EMA applies exponential decay weighting (alpha = 2/(n+1)), SMA applies uniform weighting over N bars, and WMA applies linearly increasing weights emphasizing more recent bars.",
     params: &[ParamDef {
         name: "period",
         default: "14",
@@ -183,6 +186,9 @@ SMA = \frac{1}{n} \sum_{i=1}^{n} P_i
 pub const EMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Exponential Moving Average",
     description: "The Exponential Moving Average gives more weight to recent prices.",
+    usage: "Use as the foundational smoothing module providing SMA, EMA, WMA, and SMMA implementations that power higher-level indicators across the library.",
+    keywords: &["moving-average", "smoothing", "classic", "ema"],
+    ehlers_summary: "The core smoothing algorithms — SMA, EMA, WMA — are the building blocks of nearly all technical indicators. EMA applies exponential decay weighting (alpha = 2/(n+1)), SMA applies uniform weighting over N bars, and WMA applies linearly increasing weights emphasizing more recent bars.",
     params: &[ParamDef {
         name: "period",
         default: "14",
@@ -201,6 +207,9 @@ EMA = P_t \times \alpha + EMA_{t-1} \times (1 - \alpha)
 pub const WMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Weighted Moving Average",
     description: "The Weighted Moving Average assigns linearly decreasing weights.",
+    usage: "Use as the foundational smoothing module providing SMA, EMA, WMA, and SMMA implementations that power higher-level indicators across the library.",
+    keywords: &["moving-average", "smoothing", "classic", "ema"],
+    ehlers_summary: "The core smoothing algorithms — SMA, EMA, WMA — are the building blocks of nearly all technical indicators. EMA applies exponential decay weighting (alpha = 2/(n+1)), SMA applies uniform weighting over N bars, and WMA applies linearly increasing weights emphasizing more recent bars.",
     params: &[ParamDef {
         name: "period",
         default: "14",

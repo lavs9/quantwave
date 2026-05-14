@@ -153,6 +153,9 @@ mod tests {
 pub const WAVETREND_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "WaveTrend Oscillator",
     description: "WaveTrend is an oscillator that helps identify overbought and oversold conditions.",
+    usage: "Use as a momentum oscillator to identify overbought and oversold conditions. WaveTrend crossovers at extreme levels provide high-probability mean-reversion entry signals.",
+    keywords: &["oscillator", "momentum", "overbought", "oversold", "ehlers"],
+    ehlers_summary: "WaveTrend (popularized as LazyBear WaveTrend on TradingView) computes a channel index by normalizing price deviation from an EMA by the smoothed absolute deviation. A second EMA of this index produces the signal line. Extreme values (±60) with WT1-WT2 crossovers are the classic trade trigger.",
     params: &[
         ParamDef {
             name: "n1",

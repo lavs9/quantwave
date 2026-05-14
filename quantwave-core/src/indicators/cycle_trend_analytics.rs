@@ -31,6 +31,9 @@ impl Next<f64> for CycleTrendAnalytics {
 pub const CYCLE_TREND_ANALYTICS_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Cycle/Trend Analytics",
     description: "A set of oscillators (Price - SMA) with lengths from 5 to 30 used to visualize cycles and trends.",
+    usage: "Use to classify the current market mode as trending or cycling before selecting your strategy. Apply trend-following systems in trend mode and mean-reversion systems in cycle mode.",
+    keywords: &["cycle", "trend", "ehlers", "classification", "adaptive"],
+    ehlers_summary: "Ehlers presents Cycle/Trend Analytics in Cycle Analytics for Traders as a framework for determining the dominant market mode. By measuring the correlation between price and the best-fit dominant cycle, the indicator classifies market behavior, enabling traders to switch between trend and cycle trading strategies dynamically.",
     params: &[
         ParamDef {
             name: "min_length",

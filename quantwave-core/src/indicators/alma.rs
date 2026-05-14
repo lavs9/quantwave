@@ -117,6 +117,9 @@ mod tests {
 pub const ALMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Arnaud Legoux Moving Average",
     description: "ALMA is designed to reduce lag while providing high smoothness.",
+    usage: "Use as a low-latency moving average that reduces lag compared to EMA while controlling overshoot through the Gaussian offset parameter. Well-suited for momentum systems.",
+    keywords: &["moving-average", "smoothing", "low-latency", "adaptive"],
+    ehlers_summary: "The Arnaud Legoux Moving Average applies a Gaussian-shaped weight distribution offset toward the recent end of the lookback window. The sigma parameter controls weight spread and the offset parameter controls how far the Gaussian peak is positioned from the current bar, enabling a lag-accuracy trade-off unavailable in standard MAs.",
     params: &[
         ParamDef {
             name: "period",

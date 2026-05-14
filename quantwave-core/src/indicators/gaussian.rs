@@ -114,6 +114,9 @@ impl Next<f64> for GaussianFilter {
 pub const GAUSSIAN_FILTER_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "GaussianFilter",
     description: "Multi-pole Gaussian low-pass filter for reduced lag.",
+    usage: "Use when smooth symmetric price averaging with near-zero phase shift is needed. Works well as a preprocessing step for spectral analysis indicators.",
+    keywords: &["filter", "smoothing", "ehlers", "dsp", "low-pass"],
+    ehlers_summary: "Gaussian filters are the theoretically optimal lowpass filter for minimizing the product of time-domain duration and frequency-domain bandwidth. Ehlers implements them as cascaded pole filters with Gaussian-function-derived coefficients, achieving very smooth output with excellent stopband attenuation.",
     params: &[
         ParamDef {
             name: "period",

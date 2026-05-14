@@ -75,6 +75,9 @@ impl Next<f64> for HammingFilter {
 pub const HAMMING_FILTER_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "HammingFilter",
     description: "Hamming windowed FIR filter with pedestal.",
+    usage: "Apply as a windowing function before DFT-based cycle detection to reduce sidelobe leakage and obtain cleaner dominant cycle estimates.",
+    keywords: &["filter", "ehlers", "dsp", "windowing", "spectral"],
+    ehlers_summary: "The Hamming window is a raised-cosine weighting function that reduces spectral leakage by tapering the edges of a data block. Ehlers uses it in DFT-based cycle measurement tools to prevent energy in one frequency bin from contaminating adjacent bins, improving cycle period resolution.",
     params: &[
         ParamDef {
             name: "length",

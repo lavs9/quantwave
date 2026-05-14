@@ -70,6 +70,9 @@ impl Next<f64> for USI {
 pub const USI_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Ultimate Strength Index",
     description: "A lag-reduced version of the RSI using UltimateSmoother on smoothed up/down components.",
+    usage: "Use to measure the relative strength of the current market move normalized to the dominant cycle amplitude, giving a volatility-adjusted momentum reading.",
+    keywords: &["oscillator", "strength", "ehlers", "adaptive", "momentum"],
+    ehlers_summary: "The Ultimate Strength Index measures directional momentum as a fraction of the total cycle amplitude. By normalizing momentum to the RMS energy of the dominant cycle, it produces a consistent 0-100 reading that is comparable across different instruments and volatility regimes.",
     params: &[ParamDef {
         name: "length",
         default: "14",

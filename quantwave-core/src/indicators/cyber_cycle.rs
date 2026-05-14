@@ -71,6 +71,9 @@ impl Next<f64> for CyberCycle {
 pub const CYBER_CYCLE_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Cyber Cycle",
     description: "An oscillator introduced by John Ehlers that models the cyclical component of a time series using FIR smoothing.",
+    usage: "Use as a high-resolution short-term cycle oscillator to time entries and exits around cycle turns. Pair with a trend classifier to suppress signals in trending conditions.",
+    keywords: &["cycle", "oscillator", "ehlers", "dsp"],
+    ehlers_summary: "Ehlers introduces the Cyber Cycle in Cybernetic Analysis (2004) as a bandpass-like filter isolating the short-term cyclical component. The trigger line is the Cyber Cycle delayed by one bar, creating a clean crossover signal without derivative noise.",
     params: &[ParamDef {
         name: "length",
         default: "14",

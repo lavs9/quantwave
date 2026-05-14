@@ -142,6 +142,9 @@ mod tests {
 pub const PIVOT_POINTS_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Pivot Points",
     description: "Pivot Points are used to determine overall trend over different time frames.",
+    usage: "Use to identify key daily, weekly, or monthly support and resistance levels calculated from the prior session OHLC. Pivot levels are widely watched by floor traders and algorithms alike.",
+    keywords: &["support-resistance", "classic", "levels", "pattern"],
+    ehlers_summary: "Traditional Pivot Points, widely used by floor traders, calculate a central pivot (P = (H+L+C)/3) plus support and resistance levels at fixed multiples of the prior session range. Because they are derived from universal OHLC data and widely published, they become self-fulfilling levels of institutional interest. — StockCharts ChartSchool",
     params: &[],
     formula_source: "https://www.investopedia.com/terms/p/pivotpoint.asp",
     formula_latex: r#"

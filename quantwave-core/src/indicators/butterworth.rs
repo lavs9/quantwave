@@ -119,6 +119,9 @@ impl Next<f64> for Butterworth3 {
 pub const BUTTERWORTH2_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Butterworth2",
     description: "2-pole Butterworth low-pass filter.",
+    usage: "Use to smooth price or intermediate indicator values with a flat passband and sharp rolloff. The 3-pole version provides steeper attenuation at the cost of marginally more lag.",
+    keywords: &["filter", "ehlers", "dsp", "smoothing", "low-pass"],
+    ehlers_summary: "Butterworth filters are maximally flat in the passband, introducing no ripple. Ehlers implements 2-pole and 3-pole Butterworth IIR designs in Cycle Analytics for Traders, noting that the SuperSmoother is actually a critically-damped 2-pole Butterworth variant.",
     params: &[ParamDef {
         name: "period",
         default: "14",
@@ -143,6 +146,9 @@ f = bf_{t-1} - a^2f_{t-2} + \frac{1-b+a^2}{4}(g + 2g_{t-1} + g_{t-2})
 pub const BUTTERWORTH3_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Butterworth3",
     description: "3-pole Butterworth low-pass filter.",
+    usage: "Use to smooth price or intermediate indicator values with a flat passband and sharp rolloff. The 3-pole version provides steeper attenuation at the cost of marginally more lag.",
+    keywords: &["filter", "ehlers", "dsp", "smoothing", "low-pass"],
+    ehlers_summary: "Butterworth filters are maximally flat in the passband, introducing no ripple. Ehlers implements 2-pole and 3-pole Butterworth IIR designs in Cycle Analytics for Traders, noting that the SuperSmoother is actually a critically-damped 2-pole Butterworth variant.",
     params: &[ParamDef {
         name: "period",
         default: "14",

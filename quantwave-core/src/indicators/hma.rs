@@ -106,6 +106,9 @@ mod tests {
 pub const HMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Hull Moving Average",
     description: "The Hull Moving Average (HMA) aims to reduce lag while maintaining smoothness.",
+    usage: "Use as a near-zero-lag moving average for trend-following systems where entry timing is critical. The HMA substantially reduces the lag of a same-period WMA.",
+    keywords: &["moving-average", "low-lag", "smoothing", "classic"],
+    ehlers_summary: "Alan Hull designed the Hull Moving Average to nearly eliminate lag while maintaining smoothness. It achieves this by computing a WMA of doubled period, subtracting a WMA of full period, then applying a final WMA to the difference over the square-root period, combining speed with noise reduction. — AlanHull.com",
     params: &[ParamDef {
         name: "period",
         default: "14",

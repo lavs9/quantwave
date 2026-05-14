@@ -137,6 +137,9 @@ mod tests {
 pub const KELTNER_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Keltner Channels",
     description: "Keltner Channels are volatility-based envelopes set above and below an exponential moving average.",
+    usage: "Use as volatility-adjusted envelope bands around an EMA. When Keltner Channels contract inside Bollinger Bands (the Squeeze), a high-energy breakout move is typically imminent.",
+    keywords: &["volatility", "trend", "breakout", "channels", "classic"],
+    ehlers_summary: "Keltner Channels, updated by Linda Raschke in the 1980s from Chester Keltner original design, use ATR to set channel width around an EMA. Unlike Bollinger Bands which use standard deviation, ATR-based channels adapt to average bar range rather than statistical volatility, producing smoother and more stable channel boundaries. — StockCharts ChartSchool",
     params: &[
         ParamDef {
             name: "period",

@@ -95,6 +95,9 @@ impl Next<f64> for RoofingFilter {
 pub const ROOFING_FILTER_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Roofing Filter",
     description: "Combines a 2-pole HighPass filter and a SuperSmoother to isolate specific cyclic components.",
+    usage: "Apply before oscillators to remove both low-frequency trend drift and high-frequency noise, leaving only the tradable cycle band (roughly 10-48 bars).",
+    keywords: &["filter", "ehlers", "dsp", "cycle", "high-pass", "low-pass"],
+    ehlers_summary: "Introduced in Cycle Analytics for Traders (2013), the Roofing Filter first applies a high-pass filter to remove the dominant trend component, then a SuperSmoother to remove short-term noise. The result is a cycle-only signal with controlled bandwidth, ideal for use as input to oscillators and cycle indicators.",
     params: &[
         ParamDef { name: "hp_period", default: "48", description: "HighPass critical period" },
         ParamDef { name: "ss_period", default: "10", description: "SuperSmoother critical period" },

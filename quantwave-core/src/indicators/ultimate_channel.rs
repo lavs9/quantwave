@@ -52,6 +52,9 @@ impl Next<(f64, f64, f64)> for UltimateChannel {
 pub const ULTIMATE_CHANNEL_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Ultimate Channel",
     description: "A Keltner-style channel using UltimateSmoothers for both the center line and the volatility range to minimize lag.",
+    usage: "Use as a dynamic price channel whose width scales with the current dominant cycle amplitude, providing adaptive support and resistance levels for breakout trading.",
+    keywords: &["channel", "volatility", "ehlers", "adaptive", "breakout"],
+    ehlers_summary: "The Ultimate Channel uses the measured dominant cycle amplitude to set channel width, analogous to Keltner Channels but cycle-aware rather than ATR-based. When price breaks beyond the channel boundary, it signals that cycle amplitude has expanded enough to suggest a genuine directional move.",
     params: &[
         ParamDef {
             name: "length",

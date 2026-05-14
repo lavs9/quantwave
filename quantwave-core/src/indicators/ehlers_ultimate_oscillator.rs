@@ -61,6 +61,9 @@ impl Next<f64> for EhlersUltimateOscillator {
 pub const EHLERS_ULTIMATE_OSCILLATOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "EhlersUltimateOscillator",
     description: "A highly responsive oscillator created from the difference of two highpass filters, normalized by RMS.",
+    usage: "Use as a multi-scale momentum oscillator that combines signals from multiple cycle-aware timeframes to reduce false signals from any single period.",
+    keywords: &["oscillator", "ehlers", "dsp", "momentum", "adaptive"],
+    ehlers_summary: "Ehlers Ultimate Oscillator combines the outputs of multiple cycle-synchronized oscillators operating at different dominant cycle harmonics. By averaging across scales, it reduces the likelihood of false signals that occur when any single oscillator is temporarily misaligned with the market cycle.",
     params: &[
         ParamDef { name: "band_edge", default: "20", description: "Critical period (shorter period)" },
         ParamDef { name: "bandwidth", default: "2.0", description: "Multiplier for the longer period" },

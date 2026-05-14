@@ -94,6 +94,9 @@ impl Next<f64> for SystemEvaluator {
 pub const SYSTEM_EVALUATOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "System Evaluator",
     description: "Calculates robust statistical performance metrics for a trading system based on a stream of trade profits.",
+    usage: "Use to assess the performance quality of a trading system output using signal processing metrics. Helps distinguish systems with genuine edge from those that merely overfit.",
+    keywords: &["system", "performance", "ehlers", "statistics"],
+    ehlers_summary: "Ehlers applies signal processing metrics to evaluate trading system quality in Cybernetic Analysis. Metrics such as the Signal-to-Noise Ratio of the equity curve quantify whether a system is generating genuine signal above the noise floor of random entry and exit.",
     params: &[],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/SystemEvaluation.pdf",
     formula_latex: r#"

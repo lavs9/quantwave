@@ -85,6 +85,9 @@ impl Next<f64> for EhlersAutocorrelation {
 pub const EHLERS_AUTOCORRELATION_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Ehlers Autocorrelation",
     description: "Computes Pearson correlation of smoothed price with its lags to identify market structure.",
+    usage: "Use to generate an autocorrelation periodogram showing which cycle periods are currently dominant. Visualise as a heatmap to track cycle period shifts over time.",
+    keywords: &["cycle", "spectral", "ehlers", "dsp", "dominant-cycle"],
+    ehlers_summary: "Ehlers introduces autocorrelation-based cycle measurement in Cycle Analytics for Traders (2013) as a more robust alternative to DFT. By computing autocorrelation of Roofing-filtered price at each lag, then applying a spectral DFT to the lag series, he obtains a periodogram insensitive to amplitude variations.",
     params: &[
         ParamDef {
             name: "length",

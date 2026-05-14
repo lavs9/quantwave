@@ -51,6 +51,9 @@ impl Next<f64> for ContinuationIndex {
 pub const CONTINUATION_INDEX_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Continuation Index",
     description: "An oscillator that identifies trend onset and exhaustion by comparing a fast UltimateSmoother with a Generalized Laguerre filter.",
+    usage: "Use to measure whether a price move is likely to continue or reverse based on cycle analysis. High index values suggest trend continuation; low values suggest an impending cycle turn.",
+    keywords: &["trend", "momentum", "ehlers", "cycle"],
+    ehlers_summary: "The Continuation Index measures the persistence of directional price movement relative to the dominant cycle. Ehlers derives it from the cycle phase velocity — when phase advances quickly in one direction, momentum is strong and continuation is likely; slow or reversing phase suggests the move is exhausting.",
     params: &[
         ParamDef {
             name: "gamma",

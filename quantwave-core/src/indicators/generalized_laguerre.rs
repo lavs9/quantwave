@@ -74,6 +74,9 @@ impl Next<f64> for GeneralizedLaguerre {
 pub const GENERALIZED_LAGUERRE_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Generalized Laguerre",
     description: "A generalized Laguerre filter of arbitrary order using an UltimateSmoother as the primary component.",
+    usage: "Use when the standard 4-element Laguerre filter needs further customization. The additional gamma2 parameter allows independent control of the pole spacing for more flexible frequency response shaping.",
+    keywords: &["filter", "ehlers", "dsp", "smoothing", "laguerre"],
+    ehlers_summary: "The Generalized Laguerre Filter extends the classic 4-element Laguerre design with an additional parameter that controls the distribution of poles across the frequency spectrum. This gives finer control over the transition band slope and passband flatness, useful for specialized spectral analysis applications.",
     params: &[
         ParamDef {
             name: "length",

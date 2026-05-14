@@ -67,6 +67,9 @@ impl Next<f64> for VossPredictor {
 pub const VOSS_PREDICTOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "VossPredictor",
     description: "A predictive filter with negative group delay for band-limited signals.",
+    usage: "Use for multi-bar price prediction based on a bandpass-filtered dominant cycle. More accurate than simple linear extrapolation due to its IIR filter pole placement.",
+    keywords: &["prediction", "cycle", "ehlers", "dsp", "filter"],
+    ehlers_summary: "The Voss Predictor is a predictive filter developed by J.F. Voss and adapted by Ehlers in Cycle Analytics for Traders. Its IIR bandpass design inherently extrapolates the filtered signal several bars into the future by virtue of pole placement inside the unit circle, enabling lookahead without buffer access.",
     params: &[
         ParamDef { name: "period", default: "20", description: "Center period of the BandPass filter" },
         ParamDef { name: "predict", default: "3", description: "Number of bars of prediction" },

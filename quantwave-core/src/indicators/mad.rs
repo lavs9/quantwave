@@ -38,6 +38,9 @@ impl Next<f64> for MAD {
 pub const MAD_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "MAD",
     description: "Moving Average Difference: 100 * (SMA(short) - SMA(long)) / SMA(long)",
+    usage: "Use as a robust volatility measure when outliers or fat-tailed distributions would distort standard deviation. Works well for position sizing and volatility-based stop placement.",
+    keywords: &["volatility", "statistics", "robust", "ehlers"],
+    ehlers_summary: "Mean Absolute Deviation measures dispersion as the average absolute difference from the median rather than the squared difference from the mean used by standard deviation. It is less sensitive to outliers, making it a more robust volatility estimate for financial time series with fat tails.",
     params: &[
         ParamDef {
             name: "short_period",

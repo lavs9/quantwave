@@ -73,6 +73,9 @@ impl Next<f64> for RSIH {
 pub const RSIH_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "RSIH",
     description: "RSI enhanced with Hann windowing for superior smoothing and zero-centering.",
+    usage: "Use to measure momentum exclusively on the cyclical (high-pass filtered) component of price, eliminating the trend bias that makes standard RSI drift.",
+    keywords: &["oscillator", "rsi", "ehlers", "high-pass", "cycle"],
+    ehlers_summary: "RSIH applies RSI computation to the high-pass filtered price rather than raw price. By removing the trend component first, the RSI calculation operates only on the cyclical content of the market, producing an oscillator that is centered around zero regardless of the prevailing trend direction.",
     params: &[
         ParamDef { name: "length", default: "14", description: "RSI length" },
     ],

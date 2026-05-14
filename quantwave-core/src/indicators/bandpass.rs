@@ -56,6 +56,9 @@ impl Next<f64> for BandPass {
 pub const BANDPASS_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "BandPass",
     description: "A bandpass filter that isolates cycle components around a center period.",
+    usage: "Apply to isolate a specific cycle period in price, filtering out both trend and noise. Use zero crossings of the filtered output as entry and exit signals.",
+    keywords: &["filter", "cycle", "ehlers", "dsp", "bandpass"],
+    ehlers_summary: "Ehlers presents the BandPass filter in Cybernetic Analysis as a second-order IIR filter centred on a target cycle period with tunable bandwidth. It simultaneously attenuates lower and higher frequencies, leaving only the desired cycle band in the output.",
     params: &[
         ParamDef {
             name: "period",

@@ -165,6 +165,9 @@ impl Next<f64> for InstantaneousTrendline {
 pub const INSTANTANEOUS_TRENDLINE_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Instantaneous Trendline",
     description: "Removes the dominant cycle to reveal the underlying trend with minimal lag.",
+    usage: "Use as an adaptive trend line that automatically adjusts to the current dominant cycle period, replacing fixed-period moving averages in trend-following systems.",
+    keywords: &["trend", "adaptive", "moving-average", "ehlers", "dsp"],
+    ehlers_summary: "Defined in Rocket Science for Traders (2001), the Instantaneous Trendline is derived from Hilbert Transform phasors and synchronized to the current market cycle. It is computed as a 3-bar weighted average adjusted by the instantaneous period, giving a zero-lag trend estimate.",
     params: &[],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/ROCKET%20SCIENCE%20FOR%20TRADER.pdf",
     formula_latex: r#"

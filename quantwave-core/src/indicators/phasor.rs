@@ -72,6 +72,9 @@ impl Next<f64> for Phasor {
 pub const PHASOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Phasor",
     description: "Extracts In-Phase (I) and Quadrature (Q) components using a Hilbert Transform.",
+    usage: "Use to measure the instantaneous phase and amplitude of the dominant market cycle. Phase crossings of key angles (90, 180 degrees) provide precise cycle turn timing signals.",
+    keywords: &["cycle", "phase", "ehlers", "dsp", "dominant-cycle"],
+    ehlers_summary: "Ehlers borrows the concept of a phasor from electrical engineering to represent the amplitude and phase of a market cycle as a rotating vector. In Rocket Science for Traders (2001) he shows how measuring the instantaneous phasor angle gives more precise cycle timing than zero-crossing methods.",
     params: &[],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/ROCKET%20SCIENCE%20FOR%20TRADER.pdf",
     formula_latex: r#"

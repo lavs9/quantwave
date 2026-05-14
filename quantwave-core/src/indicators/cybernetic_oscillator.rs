@@ -70,6 +70,9 @@ impl Next<f64> for CyberneticOscillator {
 pub const CYBERNETIC_OSCILLATOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "CyberneticOscillator",
     description: "Combined HighPass and SuperSmoother filters normalized by RMS.",
+    usage: "Use as a generalized Ehlers cycle oscillator when you need a configurable bandpass response tuned to a specific dominant cycle period.",
+    keywords: &["oscillator", "ehlers", "dsp", "cycle", "momentum"],
+    ehlers_summary: "The Cybernetic Oscillator is derived from the bandpass filter framework in Ehlers Cybernetic Analysis for Stocks and Futures (2004). By tuning the filter center frequency to the measured dominant cycle period, it extracts only the cyclical component and presents it as an oscillator ranging above and below zero.",
     params: &[
         ParamDef {
             name: "hp_length",

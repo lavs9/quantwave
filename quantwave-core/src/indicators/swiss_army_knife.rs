@@ -175,6 +175,9 @@ impl Next<f64> for SwissArmyKnife {
 pub const SWISS_ARMY_KNIFE_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Swiss Army Knife Indicator",
     description: "A versatile indicator that can be configured as EMA, SMA, Gaussian, Butterworth, High Pass, Band Pass, or Band Stop filter.",
+    usage: "Use as a single configurable filter that can emulate SMA, EMA, Gaussian, Butterworth, or bandpass responses by switching mode flags. Ideal for prototyping different filter designs without code changes.",
+    keywords: &["filter", "ehlers", "dsp", "multi-purpose", "smoothing"],
+    ehlers_summary: "Ehlers presents the Swiss Army Knife Indicator in Cycle Analytics for Traders as a unified filter framework. A set of boolean flags selects the operating mode, making it possible to compare multiple filter responses on the same data by simply toggling flags rather than reimplementing each filter.",
     params: &[
         ParamDef {
             name: "mode",

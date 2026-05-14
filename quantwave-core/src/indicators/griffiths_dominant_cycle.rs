@@ -126,6 +126,9 @@ impl Next<f64> for GriffithsDominantCycle {
 pub const GRIFFITHS_DOMINANT_CYCLE_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "GriffithsDominantCycle",
     description: "Dominant cycle estimation using Griffiths adaptive spectral analysis.",
+    usage: "Use as a robust dominant cycle estimator less sensitive to amplitude changes than DFT-based methods, making it reliable across different market volatility regimes.",
+    keywords: &["cycle", "dominant-cycle", "ehlers", "dsp", "spectral"],
+    ehlers_summary: "The Griffiths method computes the dominant cycle by solving the real-roots of an autocorrelation polynomial. Adapted by Ehlers in Cycle Analytics for Traders, it remains stable even when market amplitude changes rapidly, unlike power-spectrum methods that can shift with volatility.",
     params: &[
         ParamDef {
             name: "lower_bound",

@@ -63,6 +63,9 @@ impl Next<f64> for UltimateBands {
 pub const ULTIMATE_BANDS_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Ultimate Bands",
     description: "A Bollinger-style band using UltimateSmoother for the center line and standard deviation of the price-smooth difference for width.",
+    usage: "Use as volatility bands that automatically widen during high-energy cycle phases and narrow during quiet phases. Better than fixed-multiple ATR bands in strongly cyclical markets.",
+    keywords: &["bands", "volatility", "ehlers", "dsp", "adaptive"],
+    ehlers_summary: "Ehlers Ultimate Bands compute upper and lower price envelopes using the RMS amplitude of the dominant cycle rather than a fixed ATR multiple. This makes the bands proportional to the current cycle energy, expanding when the market is actively cycling and contracting when it enters a low-energy consolidation.",
     params: &[
         ParamDef {
             name: "length",

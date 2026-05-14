@@ -146,6 +146,9 @@ impl Next<f64> for SyntheticOscillator {
 pub const SYNTHETIC_OSCILLATOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Synthetic Oscillator",
     description: "A nonlinear oscillator designed to reduce lag while maintaining smoothness by adapting to the dominant cycle.",
+    usage: "Use to construct a synthetic oscillator from dominant cycle sine components when direct price oscillators are too noisy. Most effective in clearly cyclical markets.",
+    keywords: &["oscillator", "ehlers", "dsp", "cycle", "synthetic"],
+    ehlers_summary: "Ehlers constructs a Synthetic Oscillator by generating a synthetic sine wave at the measured dominant cycle period and comparing it to price. The phase difference between the synthetic sine and actual price reveals whether the market is ahead of or behind its expected cycle position.",
     params: &[
         ParamDef { name: "lower_bound", default: "15", description: "Lower bound of cycle period" },
         ParamDef { name: "upper_bound", default: "25", description: "Upper bound of cycle period" },

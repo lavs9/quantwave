@@ -73,6 +73,9 @@ impl Next<f64> for CorrelationTrend {
 pub const CORRELATION_TREND_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Correlation Trend",
     description: "Calculates the Pearson correlation between price and a linear time ramp to identify trends.",
+    usage: "Use to confirm whether price is trending or cycling before applying directional strategies. High correlation indicates a strong trend; low correlation indicates a cycling market.",
+    keywords: &["trend", "correlation", "ehlers", "statistics"],
+    ehlers_summary: "Ehlers uses the correlation between price and the best-fit sine wave as a trend indicator in Cycle Analytics for Traders. A high correlation coefficient (near 1.0) means price closely follows a sine wave and is cycling; a low coefficient indicates the dominant market mode is a trend.",
     params: &[ParamDef {
         name: "length",
         default: "20",

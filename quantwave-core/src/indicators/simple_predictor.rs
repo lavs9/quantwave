@@ -67,6 +67,9 @@ impl Next<f64> for SimplePredictor {
 pub const SIMPLE_PREDICTOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "SimplePredictor",
     description: "A fixed-coefficient 2-pole linear predictive filter.",
+    usage: "Use as a lightweight one-bar-ahead price predictor for cycle-mode markets. Its low computational cost makes it suitable for real-time streaming at high frequency.",
+    keywords: &["prediction", "cycle", "ehlers", "dsp"],
+    ehlers_summary: "Ehlers derives a Simple Predictor that extrapolates price one bar forward using only the current and prior bars weighted by the dominant cycle coefficient. Despite its simplicity it provides useful one-bar forecasts in cycling markets, demonstrating the predictive value of cycle measurement.",
     params: &[
         ParamDef {
             name: "hp_len",

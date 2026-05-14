@@ -107,6 +107,9 @@ impl Next<f64> for DSMA {
 pub const DSMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "DSMA",
     description: "Deviation Scaled Moving Average adapts to price variations using standard deviation scaled oscillators.",
+    usage: "Use as an adaptive moving average whose period synchronizes to the current dominant cycle, avoiding the over- or under-smoothing caused by fixed-period MAs in changing market conditions.",
+    keywords: &["moving-average", "adaptive", "ehlers", "dsp", "dominant-cycle"],
+    ehlers_summary: "The Dominant Cycle-Synchronized MA adapts its period to the measured dominant cycle, ensuring the smoothing window always spans exactly one full cycle. Ehlers presents this in Cycle Analytics for Traders as the mathematically correct way to apply moving averages to cyclic market data.",
     params: &[ParamDef {
         name: "period",
         default: "40",

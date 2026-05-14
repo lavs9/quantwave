@@ -107,6 +107,9 @@ impl Next<f64> for Alligator {
 pub const ALLIGATOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Bill Williams Alligator",
     description: "Trend-following indicator using three delayed smoothed moving averages.",
+    usage: "Use to identify trend presence and direction. When the three Alligator lines are separated and fanning, the market is trending; when they converge or intertwine, the market is ranging.",
+    keywords: &["trend", "moving-average", "classic", "williams"],
+    ehlers_summary: "Bill Williams introduced the Alligator in Trading Chaos (1995) as three offset SMAs with periods 13, 8, and 5 and offsets of 8, 5, and 3 bars. The three lines represent the Jaw, Teeth, and Lips of the Alligator. When the Alligator is sleeping (lines intertwined) no trade is taken; when it wakes and opens its mouth a trend trade is entered. — StockCharts ChartSchool",
     params: &[],
     formula_source: "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/alligator",
     formula_latex: r#"

@@ -130,6 +130,9 @@ impl Next<f64> for HomodyneDiscriminator {
 pub const HOMODYNE_DISCRIMINATOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Homodyne Discriminator",
     description: "Estimates the dominant cycle period using a homodyne approach.",
+    usage: "Use to measure the instantaneous dominant cycle period from price data. Feed its output into adaptive indicators as the dynamic period parameter.",
+    keywords: &["cycle", "dominant-cycle", "ehlers", "dsp", "spectral"],
+    ehlers_summary: "Described in Rocket Science for Traders (2001), the Homodyne Discriminator borrows from radio engineering to measure instantaneous frequency by multiplying the analytic signal by its one-bar-delayed conjugate, giving cycle period without DFT latency.",
     params: &[],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/ROCKET%20SCIENCE%20FOR%20TRADER.pdf",
     formula_latex: r#"

@@ -7,6 +7,6 @@ title = "QuantWave Documentation"
 [output.html]
 mathjax-support = true
 git-repository-url = "https://github.com/lavs9/quantwave"
-additional-css = ["theme/catppuccin.css"]
+additional-css = ["theme/catppuccin.css", "theme/indicator-badges.css"]
 default-theme = "latte"
 preferred-dark-theme = "mocha"

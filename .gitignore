@@ -9,3 +9,5 @@ Cargo.lock
 # Dolt database files (added by bd init)
 .dolt/
 *.db
+/docs/book
+**/docs/book

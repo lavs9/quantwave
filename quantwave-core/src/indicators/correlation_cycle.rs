@@ -119,6 +119,9 @@ impl Next<f64> for CorrelationCycle {
 pub const CORRELATION_CYCLE_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "CorrelationCycle",
     description: "Determines cycle phase angle by correlating price with orthogonal sinusoids.",
+    usage: "Use to measure the dominant cycle period via autocorrelation in an amplitude-independent way. Prefer over DFT methods when price amplitude varies significantly across the measurement window.",
+    keywords: &["cycle", "dominant-cycle", "ehlers", "dsp", "spectral"],
+    ehlers_summary: "Ehlers introduces Correlation Cycle measurement in Cycle Analytics for Traders (2013) as an improvement on DFT. By normalizing autocorrelation coefficients to unity variance, the resulting periodogram is independent of price amplitude variations, producing more consistent cycle period estimates.",
     params: &[
         ParamDef {
             name: "period",

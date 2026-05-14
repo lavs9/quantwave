@@ -114,6 +114,9 @@ impl Next<f64> for GriffithsPredictor {
 pub const GRIFFITHS_PREDICTOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "GriffithsPredictor",
     description: "Adaptive LMS linear predictive filter for signal forecasting.",
+    usage: "Use for short-horizon price prediction by projecting the dominant market cycle one or two bars forward. Works best in oscillating markets; disable in strong trends.",
+    keywords: &["prediction", "cycle", "ehlers", "dsp"],
+    ehlers_summary: "The Griffiths Predictor uses autoregressive coefficients from the Griffiths cycle measurement to extrapolate the current dominant cycle one bar ahead. By fitting an AR model to cycle-filtered price, it generates a one-step-ahead forecast useful for anticipatory entries at predicted cycle turns.",
     params: &[
         ParamDef {
             name: "lower_bound",

@@ -89,6 +89,9 @@ impl Next<f64> for LaguerreRSI {
 pub const LAGUERRE_RSI_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Laguerre RSI",
     description: "RSI calculated over Laguerre-warped time for faster response.",
+    usage: "Use as a faster lower-lag alternative to traditional RSI. Laguerre smoothing produces fewer whipsaws while remaining responsive to genuine momentum shifts.",
+    keywords: &["oscillator", "rsi", "ehlers", "dsp", "laguerre", "momentum"],
+    ehlers_summary: "Ehlers constructs the Laguerre RSI in Cybernetic Analysis by computing RSI on the four outputs of a Laguerre filter bank. The result has RSI-like scaling (0 to 1) but dramatically less lag and smoother behaviour than conventional RSI.",
     params: &[ParamDef {
         name: "gamma",
         default: "0.5",

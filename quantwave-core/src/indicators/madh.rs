@@ -50,6 +50,9 @@ impl Next<f64> for MADH {
 pub const MADH_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "MADH",
     description: "Moving Average Difference with Hann Windowing: 100 * (Hann(short) - Hann(long)) / Hann(long)",
+    usage: "Use to measure the volatility of the cyclical price component only, filtering out trend-driven amplitude changes that inflate standard volatility measures in trending markets.",
+    keywords: &["volatility", "statistics", "ehlers", "high-pass"],
+    ehlers_summary: "MADH applies Mean Absolute Deviation to the high-pass filtered price series rather than raw price. By isolating the cyclical component before measuring dispersion, it quantifies the noise level within the current market cycle rather than conflating it with trend amplitude.",
     params: &[
         ParamDef {
             name: "short_length",

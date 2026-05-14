@@ -79,6 +79,9 @@ impl Next<(f64, f64)> for PairsRotation {
 pub const PAIRS_ROTATION_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "PairsRotation",
     description: "Relative rotation of two securities using normalized roofing filters.",
+    usage: "Use to detect and trade rotation between two correlated assets. When one asset leads and the other lags, the indicator signals a rotation trade opportunity.",
+    keywords: &["pairs-trading", "rotation", "relative-strength", "ehlers"],
+    ehlers_summary: "Pairs Rotation analysis measures the relative cycle phase between two correlated assets. When one asset is at a cycle peak while its correlated partner is at a trough, a statistical rotation trade can be placed — long the laggard, short the leader — anticipating mean reversion of the spread.",
     params: &[
         ParamDef {
             name: "hp_len",

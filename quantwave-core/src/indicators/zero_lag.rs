@@ -69,6 +69,9 @@ impl Next<f64> for ZeroLag {
 pub const ZERO_LAG_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Zero Lag EC",
     description: "Zero Lag Error Corrected EMA attempts to eliminate lag by adding an error term to the EMA.",
+    usage: "Use as a near-zero-lag moving average for trend-following systems. The error-correction term removes the lag inherent in the standard EMA without introducing significant overshoot.",
+    keywords: &["moving-average", "zero-lag", "ehlers", "ema", "smoothing"],
+    ehlers_summary: "Ehlers introduces the Zero Lag indicator in Cybernetic Analysis as an EMA with an added error-correction term that subtracts the average lag from the output. The resulting EC (Error Corrected) line tracks price with near-zero delay while the ZL-EMA provides a smoothed reference, with crossovers between them providing trade signals.",
     params: &[
         ParamDef {
             name: "length",

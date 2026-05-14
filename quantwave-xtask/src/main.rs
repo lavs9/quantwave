@@ -154,6 +154,9 @@ fn generate_native_docs(docs_dir: &Path, indicators_dir: &Path) -> Result<Vec<(S
                             if let syn::Expr::Struct(expr_struct) = &*item_const.expr {
                                 let mut name = String::new();
                                 let mut desc = String::new();
+                                let mut usage = String::new();
+                                let mut keywords: Vec<String> = Vec::new();
+                                let mut ehlers_summary = String::new();
                                 let mut latex = String::new();
                                 let mut source = String::new();
                                 let mut category = String::new();
@@ -162,60 +165,47 @@ fn generate_native_docs(docs_dir: &Path, indicators_dir: &Path) -> Result<Vec<(S
                                 for field in &expr_struct.fields {
                                     if let syn::Member::Named(ident) = &field.member {
                                         let field_name = ident.to_string();
+
+                                        // Simple &'static str fields
                                         if let syn::Expr::Lit(expr_lit) = &field.expr {
                                             if let syn::Lit::Str(lit_str) = &expr_lit.lit {
                                                 match field_name.as_str() {
                                                     "name" => name = lit_str.value(),
                                                     "description" => desc = lit_str.value(),
+                                                    "usage" => usage = lit_str.value(),
+                                                    "ehlers_summary" => ehlers_summary = lit_str.value(),
                                                     "formula_source" => source = lit_str.value(),
                                                     "formula_latex" => latex = lit_str.value(),
                                                     "category" => category = lit_str.value(),
                                                     _ => {}
                                                 }
                                             }
-                                        } else if field_name == "params" {
-                                            if let syn::Expr::Reference(expr_ref) = &field.expr {
-                                                if let syn::Expr::Array(expr_array) =
-                                                    &*expr_ref.expr
-                                                {
+                                        } else if let syn::Expr::Reference(expr_ref) = &field.expr {
+                                            if let syn::Expr::Array(expr_array) = &*expr_ref.expr {
+                                                if field_name == "keywords" {
+                                                    // keywords: &["tag1", "tag2", ...]
                                                     for elem in &expr_array.elems {
-                                                        if let syn::Expr::Struct(param_struct) =
-                                                            elem
-                                                        {
+                                                        if let syn::Expr::Lit(kw_lit) = elem {
+                                                            if let syn::Lit::Str(s) = &kw_lit.lit {
+                                                                keywords.push(s.value());
+                                                            }
+                                                        }
+                                                    }
+                                                } else if field_name == "params" {
+                                                    // params: &[ParamDef { ... }, ...]
+                                                    for elem in &expr_array.elems {
+                                                        if let syn::Expr::Struct(param_struct) = elem {
                                                             let mut p_name = String::new();
                                                             let mut p_def = String::new();
                                                             let mut p_desc = String::new();
                                                             for p_field in &param_struct.fields {
-                                                                if let syn::Member::Named(p_ident) =
-                                                                    &p_field.member
-                                                                {
-                                                                    if let syn::Expr::Lit(
-                                                                        p_expr_lit,
-                                                                    ) = &p_field.expr
-                                                                    {
-                                                                        if let syn::Lit::Str(
-                                                                            p_lit_str,
-                                                                        ) = &p_expr_lit.lit
-                                                                        {
-                                                                            match p_ident
-                                                                                .to_string()
-                                                                                .as_str()
-                                                                            {
-                                                                                "name" => {
-                                                                                    p_name =
-                                                                                        p_lit_str
-                                                                                            .value()
-                                                                                }
-                                                                                "default" => {
-                                                                                    p_def =
-                                                                                        p_lit_str
-                                                                                            .value()
-                                                                                }
-                                                                                "description" => {
-                                                                                    p_desc =
-                                                                                        p_lit_str
-                                                                                            .value()
-                                                                                }
+                                                                if let syn::Member::Named(p_ident) = &p_field.member {
+                                                                    if let syn::Expr::Lit(p_expr_lit) = &p_field.expr {
+                                                                        if let syn::Lit::Str(p_lit_str) = &p_expr_lit.lit {
+                                                                            match p_ident.to_string().as_str() {
+                                                                                "name" => { p_name = p_lit_str.value() }
+                                                                                "default" => { p_def = p_lit_str.value() }
+                                                                                "description" => { p_desc = p_lit_str.value() }
                                                                                 _ => {}
                                                                             }
                                                                         }
@@ -243,27 +233,57 @@ fn generate_native_docs(docs_dir: &Path, indicators_dir: &Path) -> Result<Vec<(S
                                     .collect::<Vec<_>>()
                                     .join("_");
 
+                                // ---- Build the rich markdown page ----
                                 let mut md = String::new();
+
+                                // Title
                                 md.push_str(&format!("# {}\n\n", name));
+
+                                // Category badge + keyword chips (HTML inline — mdBook renders it)
+                                let cat_label = if category.is_empty() { "General" } else { &category };
+                                let mut meta_line = format!(
+                                    "<div class=\"indicator-meta\"><span class=\"category-badge\">{}</span>",
+                                    cat_label
+                                );
+                                for kw in &keywords {
+                                    meta_line.push_str(&format!(" <span class=\"kw-badge\">{}</span>", kw));
+                                }
+                                meta_line.push_str("</div>\n\n");
+                                md.push_str(&meta_line);
+
+                                // Short description
                                 md.push_str(&format!("{}\n\n", desc));
 
+                                // Usage section
+                                if !usage.is_empty() {
+                                    md.push_str("## Usage\n\n");
+                                    md.push_str(&format!("{}\n\n", usage));
+                                }
+
+                                // Background / authority summary
+                                if !ehlers_summary.is_empty() {
+                                    md.push_str("## Background\n\n");
+                                    md.push_str(&format!("> {}\n\n", ehlers_summary));
+                                }
+
+                                // Parameters
                                 if !params_str.is_empty() {
                                     md.push_str("## Parameters\n\n");
                                     md.push_str(&params_str);
                                     md.push_str("\n");
                                 }
 
+                                // Formula
                                 md.push_str("## Formula\n\n");
-                                // latex string already contains \\[ \\] formatting from python script injection
                                 md.push_str(&latex);
                                 md.push_str("\n\n");
 
+                                // Source link
                                 if !source.is_empty() {
                                     md.push_str(&format!("[Source]({})\n", source));
                                 }
 
-                                let out_path =
-                                    docs_dir.join(format!("indicators/native/{}.md", filename));
+                                let out_path = docs_dir.join(format!("indicators/native/{}.md", filename));
                                 fs::write(&out_path, md).with_context(|| format!("Failed to write indicator documentation: {:?}", out_path))?;
                                 generated.push((name, filename, category));
                             }

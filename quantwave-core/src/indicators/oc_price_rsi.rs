@@ -39,6 +39,9 @@ impl Next<(f64, f64)> for OCPriceRSI {
 pub const OC_PRICE_RSI_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "OCPriceRSI",
     description: "RSI calculated using the average of Open and Close prices to reduce noise.",
+    usage: "Use to measure momentum on the open-to-close price differential rather than close-to-close, capturing intraday directional strength more directly.",
+    keywords: &["oscillator", "rsi", "ehlers", "momentum"],
+    ehlers_summary: "Ehlers computes this RSI variant on the difference between the open and close price of each bar rather than on the closing price series. The open-close differential captures the net directional pressure within each bar, producing a momentum oscillator more sensitive to intraday commitment than standard RSI.",
     params: &[
         ParamDef {
             name: "period",

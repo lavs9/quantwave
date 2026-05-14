@@ -116,6 +116,9 @@ impl Next<f64> for FourierDominantCycle {
 pub const FOURIER_DOMINANT_CYCLE_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "FourierDominantCycle",
     description: "Dominant cycle period estimation using resolution-enhanced DFT and center of gravity.",
+    usage: "Use to compute the dominant market cycle period via DFT. Feed the output period into adaptive indicators like DSMA or Ehlers Stochastic to make them cycle-synchronized.",
+    keywords: &["cycle", "spectral", "ehlers", "dsp", "dominant-cycle", "fourier"],
+    ehlers_summary: "Ehlers implements a Discrete Fourier Transform cycle measurement in Cybernetic Analysis using a Hann-windowed data segment. The DFT computes power across periods from 6 to 50 bars, and the peak power identifies the dominant cycle period driving price movement.",
     params: &[
         ParamDef {
             name: "window_len",

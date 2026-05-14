@@ -66,6 +66,9 @@ impl Next<f64> for ClassicLaguerre {
 pub const CLASSIC_LAGUERRE_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Classic Laguerre Filter",
     description: "The original Laguerre filter from John Ehlers' 2002 'Time Warp' paper.",
+    usage: "Use when a smooth trend estimate with controllable lag using only 4 state variables is needed. Preferred over long EMAs when computational memory is constrained.",
+    keywords: &["filter", "ehlers", "dsp", "smoothing", "laguerre"],
+    ehlers_summary: "The Classic Laguerre Filter uses four first-order IIR sections sharing the same gamma coefficient. In Cybernetic Analysis (2004) Ehlers shows gamma maps directly to an effective period, making it highly tunable with minimal computation.",
     params: &[ParamDef {
         name: "gamma",
         default: "0.8",

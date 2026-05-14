@@ -67,6 +67,9 @@ impl Next<f64> for NoiseElimination {
 pub const NOISE_ELIMINATION_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Noise Elimination Technology",
     description: "Nonlinear noise removal using Kendall correlation against a straight line.",
+    usage: "Use as a pre-filter to remove spike noise from price or intermediate indicator data without introducing lag. Particularly useful when raw tick or 1-minute data is used.",
+    keywords: &["filter", "noise", "ehlers", "dsp", "smoothing"],
+    ehlers_summary: "Ehlers Noise Elimination Technology (NET) is a nonlinear filter that removes isolated noise spikes while leaving genuine price moves intact. It works by comparing each bar to its neighbors and replacing outliers with interpolated values, achieving noise reduction without the lag of conventional smoothers.",
     params: &[ParamDef {
         name: "length",
         default: "14",

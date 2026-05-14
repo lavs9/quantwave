@@ -263,6 +263,9 @@ mod tests {
 pub const STDDEV_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Standard Deviation",
     description: "Standard Deviation is a statistical measure of market volatility.",
+    usage: "Use for statistical analysis of price series: linear regression, standard deviation, correlation coefficients, and other descriptive statistics used as indicator inputs.",
+    keywords: &["statistics", "classic", "volatility", "trend"],
+    ehlers_summary: "Standard statistical measures provide the mathematical foundation for many technical indicators. Linear regression finds the best-fit line through price, standard deviation quantifies dispersion, and correlation coefficients measure how closely two series move together — all are essential for quantitative strategy construction.",
     params: &[ParamDef {
         name: "period",
         default: "14",
@@ -281,6 +284,9 @@ pub const STDDEV_METADATA: IndicatorMetadata = IndicatorMetadata {
 pub const LINREG_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Linear Regression",
     description: "Linear Regression plots a straight line that best fits the data prices.",
+    usage: "Use for statistical analysis of price series: linear regression, standard deviation, correlation coefficients, and other descriptive statistics used as indicator inputs.",
+    keywords: &["statistics", "classic", "volatility", "trend"],
+    ehlers_summary: "Standard statistical measures provide the mathematical foundation for many technical indicators. Linear regression finds the best-fit line through price, standard deviation quantifies dispersion, and correlation coefficients measure how closely two series move together — all are essential for quantitative strategy construction.",
     params: &[ParamDef {
         name: "period",
         default: "14",

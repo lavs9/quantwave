@@ -75,6 +75,9 @@ impl Next<f64> for SineWave {
 pub const SINE_WAVE_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Sine Wave",
     description: "Plots a sine wave and a lead-sine wave based on the cyclic phase of price movement.",
+    usage: "Use to confirm whether the market is in cycle or trend mode. When price follows the sine wave trade cycle reversals; when it diverges switch to trend-following.",
+    keywords: &["cycle", "oscillator", "ehlers", "dsp", "phase"],
+    ehlers_summary: "Introduced in Rocket Science for Traders, the Sine Wave Indicator plots the sine and cosine of measured instantaneous phase. In cycling markets price tracks the sine wave; in trending markets price breaks through the lead line signaling a mode change.",
     params: &[],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/ROCKET%20SCIENCE%20FOR%20TRADER.pdf",
     formula_latex: r#"

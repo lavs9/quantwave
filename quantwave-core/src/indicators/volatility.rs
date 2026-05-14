@@ -149,6 +149,9 @@ mod tests {
 pub const TRUE_RANGE_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "True Range",
     description: "True Range measures daily volatility.",
+    usage: "Use as the foundational volatility module providing ATR, True Range, and related volatility measures used by higher-level indicators such as SuperTrend and Keltner Channels.",
+    keywords: &["volatility", "atr", "classic", "range"],
+    ehlers_summary: "Average True Range, developed by J. Welles Wilder in New Concepts in Technical Trading Systems (1978), measures the average of the true range over N bars. True Range accounts for overnight gaps by taking the maximum of: current high minus low, current high minus prior close, prior close minus current low. It remains the industry standard raw volatility measure.",
     params: &[],
     formula_source: "https://www.investopedia.com/terms/a/atr.asp",
     formula_latex: r#"
@@ -163,6 +166,9 @@ TR = \max(H - L, |H - C_{t-1}|, |L - C_{t-1}|)
 pub const ATR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Average True Range",
     description: "ATR represents the average of true ranges over a specified period.",
+    usage: "Use as the foundational volatility module providing ATR, True Range, and related volatility measures used by higher-level indicators such as SuperTrend and Keltner Channels.",
+    keywords: &["volatility", "atr", "classic", "range"],
+    ehlers_summary: "Average True Range, developed by J. Welles Wilder in New Concepts in Technical Trading Systems (1978), measures the average of the true range over N bars. True Range accounts for overnight gaps by taking the maximum of: current high minus low, current high minus prior close, prior close minus current low. It remains the industry standard raw volatility measure.",
     params: &[ParamDef {
         name: "period",
         default: "14",

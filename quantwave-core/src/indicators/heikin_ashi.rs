@@ -155,6 +155,9 @@ mod tests {
 pub const HEIKIN_ASHI_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Heikin-Ashi",
     description: "Heikin-Ashi candles filter market noise to reveal the underlying trend.",
+    usage: "Use to smooth candlestick charts and reduce noise for trend identification. Two or more consecutive same-colored HA candles with no lower/upper wicks confirm a strong trend.",
+    keywords: &["trend", "candlestick", "smoothing", "classic", "visualization"],
+    ehlers_summary: "Heikin-Ashi candles, developed by Munehisa Homma in the 18th century, use averaged OHLC values to produce smoother candles that better represent the prevailing trend. Each HA bar open equals the midpoint of the previous HA bar, while close equals the OHLC average, creating continuity that raw candles lack. — StockCharts ChartSchool",
     params: &[],
     formula_source: "https://www.investopedia.com/trading/heikin-ashi-better-candlestick/",
     formula_latex: r#"

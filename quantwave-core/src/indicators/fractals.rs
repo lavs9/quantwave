@@ -151,6 +151,9 @@ mod tests {
 pub const FRACTALS_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Bill Williams Fractals",
     description: "Fractals are indicators on candlestick charts that identify reversal points in the market.",
+    usage: "Use to mark potential support and resistance levels at local price extremes. Williams Fractals are commonly combined with Alligator lines to filter valid fractal signals.",
+    keywords: &["pattern", "support-resistance", "classic", "williams"],
+    ehlers_summary: "Bill Williams introduced Fractals in Trading Chaos (1995) as a pattern-recognition tool identifying local price extremes. A bullish fractal is a bar whose low is lower than the two bars on either side; a bearish fractal is a bar whose high is higher than the two bars on either side. Combined with the Alligator indicator, fractals provide entry triggers. — StockCharts ChartSchool",
     params: &[],
     formula_source: "https://www.investopedia.com/terms/f/fractal.asp",
     formula_latex: r#"
