@@ -12,8 +12,8 @@ categories.workspace = true
 keywords.workspace = true
 
 [dependencies]
-quantwave-core = { path = "../quantwave-core", version = "0.1.10" }
-quantwave-polars = { path = "../quantwave-polars", version = "0.1.10", optional = true }
+quantwave-core = { path = "../quantwave-core", version = "0.1.11" }
+quantwave-polars = { path = "../quantwave-polars", version = "0.1.11", optional = true }
 
 [features]
 default = ["polars"]
