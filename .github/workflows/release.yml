@@ -127,6 +127,7 @@ jobs:
       - name: Publish to PyPI
         run: |
           ls -R dist
-          maturin publish --skip-existing dist/*
+          cd quantwave-python
+          maturin publish --skip-existing ../dist/*
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
