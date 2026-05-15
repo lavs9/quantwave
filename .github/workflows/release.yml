@@ -1,0 +1,80 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish-rust:
+    name: Publish Rust Crates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Publish quantwave-core
+        run: cargo publish -p quantwave-core --token ${{ secrets.CRATES_IO_TOKEN }}
+        continue-on-error: true
+        
+      - name: Wait for quantwave-core to be available
+        run: sleep 45
+        
+      - name: Publish quantwave-polars
+        run: cargo publish -p quantwave-polars --token ${{ secrets.CRATES_IO_TOKEN }}
+        continue-on-error: true
+
+      - name: Publish quantwave-plugins
+        run: cargo publish -p quantwave-plugins --token ${{ secrets.CRATES_IO_TOKEN }}
+        continue-on-error: true
+
+      - name: Wait for dependencies to be available
+        run: sleep 45
+
+      - name: Publish quantwave
+        run: cargo publish -p quantwave --token ${{ secrets.CRATES_IO_TOKEN }}
+        continue-on-error: true
+
+  publish-python:
+    name: Build & Publish Python (PyPI)
+    needs: [publish-rust]
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install maturin and uniffi-bindgen
+        run: pip install maturin uniffi-bindgen==0.31.0
+
+      - name: Build wheels
+        run: maturin build --release --out dist --manifest-path quantwave-python/Cargo.toml
+        env:
+          MACOSX_DEPLOYMENT_TARGET: "11.0"
+
+      - name: Publish to PyPI
+        if: matrix.platform == 'ubuntu-latest'
+        run: maturin publish --skip-existing --manifest-path quantwave-python/Cargo.toml dist/*
+        env:
+          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
