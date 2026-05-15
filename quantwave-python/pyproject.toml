@@ -6,7 +6,7 @@ build-backend = "maturin"
 name = "quantwave"
 dynamic = ["version"]
 description = "High-performance Technical Analysis library (Rust core + UniFFI)"
-readme = "../README.md"
+readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "Mayank Lavania" }]
 keywords = ["technical-analysis", "ta-lib", "trading", "quant", "rust"]
