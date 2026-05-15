@@ -121,13 +121,13 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install maturin
-        run: pip install maturin
+      - name: Install twine
+        run: pip install twine
 
       - name: Publish to PyPI
         run: |
           ls -R dist
-          cd quantwave-python
-          maturin publish --skip-existing ../dist/*
+          twine upload --skip-existing dist/*
         env:
-          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
