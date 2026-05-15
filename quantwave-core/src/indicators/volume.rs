@@ -1,4 +1,5 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
+#[allow(unused_imports)]
 use crate::traits::Next;
 
 talib_4_in_1_out!(AD, talib_rs::volume::ad);

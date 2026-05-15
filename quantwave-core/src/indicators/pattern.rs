@@ -1,4 +1,6 @@
-use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
+use crate::indicators::metadata::IndicatorMetadata;
+#[allow(unused_imports)]
+use crate::traits::Next;
 talib_cdl!(CDLDOJI, talib_rs::pattern::cdl_doji);
 impl Default for CDLDOJI {
     fn default() -> Self {

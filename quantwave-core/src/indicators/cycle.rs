@@ -1,4 +1,5 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
+#[allow(unused_imports)]
 use crate::traits::Next;
 
 talib_1_in_1_out!(HT_DCPERIOD, talib_rs::cycle::ht_dcperiod);

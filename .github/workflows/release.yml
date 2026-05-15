@@ -127,6 +127,6 @@ jobs:
       - name: Publish to PyPI
         run: |
           ls -R dist
-          maturin publish --skip-existing --manifest-path quantwave-python/Cargo.toml dist/*
+          maturin publish --skip-existing dist/*
         env:
           MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
