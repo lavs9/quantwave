@@ -5,16 +5,24 @@ build-backend = "maturin"
 [project]
 name = "quantwave"
 dynamic = ["version"]
-description = "High-performance Technical Analysis library (Rust core + UniFFI)"
+description = "High-performance Rust + Polars quantitative finance library with 150+ indicators and full Ehlers DSP suite"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "Mayank Lavania" }]
-keywords = ["technical-analysis", "ta-lib", "trading", "quant", "rust"]
+keywords = ["technical-analysis", "ta-lib", "trading", "quant", "rust", "polars"]
 classifiers = [
-    "Programming Language :: Rust",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Rust",
     "License :: OSI Approved :: MIT License",
     "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Scientific/Engineering :: Mathematics",
 ]
 requires-python = ">=3.9"
 
@@ -22,6 +30,7 @@ requires-python = ">=3.9"
 Homepage = "https://github.com/lavs9/quantwave"
 Documentation = "https://lavs9.github.io/quantwave/"
 Repository = "https://github.com/lavs9/quantwave"
+"Bug Tracker" = "https://github.com/lavs9/quantwave/issues"
 
 [tool.maturin]
 module-name = "quantwave._quantwave"

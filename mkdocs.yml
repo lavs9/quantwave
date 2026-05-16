@@ -1,0 +1,79 @@
+site_name: QuantWave
+site_url: https://lavs9.github.io/quantwave/
+site_description: High-performance Rust + Polars quantitative finance library with 150+ indicators, full Ehlers DSP suite, and options pricing tools.
+repo_name: lavs9/quantwave
+repo_url: https://github.com/lavs9/quantwave
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - content.tabs.link
+    - content.code.copy
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.top
+    - navigation.path
+    - search.suggest
+    - search.highlight
+    - toc.follow
+
+nav:
+  - Home: index.md
+  - Purpose: purpose.md
+  - Getting Started:
+      - Python: getting-started/python.md
+      - Rust: getting-started/rust.md
+  - Guides:
+      - Indicators: guides/indicators/
+  - Examples:
+      - Batch & Streaming: examples/batch-streaming.md
+      - Jupyter Notebooks: examples/notebooks/
+  - API Reference:
+      - Python: api/
+      - Rust: api/rust.md
+
+extra_css:
+  - assets/indicator-badges.css
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: ["quantwave-python/python"] # Adjusted to where python code is
+          options:
+            docstring_style: google
+            show_source: false
+  - gen-files:
+      scripts:
+        - docs/gen_python_api.py
+  - literate-nav:
+      nav_file: SUMMARY.md # Use SUMMARY.md for nav if present
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.details
+  - pymdownx.tasklist
+  - admonition
+  - attr_list
+  - md_in_html

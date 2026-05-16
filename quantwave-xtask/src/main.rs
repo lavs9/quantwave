@@ -12,7 +12,9 @@ fn main() -> Result<()> {
             .parent()
             .unwrap()
             .to_path_buf();
-    let docs_dir = workspace_root.join("docs/src");
+    let docs_dir = workspace_root.join("docs");
+    let guides_dir = docs_dir.join("guides");
+    let indicators_base = guides_dir.join("indicators");
     let indicators_dir = workspace_root.join("quantwave-core/src/indicators");
 
     println!("Workspace Root: {:?}", workspace_root);
@@ -23,26 +25,26 @@ fn main() -> Result<()> {
         return Err(anyhow::anyhow!("Workspace root does not exist: {:?}", workspace_root));
     }
     
-    // Create docs/src if it doesn't exist (it is gitignored)
-    if !docs_dir.exists() {
-        println!("Creating missing docs directory: {:?}", docs_dir);
-        fs::create_dir_all(&docs_dir).context("Failed to create docs directory")?;
+    // Create docs/guides/indicators if it doesn't exist
+    if !indicators_base.exists() {
+        println!("Creating missing indicators directory: {:?}", indicators_base);
+        fs::create_dir_all(&indicators_base).context("Failed to create indicators directory")?;
     }
 
     if !indicators_dir.exists() {
         return Err(anyhow::anyhow!("Indicators directory does not exist: {:?}", indicators_dir));
     }
 
-    fs::create_dir_all(docs_dir.join("indicators/native")).context("Failed to create indicators/native directory")?;
-    fs::create_dir_all(docs_dir.join("indicators/talib")).context("Failed to create indicators/talib directory")?;
+    fs::create_dir_all(indicators_base.join("native")).context("Failed to create indicators/native directory")?;
+    fs::create_dir_all(indicators_base.join("talib")).context("Failed to create indicators/talib directory")?;
 
     // We will generate the SUMMARY.md dynamically based on the parsed indicators
+    // This SUMMARY.md will be used by literate-nav for the Indicators section
     let mut summary = String::new();
-    summary.push_str("# Summary\n\n");
-    summary.push_str("- [Introduction](README.md)\n");
-    summary.push_str("- [Indicators](indicators/README.md)\n");
+    summary.push_str("# Indicators\n\n");
+    summary.push_str("- [Overview](README.md)\n");
 
-    let native_docs = generate_native_docs(&docs_dir, &indicators_dir)?;
+    let native_docs = generate_native_docs(&guides_dir, &indicators_dir)?;
     if !native_docs.is_empty() {
         let mut categories: std::collections::BTreeMap<String, Vec<(String, String)>> =
             std::collections::BTreeMap::new();
@@ -53,10 +55,10 @@ fn main() -> Result<()> {
                 .push((name, filename));
         }
 
-        summary.push_str("    - [Native Indicators](indicators/native/README.md)\n");
+        summary.push_str("- [Native Indicators](native/README.md)\n");
         for (category, indicators) in categories {
             summary.push_str(&format!(
-                "        - [{}]()\n",
+                "    - [{}]()\n",
                 if category.is_empty() {
                     "General"
                 } else {
@@ -65,7 +67,7 @@ fn main() -> Result<()> {
             ));
             for (name, filename) in indicators {
                 summary.push_str(&format!(
-                    "            - [{}](indicators/native/{}.md)\n",
+                    "        - [{}](native/{}.md)\n",
                     name, filename
                 ));
             }
@@ -73,23 +75,7 @@ fn main() -> Result<()> {
     }
 
     let talib_list = generate_talib_docs().context("Failed to generate TA-Lib docs")?;
-    summary.push_str("    - [TA-Lib Wrappers](indicators/talib/README.md)\n");
-
-    let main_intro = r#"# QuantWave 🌊
-
-**High-performance, Polars-native Technical Analysis for Rust.**
-
-QuantWave is a modern technical analysis library built from the ground up for the Polars ecosystem. It bridges the gap between high-speed batch backtesting and real-time streaming execution by ensuring bit-identical results across both modes.
-
-Whether you are performing quantitative research over terabytes of historical data or deploying a live trading system on a tick-by-tick stream, QuantWave delivers industry-standard accuracy and extreme performance.
-
-## Design Philosophy
-1. **Universal Indicator Pattern:** Every indicator guarantees identical results for batch and streaming.
-2. **Zero-Copy Performance:** Native Polars plugins operate directly on Arrow memory buffers.
-3. **Rigorous Validation:** Every indicator is tested against industry gold-standard data (TradingView, MetaTrader) to ensure correctness.
-
-Select an indicator from the sidebar to view its mathematical formula, parameters, and documentation.
-"#;
+    summary.push_str("- [TA-Lib Wrappers](talib/README.md)\n");
 
     let indicators_intro = r#"# Indicator Suite
 
@@ -125,11 +111,10 @@ For more information, visit the [official TA-Lib website](https://ta-lib.org/) o
     );
     talib_intro.push_str(&talib_list);
 
-    fs::write(docs_dir.join("SUMMARY.md"), summary).context("Failed to write SUMMARY.md")?;
-    fs::write(docs_dir.join("README.md"), main_intro).context("Failed to write README.md")?;
-    fs::write(docs_dir.join("indicators/README.md"), indicators_intro).context("Failed to write indicators/README.md")?;
-    fs::write(docs_dir.join("indicators/native/README.md"), native_intro).context("Failed to write indicators/native/README.md")?;
-    fs::write(docs_dir.join("indicators/talib/README.md"), talib_intro).context("Failed to write indicators/talib/README.md")?;
+    fs::write(indicators_base.join("SUMMARY.md"), summary).context("Failed to write SUMMARY.md")?;
+    fs::write(indicators_base.join("README.md"), indicators_intro).context("Failed to write indicators/README.md")?;
+    fs::write(indicators_base.join("native/README.md"), native_intro).context("Failed to write indicators/native/README.md")?;
+    fs::write(indicators_base.join("talib/README.md"), talib_intro).context("Failed to write indicators/talib/README.md")?;
 
     println!("Documentation generation complete.");
     Ok(())

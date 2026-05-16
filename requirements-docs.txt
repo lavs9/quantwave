@@ -1,0 +1,6 @@
+mkdocs-material>=9.6
+mkdocstrings[python]>=0.27
+mkdocs-gen-files>=0.5
+mkdocs-literate-nav>=0.6
+pymdown-extensions>=10.14
+mkdocs-jupyter>=0.16

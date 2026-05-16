@@ -1,46 +1,26 @@
-name: Documentation
-
+name: docs
 on:
   push:
-    branches: [ main ]
-    paths:
-      - 'quantwave-core/src/indicators/**'
-      - 'quantwave-xtask/**'
-      - 'docs/**'
-      - '.github/workflows/docs.yml'
-  pull_request:
-    paths:
-      - 'quantwave-core/src/indicators/**'
-      - 'quantwave-xtask/**'
-      - 'docs/**'
-
+    branches:
+      - main
+permissions:
+  contents: write
 jobs:
-  generate-and-deploy:
-    permissions:
-      contents: write
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          fetch-depth: 0
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+          python-version: 3.x
+      - uses: dtolnay/rust-toolchain@stable
+      - run: echo "cache_id=$(date --utc +%V)" >> $GITHUB_ENV
+      - uses: actions/cache@v4
         with:
-          components: rustfmt
-
-      - name: Install mdbook
-        run: cargo install mdbook
-
-      - name: Run documentation generator (xtask)
-        run: cargo run -p quantwave-xtask
-
-      - name: Build mdBook
-        run: mdbook build docs/
-
-      - name: Deploy to GitHub Pages
-        if: github.ref == 'refs/heads/main'
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/book
+          key: mkdocs-material-${{ env.cache_id }}
+          path: .cache
+          restore-keys: |
+            mkdocs-material-
+      - run: pip install -r requirements-docs.txt
+      - run: cargo xtask
+      - run: mkdocs gh-deploy --force
