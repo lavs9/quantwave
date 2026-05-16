@@ -22,5 +22,5 @@ jobs:
           restore-keys: |
             mkdocs-material-
       - run: pip install -r requirements-docs.txt
-      - run: cargo xtask
+      - run: cargo run --package quantwave-xtask
       - run: mkdocs gh-deploy --force
