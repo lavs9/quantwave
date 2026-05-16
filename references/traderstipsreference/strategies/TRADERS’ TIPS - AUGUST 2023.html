@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta
+            name="description"
+            content="Traders' Tips, a collection of code provided by developers to help implement trading ideas and techniques presented in the pages of Technical Analysis of Stocks &amp; Commodities Magazine. This month: Using Price Channels by Stella Osoba. Contributions from: TradeStation; MetaQuotes; MetaStock; Wealth-lab.com; TradingView; Neuroshell Trader; Optuma; AIQ."
+        />
+        <!--ARTICLE TITLE HERE-->
+        <title>TRADERS&rsquo; TIPS - AUGUST 2023</title>
+        <!--AUTHOR'S NAME HERE - LEAVE ALONE-->
+        <meta name="author" content="Technical Analysis, Inc." />
+        <!--LINK TO EXTERNAL STYLE SHEET-->
+        <link
+            href="../../../../CSS/S_C_BIA_2013.css"
+            rel="stylesheet"
+            type="text/css"
+        />
+    </head>
+    <body style="width: 730px">
+        <!--INSERT DATE HERE-->
+        <p class="theme">TRADERS&rsquo; TIPS</p>
+        <h1 class="articleTitle grey_blue">August 2023</h1>
+
+        <p class="rules"></p>
+        <!--MONTHLY INTRO AND IMAGE-->
+        <div>
+            <img
+                src="https://www.traders.com/Documentation/FEEDbk_docs/2023/08/images/TT-Osoba.gif"
+                class="letterImg shadow1"
+                alt="Tips Article Thumbnail"
+            />
+            <p>
+                For this month&rsquo;s Traders&rsquo; Tips, the focus is Stella
+                Osoba&rsquo;s article in the 2023 Bonus issue, &ldquo;Using
+                Price Channels.&rdquo; Here, we present the August 2023
+                Traders&rsquo; Tips code with possible implementations in
+                various software.
+            </p>
+            <p>
+                <strong
+                    >You can right-click on any chart to open it in a new tab or
+                    window and view it at it&rsquo;s originally supplied size,
+                    often much larger than the version printed in the
+                    magazine.</strong
+                >
+            </p>
+            <!--<p>ZZZZZZZZZZZZ code is also provided by YYYYYYYYYY in the article, which S&amp;C subscribers will find in the Article Code section of our website <a target="_parent" href="https://technical.traders.com/sub/sublog4.asp">here</a>.</p>-->
+            <p>
+                The Traders&rsquo; Tips section is provided to help the reader
+                implement a selected technique from an article in this issue or
+                another recent issue. The entries here are contributed by
+                software developers or programmers for software that is capable
+                of customization.
+            </p>
+            <br class="clearfloat" />
+        </div>
+
+        <!--LIST ITEMS HERE-->
+        <ul class="bookList">
+            <li><a href="#item1">TradeStation: August 2023</a></li>
+            <li><a href="#item2">MetaQuotes: August 2023</a></li>
+            <li><a href="#item3">MetaStock: August 2023</a></li>
+            <li><a href="#item4">Wealth-lab.com: August 2023</a></li>
+            <li><a href="#item5">TradingView: August 2023</a></li>
+            <li><a href="#item6">Neuroshell Trader: August 2023</a></li>
+            <li><a href="#item7">Optuma: August 2023</a></li>
+            <li><a href="#item8">AIQ: August 2023</a></li>
+        </ul>
+        <!--TIPS START HERE-->
+        <p class="rules"></p>
+        <div class="logoBorder" id="item1">
+            <img
+                src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradestation-new.gif"
+                alt="logo"
+            />
+            <h3 class="newsTitle grey_blue" style="text-transform: uppercase">
+                TradeStation: August 2023
+            </h3>
+        </div>
+        <p>
+            In her article &ldquo;Using Price Channels&rdquo; in the 2023 Bonus
+            Issue, author Stella Osoba describes why many analysis techniques
+            are based on the concept of price channels. In her explanation of
+            Donchian channels, she explains that they are used to help you see
+            the trend and that prices for the most recent period are not used in
+            the calculations.
+        </p>
+        <p>
+            The EasyLanguage version presented here allows the user to
+            optionally include the most recent period. To not include the most
+            recent period, set the IncludeRecentPeriod input to <em>false</em>.
+        </p>
+        <pre>
+// TASC AUGUST 2023
+// Using Price Channels
+// Indicator: Richard Donchian
+// Article Author: Stella Osoba
+
+inputs:
+	Length( 20 ),
+	IncludeRecentPeriod( true ),
+	IncludeMiddleLine( true );
+
+variables:
+	UpperBand( 0 ),
+	LowerBand( 0 ),
+	MiddleLine( 0 ),
+	Displace( IFF( IncludeRecentPeriod, 0, 1 ) );
+
+UpperBand = Highest(High, Length)[Displace];
+LowerBand = Lowest(Low, Length)[Displace];
+MiddleLine = (UpperBand + LowerBand) * 0.5;
+
+Plot1[Displace](UpperBand, &quot;Donchian High&quot;);
+Plot2[Displace](LowerBand, &quot;Donchian Low&quot;);
+if IncludeMiddleLine then
+	Plot3[Displace](MiddleLine, &quot;Donchian Avg&quot;);
+	</pre
+        >
+        <p>A sample chart is shown in Figure 1.</p>
+        <div class="figBorder">
+            <img
+                src="images/TT-Tradestation.gif"
+                alt="Sample Chart"
+                class="shadow1"
+                style="width: 610px"
+            />
+            <p class="figCaption" style="width: 550px">
+                FIGURE 1: TRADESTATION. Here is a daily chart of the S&amp;P 500
+                ETF SPY showing a portion of 2022 and 2023 with Donchian
+                channels.
+            </p>
+        </div>
+        <p>
+            <em
+                >This article is for informational purposes. No type of trading
+                or investment recommendation, advice, or strategy is being made,
+                given, or in any manner provided by TradeStation Securities or
+                its affiliates.</em
+            >
+        </p>
+        <p class="authorTips">
+            &mdash;John Robinson<br />
+            TradeStation Securities, Inc.<br />
+            <a href="https://www.TradeStation.com" target="_parent"
+                >www.TradeStation.com</a
+            >
+        </p>
+        <!--BACK TO TOP LINK-->
+        <p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+        <p class="rules"></p>
+        <div class="logoBorder" id="item2">
+            <h3 class="newsTitle grey_blue" style="text-transform: uppercase">
+                MetaQuotes: August 2023
+            </h3>
+        </div>
+        <p>
+            The code provided here can be used as a regular Donchian channel or
+            you can use the change in slope of the middle line to determine the
+            direction of the trend.
+        </p>
+        <p>
+            The indicator includes buy/sell arrows and a color-changing middle
+            line to indicate the change in trend. Arrows can be turned off or
+            on; the default setting is <em>on</em>. See Figure 2.
+        </p>
+        <pre>
+//+------------------------------------------------------------------+
+//|                                            Donchian Channels.mq5 |
+//|                             Copyright &copy; August 2023, Shaun Bosch |
+//|                                              shadavbos&#64;gmail.com |
+//+------------------------------------------------------------------+
+#property copyright &quot;Copyright &copy; August 2023, Shaun Bosch&quot;
+#property link      &quot;shadavbos&#64;gmail.com&quot;
+#property version   &quot;1.00&quot;
+#property indicator_chart_window
+#property indicator_buffers 6
+#property indicator_plots   5
+//--- plot Upper Band
+#property indicator_label1  &quot;Upper Band&quot;
+#property indicator_type1   DRAW_LINE
+#property indicator_color1  clrYellow
+#property indicator_style1  STYLE_SOLID
+#property indicator_width1  1
+//--- plot Middle Line
+#property indicator_label2  &quot;Middle Line&quot;
+#property indicator_type2   DRAW_COLOR_LINE
+#property indicator_color2  clrGreen,clrRed
+#property indicator_style2  STYLE_SOLID
+#property indicator_width2  2
+//--- plot Lower Band
+#property indicator_label3  &quot;Lower Band&quot;
+#property indicator_type3   DRAW_LINE
+#property indicator_color3  clrYellow
+#property indicator_style3  STYLE_SOLID
+#property indicator_width3  1
+//--- plot Buy Signal
+#property indicator_label4  &quot;Buy Signal&quot;
+#property indicator_type4   DRAW_ARROW
+#property indicator_color4  clrDodgerBlue
+#property indicator_style4  STYLE_SOLID
+#property indicator_width4  1
+//--- plot Sell Signal
+#property indicator_label5  &quot;Sell Signal&quot;
+#property indicator_type5   DRAW_ARROW
+#property indicator_color5  clrMagenta
+#property indicator_style5  STYLE_SOLID
+#property indicator_width5  1
+//--- input parameters
+input int               inp_period           = 20;          // Lookback Period (min val: 1; step val: 1)
+input bool              inp_show_arrw        = true;        // Show Arrows?
+//--- indicator buffers
+double                  upper_channel[];
+double                  mid_line[];
+double                  mid_line_col[];
+double                  lower_channel[];
+double                  buy_signal[];
+double                  sell_signal[];
+
+//--- indicator variables
+int                     period;
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+  {
+//--- check input parameters
+   period = inp_period &lt; 1 ? 1 : inp_period;
+//--- indicator buffers mapping
+   SetIndexBuffer(0, upper_channel, INDICATOR_DATA);
+   SetIndexBuffer(1, mid_line, INDICATOR_DATA);
+   SetIndexBuffer(2, mid_line_col, INDICATOR_COLOR_INDEX);
+   SetIndexBuffer(3, lower_channel, INDICATOR_DATA);
+   SetIndexBuffer(4, buy_signal, INDICATOR_DATA);
+   SetIndexBuffer(5, sell_signal, INDICATOR_DATA);
+//--- setting a code from the Wingdings charset as the property of PLOT_ARROW
+   PlotIndexSetInteger(3, PLOT_ARROW, 225);
+   PlotIndexSetInteger(4, PLOT_ARROW, 226);
+//--- Set the vertical shift of arrows in pixels
+   PlotIndexSetInteger(3, PLOT_ARROW_SHIFT, 15);
+   PlotIndexSetInteger(4, PLOT_ARROW_SHIFT, -15);
+//--- accuracy of drawing of indicator values
+   IndicatorSetInteger(INDICATOR_DIGITS, _Digits);
+//--- set indicator name display
+   string short_name = &quot;DONCHIAN CHANNELS (&quot; + IntegerToString(period) + &quot;)&quot;;
+   IndicatorSetString(INDICATOR_SHORTNAME, short_name);
+//--- show indicator name on screen
+   Comment(short_name);
+//--- an empty value for plotting, for which there is no drawing
+   PlotIndexSetDouble(0, PLOT_EMPTY_VALUE, EMPTY_VALUE);
+   PlotIndexSetDouble(1, PLOT_EMPTY_VALUE, EMPTY_VALUE);
+   PlotIndexSetDouble(2, PLOT_EMPTY_VALUE, EMPTY_VALUE);
+   PlotIndexSetDouble(3, PLOT_EMPTY_VALUE, EMPTY_VALUE);
+   PlotIndexSetDouble(4, PLOT_EMPTY_VALUE, EMPTY_VALUE);
+//--- display candlestick / bar / line chart above all indicators
+   ChartSetInteger(0, CHART_BRING_TO_TOP, 0, true);
+//--- successful initialization
+   return(INIT_SUCCEEDED);
+  }
+//+------------------------------------------------------------------+
+//| Custom indicator deinitialization function                       |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+  {
+   Comment(&quot;&quot;); // clear the chart from comments after deleting the indicator
+  }
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const datetime &amp;time[],
+                const double &amp;open[],
+                const double &amp;high[],
+                const double &amp;low[],
+                const double &amp;close[],
+                const long &amp;tick_volume[],
+                const long &amp;volume[],
+                const int &amp;spread[])
+  {
+//--- populate donchian channel buffers
+   on_DONCHIAN_CHANNELS(rates_total, prev_calculated, period, high, low, upper_channel, lower_channel, mid_line);
+//--- bar index start
+   int bar_index;
+   if(prev_calculated == 0)
+      bar_index = 0;
+   else
+      bar_index = prev_calculated - 1;
+//--- main loop
+   for(int i = bar_index; i &lt; rates_total &amp;&amp; !_StopFlag; i++)
+     {
+      if(i &lt; period)
+        {
+         mid_line_col[i] = EMPTY_VALUE;
+         buy_signal[i] = EMPTY_VALUE;
+         sell_signal[i] = EMPTY_VALUE;
+        }
+      else
+        {
+         mid_line_col[i] = mid_line[i] - mid_line[i - 1] &gt; 0.0 ? 0.0 : mid_line[i] - mid_line[i - 1] &lt; 0.0 ? 1.0 : mid_line_col[i - 1];
+         buy_signal[i] = inp_show_arrw == false ? EMPTY_VALUE : (mid_line_col[i] == 0.0 &amp;&amp; mid_line_col[i - 1] == 1.0 ? lower_channel[i] : EMPTY_VALUE);
+         sell_signal[i] = inp_show_arrw == false ? EMPTY_VALUE : (mid_line_col[i] == 1.0 &amp;&amp; mid_line_col[i - 1] == 0.0 ? upper_channel[i] : EMPTY_VALUE);
+        }
+     }
+//--- return value of prev_calculated for next call
+   return(rates_total);
+  }
+//+------------------------------------------------------------------+
+//| Donchian Channels                                                |
+//+------------------------------------------------------------------+
+//--- by Richard Donchian
+//                       //--- System bar_index references:
+int on_DONCHIAN_CHANNELS(const int rates_total,
+                         const int prev_calculated,
+                         //--- Input variables and arrays:
+                         const int length, // DC Period (min val: 1; step val: 1; default val: 20)
+                         const double &amp;high[], // High Price
+                         const double &amp;low[], // Low Price
+                         //--- Output arrays:
+                         double &amp;result_upper[],
+                         double &amp;result_lower[],
+                         double &amp;result_mid[])
+  {
+//--- bar index start
+   int bar_index;
+   if(prev_calculated == 0)
+      bar_index = 0;
+   else
+      bar_index = prev_calculated - 1;
+//--- main loop
+   for(int i = bar_index; i &lt; rates_total &amp;&amp; !_StopFlag; i++)
+     {
+      if(i &lt; length)
+        {
+         result_upper[i] = EMPTY_VALUE;
+         result_lower[i] = EMPTY_VALUE;
+         result_mid[i] = EMPTY_VALUE;
+        }
+      else
+        {
+         result_upper[i] = high[i];
+         result_lower[i] = low[i];
+         for(int j = 0; j &lt; length; j++)
+           {
+            result_upper[i] = high[i - j] &gt; result_upper[i] ? high[i - j] : result_upper[i];
+            result_lower[i] = low[i - j] &lt; result_lower[i] ? low[i - j] : result_lower[i];
+           }
+         result_mid[i] = (result_upper[i] + result_lower[i]) / 2.0;
+        }
+     }
+   return(rates_total);
+  }
+//+------------------------------------------------------------------+
+</pre
+        >
+        <div class="figBorder">
+            <img
+                src="images/TT-Metaquotes1.gif"
+                alt="Sample Chart"
+                class="shadow1"
+                style="width: 610px"
+            />
+            <p class="figCaption" style="width: 550px">
+                FIGURE 2: METAQUOTES. This shows setting up a 20-day Donchian
+                channel in MetaQuotes.
+            </p>
+        </div>
+        <div class="figBorder">
+            <img
+                src="images/TT-Metaquotes2.gif"
+                alt="Sample Chart"
+                class="shadow1"
+                style="width: 610px"
+            />
+            <p class="figCaption" style="width: 550px">
+                FIGURE 3: METAQUOTES. This demonstrates Donchian price channels
+                on a dail chart of EURUSD from October 2022 through early June
+                2023.
+            </p>
+        </div>
+        <p class="authorTips">
+            &mdash;Shaun Bosch<br />
+            <a href="mailto:shadavbos@gmail.com">shadavbos@gmail.com</a>
+        </p>
+        <!--BACK TO TOP LINK-->
+        <p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+        <p class="rules"></p>
+        <div class="logoBorder" id="item3">
+            <img
+                src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Metastock.gif"
+                alt="logo"
+            />
+            <h3 class="newsTitle grey_blue" style="text-transform: uppercase">
+                MetaStock: August 2023
+            </h3>
+        </div>
+        <p>
+            Stella Osoba&rsquo;s article &ldquo;Using Price Channels&rdquo;
+            explains Donchian channels and offers a system to trade them. The
+            MetaStock platform includes Donchian channels in its list of
+            built-in indicators but uses a different formula for the center
+            band. Provided here are MetaStock formulas for the version described
+            by Osoba. Also included are the suggested entry signals and middle
+            band exit formulas.
+        </p>
+        <pre>
+Indicator:
+x:= Input(&quot;periods&quot;,2,100,20);
+Ref(HHV(H,x), -1);
+Ref(LLV(L,x), -1);
+Ref(HHV(H,x)+LLV(L,x), -1)/2
+
+Buy Signal:
+x:= 20;
+Cross( H, Ref(HHV(H,x), -1) )
+
+Sell Signal:
+x:= 20;
+Cross( Ref(HHV(H,x)+LLV(L,x), -1)/2, L)
+
+Sell Short Signal:
+x:= 20;
+Cross( Ref(LLV(L,x), -1), L )
+
+Buy to Cover Signal:
+x:= 20;
+Cross( H, Ref(HHV(H,x)+LLV(L,x), -1)/2 )
+</pre
+        >
+        <p class="authorTips">
+            &mdash;William Golson<br />
+            MetaStock Technical Support<br />
+            <a href="https://www.MetaStock.com" target="_parent"
+                >www.MetaStock.com</a
+            >
+        </p>
+        <!--BACK TO TOP LINK-->
+        <p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+        <p class="rules"></p>
+        <div class="logoBorder" id="item4">
+            <img
+                src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Wealthlab.gif"
+                alt="logo"
+            />
+            <h3 class="newsTitle grey_blue" style="text-transform: uppercase">
+                Wealth-lab.com: August 2023
+            </h3>
+        </div>
+        <p>
+            Wealth-Lab is all set when it comes to trading price channels.
+            Without any programming to do, creating a Donchian channel trading
+            system is a matter of dropping a pair of &ldquo;buy(short) at limit
+            or stop&rdquo; and &ldquo;sell(cover) at limit or stop&rdquo;
+            building blocks onto a design surface. (See Figure 4.)
+        </p>
+        <div class="figBorder">
+            <img
+                src="images/TT-Wealthlab1.gif"
+                alt="Sample Chart"
+                class="shadow1"
+                style="width: 610px"
+            />
+            <p class="figCaption" style="width: 550px">
+                FIGURE 4: WEALTH-LAB. Here is an example of setting up a
+                Donchian channel system using the building blocks feature in
+                Wealth-Lab, without requiring the user to create any coding.
+            </p>
+        </div>
+        <p>
+            When you&rsquo;re ready to add a twist, open the &ldquo;Dual
+            Donchian Breakout&rdquo; system straight in Wealth-Lab. A dual
+            Donchian band strategy uses the longer band to determine trend
+            direction and the shorter one for trade decisions. For example, it
+            buys after a breakout of the 120-day highest high, and thereafter
+            only takes buys when the market breaks the 20-day high. See Figure 5
+            for an example implementation of the dual Donchian breakout system.
+        </p>
+        <div class="figBorder">
+            <img
+                src="images/TT-Wealthlab2.gif"
+                alt="Sample Chart"
+                class="shadow1"
+                style="width: 610px"
+            />
+            <p class="figCaption" style="width: 550px">
+                FIGURE 5: WEALTH-LAB. This shows an implementation of the
+                example Donchian channel system from Figure 4 on a chart. A long
+                trade in SPY is entered by the dual channel system only after
+                the downtrend has finally reversed its course with a new 120-day
+                high.
+            </p>
+        </div>
+        <p class="authorTips">
+            &mdash;Gene Geren (Eugene)<br />
+            Wealth-Lab team<br />
+            <a href="https://www.wealth-lab.com" target="_parent"
+                >www.wealth-lab.com</a
+            >
+        </p>
+        <!--BACK TO TOP LINK-->
+        <p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+        <p class="rules"></p>
+        <div class="logoBorder" id="item5">
+            <img
+                src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Tradingview.gif"
+                alt="logo"
+            />
+            <h3 class="newsTitle grey_blue" style="text-transform: uppercase">
+                TradingView: August 2023
+            </h3>
+        </div>
+        <p>
+            Here is TradingView Pine Script code demonstrating an approach to
+            using Donchian channels, as discussed in Stella Osoba&rsquo;s
+            articles &ldquo;Using Price Channels&rdquo; and &ldquo;The Savvy
+            Technician: Markets And News.&rdquo;
+        </p>
+        <pre>
+//  TASC Issue: August 2023 - Vol. 41, Issue 9
+//     Article: Channeling Your Inner Chartist
+//              Using Price Channels
+//  Article By: Stella Osoba, CMT
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//&#64;version=5
+string title = 'TASC 2023.08 Donchian Channel'
+string stitle = 'DC'
+indicator(title, stitle, true)
+
+
+//#region   Inputs:
+float srcH = input.source(high, 'High Source:')
+float srcL = input.source(low, 'Low Source:')
+int length = input.int(50, 'Length:')
+string cT = 'Colors:'
+color cUp = input.color(#ff5252ff, '', '', cT, cT)
+color cLo = input.color(#4caf50ff, '', '', cT, cT)
+color cMi = input.color(#8b8b8bff, '', '', cT, cT)
+//#endregion
+
+
+//#region   Calculations:
+// Calculate the Donchian channel.
+float upper  = ta.highest(srcH, length)
+float lower  = ta.lowest(srcL, length)
+float middle = math.avg(upper, lower)
+//#endregion
+
+
+//#region   Output:
+ps1 = plot.style_circles
+ps2 = plot.style_line
+plot(middle, 'Middle', cMi, 1, ps1)
+plot(upper , 'Upper' , cUp, 1, ps2)
+plot(lower , 'Lower' , cLo, 1, ps2)
+//#endregion
+
+
+//#region   Signals:
+var bool isUpCycle = false
+var bool isLoCycle = false
+int dir = 0
+// Look for the start of a new cycle.
+switch
+  not isUpCycle =&gt;
+      if high &gt;= upper
+          isUpCycle := true
+          isLoCycle := false
+          dir := 1
+  not isLoCycle =&gt;
+      if low &lt;= lower
+          isUpCycle := false
+          isLoCycle := true
+          dir := -1
+float sigUp = dir &gt; 0 ? upper : na
+float sigLo = dir &lt; 0 ? lower : na
+
+
+sUp = shape.triangleup
+sLo = shape.triangledown
+loc = location.absolute
+plotshape(sigUp, 'Up Signal', sLo,loc,cLo,size=size.small)
+plotshape(sigLo, 'Lo Signal', sUp,loc,cUp,size=size.small)
+//#endregion
+</pre
+        >
+        <p>
+            The indicator is available on TradingView from the PineCodersTASC
+            account:
+            <a
+                href="https://www.tradingview.com/u/PineCodersTASC/#published-scripts"
+                target="_parent"
+                >https://www.tradingview.com/u/PineCodersTASC/#published-scripts</a
+            >
+        </p>
+        <p>An example chart is shown in Figure 6.</p>
+        <div class="figBorder">
+            <img
+                src="images/TT-Tradingview.gif"
+                alt="Sample Chart"
+                class="shadow1"
+                style="width: 610px"
+            />
+            <p class="figCaption" style="width: 550px">
+                FIGURE 6: TRADINGVIEW. This demonstrates a daily chart of the US
+                Dollar Index with Donchian price channels and buy/sell signals
+                based on the channels.
+            </p>
+        </div>
+        <p class="authorTips">
+            &mdash;PineCoders, for TradingView<br />
+            <a href="https://www.TradingView.com" target="_parent"
+                >www.TradingView.com</a
+            >
+        </p>
+        <!--BACK TO TOP LINK-->
+        <p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+        <p class="rules"></p>
+        <div class="logoBorder" id="item6">
+            <img
+                src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Ward.gif"
+                alt="logo"
+            />
+            <h3 class="newsTitle grey_blue" style="text-transform: uppercase">
+                Neuroshell Trader: August 2023
+            </h3>
+        </div>
+        <p>
+            Donchian channels can be easily implemented with a few of NeuroShell
+            Trader&rsquo;s 800+ indicators. Simply select &ldquo;new
+            indicator&rdquo; from the <em>insert</em> menu and use the indicator
+            wizard to create the following indicators:
+        </p>
+        <pre>
+UpperBand:	Lag( PriceHigh( High, 20 ), 1 )
+MiddleBand:	PriceMidPoint( High, Low, 20 ), 1 )
+LowerBand:	Lag(PriceLow( Low, 20 ), 1 )
+</pre
+        >
+        <p>
+            To implement a Donchian channel reversal trading system, select
+            &ldquo;new strategy&rdquo; from the <em>insert</em> menu and use the
+            trading strategy wizard to create the following strategy:
+        </p>
+        <pre>
+BUY LONG CONDITIONS:
+     CrossAbove(High,Lag(PriceHigh(High,20),1))
+
+SELL SHORT CONDITIONS:
+     CrossBelow(Low,Lag(PriceLow(Low,20),1))
+</pre
+        >
+        <div class="figBorder">
+            <img
+                src="images/TT-Neuroshell.gif"
+                alt="Sample Chart"
+                class="shadow1"
+                style="width: 610px"
+            />
+            <p class="figCaption" style="width: 550px">
+                FIGURE 7: NEUROSHELL TRADER. This NeuroShell Trader chart
+                demonstrates Donchian bands and a trading system based on
+                Donchian bands.
+            </p>
+        </div>
+        <p>
+            Users of NeuroShell Trader can go to the Stocks &amp; Commodities
+            section of the NeuroShell Trader free technical support website to
+            download a copy of this or any previous Traders&rsquo; Tips.
+        </p>
+        <p class="authorTips">
+            &mdash;Ward Systems Group, Inc.<br />
+            <a href="mailto:sales@wardsystems.com">sales@wardsystems.com</a
+            ><br />
+            <a href="https://www.neuroshell.com" target="_parent"
+                >www.neuroshell.com</a
+            >
+        </p>
+        <!--BACK TO TOP LINK-->
+        <p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+        <p class="rules"></p>
+        <div class="logoBorder" id="item7">
+            <img
+                src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Optuma.gif"
+                alt="logo"
+            />
+            <h3 class="newsTitle grey_blue" style="text-transform: uppercase">
+                Optuma: August 2023
+            </h3>
+        </div>
+        <p>
+            Here are a few examples of using a 20-day Donchian price channel, as
+            discussed in Stella Osoba&rsquo;s article &ldquo;Using Price
+            Channels&rdquo; in the 2023 Bonus Issue, and additionally in
+            &ldquo;Markets And News&rdquo; in this issue.
+        </p>
+        <p>
+            The chart of the S&amp;P 500 index in Figure 8 shows the changes in
+            the long/short Donchian channel regime. The index enters a long
+            regime when the upper line of the Donchian channel changes to an
+            upward direction (green arrow), until the lower line moves down,
+            causing a short signal (red arrow). The bars and analysis box are
+            colored accordingly.
+        </p>
+        <div class="figBorder">
+            <img
+                src="images/TT-Optuma1.gif"
+                alt="Sample Chart"
+                class="shadow1"
+                style="width: 610px"
+            />
+            <p class="figCaption" style="width: 550px">
+                FIGURE 8: OPTUMA. This chart of the S&amp;P 500 index shows the
+                changes in the long/short Donchian channel regime. The index
+                enters a long regime when the upper line of the Donchian channel
+                changes to an upward direction (green arrow) until the lower
+                line moves down, causing a short signal (red arrow). The bars
+                and analysis box are colored accordingly.
+            </p>
+        </div>
+        <p>
+            This watchlist table (Figure 9) shows the recent Donchian channel
+            regime for the major US indexes and sectors. At time of this
+            writing, the Nasdaq 100 index signaled long on March 17 (62 trading
+            days ago as of this writing) and is trading above the Donchian
+            centerline. On a sector level, only Consumer Staples is trading
+            below the centerline, and has had a short signal since May 18.
+        </p>
+        <div class="figBorder">
+            <img
+                src="images/TT-Optuma2.gif"
+                alt="Sample Chart"
+                class="shadow1"
+                style="width: 610px"
+            />
+            <p class="figCaption" style="width: 550px">
+                FIGURE 9: OPTUMA. A watchlist shows the Donchian channel regime
+                for major US indexes and sectors. Here, the Nasdaq 100 index
+                signals long on March 17 and is trading above the Donchian
+                centerline. On a sector level, only Consumer Staples is trading
+                below the centerline and saw a short signal on May 18 onward.
+            </p>
+        </div>
+        <p>
+            Optuma clients can get the formulas and download workbooks from our
+            scripting forum:
+            <a
+                href="https://forum.optuma.com/topic/stocks-commodities-magazine-traders-tips"
+                target="_parent"
+                >https://forum.optuma.com/topic/stocks-commodities-magazine-traders-tips</a
+            >.
+        </p>
+        <p class="authorTips">&mdash;support@optuma.com</p>
+        <!--BACK TO TOP LINK-->
+        <p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+        <p class="rules"></p>
+        <div class="logoBorder" id="item8">
+            <img
+                src="https://www.traders.com/Documentation/FEEDbk_docs/vendor_logos/Aiq.gif"
+                alt="logo"
+            />
+            <h3 class="newsTitle grey_blue" style="text-transform: uppercase">
+                AIQ: August 2023
+            </h3>
+        </div>
+        <p>
+            The importable AIQ EDS file based on Stella Osoba&rsquo;s article
+            &ldquo;Using Price Channels&rdquo; can be obtained on request via
+            <a href="mailto:rdencpa@gmail.com">rdencpa@gmail.com</a>. The code
+            is also shown below.
+        </p>
+        <p>
+            Code for the author&rsquo;s indicator is set up in the AIQ EDS code
+            file. Figure 10 shows Donchian channels plotted on a chart of Apple,
+            Inc (AAPL).
+        </p>
+        <pre>
+!Using Price Channels
+!Author: Stella Osoba, Aug 2023
+!Coded by: Richard Denning, 6/13/23
+
+!INPUT:
+Len is 20.
+
+UpDon is hival([high],Len).
+DnDon is loval([low],Len).
+MdDon is (UpDon - DnDon) / 2 + DnDon.
+</pre
+        >
+        <div class="figBorder">
+            <img
+                src="images/TT-Aiq.gif"
+                alt="Sample Chart"
+                class="shadow1"
+                style="width: 610px"
+            />
+            <p class="figCaption" style="width: 550px">
+                FIGURE 10: AIQ. This chart demonstrates Donchian price channels
+                plotted on a chart of Apple, Inc. (AAPL).
+            </p>
+        </div>
+        <p class="authorTips">
+            &mdash;Richard Denning<br />
+            <a href="mailto:rdencpa@gmail.com">rdencpa@gmail.com</a><br />
+            for AIQ Systems
+        </p>
+        <!--BACK TO TOP LINK-->
+        <p class="bookReturn"><a href="#">BACK TO LIST</a></p>
+        <!--ORIGINALLY FOOTER HERE-->
+        <p class="footerarticle">
+            Originally published in the August 2023 issue of<br />
+            <em>Technical Analysis of</em> STOCKS &amp; COMMODITIES magazine.
+            <br />
+            All rights reserved. &copy;&nbsp;Copyright&nbsp;2023, Technical
+            Analysis, Inc.
+        </p>
+    </body>
+</html>
