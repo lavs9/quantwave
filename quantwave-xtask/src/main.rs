@@ -58,7 +58,7 @@ fn main() -> Result<()> {
         summary.push_str("- [Native Indicators](native/README.md)\n");
         for (category, indicators) in categories {
             summary.push_str(&format!(
-                "    - [{}]()\n",
+                "    - {}\n",
                 if category.is_empty() {
                     "General"
                 } else {
