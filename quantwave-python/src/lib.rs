@@ -98,6 +98,7 @@ use quantwave_core::indicators::wavetrend::WaveTrend as CoreWaveTrend;
 use quantwave_core::indicators::zero_lag::ZeroLag as CoreZeroLag;
 use quantwave_core::indicators::amfm::{AMDetector as CoreAMDetector, FMDemodulator as CoreFMDemodulator};
 use quantwave_core::indicators::cycle::{HT_DCPERIOD, HT_PHASOR, HT_DCPHASE, HT_SINE, HT_TRENDMODE};
+use quantwave_core::options_india;
 use quantwave_core::indicators::volume_profile::VolumeProfile as CoreVolumeProfile;
 use quantwave_core::indicators::hilbert_transform::EhlersWma4 as CoreEhlersWma4;
 use quantwave_core::indicators::just_ignore_them::UndersampledDoubleMA as CoreUDMA;
@@ -141,6 +142,9 @@ uniffi::setup_scaffolding!();
 #[derive(uniffi::Record)] pub struct PmaResult { pub pma: f64, pub predict: f64 }
 #[derive(uniffi::Record)] pub struct TrendRocResult { pub trend: f64, pub roc: f64 }
 #[derive(uniffi::Record)] pub struct UdmaResult { pub fast: f64, pub slow: f64 }
+#[derive(uniffi::Record)] pub struct OIZonesResult { pub resistance_strikes: Vec<f64>, pub support_strikes: Vec<f64> }
+#[derive(uniffi::Record)] pub struct GexResult { pub ce_gex: f64, pub pe_gex: f64, pub net_gex: f64 }
+#[derive(uniffi::Record)] pub struct StraddleResult { pub atm_strike: f64, pub straddle_premium: f64, pub implied_move_pct: f64 }
 
 #[derive(uniffi::Enum)]
 pub enum SwissMode { EMA, SMA, Gauss, Butterworth, Smooth, HighPass, TwoPoleHighPass, BandPass, BandStop }
@@ -423,6 +427,7 @@ pub fn donchian(high: Vec<f64>, low: Vec<f64>, period: u64) -> Vec<DonchianResul
 }
 
 export_1_in_1_out!(Dsma, CoreDSMA, (period: u64));
+export_1_in_record_out!(Emd, CoreEMD, EmdResult, (period: u64, delta: f64, fraction: f64), res, EmdResult { trend: res.0, upper: res.1, lower: res.2 });
 export_co_in_1_out!(AmDetector, CoreAMDetector, (highest_len: u64, avg_len: u64));
 export_co_in_1_out!(FmDemodulator, CoreFMDemodulator, (period: u64));
 export_1_in_vec_out!(EhlersAutocorrelation, CoreEhlersAutocorrelation, (length: u64, num_lags: u64));
@@ -646,3 +651,93 @@ impl From<quantwave_core::indicators::system_evaluator::SystemEvaluationResults>
         Self { average_win_loss_ratio: r.average_win_loss_ratio, average_trade: r.average_trade, profit_factor: r.profit_factor, percent_winners: r.percent_winners, breakeven_profit_factor: r.breakeven_profit_factor, weighted_average_trade: r.weighted_average_trade, theoretical_consecutive_losers: r.theoretical_consecutive_losers }
     }
 }
+
+// --- Options India ---
+
+#[uniffi::export]
+pub fn bs_call_price(s: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {
+    options_india::bs_call_price(s, k, r, t, sigma)
+}
+#[uniffi::export]
+pub fn bs_put_price(s: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {
+    options_india::bs_put_price(s, k, r, t, sigma)
+}
+#[uniffi::export]
+pub fn bs_delta(s: f64, k: f64, r: f64, t: f64, sigma: f64, is_call: bool) -> f64 {
+    options_india::bs_delta(s, k, r, t, sigma, is_call)
+}
+#[uniffi::export]
+pub fn bs_gamma(s: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {
+    options_india::bs_gamma(s, k, r, t, sigma)
+}
+#[uniffi::export]
+pub fn bs_theta(s: f64, k: f64, r: f64, t: f64, sigma: f64, is_call: bool) -> f64 {
+    options_india::bs_theta(s, k, r, t, sigma, is_call)
+}
+#[uniffi::export]
+pub fn bs_vega(s: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {
+    options_india::bs_vega(s, k, r, t, sigma)
+}
+#[uniffi::export]
+pub fn bs_rho(s: f64, k: f64, r: f64, t: f64, sigma: f64, is_call: bool) -> f64 {
+    options_india::bs_rho(s, k, r, t, sigma, is_call)
+}
+#[uniffi::export]
+pub fn implied_vol(market_price: f64, s: f64, k: f64, r: f64, t: f64, is_call: bool) -> Option<f64> {
+    if t <= 0.0 { return None; }
+    let theta = if is_call { 1.0 } else { -1.0 };
+    let forward = s * (r * t).exp();
+    let undiscounted_price = market_price * (r * t).exp();
+    let iv = options_india::implied_black_volatility(undiscounted_price, forward, k, t, theta);
+    if iv >= f64::MAX || iv <= -f64::MAX { None } else { Some(iv) }
+}
+#[uniffi::export]
+pub fn max_pain(strikes: Vec<f64>, ce_oi: Vec<u64>, pe_oi: Vec<u64>, lot_size: u32) -> f64 {
+    options_india::max_pain(&strikes, &ce_oi, &pe_oi, lot_size)
+}
+#[uniffi::export]
+pub fn strike_pcr(ce_oi: Vec<u64>, pe_oi: Vec<u64>) -> Vec<f64> {
+    options_india::strike_pcr(&ce_oi, &pe_oi)
+}
+#[uniffi::export]
+pub fn chain_pcr(ce_oi: Vec<u64>, pe_oi: Vec<u64>) -> f64 {
+    options_india::chain_pcr(&ce_oi, &pe_oi)
+}
+#[uniffi::export]
+pub fn oi_zones(strikes: Vec<f64>, ce_oi: Vec<u64>, pe_oi: Vec<u64>, n: u64) -> OIZonesResult {
+    let zones = options_india::oi_zones(&strikes, &ce_oi, &pe_oi, n as usize);
+    OIZonesResult { resistance_strikes: zones.resistance_strikes, support_strikes: zones.support_strikes }
+}
+#[uniffi::export]
+pub fn gex_per_strike(spot: f64, strikes: Vec<f64>, ce_gamma: Vec<f64>, pe_gamma: Vec<f64>, ce_oi: Vec<u64>, pe_oi: Vec<u64>, lot_size: u32) -> Vec<GexResult> {
+    options_india::gex_per_strike(spot, &strikes, &ce_gamma, &pe_gamma, &ce_oi, &pe_oi, lot_size)
+        .into_iter()
+        .map(|(ce, pe, net)| GexResult { ce_gex: ce, pe_gex: pe, net_gex: net })
+        .collect()
+}
+#[uniffi::export]
+pub fn gex_flip_strike(strikes: Vec<f64>, net_gex: Vec<f64>) -> Option<f64> {
+    options_india::gex_flip_strike(&strikes, &net_gex)
+}
+#[uniffi::export]
+pub fn atm_straddle(spot: f64, strikes: Vec<f64>, ce_ltp: Vec<f64>, pe_ltp: Vec<f64>) -> StraddleResult {
+    let (atm, premium, pct) = options_india::atm_straddle(spot, &strikes, &ce_ltp, &pe_ltp);
+    StraddleResult { atm_strike: atm, straddle_premium: premium, implied_move_pct: pct }
+}
+#[uniffi::export]
+pub fn synthetic_futures(strikes: Vec<f64>, ce_ltp: Vec<f64>, pe_ltp: Vec<f64>) -> Vec<f64> {
+    options_india::synthetic_futures(&strikes, &ce_ltp, &pe_ltp)
+}
+#[uniffi::export]
+pub fn moneyness(spot: f64, strike: f64) -> String {
+    options_india::moneyness(spot, strike).to_string()
+}
+#[uniffi::export]
+pub fn nse_lot_size(symbol: String) -> Option<u32> {
+    options_india::nse_lot_size(&symbol)
+}
+#[uniffi::export]
+pub fn nse_risk_free_rate() -> f64 {
+    options_india::NSE_RISK_FREE_RATE
+}
+

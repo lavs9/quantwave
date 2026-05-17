@@ -345,7 +345,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c673075a2e0e5f4a1dde27ce9dee1ea4558c7ffe648f576438a20ca1d2acc4b0"
 dependencies = [
  "iana-time-zone",
+ "js-sys",
  "num-traits",
+ "serde",
+ "wasm-bindgen",
  "windows-link",
 ]
 
@@ -2060,7 +2063,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave"
-version = "0.1.15"
+version = "0.1.18"
 dependencies = [
  "quantwave-core",
  "quantwave-polars",
@@ -2068,9 +2071,10 @@ dependencies = [
 
 [[package]]
 name = "quantwave-core"
-version = "0.1.15"
+version = "0.1.18"
 dependencies = [
  "approx",
+ "chrono",
  "log",
  "proptest",
  "rand 0.8.6",
@@ -2083,7 +2087,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-plugins"
-version = "0.1.15"
+version = "0.1.18"
 dependencies = [
  "polars",
  "polars-arrow",
@@ -2094,7 +2098,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-polars"
-version = "0.1.15"
+version = "0.1.18"
 dependencies = [
  "polars",
  "quantwave-core",
@@ -2104,7 +2108,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-python"
-version = "0.1.15"
+version = "0.1.18"
 dependencies = [
  "paste",
  "quantwave-core",
@@ -2113,7 +2117,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-xtask"
-version = "0.1.15"
+version = "0.1.18"
 dependencies = [
  "anyhow",
  "quick-xml",

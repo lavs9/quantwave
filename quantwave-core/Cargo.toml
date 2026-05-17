@@ -13,14 +13,15 @@ keywords.workspace = true
 
 [features]
 default = []
-test_utils = ["serde", "serde_json"]
+test_utils = ["serde_json"]
 
 [dependencies]
 talib-rs = { workspace = true }
 thiserror = { workspace = true }
 approx = { workspace = true }
+chrono = { workspace = true }
 log = { workspace = true }
-serde = { workspace = true, optional = true }
+serde = { workspace = true }
 serde_json = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
 rustfft = { workspace = true, optional = true }

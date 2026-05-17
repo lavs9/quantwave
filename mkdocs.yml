@@ -39,6 +39,7 @@ nav:
       - Rust: getting-started/rust.md
   - Guides:
       - Indicators: guides/indicators/
+      - Options India: guides/options_india.md
   - Examples:
       - Batch & Streaming: examples/batch-streaming.md
       - Jupyter Notebooks: examples/notebooks/

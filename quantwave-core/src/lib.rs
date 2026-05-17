@@ -1,4 +1,5 @@
 pub mod indicators;
+pub mod options_india;
 pub mod traits;
 
 #[cfg(any(test, feature = "test_utils"))]
