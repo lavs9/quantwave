@@ -8,7 +8,7 @@ __pycache__/
 # UniFFI generated files
 python/quantwave/quantwave_python/
 quantwave/quantwave_python/
-python/quantwave/_quantwave/quantwave_python.py
+python/quantwave/_quantwave/
 *.dylib
 *.so
 *.dll
