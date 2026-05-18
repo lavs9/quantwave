@@ -2552,7 +2552,362 @@ impl<'a> QuantWaveNamespace<'a> {
             )
             .alias("gmm_regime")])
     }
+
+    pub fn regimes_duration_stats(self, regime_col: &str, num_states: usize) -> LazyFrame {
+        let name_str = regime_col.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    let ca = s.u32()?;
+                    let states: Vec<u32> = ca.into_iter().map(|v| v.unwrap_or(0)).collect();
+                    let stats = quantwave_core::RegimeAnalytics::duration_stats(&states, num_states);
+                    
+                    // Convert stats to a Struct
+                    let mut regime_ids = Vec::new();
+                    let mut means = Vec::new();
+                    let mut medians = Vec::new();
+                    let mut stds = Vec::new();
+                    let mut maxes = Vec::new();
+                    let mut totals = Vec::new();
+                    
+                    for stat in stats {
+                        regime_ids.push(stat.regime_id);
+                        means.push(stat.mean_duration);
+                        medians.push(stat.median_duration);
+                        stds.push(stat.std_duration);
+                        maxes.push(stat.max_duration as u32);
+                        totals.push(stat.total_observations as u32);
+                    }
+                    
+                    let s_id = Series::new("regime_id".into(), regime_ids);
+                    let s_mean = Series::new("mean_duration".into(), means);
+                    let s_median = Series::new("median_duration".into(), medians);
+                    let s_std = Series::new("std_duration".into(), stds);
+                    let s_max = Series::new("max_duration".into(), maxes);
+                    let s_total = Series::new("total_observations".into(), totals);
+                    
+                    let struct_series = StructChunked::from_series(
+                        "duration_stats".into(),
+                        s_id.len(),
+                        [s_id, s_mean, s_median, s_std, s_max, s_total].iter(),
+                    )?;
+                    Ok(Some(Column::from(struct_series.into_series())))
+                },
+                GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("regime_id".into(), DataType::UInt32),
+                    Field::new("mean_duration".into(), DataType::Float64),
+                    Field::new("median_duration".into(), DataType::Float64),
+                    Field::new("std_duration".into(), DataType::Float64),
+                    Field::new("max_duration".into(), DataType::UInt32),
+                    Field::new("total_observations".into(), DataType::UInt32),
+                ])),
+            )
+            .alias("regime_duration_stats")])
+    }
+
+    pub fn regimes_transition_matrix(self, regime_col: &str, num_states: usize) -> LazyFrame {
+        let name_str = regime_col.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    let ca = s.u32()?;
+                    let states: Vec<u32> = ca.into_iter().map(|v| v.unwrap_or(0)).collect();
+                    let matrix = quantwave_core::RegimeAnalytics::transition_matrix(&states, num_states);
+                    
+                    // Return as a List of Lists (effectively a matrix)
+                    let mut builders = ListPrimitiveChunkedBuilder::<Float64Type>::new(
+                        "transition_matrix".into(),
+                        matrix.len(),
+                        matrix.len() * num_states,
+                        DataType::Float64,
+                    );
+                    for row in matrix {
+                        builders.append_slice(&row);
+                    }
+                    
+                    let list_ca = builders.finish();
+                    Ok(Some(Column::from(list_ca.into_series())))
+                },
+                GetOutput::from_type(DataType::List(Box::new(DataType::Float64))),
+            )
+            .alias("regime_transition_matrix")])
+    }
+
+    pub fn regimes_stability_score(self, regime_col: &str) -> LazyFrame {
+        let name_str = regime_col.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    let ca = s.u32()?;
+                    let states: Vec<u32> = ca.into_iter().map(|v| v.unwrap_or(0)).collect();
+                    let score = quantwave_core::RegimeAnalytics::stability_score(&states);
+                    
+                    Ok(Some(Column::from(Series::new("stability_score".into(), vec![score; s.len()]))))
+                },
+                GetOutput::from_type(DataType::Float64),
+            )
+            .alias("regime_stability_score")])
+    }
+
+    pub fn regimes_next_state_prob(self, regime_col: &str, num_states: usize, steps: usize) -> LazyFrame {
+        let name_str = regime_col.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    let ca = s.u32()?;
+                    let states: Vec<u32> = ca.into_iter().map(|v| v.unwrap_or(0)).collect();
+                    let matrix = quantwave_core::RegimeAnalytics::transition_matrix(&states, num_states);
+                    
+                    let mut builders = ListPrimitiveChunkedBuilder::<Float64Type>::new(
+                        "next_state_probs".into(),
+                        s.len(),
+                        s.len() * num_states,
+                        DataType::Float64,
+                    );
+
+                    for &current in &states {
+                        let probs = quantwave_core::RegimeAnalytics::forecast_state(&matrix, current, steps);
+                        builders.append_slice(&probs);
+                    }
+                    
+                    let list_ca = builders.finish();
+                    Ok(Some(Column::from(list_ca.into_series())))
+                },
+                GetOutput::from_type(DataType::List(Box::new(DataType::Float64))),
+            )
+            .alias("next_state_probs")])
+    }
+
+    pub fn filter_by_regime(self, regime_col: &str, target_regime: u32) -> LazyFrame {
+        self.0.clone().filter(col(regime_col).eq(lit(target_regime)))
+    }
+
+    pub fn apply_regime_strategy(
+        self,
+        regime_col: &str,
+        signal_col: &str,
+        regime_weights: std::collections::HashMap<u32, f64>,
+    ) -> LazyFrame {
+        let mut case_expr = col(signal_col);
+        for (regime, weight) in regime_weights {
+            case_expr = when(col(regime_col).eq(lit(regime)))
+                .then(col(signal_col) * lit(weight))
+                .otherwise(case_expr);
+        }
+        
+        self.0.clone().with_columns([case_expr.alias("regime_adjusted_signal")])
+    }
+
+    pub fn regimes_ms_garch(self, returns_col: &str) -> LazyFrame {
+        let name_str = returns_col.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    let ca = s.f64()?;
+                    let mut model = quantwave_core::regimes::ms_garch::MSGarch::low_high_vol();
+                    let mut regimes = Vec::with_capacity(s.len());
+                    let mut vols = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let ret = ca.get(i).unwrap_or(0.0);
+                        let (regime, vol) = model.next(ret);
+                        
+                        let r_val = match regime {
+                            quantwave_core::regimes::MarketRegime::Steady => 0u32,
+                            quantwave_core::regimes::MarketRegime::Crisis => 1,
+                            quantwave_core::regimes::MarketRegime::Bull => 2,
+                            quantwave_core::regimes::MarketRegime::Bear => 3,
+                            quantwave_core::regimes::MarketRegime::Cluster(c) => 4 + (c as u32),
+                        };
+                        regimes.push(r_val);
+                        vols.push(vol);
+                    }
+
+                    let s_regime = Series::new("regime".into(), regimes);
+                    let s_vol = Series::new("estimated_vol".into(), vols);
+                    let struct_series = StructChunked::from_series(
+                        "ms_garch_data".into(),
+                        s.len(),
+                        [s_regime, s_vol].iter(),
+                    )?;
+                    Ok(Some(Column::from(struct_series.into_series())))
+                },
+                GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("regime".into(), DataType::UInt32),
+                    Field::new("estimated_vol".into(), DataType::Float64),
+                ])),
+            )
+            .alias("ms_garch_data")])
+    }
+
+    pub fn regimes_ensemble(self, columns: &[&str], weights: &[f64]) -> LazyFrame {
+        let cols: Vec<String> = columns.iter().map(|s| s.to_string()).collect();
+        let col_exprs: Vec<Expr> = cols.iter().map(|c| col(c)).collect();
+        let w_vec = weights.to_vec();
+
+        self.0.clone().with_columns([as_struct(col_exprs)
+            .map(
+                move |s| {
+                    let ca = s.struct_()?;
+                    let n_rows = s.len();
+                    let n_dims = cols.len();
+                    let ensemble = quantwave_core::regimes::ensemble::RegimeEnsemble::new(w_vec.clone());
+                    
+                    let mut results = Vec::with_capacity(n_rows);
+                    for i in 0..n_rows {
+                        let mut row_regimes = Vec::with_capacity(n_dims);
+                        for c_name in &cols {
+                            let f = ca.field_by_name(c_name)?;
+                            let val = f.u32()?.get(i).unwrap_or(0);
+                            
+                            let regime = match val {
+                                0 => quantwave_core::regimes::MarketRegime::Steady,
+                                1 => quantwave_core::regimes::MarketRegime::Crisis,
+                                2 => quantwave_core::regimes::MarketRegime::Bull,
+                                3 => quantwave_core::regimes::MarketRegime::Bear,
+                                v if v >= 4 => quantwave_core::regimes::MarketRegime::Cluster((v - 4) as u8),
+                                _ => quantwave_core::regimes::MarketRegime::Steady,
+                            };
+                            row_regimes.push(regime);
+                        }
+                        
+                        let consensus = ensemble.vote(&row_regimes);
+                        let out = match consensus {
+                            quantwave_core::regimes::MarketRegime::Steady => 0u32,
+                            quantwave_core::regimes::MarketRegime::Crisis => 1,
+                            quantwave_core::regimes::MarketRegime::Bull => 2,
+                            quantwave_core::regimes::MarketRegime::Bear => 3,
+                            quantwave_core::regimes::MarketRegime::Cluster(c) => 4 + (c as u32),
+                        };
+                        results.push(out);
+                    }
+
+                    Ok(Some(Column::from(Series::new("ensemble_regime".into(), results))))
+                },
+                GetOutput::from_type(DataType::UInt32),
+            )
+            .alias("ensemble_regime")])
+    }
+
+    pub fn regimes_tar(self, signal_col: &str, thresholds: Vec<f64>) -> LazyFrame {
+        let name_str = signal_col.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    let ca = s.f64()?;
+                    let mut model = quantwave_core::regimes::tar::TAR::multi(thresholds.clone());
+                    let mut results = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        let regime = model.next(val);
+                        let out = match regime {
+                            quantwave_core::regimes::MarketRegime::Steady => 0u32,
+                            quantwave_core::regimes::MarketRegime::Crisis => 1,
+                            quantwave_core::regimes::MarketRegime::Bull => 2,
+                            quantwave_core::regimes::MarketRegime::Bear => 3,
+                            quantwave_core::regimes::MarketRegime::Cluster(c) => 4 + (c as u32),
+                        };
+                        results.push(out);
+                    }
+
+                    Ok(Some(Column::from(Series::new("tar_regime".into(), results))))
+                },
+                GetOutput::from_type(DataType::UInt32),
+            )
+            .alias("tar_regime")])
+    }
+
+    pub fn regimes_hsmm(self, name: &str) -> LazyFrame {
+        let name_str = name.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    let ca = s.f64()?;
+                    // Default 2-state HSMM: Poisson durations (5 days Bull, 2 days Bear)
+                    let mut model = quantwave_core::regimes::hsmm::HSMM::new(
+                        vec![vec![0.0, 1.0], vec![1.0, 0.0]], // Always switch
+                        vec![0.001, -0.002],
+                        vec![0.01, 0.02],
+                        vec![
+                            quantwave_core::regimes::hsmm::DurationDistribution::Poisson { lambda: 5.0 },
+                            quantwave_core::regimes::hsmm::DurationDistribution::Poisson { lambda: 2.0 },
+                        ],
+                    );
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        let regime = model.next(val);
+                        let out = match regime {
+                            quantwave_core::regimes::MarketRegime::Steady => 0u32,
+                            quantwave_core::regimes::MarketRegime::Crisis => 1,
+                            _ => 2, // Map others
+                        };
+                        values.push(out);
+                    }
+
+                    Ok(Some(Column::from(Series::new("hsmm_regime".into(), values))))
+                },
+                GetOutput::from_type(DataType::UInt32),
+            )
+            .alias("hsmm_regime")])
+    }
+
+    pub fn regimes_hmm_gas(self, name: &str) -> LazyFrame {
+        let name_str = name.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    let ca = s.f64()?;
+                    let mut model = quantwave_core::regimes::hmm_gas::HMMGAS::new(
+                        [0.1, 0.05, 0.9], // p11 params
+                        [0.1, 0.05, 0.9], // p22 params
+                        [0.001, -0.002],
+                        [0.01, 0.02],
+                    );
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        let regime = model.next(val);
+                        let out = match regime {
+                            quantwave_core::regimes::MarketRegime::Steady => 0u32,
+                            quantwave_core::regimes::MarketRegime::Crisis => 1,
+                            _ => 2,
+                        };
+                        values.push(out);
+                    }
+
+                    Ok(Some(Column::from(Series::new("hmm_gas_regime".into(), values))))
+                },
+                GetOutput::from_type(DataType::UInt32),
+            )
+            .alias("hmm_gas_regime")])
+    }
+
+    pub fn regimes_conditioned_metrics(
+        self,
+        returns_col: &str,
+        regime_col: &str,
+        annualization_factor: f64,
+    ) -> LazyFrame {
+        let ret_str = returns_col.to_string();
+        let reg_str = regime_col.to_string();
+
+        self.0
+            .clone()
+            .group_by([col(&reg_str)])
+            .agg([
+                col(&ret_str).mean().alias("mean_return"),
+                col(&ret_str).std(1).alias("volatility"),
+                (col(&ret_str).mean() / col(&ret_str).std(1) * lit(annualization_factor.sqrt()))
+                    .alias("sharpe_ratio"),
+            ])
+    }
 }
+
+
 
 
 

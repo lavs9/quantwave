@@ -3,6 +3,8 @@ pub mod regimes;
 pub mod options_india;
 pub mod traits;
 
+pub use regimes::analytics::*;
+
 #[cfg(any(test, feature = "test_utils"))]
 pub mod test_utils;
 

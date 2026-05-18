@@ -16,7 +16,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 uniffi = { version = "0.31", features = ["cli"] }
-quantwave-core = { path = "../quantwave-core" }
+quantwave-core = { workspace = true }
 paste = "1.0.15"
 
 [build-dependencies]

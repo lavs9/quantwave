@@ -1,6 +1,7 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::smoothing::EMA;
 use crate::traits::Next;
+use serde::{Deserialize, Serialize};
 
 talib_3_in_1_out!(TaATR, talib_rs::volatility::atr, timeperiod: usize);
 impl From<usize> for TaATR {
@@ -22,7 +23,7 @@ impl Default for TaTRANGE {
 }
 
 /// True Range (TR)
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TrueRange {
     prev_close: Option<f64>,
 }
@@ -46,7 +47,7 @@ impl Next<(f64, f64, f64)> for TrueRange {
 }
 
 /// Average True Range (ATR)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ATR {
     tr: TrueRange,
     smoothing: EMA,

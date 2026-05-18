@@ -1,9 +1,10 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
+use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 
 /// Simple Moving Average (SMA)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SMA {
     period: usize,
     window: VecDeque<f64>,
@@ -42,7 +43,7 @@ impl Next<f64> for SMA {
 }
 
 /// Exponential Moving Average (EMA)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EMA {
     _period: usize,
     alpha: f64,
@@ -84,7 +85,7 @@ impl Next<f64> for EMA {
 }
 
 /// Weighted Moving Average (WMA)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WMA {
     period: usize,
     window: VecDeque<f64>,

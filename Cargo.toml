@@ -35,6 +35,11 @@ serde_json = "1.0"
 log = "0.4"
 thiserror = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
+nalgebra = { version = "0.33", features = ["serde-serialize"] }
+statrs = "0.18"
+quantwave-core = { path = "quantwave-core", version = "0.2.0" }
+quantwave-polars = { path = "quantwave-polars", version = "0.2.0" }
+quantwave-plugins = { path = "quantwave-plugins", version = "0.2.0" }
 
 [profile.dev]
 opt-level = 0

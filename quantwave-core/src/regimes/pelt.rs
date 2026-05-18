@@ -7,8 +7,10 @@
 //! Implementation of the Pruned Exact Linear Time (PELT) algorithm for exact segmentation.
 //! PELT identifies change points by minimizing a cost function over all possible partitions.
 
+use serde::{Deserialize, Serialize};
+
 /// A PELT changepoint detector.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PELT {
     penalty: f64,
     min_dist: usize,

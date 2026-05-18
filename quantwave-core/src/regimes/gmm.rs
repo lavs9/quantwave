@@ -10,9 +10,10 @@
 
 use crate::traits::Next;
 use crate::regimes::MarketRegime;
+use serde::{Deserialize, Serialize};
 
 /// A Gaussian Mixture Model for multi-factor regime detection.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GMM {
     k: usize,
     dims: usize,

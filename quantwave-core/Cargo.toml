@@ -25,6 +25,8 @@ serde = { workspace = true }
 serde_json = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
 rustfft = { workspace = true, optional = true }
+nalgebra = { workspace = true }
+statrs = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

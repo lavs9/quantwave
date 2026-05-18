@@ -9,9 +9,10 @@
 
 use crate::traits::Next;
 use crate::regimes::MarketRegime;
+use serde::{Deserialize, Serialize};
 
 /// A Hidden Markov Model for regime detection.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HMM {
     n_states: usize,
     /// Transition probability matrix [from_state][to_state]

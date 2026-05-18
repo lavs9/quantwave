@@ -16,7 +16,7 @@ name = "quantwave_plugins"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-quantwave-core = { path = "../quantwave-core", version = "0.1.15" }
+quantwave-core = { workspace = true }
 polars = { workspace = true }
 polars-arrow = { workspace = true }
 serde = { workspace = true, features = ["derive"] }

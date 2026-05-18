@@ -7,11 +7,19 @@ pub mod volatility_clustering;
 pub mod hmm;
 pub mod gmm;
 pub mod pelt;
+pub mod analytics;
+pub mod ms_garch;
+pub mod ensemble;
+pub mod india;
+pub mod tar;
+pub mod hsmm;
+pub mod hmm_gas;
+pub mod multi_asset;
 
 use serde::{Deserialize, Serialize};
 
 /// Represents common market regime states.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum MarketRegime {
     /// A period of low volatility and generally upward price movement.
     Bull,

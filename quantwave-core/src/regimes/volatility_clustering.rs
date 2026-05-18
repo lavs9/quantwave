@@ -12,9 +12,10 @@ use std::collections::VecDeque;
 use crate::indicators::volatility::ATR;
 use crate::traits::Next;
 use crate::regimes::MarketRegime;
+use serde::{Deserialize, Serialize};
 
 /// A streaming volatility clusterer that identifies market regimes based on ATR.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VolatilityClusterer {
     atr: ATR,
     window: VecDeque<f64>,
