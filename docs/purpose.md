@@ -13,7 +13,9 @@ To create the **fastest, most complete, and most Polars-native** quantitative to
 
 - **150+ technical indicators** with perfect TA-Lib parity  
 - **Full Ehlers Digital Signal Processing suite** (the most advanced cycle and trend tools available in open source)  
-- **Zero-copy, vectorized Polars expressions** that run at Rust speed  
+- **Options India Suite**: Native Black-Scholes, IV solvers, and Greeks optimized for the Indian market.
+- **Zero-copy, vectorized Polars expressions** that run at Rust speed
+  
 - **Seamless batch + streaming** modes for both research and live trading  
 - **Future-proof architecture** ready for options pricing, Greeks, risk engines, and beyond
 
@@ -33,7 +35,7 @@ Whether you are:
 - **Community driven** — MIT licensed, fully open, built for you
 
 We are just getting started.  
-Options Greeks, implied volatility solvers, advanced risk metrics, and portfolio tools are already on the roadmap.
+Advanced risk metrics and portfolio tools are already on the roadmap.
 
 **Welcome to the next generation of open-source quant tooling.**
 

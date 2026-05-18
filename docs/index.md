@@ -21,6 +21,7 @@ That’s why we combined the raw speed of Rust with the beloved Polars DataFrame
 
 *   **150+ Technical Indicators**: From basic RSI to complex Ehlers oscillators.
 *   **Polars Native**: Zero-copy expressions for high-performance vectorized calculations.
+*   **Options India Suite**: Native support for Indian options markets, including Black-Scholes, IV solvers, and Greeks.
 *   **Streaming & Batch Parity**: Use the same logic for backtesting and live trading.
 *   **Institutional Grade**: Validated against gold-standard reference vectors.
 
