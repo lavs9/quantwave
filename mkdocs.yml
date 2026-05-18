@@ -30,28 +30,48 @@ theme:
     - search.suggest
     - search.highlight
     - toc.follow
+  icon:
+    logo: material/chart-timeline-variant
+    favicon: material/chart-bell-curve-cumulative
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/lavs9/quantwave
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/quantwave/
 
 nav:
   - Home: index.md
   - Purpose: purpose.md
+  - Roadmap: roadmap.md
+  - Benchmarks: benchmarks.md
   - Getting Started:
       - Python: getting-started/python.md
       - Rust: getting-started/rust.md
   - Guides:
+      - Indicator Gallery: guides/indicators/gallery.md
       - Indicators: guides/indicators/
       - Options India: guides/options_india.md
   - Examples:
       - Batch & Streaming: examples/batch-streaming.md
-      - Jupyter Notebooks: examples/notebooks/
+      - Marimo Notebooks: examples/notebooks/
   - API Reference:
       - Python: api/
       - Rust: api/rust.md
+  - Community:
+      - Contributing: contributing.md
+      - Changelog: changelog.md
 
 extra_css:
   - assets/indicator-badges.css
 
 plugins:
   - search
+  - marimo
+  - git-revision-date-localized:
+      enable_creation_date: true
+      type: timeago
   - mkdocstrings:
       handlers:
         python:
