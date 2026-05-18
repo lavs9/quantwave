@@ -1,5 +1,9 @@
 //! Hidden Markov Models (Hamilton 1989)
 //!
+//! Source: Hamilton, J. D. (1989). 
+//! "A New Approach to the Economic Analysis of Nonstationary Time Series and the Business Cycle." 
+//! Econometrica, 57(2), 357-384.
+//!
 //! Implementation of a regime-switching Hidden Markov Model with Gaussian emissions.
 //! Includes the Viterbi algorithm for online state decoding and placeholder for Baum-Welch training.
 

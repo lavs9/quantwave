@@ -1,4 +1,8 @@
-//! Volatility Regimes (Prakash et al. 2020)
+//! Volatility Regimes (Prakash et al. 2021)
+//!
+//! Source: Prakash, A., James, N., Menzies, M., & Francis, G. (2021). 
+//! "Structural clustering of volatility regimes for dynamic trading strategies." 
+//! Applied Mathematical Finance, 28(3), 236-274.
 //!
 //! Implementation of structural clustering of volatility regimes using rolling ATR and online K-Means.
 //! This module identifies discrete volatility states (e.g., Low, Medium, High) by clustering

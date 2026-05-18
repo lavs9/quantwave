@@ -1,5 +1,9 @@
 //! Changepoint Detection (Killick et al. 2012)
 //!
+//! Source: Killick, R., Fearnhead, P., & Eckley, I. A. (2012). 
+//! "Optimal Detection of Changepoints with a Linear Computational Cost." 
+//! Journal of the American Statistical Association, 107(500), 1590-1598.
+//!
 //! Implementation of the Pruned Exact Linear Time (PELT) algorithm for exact segmentation.
 //! PELT identifies change points by minimizing a cost function over all possible partitions.
 

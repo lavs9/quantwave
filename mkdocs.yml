@@ -61,10 +61,10 @@ nav:
           - Multi-Indicator Analysis: examples/notebooks/multi_indicator_analysis.py
   - API Reference:
       - Python: api/
-      - Rust: api/rust.md
   - Community:
       - Contributing: contributing.md
       - Changelog: changelog.md
+      - Documentation Decisions: DOCUMENTATION_DECISIONS.md
 
 extra_css:
   - assets/indicator-badges.css
@@ -75,6 +75,11 @@ plugins:
   - git-revision-date-localized:
       enable_creation_date: true
       type: timeago
+      fallback_to_build_date: true
+      exclude:
+        - api/*
+        - examples/notebooks/*.py
+        - examples/notebooks/*.md # marimo generated ones might match this
   - mkdocstrings:
       handlers:
         python:

@@ -1,5 +1,10 @@
 //! Gaussian Mixture Models (Two Sigma 2021)
 //!
+//! Source: Two Sigma (2021). "A Machine Learning Approach to Regime Modeling."
+//! Foundational EM Algorithm: Dempster, A. P., Laird, N. M., & Rubin, D. B. (1977). 
+//! "Maximum Likelihood from Incomplete Data via the EM Algorithm." 
+//! Journal of the Royal Statistical Society: Series B (Methodological), 39(1), 1-22.
+//!
 //! Multi-variate clustering for latent market states using the Expectation-Maximization (EM) algorithm.
 //! This implementation uses diagonal covariance matrices for efficiency.
 

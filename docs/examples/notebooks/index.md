@@ -2,8 +2,8 @@
 
 Explore interactive examples of QuantWave in action using [Marimo](https://marimo.io/).
 
-* [Strategy Backtesting](strategy_backtest.py) - A steel-thread example of backtesting a simple strategy.
-* [Multi-Indicator Analysis](multi_indicator_analysis.py) - Combining multiple indicators using Polars expressions.
+* [Strategy Backtesting](strategy_backtest.md) - A steel-thread example of backtesting a simple strategy.
+* [Multi-Indicator Analysis](multi_indicator_analysis.md) - Combining multiple indicators using Polars expressions.
 
 ---
 
