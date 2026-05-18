@@ -1,43 +1,31 @@
 # SuperTrend
 
-The SuperTrend indicator is a trend-following indicator based on Average True Range (ATR). It is highly effective for identifying trend reversals and setting trailing stop-losses.
+<div class="indicator-meta"><span class="category-badge">Classic</span> <span class="kw-badge">trend</span> <span class="kw-badge">atr</span> <span class="kw-badge">stop-loss</span> <span class="kw-badge">classic</span> <span class="kw-badge">breakout</span></div>
 
-## Formula
+Trend-following indicator that combines ATR for volatility bands to identify the primary market direction.
 
-The SuperTrend is calculated using the following steps:
+## Usage
 
-1.  **Basic Upper Band**:
-    $$\text{Basic Upper Band} = \frac{\text{High} + \text{Low}}{2} + (\text{Multiplier} \times \text{ATR})$$
-2.  **Basic Lower Band**:
-    $$\text{Basic Lower Band} = \frac{\text{High} + \text{Low}}{2} - (\text{Multiplier} \times \text{ATR})$$
-3.  **Final Upper Band**:
-    $$\text{Final Upper Band} = \begin{cases} \text{Basic Upper Band} & \text{if } \text{Basic Upper Band} < \text{Prev Final Upper Band} \text{ or } \text{Prev Close} > \text{Prev Final Upper Band} \\ \text{Prev Final Upper Band} & \text{otherwise} \end{cases}$$
-4.  **Final Lower Band**:
-    $$\text{Final Lower Band} = \begin{cases} \text{Basic Lower Band} & \text{if } \text{Basic Lower Band} > \text{Prev Final Lower Band} \text{ or } \text{Prev Close} < \text{Prev Final Lower Band} \\ \text{Prev Final Lower Band} & \text{otherwise} \end{cases}$$
+Use as a primary trend-following indicator and dynamic stop-loss. A SuperTrend flip from bearish to bullish (or vice versa) provides a clear, rule-based entry and exit signal.
+
+## Background
+
+> SuperTrend computes upper and lower ATR-based bands around the midpoint of each bar. The active line flips from upper to lower (and vice versa) only when price closes beyond the band, providing a clean directional bias and a trailing stop level in one indicator. — TradingView Community
 
 ## Parameters
 
-| Parameter  | Default | Description |
-|------------|---------|-------------|
-| `period`   | 10      | The lookback period for ATR calculation. |
-| `multiplier`| 3.0     | The coefficient applied to the ATR. |
+- `period` (default: 10): ATR length
+- `multiplier` (default: 3.0): ATR multiplier
 
-## Polars Usage
+## Formula
 
-```python
-import polars as pl
-import quantwave as qw
 
-df = pl.read_csv("data.csv")
-df = df.with_columns([
-    pl.col("close").ta.supertrend(period=10, multiplier=3.0).alias("supertrend")
-])
-```
+\[
+\text{SuperTrend} = \begin{cases}
+\text{LowerBand} & \text{if trend is up} \\
+\text{UpperBand} & \text{if trend is down}
+\end{cases}
+\]
 
-## Performance Note
 
-QuantWave's SuperTrend implementation is written in Rust and uses SIMD instructions where possible. On a dataset of 1M rows, it typically calculates in under 50ms.
-
----
-
-*See also: [Indicator Gallery](../gallery.md)*
+[Source](https://www.tradingview.com/script/7zF0a4f8-SuperTrend-by-Mobius/)
