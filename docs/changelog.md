@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-05-18
+
+### Added
+- **Multi-Asset Regime Detection**: Enhanced `MultiAssetClusterer` with rolling correlation structures and dispersion analysis to identify joint market states.
+- **Advanced Conditioned Risk Metrics**: Expanded `regimes_conditioned_metrics` in Polars to include Skewness, Kurtosis, and Sortino Ratio.
+- **Polars Enhancements**: Enabled `moment` and `cum_agg` features for vectorized higher-order statistics.
+
+### Fixed
+- **Release Stability**: Fixed workspace dependency alignment issues that caused CI failures in previous releases.
+- **Compilation**: Resolved method resolution errors for `skew` and `kurtosis` in Polars pipelines.
+
 ## [0.2.0] - 2026-05-18
 
 ### Added
