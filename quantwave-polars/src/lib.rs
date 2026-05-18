@@ -2903,6 +2903,16 @@ impl<'a> QuantWaveNamespace<'a> {
                 col(&ret_str).std(1).alias("volatility"),
                 (col(&ret_str).mean() / col(&ret_str).std(1) * lit(annualization_factor.sqrt()))
                     .alias("sharpe_ratio"),
+                col(&ret_str).skew(true).alias("skewness"),
+                col(&ret_str).kurtosis(true, true).alias("kurtosis"),
+                // Sortino Ratio: Mean return / Downside Deviation
+                (col(&ret_str).mean() 
+                    / col(&ret_str).filter(col(&ret_str).lt(lit(0.0))).std(1) 
+                    * lit(annualization_factor.sqrt()))
+                .alias("sortino_ratio"),
+                // For Max Drawdown and Ulcer Index in an AGG context, we can use map_groups if needed,
+                // but for now let's stick to simpler metrics or use a robust multi-step approach.
+                // We'll calculate drawdown stats by first expanding the groups.
             ])
     }
 }
@@ -3435,6 +3445,28 @@ mod tests {
         let out = df.lazy().ta().exp_dev_bands("p", 10, 2.0, true).collect()?;
         let data = out.column("exp_dev_bands_data")?.struct_()?;
         assert!(data.field_by_name("upper".into())?.f64()?.get(4).is_some());
+        Ok(())
+    }
+
+    #[test]
+    fn test_regimes_conditioned_metrics() -> PolarsResult<()> {
+        let df = df![
+            "returns" => [0.01, 0.02, -0.01, -0.02, 0.01],
+            "regime" => [0u32, 0, 1, 1, 0]
+        ]?;
+
+        let out = df
+            .lazy()
+            .ta()
+            .regimes_conditioned_metrics("returns", "regime", 252.0)
+            .collect()?;
+
+        assert_eq!(out.height(), 2);
+        assert!(out.column("sharpe_ratio").is_ok());
+        assert!(out.column("skewness").is_ok());
+        assert!(out.column("kurtosis").is_ok());
+        assert!(out.column("sortino_ratio").is_ok());
+
         Ok(())
     }
 }

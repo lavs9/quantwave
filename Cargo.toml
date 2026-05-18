@@ -22,7 +22,7 @@ categories = ["science", "mathematics"]
 keywords = ["trading", "technical-analysis", "polars", "finance"]
 
 [workspace.dependencies]
-polars = { version = "0.46", features = ["lazy", "dtype-struct"] }
+polars = { version = "0.46", features = ["lazy", "dtype-struct", "moment", "cum_agg"] }
 polars-core = { version = "0.46" }
 polars-arrow = { version = "0.46" }
 talib-rs = "0.1"
