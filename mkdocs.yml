@@ -55,7 +55,10 @@ nav:
       - Options India: guides/options_india.md
   - Examples:
       - Batch & Streaming: examples/batch-streaming.md
-      - Marimo Notebooks: examples/notebooks/
+      - Marimo Notebooks:
+          - Overview: examples/notebooks/index.md
+          - Strategy Backtest: examples/notebooks/strategy_backtest.py
+          - Multi-Indicator Analysis: examples/notebooks/multi_indicator_analysis.py
   - API Reference:
       - Python: api/
       - Rust: api/rust.md

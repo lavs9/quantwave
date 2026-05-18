@@ -15,7 +15,6 @@ Cargo.lock
 
 # Hand-authored docs are in /docs/, but some subdirectories are generated at CI time
 /docs/guides/indicators/talib/
-/docs/guides/indicators/README.md
 /docs/api/
 /docs/SUMMARY.md
 
