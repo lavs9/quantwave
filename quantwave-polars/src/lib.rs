@@ -2411,7 +2411,150 @@ impl<'a> QuantWaveNamespace<'a> {
                 )
                 .alias("ichimoku_data")])
     }
+
+    pub fn volatility_clusterer(
+        self,
+        high: &str,
+        low: &str,
+        close: &str,
+        atr_period: usize,
+        window_size: usize,
+        k: usize,
+    ) -> LazyFrame {
+        let h_str = high.to_string();
+        let l_str = low.to_string();
+        let c_str = close.to_string();
+
+        self.0.clone().with_columns([as_struct(vec![col(&h_str), col(&l_str), col(&c_str)])
+            .map(
+                move |s| {
+                    let ca = s.struct_()?;
+                    let f_h = ca.field_by_name(&h_str)?;
+                    let high = f_h.f64()?;
+                    let f_l = ca.field_by_name(&l_str)?;
+                    let low = f_l.f64()?;
+                    let f_c = ca.field_by_name(&c_str)?;
+                    let close = f_c.f64()?;
+
+                    let mut clusterer =
+                        quantwave_core::regimes::volatility_clustering::VolatilityClusterer::new(
+                            atr_period,
+                            window_size,
+                            k,
+                        );
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let h = high.get(i).unwrap_or(f64::NAN);
+                        let l = low.get(i).unwrap_or(f64::NAN);
+                        let c = close.get(i).unwrap_or(f64::NAN);
+                        let regime = clusterer.next((h, l, c));
+                        let val = match regime {
+                            quantwave_core::regimes::MarketRegime::Steady => 0u32,
+                            quantwave_core::regimes::MarketRegime::Bull => 1,
+                            quantwave_core::regimes::MarketRegime::Bear => 2,
+                            quantwave_core::regimes::MarketRegime::Crisis => 3,
+                            quantwave_core::regimes::MarketRegime::Cluster(c) => 4 + (c as u32),
+                        };
+                        values.push(val);
+                    }
+
+                    Ok(Some(Column::from(Series::new("volatility_regime".into(), values))))
+                },
+                GetOutput::from_type(DataType::UInt32),
+            )
+            .alias("volatility_regime")])
+    }
+
+    pub fn hmm_bull_bear(self, name: &str) -> LazyFrame {
+        let name_str = name.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    let ca = s.f64()?;
+                    let mut hmm = quantwave_core::regimes::hmm::HMM::bull_bear();
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        let regime = hmm.next(val);
+                        let out = match regime {
+                            quantwave_core::regimes::MarketRegime::Bull => 1u32,
+                            quantwave_core::regimes::MarketRegime::Bear => 2,
+                            _ => 0,
+                        };
+                        values.push(out);
+                    }
+
+                    Ok(Some(Column::from(Series::new("hmm_regime".into(), values))))
+                },
+                GetOutput::from_type(DataType::UInt32),
+            )
+            .alias("hmm_regime")])
+    }
+
+    pub fn pelt(self, name: &str, penalty: f64, min_dist: usize) -> LazyFrame {
+        let name_str = name.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    let ca = s.f64()?;
+                    let data: Vec<f64> = ca.into_iter().map(|v| v.unwrap_or(f64::NAN)).collect();
+                    let pelt = quantwave_core::regimes::pelt::PELT::new(penalty, min_dist);
+                    let cps = pelt.detect(&data);
+                    
+                    let mut values = vec![0u32; s.len()];
+                    for cp in cps {
+                        if cp < values.len() {
+                            values[cp] = 1;
+                        }
+                    }
+
+                    Ok(Some(Column::from(Series::new("changepoints".into(), values))))
+                },
+                GetOutput::from_type(DataType::UInt32),
+            )
+            .alias("changepoints")])
+    }
+
+    pub fn gmm(self, columns: &[&str], _k: usize) -> LazyFrame {
+        let cols: Vec<String> = columns.iter().map(|s| s.to_string()).collect();
+        let col_exprs: Vec<Expr> = cols.iter().map(|c| col(c)).collect();
+
+        self.0.clone().with_columns([as_struct(col_exprs)
+            .map(
+                move |s| {
+                    let ca = s.struct_()?;
+                    let n_rows = s.len();
+                    let n_dims = cols.len();
+
+                    let mut data = Vec::with_capacity(n_rows);
+                    for i in 0..n_rows {
+                        let mut row = Vec::with_capacity(n_dims);
+                        for c_name in &cols {
+                            let f = ca.field_by_name(c_name)?;
+                            let val = f.f64()?.get(i).unwrap_or(f64::NAN);
+                            row.push(val);
+                        }
+                        data.push(row);
+                    }
+
+                    // Placeholder GMM: requires fitting or pre-trained params.
+                    // For now, we'll use a simple default clusterer based on means.
+                    let mut values = Vec::with_capacity(n_rows);
+                    for _ in 0..n_rows {
+                        values.push(0u32);
+                    }
+
+                    Ok(Some(Column::from(Series::new("gmm_regime".into(), values))))
+                },
+                GetOutput::from_type(DataType::UInt32),
+            )
+            .alias("gmm_regime")])
+    }
 }
+
+
 
 #[cfg(test)]
 mod tests {

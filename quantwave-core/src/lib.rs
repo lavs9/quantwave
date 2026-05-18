@@ -1,4 +1,5 @@
 pub mod indicators;
+pub mod regimes;
 pub mod options_india;
 pub mod traits;
 
