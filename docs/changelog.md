@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-05-19
+
+### Added
+- **Options India Analytics**: Comprehensive suite for NSE options including Black-Scholes Greeks (Price, Delta, Gamma, Theta, Vega, Rho), Implied Volatility, and Chain Analytics (Max Pain, PCR, GEX, OI Zones, ATM Straddle, Synthetic Futures).
+- **Polars Integration for Options**: Full support for `options_india` as native Polars expressions with robust handling of column-or-value parameters.
+- **NSE Utilities**: Added `nse_lot_size` and `moneyness` helpers for the Indian market.
+
+### Fixed
+- **Release Build**: Resolved a critical 'maturin' conflict where tracked `__init__.py` files were being overwritten during the wheel build process.
+- **Code Hygiene**: Cleaned up all compiler warnings and unused imports across the entire workspace.
+
 ## [0.3.0] - 2026-05-18
 
 ### Added

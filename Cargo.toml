@@ -10,7 +10,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/lavs9/quantwave"
@@ -37,9 +37,9 @@ thiserror = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 nalgebra = { version = "0.33", features = ["serde-serialize"] }
 statrs = "0.18"
-quantwave-core = { path = "quantwave-core", version = "0.3.0" }
-quantwave-polars = { path = "quantwave-polars", version = "0.3.0" }
-quantwave-plugins = { path = "quantwave-plugins", version = "0.3.0" }
+quantwave-core = { path = "quantwave-core", version = "0.4.0" }
+quantwave-polars = { path = "quantwave-polars", version = "0.4.0" }
+quantwave-plugins = { path = "quantwave-plugins", version = "0.4.0" }
 
 [profile.dev]
 opt-level = 0
