@@ -25,7 +25,7 @@ use crate::traits::Next;
 /// as per QuantWave's preference for Ehlers-style smoothing.
 #[derive(Debug, Clone)]
 pub struct VPNIndicator {
-    period: usize,
+    _period: usize,
     atr: ATR,
     vp_sma: SMA,
     vn_sma: SMA,
@@ -37,7 +37,7 @@ pub struct VPNIndicator {
 impl VPNIndicator {
     pub fn new(period: usize, smooth_period: usize) -> Self {
         Self {
-            period,
+            _period: period,
             atr: ATR::new(period),
             vp_sma: SMA::new(period),
             vn_sma: SMA::new(period),

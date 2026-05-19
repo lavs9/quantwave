@@ -9,8 +9,8 @@ use crate::traits::Next;
 /// It uses a histogram-like display where the sign depends on (Smoothed DMI+ - Smoothed DMI-).
 #[derive(Debug, Clone)]
 pub struct HarringtonADXOscillator {
-    adx_length: usize,
-    adx_smooth_length: usize,
+    _adx_length: usize,
+    _adx_smooth_length: usize,
     sf: f64,
     tr_ema: f64,
     pdm_ema: f64,
@@ -27,8 +27,8 @@ pub struct HarringtonADXOscillator {
 impl HarringtonADXOscillator {
     pub fn new(adx_length: usize, adx_smooth_length: usize) -> Self {
         Self {
-            adx_length,
-            adx_smooth_length,
+            _adx_length: adx_length,
+            _adx_smooth_length: adx_smooth_length,
             sf: 1.0 / (adx_length as f64),
             tr_ema: 0.0,
             pdm_ema: 0.0,

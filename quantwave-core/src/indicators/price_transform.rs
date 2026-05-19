@@ -1,4 +1,4 @@
-use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
+use crate::indicators::metadata::IndicatorMetadata;
 use crate::traits::Next;
 
 talib_4_in_1_out!(AVGPRICE, talib_rs::price_transform::avgprice);

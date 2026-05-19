@@ -1,4 +1,3 @@
-use std::f64::consts::PI;
 use super::iv_solver::{norm_cdf, norm_pdf};
 
 pub fn bs_call_price(s: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {

@@ -90,7 +90,7 @@ impl Next<f64> for HSMM {
         // Calculate probability of staying vs switching
         let prob_stay = self.durations[self.last_state].p(self.current_duration);
         
-        let mut max_prob = -1.0;
+        let mut max_prob;
         let mut best_state = self.last_state;
 
         // 1. Evaluate staying in current state

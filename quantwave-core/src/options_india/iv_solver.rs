@@ -132,8 +132,7 @@ const ONE_OVER_SQRT_PI: f64 = 0.56418958354775628695;
 const THRESHOLD: f64 = 0.46875;
 const XNEG: f64 = -26.6287357137514;
 const XBIG: f64 = 26.543;
-const XHUGE: f64 = 6.71E7;
-const XMAX: f64 = 2.53E307;
+
 
 pub fn erfc_cody(x: f64) -> f64 {
     let y = x.abs();

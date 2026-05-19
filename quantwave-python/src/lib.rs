@@ -2,7 +2,7 @@ use quantwave_core::traits::Next;
 use quantwave_core::indicators::smoothing::{SMA as CoreSMA, EMA as CoreEMA, WMA as CoreWMA};
 use quantwave_core::indicators::supertrend::SuperTrend as CoreSuperTrend;
 use quantwave_core::indicators::momentum::*;
-use quantwave_core::indicators::overlap::{DEMA, KAMA, MAMA, SAR, T3 as CoreT3, BBANDS};
+use quantwave_core::indicators::overlap::{DEMA, KAMA, MAMA, SAR, T3 as CoreT3};
 use quantwave_core::indicators::volatility::*;
 use quantwave_core::indicators::tema::*;
 use quantwave_core::indicators::ichimoku::IchimokuCloud as CoreIchimoku;

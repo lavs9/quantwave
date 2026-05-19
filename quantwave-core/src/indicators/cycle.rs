@@ -1,4 +1,4 @@
-use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
+use crate::indicators::metadata::IndicatorMetadata;
 #[allow(unused_imports)]
 use crate::traits::Next;
 

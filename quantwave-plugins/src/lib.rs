@@ -1,6 +1,3 @@
-use polars::prelude::*;
-use quantwave_core::indicators::smoothing::SMA;
-use quantwave_core::traits::Next;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
