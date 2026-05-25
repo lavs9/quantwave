@@ -117,6 +117,7 @@ pub mod rsmk;
 pub mod rodc;
 pub mod market_state;
 pub mod kalman;
+pub mod kinematic_kalman;
 pub mod hurst;
 pub mod volume_profile;
 pub mod vpn;

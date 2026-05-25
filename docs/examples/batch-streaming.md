@@ -25,24 +25,41 @@ QuantWave allows you to use the same logic for both batch processing and streami
 
 ## Streaming Processing
 
+QuantWave indicators implement the universal `Next<T>` trait. This is the single source of mathematical truth for every indicator — the exact same logic used by the Polars expressions. As a result, streaming and batch results are guaranteed to be bit-identical.
+
 === "Python"
 
     ```python
-    from quantwave import RSI
+    from quantwave import RSI, SuperTrend
 
+    # Simple streaming example
     rsi = RSI(14)
     for price in prices:
         print(rsi.next(price))
+
+    # SuperTrend streaming example
+    st = SuperTrend(10, 3.0)
+    for high, low, close in ohlcv_data:
+        signal = st.next(high, low, close)
+        print(signal)
     ```
 
 === "Rust"
 
     ```rust
-    use quantwave_core::indicators::RSI;
+    use quantwave_core::indicators::{RSI, SuperTrend};
     use quantwave_core::traits::Next;
 
+    // Simple streaming example
     let mut rsi = RSI::new(14);
     for price in prices {
         println!("{:?}", rsi.next(price));
+    }
+
+    // SuperTrend streaming example
+    let mut st = SuperTrend::new(10, 3.0);
+    for (high, low, close) in ohlcv_data {
+        let signal = st.next((high, low, close));
+        println!("{:?}", signal);
     }
     ```

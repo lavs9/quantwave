@@ -2,25 +2,30 @@
 
 QuantWave is evolving rapidly. Our goal is to provide the most comprehensive and high-performance technical analysis library for the Polars ecosystem.
 
-## Phase 1: Foundation (Current)
-- [x] High-performance Rust core with `Next<T>` trait.
-- [x] Polars integration via Expressions and Series.
-- [x] Steel-thread indicators (SuperTrend, SMA, EMA).
-- [x] Initial gold standard testing infrastructure.
-- [x] Ehlers DSP Core Suite (CyberCycle, Instantaneous Trendline, Laguerre, etc.).
+## Current Status (v0.4.0)
 
-## Phase 2: Depth & Breadth
-- [ ] Native Polars Expressions for all 150+ indicators (Work-in-progress).
-- [ ] Comprehensive "Indicator Gallery" with visual previews.
-- [ ] Integration with major data providers (Polygon.io, Alpha Vantage).
-- [ ] Advanced DSP: Hilbert Transform Phase/Amplitude metrics.
+- Regime Detection Suite (v0.2–v0.3): HMM, GMM, PELT change-point detection, volatility clustering, conditioned risk metrics — all with native Polars support
+- Options India Suite (v0.4.0): Full Black-Scholes Greeks, implied volatility solvers, chain analytics (Max Pain, PCR, GEX, OI Zones), NSE utilities, and Polars expressions
+- 150+ technical indicators, including the complete Ehlers Digital Signal Processing suite
+- High-performance Polars expressions + Python bindings (`pip install quantwave`)
+- Streaming and batch parity via the universal `Next<T>` trait
+- Extensive documentation (200+ indicator guides)
+- Gold-standard testing and batch/streaming parity validation
 
-## Phase 3: Advanced Analytics & ML
-- [ ] Machine Learning feature engineering toolkit.
-- [ ] Portfolio-level vectorized backtesting engine.
-- [ ] Real-time streaming bridge for production trading.
-- [ ] WASM support for browser-based visualization.
+## In Progress
+
+- 2D Kinematic Kalman Filter (position + velocity state for lower lag)
+- Expanded native Polars expression plugin coverage
+
+## Next Priorities
+
+- GitHub Releases, topics, README hero, and overall visibility (this P0 epic)
+- Example quality, streaming documentation, and visual gallery strategy
+- Stronger positioning and competitive differentiation
 
 ## Future Horizons
-- [ ] Support for non-time-series data (e.g., Order Flow analysis).
-- [ ] Custom GPU-accelerated indicator kernels.
+
+- Machine Learning feature engineering toolkit
+- Portfolio-level vectorized backtesting engine
+- WASM / browser runtime support
+- Additional data provider integrations and real-time bridges

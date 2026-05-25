@@ -3,11 +3,11 @@
 **High-performance quantitative finance library**  
 Built in Rust · Native Polars support · 150+ indicators · Full Ehlers DSP suite
 
-**Python** `pip install quantwave`  
-**Rust** `cargo add quantwave`
+**Python** `pip install quantwave` **Rust** `cargo add quantwave`
 
-[📖 Full Documentation](https://lavs9.github.io/quantwave/)  
-[⭐ GitHub](https://github.com/lavs9/quantwave)
+[📖 Docs](https://lavs9.github.io/quantwave/) • [⭐ GitHub](https://github.com/lavs9/quantwave) • [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/lavs9/quantwave)
+
+**150+ indicators • Polars-native • Streaming & batch parity • MIT licensed**
 
 ---
 

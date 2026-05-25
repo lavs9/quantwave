@@ -1205,6 +1205,55 @@ impl<'a> QuantWaveNamespace<'a> {
             .alias("hma")])
     }
 
+    pub fn kalman(self, name: &str, q: f64, r: f64) -> LazyFrame {
+        let name = name.to_string();
+        self.0.clone().with_columns([col(&name)
+            .map(
+                move |s| {
+                    let ca = s.f64()?;
+                    let mut indicator =
+                        quantwave_core::indicators::kalman::KalmanFilter::new(q, r);
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next(val));
+                    }
+
+                    Ok(Some(Column::from(Series::new("kalman".into(), values))))
+                },
+                GetOutput::from_type(DataType::Float64),
+            )
+            .alias("kalman")])
+    }
+
+    pub fn kinematic_kalman(self, name: &str, q_pos: f64, q_vel: f64, r: f64) -> LazyFrame {
+        let name = name.to_string();
+        self.0.clone().with_columns([col(&name)
+            .map(
+                move |s| {
+                    let ca = s.f64()?;
+                    let mut indicator =
+                        quantwave_core::indicators::kinematic_kalman::KinematicKalmanFilter::new(
+                            q_pos, q_vel, r,
+                        );
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next(val));
+                    }
+
+                    Ok(Some(Column::from(Series::new(
+                        "kinematic_kalman".into(),
+                        values,
+                    ))))
+                },
+                GetOutput::from_type(DataType::Float64),
+            )
+            .alias("kinematic_kalman")])
+    }
+
     pub fn vpn(
         self,
         high: &str,
@@ -3466,6 +3515,36 @@ mod tests {
         assert!(out.column("skewness").is_ok());
         assert!(out.column("kurtosis").is_ok());
         assert!(out.column("sortino_ratio").is_ok());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_polars_kalman_filters() -> PolarsResult<()> {
+        let df = df![
+            "price" => [100.0, 101.0, 102.0, 103.0, 104.0]
+        ]?;
+
+        let out = df
+            .clone()
+            .lazy()
+            .ta()
+            .kalman("price", 0.01, 0.1)
+            .collect()?;
+
+        let kalman = out.column("kalman")?.f64()?;
+        assert!(kalman.get(0).is_some());
+        assert_eq!(kalman.get(0).unwrap(), 100.0);
+
+        let out2 = df
+            .lazy()
+            .ta()
+            .kinematic_kalman("price", 0.001, 0.0001, 0.1)
+            .collect()?;
+
+        let kin_kalman = out2.column("kinematic_kalman")?.f64()?;
+        assert!(kin_kalman.get(0).is_some());
+        assert_eq!(kin_kalman.get(0).unwrap(), 100.0);
 
         Ok(())
     }

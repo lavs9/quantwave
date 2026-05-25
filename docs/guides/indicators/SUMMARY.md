@@ -146,6 +146,7 @@
     - ML Features
         - [Hurst Exponent](native/hurst_exponent.md)
         - [Kalman Filter](native/kalman_filter.md)
+        - [Kinematic Kalman Filter](native/kinematic_kalman_filter.md)
     - Modern
         - [Choppiness Index](native/choppiness_index.md)
         - [Schaff Trend Cycle](native/schaff_trend_cycle.md)
