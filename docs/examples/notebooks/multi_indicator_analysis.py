@@ -44,17 +44,27 @@ def __():
 
 @app.cell
 def __(df, mo, pl):
-    # Apply multiple indicators
-    # Note: Using native Polars rolling for demonstration where direct plugin call isn't setup in sandbox
-    df_indicators = df.with_columns([
-        pl.col("close").rolling_mean(20).alias("sma_20"),
-        pl.col("close").ewm_mean(span=20).alias("ema_20"),
-        # Simulated CyberCycle and SuperTrend (placeholders)
-        (pl.col("close") - pl.col("close").shift(1)).alias("momentum"),
-        pl.lit(120.0).alias("supertrend")
-    ])
+    # Apply multiple indicators using real QuantWave Polars expressions
+    df_indicators = (
+        df.lazy()
+        .ta()
+        .sma("close", 20)
+        .ta()
+        .ema("close", 20)
+        .ta()
+        .mom("close", 1)
+        .ta()
+        .supertrend(period=10, multiplier=3.0)
+        .collect()
+    )
     
-    mo.md(f"Applied SMA, EMA, and Momentum to {len(df_indicators)} rows.")
+    # Unnest SuperTrend struct for clean columns
+    df_indicators = df_indicators.with_columns([
+        pl.col("supertrend_data").struct.field("supertrend").alias("supertrend"),
+        pl.col("supertrend_data").struct.field("supertrend_direction").alias("supertrend_dir"),
+    ]).drop("supertrend_data")
+    
+    mo.md(f"Applied real QuantWave indicators (SMA, EMA, Momentum, SuperTrend) to {len(df_indicators)} rows.")
     return df_indicators,
 
 

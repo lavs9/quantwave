@@ -31,14 +31,20 @@ def __():
 
 @app.cell
 def __(data, pl):
-    # Apply SuperTrend indicator using QuantWave
-    # (Assuming quantwave is installed and exposed)
-    # df = data.lazy().with_columns([
-    #     pl.col("close").ta.supertrend(period=10, multiplier=3.0).alias("supertrend")
-    # ]).collect()
+    # Apply SuperTrend using the real QuantWave Polars extension
+    df = (
+        data.lazy()
+        .ta()
+        .supertrend(period=10, multiplier=3.0)
+        .collect()
+    )
     
-    # Placeholder for actual calculation
-    df = data.with_columns(pl.lit(150.0).alias("supertrend"))
+    # Unnest the struct so we have clean columns
+    df = df.with_columns([
+        pl.col("supertrend_data").struct.field("supertrend").alias("supertrend"),
+        pl.col("supertrend_data").struct.field("supertrend_direction").alias("supertrend_dir"),
+    ]).drop("supertrend_data")
+    
     df.head()
     return df,
 
