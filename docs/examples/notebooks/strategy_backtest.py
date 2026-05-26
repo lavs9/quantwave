@@ -34,8 +34,7 @@ def __(data, pl):
     # Apply SuperTrend using the real QuantWave Polars extension
     df = (
         data.lazy()
-        .ta()
-        .supertrend(period=10, multiplier=3.0)
+        .ta.supertrend(period=10, multiplier=3.0)
         .collect()
     )
     

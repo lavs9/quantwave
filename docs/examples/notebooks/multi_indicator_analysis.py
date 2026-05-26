@@ -47,14 +47,10 @@ def __(df, mo, pl):
     # Apply multiple indicators using real QuantWave Polars expressions
     df_indicators = (
         df.lazy()
-        .ta()
-        .sma("close", 20)
-        .ta()
-        .ema("close", 20)
-        .ta()
-        .mom("close", 1)
-        .ta()
-        .supertrend(period=10, multiplier=3.0)
+        .ta.sma("close", 20)
+        .ta.ema("close", 20)
+        .ta.mom("close", 1)
+        .ta.supertrend(period=10, multiplier=3.0)
         .collect()
     )
     
