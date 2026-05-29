@@ -2,6 +2,10 @@
 
 <div class="indicator-meta"><span class="category-badge">Classic</span> <span class="kw-badge">trend</span> <span class="kw-badge">atr</span> <span class="kw-badge">stop-loss</span> <span class="kw-badge">classic</span> <span class="kw-badge">breakout</span></div>
 
+> **Prototype per-page preview (quantwave-7x1 spike)** — Temporary for review only.
+
+![SuperTrend preview](../../../assets/indicator-previews/supertrend.png){ width="420" }
+
 Trend-following indicator that combines ATR for volatility bands to identify the primary market direction.
 
 ## Usage
