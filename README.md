@@ -1,8 +1,8 @@
 # QuantWave
 
-**High-performance, Polars-native technical analysis for Rust**
+**High-performance, Polars-native technical analysis — in Python and Rust**
 
-150+ indicators · Full Ehlers DSP suite · Regime Detection · Options India Analytics · Streaming & Batch Parity
+150+ indicators · Full Ehlers DSP suite · Regime Detection · Complete Options India stack · Bit-identical streaming & batch
 
 **Python** `pip install quantwave` **Rust** `cargo add quantwave`
 
@@ -14,14 +14,23 @@
 
 ## Why QuantWave?
 
-Most quantitative libraries force you to choose between **performance** and **usability**.
+Most quantitative libraries force an uncomfortable compromise.
 
-- Python-only libraries are slow on large datasets and live streams.
-- Pure Rust libraries are fast but painful to integrate into modern Polars-based research and production workflows.
+**Python-first libraries** (pandas-ta, TA-Lib Python wrappers, etc.) are convenient but fall apart on large datasets, recursive indicators, or live streaming — often becoming 10-100x slower than native code.
 
-QuantWave was built to eliminate this tradeoff.
+**Pure Rust libraries** are fast, but they rarely integrate cleanly with modern Polars-based research pipelines and lack the breadth of advanced techniques (Ehlers DSP, regime detection, full Options India analytics).
 
-We deliver **institutional-grade performance** through a Rust core with zero-copy Polars expressions, while providing a clean, productive experience in both Python and Rust. Every indicator is designed around a single source of truth — the `Next<T>` trait — ensuring that batch results (via Polars) and real-time streaming results are **bit-identical**.
+**QuantWave removes the tradeoff.**
+
+It delivers **institutional-grade Rust performance** through zero-copy Polars expressions, while offering a first-class, productive experience in both Python and Rust. Every indicator is built on a single mathematical source of truth — the `Next<T>` trait — guaranteeing that batch results (Polars) and real-time streaming results are **bit-identical**.
+
+### How We Compare
+
+| Approach                  | Speed on large data | Polars-native | Streaming parity | Breadth (Ehlers + Regimes + Options) |
+|---------------------------|---------------------|---------------|------------------|--------------------------------------|
+| pandas-ta / TA-Lib (Python) | Poor–Average       | Partial      | Rare             | Limited                              |
+| Other Rust TA crates      | Excellent           | Poor         | Rare             | Limited                              |
+| **QuantWave**             | **Excellent**       | **Native**   | **Guaranteed**   | **Strong**                           |
 
 ## What We’ve Built
 
@@ -40,6 +49,19 @@ QuantWave is no longer early-stage. It ships with production-ready depth across 
 - **Parity** — Bit-identical results between batch and streaming
 - **Breadth** — Classic indicators + advanced Ehlers DSP + regime detection + Options India
 - **Developer Experience** — Clean Python API (`from quantwave import ta`) and idiomatic Rust
+
+## Real-World Performance
+
+We don’t just claim to be fast — here’s what the numbers show on 1 million rows of realistic OHLCV data:
+
+- **SuperTrend**: 7.4 ms (QuantWave) vs >200 ms (Pandas) → **~27× faster**
+- **CyberCycle** (Ehlers): 5.0 ms vs >500 ms (Pandas) → **~100× faster**
+- **Instantaneous Trendline**: 74 ms vs >2,000 ms (Pandas) → **~27× faster**
+- **Memory footprint** on realistic multi-ticker data: **2–5× lower** than Pandas
+
+Complex recursive indicators (the ones that matter most for real strategies) are where the gap becomes dramatic.
+
+→ [Full benchmarks & methodology](https://lavs9.github.io/quantwave/benchmarks/)
 
 ## Quickstart (Python)
 
@@ -64,8 +86,13 @@ df = df.with_columns(
 
 ## Get Started
 
-- [Full Python Guide](https://lavs9.github.io/quantwave/getting-started/python/)
-- [Rust Guide](https://lavs9.github.io/quantwave/getting-started/rust/)
+**Primary paths**
+- [Get Started with Python](https://lavs9.github.io/quantwave/getting-started/python/)
+- [Get Started with Rust](https://lavs9.github.io/quantwave/getting-started/rust/)
+
+**Explore further**
+- [Browse All Indicators](https://lavs9.github.io/quantwave/guides/indicators/)
+- [See Real Benchmarks](https://lavs9.github.io/quantwave/benchmarks/)
 - [v0.4.0 Release Notes](https://github.com/lavs9/quantwave/releases/tag/v0.4.0)
 - [Ask DeepWiki](https://deepwiki.com/lavs9/quantwave)
 
