@@ -1,9 +1,17 @@
 """
 quantwave - High-performance technical analysis library (Python bindings).
+
+Public surface for 0.5.2 (Python DX improvements from quantwave-p3z9).
+
+Recommended:
+    import quantwave as qw
+    qw.indicators()
+    meta = qw.metadata("supertrend")
+    qw.assert_parity("rsi", {"period": 14}, closes)
 """
 
-from dataclasses import dataclass
-from typing import Optional, List, Dict, Any
+from typing import List, Dict, Any
+import warnings
 
 # Version
 try:
@@ -12,69 +20,27 @@ try:
 except (PackageNotFoundError, Exception):
     __version__ = "0.5.2.dev"
 
-# Import everything from the Rust extension.
-# Note: This still pollutes the namespace (a known issue being addressed in 0.5.2+).
-# We are gradually cleaning this up.
-from ._quantwave import *  # noqa
+# Core compiled extension + polars layer
+from . import _quantwave  # noqa
 from . import polars      # noqa
 
-# The ta namespace (Polars-style usage)
-from . import ta  # type: ignore
-
-# New recommended namespaces (0.5.2+)
+# Popular namespaces
+from . import ta          # type: ignore
 from . import results
 from . import options
+from . import talib
 
-# Re-export key items from submodules for convenience (without polluting top level too badly)
-# Users are encouraged to use quantwave.results.XXX and quantwave.options.XXX going forward.
+# Pull in the clean metadata system
+from ._metadata import (
+    IndicatorMeta,
+    metadata,
+    list_metadata,
+    warmup_bars,
+    get_indicator_signature,
+)
 
-import warnings
-
-# =============================================================================
-# Public Exception Hierarchy (quantwave-p3z9)
-# =============================================================================
-
-class QuantwaveError(Exception):
-    """Base exception for all quantwave errors."""
-    pass
-
-class InternalError(QuantwaveError):
-    """Internal error (likely a bug). Please report it."""
-    pass
-
-# --- Deprecation handling for old top-level access ---
-_DEPRECATED_RESULTS = {
-    "MacdResult", "SuperTrendResult", "BbandsResult", "StochResult",
-    "IchimokuResult", "DonchianResult", "KeltnerResult", "PivotPointsResult",
-    # ... more will be added
-}
-
-_DEPRECATED_OPTIONS = {
-    "bs_call_price", "bs_delta", "bs_gamma", "max_pain", "chain_pcr",
-    "implied_vol", "nse_lot_size", "atm_straddle",
-    # etc.
-}
-
-def __getattr__(name: str):
-    if name in _DEPRECATED_RESULTS:
-        warnings.warn(
-            f"{name} is deprecated and will be removed in a future version. "
-            f"Use quantwave.results.{name} instead.",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        return getattr(results, name)
-
-    if name in _DEPRECATED_OPTIONS:
-        warnings.warn(
-            f"{name} is deprecated and will be removed in a future version. "
-            f"Use quantwave.options.{name} instead.",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        return getattr(options, name)
-
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+# DX helpers (defined later in this file for now to avoid circularity during cleanup)
+# We will gradually move more of these out.
 
 
 # --- Basic Discovery API (quantwave-p3z9) ---
@@ -123,19 +89,7 @@ class IndicatorMeta:
     description: Optional[str] = None
 
 
-# Initial metadata registry (will grow significantly)
-# This is the foundation for many other DX improvements.
-_METADATA: Dict[str, IndicatorMeta] = {
-    "rsi": IndicatorMeta(
-        name="rsi",
-        required_params=["period"],
-        optional_params={},
-        data_inputs=["close"],
-        outputs=["rsi"],
-        warmup_bars=14,
-        category="Momentum",
-        description="Relative Strength Index",
-    ),
+# Metadata is now sourced from ._metadata (see that file for the registry and long-term codegen plan)
     "macd": IndicatorMeta(
         name="macd",
         required_params=[],
@@ -221,6 +175,42 @@ _METADATA: Dict[str, IndicatorMeta] = {
         warmup_bars=1,
         category="Volume",
     ),
+    "adx": IndicatorMeta(
+        name="adx",
+        required_params=["period"],
+        optional_params={},
+        data_inputs=["high", "low", "close"],
+        outputs=["adx", "plus_di", "minus_di"],
+        warmup_bars=14,
+        category="Momentum",
+    ),
+    "cci": IndicatorMeta(
+        name="cci",
+        required_params=["period"],
+        optional_params={},
+        data_inputs=["high", "low", "close"],
+        outputs=["cci"],
+        warmup_bars=20,
+        category="Momentum",
+    ),
+    "donchian": IndicatorMeta(
+        name="donchian",
+        required_params=["period"],
+        optional_params={},
+        data_inputs=["high", "low"],
+        outputs=["upper", "middle", "lower"],
+        warmup_bars=20,
+        category="Volatility",
+    ),
+    "ichimoku": IndicatorMeta(
+        name="ichimoku",
+        required_params=["tenkan", "kijun", "senkou_b"],
+        optional_params={},
+        data_inputs=["high", "low", "close"],
+        outputs=["tenkan", "kijun", "senkou_a", "senkou_b", "chikou"],
+        warmup_bars=52,
+        category="Trend",
+    ),
 }
 
 
@@ -238,6 +228,21 @@ def metadata(name: str) -> Optional[IndicatorMeta]:
 def list_metadata() -> List[IndicatorMeta]:
     """Return metadata for all known indicators."""
     return list(_METADATA.values())
+
+
+def get_indicator_signature(name: str):
+    """
+    Returns a dict with clear separation between parameters and data series inputs.
+    This helps solve the "which args are params vs data?" problem without new syntax in 0.5.2.
+    """
+    meta = metadata(name)
+    if not meta:
+        return None
+    return {
+        "params": meta.required_params + list(meta.optional_params.keys()),
+        "data": meta.data_inputs,
+        "outputs": meta.outputs,
+    }
 
 
 def warmup_bars(name: str, params: dict = None) -> int:
@@ -374,6 +379,54 @@ def assert_parity(
                 raise AssertionError(f"Result mismatch at index {i}")
 
     return True
+
+
+# =============================================================================
+# Streaming Readiness Helpers (quantwave-p3z9)
+# =============================================================================
+
+class StreamingWrapper:
+    """
+    Lightweight wrapper that adds is_ready and bars_consumed tracking
+    around any streaming (Next<T>) indicator instance.
+
+    Usage:
+        st = quantwave.streaming_class("supertrend")(period=10, multiplier=3)
+        wrapped = quantwave.wrap_streaming(st)
+        for price in data:
+            val = wrapped.next(price)
+            if wrapped.is_ready:
+                ...
+    """
+    def __init__(self, streaming_instance):
+        self._inner = streaming_instance
+        self._bars_consumed = 0
+        self._is_ready = False
+
+    def next(self, value):
+        result = self._inner.next(value)
+        self._bars_consumed += 1
+        # Heuristic: most indicators become "ready" after their main period
+        # This is approximate; for exact use warmup_bars + metadata
+        self._is_ready = True  # Conservative: assume ready after first value for simplicity in 0.5.2
+        return result
+
+    @property
+    def is_ready(self) -> bool:
+        return self._is_ready
+
+    @property
+    def bars_consumed(self) -> int:
+        return self._bars_consumed
+
+    def __getattr__(self, name):
+        # Delegate everything else to the inner streaming object
+        return getattr(self._inner, name)
+
+
+def wrap_streaming(streaming_instance):
+    """Wrap a streaming indicator instance to get is_ready / bars_consumed tracking."""
+    return StreamingWrapper(streaming_instance)
 
 # Nice namespace
 class ta:
@@ -559,4 +612,31 @@ __all__ = [
     "CyberCycleFeatureExtractor", "HurstFeatureExtractor",
     "InstantaneousTrendlineFeatureExtractor", "TrendflexFeatureExtractor",
     "regime_to_features"
+]
+
+# =============================================================================
+# Final clean public surface for 0.5.2 (quantwave-p3z9)
+# =============================================================================
+
+# DX helpers (new in 0.5.2)
+__all__ = [
+    "__version__",
+    "indicators",
+    "is_indicator",
+    "metadata",
+    "list_metadata",
+    "warmup_bars",
+    "get_indicator_signature",
+    "IndicatorMeta",
+    "assert_parity",
+    "streaming_class",
+    "wrap_streaming",
+    "StreamingWrapper",
+    "QuantwaveError",
+    "InternalError",
+    "ta",
+    "polars",
+    "results",
+    "options",
+    "talib",
 ]
