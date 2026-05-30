@@ -14,6 +14,9 @@ pub use indicators::atr_ts::ATRTrailingStop;
 pub use indicators::cycle::*;
 pub use indicators::donchian::DonchianChannels;
 pub use indicators::fractals::BillWilliamsFractals;
+pub use indicators::market_structure::{
+    Bias, FlipEvent, MarketStructure, MarketStructureState, SwingPoint,
+};
 pub use indicators::heikin_ashi::HeikinAshi;
 pub use indicators::hma::HMA;
 pub use indicators::ichimoku::IchimokuCloud;

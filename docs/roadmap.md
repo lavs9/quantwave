@@ -16,6 +16,7 @@ QuantWave is evolving rapidly. Our goal is to provide the most comprehensive and
 
 - 2D Kinematic Kalman Filter (position + velocity state for lower lag)
 - Expanded native Polars expression plugin coverage
+- Price Action Structure Foundation (MQL5 lynnchris Part 21 port): adaptive swings + confirmed BOS flips with rich event structs (market_structure.rs, parity + invariants green; unblocks Flags/H&S/SR)
 
 ## Next Priorities
 

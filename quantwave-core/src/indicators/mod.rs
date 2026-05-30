@@ -26,6 +26,7 @@ pub mod ehlers_stochastic;
 pub mod emd;
 pub mod fisher;
 pub mod fractals;
+pub mod market_structure;
 pub mod fourier_transform;
 pub mod fourier_series;
 pub mod griffiths_predictor;
