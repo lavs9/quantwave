@@ -1,5 +1,379 @@
+"""
+quantwave - High-performance technical analysis library (Python bindings).
+"""
+
+from dataclasses import dataclass
+from typing import Optional, List, Dict, Any
+
+# Version
+try:
+    from importlib.metadata import version, PackageNotFoundError
+    __version__ = version("quantwave")
+except (PackageNotFoundError, Exception):
+    __version__ = "0.5.2.dev"
+
+# Import everything from the Rust extension.
+# Note: This still pollutes the namespace (a known issue being addressed in 0.5.2+).
+# We are gradually cleaning this up.
 from ._quantwave import *  # noqa
-from . import polars  # noqa
+from . import polars      # noqa
+
+# The ta namespace (Polars-style usage)
+from . import ta  # type: ignore
+
+# New recommended namespaces (0.5.2+)
+from . import results
+from . import options
+
+# Re-export key items from submodules for convenience (without polluting top level too badly)
+# Users are encouraged to use quantwave.results.XXX and quantwave.options.XXX going forward.
+
+import warnings
+
+# =============================================================================
+# Public Exception Hierarchy (quantwave-p3z9)
+# =============================================================================
+
+class QuantwaveError(Exception):
+    """Base exception for all quantwave errors."""
+    pass
+
+class InternalError(QuantwaveError):
+    """Internal error (likely a bug). Please report it."""
+    pass
+
+# --- Deprecation handling for old top-level access ---
+_DEPRECATED_RESULTS = {
+    "MacdResult", "SuperTrendResult", "BbandsResult", "StochResult",
+    "IchimokuResult", "DonchianResult", "KeltnerResult", "PivotPointsResult",
+    # ... more will be added
+}
+
+_DEPRECATED_OPTIONS = {
+    "bs_call_price", "bs_delta", "bs_gamma", "max_pain", "chain_pcr",
+    "implied_vol", "nse_lot_size", "atm_straddle",
+    # etc.
+}
+
+def __getattr__(name: str):
+    if name in _DEPRECATED_RESULTS:
+        warnings.warn(
+            f"{name} is deprecated and will be removed in a future version. "
+            f"Use quantwave.results.{name} instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return getattr(results, name)
+
+    if name in _DEPRECATED_OPTIONS:
+        warnings.warn(
+            f"{name} is deprecated and will be removed in a future version. "
+            f"Use quantwave.options.{name} instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return getattr(options, name)
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+# --- Basic Discovery API (quantwave-p3z9) ---
+# This is a first-pass implementation. It will be backed by real metadata later.
+
+def _build_indicator_names() -> set[str]:
+    """Build the set of indicator names from the ta namespace."""
+    names = set()
+    for name in dir(ta):
+        if name.startswith("_"):
+            continue
+        obj = getattr(ta, name, None)
+        if callable(obj):
+            names.add(name)
+    return names
+
+_INDICATOR_NAMES: set[str] = _build_indicator_names()
+
+def indicators() -> list[str]:
+    """Return a sorted list of all available indicator names."""
+    return sorted(_INDICATOR_NAMES)
+
+def is_indicator(name: str) -> bool:
+    """Check whether the given name is a known indicator."""
+    if not name:
+        return False
+    return name in _INDICATOR_NAMES or name.lower() in _INDICATOR_NAMES
+
+
+# =============================================================================
+# Rich Metadata API (quantwave-p3z9 - Critical)
+# =============================================================================
+
+@dataclass(frozen=True)
+class IndicatorMeta:
+    """Structured metadata for an indicator."""
+    name: str
+    required_params: List[str]
+    optional_params: Dict[str, Any]          # name -> default value
+    data_inputs: List[str]                   # e.g. ["high", "low", "close"]
+    outputs: List[str]
+    warmup_bars: Optional[int] = None        # Rough estimate or None if dynamic
+    category: Optional[str] = None
+    has_streaming: bool = True
+    has_polars: bool = True
+    description: Optional[str] = None
+
+
+# Initial metadata registry (will grow significantly)
+# This is the foundation for many other DX improvements.
+_METADATA: Dict[str, IndicatorMeta] = {
+    "rsi": IndicatorMeta(
+        name="rsi",
+        required_params=["period"],
+        optional_params={},
+        data_inputs=["close"],
+        outputs=["rsi"],
+        warmup_bars=14,
+        category="Momentum",
+        description="Relative Strength Index",
+    ),
+    "macd": IndicatorMeta(
+        name="macd",
+        required_params=[],
+        optional_params={"fast": 12, "slow": 26, "signal": 9},
+        data_inputs=["close"],
+        outputs=["macd", "signal", "histogram"],
+        warmup_bars=26,
+        category="Momentum",
+        description="Moving Average Convergence Divergence",
+    ),
+    "supertrend": IndicatorMeta(
+        name="supertrend",
+        required_params=["period", "multiplier"],
+        optional_params={},
+        data_inputs=["high", "low", "close"],
+        outputs=["supertrend", "direction"],
+        warmup_bars=None,  # Depends on ATR period
+        category="Volatility / Trend",
+        description="SuperTrend",
+    ),
+    "atr": IndicatorMeta(
+        name="atr",
+        required_params=["period"],
+        optional_params={},
+        data_inputs=["high", "low", "close"],
+        outputs=["atr"],
+        warmup_bars=14,
+        category="Volatility",
+        description="Average True Range",
+    ),
+    "bbands": IndicatorMeta(
+        name="bbands",
+        required_params=["period"],
+        optional_params={"std_dev": 2.0},
+        data_inputs=["close"],
+        outputs=["upper", "middle", "lower"],
+        warmup_bars=20,
+        category="Volatility",
+        description="Bollinger Bands",
+    ),
+    "ema": IndicatorMeta(
+        name="ema",
+        required_params=["period"],
+        optional_params={},
+        data_inputs=["close"],
+        outputs=["ema"],
+        warmup_bars=20,
+        category="Overlap",
+    ),
+    "sma": IndicatorMeta(
+        name="sma",
+        required_params=["period"],
+        optional_params={},
+        data_inputs=["close"],
+        outputs=["sma"],
+        warmup_bars=20,
+        category="Overlap",
+    ),
+    "stoch": IndicatorMeta(
+        name="stoch",
+        required_params=["fastk", "slowk", "slowd"],
+        optional_params={},
+        data_inputs=["high", "low", "close"],
+        outputs=["slowk", "slowd"],
+        warmup_bars=14,
+        category="Momentum",
+    ),
+    "willr": IndicatorMeta(
+        name="willr",
+        required_params=["period"],
+        optional_params={},
+        data_inputs=["high", "low", "close"],
+        outputs=["willr"],
+        warmup_bars=14,
+        category="Momentum",
+    ),
+    "obv": IndicatorMeta(
+        name="obv",
+        required_params=[],
+        optional_params={},
+        data_inputs=["close", "volume"],
+        outputs=["obv"],
+        warmup_bars=1,
+        category="Volume",
+    ),
+}
+
+
+def metadata(name: str) -> Optional[IndicatorMeta]:
+    """
+    Return rich metadata for an indicator.
+
+    Returns None if the indicator is unknown.
+    This is the foundation for better tooling, docs, and UIs.
+    """
+    key = name.lower()
+    return _METADATA.get(key)
+
+
+def list_metadata() -> List[IndicatorMeta]:
+    """Return metadata for all known indicators."""
+    return list(_METADATA.values())
+
+
+def warmup_bars(name: str, params: dict = None) -> int:
+    """
+    Return the approximate number of bars required before this indicator
+    produces reliable (non-warmup) output.
+
+    This is extremely useful for backtesting and rolling window calculations.
+    """
+    meta = metadata(name)
+    if not meta:
+        return 0
+
+    if meta.warmup_bars is not None:
+        return meta.warmup_bars
+
+    # Dynamic calculation based on params
+    p = params or {}
+    max_period = 0
+    for key in ["period", "fast", "slow", "signal", "length", "fastk", "slowk", "slowd"]:
+        if key in p:
+            try:
+                max_period = max(max_period, int(p[key]))
+            except (ValueError, TypeError):
+                pass
+
+    if max_period > 0:
+        return max_period + 5  # small safety margin
+
+    return 20  # reasonable default for most indicators
+
+
+# =============================================================================
+# Streaming Class Lookup (quantwave-p3z9)
+# =============================================================================
+
+def streaming_class(name: str):
+    """
+    Return the streaming (Next<T>) class for a given batch indicator name.
+
+    Example:
+        cls = quantwave.streaming_class("supertrend")
+        st = cls(period=10, multiplier=3.0)
+    """
+    if not name:
+        return None
+
+    key = name.lower()
+
+    # Try direct attribute first (common case)
+    if hasattr(ta, key):
+        candidate = getattr(ta, key)
+        if isinstance(candidate, type):
+            return candidate
+
+    # Fallback: try common PascalCase conversions
+    pascal = "".join(word.capitalize() for word in key.split("_"))
+    if hasattr(ta, pascal) and isinstance(getattr(ta, pascal), type):
+        return getattr(ta, pascal)
+
+    # Last resort: search for anything that looks like a streaming class
+    for attr_name in dir(ta):
+        if attr_name.lower() == key or attr_name.lower().replace("_", "") == key.replace("_", ""):
+            obj = getattr(ta, attr_name)
+            if isinstance(obj, type):
+                return obj
+
+    return None
+
+
+# =============================================================================
+# Parity Testing Helper (quantwave-p3z9 - Critical)
+# =============================================================================
+
+def assert_parity(
+    indicator_name: str,
+    params: Dict[str, Any],
+    data: List[float],
+    tolerance: float = 1e-10,
+    **kwargs,
+) -> bool:
+    """
+    Run both batch and streaming versions of an indicator and assert
+    they produce (nearly) identical results.
+
+    Returns True if they match within tolerance.
+    Raises AssertionError with details on mismatch.
+
+    This is the first-class way for users and CI to verify the
+    "bit-identical" guarantee.
+    """
+    batch_fn = getattr(ta, indicator_name, None)
+    if batch_fn is None:
+        raise ValueError(f"Unknown indicator: {indicator_name}")
+
+    streaming_cls = streaming_class(indicator_name)
+    if streaming_cls is None:
+        raise ValueError(f"No streaming class found for: {indicator_name}")
+
+    # Run batch
+    try:
+        batch_result = batch_fn(data, **params, **kwargs)
+    except Exception as e:
+        raise RuntimeError(f"Batch mode failed: {e}") from e
+
+    # Run streaming
+    try:
+        streamer = streaming_cls(**params, **kwargs)
+        stream_result = [streamer.next(v) for v in data]
+    except Exception as e:
+        raise RuntimeError(f"Streaming mode failed: {e}") from e
+
+    # Normalize for comparison (handle single vs multi output)
+    def _normalize(x):
+        if isinstance(x, (list, tuple)):
+            return x
+        return [x]
+
+    b = _normalize(batch_result)
+    s = _normalize(stream_result)
+
+    if len(b) != len(s):
+        raise AssertionError(f"Length mismatch: batch={len(b)}, stream={len(s)}")
+
+    for i, (bv, sv) in enumerate(zip(b, s)):
+        if isinstance(bv, (int, float)) and isinstance(sv, (int, float)):
+            if abs(bv - sv) > tolerance:
+                raise AssertionError(
+                    f"Mismatch at index {i}: batch={bv}, stream={sv}, diff={abs(bv-sv)}"
+                )
+        else:
+            # For complex results (dataclasses), do a simple repr comparison for now
+            if repr(bv) != repr(sv):
+                raise AssertionError(f"Result mismatch at index {i}")
+
+    return True
 
 # Nice namespace
 class ta:

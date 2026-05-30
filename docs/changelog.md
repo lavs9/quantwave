@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.2] - 2026-05-31
+
+### Added (Python DX - quantwave-p3z9 epic)
+- **Discovery API**: `quantwave.indicators()` and `quantwave.is_indicator(name)`.
+- **Rich Metadata**: `quantwave.metadata(name)` returning `IndicatorMeta` with params, data inputs, outputs, warmup_bars, category, etc.
+- **Streaming lookup**: `quantwave.streaming_class(name)`.
+- **Parity testing**: `quantwave.assert_parity()` helper for verifying batch vs streaming bit-identical behavior.
+- **`warmup_bars(name, params)`** helper.
+- **Namespace improvements**: New `quantwave.results`, `quantwave.options`, and `quantwave.talib` submodules. Old top-level access now emits deprecation warnings.
+- **Public exception base**: `quantwave.QuantwaveError`.
+- **`__version__`** properly exposed.
+- Linux arm64 (aarch64) wheels are now built and published.
+
+### Changed
+- Release workflow no longer hard-gates on docs build (docs issues can be fixed independently).
+
 ## [0.5.1] - 2026-05-31
 
 ### Fixed

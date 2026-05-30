@@ -55,7 +55,7 @@ df = df.with_columns(
 
 ## Next Steps
 
-- [Full Python Guide](https://lavs9.github.io/quantwave/getting-started/python/)
+- [Python Guide](https://lavs9.github.io/quantwave/getting-started/python/)
 - [Rust Guide](https://lavs9.github.io/quantwave/getting-started/rust/)
 - [Options Greeks & Pricing (roadmap)](https://lavs9.github.io/quantwave/purpose/)
 
