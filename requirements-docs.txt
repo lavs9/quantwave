@@ -4,4 +4,9 @@ mkdocs-gen-files>=0.5
 mkdocs-literate-nav>=0.6
 pymdown-extensions>=10.14
 mkdocs-marimo
+maturin>=1.0
+marimo>=0.13
 mkdocs-git-revision-date-localized-plugin>=1.2
+
+# For exporting marimo notebooks to static HTML during docs build
+marimo>=0.13

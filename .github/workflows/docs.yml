@@ -24,5 +24,10 @@ jobs:
           restore-keys: |
             mkdocs-material-
       - run: pip install -r requirements-docs.txt
+      # Build the Python package so that `import quantwave` works during notebook export
+      - run: maturin develop -p quantwave-python --release
       - run: cargo run --package quantwave-xtask
+      # Export marimo notebooks to self-contained HTML (much more reliable on static GitHub Pages
+      # than trying to execute .py files at runtime via the mkdocs-marimo plugin)
+      - run: python docs/export_notebooks.py
       - run: mkdocs gh-deploy --force

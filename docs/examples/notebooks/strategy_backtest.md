@@ -22,9 +22,13 @@ This notebook demonstrates the high-fidelity execution path and rich metadata su
 
 - [Raw notebook on GitHub](https://github.com/lavs9/quantwave/blob/main/docs/examples/notebooks/strategy_backtest.py)
 
-## Documentation site limitation
+## Live Notebook (Exported)
 
-Because this is a static site (GitHub Pages), notebooks that require the native `quantwave` package show fallback content. For the full interactive marimo experience with real computations, run the notebook locally.
+The notebook below is a pre-exported self-contained version generated during the docs build. It shows the structure, code, and any captured outputs.
+
+<iframe src="rendered/strategy_backtest.html" width="100%" height="900px" style="border: 1px solid #ddd; border-radius: 8px;"></iframe>
+
+**Note:** Some cells may have limited interactivity in the embedded view because they depend on the native `quantwave` Rust package. For the best experience, run the notebook locally with the command above.
 
 ---
 
