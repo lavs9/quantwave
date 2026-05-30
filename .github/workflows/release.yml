@@ -109,12 +109,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Download all artifacts
+
+      # Download wheels from each platform explicitly for better reliability
+      - name: Download Ubuntu wheels
         uses: actions/download-artifact@v4
         with:
+          name: wheels-ubuntu-latest
           path: dist
-          pattern: wheels-*
-          merge-multiple: true
+
+      - name: Download macOS wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-macos-latest
+          path: dist
+
+      - name: Download Windows wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-windows-latest
+          path: dist
+
+      - name: Download sdist
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-sdist
+          path: dist
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -126,7 +145,8 @@ jobs:
 
       - name: Publish to PyPI
         run: |
-          ls -R dist
+          echo "Contents of dist directory:"
+          ls -la dist/
           twine upload --skip-existing dist/*
         env:
           TWINE_USERNAME: __token__
