@@ -4,13 +4,16 @@ Export marimo notebooks to self-contained HTML for embedding in the static docs 
 
 This script is run during the documentation build (see .github/workflows/docs.yml).
 
-Why we do this instead of relying on mkdocs-marimo plugin at runtime:
-- Notebooks that depend on the native `quantwave` Rust package cannot execute
-  in the browser Pyodide/WASM environment.
-- Pre-exporting during CI (where we have the full Rust + Python environment)
-  lets us capture real outputs and provide a much better "showcase" experience
-  on GitHub Pages.
-- Users get nice embedded notebook UIs without raw .py downloads or 404s.
+We install the released `quantwave` package from PyPI before running this script.
+This allows the notebooks to actually execute (including `import quantwave` and
+using the `.ta` Polars extensions) during export, so real outputs can be captured.
+
+We do this instead of relying on the mkdocs-marimo plugin to execute the raw .py
+files at runtime in the browser because:
+
+- Heavy notebooks depend on the native Rust `quantwave` package.
+- That package cannot run in Pyodide/WASM on GitHub Pages.
+- Pre-exporting during CI gives us beautiful rendered notebooks on the static site.
 
 Usage (called from CI):
     python docs/export_notebooks.py
@@ -52,8 +55,10 @@ def export_notebook(notebook_name: str):
     print(f"Exporting {notebook_name} -> {dst.relative_to(ROOT)} ...")
 
     # We use html-wasm because it produces a single file that works well on static hosting.
-    # If a notebook has heavy native dependencies, some cells may show as non-executable
-    # in the browser, but the code + any captured outputs will still be visible.
+    # Because we install the real `quantwave` package before running this script,
+    # the export can execute the notebook and capture real outputs.
+    # In the browser, cells that require the native package will be non-interactive,
+    # but the code and captured results will still be visible and beautiful.
     cmd = [
         "marimo",
         "export",

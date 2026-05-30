@@ -28,7 +28,7 @@ The notebook below is a pre-exported self-contained version generated during the
 
 <iframe src="rendered/strategy_backtest.html" width="100%" height="900px" style="border: 1px solid #ddd; border-radius: 8px;"></iframe>
 
-**Note:** Some cells may have limited interactivity in the embedded view because they depend on the native `quantwave` Rust package. For the best experience, run the notebook locally with the command above.
+**Note:** The exported HTML on this page was generated during the docs build after installing the released `quantwave` package from PyPI. This is why real outputs are visible. Full re-execution of cells that use the native extension is limited in the browser. For the complete interactive experience, run locally with the command above.
 
 ---
 
