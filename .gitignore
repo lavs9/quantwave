@@ -24,3 +24,9 @@ Cargo.lock
 # Temporary scratch files used during development
 /scratch/
 docs/examples/notebooks/rendered/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+

@@ -59,8 +59,8 @@ nav:
           - Overview: examples/notebooks/index.md
           - Strategy Backtest: examples/notebooks/strategy_backtest.md
           - Multi-Indicator Analysis: examples/notebooks/multi_indicator_analysis.md
-          - ML Feature Stability: examples/notebooks/ml_feature_stability.py.md
-          - ML Features → Backtest (E2E): examples/notebooks/ml_feature_backtest_parity.py.md
+          - ML Feature Stability: examples/notebooks/ml_feature_stability.md
+          - ML Features → Backtest (E2E): examples/notebooks/ml_feature_backtest_parity.md
   - API Reference:
       - Python: api/
   - Community:
