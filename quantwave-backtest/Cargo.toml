@@ -1,0 +1,25 @@
+[package]
+name = "quantwave-backtest"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Vectorized portfolio simulation engine for QuantWave (Polars long-format, basic costs/slippage, rich signal struct support foundation)."
+repository.workspace = true
+homepage.workspace = true
+readme = "../README.md"
+categories.workspace = true
+keywords.workspace = true
+
+[dependencies]
+quantwave-core = { workspace = true }
+polars = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+chrono = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+approx = { workspace = true }
+rand = { workspace = true }
+serde_json = { workspace = true }

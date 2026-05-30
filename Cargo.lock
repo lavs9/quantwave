@@ -2132,6 +2132,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "quantwave-backtest"
+version = "0.4.0"
+dependencies = [
+ "approx",
+ "chrono",
+ "polars",
+ "proptest",
+ "quantwave-core",
+ "rand 0.8.6",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "quantwave-core"
 version = "0.4.0"
 dependencies = [

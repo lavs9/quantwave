@@ -4,7 +4,10 @@ use quantwave_core::*;
 
 pub mod prelude {
     pub use crate::{QuantWaveExt, QuantWaveNamespace};
+pub use features::TaFeaturesExt; // brings .ta_hurst etc. into scope when using the module
 }
+
+pub mod features; // wlx Polars layer start (see features.rs for ta.features.* impls)
 
 pub trait QuantWaveExt {
     fn ta(&self) -> QuantWaveNamespace<'_>;

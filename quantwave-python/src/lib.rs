@@ -98,6 +98,13 @@ use quantwave_core::indicators::wavetrend::WaveTrend as CoreWaveTrend;
 use quantwave_core::indicators::zero_lag::ZeroLag as CoreZeroLag;
 use quantwave_core::indicators::amfm::{AMDetector as CoreAMDetector, FMDemodulator as CoreFMDemodulator};
 use quantwave_core::indicators::cycle::{HT_DCPERIOD, HT_PHASOR, HT_DCPHASE, HT_SINE, HT_TRENDMODE};
+
+// ML Feature extractors (for quantwave-gw7s canonical notebook + validation)
+use quantwave_core::features::cyber_cycle::{CyberCycleFeatureExtractor as CoreCyberCycleFE, CyberCycleFeatures as CoreCyberCycleF};
+use quantwave_core::features::hurst::{HurstFeatureExtractor as CoreHurstFE, HurstFeatures as CoreHurstF};
+use quantwave_core::features::instantaneous_trendline::InstantaneousTrendlineFeatureExtractor as CoreITFE;
+use quantwave_core::features::trendflex::TrendflexFeatureExtractor as CoreTrendflexFE;
+use quantwave_core::features::regime::regime_to_features as core_regime_to_features;
 use quantwave_core::options_india;
 use quantwave_core::indicators::volume_profile::VolumeProfile as CoreVolumeProfile;
 use quantwave_core::indicators::hilbert_transform::EhlersWma4 as CoreEhlersWma4;
@@ -739,5 +746,170 @@ pub fn nse_lot_size(symbol: String) -> Option<u32> {
 #[uniffi::export]
 pub fn nse_risk_free_rate() -> f64 {
     options_india::NSE_RISK_FREE_RATE
+}
+
+// ============================================================================
+// ML Feature Extractors (quantwave-gw7s: validation harness + canonical notebook)
+// Exposes the rich feature structs from quantwave-core/src/features/* as
+// streaming Objects + batch fns. This enables the notebook to build feature
+// matrices from the *new toolkit* using the exact same Next impls tested in Rust.
+// Sources: features/mod.rs + the four * .rs files (wrapping Ehlers + Hurst).
+// ============================================================================
+
+#[derive(uniffi::Record)]
+pub struct CyberCycleFeaturesResult {
+    pub cycle: f64,
+    pub trigger: f64,
+    pub cycle_momentum: f64,
+    pub trigger_signal: f64,
+}
+
+#[derive(uniffi::Object)]
+pub struct CyberCycleFeatureExtractor {
+    inner: Mutex<CoreCyberCycleFE>,
+}
+#[uniffi::export]
+impl CyberCycleFeatureExtractor {
+    #[uniffi::constructor]
+    pub fn new(length: u64) -> Self {
+        Self { inner: Mutex::new(CoreCyberCycleFE::new(length as usize)) }
+    }
+    pub fn next(&self, input: f64) -> CyberCycleFeaturesResult {
+        let f = self.inner.lock().unwrap().next(input);
+        CyberCycleFeaturesResult {
+            cycle: f.cycle,
+            trigger: f.trigger,
+            cycle_momentum: f.cycle_momentum,
+            trigger_signal: f.trigger_signal,
+        }
+    }
+}
+#[uniffi::export]
+pub fn cyber_cycle_features(length: u64, series: Vec<f64>) -> Vec<CyberCycleFeaturesResult> {
+    let mut ext = CoreCyberCycleFE::new(length as usize);
+    series.into_iter().map(|x| {
+        let f = ext.next(x);
+        CyberCycleFeaturesResult { cycle: f.cycle, trigger: f.trigger, cycle_momentum: f.cycle_momentum, trigger_signal: f.trigger_signal }
+    }).collect()
+}
+
+#[derive(uniffi::Record)]
+pub struct HurstFeaturesResult {
+    pub persistence: f64,
+    /// -1 mean-reverting, 0 random, +1 trending (or None -> -99 sentinel for FFI simplicity in some consumers)
+    pub regime_label: i32,
+}
+
+#[derive(uniffi::Object)]
+pub struct HurstFeatureExtractor {
+    inner: Mutex<CoreHurstFE>,
+}
+#[uniffi::export]
+impl HurstFeatureExtractor {
+    #[uniffi::constructor]
+    pub fn new(period: u64) -> Self {
+        Self { inner: Mutex::new(CoreHurstFE::new(period as usize)) }
+    }
+    pub fn next(&self, input: f64) -> HurstFeaturesResult {
+        let f = self.inner.lock().unwrap().next(input);
+        HurstFeaturesResult {
+            persistence: f.persistence,
+            regime_label: f.regime_label.unwrap_or(-99) as i32,
+        }
+    }
+}
+#[uniffi::export]
+pub fn hurst_features(period: u64, series: Vec<f64>) -> Vec<HurstFeaturesResult> {
+    let mut ext = CoreHurstFE::new(period as usize);
+    series.into_iter().map(|x| {
+        let f = ext.next(x);
+        HurstFeaturesResult { persistence: f.persistence, regime_label: f.regime_label.unwrap_or(-99) as i32 }
+    }).collect()
+}
+
+#[derive(uniffi::Record)]
+pub struct InstantaneousTrendlineFeaturesResult {
+    pub trend: f64,
+    pub strength: f64,
+}
+
+#[derive(uniffi::Object)]
+pub struct InstantaneousTrendlineFeatureExtractor {
+    inner: Mutex<CoreITFE>,
+}
+#[uniffi::export]
+impl InstantaneousTrendlineFeatureExtractor {
+    #[uniffi::constructor]
+    pub fn new() -> Self {
+        Self { inner: Mutex::new(CoreITFE::new()) }
+    }
+    pub fn next(&self, input: f64) -> InstantaneousTrendlineFeaturesResult {
+        let f = self.inner.lock().unwrap().next(input);
+        InstantaneousTrendlineFeaturesResult { trend: f.trend, strength: f.strength }
+    }
+}
+#[uniffi::export]
+pub fn instantaneous_trendline_features(series: Vec<f64>) -> Vec<InstantaneousTrendlineFeaturesResult> {
+    let mut ext = CoreITFE::new();
+    series.into_iter().map(|x| {
+        let f = ext.next(x);
+        InstantaneousTrendlineFeaturesResult { trend: f.trend, strength: f.strength }
+    }).collect()
+}
+
+#[derive(uniffi::Record)]
+pub struct TrendflexFeaturesResult {
+    pub trendflex: f64,
+}
+
+#[derive(uniffi::Object)]
+pub struct TrendflexFeatureExtractor {
+    inner: Mutex<CoreTrendflexFE>,
+}
+#[uniffi::export]
+impl TrendflexFeatureExtractor {
+    #[uniffi::constructor]
+    pub fn new(length: u64) -> Self {
+        Self { inner: Mutex::new(CoreTrendflexFE::new(length as usize)) }
+    }
+    pub fn next(&self, input: f64) -> TrendflexFeaturesResult {
+        let f = self.inner.lock().unwrap().next(input);
+        TrendflexFeaturesResult { trendflex: f.trendflex }
+    }
+}
+#[uniffi::export]
+pub fn trendflex_features(length: u64, series: Vec<f64>) -> Vec<TrendflexFeaturesResult> {
+    let mut ext = CoreTrendflexFE::new(length as usize);
+    series.into_iter().map(|x| {
+        let f = ext.next(x);
+        TrendflexFeaturesResult { trendflex: f.trendflex }
+    }).collect()
+}
+
+// Simple regime -> feature vector helper (for completeness; notebook primarily uses the extractors)
+#[derive(uniffi::Record)]
+pub struct RegimeFeaturesResult {
+    pub regime_vector: Vec<f64>, // 5-elem one-hot style
+    pub regime_label: i32,       // 0=Bull,1=Bear,2=Crisis,3=Steady,4+=Cluster
+}
+#[uniffi::export]
+pub fn regime_to_features(regime_id: u32) -> RegimeFeaturesResult {
+    let regime = match regime_id {
+        0 => quantwave_core::regimes::MarketRegime::Bull,
+        1 => quantwave_core::regimes::MarketRegime::Bear,
+        2 => quantwave_core::regimes::MarketRegime::Crisis,
+        3 => quantwave_core::regimes::MarketRegime::Steady,
+        v => quantwave_core::regimes::MarketRegime::Cluster((v.saturating_sub(4)) as u8),
+    };
+    let core_f = core_regime_to_features(regime);
+    let vec = core_f.regime_vector.to_vec();
+    let label = match core_f.regime_label {
+        quantwave_core::regimes::MarketRegime::Bull => 0,
+        quantwave_core::regimes::MarketRegime::Bear => 1,
+        quantwave_core::regimes::MarketRegime::Crisis => 2,
+        quantwave_core::regimes::MarketRegime::Steady => 3,
+        quantwave_core::regimes::MarketRegime::Cluster(c) => 4 + c as i32,
+    };
+    RegimeFeaturesResult { regime_vector: vec, regime_label: label }
 }
 

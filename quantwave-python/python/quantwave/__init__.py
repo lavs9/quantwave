@@ -125,6 +125,12 @@ class ta:
     rocket_rsi = rocketrsi
     trendflex = trendflex
     truncated_bandpass = truncatedbandpass
+    # ML features (gw7s notebook + harness)
+    cyber_cycle_feature_extractor = CyberCycleFeatureExtractor
+    hurst_feature_extractor = HurstFeatureExtractor
+    instantaneous_trendline_feature_extractor = InstantaneousTrendlineFeatureExtractor
+    trendflex_feature_extractor = TrendflexFeatureExtractor
+    regime_to_features = regime_to_features
     volume_profile = volumeprofile
 
 class options_india:
@@ -170,5 +176,9 @@ __all__ = [
     "HtDcPeriod", "HtPhasor", "HtDcPhase", "HtSine", "HtTrendMode",
     "HurstExponent", "KalmanFilter", "MarketState", "RecursiveMedian",
     "RecursiveMedianOscillator", "Reflex", "RocketRsi", "Trendflex",
-    "TruncatedBandpass", "VolumeProfile"
+    "TruncatedBandpass", "VolumeProfile",
+    # ML feature toolkit (quantwave-gw7s)
+    "CyberCycleFeatureExtractor", "HurstFeatureExtractor",
+    "InstantaneousTrendlineFeatureExtractor", "TrendflexFeatureExtractor",
+    "regime_to_features"
 ]
