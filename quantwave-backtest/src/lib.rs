@@ -1061,9 +1061,8 @@ mod integration_example_between_epics {
     fn ml_features_feed_backtester_with_metadata() {
         let n = 60;
         let closes: Vec<f64> = (0..n).map(|i| 100.0 + i as f64 * 0.25).collect();
-        let timestamps: Vec<_> = (0..n)
-            .map(|i| chrono::Utc::now() + chrono::Duration::seconds(i as i64))
-            .collect();
+        // Use i64 unix seconds (supported by extract_timestamps) to avoid df! + DateTime<Utc> macro issues
+        let timestamps: Vec<i64> = (0..n).map(|i| 1_700_000_000i64 + i as i64).collect();
 
         // Streaming feature computation (exactly as it will come from wlx in the future)
         let mut h_ext = HurstFeatureExtractor::new(15);
