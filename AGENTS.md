@@ -157,22 +157,25 @@ For more details, see README.md and docs/QUICKSTART.md.
 
 1. **File issues for remaining work** - Create issues for anything that needs follow-up
 2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
+3. **Update IndicatorMetadata for Rust indicators** — If any new indicator is added or an existing one is significantly changed (in `quantwave-core/src/indicators/` or related), you **MUST** create or update its `XXX_METADATA` constant (of type `IndicatorMetadata`) in the same session. This metadata is the single source of truth consumed by documentation (mkdocs) and the Python package. See task `quantwave-i9dn`.
+4. **Update issue status** - Close finished work, update in-progress items
+5. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
    bd dolt push
    git push
    git status  # MUST show "up to date with origin"
    ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
+6. **Clean up** - Clear stashes, prune remote branches
+7. **Verify** - All changes committed AND pushed
+8. **Hand off** - Provide context for next session
 
 **CRITICAL RULES:**
 - Work is NOT complete until `git push` succeeds
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
+
+- **IndicatorMetadata rule (quantwave-i9dn)**: Adding or modifying any Rust indicator without also creating/updating its `IndicatorMetadata` (the `XXX_METADATA` constant) is not permitted. This metadata is the source of truth for both documentation and Python DX. It must be done as part of landing the plane, before `git push`. See task `quantwave-i9dn`.
 
 <!-- END BEADS INTEGRATION -->

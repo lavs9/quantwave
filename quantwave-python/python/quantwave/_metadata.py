@@ -1,12 +1,13 @@
 """
-Internal metadata registry for indicators.
+Internal metadata registry for indicators (Python side).
 
-This is the source of truth for discovery, warmup periods, categories, etc.
+NOTE: The primary source of truth is in Rust (`quantwave-core/src/indicators/metadata.rs`
+and the per-indicator `*_METADATA` constants).
 
-Long-term plan: This should be auto-generated from Rust code (via a build script or
-a central registry in the core crate) so we don't have to maintain it manually.
+This Python file is currently manually synced. See task quantwave-i9dn for the
+mandatory process rule.
 
-See scripts/generate_indicator_metadata.py for the future generator stub.
+Long-term plan: Auto-generated from Rust (see quantwave-iqq7 and scripts/generate_indicator_metadata.py).
 """
 
 from dataclasses import dataclass
