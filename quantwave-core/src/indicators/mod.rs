@@ -27,6 +27,7 @@ pub mod emd;
 pub mod fisher;
 pub mod fractals;
 pub mod market_structure;
+pub mod geometric_patterns;
 pub mod fourier_transform;
 pub mod fourier_series;
 pub mod griffiths_predictor;

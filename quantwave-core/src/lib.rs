@@ -17,6 +17,7 @@ pub use indicators::fractals::BillWilliamsFractals;
 pub use indicators::market_structure::{
     Bias, FlipEvent, MarketStructure, MarketStructureState, SwingPoint,
 };
+pub use indicators::geometric_patterns::{FlagPattern, HsPattern, GeometricPatternScanner};
 pub use indicators::heikin_ashi::HeikinAshi;
 pub use indicators::hma::HMA;
 pub use indicators::ichimoku::IchimokuCloud;
