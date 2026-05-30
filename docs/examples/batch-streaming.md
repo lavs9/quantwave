@@ -63,3 +63,11 @@ QuantWave indicators implement the universal `Next<T>` trait. This is the single
         println!("{:?}", signal);
     }
     ```
+
+## ML Features + Rich Backtest (Cross-Epic Canonical Example)
+
+The complete demonstration of the 4ps/gwx integration contract (locked `.ta().features()` surface for batch signal prep + `FeatureToSignal` adapter implementing `Next<&Bar, Output=StrategySignal>` with rich metadata for `run_streaming_simulation` + verified parity + metadata in `Trade.entry_metadata`) is the runnable notebook:
+
+- `docs/examples/notebooks/ml_feature_backtest_parity.py`
+
+It is the primary evidence artifact for closure of both epics. Run instructions and full source provenance are inside the notebook.

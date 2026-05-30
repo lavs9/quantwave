@@ -125,12 +125,16 @@ class ta:
     rocket_rsi = rocketrsi
     trendflex = trendflex
     truncated_bandpass = truncatedbandpass
-    # ML features (gw7s notebook + harness)
+    # ML features (gw7s notebook + harness + 4ps/gwx cross-epic deliverable)
     cyber_cycle_feature_extractor = CyberCycleFeatureExtractor
     hurst_feature_extractor = HurstFeatureExtractor
     instantaneous_trendline_feature_extractor = InstantaneousTrendlineFeatureExtractor
     trendflex_feature_extractor = TrendflexFeatureExtractor
     regime_to_features = regime_to_features
+    # Newly wired for the E2E notebook (trivial parallel to above; completes the locked .ta.features.* surface in Python)
+    griffiths_dominant_cycle_feature_extractor = GriffithsDominantCycleFeatureExtractor
+    bull_bear_hmm = BullBearHMM
+    griffiths_dominant_cycle_features = griffiths_dominant_cycle_features  # batch helper
     volume_profile = volumeprofile
 
 class options_india:

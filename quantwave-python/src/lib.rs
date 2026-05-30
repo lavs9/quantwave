@@ -105,6 +105,9 @@ use quantwave_core::features::hurst::{HurstFeatureExtractor as CoreHurstFE, Hurs
 use quantwave_core::features::instantaneous_trendline::InstantaneousTrendlineFeatureExtractor as CoreITFE;
 use quantwave_core::features::trendflex::TrendflexFeatureExtractor as CoreTrendflexFE;
 use quantwave_core::features::regime::regime_to_features as core_regime_to_features;
+use quantwave_core::features::griffiths_dominant_cycle::GriffithsDominantCycleFeatureExtractor as CoreGriffithsDCFE;
+use quantwave_core::regimes::hmm::HMM as CoreHMM;
+use quantwave_core::regimes::MarketRegime;
 use quantwave_core::options_india;
 use quantwave_core::indicators::volume_profile::VolumeProfile as CoreVolumeProfile;
 use quantwave_core::indicators::hilbert_transform::EhlersWma4 as CoreEhlersWma4;
@@ -884,6 +887,70 @@ pub fn trendflex_features(length: u64, series: Vec<f64>) -> Vec<TrendflexFeature
         let f = ext.next(x);
         TrendflexFeaturesResult { trendflex: f.trendflex }
     }).collect()
+}
+
+// === Additional ML feature extractors for 4ps/gwx cross-epic E2E notebook (trivial wiring of core Next<T> wrappers) ===
+// Sources: quantwave-core/src/features/griffiths_dominant_cycle.rs + regime.rs + regimes/hmm.rs (HMM::bull_bear)
+// These complete the 4 locked .ta.features.* surface for Python consumers (Hurst + Cyber already present; griffiths + regime now added).
+
+#[derive(uniffi::Record)]
+pub struct GriffithsDominantCycleFeaturesResult {
+    pub dominant_cycle: f64,
+}
+
+#[derive(uniffi::Object)]
+pub struct GriffithsDominantCycleFeatureExtractor {
+    inner: Mutex<CoreGriffithsDCFE>,
+}
+#[uniffi::export]
+impl GriffithsDominantCycleFeatureExtractor {
+    #[uniffi::constructor]
+    pub fn new(lower: u64, upper: u64, length: u64) -> Self {
+        Self {
+            inner: Mutex::new(CoreGriffithsDCFE::new(lower as usize, upper as usize, length as usize)),
+        }
+    }
+    pub fn next(&self, input: f64) -> GriffithsDominantCycleFeaturesResult {
+        let f = self.inner.lock().unwrap().next(input);
+        GriffithsDominantCycleFeaturesResult {
+            dominant_cycle: f.dominant_cycle,
+        }
+    }
+}
+#[uniffi::export]
+pub fn griffiths_dominant_cycle_features(lower: u64, upper: u64, length: u64, series: Vec<f64>) -> Vec<GriffithsDominantCycleFeaturesResult> {
+    let mut ext = CoreGriffithsDCFE::new(lower as usize, upper as usize, length as usize);
+    series.into_iter().map(|x| {
+        let f = ext.next(x);
+        GriffithsDominantCycleFeaturesResult { dominant_cycle: f.dominant_cycle }
+    }).collect()
+}
+
+#[derive(uniffi::Object)]
+pub struct BullBearHMM {
+    inner: Mutex<CoreHMM>,
+}
+#[uniffi::export]
+impl BullBearHMM {
+    #[uniffi::constructor]
+    pub fn bull_bear() -> Self {
+        Self {
+            inner: Mutex::new(CoreHMM::bull_bear()),
+        }
+    }
+    pub fn next(&self, price: f64) -> i32 {
+        if !price.is_finite() {
+            return 0; // Steady sentinel
+        }
+        let regime = self.inner.lock().unwrap().next(price);
+        match regime {
+            MarketRegime::Bull => 1,
+            MarketRegime::Bear => 2,
+            MarketRegime::Crisis => 3,
+            MarketRegime::Steady => 0,
+            MarketRegime::Cluster(c) => 4 + (c as i32),
+        }
+    }
 }
 
 // Simple regime -> feature vector helper (for completeness; notebook primarily uses the extractors)

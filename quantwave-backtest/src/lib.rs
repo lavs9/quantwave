@@ -1046,8 +1046,11 @@ mod tests {
 // === Small end-to-end integration example between 4ps (ML features) and gwx (backtester) ===
 // Demonstrates using a feature (Hurst) + simple regime logic to produce StrategySignal
 // with rich metadata, then feeding it into the backtester.
-// This is the "smoke test" that the two epics work together. Full version will use
-// the wlx Polars layer + gw7s notebook patterns.
+// This is the "smoke test" that the two epics work together.
+// The full canonical version exercising the complete locked surface (Hurst + CyberCycle struct +
+// Griffiths DC + regime HMM) + Polars .ta().features() batch + streaming FeatureToSignal adapter
+// + metadata-in-Trade + exact parity is the living notebook:
+// docs/examples/notebooks/ml_feature_backtest_parity.py (primary closure artifact for 4ps + gwx).
 #[cfg(test)]
 mod integration_example_between_epics {
     use super::*;
