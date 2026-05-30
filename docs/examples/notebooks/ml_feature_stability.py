@@ -1,12 +1,12 @@
-import marimo
+import marimo as mo
 
-__generated_with = "0.1.0"
-app = marimo.App()
+__generated_with = "0.13.0"
+app = mo.App()
 
 
 @app.cell
-def __(marimo):
-    marimo.md(
+def _():
+    mo.md(
         r"""
         # ML Feature Engineering: Stability, Parity & Tiny Model (Canonical Example)
 
@@ -27,22 +27,40 @@ def __(marimo):
 
 
 @app.cell
-def __():
+def _():
     import numpy as np
-    import marimo as mo
-    # The new ML feature toolkit (exposed for this notebook per gw7s)
-    from quantwave import (
-        CyberCycleFeatureExtractor,
-        HurstFeatureExtractor,
-        InstantaneousTrendlineFeatureExtractor,
-        TrendflexFeatureExtractor,
-        regime_to_features,
-    )
     import polars as pl  # optional, for nice display
 
-    mo.md("Imports successful. Using the **new feature extractors** (CyberCycleFeatures, HurstFeatures, etc.) + regime helper.")
+    try:
+        from quantwave import (
+            CyberCycleFeatureExtractor,
+            HurstFeatureExtractor,
+            InstantaneousTrendlineFeatureExtractor,
+            TrendflexFeatureExtractor,
+            regime_to_features,
+        )
+        HAS_QUANTWAVE = True
+        mo.md("Imports successful. Using the **new feature extractors** (CyberCycleFeatures, HurstFeatures, etc.) + regime helper.")
+    except ImportError:
+        HAS_QUANTWAVE = False
+        CyberCycleFeatureExtractor = None
+        HurstFeatureExtractor = None
+        InstantaneousTrendlineFeatureExtractor = None
+        TrendflexFeatureExtractor = None
+        regime_to_features = None
+        mo.md(
+            """
+            **⚠️ Fallback mode — `quantwave` package not found.**
+
+            This notebook requires `pip install quantwave` (or `maturin develop -p quantwave-python --release` from source).
+
+            The real feature extractors are not available in the browser environment used by the documentation site.
+            """
+        )
+
     return (
         CyberCycleFeatureExtractor,
+        HAS_QUANTWAVE,
         HurstFeatureExtractor,
         InstantaneousTrendlineFeatureExtractor,
         TrendflexFeatureExtractor,

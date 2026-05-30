@@ -1,12 +1,12 @@
-import marimo
+import marimo as mo
 
-__generated_with = "0.1.0"
-app = marimo.App()
+__generated_with = "0.13.0"
+app = mo.App()
 
 
 @app.cell
-def __(marimo):
-    marimo.md(
+def _():
+    mo.md(
         r"""
         # ML Features → Realistic Backtest with Rich Metadata (End-to-End)
 
@@ -26,6 +26,8 @@ def __(marimo):
         3. `marimo edit docs/examples/notebooks/ml_feature_backtest_parity.py`
         4. Run all cells. All computation is deterministic (no RNG) for reproducible parity.
 
+        **Note:** This notebook requires the `quantwave` package. It will show a friendly fallback message when viewed on the documentation website.
+
         ## Sources (recorded per AGENTS.md)
         - Polars surface + contract: `quantwave-polars/src/features.rs` (and `lib.rs` re-exports)
         - Core extractors (Next<T> truth): `quantwave-core/src/features/{hurst.rs,cyber_cycle.rs,griffiths_dominant_cycle.rs,regime.rs}` + `regimes/hmm.rs`
@@ -42,25 +44,41 @@ def __(marimo):
 
 
 @app.cell
-def __():
-    import marimo as mo
+def _():
     import polars as pl
     import numpy as np
     from datetime import datetime, timedelta, timezone
 
-    # The ML feature toolkit (Python surface of the core Next<T> extractors)
-    from quantwave import (
-        CyberCycleFeatureExtractor,
-        HurstFeatureExtractor,
-        GriffithsDominantCycleFeatureExtractor,
-        BullBearHMM,
-    )
+    try:
+        from quantwave import (
+            CyberCycleFeatureExtractor,
+            HurstFeatureExtractor,
+            GriffithsDominantCycleFeatureExtractor,
+            BullBearHMM,
+        )
+        HAS_QUANTWAVE = True
+        mo.md("Imports OK. Using delivered extractors (Hurst, CyberCycle, Griffiths DC, BullBearHMM) + Polars for batch DF construction.")
+    except ImportError:
+        HAS_QUANTWAVE = False
+        CyberCycleFeatureExtractor = None
+        HurstFeatureExtractor = None
+        GriffithsDominantCycleFeatureExtractor = None
+        BullBearHMM = None
+        mo.md(
+            """
+            **⚠️ Fallback mode — `quantwave` package not found.**
 
-    mo.md("Imports OK. Using delivered extractors (Hurst, CyberCycle, Griffiths DC, BullBearHMM) + Polars for batch DF construction.")
+            This is the most important E2E notebook in the repository. It requires a working `quantwave` installation.
+
+            When viewed on the documentation website, the real feature extractors and backtester are not available.
+            """
+        )
+
     return (
         BullBearHMM,
         CyberCycleFeatureExtractor,
         GriffithsDominantCycleFeatureExtractor,
+        HAS_QUANTWAVE,
         HurstFeatureExtractor,
         datetime,
         mo,

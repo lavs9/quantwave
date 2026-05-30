@@ -9,4 +9,6 @@ Explore interactive examples of QuantWave in action using [Marimo](https://marim
 
 ---
 
-*Note: These notebooks are interactive. You can run them locally using `marimo edit`.*
+**Note:** These notebooks are best experienced by running them locally with `marimo edit`. 
+
+All notebooks now include defensive guards. Heavy examples (especially anything using the real `quantwave` Rust extensions) will show friendly fallback messages + installation instructions when viewed directly on the documentation site, because native Rust code cannot execute in the browser environment used for embedded notebooks.
