@@ -1,7 +1,7 @@
 # Indicators
 
-- [Overview](README.md)
-- [Native Indicators](native/README.md)
+- [Overview](index.md)
+- [Native Indicators](native/index.md)
     - Classic
         - [ATR Trailing Stop](native/atr_trailing_stop.md)
         - [Absolute Price Oscillator (APO)](native/absolute_price_oscillator_apo.md)
@@ -236,4 +236,4 @@
         - [VFI](native/vfi.md)
     - Wilder
         - [Harrington ADX Oscillator](native/harrington_adx_oscillator.md)
-- [TA-Lib Wrappers](talib/README.md)
+- [TA-Lib Wrappers](talib/index.md)
