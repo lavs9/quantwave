@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-05-30
+
+### Added
+- **Backtest Engine v0.2** (major milestone under epic `quantwave-n1yc`):
+  - **Rich-Metadata Position Sizing**: New `PositionSizer` trait + `InitialRiskPositionSizer` that directly consumes rich PA detector metadata (`fraction_at_risk`, `pole_height_atr`, strength, etc.) for dynamic, risk-aware sizing. Inspired by QF-Lib patterns. Includes `SizingAdapter` for seamless streaming `Next<T>` generators.
+  - **Pluggable Realistic Execution Models**: Proper `CommissionModel` and `SlippageModel` traits with high-quality implementations, including `SquareRootMarketImpactSlippage` (volatility × √(volume/ADV)) and `max_volume_share_limit` support.
+  - **High-Fidelity Execution Simulator Mode**: New execution path that applies the full sophisticated models while being driven by the *exact same* rich `StrategySignal` / PA struct stream as the fast vectorized path. Perfect for "pre-live" validation.
+  - **Professional Tearsheet & Reporting Layer**: New `BacktestTearsheet` with `PerformanceSummary`, `RiskMetrics`, `EnrichedTrade` (carries full PA metadata for attribution), `AttributionReport`, `to_markdown()`, and Polars DataFrame export for Excel. Institutional-quality output.
+- Full batch + streaming `Next<T>` parity maintained across all new features.
+- Updated canonical examples and documentation demonstrating PA detector + rich metadata workflows.
+
+### Changed
+- Backtester is now production-grade ready for complex PA + ML strategies (Flags, H&S, Market Structure, etc.).
+
 ## [0.4.0] - 2026-05-19
 
 ### Added
