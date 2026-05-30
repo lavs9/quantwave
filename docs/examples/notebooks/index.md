@@ -2,13 +2,34 @@
 
 Explore interactive examples of QuantWave in action using [Marimo](https://marimo.io/).
 
-* [Strategy Backtesting](strategy_backtest.py) - A steel-thread example of backtesting a simple strategy.
-* [Multi-Indicator Analysis](multi_indicator_analysis.py) - Combining multiple indicators using Polars expressions.
-* [ML Feature Stability & Tiny Model](ml_feature_stability.py) — **Canonical example** (quantwave-gw7s): builds feature matrix from the new toolkit (CyberCycle/Hurst/Trendflex/ITrend features), trains tiny regime+direction model, reports stability + regime-conditional metrics, proves no-lookahead. The living spec for correct ML feature usage.
-* [ML Features → Realistic Backtest with Rich Metadata (E2E)](ml_feature_backtest_parity.py) — **Primary cross-epic closure artifact** (quantwave-4ps + quantwave-gwx): full end-to-end using the locked `.ta().features()` surface (Hurst, CyberCycle Struct, Griffiths DC, regime HMM labels) for realistic strategy with feature+regime entry/sizing logic. Demonstrates batch Polars path (exposure + meta columns) vs streaming (FeatureToSignal adapter implementing Next<&Bar> → StrategySignal with rich metadata) with exact parity verification, metadata preservation into trades, and copy-paste Rust adapter. The smoking-gun living reference and contract exercise.
+These pages are landing pages for the notebooks. For the best experience (full interactivity + native Rust performance), run them locally with `marimo edit`.
 
----
+### Available Notebooks
 
-**Note:** These notebooks are best experienced by running them locally with `marimo edit`. 
+- **[Strategy Backtesting](strategy_backtest.md)**  
+  Steel-thread example using indicators inside the vectorized backtester with rich signal metadata.
 
-All notebooks now include defensive guards. Heavy examples (especially anything using the real `quantwave` Rust extensions) will show friendly fallback messages + installation instructions when viewed directly on the documentation site, because native Rust code cannot execute in the browser environment used for embedded notebooks.
+- **[Multi-Indicator Analysis](multi_indicator_analysis.md)**  
+  Clean chaining of multiple indicators (SMA, EMA, Momentum, SuperTrend, etc.) in one lazy Polars expression.
+
+- **[ML Feature Stability & Tiny Model](ml_feature_stability.py.md)** — *Canonical example* (quantwave-gw7s)  
+  Builds feature matrices from the new toolkit, proves batch/streaming parity + no-lookahead, trains a tiny regime+direction model with per-regime metrics.
+
+- **[ML Features → Realistic Backtest (E2E)](ml_feature_backtest_parity.py.md)** — *Primary cross-epic reference* (quantwave-4ps + quantwave-gwx)  
+  End-to-end demonstration of the locked features surface feeding the backtester. Shows batch vs streaming parity with rich metadata preserved all the way into trades.
+
+### How to run any notebook locally
+
+```bash
+# Recommended
+pip install "quantwave[all]" marimo polars numpy
+
+# Or from source after building the Python bindings
+maturin develop -p quantwave-python --release
+pip install marimo polars numpy
+
+marimo edit docs/examples/notebooks/<notebook_name>.py
+```
+
+**Why some notebooks show limited content here:**  
+The live documentation site is static (GitHub Pages). Notebooks that depend on QuantWave's native Rust extensions cannot execute inside the browser. The pages above give you context + the exact commands to run the real interactive versions locally.
