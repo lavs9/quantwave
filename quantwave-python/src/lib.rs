@@ -134,6 +134,59 @@ uniffi::setup_scaffolding!();
 #[derive(uniffi::Record)] pub struct EhlersLoopsResult { pub price_rms: f64, pub vol_rms: f64 }
 #[derive(uniffi::Record)] pub struct FractalsResult { pub bearish: bool, pub bullish: bool }
 #[derive(uniffi::Record)] pub struct HeikinAshiResult { pub open: f64, pub high: f64, pub low: f64, pub close: f64 }
+
+// --- PA / MarketStructure + Geometric foundation (quantwave-5thj) ---
+#[derive(uniffi::Record)]
+pub struct SwingPointResult {
+    pub bar: u64,
+    pub price: f64,
+    pub is_high: bool,
+}
+#[derive(uniffi::Record)]
+pub struct FlipEventResult {
+    pub is_bearish: bool,
+    pub price: f64,
+    pub bar: u64,
+    pub structure_strength: u32,
+}
+#[derive(uniffi::Record)]
+pub struct MarketStructureStateResult {
+    pub bias: u32, // 0=Neutral, 1=Bullish, 2=Bearish
+    pub last_swing_high: Option<SwingPointResult>,
+    pub last_swing_low: Option<SwingPointResult>,
+    pub current_flip: Option<FlipEventResult>,
+    pub swing_depth_used: u32,
+    pub bar_index: u64,
+}
+#[derive(uniffi::Record)]
+pub struct FlagPatternResult {
+    pub id: u32,
+    pub is_bull: bool,
+    pub pole_start_bar: u64,
+    pub pole_end_bar: u64,
+    pub flag_start_bar: u64,
+    pub flag_end_bar: u64,
+    pub pole_length: f64,
+    pub pole_length_atr: f64,
+    pub breakout_confirmed: bool,
+    pub breakout_price: f64,
+}
+#[derive(uniffi::Record)]
+pub struct HsPatternResult {
+    pub id: u32,
+    pub is_bearish: bool,
+    pub height: f64,
+    pub height_atr: f64,
+    pub score: f64,
+    pub breakout_confirmed: bool,
+}
+
+#[derive(uniffi::Record)]
+pub struct GeometricNextResult {
+    pub market_structure: MarketStructureStateResult,
+    pub flag: Option<FlagPatternResult>,
+    pub hs: Option<HsPatternResult>,
+}
 #[derive(uniffi::Record)] pub struct KeltnerResult { pub upper: f64, pub middle: f64, pub lower: f64 }
 #[derive(uniffi::Record)] pub struct PairsRotationResult { pub ratio: f64, pub angle: f64 }
 #[derive(uniffi::Record)] pub struct PhasorResult { pub in_phase: f64, pub quadrature: f64 }
@@ -978,5 +1031,106 @@ pub fn regime_to_features(regime_id: u32) -> RegimeFeaturesResult {
         quantwave_core::regimes::MarketRegime::Cluster(c) => 4 + c as i32,
     };
     RegimeFeaturesResult { regime_vector: vec, regime_label: label }
+}
+
+// === 5thj PA foundation Python surface (MarketStructure + Geometric) ===
+// Enables pure-Python notebook usage (streaming loops to build columns) + parity with Polars Rust path.
+// Rich outputs (esp. pole_length_atr, flips, bias) feed strategy filters + dynamic sizing in backtester demo.
+// Sources: quantwave-core indicators/market_structure + geometric_patterns (MQL5 21/66/69).
+
+use quantwave_core::indicators::market_structure::{MarketStructure as CoreMS, Bias as CoreBias};
+use quantwave_core::indicators::geometric_patterns::GeometricPatternScanner as CoreGeo;
+
+#[derive(uniffi::Object)]
+pub struct MarketStructure {
+    inner: Mutex<CoreMS>,
+}
+#[uniffi::export]
+impl MarketStructure {
+    #[uniffi::constructor]
+    pub fn new(swing_strength: u64) -> Self {
+        Self { inner: Mutex::new(CoreMS::new(swing_strength as usize)) }
+    }
+    pub fn next(&self, high: f64, low: f64) -> MarketStructureStateResult {
+        let mut guard = self.inner.lock().unwrap();
+        let state = guard.next((high, low));
+        MarketStructureStateResult {
+            bias: match state.bias {
+                CoreBias::Neutral => 0,
+                CoreBias::Bullish => 1,
+                CoreBias::Bearish => 2,
+            },
+            last_swing_high: state.last_swing_high.map(|sp| SwingPointResult { bar: sp.bar as u64, price: sp.price, is_high: sp.is_high }),
+            last_swing_low: state.last_swing_low.map(|sp| SwingPointResult { bar: sp.bar as u64, price: sp.price, is_high: sp.is_high }),
+            current_flip: state.current_flip.map(|f| FlipEventResult {
+                is_bearish: f.is_bearish,
+                price: f.price,
+                bar: f.bar as u64,
+                structure_strength: f.structure_strength,
+            }),
+            swing_depth_used: state.swing_depth_used as u32,
+            bar_index: state.bar_index as u64,
+        }
+    }
+}
+
+#[derive(uniffi::Object)]
+pub struct GeometricPatternScanner {
+    inner: Mutex<CoreGeo>,
+}
+#[uniffi::export]
+impl GeometricPatternScanner {
+    #[uniffi::constructor]
+    pub fn new(swing_strength: u64) -> Self {
+        Self { inner: Mutex::new(CoreGeo::new(swing_strength as usize)) }
+    }
+    pub fn next(&self, high: f64, low: f64) -> GeometricNextResult {
+        let mut guard = self.inner.lock().unwrap();
+        let (state, flag, hs) = guard.next((high, low));
+        let ms_res = MarketStructureStateResult {
+            bias: match state.bias {
+                CoreBias::Neutral => 0,
+                CoreBias::Bullish => 1,
+                CoreBias::Bearish => 2,
+            },
+            last_swing_high: state.last_swing_high.map(|sp| SwingPointResult { bar: sp.bar as u64, price: sp.price, is_high: sp.is_high }),
+            last_swing_low: state.last_swing_low.map(|sp| SwingPointResult { bar: sp.bar as u64, price: sp.price, is_high: sp.is_high }),
+            current_flip: state.current_flip.map(|f| FlipEventResult {
+                is_bearish: f.is_bearish, price: f.price, bar: f.bar as u64, structure_strength: f.structure_strength,
+            }),
+            swing_depth_used: state.swing_depth_used as u32,
+            bar_index: state.bar_index as u64,
+        };
+        let flag_res = flag.map(|f| FlagPatternResult {
+            id: f.id, is_bull: f.is_bull,
+            pole_start_bar: f.pole_start_bar as u64, pole_end_bar: f.pole_end_bar as u64,
+            flag_start_bar: f.flag_start_bar as u64, flag_end_bar: f.flag_end_bar as u64,
+            pole_length: f.pole_length, pole_length_atr: f.pole_length_atr,
+            breakout_confirmed: f.breakout_confirmed, breakout_price: f.breakout_price,
+        });
+        let hs_res = hs.map(|h| HsPatternResult {
+            id: h.id, is_bearish: h.is_bearish,
+            height: h.height, height_atr: h.height_atr, score: h.score,
+            breakout_confirmed: h.breakout_confirmed,
+        });
+        GeometricNextResult { market_structure: ms_res, flag: flag_res, hs: hs_res }
+    }
+}
+
+// Batch helpers for notebook convenience (equivalent to Polars collect over synthetic/real series)
+#[uniffi::export]
+pub fn market_structure_batch(swing_strength: u64, highs: Vec<f64>, lows: Vec<f64>) -> Vec<MarketStructureStateResult> {
+    let mut ms = CoreMS::new(swing_strength as usize);
+    highs.into_iter().zip(lows).map(|(h,l)| {
+        let st = ms.next((h,l));
+        MarketStructureStateResult {
+            bias: match st.bias { CoreBias::Neutral=>0, CoreBias::Bullish=>1, CoreBias::Bearish=>2 },
+            last_swing_high: st.last_swing_high.map(|sp| SwingPointResult{bar:sp.bar as u64, price:sp.price, is_high:sp.is_high}),
+            last_swing_low: st.last_swing_low.map(|sp| SwingPointResult{bar:sp.bar as u64, price:sp.price, is_high:sp.is_high}),
+            current_flip: st.current_flip.map(|f| FlipEventResult{is_bearish:f.is_bearish, price:f.price, bar:f.bar as u64, structure_strength:f.structure_strength}),
+            swing_depth_used: st.swing_depth_used as u32,
+            bar_index: st.bar_index as u64,
+        }
+    }).collect()
 }
 

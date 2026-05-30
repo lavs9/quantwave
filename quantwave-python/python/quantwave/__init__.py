@@ -365,6 +365,12 @@ class ta:
     bull_bear_hmm = BullBearHMM
     griffiths_dominant_cycle_features = griffiths_dominant_cycle_features  # batch helper
     volume_profile = volumeprofile
+    # PA foundation (5thj): streaming access to rich MarketStructure (bias/flips) + Geometric (Flags/H&S with pole_length_atr)
+    # Use in notebooks exactly like feature extractors: loop or batch_ helpers to populate DF columns for strategy.
+    market_structure = MarketStructure
+    geometric_pattern_scanner = GeometricPatternScanner
+    market_structure_batch = market_structure_batch
+    # (geometric batch can be added later; use the object in loop for now)
 
 class options_india:
     bs_call_price = bs_call_price
@@ -410,6 +416,9 @@ __all__ = [
     "HurstExponent", "KalmanFilter", "MarketState", "RecursiveMedian",
     "RecursiveMedianOscillator", "Reflex", "RocketRsi", "Trendflex",
     "TruncatedBandpass", "VolumeProfile",
+    # PA / MarketStructure + Geometric foundation (quantwave-5thj)
+    "MarketStructure", "GeometricPatternScanner", "market_structure_batch",
+    "SwingPointResult", "FlipEventResult", "MarketStructureStateResult", "FlagPatternResult", "HsPatternResult", "GeometricNextResult",
     # ML feature toolkit (quantwave-gw7s)
     "CyberCycleFeatureExtractor", "HurstFeatureExtractor",
     "InstantaneousTrendlineFeatureExtractor", "TrendflexFeatureExtractor",

@@ -1148,6 +1148,18 @@ impl<'a> QuantWaveNamespace<'a> {
                 .alias("supertrend_data")])
     }
 
+    /// Market Structure (swings + confirmed BOS flips) — rich PA event foundation.
+    ///
+    /// Returns a Struct column "market_structure" with rich metadata fields directly usable
+    /// for event extraction (filter rows where has_current_flip=true), backtester signals (06sz),
+    /// and ML (regime + feature joins at flip bars).
+    ///
+    /// This wires the core MarketStructure Next impl + PAEvent system (bmkn) into Polars.
+    /// Emits as Struct series (per project convention for composites like supertrend/bbands).
+    /// For exploded event log: after collect, filter on has_current_flip and construct PAEvent rows
+    /// (or use core extract_pa_events on the state columns).
+    ///
+    /// Sources: see market_structure.rs (MQL5 Part 21 + Parts 66/69 lessons).
     pub fn anchored_vwap(self, price: &str, volume: &str, anchor: &str) -> LazyFrame {
         let price = price.to_string();
         let volume = volume.to_string();
@@ -2403,6 +2415,257 @@ impl<'a> QuantWaveNamespace<'a> {
                 .alias("fractals_data")])
     }
 
+    /// Market Structure (swings + confirmed BOS flips) Polars accessor (bmkn Rich PA Event Output).
+    /// Returns a Struct column "market_structure" with rich per-bar state + flip metadata:
+    ///   bias (0=Neutral,1=Bullish,2=Bearish), last_*_price/bar (0/NaN if none),
+    ///   has_flip + flip_* fields (only meaningful when has_flip=true — these are the events),
+    ///   swing_depth, bar_index.
+    ///
+    /// This directly emits the foundation for the standardized PAEvent system:
+    /// - Use core `extract_pa_events(&state)` (or Python equivalent on the struct fields) to obtain
+    ///   typed `PAEvent` / `PAEventKind::MarketStructureFlip` carrying strength, confidence=1.0, bar etc.
+    /// - Filter/explode for events: `.filter(col("market_structure").struct_().field_by_name("has_flip"))`.
+    /// - Rich meta (structure_strength etc) drives backtester (quantwave-06sz/gwx) sizing/attribution
+    ///   and ML confluence (feature_values/regime_at_event slots filled by join).
+    ///
+    /// Delegates to quantwave_core::MarketStructure (Next<(f64,f64)> -> MarketStructureState + PAEvent adapters).
+    /// Primary Polars surface for Part 21 PA foundation + bmkn event standardization.
+    ///
+    /// Matches project patterns (see fractals, supertrend, features.rs cyber_cycle).
+    ///
+    /// Sources: market_structure.rs (MQL5 Part 21 https://www.mql5.com/en/articles/17891 + 66/69 lessons).
+    pub fn market_structure(
+        self,
+        high: &str,
+        low: &str,
+        swing_strength: usize,
+    ) -> LazyFrame {
+        let high_str = high.to_string();
+        let low_str = low.to_string();
+        let strength = swing_strength;
+
+        self.0.clone().with_columns([as_struct(vec![col(&high_str), col(&low_str)])
+            .map(
+                move |s| {
+                    let ca = s.struct_()?;
+                    let s_h = ca.field_by_name(&high_str)?;
+                    let s_l = ca.field_by_name(&low_str)?;
+                    let highs = s_h.f64()?;
+                    let lows = s_l.f64()?;
+
+                    let mut ms = quantwave_core::MarketStructure::new(strength);
+                    let n = s.len();
+
+                    let mut bias_vals: Vec<u32> = Vec::with_capacity(n);
+                    let mut lh_p: Vec<f64> = Vec::with_capacity(n);
+                    let mut lh_b: Vec<u64> = Vec::with_capacity(n);
+                    let mut ll_p: Vec<f64> = Vec::with_capacity(n);
+                    let mut ll_b: Vec<u64> = Vec::with_capacity(n);
+                    let mut has_f: Vec<bool> = Vec::with_capacity(n);
+                    let mut f_bear: Vec<bool> = Vec::with_capacity(n);
+                    let mut f_p: Vec<f64> = Vec::with_capacity(n);
+                    let mut f_ba: Vec<u64> = Vec::with_capacity(n);
+                    let mut f_str: Vec<u32> = Vec::with_capacity(n);
+                    let mut depths: Vec<u32> = Vec::with_capacity(n);
+                    let mut bars: Vec<u64> = Vec::with_capacity(n);
+
+                    for i in 0..n {
+                        let h = highs.get(i).unwrap_or(f64::NAN);
+                        let l = lows.get(i).unwrap_or(f64::NAN);
+                        // Guard ordering
+                        let hh = if h.is_nan() || l.is_nan() { f64::NAN } else { h.max(l) };
+                        let ll = if h.is_nan() || l.is_nan() { f64::NAN } else { l.min(h) };
+                        let state = ms.next((hh, ll));
+
+                        let b = match state.bias {
+                            quantwave_core::Bias::Neutral => 0u32,
+                            quantwave_core::Bias::Bullish => 1,
+                            quantwave_core::Bias::Bearish => 2,
+                        };
+                        bias_vals.push(b);
+
+                        match &state.last_swing_high {
+                            Some(sh) => { lh_p.push(sh.price); lh_b.push(sh.bar as u64); }
+                            None => { lh_p.push(f64::NAN); lh_b.push(0); }
+                        }
+                        match &state.last_swing_low {
+                            Some(sl) => { ll_p.push(sl.price); ll_b.push(sl.bar as u64); }
+                            None => { ll_p.push(f64::NAN); ll_b.push(0); }
+                        }
+
+                        if let Some(f) = &state.current_flip {
+                            has_f.push(true);
+                            f_bear.push(f.is_bearish);
+                            f_p.push(f.price);
+                            f_ba.push(f.bar as u64);
+                            f_str.push(f.structure_strength);
+                        } else {
+                            has_f.push(false);
+                            f_bear.push(false);
+                            f_p.push(f64::NAN);
+                            f_ba.push(0);
+                            f_str.push(0);
+                        }
+
+                        depths.push(state.swing_depth_used as u32);
+                        bars.push(state.bar_index as u64);
+                    }
+
+                    let s_bias = Series::new("bias".into(), bias_vals);
+                    let s_lhp = Series::new("last_high_price".into(), lh_p);
+                    let s_lhb = Series::new("last_high_bar".into(), lh_b);
+                    let s_llp = Series::new("last_low_price".into(), ll_p);
+                    let s_llb = Series::new("last_low_bar".into(), ll_b);
+                    let s_hasf = Series::new("has_flip".into(), has_f);
+                    let s_fb = Series::new("flip_bearish".into(), f_bear);
+                    let s_fp = Series::new("flip_price".into(), f_p);
+                    let s_fba = Series::new("flip_bar".into(), f_ba);
+                    let s_fstr = Series::new("flip_strength".into(), f_str);
+                    let s_dep = Series::new("swing_depth".into(), depths);
+                    let s_bar = Series::new("bar_index".into(), bars);
+
+    }
+
+    /// Geometric Pattern Scanner (Flags + H&S) Polars accessor (5thj), built on the MarketStructure foundation.
+    /// Returns a Struct column "geometric_patterns" containing:
+    ///   flag: Struct(id, is_bull, pole_length, pole_length_atr, breakout_confirmed, breakout_price)
+    ///   hs:   Struct(id, is_bearish, height, height_atr, score, breakout_confirmed)
+    /// (id==0 means no detection on that bar in the current skeleton impl).
+    ///
+    /// Delegates to quantwave_core::GeometricPatternScanner (composes internal MarketStructure).
+    /// This delivers the Polars surface + rich metadata shape (pole_length_atr for sizing!) for the
+    /// canonical notebook. Full production detectors per MQL5 Parts 66/69 are in the ej8b lineage.
+    pub fn geometric_patterns(
+        self,
+        high: &str,
+        low: &str,
+        swing_strength: usize,
+    ) -> LazyFrame {
+        let high_str = high.to_string();
+        let low_str = low.to_string();
+        let strength = swing_strength;
+
+        self.0.clone().with_columns([as_struct(vec![col(&high_str), col(&low_str)])
+            .map(
+                move |s| {
+                    let ca = s.struct_()?;
+                    let s_h = ca.field_by_name(&high_str)?;
+                    let s_l = ca.field_by_name(&low_str)?;
+                    let highs = s_h.f64()?;
+                    let lows = s_l.f64()?;
+
+                    let mut scanner = quantwave_core::GeometricPatternScanner::new(strength);
+                    let n = s.len();
+
+                    let mut flag_ids: Vec<u32> = Vec::with_capacity(n);
+                    let mut flag_is_bull: Vec<bool> = Vec::with_capacity(n);
+                    let mut flag_pole_len: Vec<f64> = Vec::with_capacity(n);
+                    let mut flag_pole_atr: Vec<f64> = Vec::with_capacity(n);
+                    let mut flag_breakout: Vec<bool> = Vec::with_capacity(n);
+                    let mut flag_bp: Vec<f64> = Vec::with_capacity(n);
+
+                    let mut hs_ids: Vec<u32> = Vec::with_capacity(n);
+                    let mut hs_bear: Vec<bool> = Vec::with_capacity(n);
+                    let mut hs_height: Vec<f64> = Vec::with_capacity(n);
+                    let mut hs_height_atr: Vec<f64> = Vec::with_capacity(n);
+                    let mut hs_score: Vec<f64> = Vec::with_capacity(n);
+                    let mut hs_breakout: Vec<bool> = Vec::with_capacity(n);
+
+                    for i in 0..n {
+                        let h = highs.get(i).unwrap_or(f64::NAN);
+                        let l = lows.get(i).unwrap_or(f64::NAN);
+                        let hh = if h.is_nan() || l.is_nan() { f64::NAN } else { h.max(l) };
+                        let ll = if h.is_nan() || l.is_nan() { f64::NAN } else { l.min(h) };
+                        let (_state, flag, hs) = scanner.next((hh, ll));
+
+                        if let Some(f) = flag {
+                            flag_ids.push(f.id);
+                            flag_is_bull.push(f.is_bull);
+                            flag_pole_len.push(f.pole_length);
+                            flag_pole_atr.push(f.pole_length_atr);
+                            flag_breakout.push(f.breakout_confirmed);
+                            flag_bp.push(f.breakout_price);
+                        } else {
+                            flag_ids.push(0);
+                            flag_is_bull.push(false);
+                            flag_pole_len.push(f64::NAN);
+                            flag_pole_atr.push(f64::NAN);
+                            flag_breakout.push(false);
+                            flag_bp.push(f64::NAN);
+                        }
+
+                        if let Some(hp) = hs {
+                            hs_ids.push(hp.id);
+                            hs_bear.push(hp.is_bearish);
+                            hs_height.push(hp.height);
+                            hs_height_atr.push(hp.height_atr);
+                            hs_score.push(hp.score);
+                            hs_breakout.push(hp.breakout_confirmed);
+                        } else {
+                            hs_ids.push(0);
+                            hs_bear.push(false);
+                            hs_height.push(f64::NAN);
+                            hs_height_atr.push(f64::NAN);
+                            hs_score.push(f64::NAN);
+                            hs_breakout.push(false);
+                        }
+                    }
+
+                    let s_fid = Series::new("id".into(), flag_ids);
+                    let s_fbull = Series::new("is_bull".into(), flag_is_bull);
+                    let s_fplen = Series::new("pole_length".into(), flag_pole_len);
+                    let s_fpatr = Series::new("pole_length_atr".into(), flag_pole_atr);
+                    let s_fbo = Series::new("breakout_confirmed".into(), flag_breakout);
+                    let s_fbp = Series::new("breakout_price".into(), flag_bp);
+
+                    let flag_struct = StructChunked::from_series(
+                        "flag".into(),
+                        n,
+                        [s_fid, s_fbull, s_fplen, s_fpatr, s_fbo, s_fbp].iter(),
+                    )?;
+
+                    let s_hid = Series::new("id".into(), hs_ids);
+                    let s_hbear = Series::new("is_bearish".into(), hs_bear);
+                    let s_hh = Series::new("height".into(), hs_height);
+                    let s_hhatr = Series::new("height_atr".into(), hs_height_atr);
+                    let s_hsc = Series::new("score".into(), hs_score);
+                    let s_hbo = Series::new("breakout_confirmed".into(), hs_breakout);
+
+                    let hs_struct = StructChunked::from_series(
+                        "hs".into(),
+                        n,
+                        [s_hid, s_hbear, s_hh, s_hhatr, s_hsc, s_hbo].iter(),
+                    )?;
+
+                    let combined = StructChunked::from_series(
+                        "geo_patterns".into(),
+                        n,
+                        [flag_struct.into_series(), hs_struct.into_series()].iter(),
+                    )?;
+                    Ok(Some(Column::from(combined.into_series())))
+                },
+                GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("flag".into(), DataType::Struct(vec![
+                        Field::new("id".into(), DataType::UInt32),
+                        Field::new("is_bull".into(), DataType::Boolean),
+                        Field::new("pole_length".into(), DataType::Float64),
+                        Field::new("pole_length_atr".into(), DataType::Float64),
+                        Field::new("breakout_confirmed".into(), DataType::Boolean),
+                        Field::new("breakout_price".into(), DataType::Float64),
+                    ])),
+                    Field::new("hs".into(), DataType::Struct(vec![
+                        Field::new("id".into(), DataType::UInt32),
+                        Field::new("is_bearish".into(), DataType::Boolean),
+                        Field::new("height".into(), DataType::Float64),
+                        Field::new("height_atr".into(), DataType::Float64),
+                        Field::new("score".into(), DataType::Float64),
+                        Field::new("breakout_confirmed".into(), DataType::Boolean),
+                    ])),
+                ])),
+            )
+            .alias("geometric_patterns")])
+    }
+
     pub fn ichimoku_cloud(
         self,
         high: &str,
@@ -3548,6 +3811,47 @@ mod tests {
         let kin_kalman = out2.column("kinematic_kalman")?.f64()?;
         assert!(kin_kalman.get(0).is_some());
         assert_eq!(kin_kalman.get(0).unwrap(), 100.0);
+
+        Ok(())
+    }
+
+    /// Smoke test for the new PA foundation accessors (quantwave-5thj).
+    /// Verifies column presence + dtypes for rich structs (existing market_structure + new geometric_patterns).
+    /// Uses the exact field names from the prior market_structure impl.
+    #[test]
+    fn smoke_ta_pa_foundation() -> PolarsResult<()> {
+        let highs: Vec<f64> = (0..60).map(|i| 100.0 + (i as f64 * 0.8).sin() * 5.0 + (i as f64) * 0.3).collect();
+        let lows: Vec<f64> = highs.iter().map(|&h| h - 1.5 - (h % 3.0) * 0.2).collect();
+
+        let df = df!["high" => highs, "low" => lows]?;
+        let lf = df.lazy();
+
+        // market_structure (pre-existing impl in this file) -> rich struct with String bias etc.
+        let out = lf
+            .clone()
+            .ta()
+            .market_structure("high", "low", 3)
+            .collect()?;
+        let ms = out.column("market_structure")?;
+        assert!(matches!(ms.dtype(), DataType::Struct(_)));
+        let ca = ms.struct_()?;
+        // bias is String per the established impl (see market_structure fn ~1205)
+        assert_eq!(ca.field_by_name("bias".into())?.dtype().clone(), DataType::String);
+        assert!(ca.field_by_name("has_current_flip".into())?.bool()?.get(59).is_some());
+
+        // geometric_patterns (5thj addition) -> Struct( flag: Struct(...), hs: Struct(...) )
+        let out2 = out
+            .lazy()
+            .ta()
+            .geometric_patterns("high", "low", 2)
+            .collect()?;
+        let gp = out2.column("geometric_patterns")?;
+        assert!(matches!(gp.dtype(), DataType::Struct(_)));
+        let gca = gp.struct_()?;
+        let flag = gca.field_by_name("flag".into())?;
+        assert!(matches!(flag.dtype(), DataType::Struct(_)));
+        // pole_length_atr is the key rich field for sizing in the notebook strategy
+        assert!(flag.struct_()?.field_by_name("pole_length_atr".into())?.f64()?.get(59).is_some());
 
         Ok(())
     }
