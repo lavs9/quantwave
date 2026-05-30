@@ -7,6 +7,9 @@ mkdocs-marimo
 marimo>=0.13
 mkdocs-git-revision-date-localized-plugin>=1.2
 
-# quantwave package from PyPI — needed so that `import quantwave` succeeds
-# when we export the marimo notebooks to HTML during the docs build.
-quantwave>=0.5.0
+# quantwave package from PyPI.
+# We install the latest released version so that `import quantwave` works
+# when exporting marimo notebooks to HTML during the docs build.
+# Note: After a new release, it can take a little while for the new version
+# to appear on PyPI. Use the latest available version here.
+quantwave>=0.4.0

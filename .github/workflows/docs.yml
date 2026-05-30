@@ -24,10 +24,14 @@ jobs:
           restore-keys: |
             mkdocs-material-
       - run: pip install -r requirements-docs.txt
-      # Install the released quantwave package from PyPI.
-      # This lets us actually execute the marimo notebooks (including `import quantwave`)
-      # during the export step so we can capture real outputs.
-      - run: pip install quantwave
+
+      # Install the latest released quantwave from PyPI so we can export notebooks
+      # with real outputs. This step is allowed to fail on release day (when the
+      # new version hasn't hit PyPI yet). The export script is resilient.
+      - name: Install quantwave from PyPI (non-fatal)
+        run: pip install quantwave || echo "WARNING: Could not install latest quantwave from PyPI. Notebook exports may use fallback behavior."
+        continue-on-error: true
+
       - run: cargo run --package quantwave-xtask
       # Pre-export marimo notebooks to HTML. This is much more reliable on static GitHub Pages
       # than trying to run the raw .py files at view time via the mkdocs-marimo plugin.

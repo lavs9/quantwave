@@ -47,18 +47,10 @@ def export_notebook(notebook_name: str):
         print(f"WARNING: Notebook not found: {src}", file=sys.stderr)
         return
 
-    # Output as .html (self-contained where possible)
-    # html-wasm is generally preferred for GitHub Pages (runs in browser via Pyodide)
-    # but falls back gracefully for cells that can't execute.
     dst = RENDERED_DIR / (src.stem + ".html")
 
     print(f"Exporting {notebook_name} -> {dst.relative_to(ROOT)} ...")
 
-    # We use html-wasm because it produces a single file that works well on static hosting.
-    # Because we install the real `quantwave` package before running this script,
-    # the export can execute the notebook and capture real outputs.
-    # In the browser, cells that require the native package will be non-interactive,
-    # but the code and captured results will still be visible and beautiful.
     cmd = [
         "marimo",
         "export",
@@ -67,18 +59,18 @@ def export_notebook(notebook_name: str):
         "--output",
         str(dst),
         "--mode",
-        "edit",  # or "run" — edit is usually better for documentation
+        "edit",
     ]
 
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
         print(f"  ✓ Exported successfully")
     except subprocess.CalledProcessError as e:
-        print(f"  ✗ Export failed for {notebook_name}")
+        print(f"  ✗ Export failed for {notebook_name} (common right after a new release when the package isn't on PyPI yet)")
         print(e.stdout)
         print(e.stderr, file=sys.stderr)
-        # Don't fail the whole docs build for one notebook
-        # (we can still have the landing page with "run locally" instructions)
+        # Never fail the entire docs build because of one notebook.
+        # The landing page will still exist with "run locally" instructions.
 
 
 def main():
