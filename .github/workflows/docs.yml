@@ -25,9 +25,13 @@ jobs:
             mkdocs-material-
       - run: pip install -r requirements-docs.txt
 
-      # Install the latest released quantwave from PyPI (non-fatal on release day
-      # when the new version has not hit PyPI yet). The export script is resilient.
-      - run: 'pip install quantwave || echo "WARNING: Could not install latest quantwave from PyPI. Notebook exports may use fallback behavior."'
+      # Build and install the local Python package from source.
+      # This ensures mkdocstrings/griffe sees the current Python surface
+      # (including new PA bindings and _metadata) instead of the old PyPI version.
+      - name: Build local quantwave Python package
+        run: |
+          pip install maturin
+          maturin develop -m quantwave-python/Cargo.toml --release
 
       - run: cargo run --package quantwave-xtask
       # Pre-export marimo notebooks to HTML. This is much more reliable on static GitHub Pages
