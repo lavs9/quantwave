@@ -30,12 +30,14 @@ jobs:
       - run: 'pip install quantwave || echo "WARNING: Could not install latest quantwave from PyPI."'
 
       # Build and install the *local* Python package on top.
-      # This makes mkdocstrings/griffe see the current source (new PA types,
-      # _metadata, etc.) for accurate API documentation generation.
+      # Use `maturin build` + `pip install` (instead of `develop`) because
+      # `develop` has fragile virtualenv detection in GitHub Actions.
+      # This ensures mkdocstrings/griffe sees the current source.
       - name: Build local quantwave Python package
         run: |
           pip install maturin
-          maturin develop -m quantwave-python/Cargo.toml --release
+          maturin build -m quantwave-python/Cargo.toml --release --out dist
+          pip install dist/quantwave*.whl --force-reinstall
 
       - run: cargo run --package quantwave-xtask
       # Pre-export marimo notebooks to HTML. This is much more reliable on static GitHub Pages
