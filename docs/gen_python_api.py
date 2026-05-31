@@ -16,6 +16,10 @@ for path in sorted(src.rglob("*.py")):
 
     parts = list(module_path.parts)
 
+    # Skip private/internal modules (e.g. _metadata, _quantwave, etc.)
+    if any(p.startswith("_") for p in parts):
+        continue
+
     if parts[-1] == "__init__":
         parts.pop()
         doc_path = doc_path.with_name("index.md")
