@@ -35,7 +35,7 @@ jobs:
       # This ensures mkdocstrings/griffe sees the current source.
       - name: Build local quantwave Python package
         run: |
-          pip install maturin
+          pip install maturin uniffi-bindgen
           maturin build -m quantwave-python/Cargo.toml --release --out dist
           pip install dist/quantwave*.whl --force-reinstall
 
