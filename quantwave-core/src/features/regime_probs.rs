@@ -32,7 +32,10 @@ pub fn regime_to_prob_features(regime: MarketRegime) -> RegimeProbFeatures {
     for p in &mut probs {
         *p /= sum;
     }
-    RegimeProbFeatures { probs, hard_label: regime }
+    RegimeProbFeatures {
+        probs,
+        hard_label: regime,
+    }
 }
 
 #[cfg(test)]

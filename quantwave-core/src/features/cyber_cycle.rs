@@ -41,7 +41,11 @@ impl Next<f64> for CyberCycleFeatureExtractor {
     fn next(&mut self, input: f64) -> Self::Output {
         let (cycle, trigger) = self.inner.next(input);
 
-        let momentum = if self.prev_cycle == 0.0 { 0.0 } else { cycle - self.prev_cycle };
+        let momentum = if self.prev_cycle == 0.0 {
+            0.0
+        } else {
+            cycle - self.prev_cycle
+        };
         let trigger_signal = (cycle - trigger).signum();
 
         self.prev_cycle = cycle;

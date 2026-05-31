@@ -34,6 +34,9 @@ impl Next<f64> for InstantaneousTrendlineFeatureExtractor {
     fn next(&mut self, input: f64) -> Self::Output {
         let trend = self.inner.next(input);
         // For MVP, strength is 0.0. Real phase/power can be added later from the indicator internals if exposed.
-        InstantaneousTrendlineFeatures { trend, strength: 0.0 }
+        InstantaneousTrendlineFeatures {
+            trend,
+            strength: 0.0,
+        }
     }
 }

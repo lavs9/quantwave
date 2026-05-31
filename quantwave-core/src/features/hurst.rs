@@ -24,7 +24,10 @@ pub struct HurstFeatures {
 
 impl HurstFeatures {
     pub fn new(persistence: f64, regime_label: Option<i8>) -> Self {
-        Self { persistence, regime_label }
+        Self {
+            persistence,
+            regime_label,
+        }
     }
 }
 
@@ -87,15 +90,18 @@ mod tests {
             let val = 100.0 + (i as f64) * 0.5;
             let f = extractor.next(val);
             if !f.persistence.is_nan() {
-                assert!(f.persistence > 0.5, "Expected trending persistence, got {}", f.persistence);
+                assert!(
+                    f.persistence > 0.5,
+                    "Expected trending persistence, got {}",
+                    f.persistence
+                );
             }
         }
     }
 
     #[test]
     fn test_hurst_feature_regime_labels() {
-        let mut extractor = HurstFeatureExtractor::new(10)
-            .with_thresholds(0.4, 0.6);
+        let mut extractor = HurstFeatureExtractor::new(10).with_thresholds(0.4, 0.6);
 
         // Force a high persistence value via dummy (real impl will vary)
         // This is a smoke test for the wrapper logic

@@ -34,12 +34,18 @@ pub mod trendflex;
 
 // Re-export common feature types for convenience
 pub use cyber_cycle::{CyberCycleFeatureExtractor, CyberCycleFeatures};
-pub use ehlers_autocorrelation::{EhlersAutocorrelationFeatureExtractor, EhlersAutocorrelationFeatures};
-pub use griffiths_dominant_cycle::{GriffithsDominantCycleFeatureExtractor, GriffithsDominantCycleFeatures};
+pub use ehlers_autocorrelation::{
+    EhlersAutocorrelationFeatureExtractor, EhlersAutocorrelationFeatures,
+};
+pub use griffiths_dominant_cycle::{
+    GriffithsDominantCycleFeatureExtractor, GriffithsDominantCycleFeatures,
+};
 pub use hurst::{HurstFeatureExtractor, HurstFeatures};
-pub use instantaneous_trendline::{InstantaneousTrendlineFeatureExtractor, InstantaneousTrendlineFeatures};
-pub use regime::{regime_to_features, RegimeFeatures};
-pub use regime_probs::{regime_to_prob_features, RegimeProbFeatures};
+pub use instantaneous_trendline::{
+    InstantaneousTrendlineFeatureExtractor, InstantaneousTrendlineFeatures,
+};
+pub use regime::{RegimeFeatures, regime_to_features};
+pub use regime_probs::{RegimeProbFeatures, regime_to_prob_features};
 pub use trendflex::{TrendflexFeatureExtractor, TrendflexFeatures};
 
 // === wlx (Polars layer) preparation note (2026-05-30) ===
@@ -125,7 +131,6 @@ mod proptest_parity {
         // using existing crate check_batch_streaming_parity helper pattern from indicators.
     }
 }
-
 
 /// Common trait for feature extractors that want to expose a stable "feature vector" view.
 /// (Future expansion point for a unified FeatureVector trait.)
