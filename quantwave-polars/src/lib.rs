@@ -1766,10 +1766,10 @@ impl<'a> QuantWaveNamespace<'a> {
     /// Market Structure (swings + confirmed BOS flips) — rich PA event foundation.
     ///
     /// Returns a Struct column "market_structure" with rich metadata fields directly usable
-    /// for event extraction (filter rows where has_current_flip=true), backtester signals (06sz),
+    /// for event extraction (filter rows where has_current_flip=true), backtester signals,
     /// and ML (regime + feature joins at flip bars).
     ///
-    /// This wires the core MarketStructure Next impl + PAEvent system (bmkn) into Polars.
+    /// This wires the core MarketStructure Next impl + PAEvent system into Polars.
     /// Emits as Struct series (per project convention for composites like supertrend/bbands).
     /// For exploded event log: after collect, filter on has_current_flip and construct PAEvent rows
     /// (or use core extract_pa_events on the state columns).
@@ -3030,7 +3030,7 @@ impl<'a> QuantWaveNamespace<'a> {
                 .alias("fractals_data")])
     }
 
-    /// Market Structure (swings + confirmed BOS flips) Polars accessor (bmkn Rich PA Event Output).
+    /// Market Structure (swings + confirmed BOS flips) Polars accessor.
     /// Returns a Struct column "market_structure" with rich per-bar state + flip metadata:
     ///   bias (0=Neutral,1=Bullish,2=Bearish), last_*_price/bar (0/NaN if none),
     ///   has_flip + flip_* fields (only meaningful when has_flip=true — these are the events),
@@ -3040,11 +3040,11 @@ impl<'a> QuantWaveNamespace<'a> {
     /// - Use core `extract_pa_events(&state)` (or Python equivalent on the struct fields) to obtain
     ///   typed `PAEvent` / `PAEventKind::MarketStructureFlip` carrying strength, confidence=1.0, bar etc.
     /// - Filter/explode for events: `.filter(col("market_structure").struct_().field_by_name("has_flip"))`.
-    /// - Rich meta (structure_strength etc) drives backtester (quantwave-06sz/gwx) sizing/attribution
+    /// - Rich meta (structure_strength etc) drives backtester sizing/attribution
     ///   and ML confluence (feature_values/regime_at_event slots filled by join).
     ///
     /// Delegates to quantwave_core::MarketStructure (Next<(f64,f64)> -> MarketStructureState + PAEvent adapters).
-    /// Primary Polars surface for Part 21 PA foundation + bmkn event standardization.
+    /// Primary Polars surface for Part 21 PA foundation + rich event standardization.
     ///
     /// Matches project patterns (see fractals, supertrend, features.rs cyber_cycle).
     ///
@@ -3169,15 +3169,15 @@ impl<'a> QuantWaveNamespace<'a> {
 
     }
 
-    /// Geometric Pattern Scanner (Flags + H&S) Polars accessor (5thj), built on the MarketStructure foundation.
+    /// Geometric Pattern Scanner (Flags + H&S) Polars accessor, built on the MarketStructure foundation.
     /// Returns a Struct column "geometric_patterns" containing:
     ///   flag: Struct(id, is_bull, pole_length, pole_length_atr, breakout_confirmed, breakout_price)
     ///   hs:   Struct(id, is_bearish, height, height_atr, score, breakout_confirmed)
     /// (id==0 means no detection on that bar in the current skeleton impl).
     ///
     /// Delegates to quantwave_core::GeometricPatternScanner (composes internal MarketStructure).
-    /// This delivers the Polars surface + rich metadata shape (pole_length_atr for sizing!) for the
-    /// canonical notebook. Full production detectors per MQL5 Parts 66/69 are in the ej8b lineage.
+    /// This delivers the Polars surface + rich metadata shape (pole_length_atr for sizing!) for
+    /// strategy notebooks and backtesting. Full production detectors per MQL5 Parts 66/69.
     pub fn geometric_patterns(
         self,
         high: &str,
@@ -4458,7 +4458,7 @@ mod tests {
         Ok(())
     }
 
-    /// Smoke test for the new PA foundation accessors (quantwave-5thj).
+    /// Smoke test for the new PA foundation accessors.
     /// Verifies column presence + dtypes for rich structs (existing market_structure + new geometric_patterns).
     /// Uses the exact field names from the prior market_structure impl.
     #[test]
@@ -4478,11 +4478,11 @@ mod tests {
         let ms = out.column("market_structure")?;
         assert!(matches!(ms.dtype(), DataType::Struct(_)));
         let ca = ms.struct_()?;
-        // bias is String per the established impl (see market_structure fn ~1205)
-        assert_eq!(ca.field_by_name("bias".into())?.dtype().clone(), DataType::String);
-        assert!(ca.field_by_name("has_current_flip".into())?.bool()?.get(59).is_some());
+        // bias is UInt32 per the new optimized impl
+        assert_eq!(ca.field_by_name("bias".into())?.dtype().clone(), DataType::UInt32);
+        assert!(ca.field_by_name("has_flip".into())?.bool()?.get(59).is_some());
 
-        // geometric_patterns (5thj addition) -> Struct( flag: Struct(...), hs: Struct(...) )
+        // geometric_patterns -> Struct( flag: Struct(...), hs: Struct(...) )
         let out2 = out
             .lazy()
             .ta()
