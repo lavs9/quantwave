@@ -25,9 +25,13 @@ jobs:
             mkdocs-material-
       - run: pip install -r requirements-docs.txt
 
-      # Build and install the local Python package from source.
-      # This ensures mkdocstrings/griffe sees the current Python surface
-      # (including new PA bindings and _metadata) instead of the old PyPI version.
+      # Install latest released quantwave from PyPI as a base (for notebook
+      # fallback behavior in export scripts).
+      - run: 'pip install quantwave || echo "WARNING: Could not install latest quantwave from PyPI."'
+
+      # Build and install the *local* Python package on top.
+      # This makes mkdocstrings/griffe see the current source (new PA types,
+      # _metadata, etc.) for accurate API documentation generation.
       - name: Build local quantwave Python package
         run: |
           pip install maturin
