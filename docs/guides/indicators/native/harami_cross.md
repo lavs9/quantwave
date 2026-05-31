@@ -1,21 +1,58 @@
 # Harami Cross
 
-<div class="indicator-meta"><span class="category-badge">Patterns</span> <span class="kw-badge">pattern</span> <span class="kw-badge">candlestick</span> <span class="kw-badge">classic</span></div>
+<div class="indicator-meta"><span class="category-badge">Patterns</span> <span class="kw-badge">candlestick</span> <span class="kw-badge">reversal</span> <span class="kw-badge">indecision</span></div>
 
-A harami where the second candle is a doji.
+A Harami in which the second ("baby") candle is a Doji. The combination of containment + perfect indecision produces one of the stronger two-candle warning signals in the classic candlestick vocabulary.
 
-## Usage
+## Visual Example
 
-A more reliable reversal signal than a standard harami.
+![Harami Cross: large directional candle containing a Doji whose body and wicks lie inside the prior range. Annotation stresses the Doji containment.](../../../assets/candlestick-previews/harami_cross.png)
 
-## Background
+*Synthetic ideal per TA-Lib CDLHARAMICROSS. Generated 2026-05-31 IST via `docs/gen_candle_previews.py`.*
 
-> Candlestick patterns were popularized in the West by Steve Nison in his 1991 book 'Japanese Candlestick Charting Techniques'. These patterns provide a visual representation of market psychology and the balance of power between buyers and sellers at key price levels.
+## Description
 
-## Formula
+The Harami Cross merges the volatility contraction of a Harami with the equilibrium message of a Doji. It is interpreted as a higher-probability exhaustion signal than a regular Harami because the second bar shows zero net conviction.
 
+Used by quant traders as a high-quality binary feature or as a precise entry filter once Market Structure bias has already flipped.
 
-\text{Pattern Recognition Logic (TA-Lib Internal)}
+## Formula / Specification
 
+**Recognition Rules (exact implementation in QuantWave / TA-Lib CDLHARAMICROSS)**:
 
-[Source](https://www.investopedia.com/articles/active-trading/062315/using-bullish-candlestick-patterns-buy-stocks.asp)
+1. Candle 1: large body.
+2. Candle 2: qualifies as Doji AND lies entirely inside Candle 1 body.
+3. Completes on bar 2 close; TA-Lib sign convention.
+4. Two-bar state in streaming wrapper.
+
+## Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| (none) | — | Pattern recognition only; no tunable parameters. |
+
+## Usage Examples
+
+Streaming / Polars examples identical in structure to Harami (substitute `CDLHARAMICROSS` / `.ta.cdl_haramicross(...)`). Full parity guaranteed.
+
+## Edge Cases & Limitations
+
+- Two-bar requirement.
+- Still benefits enormously from trend/structure context; isolated occurrences in ranges are low value.
+- Stronger than plain Harami but not infallible — always seek confirmation.
+
+## Related Indicators & See Also
+
+- [Harami](harami.md), [Doji](doji.md), [Engulfing](engulfing.md)
+- Rich PA tools: Market Structure, SR Monitor
+- Gallery, native index, PA notebook
+
+## Sources & References
+
+**Primary Source**: TA-Lib CDLHARAMICROSS via core pattern.rs.
+
+**Visual**: gen script, 2026-05-31 IST.
+
+**Context**: Nison psychology only; MQL5 for practical application.
+
+**Provenance**: Next + Polars fidelity.

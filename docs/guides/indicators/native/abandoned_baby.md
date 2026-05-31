@@ -1,21 +1,59 @@
 # Abandoned Baby
 
-<div class="indicator-meta"><span class="category-badge">Patterns</span> <span class="kw-badge">pattern</span> <span class="kw-badge">candlestick</span> <span class="kw-badge">classic</span></div>
+<div class="indicator-meta"><span class="category-badge">Patterns</span> <span class="kw-badge">candlestick</span> <span class="kw-badge">reversal</span> <span class="kw-badge">rare</span></div>
 
-A very rare reversal pattern with a doji gapping away.
+A rare and high-confidence three-candle reversal pattern. A long candle is followed by a Doji that gaps away from it ("abandoned"), which is itself gapped away from a strong reversal candle in the opposite direction. The isolated Doji visually demonstrates a complete vacuum of conviction.
 
-## Usage
+## Visual Example
 
-One of the most reliable reversal signals.
+![Abandoned Baby (bullish): long bear candle, gapped-down Doji (abandoned), then gapped-up strong bull candle that closes well into the first candle's body. Annotations highlight both gaps.](../../../assets/candlestick-previews/abandoned_baby.png)
 
-## Background
+*Synthetic ideal satisfying TA-Lib CDLABANDONEDBABY gap + Doji isolation rules. Generated 2026-05-31 IST via `docs/gen_candle_previews.py`.*
 
-> Candlestick patterns were popularized in the West by Steve Nison in his 1991 book 'Japanese Candlestick Charting Techniques'. These patterns provide a visual representation of market psychology and the balance of power between buyers and sellers at key price levels.
+## Description
 
-## Formula
+The Abandoned Baby is the candlestick equivalent of a "blow-off" or capitulation followed by immediate rejection. Because two gaps are required, it is statistically rare but carries significant weight when it appears.
 
+Practitioners treat confirmed Abandoned Baby events as high-conviction regime-shift signals suitable for larger position sizing or as premium labels in ML datasets. It pairs exceptionally well with Market Structure BOS flips.
 
-\text{Pattern Recognition Logic (TA-Lib Internal)}
+## Formula / Specification
 
+**Recognition Rules (exact implementation in QuantWave / TA-Lib CDLABANDONEDBABY)**:
 
-[Source](https://www.investopedia.com/articles/active-trading/062315/using-bullish-candlestick-patterns-buy-stocks.asp)
+1. Candle 1: long body in the direction of the prior trend.
+2. Candle 2: Doji that gaps away from Candle 1 (no overlap in ranges).
+3. Candle 3: strong opposite-color body that gaps away from the Doji.
+4. The Doji is "abandoned" on both sides.
+5. Pattern completes on bar 3; TA-Lib sign convention.
+
+## Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| (none) | — | Pattern recognition only; no tunable parameters. |
+
+## Usage Examples
+
+Streaming (Rust/Python) and Polars examples follow the three-bar multi-input pattern (use `CDLABANDONEDBABY` / `.ta.cdl_abandonedbaby(...)`). Full parity across surfaces.
+
+## Edge Cases & Limitations
+
+- Requires three bars + two gaps; extremely rare on intraday or illiquid instruments.
+- Gaps can be filled quickly; confirmation (close beyond the reversal candle) is mandatory.
+- Highest edge when it coincides with a higher-timeframe structure level or news catalyst.
+
+## Related Indicators & See Also
+
+- [Morning Star](morning_star.md), [Evening Star](evening_star.md), [Doji Star](doji_star.md)
+- [Market Structure](market_structure.md) — the ideal confluence partner for this rare event
+- Gallery, native index, PA notebook
+
+## Sources & References
+
+**Primary Source**: TA-Lib CDLABANDONEDBABY via `quantwave-core/src/indicators/pattern.rs`.
+
+**Visual**: `docs/gen_candle_previews.py`, 2026-05-31 IST.
+
+**Context**: Nison (1991) for "abandoned" psychology (no duplication). MQL5 PA series.
+
+**Provenance**: Next<T> + Polars parity.

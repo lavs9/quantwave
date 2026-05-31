@@ -16,14 +16,16 @@ QuantWave is evolving rapidly. Our goal is to provide the most comprehensive and
 
 - 2D Kinematic Kalman Filter (position + velocity state for lower lag)
 - Expanded native Polars expression plugin coverage
-- Price Action Structure Foundation (MQL5 lynnchris Part 21 port): adaptive swings + confirmed BOS flips (market_structure.rs done).
-- Geometric PA library (MQL5 Parts 66+69): Flags + H&S detectors (geometric_patterns.rs) now built on the foundation + rich structs from research; initial streaming + parity in place (ej8b child).
-- Polars + Python surface + canonical notebook (5thj): .ta.market_structure() / .ta.geometric_patterns() (rich Structs with bias/flip/pole_atr), full Python streaming wrappers + batch helpers, runnable notebook demonstrating Flag breakout strategy on confirmed bullish MS + regime + ML filter + pole sizing + backtester sketch. (Delivered 2026-05-30 IST).
+- Price Action Structure Foundation (MQL5 lynnchris Part 21): adaptive swings + confirmed BOS flips (`market_structure.rs` delivered with rich `PAEvent` system).
+- Geometric PA library (MQL5 Parts 66+69): Flags + H&S detectors (`geometric_patterns.rs`) built on the foundation with rich `FlagPattern`/`HsPattern` (pole_length_atr, score, symmetry, breakout_confirmed). Full streaming + batch parity. S/R monitoring (Part 67) also available via `sr_monitor.rs`.
+- Polars + Python surface + notebooks: `.ta.market_structure()` / `.ta.geometric_patterns()`, Python streaming wrappers, runnable Flag breakout and foundation strategy notebooks demonstrating sizing, regime/ML filters. (Core delivered 2026-05-30 IST; docs & fidelity polish ongoing under quantwave-p1k6).
+- Dedicated high-quality user guide pages (quantwave-za0u, split from n6e7): professional pages for Market Structure, Geometric Patterns (Flags + H&S), S/R Interactions, and Using Rich PA Events for Strategies/ML — all with rich metadata explanations (pole_length_atr etc.), practical code (Rust/Polars/Python), visual placeholders, sizing examples, ML/strategy ideas, and direct MQL5 links (Parts 21/66/67/69). Completed 2026-05-31 IST under epic p1k6.
 
 ## Next Priorities
 
 - GitHub Releases, topics, README hero, and overall visibility (this P0 epic)
-- Example quality, streaming documentation, and visual gallery strategy
+- Example quality, streaming documentation, and visual gallery strategy (quantwave-0ywt: full strategy defined + initial PA/patterns rollout complete; see DOCUMENTATION_DECISIONS.md) — **Further advanced under quantwave-lkca (2026-05-31 IST)**: Indicator Gallery page completely overhauled and professionalized as a high-value entry point (strong categories aligned to SUMMARY, prominent featured highlights especially the new geometric/PA tools with their rich metadata fields, extensive cross-links to notebook/examples/standards/native/Ehlers, clear next steps, all placeholder language eliminated, proper expectations set for page quality and 150+ indicators). Related docs updated in the same logical change set.
+- **Candle Pattern Standards Proof batch (p1k6 child, 2026-05-31 IST)**: 8 worst-duplication pages (Doji variants, Harami family, Three Black Crows/White Soldiers, Abandoned Baby) + Engulfing enhancement fully rewritten to DOCUMENTATION_STANDARDS.md template. `gen_candle_previews.py` extended (portable + 8+ new professional generators); 11 annotated PNGs produced. All Nison boilerplate eliminated from batch. Cross-refs + decision record updated. Proves template + visuals tooling scales. See DOCUMENTATION_DECISIONS.md for full record.
 - Stronger positioning and competitive differentiation
 
 ## Future Horizons
