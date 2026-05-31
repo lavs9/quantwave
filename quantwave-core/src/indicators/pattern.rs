@@ -415,7 +415,6 @@ mod tests {
     }
 }
 
-
 pub const CDLDOJI_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Doji",
     description: "A candlestick pattern where the open and close are virtually equal.",
@@ -1330,4 +1329,3 @@ pub const CDLXSIDEGAP3METHODS_METADATA: IndicatorMetadata = IndicatorMetadata {
     gold_standard_file: "cdlxsidegap3methods.json",
     category: "Patterns",
 };
-

@@ -7,7 +7,13 @@ pub const METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Rate of Directional Change",
     description: "Measures the frequency of directional changes (zigzag flips) within a moving window to identify whipsaw market conditions.",
     usage: "Use to filter out false signals in trend-following strategies. High RODC values indicate a whipsaw environment, while low values suggest a trending market.",
-    keywords: &["zigzag", "whipsaw", "momentum", "volatility", "directional change"],
+    keywords: &[
+        "zigzag",
+        "whipsaw",
+        "momentum",
+        "volatility",
+        "directional change",
+    ],
     ehlers_summary: "RODC tracks the number of alternating up and down zigzag segments within a fixed window. By normalizing this count and smoothing it, the indicator provides a measure of how 'noisy' the price action is. It declines in trending environments and increases during whipsaws. — Richard Poster, TASC March 2024",
     params: &[
         ParamDef {
@@ -80,14 +86,14 @@ impl Next<f64> for RODC {
         // Calculate zigzag flips within the current window
         let mut n_ud = 1;
         let mut mode_up = true;
-        
+
         // Start from the oldest price in the window
         let mut x_ext = *self.price_window.front().unwrap();
-        
+
         // Iterate forward through the window (excluding the very first point which is x_ext)
         for i in 1..self.price_window.len() {
             let x_cls = self.price_window[i];
-            
+
             if !mode_up {
                 if x_ext > x_cls {
                     // Still mode down, update extreme low
@@ -124,13 +130,13 @@ mod tests {
     fn test_rodc_basic() {
         // window_size = 4, threshold = 2.0, smooth = 1 (no smoothing)
         let mut rodc = RODC::new(4, 2.0, 1);
-        
+
         // Initializing... need 5 points
         assert_eq!(rodc.next(10.0), 0.0);
         assert_eq!(rodc.next(11.0), 0.0);
         assert_eq!(rodc.next(12.0), 0.0);
         assert_eq!(rodc.next(13.0), 0.0);
-        
+
         // Bar 5: [10, 11, 12, 13, 14]
         // Window starts at 10. n_ud = 1. mode_up = true. x_ext = 10.
         // 11 > 10, x_ext = 11.
@@ -139,7 +145,7 @@ mod tests {
         // 14 > 13, x_ext = 14.
         // Result: 100 * 1 / 4 = 25.0
         assert_eq!(rodc.next(14.0), 25.0);
-        
+
         // Bar 6: [11, 12, 13, 14, 12]
         // x_ext = 11. mode_up = true.
         // 12 > 11, x_ext = 12.

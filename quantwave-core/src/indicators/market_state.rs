@@ -35,7 +35,7 @@ impl Next<f64> for MarketState {
 
     fn next(&mut self, input: f64) -> Self::Output {
         let (_, _, angle) = self.cc.next(input);
-        
+
         let mut state = 0.0;
         if (angle - self.prev_angle).abs() < self.threshold {
             if angle < 0.0 {

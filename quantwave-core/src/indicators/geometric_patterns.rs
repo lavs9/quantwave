@@ -16,20 +16,26 @@
 //!
 //! Rich output structs are the primary deliverable (for backtester sizing, ML features,
 //! confluence). Drawing is secondary / optional.
+//!
+//! These feed directly into the standardized PAEvent / PAEventKind system (see
+//! market_structure.rs) for uniform "Rich PA Event Output" (quantwave-bmkn / cu03).
+//! Use extract_pa_events(...) adapter to get machine-readable events with rich metadata.
 
 use crate::indicators::market_structure::{MarketStructure, MarketStructureState, SwingPoint};
 use crate::traits::Next;
+use serde::{Deserialize, Serialize};
 
 /// Rich output for a detected Flag pattern (continuation).
 /// Matches the shape proposed in the Part 69 research extraction.
-#[derive(Debug, Clone, PartialEq)]
+/// Now also Serialize for the unified PAEvent system (bmkn).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FlagPattern {
     pub id: u32,
     pub is_bull: bool,
     pub pole_start_bar: usize,
     pub pole_end_bar: usize,
     pub flag_start_bar: usize,
-    pub flag_end_bar: usize,        // breakout bar
+    pub flag_end_bar: usize, // breakout bar
     pub pole_length: f64,
     pub pole_length_atr: f64,
     pub max_retrace_pct: f64,
@@ -38,12 +44,13 @@ pub struct FlagPattern {
     pub breakout_confirmed: bool,
     pub breakout_price: f64,
     pub consolidation_bars: i32,
-    pub pole_strength: f64,         // body sum relative to ATR
+    pub pole_strength: f64, // body sum relative to ATR
 }
 
 /// Rich output for a detected Head & Shoulders (or inverse) pattern.
 /// Matches the shape proposed in the Part 66 research extraction.
-#[derive(Debug, Clone, PartialEq)]
+/// Now also Serialize for the unified PAEvent system (bmkn).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct HsPattern {
     pub id: u32,
     pub is_bearish: bool,
@@ -93,7 +100,7 @@ struct ActiveFlagState {
 #[derive(Debug, Clone)]
 struct HsCandidate {
     _swings: Vec<SwingPoint>, // 5-swing window (stub for full bfg matcher)
-    // ... more fields for neckline etc. in full version from closed bfg research
+                              // ... more fields for neckline etc. in full version from closed bfg research
 }
 
 impl GeometricPatternScanner {
@@ -125,12 +132,20 @@ impl Next<(f64, f64)> for GeometricPatternScanner {
 
         // Feed recent swings from the foundation (this is the "built on" composition)
         if let Some(ref sh) = state.last_swing_high {
-            if self.recent_swings.last().map_or(true, |last| last.bar != sh.bar) {
+            if self
+                .recent_swings
+                .last()
+                .map_or(true, |last| last.bar != sh.bar)
+            {
                 self.recent_swings.push(sh.clone());
             }
         }
         if let Some(ref sl) = state.last_swing_low {
-            if self.recent_swings.last().map_or(true, |last| last.bar != sl.bar) {
+            if self
+                .recent_swings
+                .last()
+                .map_or(true, |last| last.bar != sl.bar)
+            {
                 self.recent_swings.push(sl.clone());
             }
         }
@@ -152,7 +167,7 @@ impl Next<(f64, f64)> for GeometricPatternScanner {
             if self.active_flag.is_none() && last.is_high {
                 // pretend we saw a pole — in real code this would be the 3-bar body sum check
                 if self.recent_swings.len() >= 5 {
-                    let pole_start = self.recent_swings[self.recent_swings.len()-5].clone();
+                    let pole_start = self.recent_swings[self.recent_swings.len() - 5].clone();
                     self.active_flag = Some(ActiveFlagState {
                         is_bull: true,
                         pole_start,
@@ -203,10 +218,15 @@ impl Next<(f64, f64)> for GeometricPatternScanner {
         // and applies the exact symmetry, neckline, score, head-dominance rules from bfg design.
         if self.recent_swings.len() >= 5 {
             let n = self.recent_swings.len();
-            let w = &self.recent_swings[n-5..];
+            let w = &self.recent_swings[n - 5..];
             // Very loose check for bearish H&S shape (H L H L H with middle highest)
-            if w[0].is_high && !w[1].is_high && w[2].is_high && !w[3].is_high && w[4].is_high &&
-               w[2].price > w[0].price && w[2].price > w[4].price
+            if w[0].is_high
+                && !w[1].is_high
+                && w[2].is_high
+                && !w[3].is_high
+                && w[4].is_high
+                && w[2].price > w[0].price
+                && w[2].price > w[4].price
             {
                 let score = 78.0; // would be ComputePatternScore(...)
                 hs_out = Some(HsPattern {
@@ -245,22 +265,28 @@ mod tests {
     #[test]
     fn test_geometric_scanner_basic() {
         let mut scanner = GeometricPatternScanner::new(2);
-        let highs = vec![10.,11.,12.,15.,14.,13.,16.,15.,17.,16.5,18.];
-        let lows  = vec![ 9., 9.5,10., 11.,12.,11.,12.,13.,14.,13.5,15.];
+        let highs = vec![10., 11., 12., 15., 14., 13., 16., 15., 17., 16.5, 18.];
+        let lows = vec![9., 9.5, 10., 11., 12., 11., 12., 13., 14., 13.5, 15.];
 
         let mut any_flag = false;
         let mut any_hs = false;
         for i in 0..highs.len() {
             let (_state, flag, hs) = scanner.next((highs[i], lows[i]));
-            if flag.is_some() { any_flag = true; }
-            if hs.is_some() { any_hs = true; }
+            if flag.is_some() {
+                any_flag = true;
+            }
+            if hs.is_some() {
+                any_hs = true;
+            }
         }
         // The toy detectors may or may not fire on this tiny synthetic series;
         // the important thing is no panic + the API works and parity test below passes.
         assert!(any_flag || any_hs || true); // always pass — real value is in the parity + richer synthetics
     }
 
-    fn scanner_batch(data: &[(f64, f64)]) -> Vec<(MarketStructureState, Option<FlagPattern>, Option<HsPattern>)> {
+    fn scanner_batch(
+        data: &[(f64, f64)],
+    ) -> Vec<(MarketStructureState, Option<FlagPattern>, Option<HsPattern>)> {
         let mut s = GeometricPatternScanner::new(2);
         data.iter().map(|&x| s.next(x)).collect()
     }
@@ -268,7 +294,7 @@ mod tests {
     proptest! {
         #[test]
         fn test_geometric_parity(input in prop::collection::vec((1.0..500.0, 1.0..500.0), 15..60)) {
-            let adj: Vec<(f64,f64)> = input.into_iter().map(|(h,l)| (h.max(l), l.min(h))).collect();
+            let adj: Vec<(f64,f64)> = input.into_iter().map(|(h,l): (f64,f64)| (h.max(l), l.min(h))).collect();
 
             let mut streaming = GeometricPatternScanner::new(2);
             let streaming_res: Vec<_> = adj.iter().map(|&x| streaming.next(x)).collect();
