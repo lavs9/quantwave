@@ -25,19 +25,9 @@ jobs:
             mkdocs-material-
       - run: pip install -r requirements-docs.txt
 
-      # Install latest released quantwave from PyPI as a base (for notebook
-      # fallback behavior in export scripts).
-      - run: 'pip install quantwave || echo "WARNING: Could not install latest quantwave from PyPI."'
-
-      # Build and install the *local* Python package on top.
-      # Use `maturin build` + `pip install` (instead of `develop`) because
-      # `develop` has fragile virtualenv detection in GitHub Actions.
-      # This ensures mkdocstrings/griffe sees the current source.
-      - name: Build local quantwave Python package
-        run: |
-          pip install maturin uniffi-bindgen
-          maturin build -m quantwave-python/Cargo.toml --release --out dist
-          pip install dist/quantwave*.whl --force-reinstall
+      # Install the latest released quantwave from PyPI (non-fatal on release day
+      # when the new version has not hit PyPI yet). The export script is resilient.
+      - run: 'pip install quantwave || echo "WARNING: Could not install latest quantwave from PyPI. Notebook exports may use fallback behavior."'
 
       - run: cargo run --package quantwave-xtask
       # Pre-export marimo notebooks to HTML. This is much more reliable on static GitHub Pages
