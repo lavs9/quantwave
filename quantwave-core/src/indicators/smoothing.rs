@@ -34,7 +34,9 @@ impl Next<f64> for SMA {
         self.window.push_back(input);
         self.sum += input;
 
-        if self.window.len() > self.period && let Some(oldest) = self.window.pop_front() {
+        if self.window.len() > self.period
+            && let Some(oldest) = self.window.pop_front()
+        {
             self.sum -= oldest;
         }
 

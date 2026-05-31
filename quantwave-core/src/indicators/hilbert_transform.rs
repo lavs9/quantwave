@@ -21,10 +21,9 @@ impl HilbertFIR {
         self.window.push_front(input);
 
         // FIR coefficients for 90-degree phase shift
-        (0.0962 * self.window[0] 
-            + 0.5769 * self.window[2] 
-            - 0.5769 * self.window[4] 
-            - 0.0962 * self.window[6]) 
+        (0.0962 * self.window[0] + 0.5769 * self.window[2]
+            - 0.5769 * self.window[4]
+            - 0.0962 * self.window[6])
             * (0.075 * period + 0.54)
     }
 }
@@ -51,11 +50,8 @@ impl EhlersWma4 {
     pub fn next(&mut self, input: f64) -> f64 {
         self.window.pop_back();
         self.window.push_front(input);
-        
-        (4.0 * self.window[0] 
-            + 3.0 * self.window[1] 
-            + 2.0 * self.window[2] 
-            + self.window[3]) / 10.0
+
+        (4.0 * self.window[0] + 3.0 * self.window[1] + 2.0 * self.window[2] + self.window[3]) / 10.0
     }
 }
 

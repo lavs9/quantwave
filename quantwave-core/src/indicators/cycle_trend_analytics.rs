@@ -14,9 +14,7 @@ pub struct CycleTrendAnalytics {
 impl CycleTrendAnalytics {
     pub fn new(min_length: usize, max_length: usize) -> Self {
         let smas = (min_length..=max_length).map(SMA::new).collect();
-        Self {
-            smas,
-        }
+        Self { smas }
     }
 }
 
@@ -24,7 +22,10 @@ impl Next<f64> for CycleTrendAnalytics {
     type Output = Vec<f64>; // Price - SMA for each length from min to max
 
     fn next(&mut self, input: f64) -> Self::Output {
-        self.smas.iter_mut().map(|sma| input - sma.next(input)).collect()
+        self.smas
+            .iter_mut()
+            .map(|sma| input - sma.next(input))
+            .collect()
     }
 }
 
@@ -59,8 +60,8 @@ Osc(L) = Price - SMA(Price, L) \quad \text{for } L \in [min, max]
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{assert_indicator_parity_vec, load_gold_standard_vec};
     use crate::traits::Next;
-    use crate::test_utils::{load_gold_standard_vec, assert_indicator_parity_vec};
     use proptest::prelude::*;
 
     #[test]

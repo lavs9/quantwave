@@ -35,7 +35,7 @@ impl SmmaOffset {
 
     fn next(&mut self, price: f64) -> f64 {
         self.count += 1;
-        
+
         // SMMA calculation
         let smma = match self.prev_smma {
             None => {
@@ -151,12 +151,12 @@ mod tests {
             let mut jaw_smma = SmmaOffset::new(13, 8);
             let mut teeth_smma = SmmaOffset::new(8, 5);
             let mut lips_smma = SmmaOffset::new(5, 3);
-            
+
             for (i, &input) in inputs.iter().enumerate() {
                 let j = jaw_smma.next(input);
                 let t = teeth_smma.next(input);
                 let l = lips_smma.next(input);
-                
+
                 let (sj, st, sl) = streaming_results[i];
                 if j.is_nan() { assert!(sj.is_nan()); } else { approx::assert_relative_eq!(sj, j, epsilon = 1e-10); }
                 if t.is_nan() { assert!(st.is_nan()); } else { approx::assert_relative_eq!(st, t, epsilon = 1e-10); }

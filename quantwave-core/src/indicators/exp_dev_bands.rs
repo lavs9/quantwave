@@ -104,31 +104,36 @@ mod tests {
         let mut edb = ExpDevBands::new(20, 2.0, true);
         let price = 100.0;
         let (upper, basis, lower) = edb.next(price);
-        
+
         approx::assert_relative_eq!(basis, 100.0);
         approx::assert_relative_eq!(upper, 100.0);
         approx::assert_relative_eq!(lower, 100.0);
-        
+
         let (upper, basis, _lower) = edb.next(110.0);
         // SMA(2) of [100, 110] = 105.0
         // SMA(20) of [100, 110] = 105.0 (window not full)
         assert_eq!(basis, 105.0);
         // Deviation = |105 - 110| = 5.0
-        // EMA of Dev: first input is 0.0? 
+        // EMA of Dev: first input is 0.0?
         // Wait, SMA(100) next is 100. Dev = |100-100| = 0.
-        // EMA(Dev) next(5.0) where prev was 0.0? 
+        // EMA(Dev) next(5.0) where prev was 0.0?
         // EMA starts with first input.
         // Turn 1: SMA next(100) -> 100. Dev = 0. EMA next(0) -> 0. (upper, basis, lower) = (100, 100, 100).
         // Turn 2: SMA next(110) -> 105. Dev = |105-110|=5. EMA next(5) -> 0.095 * 5 + 0.905 * 0 = 0.476 (if period 20)
         // Wait, EMA alpha = 2 / (20 + 1) = 2/21 = 0.095238
         // Next value = 0.095238 * 5.0 + (1 - 0.095238) * 0.0 = 0.47619
         // Upper = 105 + 2 * 0.47619 = 105.95238
-        
+
         approx::assert_relative_eq!(basis, 105.0);
         approx::assert_relative_eq!(upper, 105.95238, epsilon = 1e-4);
     }
 
-    fn exp_dev_bands_batch(data: &[f64], period: usize, multiplier: f64, use_sma: bool) -> Vec<(f64, f64, f64)> {
+    fn exp_dev_bands_batch(
+        data: &[f64],
+        period: usize,
+        multiplier: f64,
+        use_sma: bool,
+    ) -> Vec<(f64, f64, f64)> {
         let mut edb = ExpDevBands::new(period, multiplier, use_sma);
         data.iter().map(|&x| edb.next(x)).collect()
     }
@@ -139,7 +144,7 @@ mod tests {
             let period = 20;
             let multiplier = 2.0;
             let use_sma = false;
-            
+
             let mut edb = ExpDevBands::new(period, multiplier, use_sma);
             let streaming_results: Vec<(f64, f64, f64)> = input.iter().map(|&x| edb.next(x)).collect();
             let batch_results = exp_dev_bands_batch(&input, period, multiplier, use_sma);

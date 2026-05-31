@@ -29,7 +29,7 @@ impl GaussianFilter {
         // 1.4142 is sqrt(2), so 2^(1/(2N))
         let beta = (1.0 - omega.cos()) / (2.0_f64.powf(1.0 / (2.0 * poles as f64)) - 1.0);
         let alpha = -beta + (beta * beta + 2.0 * beta).sqrt();
-        
+
         Self {
             poles,
             alpha,
@@ -53,7 +53,7 @@ impl Next<f64> for GaussianFilter {
 
     fn next(&mut self, input: f64) -> Self::Output {
         self.count += 1;
-        
+
         let res = match self.poles {
             1 => {
                 // f = a*g + (1-a)f[1]
@@ -68,8 +68,7 @@ impl Next<f64> for GaussianFilter {
                 if self.count < 3 {
                     input
                 } else {
-                    self.alpha_pow * input
-                        + 2.0 * self.one_minus_alpha * self.filt_history[0]
+                    self.alpha_pow * input + 2.0 * self.one_minus_alpha * self.filt_history[0]
                         - self.one_minus_alpha.powi(2) * self.filt_history[1]
                 }
             }
@@ -78,8 +77,7 @@ impl Next<f64> for GaussianFilter {
                 if self.count < 4 {
                     input
                 } else {
-                    self.alpha_pow * input
-                        + 3.0 * self.one_minus_alpha * self.filt_history[0]
+                    self.alpha_pow * input + 3.0 * self.one_minus_alpha * self.filt_history[0]
                         - 3.0 * self.one_minus_alpha.powi(2) * self.filt_history[1]
                         + self.one_minus_alpha.powi(3) * self.filt_history[2]
                 }
@@ -89,8 +87,7 @@ impl Next<f64> for GaussianFilter {
                 if self.count < 5 {
                     input
                 } else {
-                    self.alpha_pow * input
-                        + 4.0 * self.one_minus_alpha * self.filt_history[0]
+                    self.alpha_pow * input + 4.0 * self.one_minus_alpha * self.filt_history[0]
                         - 6.0 * self.one_minus_alpha.powi(2) * self.filt_history[1]
                         + 4.0 * self.one_minus_alpha.powi(3) * self.filt_history[2]
                         - self.one_minus_alpha.powi(4) * self.filt_history[3]
@@ -106,7 +103,7 @@ impl Next<f64> for GaussianFilter {
         }
         self.filt_history[0] = res;
         self.price_history[0] = input;
-        
+
         res
     }
 }
@@ -179,7 +176,7 @@ mod tests {
             let oma = 1.0 - alpha;
 
             let mut f_hist = vec![0.0; poles];
-            
+
             for (i, &input) in inputs.iter().enumerate() {
                 let bar = i + 1;
                 let res = if bar < poles + 1 {
@@ -193,7 +190,7 @@ mod tests {
                         _ => input,
                     }
                 };
-                
+
                 for j in (1..poles).rev() {
                     f_hist[j] = f_hist[j-1];
                 }

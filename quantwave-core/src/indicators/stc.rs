@@ -4,7 +4,7 @@ use std::collections::VecDeque;
 
 /// Schaff Trend Cycle (STC)
 ///
-/// STC is a trend-following indicator that combines MACD with a double-smoothed 
+/// STC is a trend-following indicator that combines MACD with a double-smoothed
 /// stochastic calculation to provide faster and more accurate signals than MACD alone.
 #[derive(Debug, Clone)]
 pub struct SchaffTrendCycle {
@@ -67,8 +67,12 @@ impl StochasticEma {
         let mut min = f64::MAX;
         let mut max = f64::MIN;
         for &v in &self.window {
-            if v < min { min = v; }
-            if v > max { max = v; }
+            if v < min {
+                min = v;
+            }
+            if v > max {
+                max = v;
+            }
         }
 
         let stoch = if max == min {
@@ -115,9 +119,21 @@ pub const STC_METADATA: IndicatorMetadata = IndicatorMetadata {
     keywords: &["trend", "momentum", "cycle", "oscillator", "classic"],
     ehlers_summary: "The Schaff Trend Cycle, developed by Doug Schaff, applies the stochastic oscillator formula twice to MACD values rather than to price. This double stochastic smoothing produces faster, more defined overbought and oversold levels than MACD alone, while the cycle component reduces the lag of a conventional stochastic. — investopedia.com",
     params: &[
-        ParamDef { name: "cycle_period", default: "10", description: "Stochastic lookback period" },
-        ParamDef { name: "fast_period", default: "23", description: "Fast EMA period for MACD" },
-        ParamDef { name: "slow_period", default: "50", description: "Slow EMA period for MACD" },
+        ParamDef {
+            name: "cycle_period",
+            default: "10",
+            description: "Stochastic lookback period",
+        },
+        ParamDef {
+            name: "fast_period",
+            default: "23",
+            description: "Fast EMA period for MACD",
+        },
+        ParamDef {
+            name: "slow_period",
+            default: "50",
+            description: "Slow EMA period for MACD",
+        },
     ],
     formula_source: "https://www.investopedia.com/articles/forex/10/schaff-trend-cycle-indicator.asp",
     formula_latex: r#"
@@ -141,7 +157,9 @@ mod tests {
     #[test]
     fn test_stc_basic() {
         let mut stc = SchaffTrendCycle::new(10, 23, 50);
-        let inputs = vec![10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0];
+        let inputs = vec![
+            10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0,
+        ];
         for input in inputs {
             let res = stc.next(input);
             assert!(res >= 0.0 && res <= 100.0);

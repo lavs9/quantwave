@@ -52,17 +52,18 @@ impl Next<f64> for OneEuroFilter {
         }
 
         // EMA the Delta Price
-        self.smoothed_dx = self.alpha_dx * (input - self.prev_price) + (1.0 - self.alpha_dx) * self.smoothed_dx;
-        
+        self.smoothed_dx =
+            self.alpha_dx * (input - self.prev_price) + (1.0 - self.alpha_dx) * self.smoothed_dx;
+
         // Adjust cutoff period based on fraction of the rate of change
         let cutoff = self.period_min + self.beta * self.smoothed_dx.abs();
-        
+
         // Compute adaptive alpha
         let alpha3 = 2.0 * PI / (4.0 * PI + cutoff);
-        
+
         // Adaptive smoothing
         self.smoothed = alpha3 * input + (1.0 - alpha3) * self.smoothed;
-        
+
         self.prev_price = input;
         self.smoothed
     }

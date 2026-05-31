@@ -1,7 +1,7 @@
-use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::bandpass::BandPass;
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::smoothing::SMA;
+use crate::traits::Next;
 use std::f64::consts::PI;
 
 /// Fourier Series Model
@@ -54,7 +54,7 @@ impl Next<f64> for FourierSeriesModel {
 
     fn next(&mut self, input: f64) -> Self::Output {
         self.count += 1;
-        
+
         let bp1 = self.bp1.next(input);
         let bp2 = self.bp2.next(input);
         let bp3 = self.bp3.next(input);
@@ -94,13 +94,11 @@ pub const FOURIER_SERIES_MODEL_METADATA: IndicatorMetadata = IndicatorMetadata {
     usage: "Use to model price as a sum of sine wave harmonics for short-term prediction. Most effective in clearly cyclical markets; combine with a cycle mode detector to disable it in trends.",
     keywords: &["cycle", "spectral", "ehlers", "prediction", "fourier"],
     ehlers_summary: "The Fourier Series Model fits harmonically related sine waves to recent price history using least-squares coefficients. Ehlers shows that projecting this model one bar forward gives a price forecast useful for anticipatory entry timing at predicted cycle turns.",
-    params: &[
-        ParamDef {
-            name: "fundamental",
-            default: "20",
-            description: "Fundamental cycle period",
-        },
-    ],
+    params: &[ParamDef {
+        name: "fundamental",
+        default: "20",
+        description: "Fundamental cycle period",
+    }],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/FOURIER%20SERIES%20MODEL%20OF%20THE%20MARKET.pdf",
     formula_latex: r#"
 \[
@@ -149,7 +147,7 @@ mod tests {
             let mut bp1_obj = BandPass::new(fundamental, 0.1);
             let mut bp2_obj = BandPass::new(fundamental / 2, 0.1);
             let mut bp3_obj = BandPass::new(fundamental / 3, 0.1);
-            
+
             let mut bp1_vals = Vec::new();
             let mut bp2_vals = Vec::new();
             let mut bp3_vals = Vec::new();
@@ -185,10 +183,10 @@ mod tests {
                     p2 += bp2_vals[j] * bp2_vals[j] + q2_vals[j] * q2_vals[j];
                     p3 += bp3_vals[j] * bp3_vals[j] + q3_vals[j] * q3_vals[j];
                 }
-                
+
                 // Normalizing to moving average-like behavior
                 // (Wait, SMA * period is just the sum)
-                
+
                 let mut wave = bp1;
                 if p1 > 0.0 {
                     wave += (p2 / p1).sqrt() * bp2;

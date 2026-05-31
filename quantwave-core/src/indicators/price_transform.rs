@@ -27,7 +27,7 @@ impl Default for WCLPRICE {
 }
 
 /// (Open + Close) / 2
-/// 
+///
 /// Based on John Ehlers' "Every Little Bit Helps" (2023).
 /// Used to reduce noise in technical indicators by averaging the open and close.
 #[derive(Debug, Clone, Default)]

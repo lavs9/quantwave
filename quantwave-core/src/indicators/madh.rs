@@ -1,5 +1,5 @@
-use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::hann::HannFilter;
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 
 /// Moving Average Difference with Hann Windowing (MADH)
@@ -114,7 +114,7 @@ mod tests {
 
             // Reference implementation
             let mut batch_results = Vec::with_capacity(inputs.len());
-            
+
             let mut coeffs1 = Vec::new();
             let mut sum1 = 0.0;
             for count in 1..=short {
@@ -122,7 +122,7 @@ mod tests {
                 coeffs1.push(c);
                 sum1 += c;
             }
-            
+
             let mut coeffs2 = Vec::new();
             let mut sum2 = 0.0;
             for count in 1..=long {

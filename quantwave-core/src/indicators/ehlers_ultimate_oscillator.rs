@@ -1,6 +1,6 @@
+use crate::indicators::high_pass::HighPass;
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
-use crate::indicators::high_pass::HighPass;
 use std::collections::VecDeque;
 
 /// Ehlers Ultimate Oscillator
@@ -43,16 +43,14 @@ impl Next<f64> for EhlersUltimateOscillator {
 
         self.window.push_back(signal);
         self.sum_sq += signal * signal;
-        if self.window.len() > 100 && let Some(old) = self.window.pop_front() {
+        if self.window.len() > 100
+            && let Some(old) = self.window.pop_front()
+        {
             self.sum_sq -= old * old;
         }
 
         let rms = (self.sum_sq / self.window.len() as f64).sqrt();
-        if rms > 1e-10 {
-            signal / rms
-        } else {
-            0.0
-        }
+        if rms > 1e-10 { signal / rms } else { 0.0 }
     }
 }
 
@@ -63,8 +61,16 @@ pub const EHLERS_ULTIMATE_OSCILLATOR_METADATA: IndicatorMetadata = IndicatorMeta
     keywords: &["oscillator", "ehlers", "dsp", "momentum", "adaptive"],
     ehlers_summary: "Ehlers Ultimate Oscillator combines the outputs of multiple cycle-synchronized oscillators operating at different dominant cycle harmonics. By averaging across scales, it reduces the likelihood of false signals that occur when any single oscillator is temporarily misaligned with the market cycle.",
     params: &[
-        ParamDef { name: "band_edge", default: "20", description: "Critical period (shorter period)" },
-        ParamDef { name: "bandwidth", default: "2.0", description: "Multiplier for the longer period" },
+        ParamDef {
+            name: "band_edge",
+            default: "20",
+            description: "Critical period (shorter period)",
+        },
+        ParamDef {
+            name: "bandwidth",
+            default: "2.0",
+            description: "Multiplier for the longer period",
+        },
     ],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/traderstipsreference/TRADERS’%20TIPS%20-%20APRIL%202025.html",
     formula_latex: r#"
@@ -122,14 +128,14 @@ mod tests {
                 let h1 = hp1.next(input);
                 let h2 = hp2.next(input);
                 let signal = h1 - h2;
-                
+
                 win.push_back(signal);
                 sum_sq += signal * signal;
                 if win.len() > 100 {
                     let old = win.pop_front().unwrap();
                     sum_sq -= old * old;
                 }
-                
+
                 let rms = (sum_sq / win.len() as f64).sqrt();
                 let res = if rms > 1e-10 { signal / rms } else { 0.0 };
                 batch_results.push(res);

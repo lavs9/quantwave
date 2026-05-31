@@ -11,14 +11,17 @@ fn main() {
 
     println!("Benchmarking EMA (20) on {} rows...", num_rows);
     let mut ema = EMA::new(20);
-    
+
     let mut sum = 0.0;
     let start = Instant::now();
     for i in 0..num_rows {
         sum += ema.next(data[i]);
     }
     let duration = start.elapsed();
-    
+
     println!("Total time: {:?}, Sum: {}", duration, sum);
-    println!("Result: {:.2} ms for 1M rows", duration.as_secs_f64() * 1000.0);
+    println!(
+        "Result: {:.2} ms for 1M rows",
+        duration.as_secs_f64() * 1000.0
+    );
 }

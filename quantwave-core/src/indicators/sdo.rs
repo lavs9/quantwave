@@ -50,7 +50,7 @@ impl Next<f64> for SDO {
 
         let prev_price = self.prices[0];
         let dist = (input - prev_price).abs();
-        
+
         self.distances.push_back(dist);
         if self.distances.len() > self.lookback_period {
             self.distances.pop_front();
@@ -174,7 +174,7 @@ mod tests {
 
                 let start = if distances.len() > lookback { distances.len() - lookback } else { 0 };
                 let current_window = &distances[start..];
-                
+
                 let mut max_dist = f64::MIN;
                 let mut min_dist = f64::MAX;
                 for &d in current_window {

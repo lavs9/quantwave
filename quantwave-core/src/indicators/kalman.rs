@@ -48,10 +48,10 @@ impl Next<f64> for KalmanFilter {
         // Update
         // k = p_pred / (p_pred + r)
         self.k = p_pred / (p_pred + self.r);
-        
+
         // x = x + k * (input - x)
         self.x = self.x + self.k * (input - self.x);
-        
+
         // p = (1 - k) * p_pred
         self.p = (1.0 - self.k) * p_pred;
 

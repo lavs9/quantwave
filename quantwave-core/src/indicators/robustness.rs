@@ -12,7 +12,9 @@ pub struct RobustnessEvaluator {
 
 impl RobustnessEvaluator {
     pub fn new() -> Self {
-        Self { profits: Vec::new() }
+        Self {
+            profits: Vec::new(),
+        }
     }
 
     pub fn add_test_result(&mut self, net_profit: f64) {

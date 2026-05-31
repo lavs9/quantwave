@@ -1,7 +1,7 @@
-use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::high_pass::HighPass;
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::super_smoother::SuperSmoother;
+use crate::traits::Next;
 
 /// Pairs Rotation (Ehlers Loops)
 ///
@@ -135,7 +135,7 @@ mod tests {
             let hp_len = 125;
             let lp_len = 20;
             let mut pr = PairsRotation::new(hp_len, lp_len);
-            
+
             let min_len = inputs1.len().min(inputs2.len());
             let inputs: Vec<(f64, f64)> = inputs1[..min_len].iter().cloned().zip(inputs2[..min_len].iter().cloned()).collect();
             let streaming_results: Vec<(f64, f64)> = inputs.iter().map(|&x| pr.next(x)).collect();
@@ -153,7 +153,7 @@ mod tests {
             for (i, &(p1, p2)) in inputs.iter().enumerate() {
                 let f1 = ss1.next(hp1.next(p1));
                 let f2 = ss2.next(hp2.next(p2));
-                
+
                 if i == 0 {
                     ms1 = f1 * f1;
                     ms2 = f2 * f2;
@@ -161,7 +161,7 @@ mod tests {
                     ms1 = alpha * f1 * f1 + (1.0 - alpha) * ms1;
                     ms2 = alpha * f2 * f2 + (1.0 - alpha) * ms2;
                 }
-                
+
                 let n1 = if ms1 > 0.0 { f1 / ms1.sqrt() } else { 0.0 };
                 let n2 = if ms2 > 0.0 { f2 / ms2.sqrt() } else { 0.0 };
                 batch_results.push((n1, n2));

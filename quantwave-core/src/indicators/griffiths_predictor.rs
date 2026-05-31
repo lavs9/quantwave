@@ -1,7 +1,7 @@
-use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::high_pass::HighPass;
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::super_smoother::SuperSmoother;
+use crate::traits::Next;
 use std::collections::VecDeque;
 
 /// Griffiths Predictor
@@ -75,7 +75,7 @@ impl Next<f64> for GriffithsPredictor {
         // XX[Length - count] is previous signals.
         // XX[Length - 1] = window[1]
         // XX[Length - length] = window[length]? Wait.
-        
+
         // Let's use Ehlers' indexing directly by copying to a temp vector
         let mut xx = vec![0.0; self.length + 1];
         for (i, val) in xx.iter_mut().enumerate().skip(1).take(self.length) {
@@ -99,7 +99,7 @@ impl Next<f64> for GriffithsPredictor {
             for count in 1..=self.length {
                 x_pred += xx_temp[self.length + 1 - count] * self.coef[count];
             }
-            
+
             // Shift
             for count in 1..self.length {
                 xx_temp[count] = xx_temp[count + 1];

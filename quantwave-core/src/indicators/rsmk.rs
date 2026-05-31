@@ -74,7 +74,7 @@ impl Next<(f64, f64)> for RSMK {
 
         let old_log_val = self.log_val_window.pop_front().unwrap();
         let momentum = log_val - old_log_val;
-        
+
         self.ema.next(momentum) * 100.0
     }
 }
@@ -86,23 +86,23 @@ mod tests {
     #[test]
     fn test_rsmk_basic() {
         let mut rsmk = RSMK::new(2, 3);
-        
+
         // Data: (Price, Benchmark)
         // LogVal = ln(Price/Benchmark)
-        
+
         // Bar 1: (10, 100) -> LogVal = ln(0.1) = -2.302585
         assert_eq!(rsmk.next((10.0, 100.0)), 0.0);
-        
+
         // Bar 2: (11, 100) -> LogVal = ln(0.11) = -2.207275
         assert_eq!(rsmk.next((11.0, 100.0)), 0.0);
-        
+
         // Bar 3: (12, 100) -> LogVal = ln(0.12) = -2.120264
         // Momentum = ln(0.12) - ln(0.1) = -2.120264 - (-2.302585) = 0.182321
         // EMA(1, 0.182321) = 0.182321
         // RSMK = 0.182321 * 100 = 18.2321
         let val = rsmk.next((12.0, 100.0));
         approx::assert_relative_eq!(val, 18.232155, epsilon = 1e-6);
-        
+
         // Bar 4: (12, 110) -> LogVal = ln(12/110) = -2.215574
         // Momentum = ln(12/110) - ln(0.11) = -2.215574 - (-2.207275) = -0.008299
         // EMA(prev=0.182321, curr=-0.008299, length=3)

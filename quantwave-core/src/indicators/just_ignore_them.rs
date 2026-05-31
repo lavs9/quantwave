@@ -1,6 +1,6 @@
+use crate::indicators::hann::HannFilter;
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
-use crate::indicators::hann::HannFilter;
 
 /// Undersampled Double Moving Average
 ///
@@ -39,7 +39,7 @@ impl Next<f64> for UndersampledDoubleMA {
 
     fn next(&mut self, input: f64) -> Self::Output {
         self.count += 1;
-        
+
         // Ehlers: If CurrentBar / 5 = IntPortion(CurrentBar / 5) Then Sample = Close;
         if self.count.is_multiple_of(self.sampling_period) || self.count == 1 {
             self.sample = input;

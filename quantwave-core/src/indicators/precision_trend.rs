@@ -43,9 +43,9 @@ impl Next<f64> for PrecisionTrendAnalysis {
         let v_hp1 = self.hp1.next(input);
         let v_hp2 = self.hp2.next(input);
         let trend = v_hp1 - v_hp2;
-        
+
         let roc = (self.length2 / std::f64::consts::TAU) * (trend - self.prev_trend);
-        
+
         self.prev_trend = trend;
         (trend, roc)
     }

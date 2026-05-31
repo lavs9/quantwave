@@ -81,7 +81,9 @@ impl Next<f64> for StandardDeviation {
         self.sum += input;
         self.sum_sq += input * input;
 
-        if self.window.len() > self.period && let Some(oldest) = self.window.pop_front() {
+        if self.window.len() > self.period
+            && let Some(oldest) = self.window.pop_front()
+        {
             self.sum -= oldest;
             self.sum_sq -= oldest * oldest;
         }
@@ -306,7 +308,11 @@ pub const CORREL_METADATA: IndicatorMetadata = IndicatorMetadata {
     usage: "Use to measure the strength and direction of the linear relationship between two assets. Values range from -1.0 (inverse correlation) to +1.0 (perfect correlation).",
     keywords: &["statistics", "correlation", "classic"],
     ehlers_summary: "The Pearson Correlation Coefficient measures the strength and direction of a linear relationship between two price series. It is a fundamental tool for pair trading and portfolio diversification, allowing traders to quantify how much of a security's movement is explained by another. — StockCharts ChartSchool",
-    params: &[ParamDef { name: "timeperiod", default: "30", description: "Lookback period" }],
+    params: &[ParamDef {
+        name: "timeperiod",
+        default: "30",
+        description: "Lookback period",
+    }],
     formula_source: "https://www.investopedia.com/terms/c/correlationcoefficient.asp",
     formula_latex: r#"
 \[
@@ -323,7 +329,11 @@ pub const BETA_METADATA: IndicatorMetadata = IndicatorMetadata {
     usage: "Use to understand the systematic risk of an asset. A beta of 1.0 indicates the asset moves with the market; >1.0 means it is more volatile, and <1.0 means it is less volatile.",
     keywords: &["statistics", "risk", "classic", "volatility"],
     ehlers_summary: "Beta is a measure of the volatility—or systematic risk—of a security or portfolio compared to the market as a whole. It is used in the Capital Asset Pricing Model (CAPM) to calculate the expected return of an asset based on its beta and expected market returns. — Investopedia",
-    params: &[ParamDef { name: "timeperiod", default: "30", description: "Lookback period" }],
+    params: &[ParamDef {
+        name: "timeperiod",
+        default: "30",
+        description: "Lookback period",
+    }],
     formula_source: "https://www.investopedia.com/terms/b/beta.asp",
     formula_latex: r#"
 \[

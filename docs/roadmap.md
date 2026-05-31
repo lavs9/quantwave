@@ -18,6 +18,7 @@ QuantWave is evolving rapidly. Our goal is to provide the most comprehensive and
 - Expanded native Polars expression plugin coverage
 - Price Action Structure Foundation (MQL5 lynnchris Part 21 port): adaptive swings + confirmed BOS flips (market_structure.rs done).
 - Geometric PA library (MQL5 Parts 66+69): Flags + H&S detectors (geometric_patterns.rs) now built on the foundation + rich structs from research; initial streaming + parity in place (ej8b child).
+- Polars + Python surface + canonical notebook (5thj): .ta.market_structure() / .ta.geometric_patterns() (rich Structs with bias/flip/pole_atr), full Python streaming wrappers + batch helpers, runnable notebook demonstrating Flag breakout strategy on confirmed bullish MS + regime + ML filter + pole sizing + backtester sketch. (Delivered 2026-05-30 IST).
 
 ## Next Priorities
 

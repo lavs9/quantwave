@@ -2125,7 +2125,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "quantwave-core",
  "quantwave-polars",
@@ -2133,7 +2133,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-backtest"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "approx",
  "chrono",
@@ -2148,7 +2148,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-core"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "approx",
  "chrono",
@@ -2166,7 +2166,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-plugins"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "polars",
  "polars-arrow",
@@ -2177,7 +2177,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-polars"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "polars",
  "quantwave-core",
@@ -2187,7 +2187,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-python"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "paste",
  "quantwave-core",
@@ -2196,7 +2196,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-xtask"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "anyhow",
  "quick-xml",

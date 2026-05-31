@@ -184,7 +184,11 @@ pub const DEMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     usage: "Use as a replacement for EMA when faster signal generation is required without excessive noise. DEMA reacts more quickly to price changes than a standard EMA.",
     keywords: &["moving-average", "smoothing", "lag-reduction", "classic"],
     ehlers_summary: "Developed by Patrick Mulloy in 1994, DEMA provides a less-laggy alternative to traditional moving averages. It is calculated by taking a single EMA and then subtracting it from a double EMA of the same period. This effectively cancels out some of the lag inherent in the EMA calculation. — StockCharts ChartSchool",
-    params: &[ParamDef { name: "timeperiod", default: "30", description: "Smoothing period" }],
+    params: &[ParamDef {
+        name: "timeperiod",
+        default: "30",
+        description: "Smoothing period",
+    }],
     formula_source: "https://www.investopedia.com/terms/d/double-exponential-moving-average.asp",
     formula_latex: r#"
 \[
@@ -201,7 +205,11 @@ pub const TRIMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     usage: "Use for extremely smooth trend identification. TRIMA is significantly smoother than a standard SMA but introduces more lag; it is ideal for identifying long-term cycles.",
     keywords: &["moving-average", "smoothing", "classic"],
     ehlers_summary: "The Triangular Moving Average is an SMA of an SMA. For a period N, it averages the values over N/2 periods twice. This results in a weight distribution that is triangular, peaking at the center of the window, making it very effective at filtering out high-frequency noise. — StockCharts ChartSchool",
-    params: &[ParamDef { name: "timeperiod", default: "30", description: "Smoothing period" }],
+    params: &[ParamDef {
+        name: "timeperiod",
+        default: "30",
+        description: "Smoothing period",
+    }],
     formula_source: "https://www.tradingview.com/support/solutions/43000591273-triangular-moving-average-tma/",
     formula_latex: r#"
 \[
@@ -219,8 +227,16 @@ pub const T3_METADATA: IndicatorMetadata = IndicatorMetadata {
     keywords: &["moving-average", "smoothing", "lag-reduction", "classic"],
     ehlers_summary: "Developed by Tim Tilson in 1998, the T3 moving average uses a 'v-factor' (volume factor) to control how much the indicator reacts to price changes. It is essentially a sextuple EMA smoothing process that provides a very smooth curve with remarkably little lag. — Technical Analysis of Stocks & Commodities",
     params: &[
-        ParamDef { name: "timeperiod", default: "5", description: "Smoothing period" },
-        ParamDef { name: "v_factor", default: "0.7", description: "Volume factor (0.0 to 1.0)" },
+        ParamDef {
+            name: "timeperiod",
+            default: "5",
+            description: "Smoothing period",
+        },
+        ParamDef {
+            name: "v_factor",
+            default: "0.7",
+            description: "Volume factor (0.0 to 1.0)",
+        },
     ],
     formula_source: "https://www.tradingview.com/script/667W2a8n-T3-Moving-Average/",
     formula_latex: r#"

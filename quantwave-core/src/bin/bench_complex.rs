@@ -22,10 +22,16 @@ fn main() {
     }
     let duration_cc = start_cc.elapsed();
     println!("CyberCycle: {:?} (Sum: {})", duration_cc, sum_cc);
-    println!("Result: {:.2} ms for 1M rows", duration_cc.as_secs_f64() * 1000.0);
+    println!(
+        "Result: {:.2} ms for 1M rows",
+        duration_cc.as_secs_f64() * 1000.0
+    );
 
     // Benchmark Instantaneous Trendline
-    println!("\nBenchmarking Instantaneous Trendline on {} rows...", num_rows);
+    println!(
+        "\nBenchmarking Instantaneous Trendline on {} rows...",
+        num_rows
+    );
     let mut it = InstantaneousTrendline::new();
     let mut sum_it = 0.0;
     let start_it = Instant::now();
@@ -33,6 +39,12 @@ fn main() {
         sum_it += it.next(data[i]);
     }
     let duration_it = start_it.elapsed();
-    println!("Instantaneous Trendline: {:?} (Sum: {})", duration_it, sum_it);
-    println!("Result: {:.2} ms for 1M rows", duration_it.as_secs_f64() * 1000.0);
+    println!(
+        "Instantaneous Trendline: {:?} (Sum: {})",
+        duration_it, sum_it
+    );
+    println!(
+        "Result: {:.2} ms for 1M rows",
+        duration_it.as_secs_f64() * 1000.0
+    );
 }

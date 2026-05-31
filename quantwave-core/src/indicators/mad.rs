@@ -27,11 +27,7 @@ impl Next<f64> for MAD {
     fn next(&mut self, input: f64) -> Self::Output {
         let s = self.short_sma.next(input);
         let l = self.long_sma.next(input);
-        if l != 0.0 {
-            100.0 * (s - l) / l
-        } else {
-            0.0
-        }
+        if l != 0.0 { 100.0 * (s - l) / l } else { 0.0 }
     }
 }
 
@@ -66,8 +62,8 @@ MAD = 100 \times \frac{SMA(short) - SMA(long)}{SMA(long)}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{assert_indicator_parity, load_gold_standard};
     use crate::traits::Next;
-    use crate::test_utils::{load_gold_standard, assert_indicator_parity};
     use proptest::prelude::*;
 
     #[test]
@@ -102,13 +98,13 @@ mod tests {
             for i in 0..inputs.len() {
                 let s_sum: f64 = inputs[(i.saturating_sub(short - 1))..=i].iter().sum();
                 let l_sum: f64 = inputs[(i.saturating_sub(long - 1))..=i].iter().sum();
-                
+
                 let s_count = (i + 1).min(short);
                 let l_count = (i + 1).min(long);
-                
+
                 let s = s_sum / s_count as f64;
                 let l = l_sum / l_count as f64;
-                
+
                 let res = if l != 0.0 {
                     100.0 * (s - l) / l
                 } else {

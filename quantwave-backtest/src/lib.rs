@@ -98,8 +98,8 @@ pub struct CostModel {
 impl Default for CostModel {
     fn default() -> Self {
         Self {
-            commission_bps: 5.0,   // 0.05% realistic for many instruments
-            slippage_bps: 2.0,     // 0.02% minimal slippage
+            commission_bps: 5.0, // 0.05% realistic for many instruments
+            slippage_bps: 2.0,   // 0.02% minimal slippage
             initial_cash: 100_000.0,
         }
     }
@@ -273,7 +273,10 @@ impl BacktestEngine {
 
         for c in [ts_col, close_col, sig_col] {
             if df.column(c).is_err() {
-                return Err(BacktestError::InvalidInput(format!("missing column: {}", c)));
+                return Err(BacktestError::InvalidInput(format!(
+                    "missing column: {}",
+                    c
+                )));
             }
         }
 
@@ -301,7 +304,10 @@ impl BacktestEngine {
         // Timestamps: try datetime, fallback to i64 as "bars", or strings (MVP supports common cases)
         let timestamps: Vec<DateTime<Utc>> = self.extract_timestamps(&ts_series)?;
 
-        let closes: Vec<f64> = close_ca.into_iter().map(|v| v.unwrap_or(f64::NAN)).collect();
+        let closes: Vec<f64> = close_ca
+            .into_iter()
+            .map(|v| v.unwrap_or(f64::NAN))
+            .collect();
 
         if timestamps.len() != closes.len() || closes.len() != signal_vals.len() {
             return Err(BacktestError::InvalidInput("column length mismatch".into()));
@@ -323,7 +329,10 @@ impl BacktestEngine {
         let equity_df = self.equity_to_df(&equity_points)?;
 
         // Basic stats (MVP — richer via Polars later)
-        let final_equity = equity_points.last().map(|e| e.equity).unwrap_or(cm.initial_cash);
+        let final_equity = equity_points
+            .last()
+            .map(|e| e.equity)
+            .unwrap_or(cm.initial_cash);
         let total_return = (final_equity - cm.initial_cash) / cm.initial_cash;
         let num_trades = trades.len() as f64;
 
@@ -344,7 +353,9 @@ impl BacktestEngine {
     fn extract_timestamps(&self, col: &Column) -> Result<Vec<DateTime<Utc>>, BacktestError> {
         // Support Datetime, Int64 (as unix micros or simple increasing), or fallback.
         // In Polars 0.46+, df.column() yields Column; convert for ChunkedArray access.
-        let s = col.as_series().ok_or_else(|| BacktestError::InvalidInput("column has no series backing".into()))?;
+        let s = col
+            .as_series()
+            .ok_or_else(|| BacktestError::InvalidInput("column has no series backing".into()))?;
 
         // Support Datetime, Int64 (as unix micros or simple increasing), or fallback
         if let Ok(ca) = s.datetime() {
@@ -491,7 +502,11 @@ fn run_simulation(
         }
 
         let (desired_exposure, meta) = next_signal(i);
-        let desired = if desired_exposure > 0.0 { desired_exposure } else { 0.0 };
+        let desired = if desired_exposure > 0.0 {
+            desired_exposure
+        } else {
+            0.0
+        };
 
         // Discrete flip semantics generalized to sized exposure (ug9t)
         let currently_in = current_exposure > 0.0;
@@ -664,7 +679,10 @@ where
         ])?
     };
 
-    let final_equity = equity_points.last().map(|e| e.equity).unwrap_or(cm.initial_cash);
+    let final_equity = equity_points
+        .last()
+        .map(|e| e.equity)
+        .unwrap_or(cm.initial_cash);
     let total_return = (final_equity - cm.initial_cash) / cm.initial_cash;
     let num_trades = trades.len() as f64;
 
@@ -690,8 +708,8 @@ mod tests {
     use rand::Rng;
     // Core types needed for ug9t parity strategy (regime + feature + rich PA)
     use quantwave_core::features::CyberCycleFeatureExtractor;
-    use quantwave_core::regimes::tar::TAR;
     use quantwave_core::regimes::MarketRegime;
+    use quantwave_core::regimes::tar::TAR;
     use quantwave_core::traits::Next;
     use std::collections::HashMap;
 
@@ -700,7 +718,9 @@ mod tests {
         // Synthetic 6 bars. Signal goes 0 -> 1 (enter) -> 1 -> 0 (exit).
         // Prices rise then fall. With small costs, net should be positive on the move.
         let n: usize = 6;
-        let timestamps: Vec<i64> = (0..n).map(|i| 1_700_000_000i64 + (i as i64) * 3600).collect(); // unix secs
+        let timestamps: Vec<i64> = (0..n)
+            .map(|i| 1_700_000_000i64 + (i as i64) * 3600)
+            .collect(); // unix secs
         let closes = vec![100.0, 101.0, 102.5, 103.0, 102.0, 101.0];
         let signals = vec![0.0, 1.0, 1.0, 1.0, 0.0, 0.0];
 
@@ -721,7 +741,12 @@ mod tests {
         // Final equity > initial because price rose while long
         let final_eq = *result.stats.get("final_equity").unwrap();
         let init = 100_000.0;
-        assert!(final_eq > init, "equity should grow on winning long: {} vs {}", final_eq, init);
+        assert!(
+            final_eq > init,
+            "equity should grow on winning long: {} vs {}",
+            final_eq,
+            init
+        );
 
         // Equity curve has exactly n rows
         assert_eq!(result.equity_curve.height(), n);
@@ -919,10 +944,7 @@ mod tests {
             let mut meta = HashMap::new();
             meta.insert("pole_height".to_string(), pa.pole_height);
             meta.insert("cycle_momentum".to_string(), feat.cycle_momentum);
-            meta.insert(
-                "regime_ok".to_string(),
-                if regime_ok { 1.0 } else { 0.0 },
-            );
+            meta.insert("regime_ok".to_string(), if regime_ok { 1.0 } else { 0.0 });
 
             StrategySignal {
                 exposure,
@@ -966,7 +988,10 @@ mod tests {
         }
 
         let df = DataFrame::new(vec![
-            Column::new("timestamp".into(), timestamps.iter().map(|t| t.timestamp()).collect::<Vec<_>>()),
+            Column::new(
+                "timestamp".into(),
+                timestamps.iter().map(|t| t.timestamp()).collect::<Vec<_>>(),
+            ),
             Column::new("close".into(), closes.clone()),
             Column::new("signal".into(), exposures.clone()),
         ])
@@ -1002,12 +1027,7 @@ mod tests {
 
         assert_eq!(b_eq.len(), s_eq.len(), "equity curve lengths must match");
         for (i, (b, s)) in b_eq.iter().zip(s_eq.iter()).enumerate() {
-            approx::assert_relative_eq!(
-                *b,
-                *s,
-                epsilon = 1e-8,
-                max_relative = 1e-8
-            );
+            approx::assert_relative_eq!(*b, *s, epsilon = 1e-8, max_relative = 1e-8);
             // Additional context on failure (approx panics with its own message)
             if (b - s).abs() > 1e-7 {
                 panic!("equity diverged at bar {}: {} vs {}", i, b, s);
@@ -1071,7 +1091,11 @@ mod integration_example_between_epics {
         for &c in &closes {
             let f = h_ext.next(c);
             let regime_ok = true; // would come from regime column in real use
-            let exposure = if regime_ok && f.persistence > 0.52 { 1.0 } else { 0.0 };
+            let exposure = if regime_ok && f.persistence > 0.52 {
+                1.0
+            } else {
+                0.0
+            };
             exposures.push(exposure);
         }
 

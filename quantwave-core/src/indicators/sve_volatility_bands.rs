@@ -56,7 +56,12 @@ pub struct SVEVolatilityBands {
 }
 
 impl SVEVolatilityBands {
-    pub fn new(bands_period: usize, bands_deviation: f64, low_band_adjust: f64, mid_line_length: usize) -> Self {
+    pub fn new(
+        bands_period: usize,
+        bands_deviation: f64,
+        low_band_adjust: f64,
+        mid_line_length: usize,
+    ) -> Self {
         Self {
             price_wma: WMA::new(bands_period),
             tr_sma: SMA::new(bands_period * 2 - 1),
@@ -85,16 +90,16 @@ impl Next<(f64, f64, f64)> for SVEVolatilityBands {
 
         let ma_tr = self.tr_sma.next(tr);
         let wtd_avg_val = self.price_wma.next(close);
-        
+
         let typical_price = (high + low + close) / 3.0;
         let mid_line = self.mid_line_wma.next(typical_price);
 
         let atr_val = ma_tr * self.bands_deviation;
-        
-        // From TradeStation code: 
+
+        // From TradeStation code:
         // HighBand = WtdAvgVal + WtdAvgVal * ( AtrVal / Price )
         // LowBand = WtdAvgVal - WtdAvgVal * ( AtrVal * LowBandAdjust / Price )
-        
+
         let upper = wtd_avg_val + wtd_avg_val * (atr_val / close);
         let lower = wtd_avg_val - wtd_avg_val * (atr_val * self.low_band_adjust / close);
 
@@ -111,14 +116,14 @@ mod tests {
     fn test_sve_volatility_bands_basic() {
         let mut sve = SVEVolatilityBands::new(20, 2.4, 0.9, 20);
         let (upper, mid, lower) = sve.next((105.0, 95.0, 100.0));
-        
+
         // TR = 10, SMA(39) = 10.0
         // Price WMA(20) = 100.0
         // Typical = (105+95+100)/3 = 100.0. Mid WMA(20) = 100.0
         // ATRVal = 10 * 2.4 = 24.0
         // Upper = 100 + 100 * (24 / 100) = 124.0
         // Lower = 100 - 100 * (24 * 0.9 / 100) = 100 - 21.6 = 78.4
-        
+
         assert_eq!(mid, 100.0);
         assert_eq!(upper, 124.0);
         assert_eq!(lower, 78.4);
@@ -152,7 +157,7 @@ mod tests {
             let dev = 2.4;
             let adj = 0.9;
             let mid_len = 20;
-            
+
             let mut sve = SVEVolatilityBands::new(period, dev, adj, mid_len);
             let streaming_results: Vec<(f64, f64, f64)> = adj_input.iter().map(|&x| sve.next(x)).collect();
             let batch_results = sve_volatility_bands_batch(&adj_input, period, dev, adj, mid_len);

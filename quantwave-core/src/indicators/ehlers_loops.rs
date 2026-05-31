@@ -177,8 +177,8 @@ RMS = \frac{SS}{\sqrt{MS}}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{assert_indicator_parity_loops, load_gold_standard_loops};
     use crate::traits::Next;
-    use crate::test_utils::{load_gold_standard_loops, assert_indicator_parity_loops};
     use proptest::prelude::*;
 
     #[test]
@@ -209,7 +209,7 @@ mod tests {
             let hp_period = 125;
             let rms_alpha = 0.0242;
             let mut el = EhlersLoops::with_rms_alpha(lp_period, hp_period, rms_alpha);
-            
+
             let min_len = prices.len().min(volumes.len());
             let inputs: Vec<(f64, f64)> = prices[..min_len].iter().cloned().zip(volumes[..min_len].iter().cloned()).collect();
             let streaming_results: Vec<(f64, f64)> = inputs.iter().map(|&x| el.next(x)).collect();
@@ -246,7 +246,7 @@ mod tests {
                 };
                 if bar == 1 { p_ms = ss * ss; } else { p_ms = rms_alpha * ss * ss + (1.0 - rms_alpha) * p_ms; }
                 let res = if p_ms > 0.0 { ss / p_ms.sqrt() } else { 0.0 };
-                
+
                 p_hp_hist[1] = p_hp_hist[0]; p_hp_hist[0] = hp;
                 p_input_hist[1] = p_input_hist[0]; p_input_hist[0] = p_input;
                 p_ss_hist[1] = p_ss_hist[0]; p_ss_hist[0] = ss;
@@ -270,7 +270,7 @@ mod tests {
                 };
                 if bar == 1 { v_ms = ss * ss; } else { v_ms = rms_alpha * ss * ss + (1.0 - rms_alpha) * v_ms; }
                 let res = if v_ms > 0.0 { ss / v_ms.sqrt() } else { 0.0 };
-                
+
                 v_hp_hist[1] = v_hp_hist[0]; v_hp_hist[0] = hp;
                 v_input_hist[1] = v_input_hist[0]; v_input_hist[0] = v_input;
                 v_ss_hist[1] = v_ss_hist[0]; v_ss_hist[0] = ss;

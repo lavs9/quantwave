@@ -110,8 +110,7 @@ impl Next<f64> for RecursiveMedianOscillator {
         let c2 = 2.0 * (1.0 - self.alpha2);
         let c3 = (1.0 - self.alpha2) * (1.0 - self.alpha2);
 
-        let rmo = c1 * (rm - 2.0 * self.prev_rm[0] + self.prev_rm[1])
-            + c2 * self.prev_rmo[0]
+        let rmo = c1 * (rm - 2.0 * self.prev_rm[0] + self.prev_rm[1]) + c2 * self.prev_rmo[0]
             - c3 * self.prev_rmo[1];
 
         self.prev_rm[1] = self.prev_rm[0];
@@ -130,13 +129,11 @@ pub const RECURSIVE_MEDIAN_METADATA: IndicatorMetadata = IndicatorMetadata {
     usage: "Use to filter out extreme outliers and noise while maintaining trend sensitivity. Excellent as a baseline for other oscillators.",
     keywords: &["filter", "ehlers", "dsp", "median", "robust", "smoothing"],
     ehlers_summary: "Standard filters like SMA or EMA are distorted by price spikes. The recursive median filter uses the median to reject outliers and an EMA to provide smoothness, offering a cleaner trend representation than standard moving averages.",
-    params: &[
-        ParamDef {
-            name: "lp_period",
-            default: "12",
-            description: "Low-pass smoothing period",
-        },
-    ],
+    params: &[ParamDef {
+        name: "lp_period",
+        default: "12",
+        description: "Low-pass smoothing period",
+    }],
     formula_source: "https://www.traders.com/Documentation/FEEDbk_docs/2018/03/TradersTips.html",
     formula_latex: r#"
 \[

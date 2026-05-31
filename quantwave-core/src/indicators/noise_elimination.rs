@@ -100,7 +100,9 @@ mod tests {
     #[test]
     fn test_noise_elimination_basic() {
         let mut net = NoiseElimination::new(14);
-        let inputs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0];
+        let inputs = vec![
+            1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0,
+        ];
         let mut last_net = 0.0;
         for input in inputs {
             last_net = net.next(input);

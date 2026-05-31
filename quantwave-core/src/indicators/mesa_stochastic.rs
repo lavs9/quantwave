@@ -1,14 +1,14 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::roofing_filter::RoofingFilter;
 use crate::indicators::super_smoother::SuperSmoother;
+use crate::traits::Next;
 use std::collections::VecDeque;
 
 /// MESA Stochastic
-/// 
-/// Based on John Ehlers' "Predictive and Successful Indicators" (2014) 
+///
+/// Based on John Ehlers' "Predictive and Successful Indicators" (2014)
 /// and "Anticipating Turning Points".
-/// It applies a standard Stochastic formula to price data preprocessed by 
+/// It applies a standard Stochastic formula to price data preprocessed by
 /// a Roofing Filter, followed by a SuperSmoother filter.
 #[derive(Debug, Clone)]
 pub struct MESAStochastic {
@@ -40,7 +40,7 @@ impl Next<f64> for MESAStochastic {
 
     fn next(&mut self, input: f64) -> Self::Output {
         let filt = self.roofing_filter.next(input);
-        
+
         self.filt_history.push_front(filt);
         if self.filt_history.len() > self.length {
             self.filt_history.pop_back();
@@ -48,10 +48,14 @@ impl Next<f64> for MESAStochastic {
 
         let mut highest_c = f64::NEG_INFINITY;
         let mut lowest_c = f64::INFINITY;
-        
+
         for &val in &self.filt_history {
-            if val > highest_c { highest_c = val; }
-            if val < lowest_c { lowest_c = val; }
+            if val > highest_c {
+                highest_c = val;
+            }
+            if val < lowest_c {
+                lowest_c = val;
+            }
         }
 
         let stoch = if (highest_c - lowest_c).abs() > 1e-10 {
@@ -72,9 +76,21 @@ pub const MESA_STOCHASTIC_METADATA: IndicatorMetadata = IndicatorMetadata {
     keywords: &["oscillator", "stochastic", "ehlers", "cycle", "adaptive"],
     ehlers_summary: "The MESA Stochastic extends Ehlers adaptive stochastic concept by using the MESA-measured dominant cycle period as the lookback window. Unlike traditional stochastics with fixed periods, it adapts to the current market rhythm, keeping the oscillator calibrated to one full cycle at all times.",
     params: &[
-        ParamDef { name: "length", default: "20", description: "Stochastic lookback length" },
-        ParamDef { name: "hp_period", default: "48", description: "HighPass critical period" },
-        ParamDef { name: "ss_period", default: "10", description: "SuperSmoother critical period" },
+        ParamDef {
+            name: "length",
+            default: "20",
+            description: "Stochastic lookback length",
+        },
+        ParamDef {
+            name: "hp_period",
+            default: "48",
+            description: "HighPass critical period",
+        },
+        ParamDef {
+            name: "ss_period",
+            default: "10",
+            description: "SuperSmoother critical period",
+        },
     ],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/Anticipating%20Turning%20Points.pdf",
     formula_latex: r#"
@@ -95,8 +111,8 @@ MESAStoch = \text{SuperSmoother}(Stoc \times 100, P_{ss})
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{assert_indicator_parity, load_gold_standard};
     use crate::traits::Next;
-    use crate::test_utils::{load_gold_standard, assert_indicator_parity};
     use proptest::prelude::*;
 
     #[test]
@@ -126,37 +142,37 @@ mod tests {
             let ss_period = 10;
             let mut ms = MESAStochastic::new(length, hp_period, ss_period);
             let streaming_results: Vec<f64> = inputs.iter().map(|&x| ms.next(x)).collect();
-            
+
             // Batch implementation
             let mut batch_results = Vec::with_capacity(inputs.len());
             let mut rf = RoofingFilter::new(hp_period, ss_period);
             let mut ss = SuperSmoother::new(ss_period);
             let mut filt_hist = VecDeque::new();
-            
+
             for &input in &inputs {
                 let filt = rf.next(input);
                 filt_hist.push_front(filt);
                 if filt_hist.len() > length {
                     filt_hist.pop_back();
                 }
-                
+
                 let mut highest_c = f64::NEG_INFINITY;
                 let mut lowest_c = f64::INFINITY;
                 for &val in &filt_hist {
                     if val > highest_c { highest_c = val; }
                     if val < lowest_c { lowest_c = val; }
                 }
-                
+
                 let stoch = if (highest_c - lowest_c).abs() > 1e-10 {
                     (filt - lowest_c) / (highest_c - lowest_c)
                 } else {
                     0.0
                 };
-                
+
                 let res = ss.next(stoch * 100.0);
                 batch_results.push(res);
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-10);
             }

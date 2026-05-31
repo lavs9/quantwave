@@ -118,7 +118,7 @@ mod tests {
             // My alpha/beta in code:
             // beta = cos(2*PI/P)
             // gamma = 1/cos(4*PI*delta/P)
-            
+
             let alpha = {
                 let g = 1.0 / (2.0 * PI * bandwidth / period as f64).cos();
                 g - (g * g - 1.0).sqrt()

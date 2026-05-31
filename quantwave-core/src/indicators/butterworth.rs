@@ -100,10 +100,13 @@ impl Next<f64> for Butterworth3 {
         let res = if self.count < 4 {
             input
         } else {
-            (self.b + self.c) * self.filt_history[0]
-                - (self.c + self.bc) * self.filt_history[1]
+            (self.b + self.c) * self.filt_history[0] - (self.c + self.bc) * self.filt_history[1]
                 + self.cc * self.filt_history[2]
-                + self.c1 * (input + 3.0 * self.price_history[0] + 3.0 * self.price_history[1] + self.price_history[2])
+                + self.c1
+                    * (input
+                        + 3.0 * self.price_history[0]
+                        + 3.0 * self.price_history[1]
+                        + self.price_history[2])
         };
 
         self.filt_history[2] = self.filt_history[1];

@@ -83,15 +83,20 @@ pub const HURST_EXPONENT_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Hurst Exponent",
     description: "Measures the persistence or anti-persistence of a time series using R/S analysis.",
     usage: "Use to classify the current market regime. H > 0.5 suggests a trending market (persistent); H < 0.5 suggests a mean-reverting market (anti-persistent). Useful as a filter for trend-following or mean-reversion strategies.",
-    keywords: &["statistics", "regime-detection", "hurst", "ml", "trending", "mean-reversion"],
-    ehlers_summary: "The Hurst Exponent, pioneered by Harold Edwin Hurst in 1951, quantifies the 'memory' of a time series. In technical analysis, it distinguishes between trending, mean-reverting, and random walk price action. It is a critical feature for machine learning models to adapt their logic to the underlying market structure.",
-    params: &[
-        ParamDef {
-            name: "period",
-            default: "100",
-            description: "Lookback period for R/S analysis",
-        },
+    keywords: &[
+        "statistics",
+        "regime-detection",
+        "hurst",
+        "ml",
+        "trending",
+        "mean-reversion",
     ],
+    ehlers_summary: "The Hurst Exponent, pioneered by Harold Edwin Hurst in 1951, quantifies the 'memory' of a time series. In technical analysis, it distinguishes between trending, mean-reverting, and random walk price action. It is a critical feature for machine learning models to adapt their logic to the underlying market structure.",
+    params: &[ParamDef {
+        name: "period",
+        default: "100",
+        description: "Lookback period for R/S analysis",
+    }],
     formula_source: "https://en.wikipedia.org/wiki/Hurst_exponent",
     formula_latex: r#"
 \[

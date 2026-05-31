@@ -102,7 +102,7 @@ mod tests {
         ];
 
         let results: Vec<(f64, f64)> = inputs.into_iter().map(|x| obvm.next(x)).collect();
-        
+
         // Check that values are being computed and are finite
         for (obvm_val, signal_val) in results {
             assert!(!obvm_val.is_nan());
@@ -116,12 +116,12 @@ mod tests {
             inputs in prop::collection::vec((1.0..100.0, 1.0..100.0, 1.0..100.0, 1.0..1000.0), 10..100),
         ) {
             let mut obvm = Obvm::new(7, 10);
-            
+
             let mut obv = 0.0;
             let mut prev_tp: Option<f64> = None;
             let mut ema_obv = EMA::new(7);
             let mut ema_signal = EMA::new(10);
-            
+
             for (h, l, c, v) in inputs {
                 let h: f64 = h;
                 let l: f64 = l;
@@ -129,7 +129,7 @@ mod tests {
                 let high = h.max(l).max(c);
                 let low = h.min(l).min(c);
                 let tp = (high + low + c) / 3.0;
-                
+
                 if let Some(prev) = prev_tp {
                     if tp > prev {
                         obv += v;
@@ -138,12 +138,12 @@ mod tests {
                     }
                 }
                 prev_tp = Some(tp);
-                
+
                 let expected_obvm = ema_obv.next(obv);
                 let expected_signal = ema_signal.next(expected_obvm);
-                
+
                 let (actual_obvm, actual_signal) = obvm.next((high, low, c, v));
-                
+
                 approx::assert_relative_eq!(actual_obvm, expected_obvm, epsilon = 1e-10);
                 approx::assert_relative_eq!(actual_signal, expected_signal, epsilon = 1e-10);
             }

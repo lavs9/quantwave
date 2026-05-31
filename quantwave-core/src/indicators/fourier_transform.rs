@@ -1,6 +1,6 @@
+use crate::indicators::high_pass::HighPass;
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
-use crate::indicators::high_pass::HighPass;
 use std::collections::VecDeque;
 
 /// Fourier Dominant Cycle
@@ -44,16 +44,17 @@ impl Next<f64> for FourierDominantCycle {
         let hp_val = self.hp.next(input);
 
         // FIR Smoothing: CleanedData = (HP + 2*HP[1] + 3*HP[2] + 3*HP[3] + 2*HP[4] + HP[5])/12
-        let cleaned = (hp_val 
-            + 2.0 * self.hp_history[0] 
-            + 3.0 * self.hp_history[1] 
-            + 3.0 * self.hp_history[2] 
-            + 2.0 * self.hp_history[3] 
-            + self.hp_history[4]) / 12.0;
+        let cleaned = (hp_val
+            + 2.0 * self.hp_history[0]
+            + 3.0 * self.hp_history[1]
+            + 3.0 * self.hp_history[2]
+            + 2.0 * self.hp_history[3]
+            + self.hp_history[4])
+            / 12.0;
 
         // Shift HP history
         for i in (1..6).rev() {
-            self.hp_history[i] = self.hp_history[i-1];
+            self.hp_history[i] = self.hp_history[i - 1];
         }
         self.hp_history[0] = hp_val;
 
@@ -83,7 +84,9 @@ impl Next<f64> for FourierDominantCycle {
         // Max Power
         let mut max_pwr = 0.0;
         for &p in &pwr[8..=50] {
-            if p > max_pwr { max_pwr = p; }
+            if p > max_pwr {
+                max_pwr = p;
+            }
         }
 
         // dB and CG
@@ -95,7 +98,8 @@ impl Next<f64> for FourierDominantCycle {
                 -10.0 * val.log10()
             } else {
                 20.0
-            }.min(20.0);
+            }
+            .min(20.0);
 
             if db < 3.0 {
                 num += period_idx as f64 * (3.0 - db);
@@ -103,11 +107,7 @@ impl Next<f64> for FourierDominantCycle {
             }
         }
 
-        if denom != 0.0 {
-            num / denom
-        } else {
-            0.0
-        }
+        if denom != 0.0 { num / denom } else { 0.0 }
     }
 }
 
@@ -115,15 +115,20 @@ pub const FOURIER_DOMINANT_CYCLE_METADATA: IndicatorMetadata = IndicatorMetadata
     name: "FourierDominantCycle",
     description: "Dominant cycle period estimation using resolution-enhanced DFT and center of gravity.",
     usage: "Use to compute the dominant market cycle period via DFT. Feed the output period into adaptive indicators like DSMA or Ehlers Stochastic to make them cycle-synchronized.",
-    keywords: &["cycle", "spectral", "ehlers", "dsp", "dominant-cycle", "fourier"],
-    ehlers_summary: "Ehlers implements a Discrete Fourier Transform cycle measurement in Cybernetic Analysis using a Hann-windowed data segment. The DFT computes power across periods from 6 to 50 bars, and the peak power identifies the dominant cycle period driving price movement.",
-    params: &[
-        ParamDef {
-            name: "window_len",
-            default: "50",
-            description: "DFT window length",
-        },
+    keywords: &[
+        "cycle",
+        "spectral",
+        "ehlers",
+        "dsp",
+        "dominant-cycle",
+        "fourier",
     ],
+    ehlers_summary: "Ehlers implements a Discrete Fourier Transform cycle measurement in Cybernetic Analysis using a Hann-windowed data segment. The DFT computes power across periods from 6 to 50 bars, and the peak power identifies the dominant cycle period driving price movement.",
+    params: &[ParamDef {
+        name: "window_len",
+        default: "50",
+        description: "DFT window length",
+    }],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/FourierTransformForTraders.pdf",
     formula_latex: r#"
 \[
@@ -148,10 +153,10 @@ DC = \frac{\sum_{P=8}^{50} P \cdot (3 - DB(P)) \text{ where } DB(P) < 3}{\sum (3
 
 #[cfg(test)]
 mod tests {
-    use std::f64::consts::PI;
     use super::*;
     use crate::traits::Next;
     use proptest::prelude::*;
+    use std::f64::consts::PI;
 
     #[test]
     fn test_fourier_dc_basic() {
@@ -182,7 +187,7 @@ mod tests {
             let mut cleaned_vals = Vec::new();
 
             for i in 0..hp_vals.len() {
-                let c = (hp_vals[i] 
+                let c = (hp_vals[i]
                     + 2.0 * (if i > 0 { hp_vals[i-1] } else { 0.0 })
                     + 3.0 * (if i > 1 { hp_vals[i-2] } else { 0.0 })
                     + 3.0 * (if i > 2 { hp_vals[i-3] } else { 0.0 })

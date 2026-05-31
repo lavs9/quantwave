@@ -1,7 +1,7 @@
-use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::high_pass::HighPass;
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::super_smoother::SuperSmoother;
+use crate::traits::Next;
 use std::collections::VecDeque;
 
 /// Cybernetic Oscillator
@@ -59,11 +59,7 @@ impl Next<f64> for CyberneticOscillator {
 
         let rms = (self.sum_sq / self.rms_len as f64).sqrt();
 
-        if rms != 0.0 {
-            lp_val / rms
-        } else {
-            0.0
-        }
+        if rms != 0.0 { lp_val / rms } else { 0.0 }
     }
 }
 
@@ -137,7 +133,7 @@ mod tests {
 
             // Batch implementation
             let mut batch_results = Vec::with_capacity(inputs.len());
-            
+
             let mut hp = HighPass::new(hp_len);
             let mut ss = SuperSmoother::new(lp_len);
             let lp_vals: Vec<f64> = inputs.iter().map(|&x| ss.next(hp.next(x))).collect();
@@ -145,18 +141,18 @@ mod tests {
             for i in 0..lp_vals.len() {
                 let start = if i >= rms_len - 1 { i + 1 - rms_len } else { 0 };
                 let window = &lp_vals[start..i + 1];
-                
+
                 let mut sum_sq = 0.0;
                 for &v in window {
                     sum_sq += v * v;
                 }
-                
+
                 // Note: The denominator in Ehlers' EasyLanguage is constant (Length)
-                // whereas the window may be smaller initially. 
+                // whereas the window may be smaller initially.
                 // But Ehlers' code: $RMS = SquareRoot(SumSq / Length)
                 // So we always divide by rms_len.
                 let rms = (sum_sq / rms_len as f64).sqrt();
-                
+
                 if rms != 0.0 {
                     batch_results.push(lp_vals[i] / rms);
                 } else {

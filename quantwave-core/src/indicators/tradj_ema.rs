@@ -34,11 +34,23 @@ impl Next<(f64, f64, f64)> for TRAdjEMA {
 
     fn next(&mut self, (high, low, close): (f64, f64, f64)) -> Self::Output {
         let th = match self.prev_close {
-            Some(pc) => if pc > high { pc } else { high },
+            Some(pc) => {
+                if pc > high {
+                    pc
+                } else {
+                    high
+                }
+            }
             None => high,
         };
         let tl = match self.prev_close {
-            Some(pc) => if pc < low { pc } else { low },
+            Some(pc) => {
+                if pc < low {
+                    pc
+                } else {
+                    low
+                }
+            }
             None => low,
         };
         self.prev_close = Some(close);
@@ -85,7 +97,12 @@ mod tests {
     use super::*;
     use proptest::prelude::*;
 
-    fn tradj_ema_batch(data: Vec<(f64, f64, f64)>, period: usize, pds: usize, mltp: f64) -> Vec<f64> {
+    fn tradj_ema_batch(
+        data: Vec<(f64, f64, f64)>,
+        period: usize,
+        pds: usize,
+        mltp: f64,
+    ) -> Vec<f64> {
         let mut ema = TRAdjEMA::new(period, pds, mltp);
         data.into_iter().map(|x| ema.next(x)).collect()
     }

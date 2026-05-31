@@ -59,11 +59,7 @@ impl CorrelationCycle {
         let num = nf * sxy - sx * sy;
         let den = ((nf * sxx - sx * sx) * (nf * syy - sy * sy)).sqrt();
 
-        if den > 0.0 {
-            num / den
-        } else {
-            0.0
-        }
+        if den > 0.0 { num / den } else { 0.0 }
     }
 }
 
@@ -104,7 +100,10 @@ impl Next<f64> for CorrelationCycle {
 
         // Do not allow rate change of angle to go negative
         // If Angle[1] - Angle < 270 and Angle < Angle[1] Then Angle = Angle[1];
-        if self.count > self.period + 1 && self.prev_angle - angle < 270.0 && angle < self.prev_angle {
+        if self.count > self.period + 1
+            && self.prev_angle - angle < 270.0
+            && angle < self.prev_angle
+        {
             angle = self.prev_angle;
         }
 
@@ -120,13 +119,11 @@ pub const CORRELATION_CYCLE_METADATA: IndicatorMetadata = IndicatorMetadata {
     usage: "Use to measure the dominant cycle period via autocorrelation in an amplitude-independent way. Prefer over DFT methods when price amplitude varies significantly across the measurement window.",
     keywords: &["cycle", "dominant-cycle", "ehlers", "dsp", "spectral"],
     ehlers_summary: "Ehlers introduces Correlation Cycle measurement in Cycle Analytics for Traders (2013) as an improvement on DFT. By normalizing autocorrelation coefficients to unity variance, the resulting periodogram is independent of price amplitude variations, producing more consistent cycle period estimates.",
-    params: &[
-        ParamDef {
-            name: "period",
-            default: "20",
-            description: "Correlation wavelength",
-        },
-    ],
+    params: &[ParamDef {
+        name: "period",
+        default: "20",
+        description: "Correlation wavelength",
+    }],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/CORRELATION%20AS%20A%20CYCLE%20INDICATOR.pdf",
     formula_latex: r#"
 \[
@@ -182,7 +179,7 @@ mod tests {
                     batch_results.push((0.0, 0.0, 0.0));
                     continue;
                 }
-                
+
                 let mut sx = 0.0;
                 let mut sy_c = 0.0;
                 let mut sy_s = 0.0;
@@ -209,7 +206,7 @@ mod tests {
                 let nf = period as f64;
                 let den_c = ((nf * sxx - sx * sx) * (nf * syy_c - sy_c * sy_c)).sqrt();
                 let real = if den_c > 0.0 { (nf * sxy_c - sx * sy_c) / den_c } else { 0.0 };
-                
+
                 let den_s = ((nf * sxx - sx * sx) * (nf * syy_s - sy_s * sy_s)).sqrt();
                 let imag = if den_s > 0.0 { (nf * sxy_s - sx * sy_s) / den_s } else { 0.0 };
 
@@ -225,7 +222,7 @@ mod tests {
                         angle = prev_a;
                     }
                 }
-                
+
                 prev_a = angle;
                 batch_results.push((real, imag, angle));
             }

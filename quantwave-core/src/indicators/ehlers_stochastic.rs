@@ -4,7 +4,7 @@ use crate::traits::Next;
 use std::collections::VecDeque;
 
 /// Ehlers Stochastic (MESA Stochastic)
-/// 
+///
 /// Based on John Ehlers' "Anticipating Turning Points".
 /// It is a standard Stochastic calculation applied to the output of a Roofing Filter.
 /// This removes the distortion caused by Spectral Dilation in standard Stochastics.
@@ -34,14 +34,18 @@ impl Next<f64> for EhlersStochastic {
         if self.roof_window.len() > self.stoch_period {
             self.roof_window.pop_back();
         }
-        
+
         let mut min = f64::MAX;
         let mut max = f64::MIN;
         for &v in &self.roof_window {
-            if v < min { min = v; }
-            if v > max { max = v; }
+            if v < min {
+                min = v;
+            }
+            if v > max {
+                max = v;
+            }
         }
-        
+
         if max == min {
             50.0
         } else {
@@ -57,9 +61,21 @@ pub const EHLERS_STOCHASTIC_METADATA: IndicatorMetadata = IndicatorMetadata {
     keywords: &["oscillator", "stochastic", "ehlers", "cycle", "adaptive"],
     ehlers_summary: "Ehlers computes the stochastic oscillator using the measured dominant cycle period as the lookback window. This adaptive approach ensures the stochastic spans exactly one full market cycle, making overbought and oversold conditions consistently meaningful.",
     params: &[
-        ParamDef { name: "hp_period", default: "48", description: "HighPass critical period" },
-        ParamDef { name: "ss_period", default: "10", description: "SuperSmoother critical period" },
-        ParamDef { name: "stoch_period", default: "20", description: "Stochastic lookback period" },
+        ParamDef {
+            name: "hp_period",
+            default: "48",
+            description: "HighPass critical period",
+        },
+        ParamDef {
+            name: "ss_period",
+            default: "10",
+            description: "SuperSmoother critical period",
+        },
+        ParamDef {
+            name: "stoch_period",
+            default: "20",
+            description: "Stochastic lookback period",
+        },
     ],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/Anticipating Turning Points.pdf",
     formula_latex: r#"
@@ -77,8 +93,8 @@ Stoch = 100 \times \frac{Roof - \min(Roof, L)}{\max(Roof, L) - \min(Roof, L)}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{assert_indicator_parity, load_gold_standard};
     use crate::traits::Next;
-    use crate::test_utils::{load_gold_standard, assert_indicator_parity};
     use proptest::prelude::*;
 
     #[test]
@@ -108,26 +124,26 @@ mod tests {
             let stoch = 20;
             let mut es = EhlersStochastic::new(hp, ss, stoch);
             let streaming_results: Vec<f64> = inputs.iter().map(|&x| es.next(x)).collect();
-            
+
             // Batch implementation
             let mut batch_results = Vec::with_capacity(inputs.len());
             let mut roof = RoofingFilter::new(hp, ss);
             let mut roof_vals = Vec::new();
-            
+
             for &input in &inputs {
                 let r_val = roof.next(input);
                 roof_vals.push(r_val);
-                
+
                 let start = if roof_vals.len() > stoch { roof_vals.len() - stoch } else { 0 };
                 let window = &roof_vals[start..];
-                
+
                 let mut min = f64::MAX;
                 let mut max = f64::MIN;
                 for &v in window {
                     if v < min { min = v; }
                     if v > max { max = v; }
                 }
-                
+
                 let res = if max == min {
                     50.0
                 } else {
@@ -135,7 +151,7 @@ mod tests {
                 };
                 batch_results.push(res);
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-10);
             }

@@ -1,6 +1,6 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::super_smoother::SuperSmoother;
+use crate::traits::Next;
 use std::collections::VecDeque;
 
 /// Ehlers Trendflex
@@ -33,11 +33,11 @@ impl Next<f64> for Trendflex {
     fn next(&mut self, input: f64) -> Self::Output {
         let filt = self.smoother.next(input);
         self.filt_history.push_front(filt);
-        
+
         if self.filt_history.len() <= self.length {
             return 0.0;
         }
-        
+
         if self.filt_history.len() > self.length + 1 {
             self.filt_history.pop_back();
         }
@@ -48,9 +48,9 @@ impl Next<f64> for Trendflex {
             sum += filt - val;
         }
         sum /= self.length as f64;
-        
+
         self.ms = 0.04 * sum * sum + 0.96 * self.ms;
-        
+
         if self.ms > 0.0 {
             sum / self.ms.sqrt()
         } else {
@@ -65,9 +65,11 @@ pub const TRENDFLEX_METADATA: IndicatorMetadata = IndicatorMetadata {
     usage: "Use to recognize enduring trends with minimal lag. It is better at identifying the start of a new trend than standard moving averages.",
     keywords: &["zero-lag", "trend", "ehlers", "dsp", "oscillator"],
     ehlers_summary: "Trendflex is the companion to Reflex. While Reflex focuses on the cyclic component by removing the trend slope, Trendflex retains the trend information by measuring the cumulative difference between the current smoothed value and its history without slope adjustment.",
-    params: &[
-        ParamDef { name: "length", default: "20", description: "Assumed cycle period" },
-    ],
+    params: &[ParamDef {
+        name: "length",
+        default: "20",
+        description: "Assumed cycle period",
+    }],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/traderstipsreference/implemented/TRADERS’ TIPS - FEBRUARY 2020.html",
     formula_latex: r#"
 \[
@@ -96,7 +98,10 @@ mod tests {
     #[test]
     fn test_trendflex_basic() {
         let mut tf = Trendflex::new(20);
-        let inputs = vec![10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0];
+        let inputs = vec![
+            10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0,
+            24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0,
+        ];
         for input in inputs {
             let res = tf.next(input);
             assert!(!res.is_nan());
@@ -121,12 +126,12 @@ mod tests {
             for (i, &input) in inputs.iter().enumerate() {
                 let filt = smoother.next(input);
                 filt_vals.push(filt);
-                
+
                 if filt_vals.len() <= length {
                     batch_results.push(0.0);
                     continue;
                 }
-                
+
                 let filt_now = filt_vals[i];
                 let mut sum = 0.0;
                 for count in 1..=length {
@@ -134,7 +139,7 @@ mod tests {
                     sum += filt_now - val;
                 }
                 sum /= length as f64;
-                
+
                 ms = 0.04 * sum * sum + 0.96 * ms;
                 let res = if ms > 0.0 { sum / ms.sqrt() } else { 0.0 };
                 batch_results.push(res);

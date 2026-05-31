@@ -181,18 +181,22 @@ mod tests {
     fn test_autotune_dc_tracking() {
         let window = 20;
         let mut at = AutoTuneFilter::new(window, 0.25);
-        
+
         // Sine wave with period 10
         let period = 10.0;
         for i in 0..100 {
             let _ = at.next(100.0 + (i as f64 * 2.0 * PI / period).sin());
         }
-        
+
         // After warming up, dc_prev should be close to the period (10.0)
-        // Note: dc is twice the lag of minimum correlation. 
+        // Note: dc is twice the lag of minimum correlation.
         // For a sine wave, min correlation is at half-period lag.
         // So lag = 5, dc = 10.
-        assert!(at.dc_prev >= 8.0 && at.dc_prev <= 12.0, "DC was {}", at.dc_prev);
+        assert!(
+            at.dc_prev >= 8.0 && at.dc_prev <= 12.0,
+            "DC was {}",
+            at.dc_prev
+        );
     }
 
     proptest! {

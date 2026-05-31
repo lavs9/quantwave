@@ -93,7 +93,13 @@ pub const KINEMATIC_KALMAN_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Kinematic Kalman Filter",
     description: "A 2D Kalman filter tracking price and velocity to reduce lag in trends.",
     usage: "Optimized for trend-following strategies where lag reduction is critical. q_pos controls price sensitivity, q_vel controls momentum sensitivity, and r controls overall smoothing.",
-    keywords: &["kalman", "adaptive", "kinematic", "momentum", "lag-reduction"],
+    keywords: &[
+        "kalman",
+        "adaptive",
+        "kinematic",
+        "momentum",
+        "lag-reduction",
+    ],
     ehlers_summary: "The Kinematic Kalman Filter extends the 1D model by incorporating a velocity state. This allows the filter to 'anticipate' the next price based on current momentum, providing a zero-lag-like response during strong trends while maintaining smoothness via its optimal error-correction logic.",
     params: &[
         ParamDef {
@@ -145,11 +151,11 @@ mod tests {
         let mut kf = KinematicKalmanFilter::new(0.001, 0.0001, 0.1);
         let res = kf.next(100.0);
         assert_eq!(res, 100.0); // Initialized to first value
-        
+
         // Trend up: price goes to 101, 102, 103
         let res2 = kf.next(101.0);
         assert!(res2 > 100.0 && res2 < 101.0);
-        
+
         let res3 = kf.next(102.0);
         assert!(res3 > res2);
     }
@@ -162,7 +168,7 @@ mod tests {
             let q_pos = 0.001;
             let q_vel = 0.0001;
             let r = 0.1;
-            
+
             let mut kf = KinematicKalmanFilter::new(q_pos, q_vel, r);
             let streaming_results: Vec<f64> = inputs.iter().map(|&x| kf.next(x)).collect();
 

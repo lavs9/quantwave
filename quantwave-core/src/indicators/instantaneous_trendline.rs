@@ -1,5 +1,5 @@
+use crate::indicators::hilbert_transform::{EhlersWma4, HilbertFIR};
 use crate::indicators::metadata::IndicatorMetadata;
-use crate::indicators::hilbert_transform::{HilbertFIR, EhlersWma4};
 use crate::traits::Next;
 use std::collections::VecDeque;
 
@@ -15,19 +15,19 @@ pub struct InstantaneousTrendline {
     hilbert_q1: HilbertFIR,
     hilbert_ji: HilbertFIR,
     hilbert_jq: HilbertFIR,
-    
+
     price_history: VecDeque<f64>,
     detrender_history: VecDeque<f64>,
     i1_history: VecDeque<f64>,
     q1_history: VecDeque<f64>,
-    
+
     i2_prev: f64,
     q2_prev: f64,
     re_prev: f64,
     im_prev: f64,
     period_prev: f64,
     smooth_period_prev: f64,
-    
+
     itrend_wma: EhlersWma4,
     _itrend_history: VecDeque<f64>,
     count: usize,
@@ -41,19 +41,19 @@ impl InstantaneousTrendline {
             hilbert_q1: HilbertFIR::new(),
             hilbert_ji: HilbertFIR::new(),
             hilbert_jq: HilbertFIR::new(),
-            
+
             price_history: VecDeque::from(vec![0.0; 50]),
             detrender_history: VecDeque::from(vec![0.0; 7]),
             i1_history: VecDeque::from(vec![0.0; 7]),
             q1_history: VecDeque::from(vec![0.0; 7]),
-            
+
             i2_prev: 0.0,
             q2_prev: 0.0,
             re_prev: 0.0,
             im_prev: 0.0,
             period_prev: 6.0,
             smooth_period_prev: 6.0,
-            
+
             itrend_wma: EhlersWma4::new(),
             _itrend_history: VecDeque::from(vec![0.0; 4]),
             count: 0,
@@ -83,7 +83,7 @@ impl Next<f64> for InstantaneousTrendline {
 
         let smooth = self.wma_price.next(price);
         let detrender = self.hilbert_detrender.next(smooth, self.period_prev);
-        
+
         self.detrender_history.pop_back();
         self.detrender_history.push_front(detrender);
 
@@ -104,7 +104,7 @@ impl Next<f64> for InstantaneousTrendline {
         // Smooth I and Q components
         i2 = 0.2 * i2 + 0.8 * self.i2_prev;
         q2 = 0.2 * q2 + 0.8 * self.q2_prev;
-        
+
         // Homodyne Discriminator
         let mut re = i2 * self.i2_prev + q2 * self.q2_prev;
         let mut im = i2 * self.q2_prev - q2 * self.i2_prev;
@@ -136,7 +136,7 @@ impl Next<f64> for InstantaneousTrendline {
 
         // DCPeriod = IntPortion(SmoothPeriod + .5);
         let dc_period = (smooth_period + 0.5) as usize;
-        
+
         let mut itrend = 0.0;
         for i in 0..dc_period {
             if i < self.price_history.len() {
@@ -152,7 +152,7 @@ impl Next<f64> for InstantaneousTrendline {
         if self.count < 12 {
             return price;
         }
-        
+
         trendline
     }
 }
@@ -183,7 +183,9 @@ mod tests {
     #[test]
     fn test_instantaneous_trendline_basic() {
         let mut it = InstantaneousTrendline::new();
-        let prices = vec![10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0];
+        let prices = vec![
+            10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0,
+        ];
         for p in prices {
             let res = it.next(p);
             assert!(!res.is_nan());

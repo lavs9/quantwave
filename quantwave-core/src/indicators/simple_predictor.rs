@@ -1,7 +1,7 @@
-use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::high_pass::HighPass;
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::super_smoother::SuperSmoother;
+use crate::traits::Next;
 
 /// Simple 2-Pole Predictor
 ///
@@ -49,7 +49,7 @@ impl Next<f64> for SimplePredictor {
             signal
         } else {
             // Predict = (Signal - c1*Signal[1] - c2*Signal[2]) / sum
-            // Note: Pine script: 
+            // Note: Pine script:
             // c0 = (1.0 / sum) * Signal
             // c1_ = (c1 / sum) * Signal[1]
             // c2_ = (c2 / sum) * Signal[2]
@@ -59,7 +59,7 @@ impl Next<f64> for SimplePredictor {
 
         self.signal_history[1] = self.signal_history[0];
         self.signal_history[0] = signal;
-        
+
         res
     }
 }

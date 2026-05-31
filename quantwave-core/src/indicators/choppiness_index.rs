@@ -4,7 +4,7 @@ use std::collections::VecDeque;
 
 /// Choppiness Index
 ///
-/// The Choppiness Index is a volatility indicator used to determine if the 
+/// The Choppiness Index is a volatility indicator used to determine if the
 /// market is trending or ranging (choppy).
 /// Values above 61.8 indicate choppiness, while values below 38.2 indicate trending.
 #[derive(Debug, Clone)]
@@ -66,15 +66,23 @@ impl Next<(f64, f64, f64)> for ChoppinessIndex {
 
         // sum(TrueRange, N)
         let sum_tr: f64 = self.tr_window.iter().sum();
-        
+
         // MaxHigh(N) - MinLow(N)
         let mut max_h = f64::MIN;
         let mut min_l = f64::MAX;
-        for &h in &self.high_window { if h > max_h { max_h = h; } }
-        for &l in &self.low_window { if l < min_l { min_l = l; } }
-        
+        for &h in &self.high_window {
+            if h > max_h {
+                max_h = h;
+            }
+        }
+        for &l in &self.low_window {
+            if l < min_l {
+                min_l = l;
+            }
+        }
+
         let range = max_h - min_l;
-        
+
         if range == 0.0 {
             100.0
         } else {
@@ -90,9 +98,11 @@ pub const CHOPPINESS_INDEX_METADATA: IndicatorMetadata = IndicatorMetadata {
     usage: "Use to determine whether a market is trending or choppy before selecting a trading strategy. Values above 61.8 indicate chop; values below 38.2 indicate a strong trend.",
     keywords: &["volatility", "trend-strength", "classic", "range"],
     ehlers_summary: "The Choppiness Index, developed by E.W. Dreiss, measures how much of the total ATR-based range is consumed by the actual net price move over N bars. A value near 100 means price wandered back and forth using all available range without net progress (maximum chop); near 0 means a straight directional move with minimal retracement. — StockCharts ChartSchool",
-    params: &[
-        ParamDef { name: "period", default: "14", description: "Lookback period" },
-    ],
+    params: &[ParamDef {
+        name: "period",
+        default: "14",
+        description: "Lookback period",
+    }],
     formula_source: "https://www.tradingview.com/support/solutions/43000501980-choppiness-index-chop/",
     formula_latex: r#"
 \[

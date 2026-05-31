@@ -96,7 +96,10 @@ mod tests {
     #[test]
     fn test_my_rsi_basic() {
         let mut rsi = MyRSI::new(14);
-        let inputs = vec![10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0];
+        let inputs = vec![
+            10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0,
+            24.0,
+        ];
         let mut last_rsi = 0.0;
         for input in inputs {
             last_rsi = rsi.next(input);

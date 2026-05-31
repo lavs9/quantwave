@@ -3,7 +3,7 @@ use crate::traits::Next;
 use std::f64::consts::PI;
 
 /// Roofing Filter
-/// 
+///
 /// Based on John Ehlers' "Predictive Indicators for Effective Trading Strategies" (2013).
 /// It combines a 2-pole HighPass filter with a SuperSmoother filter to isolate
 /// cycle components between a lower and upper period (e.g., 10 and 48 bars).
@@ -12,17 +12,17 @@ use std::f64::consts::PI;
 pub struct RoofingFilter {
     _hp_period: usize,
     _ss_period: usize,
-    
+
     // HighPass coefficients
     hp_c1: f64,
     hp_c2: f64,
     hp_c3: f64,
-    
+
     // SuperSmoother coefficients
     ss_c1: f64,
     ss_c2: f64,
     ss_c3: f64,
-    
+
     price_history: [f64; 2],
     hp_history: [f64; 2],
     filt_history: [f64; 2],
@@ -36,12 +36,12 @@ impl RoofingFilter {
         let hp_c1 = (1.0 - alpha1 / 2.0).powi(2);
         let hp_c2 = 2.0 * (1.0 - alpha1);
         let hp_c3 = -(1.0 - alpha1).powi(2);
-        
+
         let a1 = (-1.414 * PI / ss_period as f64).exp();
         let ss_c2 = 2.0 * a1 * (1.414 * PI / ss_period as f64).cos();
         let ss_c3 = -a1 * a1;
         let ss_c1 = 1.0 - ss_c2 - ss_c3;
-        
+
         Self {
             _hp_period: hp_period,
             _ss_period: ss_period,
@@ -64,7 +64,7 @@ impl Next<f64> for RoofingFilter {
 
     fn next(&mut self, input: f64) -> Self::Output {
         self.count += 1;
-        
+
         let hp = if self.count < 3 {
             0.0
         } else {
@@ -72,7 +72,7 @@ impl Next<f64> for RoofingFilter {
                 + self.hp_c2 * self.hp_history[0]
                 + self.hp_c3 * self.hp_history[1]
         };
-            
+
         let res = if self.count < 3 {
             0.0
         } else {
@@ -80,14 +80,14 @@ impl Next<f64> for RoofingFilter {
                 + self.ss_c2 * self.filt_history[0]
                 + self.ss_c3 * self.filt_history[1]
         };
-            
+
         self.hp_history[1] = self.hp_history[0];
         self.hp_history[0] = hp;
         self.price_history[1] = self.price_history[0];
         self.price_history[0] = input;
         self.filt_history[1] = self.filt_history[0];
         self.filt_history[0] = res;
-        
+
         res
     }
 }
@@ -99,8 +99,16 @@ pub const ROOFING_FILTER_METADATA: IndicatorMetadata = IndicatorMetadata {
     keywords: &["filter", "ehlers", "dsp", "cycle", "high-pass", "low-pass"],
     ehlers_summary: "Introduced in Cycle Analytics for Traders (2013), the Roofing Filter first applies a high-pass filter to remove the dominant trend component, then a SuperSmoother to remove short-term noise. The result is a cycle-only signal with controlled bandwidth, ideal for use as input to oscillators and cycle indicators.",
     params: &[
-        ParamDef { name: "hp_period", default: "48", description: "HighPass critical period" },
-        ParamDef { name: "ss_period", default: "10", description: "SuperSmoother critical period" },
+        ParamDef {
+            name: "hp_period",
+            default: "48",
+            description: "HighPass critical period",
+        },
+        ParamDef {
+            name: "ss_period",
+            default: "10",
+            description: "SuperSmoother critical period",
+        },
     ],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/PredictiveIndicators.pdf",
     formula_latex: r#"
@@ -143,7 +151,7 @@ mod tests {
             let ss_period = 10;
             let mut rf = RoofingFilter::new(hp_period, ss_period);
             let streaming_results: Vec<f64> = inputs.iter().map(|&x| rf.next(x)).collect();
-            
+
             // Batch implementation
             let mut batch_results = Vec::with_capacity(inputs.len());
             let hp_angle = 0.707 * 2.0 * PI / hp_period as f64;
@@ -151,16 +159,16 @@ mod tests {
             let hp_c1 = (1.0 - alpha1 / 2.0).powi(2);
             let hp_c2 = 2.0 * (1.0 - alpha1);
             let hp_c3 = -(1.0 - alpha1).powi(2);
-            
+
             let a1 = (-1.414 * PI / ss_period as f64).exp();
             let ss_c2 = 2.0 * a1 * (1.414 * PI / ss_period as f64).cos();
             let ss_c3 = -a1 * a1;
             let ss_c1 = 1.0 - ss_c2 - ss_c3;
-            
+
             let mut price_hist = [0.0; 2];
             let mut hp_hist = [0.0; 2];
             let mut filt_hist = [0.0; 2];
-            
+
             for (i, &input) in inputs.iter().enumerate() {
                 let bar = i + 1;
                 let hp = if bar < 3 {
@@ -173,7 +181,7 @@ mod tests {
                 } else {
                     ss_c1 * (hp + hp_hist[0]) / 2.0 + ss_c2 * filt_hist[0] + ss_c3 * filt_hist[1]
                 };
-                
+
                 hp_hist[1] = hp_hist[0];
                 hp_hist[0] = hp;
                 price_hist[1] = price_hist[0];
@@ -182,7 +190,7 @@ mod tests {
                 filt_hist[0] = res;
                 batch_results.push(res);
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-10);
             }

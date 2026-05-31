@@ -1,13 +1,8 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// Max Pain strike calculation.
 /// Returns the strike price where the total loss to option buyers is minimized.
-pub fn max_pain(
-    strikes: &[f64],
-    ce_oi: &[u64],
-    pe_oi: &[u64],
-    lot_size: u32,
-) -> f64 {
+pub fn max_pain(strikes: &[f64], ce_oi: &[u64], pe_oi: &[u64], lot_size: u32) -> f64 {
     if strikes.is_empty() {
         return 0.0;
     }
@@ -41,13 +36,15 @@ pub fn max_pain(
 /// Per-strike Put-Call Ratio (PCR).
 /// Returns Vec of PE_OI / CE_OI for each strike.
 pub fn strike_pcr(ce_oi: &[u64], pe_oi: &[u64]) -> Vec<f64> {
-    ce_oi.iter().zip(pe_oi.iter()).map(|(&ce, &pe)| {
-        if ce == 0 {
-            0.0
-        } else {
-            pe as f64 / ce as f64
-        }
-    }).collect()
+    ce_oi
+        .iter()
+        .zip(pe_oi.iter())
+        .map(
+            |(&ce, &pe)| {
+                if ce == 0 { 0.0 } else { pe as f64 / ce as f64 }
+            },
+        )
+        .collect()
 }
 
 /// Chain-level Put-Call Ratio (PCR).
@@ -65,13 +62,15 @@ pub fn chain_pcr(ce_oi: &[u64], pe_oi: &[u64]) -> f64 {
 /// OI concentration zones (Support and Resistance).
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OIZones {
-    pub resistance_strikes: Vec<f64>,  // Top N strikes by CE OI
-    pub support_strikes: Vec<f64>,     // Top N strikes by PE OI
+    pub resistance_strikes: Vec<f64>, // Top N strikes by CE OI
+    pub support_strikes: Vec<f64>,    // Top N strikes by PE OI
 }
 
 pub fn oi_zones(strikes: &[f64], ce_oi: &[u64], pe_oi: &[u64], n: usize) -> OIZones {
-    let mut ce_pairs: Vec<(f64, u64)> = strikes.iter().cloned().zip(ce_oi.iter().cloned()).collect();
-    let mut pe_pairs: Vec<(f64, u64)> = strikes.iter().cloned().zip(pe_oi.iter().cloned()).collect();
+    let mut ce_pairs: Vec<(f64, u64)> =
+        strikes.iter().cloned().zip(ce_oi.iter().cloned()).collect();
+    let mut pe_pairs: Vec<(f64, u64)> =
+        strikes.iter().cloned().zip(pe_oi.iter().cloned()).collect();
 
     ce_pairs.sort_by(|a, b| b.1.cmp(&a.1));
     pe_pairs.sort_by(|a, b| b.1.cmp(&a.1));
@@ -110,9 +109,10 @@ pub fn gex_flip_strike(strikes: &[f64], net_gex: &[f64]) -> Option<f64> {
     if strikes.len() < 2 {
         return None;
     }
-    
+
     for i in 0..net_gex.len() - 1 {
-        if (net_gex[i] < 0.0 && net_gex[i+1] > 0.0) || (net_gex[i] > 0.0 && net_gex[i+1] < 0.0) {
+        if (net_gex[i] < 0.0 && net_gex[i + 1] > 0.0) || (net_gex[i] > 0.0 && net_gex[i + 1] < 0.0)
+        {
             // Linear interpolation for more precision if needed, but returning nearest strike for now
             return Some(strikes[i]);
         }
@@ -122,12 +122,7 @@ pub fn gex_flip_strike(strikes: &[f64], net_gex: &[f64]) -> Option<f64> {
 
 /// ATM Straddle analytics.
 /// Returns (atm_strike, straddle_premium, implied_move_pct).
-pub fn atm_straddle(
-    spot: f64,
-    strikes: &[f64],
-    ce_ltp: &[f64],
-    pe_ltp: &[f64],
-) -> (f64, f64, f64) {
+pub fn atm_straddle(spot: f64, strikes: &[f64], ce_ltp: &[f64], pe_ltp: &[f64]) -> (f64, f64, f64) {
     if strikes.is_empty() {
         return (0.0, 0.0, 0.0);
     }
@@ -152,12 +147,10 @@ pub fn atm_straddle(
 
 /// Synthetic Futures calculation per strike.
 /// Future Price = CE_LTP - PE_LTP + Strike
-pub fn synthetic_futures(
-    strikes: &[f64],
-    ce_ltp: &[f64],
-    pe_ltp: &[f64],
-) -> Vec<f64> {
-    strikes.iter().enumerate().map(|(i, &k)| {
-        ce_ltp[i] - pe_ltp[i] + k
-    }).collect()
+pub fn synthetic_futures(strikes: &[f64], ce_ltp: &[f64], pe_ltp: &[f64]) -> Vec<f64> {
+    strikes
+        .iter()
+        .enumerate()
+        .map(|(i, &k)| ce_ltp[i] - pe_ltp[i] + k)
+        .collect()
 }

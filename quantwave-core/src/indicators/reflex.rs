@@ -1,6 +1,6 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::super_smoother::SuperSmoother;
+use crate::traits::Next;
 use std::collections::VecDeque;
 
 /// Ehlers Reflex
@@ -33,27 +33,27 @@ impl Next<f64> for Reflex {
     fn next(&mut self, input: f64) -> Self::Output {
         let filt = self.smoother.next(input);
         self.filt_history.push_front(filt);
-        
+
         if self.filt_history.len() <= self.length {
             return 0.0;
         }
-        
+
         if self.filt_history.len() > self.length + 1 {
             self.filt_history.pop_back();
         }
 
         let filt_n = self.filt_history[self.length];
         let slope = (filt_n - filt) / self.length as f64;
-        
+
         let mut sum = 0.0;
         for count in 1..=self.length {
             let val = self.filt_history[count];
             sum += (filt + count as f64 * slope) - val;
         }
         sum /= self.length as f64;
-        
+
         self.ms = 0.04 * sum * sum + 0.96 * self.ms;
-        
+
         if self.ms > 0.0 {
             sum / self.ms.sqrt()
         } else {
@@ -68,9 +68,11 @@ pub const REFLEX_METADATA: IndicatorMetadata = IndicatorMetadata {
     usage: "Use to identify cyclic reversals with minimal lag. It is more sensitive to significant reversals than standard moving averages.",
     keywords: &["zero-lag", "cycle", "ehlers", "dsp", "oscillator"],
     ehlers_summary: "Ehlers introduces Reflex as a way to reduce lag in averaging indicators by measuring the difference between the current SuperSmoother value and its historical values, adjusted for a linear slope. This 'reflexes' the indicator to show reversals as they happen rather than after the fact.",
-    params: &[
-        ParamDef { name: "length", default: "20", description: "Assumed cycle period" },
-    ],
+    params: &[ParamDef {
+        name: "length",
+        default: "20",
+        description: "Assumed cycle period",
+    }],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/traderstipsreference/implemented/TRADERS’ TIPS - FEBRUARY 2020.html",
     formula_latex: r#"
 \[
@@ -102,7 +104,10 @@ mod tests {
     #[test]
     fn test_reflex_basic() {
         let mut reflex = Reflex::new(20);
-        let inputs = vec![10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0];
+        let inputs = vec![
+            10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0,
+            24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0,
+        ];
         for input in inputs {
             let res = reflex.next(input);
             assert!(!res.is_nan());
@@ -127,23 +132,23 @@ mod tests {
             for (i, &input) in inputs.iter().enumerate() {
                 let filt = smoother.next(input);
                 filt_vals.push(filt);
-                
+
                 if filt_vals.len() <= length {
                     batch_results.push(0.0);
                     continue;
                 }
-                
+
                 let filt_now = filt_vals[i];
                 let filt_n = filt_vals[i - length];
                 let slope = (filt_n - filt_now) / length as f64;
-                
+
                 let mut sum = 0.0;
                 for count in 1..=length {
                     let val = filt_vals[i - count];
                     sum += (filt_now + count as f64 * slope) - val;
                 }
                 sum /= length as f64;
-                
+
                 ms = 0.04 * sum * sum + 0.96 * ms;
                 let res = if ms > 0.0 { sum / ms.sqrt() } else { 0.0 };
                 batch_results.push(res);

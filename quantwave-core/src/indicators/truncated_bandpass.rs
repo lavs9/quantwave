@@ -65,7 +65,7 @@ impl Next<f64> for TruncatedBandpass {
         // In the EasyLanguage code:
         // for count = Length downto 1
         // Trunc[count] = .5*(1-S1)*(Close[count-1] - Close[count+1]) + L1*(1+S1)*Trunc[count+1] - S1*Trunc[count+2]
-        
+
         // Let's iterate from the oldest relevant bar (Length) to the newest (1)
         for i in (0..self.length).rev() {
             // Close[i] in EL is price at index i (0 is current)
@@ -74,7 +74,7 @@ impl Next<f64> for TruncatedBandpass {
             let val = 0.5 * (1.0 - self.s1) * (self.prices[i] - self.prices[i + 2])
                 + self.l1 * (1.0 + self.s1) * t1
                 - self.s1 * t2;
-            
+
             t2 = t1;
             t1 = val;
             bpt = val;
@@ -161,7 +161,7 @@ mod tests {
                     batch_results.push(0.0);
                     continue;
                 }
-                
+
                 let mut t2 = 0.0;
                 let mut t1 = 0.0;
                 let mut bpt = 0.0;

@@ -113,8 +113,8 @@ pub const EHLERS_AUTOCORRELATION_METADATA: IndicatorMetadata = IndicatorMetadata
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{assert_indicator_parity_vec, load_gold_standard_vec};
     use crate::traits::Next;
-    use crate::test_utils::{load_gold_standard_vec, assert_indicator_parity_vec};
     use proptest::prelude::*;
 
     #[test]
@@ -149,7 +149,7 @@ mod tests {
             let mut batch_results = Vec::with_capacity(inputs.len());
             let mut smoother = UltimateSmoother::new(20);
             let filtered: Vec<f64> = inputs.iter().map(|&x| smoother.next(x)).collect();
-            
+
             for i in 0..inputs.len() {
                 let mut bar_results = Vec::with_capacity(num_lags);
                 for lag in 0..num_lags {
@@ -158,25 +158,25 @@ mod tests {
                     let mut sxx = 0.0;
                     let mut sxy = 0.0;
                     let mut syy = 0.0;
-                    
+
                     for j in 0..length {
                         let idx_x = i as i32 - j as i32;
                         let idx_y = i as i32 - (lag + j) as i32;
-                        
+
                         let x = if idx_x >= 0 { filtered[idx_x as usize] } else { 0.0 };
                         let y = if idx_y >= 0 { filtered[idx_y as usize] } else { 0.0 };
-                        
+
                         sx += x;
                         sy += y;
                         sxx += x * x;
                         sxy += x * y;
                         syy += y * y;
                     }
-                    
+
                     let len_f = length as f64;
                     let denom_x = len_f * sxx - sx * sx;
                     let denom_y = len_f * syy - sy * sy;
-                    
+
                     let corr = if denom_x > 0.0 && denom_y > 0.0 {
                         (len_f * sxy - sx * sy) / (denom_x * denom_y).sqrt()
                     } else if lag == 0 {

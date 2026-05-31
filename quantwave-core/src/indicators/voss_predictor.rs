@@ -1,6 +1,6 @@
+use crate::indicators::bandpass::BandPass;
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
-use crate::indicators::bandpass::BandPass;
 use std::collections::VecDeque;
 
 /// Voss Predictive Filter
@@ -37,7 +37,7 @@ impl Next<f64> for VossPredictor {
 
     fn next(&mut self, input: f64) -> Self::Output {
         let filt = self.bandpass.next(input);
-        
+
         let mut sum_c = 0.0;
         if self.order > 0 {
             for count in 0..self.order {
@@ -54,7 +54,7 @@ impl Next<f64> for VossPredictor {
         }
 
         let voss = ((3.0 + self.order as f64) / 2.0) * filt - sum_c;
-        
+
         self.voss_history.push_front(voss);
         if self.voss_history.len() > self.order {
             self.voss_history.pop_back();
@@ -71,8 +71,16 @@ pub const VOSS_PREDICTOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     keywords: &["prediction", "cycle", "ehlers", "dsp", "filter"],
     ehlers_summary: "The Voss Predictor is a predictive filter developed by J.F. Voss and adapted by Ehlers in Cycle Analytics for Traders. Its IIR bandpass design inherently extrapolates the filtered signal several bars into the future by virtue of pole placement inside the unit circle, enabling lookahead without buffer access.",
     params: &[
-        ParamDef { name: "period", default: "20", description: "Center period of the BandPass filter" },
-        ParamDef { name: "predict", default: "3", description: "Number of bars of prediction" },
+        ParamDef {
+            name: "period",
+            default: "20",
+            description: "Center period of the BandPass filter",
+        },
+        ParamDef {
+            name: "predict",
+            default: "3",
+            description: "Number of bars of prediction",
+        },
     ],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/A%20PEEK%20INTO%20THE%20FUTURE.pdf",
     formula_latex: r#"
@@ -96,8 +104,8 @@ Voss = \frac{3 + Order}{2} Filt - SumC
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{assert_indicator_parity_tuple, load_gold_standard_tuple};
     use crate::traits::Next;
-    use crate::test_utils::{load_gold_standard_tuple, assert_indicator_parity_tuple};
     use proptest::prelude::*;
 
     #[test]
@@ -127,13 +135,13 @@ mod tests {
             let predict = 3;
             let mut vp = VossPredictor::new(period, predict);
             let streaming_results: Vec<(f64, f64)> = inputs.iter().map(|&x| vp.next(x)).collect();
-            
+
             // Batch implementation
             let mut batch_results = Vec::with_capacity(inputs.len());
             let mut bp = BandPass::new(period, 0.25);
             let order = 3 * predict;
             let mut v_hist = VecDeque::new();
-            
+
             for &input in &inputs {
                 let filt = bp.next(input);
                 let mut sum_c = 0.0;
@@ -146,7 +154,7 @@ mod tests {
                     };
                     sum_c += ((count + 1) as f64 / order as f64) * val;
                 }
-                
+
                 let voss = ((3.0 + order as f64) / 2.0) * filt - sum_c;
                 v_hist.push_front(voss);
                 if v_hist.len() > order {
@@ -154,7 +162,7 @@ mod tests {
                 }
                 batch_results.push((filt, voss));
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-10);
                 approx::assert_relative_eq!(s.1, b.1, epsilon = 1e-10);

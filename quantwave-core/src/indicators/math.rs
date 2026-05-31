@@ -116,7 +116,9 @@ impl crate::traits::Next<f64> for RMS {
         self.sum_sq += input_sq;
         self.history.push_back(input_sq);
 
-        if self.history.len() > self.period && let Some(old) = self.history.pop_front() {
+        if self.history.len() > self.period
+            && let Some(old) = self.history.pop_front()
+        {
             self.sum_sq -= old;
         }
 

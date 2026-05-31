@@ -1,9 +1,9 @@
-use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::hann::HannFilter;
 use crate::indicators::high_pass::HighPass;
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::super_smoother::SuperSmoother;
 use crate::indicators::ultimate_smoother::UltimateSmoother;
+use crate::traits::Next;
 use std::collections::VecDeque;
 use std::f64::consts::PI;
 
@@ -76,7 +76,9 @@ impl Next<f64> for SyntheticOscillator {
 
         self.lp_window.push_back(lp);
         self.lp_sum_sq += lp * lp;
-        if self.lp_window.len() > 100 && let Some(old) = self.lp_window.pop_front() {
+        if self.lp_window.len() > 100
+            && let Some(old) = self.lp_window.pop_front()
+        {
             self.lp_sum_sq -= old * old;
         }
 
@@ -87,7 +89,9 @@ impl Next<f64> for SyntheticOscillator {
         let roc = re - self.re_prev;
         self.roc_window.push_back(roc);
         self.roc_sum_sq += roc * roc;
-        if self.roc_window.len() > 100 && let Some(old) = self.roc_window.pop_front() {
+        if self.roc_window.len() > 100
+            && let Some(old) = self.roc_window.pop_front()
+        {
             self.roc_sum_sq -= old * old;
         }
 
@@ -102,8 +106,12 @@ impl Next<f64> for SyntheticOscillator {
             self.dc_prev
         };
 
-        if dc < self.lower_bound { dc = self.lower_bound; }
-        if dc > self.upper_bound { dc = self.upper_bound; }
+        if dc < self.lower_bound {
+            dc = self.lower_bound;
+        }
+        if dc > self.upper_bound {
+            dc = self.upper_bound;
+        }
 
         let hp2 = self.hp2.next(input);
         let bp = self.us.next(hp2);
@@ -123,7 +131,9 @@ impl Next<f64> for SyntheticOscillator {
         // Glitch removal
         // Normalize phase to [0, 2*PI] for quadrant checks
         let norm_phase = self.phase % (2.0 * PI);
-        if (norm_phase > 0.0 && norm_phase < PI / 2.0 && synth < self.synth_prev) || (norm_phase > PI && norm_phase < 1.5 * PI && synth > self.synth_prev) {
+        if (norm_phase > 0.0 && norm_phase < PI / 2.0 && synth < self.synth_prev)
+            || (norm_phase > PI && norm_phase < 1.5 * PI && synth > self.synth_prev)
+        {
             synth = self.synth_prev;
         }
 
@@ -144,8 +154,16 @@ pub const SYNTHETIC_OSCILLATOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     keywords: &["oscillator", "ehlers", "dsp", "cycle", "synthetic"],
     ehlers_summary: "Ehlers constructs a Synthetic Oscillator by generating a synthetic sine wave at the measured dominant cycle period and comparing it to price. The phase difference between the synthetic sine and actual price reveals whether the market is ahead of or behind its expected cycle position.",
     params: &[
-        ParamDef { name: "lower_bound", default: "15", description: "Lower bound of cycle period" },
-        ParamDef { name: "upper_bound", default: "25", description: "Upper bound of cycle period" },
+        ParamDef {
+            name: "lower_bound",
+            default: "15",
+            description: "Lower bound of cycle period",
+        },
+        ParamDef {
+            name: "upper_bound",
+            default: "25",
+            description: "Upper bound of cycle period",
+        },
     ],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/traderstipsreference/TRADERS’%20TIPS%20-%20APRIL%202026.html",
     formula_latex: r#"
@@ -224,7 +242,7 @@ mod tests {
                 let p = hann.next(input);
                 let h = hp.next(p);
                 let l = ss.next(h);
-                
+
                 lp_win.push_back(l);
                 lp_sum_sq += l * l;
                 if lp_win.len() > 100 {
@@ -233,7 +251,7 @@ mod tests {
                 }
                 let rms_lp = (lp_sum_sq / lp_win.len() as f64).sqrt();
                 let re = if rms_lp > 1e-10 { l / rms_lp } else { 0.0 };
-                
+
                 let roc = re - re_prev;
                 roc_win.push_back(roc);
                 roc_sum_sq += roc * roc;
@@ -243,7 +261,7 @@ mod tests {
                 }
                 let qrms = (roc_sum_sq / roc_win.len() as f64).sqrt();
                 let im = if qrms > 1e-10 { roc / qrms } else { 0.0 };
-                
+
                 let denom = (re - re_prev) * im - (im - im_prev) * re;
                 let mut dc = if denom.abs() > 1e-10 {
                     (2.0 * PI * (re * re + im * im)) / denom
@@ -252,17 +270,17 @@ mod tests {
                 };
                 if dc < lb as f64 { dc = lb as f64; }
                 if dc > ub as f64 { dc = ub as f64; }
-                
+
                 let h2 = hp2.next(input);
                 let bp = us.next(h2);
-                
+
                 phase += 2.0 * PI / dc;
                 if bp_prev <= 0.0 && bp > 0.0 {
                     phase = PI / dc;
                 } else if bp_prev >= 0.0 && bp < 0.0 {
                     phase = PI + PI / dc;
                 }
-                
+
                 let mut synth = phase.sin();
                 let norm_phase = phase % (2.0 * PI);
                 if norm_phase > 0.0 && norm_phase < PI / 2.0 && synth < synth_prev {
@@ -270,9 +288,9 @@ mod tests {
                 } else if norm_phase > PI && norm_phase < 1.5 * PI && synth > synth_prev {
                     synth = synth_prev;
                 }
-                
+
                 batch_results.push(synth);
-                
+
                 re_prev = re;
                 im_prev = im;
                 dc_prev = dc;

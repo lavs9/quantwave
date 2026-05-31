@@ -40,8 +40,12 @@ impl Next<(f64, f64)> for VolumeProfile {
         let mut min_p = f64::MAX;
         let mut max_p = f64::MIN;
         for &(p, _) in self.window.iter() {
-            if p < min_p { min_p = p; }
-            if p > max_p { max_p = p; }
+            if p < min_p {
+                min_p = p;
+            }
+            if p > max_p {
+                max_p = p;
+            }
         }
 
         if min_p == max_p {
@@ -79,7 +83,13 @@ pub const VOLUME_PROFILE_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Volume Profile",
     description: "Calculates the price level with the highest traded volume (Point of Control) over a sliding window.",
     usage: "Use to identify significant support and resistance levels. The POC represents the price where most market activity occurred, often acting as a magnet for price or a strong barrier. Essential for volume spread analysis and auction market theory.",
-    keywords: &["volume", "profile", "poc", "support-resistance", "auction-market-theory"],
+    keywords: &[
+        "volume",
+        "profile",
+        "poc",
+        "support-resistance",
+        "auction-market-theory",
+    ],
     ehlers_summary: "Volume Profile is an advanced charting study that displays trading activity over a specified time period at specified price levels. The Point of Control (POC) is the single most important level in the profile, representing the price at which the most volume was traded. It serves as a key benchmark for identifying value areas and potential trend reversals.",
     params: &[
         ParamDef {
@@ -121,7 +131,7 @@ mod tests {
         // Some volume at 110
         let res = vp.next((110.0, 5.0));
         assert!(res >= 100.0 && res <= 105.0); // POC should still be in the 100 bin
-        
+
         // More volume at 110
         vp.next((110.0, 20.0));
         vp.next((110.0, 20.0));

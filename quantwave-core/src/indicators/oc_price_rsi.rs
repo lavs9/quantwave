@@ -1,6 +1,6 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::momentum::RSI;
+use crate::traits::Next;
 
 /// OCPrice RSI
 ///
@@ -42,13 +42,11 @@ pub const OC_PRICE_RSI_METADATA: IndicatorMetadata = IndicatorMetadata {
     usage: "Use to measure momentum on the open-to-close price differential rather than close-to-close, capturing intraday directional strength more directly.",
     keywords: &["oscillator", "rsi", "ehlers", "momentum"],
     ehlers_summary: "Ehlers computes this RSI variant on the difference between the open and close price of each bar rather than on the closing price series. The open-close differential captures the net directional pressure within each bar, producing a momentum oscillator more sensitive to intraday commitment than standard RSI.",
-    params: &[
-        ParamDef {
-            name: "period",
-            default: "14",
-            description: "RSI period",
-        },
-    ],
+    params: &[ParamDef {
+        name: "period",
+        default: "14",
+        description: "RSI period",
+    }],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/EveryLittleBitHelps.pdf",
     formula_latex: r#"
 \[
@@ -65,8 +63,8 @@ RSI = \text{Wilder's RSI}(Input, Period)
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{assert_indicator_parity_oc, load_gold_standard_oc};
     use crate::traits::Next;
-    use crate::test_utils::{load_gold_standard_oc, assert_indicator_parity_oc};
     use proptest::prelude::*;
 
     #[test]
@@ -95,7 +93,7 @@ mod tests {
         ) {
             let period = 14;
             let mut ocrsi = OCPriceRSI::new(period);
-            
+
             let min_len = opens.len().min(closes.len());
             let inputs: Vec<(f64, f64)> = opens[..min_len].iter().cloned().zip(closes[..min_len].iter().cloned()).collect();
             let streaming_results: Vec<f64> = inputs.iter().map(|&x| ocrsi.next(x)).collect();

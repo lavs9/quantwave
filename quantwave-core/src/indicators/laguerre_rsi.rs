@@ -78,11 +78,7 @@ impl Next<f64> for LaguerreRSI {
             cd += self.l3 - self.l2;
         }
 
-        let rsi = if cu + cd != 0.0 {
-            cu / (cu + cd)
-        } else {
-            0.0
-        };
+        let rsi = if cu + cd != 0.0 { cu / (cu + cd) } else { 0.0 };
 
         rsi.clamp(0.0, 1.0)
     }

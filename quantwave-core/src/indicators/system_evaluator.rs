@@ -59,18 +59,34 @@ impl Next<f64> for SystemEvaluator {
             0.0
         };
 
-        let ave_win = if self.num_wins > 0 { self.gross_winnings / self.num_wins as f64 } else { 0.0 };
-        let ave_loss = if self.num_losses > 0 { self.gross_losses / self.num_losses as f64 } else { 0.0 };
-        
-        let ave_win_loss_ratio = if ave_loss > 0.0 { ave_win / ave_loss } else { 0.0 };
+        let ave_win = if self.num_wins > 0 {
+            self.gross_winnings / self.num_wins as f64
+        } else {
+            0.0
+        };
+        let ave_loss = if self.num_losses > 0 {
+            self.gross_losses / self.num_losses as f64
+        } else {
+            0.0
+        };
+
+        let ave_win_loss_ratio = if ave_loss > 0.0 {
+            ave_win / ave_loss
+        } else {
+            0.0
+        };
         let average_trade = (self.gross_winnings - self.gross_losses) / total_trades;
-        
-        let breakeven_pf = if win_ratio > 0.0 { loss_ratio / win_ratio } else { 100.0 };
-        
+
+        let breakeven_pf = if win_ratio > 0.0 {
+            loss_ratio / win_ratio
+        } else {
+            100.0
+        };
+
         // Weighted Average Trade = AverageTrade * (AveWin / AveLoss)
         // Note: The paper derives it as T * (AveWin / AveLoss)
         let weighted_average_trade = average_trade * ave_win_loss_ratio;
-        
+
         // N = Log(0.0027) / Log(1 - %)
         // Where % is the probability of a win.
         let theoretical_consecutive_losers = if win_ratio < 1.0 {

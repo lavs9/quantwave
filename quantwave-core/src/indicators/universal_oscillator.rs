@@ -1,5 +1,5 @@
-use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::math::AGC;
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use std::f64::consts::PI;
 
@@ -13,15 +13,15 @@ pub struct UniversalOscillator {
     c1: f64,
     c2: f64,
     c3: f64,
-    
+
     price_prev1: f64,
     price_prev2: f64,
-    
+
     wn_prev1: f64,
-    
+
     filt_history: [f64; 2],
     agc: AGC,
-    
+
     count: usize,
 }
 
@@ -63,7 +63,7 @@ impl Next<f64> for UniversalOscillator {
 
         // WhiteNoise = ( Close - Close[2] ) / 2;
         let wn = (input - self.price_prev2) / 2.0;
-        
+
         // input = ( WhiteNoise + WhiteNoise[1] ) / 2;
         let white_noise_avg = (wn + self.wn_prev1) / 2.0;
 
@@ -92,13 +92,11 @@ pub const UNIVERSAL_OSCILLATOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     usage: "Use as a generic oscillator framework that works on any pre-filtered input. Feed it the output of any smoother or filter to produce a normalized zero-centered oscillator.",
     keywords: &["oscillator", "ehlers", "dsp", "universal", "momentum"],
     ehlers_summary: "Ehlers Universal Oscillator is a generic momentum computation that can be applied to any filtered price input. It computes the rate of change of the filtered series normalized by its RMS amplitude, producing a consistently scaled oscillator that works regardless of the underlying filter or price instrument.",
-    params: &[
-        ParamDef {
-            name: "band_edge",
-            default: "20",
-            description: "Critical period for the SuperSmoother filter",
-        },
-    ],
+    params: &[ParamDef {
+        name: "band_edge",
+        default: "20",
+        description: "Critical period for the SuperSmoother filter",
+    }],
     formula_source: "https://www.traders.com/Documentation/FEEDbk_docs/2015/01/TradersTips.html",
     formula_latex: r#"
 \[

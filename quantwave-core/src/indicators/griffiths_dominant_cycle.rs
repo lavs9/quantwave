@@ -1,7 +1,7 @@
-use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::high_pass::HighPass;
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::super_smoother::SuperSmoother;
+use crate::traits::Next;
 use std::collections::VecDeque;
 use std::f64::consts::PI;
 
@@ -256,7 +256,7 @@ mod tests {
                 } else if cycle < prev_cycle - 2.0 {
                     cycle = prev_cycle - 2.0;
                 }
-                
+
                 prev_cycle = cycle;
                 batch_results.push(cycle);
             }

@@ -6,7 +6,7 @@ use std::f64::consts::PI;
 /// RSI with Hann Windowing (RSIH)
 ///
 /// Based on John Ehlers' "(Yet Another) Improved RSI" (January 2022).
-/// It applies Hann window coefficients to price changes to create a smoother, 
+/// It applies Hann window coefficients to price changes to create a smoother,
 /// zero-centered oscillator.
 #[derive(Debug, Clone)]
 pub struct RSIH {
@@ -76,9 +76,11 @@ pub const RSIH_METADATA: IndicatorMetadata = IndicatorMetadata {
     usage: "Use to measure momentum exclusively on the cyclical (high-pass filtered) component of price, eliminating the trend bias that makes standard RSI drift.",
     keywords: &["oscillator", "rsi", "ehlers", "high-pass", "cycle"],
     ehlers_summary: "RSIH applies RSI computation to the high-pass filtered price rather than raw price. By removing the trend component first, the RSI calculation operates only on the cyclical content of the market, producing an oscillator that is centered around zero regardless of the prevailing trend direction.",
-    params: &[
-        ParamDef { name: "length", default: "14", description: "RSI length" },
-    ],
+    params: &[ParamDef {
+        name: "length",
+        default: "14",
+        description: "RSI length",
+    }],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/traderstipsreference/TRADERS’%20TIPS%20-%20JANUARY%202022.html",
     formula_latex: r#"
 \[
@@ -98,8 +100,8 @@ RSIH = \frac{CU - CD}{CU + CD}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{assert_indicator_parity, load_gold_standard};
     use crate::traits::Next;
-    use crate::test_utils::{load_gold_standard, assert_indicator_parity};
     use proptest::prelude::*;
 
     #[test]

@@ -1,7 +1,7 @@
-use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::traits::Next;
 use crate::indicators::high_pass::HighPass;
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::super_smoother::SuperSmoother;
+use crate::traits::Next;
 use std::collections::VecDeque;
 use std::f64::consts::PI;
 
@@ -103,7 +103,7 @@ impl Next<f64> for GriffithsSpectrum {
 
             let denom = (1.0 - real).powi(2) + imag.powi(2);
             let pwr = 0.1 / denom;
-            
+
             if pwr > max_pwr {
                 max_pwr = pwr;
             }
@@ -127,9 +127,21 @@ pub const GRIFFITHS_SPECTRUM_METADATA: IndicatorMetadata = IndicatorMetadata {
     keywords: &["spectrum", "cycle", "ehlers", "dsp", "periodogram"],
     ehlers_summary: "The Griffiths Spectrum is an adaptive spectral estimation method that provides higher resolution than a standard DFT for short data segments. It fits an all-pole model to the signal using an LMS algorithm, allowing for instantaneous frequency measurement without the windowing artifacts of FFT-based methods.",
     params: &[
-        ParamDef { name: "lower_bound", default: "18", description: "Lower period bound" },
-        ParamDef { name: "upper_bound", default: "40", description: "Upper period bound" },
-        ParamDef { name: "length", default: "40", description: "LMS filter length" },
+        ParamDef {
+            name: "lower_bound",
+            default: "18",
+            description: "Lower period bound",
+        },
+        ParamDef {
+            name: "upper_bound",
+            default: "40",
+            description: "Upper period bound",
+        },
+        ParamDef {
+            name: "length",
+            default: "40",
+            description: "LMS filter length",
+        },
     ],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/traderstipsreference/TRADERS’%20TIPS%20-%20JANUARY%202025.html",
     formula_latex: r#"
@@ -237,7 +249,7 @@ mod tests {
                     if pwr > max_pwr { max_pwr = pwr; }
                     powers.push(pwr);
                 }
-                
+
                 let norm_powers = if max_pwr != 0.0 {
                     powers.into_iter().map(|p| p / max_pwr).collect()
                 } else {

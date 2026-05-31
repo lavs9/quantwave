@@ -1,6 +1,6 @@
+use crate::indicators::high_pass::HighPass;
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
-use crate::indicators::high_pass::HighPass;
 use std::collections::VecDeque;
 
 /// Fisher HighPass Indicator
@@ -54,8 +54,12 @@ impl Next<f64> for FisherHighPass {
         let mut high = f64::MIN;
         let mut low = f64::MAX;
         for &v in &self.hp_window {
-            if v > high { high = v; }
-            if v < low { low = v; }
+            if v > high {
+                high = v;
+            }
+            if v < low {
+                low = v;
+            }
         }
 
         let normalized = if high != low {
@@ -66,7 +70,7 @@ impl Next<f64> for FisherHighPass {
 
         // 3-tap FIR smoothing: (N + N[1] + N[2]) / 3
         let smoothed = (normalized + self.smooth_history[0] + self.smooth_history[1]) / 3.0;
-        
+
         self.smooth_history[1] = self.smooth_history[0];
         self.smooth_history[0] = normalized;
 
@@ -149,7 +153,7 @@ mod tests {
             for i in 0..hp_vals.len() {
                 let start = if i >= norm_len - 1 { i + 1 - norm_len } else { 0 };
                 let window = &hp_vals[start..i + 1];
-                
+
                 if window.len() < norm_len {
                     batch_results.push(0.0);
                     norm_vals.push(0.0);

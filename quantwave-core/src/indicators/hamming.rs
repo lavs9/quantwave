@@ -20,11 +20,12 @@ impl HammingFilter {
     pub fn new(length: usize, pedestal_deg: f64) -> Self {
         let mut coefficients = Vec::with_capacity(length);
         let mut coef_sum = 0.0;
-        
+
         // Follows Ehlers' formula: Sine(Pedestal + (180 - 2*Pedestal)*count / (Length - 1))
         // count from 0 to Length - 1
         for count in 0..length {
-            let deg = pedestal_deg + (180.0 - 2.0 * pedestal_deg) * count as f64 / (length as f64 - 1.0).max(1.0);
+            let deg = pedestal_deg
+                + (180.0 - 2.0 * pedestal_deg) * count as f64 / (length as f64 - 1.0).max(1.0);
             let coef = (deg * PI / 180.0).sin();
             coefficients.push(coef);
             coef_sum += coef;

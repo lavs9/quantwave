@@ -1,5 +1,5 @@
+use crate::indicators::hilbert_transform::{EhlersWma4, HilbertFIR};
 use crate::indicators::metadata::IndicatorMetadata;
-use crate::indicators::hilbert_transform::{HilbertFIR, EhlersWma4};
 use crate::traits::Next;
 use std::collections::VecDeque;
 
@@ -13,7 +13,7 @@ pub struct Phasor {
     wma_price: EhlersWma4,
     hilbert_detrender: HilbertFIR,
     hilbert_q1: HilbertFIR,
-    
+
     detrender_history: VecDeque<f64>,
     period_prev: f64,
     count: usize,
@@ -25,7 +25,7 @@ impl Phasor {
             wma_price: EhlersWma4::new(),
             hilbert_detrender: HilbertFIR::new(),
             hilbert_q1: HilbertFIR::new(),
-            
+
             detrender_history: VecDeque::from(vec![0.0; 7]),
             period_prev: 6.0,
             count: 0,
@@ -44,7 +44,7 @@ impl Phasor {
 
         let smooth = self.wma_price.next(price);
         let detrender = self.hilbert_detrender.next(smooth, self.period_prev);
-        
+
         self.detrender_history.pop_back();
         self.detrender_history.push_front(detrender);
 

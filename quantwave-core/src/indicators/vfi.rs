@@ -179,7 +179,7 @@ mod tests {
             let vcoef = 2.5;
             let smoothing = 3;
             let mut vfi = Vfi::new(period, coef, vcoef, smoothing);
-            
+
             // Manual calculation for parity check
             let mut prev_tp: Option<f64> = None;
             let mut stddev = StandardDeviation::new(30);
@@ -188,7 +188,7 @@ mod tests {
             let mut dir_vol_window = VecDeque::new();
             let mut dir_vol_sum = 0.0;
             let mut ema = EMA::new(smoothing);
-            
+
             for (h, l, c, v) in inputs {
                 let h: f64 = h;
                 let l: f64 = l;
@@ -196,29 +196,29 @@ mod tests {
                 let high = h.max(l).max(c);
                 let low = h.min(l).min(c);
                 let tp = (high + low + c) / 3.0;
-                
+
                 let inter = match prev_tp {
                     Some(p) if tp > 0.0 && p > 0.0 => tp.ln() - p.ln(),
                     _ => 0.0,
                 };
                 let v_inter = stddev.next(inter);
                 let cutoff = coef * v_inter * c;
-                
+
                 let v_ave = if prev_v_ave == 0.0 {
                     v_sma.next(v)
                 } else {
                     prev_v_ave
                 };
                 prev_v_ave = v_sma.next(v);
-                
+
                 let v_max = v_ave * vcoef;
                 let vc = v.min(v_max);
-                
+
                 let mf = match prev_tp {
                     Some(p) => tp - p,
                     None => 0.0,
                 };
-                
+
                 let dir_vol = if mf > cutoff {
                     vc
                 } else if mf < -cutoff {
@@ -226,22 +226,22 @@ mod tests {
                 } else {
                     0.0
                 };
-                
+
                 dir_vol_window.push_back(dir_vol);
                 dir_vol_sum += dir_vol;
                 if dir_vol_window.len() > period {
                     dir_vol_sum -= dir_vol_window.pop_front().unwrap();
                 }
-                
+
                 let vfi_raw = if v_ave != 0.0 {
                     dir_vol_sum / v_ave
                 } else {
                     0.0
                 };
-                
+
                 let expected_vfi = ema.next(vfi_raw);
                 let actual_vfi = vfi.next((high, low, c, v));
-                
+
                 approx::assert_relative_eq!(actual_vfi, expected_vfi, epsilon = 1e-10);
                 prev_tp = Some(tp);
             }

@@ -107,8 +107,8 @@ RocketRSI = 0.5 \cdot \ln\left(\frac{1 + MyRSI}{1 - MyRSI}\right)
 mod tests {
     use super::*;
     use crate::traits::Next;
-    use proptest::proptest;
     use proptest::prelude::*;
+    use proptest::proptest;
 
     #[test]
     fn test_rocket_rsi_basic() {
@@ -131,7 +131,7 @@ mod tests {
 
             // Batch implementation
             let mut batch_results = Vec::with_capacity(inputs.len());
-            
+
             let mut price_window = VecDeque::with_capacity(rsi_length);
             let mut smoother = crate::indicators::super_smoother::SuperSmoother::new(smooth_length);
             let mut my_rsi = crate::indicators::my_rsi::MyRSI::new(rsi_length);

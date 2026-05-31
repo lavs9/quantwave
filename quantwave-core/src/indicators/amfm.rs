@@ -4,9 +4,9 @@ use std::collections::VecDeque;
 use std::f64::consts::PI;
 
 /// AM Detector (Volatility)
-/// 
+///
 /// Based on John Ehlers' "A Technical Description of Market Data for Traders".
-/// It recovers market volatility by detecting the envelope of the amplitude-modulated 
+/// It recovers market volatility by detecting the envelope of the amplitude-modulated
 /// whitened price spectrum.
 #[derive(Debug, Clone)]
 pub struct AMDetector {
@@ -40,10 +40,12 @@ impl Next<(f64, f64)> for AMDetector {
         }
 
         let envelope = self.deriv_history.iter().fold(f64::MIN, |a, &b| a.max(b));
-        
+
         self.envelope_history.push_back(envelope);
         self.sum_envelope += envelope;
-        if self.envelope_history.len() > self.avg_len && let Some(old) = self.envelope_history.pop_front() {
+        if self.envelope_history.len() > self.avg_len
+            && let Some(old) = self.envelope_history.pop_front()
+        {
             self.sum_envelope -= old;
         }
 
@@ -52,9 +54,9 @@ impl Next<(f64, f64)> for AMDetector {
 }
 
 /// FM Demodulator (Timing)
-/// 
+///
 /// Based on John Ehlers' "A Technical Description of Market Data for Traders".
-/// It extracts market timing information by demodulating the frequency-modulated 
+/// It extracts market timing information by demodulating the frequency-modulated
 /// price spectrum using a hard limiter and a SuperSmoother filter.
 #[derive(Debug, Clone)]
 pub struct FMDemodulator {
@@ -73,7 +75,7 @@ impl FMDemodulator {
         let c2 = 2.0 * a1 * (1.414 * PI / period as f64).cos();
         let c3 = -a1 * a1;
         let c1 = 1.0 - c2 - c3;
-        
+
         Self {
             _period: period,
             c1,
@@ -105,7 +107,7 @@ impl Next<(f64, f64)> for FMDemodulator {
         self.ss_history[1] = self.ss_history[0];
         self.ss_history[0] = ss;
         self.hl_prev = hl;
-        
+
         ss
     }
 }
@@ -117,8 +119,16 @@ pub const AM_DETECTOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     keywords: &["cycle", "ehlers", "dsp", "amplitude", "frequency"],
     ehlers_summary: "Ehlers adapts AM and FM demodulation techniques from radio engineering in Cycle Analytics for Traders to extract cycle amplitude and instantaneous frequency from market data. The amplitude envelope measures how energetic the current cycle is, while FM reveals whether the cycle period is expanding or contracting.",
     params: &[
-        ParamDef { name: "highest_len", default: "4", description: "Envelope lookback length" },
-        ParamDef { name: "avg_len", default: "8", description: "Smoothing length" },
+        ParamDef {
+            name: "highest_len",
+            default: "4",
+            description: "Envelope lookback length",
+        },
+        ParamDef {
+            name: "avg_len",
+            default: "8",
+            description: "Smoothing length",
+        },
     ],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/AMFM.pdf",
     formula_latex: r#"
@@ -136,9 +146,11 @@ pub const FM_DEMODULATOR_METADATA: IndicatorMetadata = IndicatorMetadata {
     usage: "Use to extract the instantaneous amplitude and frequency of market cycles. The AM output measures cycle energy for position sizing; the FM output tracks cycle period for adaptive indicator tuning.",
     keywords: &["cycle", "ehlers", "dsp", "amplitude", "frequency"],
     ehlers_summary: "Ehlers adapts AM and FM demodulation techniques from radio engineering in Cycle Analytics for Traders to extract cycle amplitude and instantaneous frequency from market data. The amplitude envelope measures how energetic the current cycle is, while FM reveals whether the cycle period is expanding or contracting.",
-    params: &[
-        ParamDef { name: "period", default: "30", description: "SuperSmoother period" },
-    ],
+    params: &[ParamDef {
+        name: "period",
+        default: "30",
+        description: "SuperSmoother period",
+    }],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/AMFM.pdf",
     formula_latex: r#"
 \[
@@ -189,12 +201,12 @@ mod tests {
             let mut am = AMDetector::new(h_len, a_len);
             let inputs: Vec<(f64, f64)> = closes.iter().zip(opens.iter()).map(|(&c, &o)| (c, o)).collect();
             let streaming_results: Vec<f64> = inputs.iter().map(|&x| am.next(x)).collect();
-            
+
             // Batch implementation
             let mut batch_results = Vec::with_capacity(inputs.len());
             let mut envelope_hist = VecDeque::new();
             let mut sum_env = 0.0;
-            
+
             for i in 0..inputs.len() {
                 let start = if i >= h_len { i + 1 - h_len } else { 0 };
                 let mut max_deriv = f64::MIN;
@@ -202,7 +214,7 @@ mod tests {
                     let deriv = (inputs[j].0 - inputs[j].1).abs();
                     if deriv > max_deriv { max_deriv = deriv; }
                 }
-                
+
                 envelope_hist.push_back(max_deriv);
                 sum_env += max_deriv;
                 if envelope_hist.len() > a_len {
@@ -212,7 +224,7 @@ mod tests {
                 }
                 batch_results.push(sum_env / envelope_hist.len() as f64);
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-10);
             }
@@ -227,35 +239,35 @@ mod tests {
             let mut fm = FMDemodulator::new(period);
             let inputs: Vec<(f64, f64)> = closes.iter().zip(opens.iter()).map(|(&c, &o)| (c, o)).collect();
             let streaming_results: Vec<f64> = inputs.iter().map(|&x| fm.next(x)).collect();
-            
+
             // Batch implementation
             let mut batch_results = Vec::with_capacity(inputs.len());
             let a1 = (-1.414 * PI / period as f64).exp();
             let c2 = 2.0 * a1 * (1.414 * PI / period as f64).cos();
             let c3 = -a1 * a1;
             let c1 = 1.0 - c2 - c3;
-            
+
             let mut hl_prev = 0.0;
             let mut ss_hist = [0.0; 2];
-            
+
             for (i, &input) in inputs.iter().enumerate() {
                 let deriv = input.0 - input.1;
                 let mut hl = 10.0 * deriv;
                 if hl > 1.0 { hl = 1.0; }
                 if hl < -1.0 { hl = -1.0; }
-                
+
                 let res = if i + 1 < 3 {
                     deriv
                 } else {
                     c1 * (hl + hl_prev) / 2.0 + c2 * ss_hist[0] + c3 * ss_hist[1]
                 };
-                
+
                 ss_hist[1] = ss_hist[0];
                 ss_hist[0] = res;
                 hl_prev = hl;
                 batch_results.push(res);
             }
-            
+
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s, b, epsilon = 1e-10);
             }

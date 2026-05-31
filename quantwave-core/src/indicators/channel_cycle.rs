@@ -61,8 +61,12 @@ impl Next<f64> for ChannelCycle {
         let mut high = f64::MIN;
         let mut low = f64::MAX;
         for &p in &self.price_window {
-            if p > high { high = p; }
-            if p < low { low = p; }
+            if p > high {
+                high = p;
+            }
+            if p < low {
+                low = p;
+            }
         }
 
         let detrended = if high != low {
@@ -97,13 +101,11 @@ pub const CHANNEL_CYCLE_METADATA: IndicatorMetadata = IndicatorMetadata {
     usage: "Use to estimate the dominant cycle period from the width of price channels. Useful as a simpler alternative to Hilbert Transform cycle measurement when computational resources are limited.",
     keywords: &["cycle", "ehlers", "dsp", "dominant-cycle"],
     ehlers_summary: "Ehlers estimates the dominant cycle period by tracking successive peaks and troughs of price. The distance between turning points approximates half the cycle period, and smoothing this measurement across recent bars gives a stable period estimate for use in adaptive indicators.",
-    params: &[
-        ParamDef {
-            name: "period",
-            default: "20",
-            description: "Channel and Bandpass period",
-        },
-    ],
+    params: &[ParamDef {
+        name: "period",
+        default: "20",
+        description: "Channel and Bandpass period",
+    }],
     formula_source: "https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/InferringTradingStrategies.pdf",
     formula_latex: r#"
 \[
@@ -160,7 +162,7 @@ mod tests {
             for (i, &input) in inputs.iter().enumerate() {
                 let start = if i >= period - 1 { i + 1 - period } else { 0 };
                 let window = &inputs[start..i + 1];
-                
+
                 if window.len() < period {
                     batch_results.push((0.0, 0.0));
                     detrended_vals.push(0.0);
@@ -180,7 +182,7 @@ mod tests {
                     0.0
                 };
                 detrended_vals.push(detrended);
-                
+
                 let idx = i + 2;
                 d_vals[idx] = detrended;
                 let bp = 0.5 * (1.0 - alpha) * (d_vals[idx] - d_vals[idx-2])
