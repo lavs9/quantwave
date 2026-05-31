@@ -82,6 +82,10 @@ mod proptest_parity {
             for &val in &data {
                 let f1 = ext1.next(val);
                 let f2 = ext2.next(val);
+                // Treat NaN == NaN as equal for determinism check on degenerate input
+                if f1.persistence.is_nan() && f2.persistence.is_nan() {
+                    continue;
+                }
                 prop_assert_eq!(f1.persistence, f2.persistence);
             }
         }
