@@ -83,6 +83,11 @@ impl From<usize> for CMO {
 }
 talib_2_in_2_out!(AROON, talib_rs::momentum::aroon, timeperiod: usize);
 talib_2_in_1_out!(AROONOSC, talib_rs::momentum::aroon_osc, timeperiod: usize);
+impl From<usize> for AROONOSC {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
 talib_4_in_1_out!(MFI, talib_rs::momentum::mfi, timeperiod: usize);
 talib_1_in_1_out!(TRIX, talib_rs::momentum::trix, timeperiod: usize);
 impl From<usize> for TRIX {
@@ -110,7 +115,17 @@ impl From<usize> for MINUS_DI {
     }
 }
 talib_2_in_1_out!(PLUS_DM, talib_rs::momentum::plus_dm, timeperiod: usize);
+impl From<usize> for PLUS_DM {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
 talib_2_in_1_out!(MINUS_DM, talib_rs::momentum::minus_dm, timeperiod: usize);
+impl From<usize> for MINUS_DM {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
 
 #[cfg(test)]
 mod tests {

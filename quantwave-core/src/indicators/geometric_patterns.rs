@@ -31,7 +31,7 @@ use serde::{Deserialize, Serialize};
 pub const GEOMETRIC_PATTERNS_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "geometric_patterns",
     description: "Detects Flag (continuation) and Head & Shoulders (reversal) patterns using the MarketStructure foundation.",
-    usage: "Used for automated price action pattern detection in strategies and ML feature generation. See bfg/r46a research.",
+    usage: "Used for automated price action pattern detection in strategies and ML feature generation.",
     keywords: &["price action", "patterns", "flags", "head and shoulders", "continuation", "reversal"],
     ehlers_summary: "",
     params: &[ParamDef {
