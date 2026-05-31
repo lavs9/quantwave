@@ -100,7 +100,24 @@ def warmup_bars(name: str, params: dict = None) -> int:
                 pass
     return max_period + 5 if max_period > 0 else 20
 
+from typing import TypeVar, Generic
+
+T = TypeVar("T")
+
+class Param(Generic[T]):
+    """Marker type to indicate a parameter (not a data series)."""
+    pass
+
+class Series(Generic[T]):
+    """Marker type to indicate a data series input."""
+    pass
+
+
 def get_indicator_signature(name: str):
+    """
+    Returns a clear separation of parameters vs data inputs for an indicator.
+    This helps solve the historical ambiguity in function signatures.
+    """
     meta = metadata(name)
     if not meta:
         return None

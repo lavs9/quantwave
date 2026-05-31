@@ -3,11 +3,30 @@ quantwave - High-performance technical analysis library (Python bindings).
 
 Public surface for 0.5.2 (Python DX improvements from quantwave-p3z9).
 
-Recommended:
+Recommended modern usage:
     import quantwave as qw
+
+    # Discovery & introspection
     qw.indicators()
     meta = qw.metadata("supertrend")
+
+    # Parity verification
     qw.assert_parity("rsi", {"period": 14}, closes)
+
+    # Streaming with readiness tracking
+    cls = qw.streaming_class("rsi")
+    inst = qw.wrap_streaming(cls(14))
+
+    # New recommended namespaces (reduces top-level pollution)
+    from quantwave import results, options, talib
+
+Legacy top-level access to results (MacdResult, etc.) and options helpers
+still works but is deprecated and will be removed in a future major version.
+
+Boundary conditions & error behavior:
+Most indicators return NaN or truncated output during their warmup period.
+Passing invalid parameters (negative period, etc.) will typically raise ValueError.
+See individual docstrings and `metadata(name)` for details.
 """
 
 from typing import List, Dict, Any
@@ -37,6 +56,8 @@ from ._metadata import (
     list_metadata,
     warmup_bars,
     get_indicator_signature,
+    Param,
+    Series,
 )
 
 # DX helpers (defined later in this file for now to avoid circularity during cleanup)

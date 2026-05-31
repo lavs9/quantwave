@@ -59,4 +59,25 @@ df = df.with_columns(
 - [Rust Guide](https://lavs9.github.io/quantwave/getting-started/rust/)
 - [Options Greeks & Pricing (roadmap)](https://lavs9.github.io/quantwave/purpose/)
 
+## Python 0.5.2 DX Improvements (quantwave-p3z9)
+
+We have made major improvements to the Python developer experience:
+
+**New recommended APIs:**
+- `quantwave.indicators()` – discover available indicators
+- `quantwave.metadata("rsi")` – rich per-indicator metadata (params, data inputs, warmup, category, etc.)
+- `quantwave.assert_parity(...)` – verify batch vs streaming bit-identical behavior
+- `quantwave.streaming_class("rsi")` + `wrap_streaming(...)` – better streaming ergonomics with readiness tracking
+
+**Reduced namespace pollution:**
+- Result dataclasses and Options India helpers are now available under `quantwave.results` and `quantwave.options`.
+- Old top-level access still works but emits `DeprecationWarning`.
+
+**Other:**
+- `quantwave.__version__` is now properly exposed.
+- Linux arm64 wheels are available.
+- `quantwave.talib` submodule for easier TA-Lib migration.
+
+See the full list of changes in the main [changelog](https://github.com/lavs9/quantwave/blob/main/docs/changelog.md).
+
 Made with ❤️ for the quant community.
