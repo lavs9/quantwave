@@ -22,8 +22,28 @@
 //! Use extract_pa_events(...) adapter to get machine-readable events with rich metadata.
 
 use crate::indicators::market_structure::{MarketStructure, MarketStructureState, SwingPoint};
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use serde::{Deserialize, Serialize};
+
+/// Metadata for the Geometric Pattern Scanner (Flags + H&S).
+/// This is a higher-level PA scanner built on MarketStructure (not a classic single-output indicator).
+pub const GEOMETRIC_PATTERNS_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "geometric_patterns",
+    description: "Detects Flag (continuation) and Head & Shoulders (reversal) patterns using the MarketStructure foundation.",
+    usage: "Used for automated price action pattern detection in strategies and ML feature generation. See bfg/r46a research.",
+    keywords: &["price action", "patterns", "flags", "head and shoulders", "continuation", "reversal"],
+    ehlers_summary: "",
+    params: &[ParamDef {
+        name: "swing_strength",
+        default: "5",
+        description: "Minimum strength (number of bars) for swing point detection in the underlying MarketStructure.",
+    }],
+    formula_source: "MQL5 Part 66 (H&S) + Part 69 (Flags) by lynnchris, ported to QuantWave PA foundation",
+    formula_latex: "",
+    gold_standard_file: "references/MQL5/lynnchris/Part66/HS_Indicator.mq5 + Part69/Flag_Pattern_Detector.mq5",
+    category: "Price Action / Patterns",
+};
 
 /// Rich output for a detected Flag pattern (continuation).
 /// Matches the shape proposed in the Part 69 research extraction.
