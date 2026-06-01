@@ -1,55 +1,47 @@
 # Native Indicators
 
-QuantWave implements a large set of technical indicators natively in Rust. These are exposed both as high-performance Polars expressions and as streaming `Next<T>` implementations.
+QuantWave ships **150+ production-grade indicators** implemented natively in Rust, with first-class exposure through both Polars (`.ta()` expressions) and lightweight streaming wrappers (`Next<T>`).
 
-All native indicators follow the project's core principles:
-- Bit-identical results between batch (Polars) and streaming modes
-- Full support for the `.ta()` namespace in Polars
-- Rich metadata where applicable
+Every indicator guarantees **bit-identical results** between batch and streaming modes, validated through property-based tests against gold-standard vectors.
 
-## Categories
+All pages in this section follow the project's [Documentation Standards](../../DOCUMENTATION_STANDARDS.md): practical explanations, mathematical definitions or recognition logic, parameter tables, 3-surface usage examples, edge cases, visuals (or high-quality placeholders), and authoritative sources.
 
-- **Classic Indicators** — SMA, EMA, RSI, MACD, ATR, SuperTrend, etc.
-- **Pattern Recognition** — 50+ candlestick patterns (progressively professionalized under p1k6 to full DOCUMENTATION_STANDARDS.md conformance with visuals, exact TA-Lib rules, 3-surface examples, edges) + geometric price action detectors (Flags, Head & Shoulders, Market Structure, S/R). See dedicated exemplars in the Patterns subsection of the sidebar and the new visuals in `docs/assets/candlestick-previews/`.
-- **Ehlers DSP Suite** — Advanced cycle and trend tools from John Ehlers (Cyber Cycle, Instantaneous Trendline, etc.)
-- **Volatility & Trend** — Keltner, Donchian, TTM Squeeze, etc.
-- **Price Action Foundation** — MarketStructure (swings + confirmed BOS), GeometricPatternScanner (Flags + H&S), SRMonitor.
+## Featured High-Value Areas
 
-## Price Action & Geometric Patterns
+These stand out for strategy development, risk management, and ML feature engineering:
 
-QuantWave provides production-ready implementations of the MQL5 "Price Action Analysis Toolkit" series (lynnchris):
+- **Price Action & Geometric Patterns** (MQL5 lynnchris toolkit)  
+  Market Structure (confirmed BOS), Flags + Head & Shoulders with rich sizing metadata (`pole_length_atr`), and S/R interaction monitoring. See the four dedicated guides below and the [Price Action Patterns notebook](../examples/notebooks/pa_flag_breakout_strategy.md).
 
-- **Market Structure** (Part 21): Adaptive swing detection + bias tracking + confirmed Break of Structure flips (noise-free by design). Rich `MarketStructureState` + `PAEvent` output for strategies and ML.
-- **Geometric Patterns** (Parts 66 + 69): Flag (continuation) and Head & Shoulders (reversal) detectors built on the Market Structure foundation. Emits rich `FlagPattern` / `HsPattern` structs with `pole_length_atr`, `height_atr`, symmetry, score, breakout flags — directly usable for position sizing and feature engineering.
-- **S/R Monitoring** (Part 67): Real-time horizontal support/resistance interaction detection (touch, breakout, retest, reversal) with rich event metadata.
+- **Ehlers DSP Suite**  
+  Low-lag cycle and trend tools (Cyber Cycle, Instantaneous Trendline, Trendflex, Reflex, SuperSmoother, etc.). Exceptional performance and minimal lag compared to traditional indicators.
 
-All are exposed via:
-- Rust: `MarketStructure`, `GeometricPatternScanner`, `SRMonitor` (implement `Next`)
-- Polars: `.ta().market_structure(...)`, `.ta().geometric_patterns(...)`
-- Python streaming wrappers (parity with Rust)
+- **Modern & Regime-Aware Tools**  
+  TTM Squeeze, Choppiness Index, Hurst Exponent, multiple Kalman variants, and the full Regimes suite (HMM, GMM, PELT, etc.).
 
-**Key design principles**:
-- Streaming-first with exact batch parity (proptests)
-- Rich, serializable structs (no reliance on drawing objects)
-- Confirmed signals only (bias must be established before flips/patterns)
-- Perfect for event-driven backtesters and ML (features at event bars)
+- **Classic Production Workhorses**  
+  SuperTrend, Ichimoku, Keltner, Donchian, RSI family, MACD, ATR-based tools, and the complete TA-Lib compatible set.
 
-**Dedicated user guides** (recommended starting point for strategy & ML developers):
-- [Market Structure (Swings + Confirmed BOS)](market_structure.md)
-- [Geometric Patterns (Flags + Head & Shoulders)](geometric_patterns.md)
-- [S/R Interactions](sr_monitor.md)
-- [Using Rich PA Events & Metadata for Strategies and ML](pa_events_strategies.md)
+## Organization
 
-See also the runnable strategy deep-dive: [Price Action Patterns notebook & examples](../examples/notebooks/pa_flag_breakout_strategy.md) (includes visual placeholders, sizing math from `pole_length_atr`, regime/ML filters, and Polars + streaming examples).
+The sidebar is organized into logical groups (Classic, Ehlers DSP, Patterns, Volatility, Volume & Flow, ML Features & Regimes, Options India, etc.).
 
-MQL5 sources (authoritative):
-- Part 21: https://www.mql5.com/en/articles/17891
-- Part 66: https://www.mql5.com/en/articles/22194
-- Part 69: https://www.mql5.com/en/articles/22503
-- Part 67: https://www.mql5.com/en/articles/21961
+Use the search or the categories in the left navigation to browse. Most users will get the most value from:
 
-Archived .mq5 in `references/MQL5/lynnchris/implemented/`.
+- The **Price Action** subsection (for event-driven and ML work)
+- The **Ehlers DSP** subsection (for low-lag cycle analysis)
+- High-signal classics such as SuperTrend, TTM Squeeze, and Ichimoku
 
----
+## Important Notes
 
-*Browse the full list of native indicators in the sidebar or use the search.*
+- Detailed formulas, visuals, edge cases, and rich usage examples live on the individual indicator pages (not here). Those pages are the primary reference.
+- Many pages now include professional visuals generated via the strategies in `DOCUMENTATION_DECISIONS.md`.
+- The auto-generated Python API reference (`/api/`) documents the thin Python surface and is intentionally secondary to the manual guides.
+
+## Getting Started with Native Indicators
+
+- [Indicator Gallery](../gallery.md) — curated high-value starting points
+- [Batch & Streaming Examples](../../examples/batch-streaming.md)
+- [Documentation Standards](../../DOCUMENTATION_STANDARDS.md) (for contributors)
+
+Browse the full list in the sidebar or use the search box above.
