@@ -28,6 +28,11 @@ jobs:
 
       # Install the latest released quantwave from PyPI (non-fatal on release day
       # when the new version has not hit PyPI yet). The export script is resilient.
+      #
+      # Note on API docs (rbz4): The /api/ section is intentionally a thin reference
+      # for the Python package surface only. The rich per-indicator content lives in
+      # the manual Guides (which is why we can safely use the released wheel here).
+      # See docs/gen_python_api.py and the "Python API Reference" landing page for details.
       - run: 'pip install quantwave || echo "WARNING: Could not install latest quantwave from PyPI. Notebook exports may use fallback behavior."'
 
       - run: cargo run --package quantwave-xtask

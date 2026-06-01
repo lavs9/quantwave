@@ -354,3 +354,36 @@ This final audit + the accompanying sanitization edits close the loop on the hig
 
 All project rules followed (IST dates everywhere, Claude.md diagnosis + user approval for edits, AGENTS.md source discipline + no new internal IDs, related docs updated in same set, no root tests/docs violations, pnpm N/A, bd for tracking on landing). Ready for quality gates + full landing sequence.
 
+---
+
+## Python API Reference Landing Page (quantwave-rbz4, 2026-06-01 IST)
+
+**Context**: The public https://lavs9.github.io/quantwave/api/ page was completely empty (or near-empty). This was the most visible remaining gap from the p1k6 documentation epic after the final audit. The root cause was a combination of the docs CI installing the released PyPI wheel (for notebook export safety) + `docs/gen_python_api.py` being a minimal "basic example" that only walked the 6 small pure-Python wrapper files and emitted a one-sentence stub.
+
+**Actions taken** (full adherence to project rules, explicit user request "Drive the fix", diagnosis before edits, related-docs updated in same set, IST dates, bd tracking via existing rbz4 task):
+- Claimed the open task `quantwave-rbz4` via `bd update --claim`.
+- Completely rewrote `docs/gen_python_api.py` to produce a professional, scannable landing page that:
+  - Clearly explains the three real Python surfaces (Polars `.ta`, streaming wrappers, supporting modules).
+  - Contains practical quick-start code.
+  - Has a clean table mapping surfaces to usage + "Detailed Docs" pointers.
+  - Strongly directs users to the authoritative manual content in Guides/Indicator Gallery (the correct source of truth per p1k6 philosophy).
+  - Keeps the existing auto-generation mechanism for the thin pure-Python modules (results, options, talib, etc.).
+- Added a clarifying comment in `.github/workflows/docs.yml`.
+- Minor label tweak in `mkdocs.yml`.
+- Added entries in `roadmap.md` and top of `changelog.md`.
+- This decision record.
+
+**Outcome**: The public /api/ page will no longer be empty. It is now a useful, honest Python package reference that sets correct expectations and drives traffic to the high-quality manual documentation. The change is small, focused, and respects the "auto-generated API docs will lag one release behind" principle stated in the epic.
+
+**Files changed** (same logical set):
+- `docs/gen_python_api.py` (primary deliverable — major rewrite)
+- `.github/workflows/docs.yml` (comment)
+- `mkdocs.yml` (nav label)
+- `docs/roadmap.md`
+- `docs/changelog.md`
+- `docs/DOCUMENTATION_DECISIONS.md` (this entry)
+
+Task `quantwave-rbz4` can be closed after landing with reason: "Fixed empty public /api/ page with professional landing + cross-links. Generator now useful. Deeper introspection/filtering can be future follow-ups."
+
+This completes the last clearly broken public-facing documentation item from the p1k6 epic.
+

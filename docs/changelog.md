@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased / Docs] - 2026-06-01 IST
+
+### Fixed
+- **Empty Python API Reference page** (quantwave-rbz4): https://lavs9.github.io/quantwave/api/ was rendering completely empty on the public site. Rewrote `docs/gen_python_api.py` to produce a professional landing page that clearly explains the three Python surfaces and directs users to the high-quality manual documentation in the Guides. The auto-generated reference is now intentionally lightweight and useful as a package surface reference rather than a duplicate of the indicator docs. Updated workflow comment, mkdocs nav label, roadmap, and decision record in the same change set.
+
 ## [0.5.2] - 2026-05-31
 
 ### Added (Python DX improvements)

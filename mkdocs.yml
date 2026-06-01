@@ -62,7 +62,7 @@ nav:
           - ML Feature Stability: examples/notebooks/ml_feature_stability.md
           - ML Features → Backtest (E2E): examples/notebooks/ml_feature_backtest_parity.md
   - API Reference:
-      - Python: api/
+      - Python (package surface): api/
   - Community:
       - Contributing: contributing.md
       - Changelog: changelog.md
