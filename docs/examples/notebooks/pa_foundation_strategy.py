@@ -1,28 +1,30 @@
 """
-Canonical Notebook: PA Foundation Strategy with MarketStructure + Geometric (quantwave-5thj)
+Canonical PA Foundation Strategy Notebook: MarketStructure + Geometric Patterns (Flags + H&S)
 
-Demonstrates the full vertical slice:
-- Rust Polars .ta.market_structure() + .ta.geometric_patterns() (rich Structs)
+Demonstrates a complete, production-oriented vertical slice:
+- Rust Polars `.ta.market_structure()` + `.ta.geometric_patterns()` (rich Structs with pole_length_atr etc.)
 - Python streaming surface (MarketStructure / GeometricPatternScanner + batch helper)
 - Realistic strategy: "Only take bull Flag breakouts on confirmed Bullish MarketStructure,
   further filtered by bull regime (HMM) + ML feature (hurst persistence), sized by pole_length_atr"
-- Synthetic data with known structure shifts (reproducible)
-- Rich metadata preserved into "trades"
-- Partial backtester integration sketch (vectorized exposure + simple equity loop; full parity in backtest crate)
-- Notes on real data (yfinance or parquet) and next steps (full ej8b detectors, 06sz rich events)
+- Synthetic data with known structure shifts (reproducible, matches Rust test generators)
+- Rich metadata preserved into trade records for sizing and ML
+- Partial backtester integration sketch (vectorized exposure + simple equity loop)
 
 Run:
   python docs/examples/notebooks/pa_foundation_strategy.py
-  (or open in Jupyter / marimo after pip install quantwave polars numpy)
+  (or open in Jupyter / marimo after `pip install "quantwave[all]" polars numpy`)
 
-All per AGENTS.md: parity spirit, sources recorded (MQL5 Part 21/66/69 + iuzv/ej8b), nextest-validated core.
+Sources: MQL5 Price Action Toolkit Parts 21/66/69 (lynnchris). Core implementation in quantwave-core.
+Parity validated via proptests against synthetic generators in test_utils.rs.
+See dedicated guides: market_structure.md, geometric_patterns.md, sr_monitor.md, pa_events_strategies.md
+and the full visual/strategy deep-dive in pa_flag_breakout_strategy.py (runnable marimo notebook).
 """
 
 import polars as pl
 import numpy as np
 from datetime import datetime, timedelta
 
-# Import the Python surface delivered in 5thj
+# Import the Python surface for PA tools
 from quantwave import (
     MarketStructure,
     GeometricPatternScanner,
@@ -31,8 +33,8 @@ from quantwave import (
 )
 from quantwave import ta as qw_ta  # for reference (streaming classes)
 
-print("=== QuantWave 5thj: PA Foundation Strategy Notebook (2026-05-30 IST) ===")
-print("Sources: MQL5 Part 21 (Flip_Detector.mq5), Parts 66/69 (HS/Flag), iuzv+ej8b research, core market_structure + geometric_patterns")
+print("=== QuantWave PA Foundation Strategy Notebook (2026-06-01 IST) ===")
+print("Sources: MQL5 Part 21 (Flip_Detector.mq5), Parts 66/69 (HS/Flag); core market_structure + geometric_patterns")
 
 # ------------------------------------------------------------------
 # 1. Synthetic data with clear PA structure (reproducible "truth")
@@ -160,7 +162,7 @@ print(f"Generated exposure series. Sample trades: {len(trade_logs)} (demo)")
 
 # ------------------------------------------------------------------
 # 4. Partial backtester integration sketch (Polars vectorized + tiny equity loop)
-#    (Full rich-metadata backtester lives in quantwave-backtest; this shows consumption of pole_atr etc.)
+#    (Full rich-metadata backtester integration lives in the backtest crate; this shows consumption of pole_length_atr etc.)
 # ------------------------------------------------------------------
 print("\n--- Partial backtester sketch (rich PA metadata ready) ---")
 # Simple vectorized equity (no costs for demo; real uses BacktestEngine)
@@ -189,6 +191,6 @@ let out = df.lazy()
     .collect()?;
 """)
 
-print("\n=== 5thj deliverable complete (strong vertical slice) ===")
-print("Next gaps (for follow-up beads): full ej8b geometric fidelity, backtest rich StrategySignal.metadata integration (06sz), real data parity harness, ATR-dynamic depth in MS.")
+print("\n=== PA foundation notebook complete ===")
+print("See dedicated PA guides and pa_flag_breakout_strategy.py for visuals + full strategy patterns.")
 print("All tests (core + polars smoke) green via cargo nextest. Python surface + notebook runnable.")

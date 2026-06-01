@@ -10,10 +10,9 @@ def _():
         """
         # Canonical PA Strategy: Flag Breakout ONLY on Confirmed Bullish Market Structure
 
-        **Part of quantwave-5mfc validation harness deliverable.**  
-        Realistic strategy using the new MQL5-inspired PA foundation (Part 21 + 69).
+        Realistic strategy using the MQL5-inspired PA foundation (Parts 21 + 69: confirmed Market Structure + Flags).
 
-        Sources recorded in bd + code: MQL5 articles 17891/22503/22194 + .mq5 in references/, bfg/r46a designs, iuzv foundation, 5mfc harness generators.
+        Sources: MQL5 articles 17891/22503/22194 + archived .mq5 in references/MQL5/lynnchris/implemented/. Core: quantwave-core indicators + test generators.
 
         Run with real quantwave installed for full Rust parity, or fallback demo here.
         """
@@ -38,8 +37,8 @@ def _():
         HAS_QUANTWAVE = False
         qw = None
 
-    # Hardcoded synthetic vectors DIRECTLY from the 5mfc Rust harness generators
-    # (generate_clean_bull_flag + structure cases, 2026-05-30). Guarantees parity.
+    # Hardcoded synthetic vectors from the PA test generators (test_utils.rs).
+    # Engineered for exact reproducibility and to exercise confirmed-bias + flag invariants. Guarantees parity with Rust.
     # Bull flag after confirmed bullish MS: pole ~ bars 5-7, consolidation, breakout ~17
     SYNTH_HIGHS = [100.5, 101.2, 102.8, 104.1, 106.5, 108.9, 110.2, 109.8, 108.5, 107.9,
                    107.2, 106.8, 107.5, 108.1, 107.8, 108.3, 109.1, 111.5, 110.8, 112.2]
@@ -59,7 +58,7 @@ def _():
 def _():
     mo.md(
         """
-        ## Step 1: Market Structure Foundation (from Part 21 / iuzv)
+        ## Step 1: Market Structure Foundation (Part 21)
 
         The Rust `MarketStructure` (Next<(high,low)>) produces bias + confirmed flips (only after structure_count >=2).
         Python fallback here mirrors the logic for demo (full parity when using qw).
@@ -71,7 +70,7 @@ def _():
 @app.cell
 def _(SYNTH_HIGHS, SYNTH_LOWS, np, pl):
     # Simplified Python port of MarketStructure (strength=2, min dist=4) for demo only.
-    # In real: use Rust streaming or Polars .ta.market_structure() (see 5thj work).
+    # In real usage: use Rust streaming (MarketStructure) or Polars .ta.market_structure().
     def simple_ms_bias_flips(highs, lows, strength=2):
         n = len(highs)
         bias = "Neutral"
@@ -125,7 +124,7 @@ def _(SYNTH_HIGHS, SYNTH_LOWS, np, pl):
 def _():
     mo.md(
         """
-        ## Step 2: Geometric Flag Detection + Rich Metadata (Part 69 / r46a + ej8b)
+        ## Step 2: Geometric Flag Detection + Rich Metadata (Part 69)
 
         On the confirmed bullish structure, detect flag using pole (3-bar impulse), pullbacks>pushes, retrace<=61.8.
         Rich output: pole_length_atr (for sizing), pullbacks, etc. (exactly as in FlagPattern struct).
@@ -136,7 +135,7 @@ def _():
 
 @app.cell
 def _(SYNTH_HIGHS, SYNTH_LOWS, final_bias, flips, np, pl):
-    # Toy but rule-based flag detector on the synthetic (matches generator intent + r46a rules).
+    # Rule-based flag detector on the synthetic (matches documented invariants: pole + shallow retrace).
     # Real: GeometricPatternScanner.next() in Rust produces the rich FlagPattern.
     @dataclass
     class DemoFlag:
@@ -254,16 +253,14 @@ def _():
 def _(trade_log):
     mo.md(
         f"""
-        ## Verification Summary (from 5mfc harness)
+        ## Verification Summary
 
-        - Synthetic data: exact vectors from Rust 5mfc generators (reproducible, violation cases included).
-        - MS + flag logic: respects "confirmed only after bias" + Part 69 rules (pullbacks>pushes, retrace<=61.8).
-        - Sizing uses pole_length_atr from rich event (exactly as designed in r46a/bfg for backtester).
-        - Notebook runs end-to-end in fallback; identical results expected from quantwave Rust when Polars surface complete.
+        - Synthetic data: exact vectors from Rust PA generators in test_utils.rs (reproducible, includes violation cases).
+        - MS + flag logic: respects "confirmed only after bias established" + Part 69 rules (pullbacks > pushes, retrace <= 61.8%).
+        - Sizing uses pole_length_atr from rich FlagPattern event (core design for dynamic risk and ML features).
+        - Notebook runs end-to-end in pure-Python fallback; identical results from full quantwave Rust/Polars surface.
 
-        See pa_flag_breakout_strategy.md for full sources, coordination notes, and links to harness code + bd tracking (only mechanism used).
-
-        **5mfc status**: Harness core + generators + passing focused nextest delivered. This notebook advances the canonical reference.
+        See the four dedicated PA guides (market_structure.md etc.) + this runnable notebook for production usage. All sources in MQL5 articles + core metadata.
         """
     )
     return

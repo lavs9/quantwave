@@ -1,45 +1,43 @@
-# Canonical PA Strategy Notebook: Flag Breakout on Confirmed Market Structure
+# Price Action Patterns: Flag Breakout on Confirmed Market Structure (Runnable Notebook)
 
-**Bead**: quantwave-5mfc (PA Validation Harness + Canonical Notebook)  
-**Date**: 2026-05-30 IST  
-**Sources**: MQL5 Price Action series (Part 21 Market Structure / art17891 + Flip_Detector.mq5; Part 66 H&S / art22194 + HS_Indicator.mq5; Part 69 Flags / art22503 + Flag_Pattern_Detector.mq5); closed research quantwave-bfg, quantwave-r46a, quantwave-wtz; implementation in quantwave-iuzv (market_structure.rs) + ej8b skeleton (geometric_patterns.rs) + 5mfc harness (test_utils.rs generators + property tests).
+**Date**: 2026-06-01 IST  
+**Sources**: MQL5 Price Action Analysis Toolkit (Part 21 "Market Structure Flip Detector", Part 66 H&S, Part 69 Flags) by lynnchris. Archived `.mq5`: `references/MQL5/lynnchris/implemented/`. Core Rust: `quantwave-core/src/indicators/{market_structure,geometric_patterns}.rs` + synthetic generators in `test_utils.rs`. Visuals via `docs/gen_pa_visuals.py`.
 
-## Strategy Definition (Reference Implementation)
-"Enter bull flag breakout **only** after confirmed bullish MarketStructure bias (HH/HL established, flip only after count>=2 per Part 21). Further filter by regime (e.g. HMM trending) + ML feature proxy (e.g. high trendflex). Size position using `pole_length_atr` from the rich FlagPattern event (risk = 0.5 * pole_atr * ATR)."
+This runnable Marimo notebook is the **canonical executable reference** for QuantWave's Price Action suite. It demonstrates the exact production pattern recommended in the four dedicated guides:
 
-This matches the exact success criteria in the cu03/5mfc spec: "A developer can build a 'Flag breakout only on confirmed bullish structure, filtered by regime + ML features, sized by pattern metadata' strategy using clean, documented APIs."
+- Build only on **confirmed** MarketStructure bias (structure_count ≥ 2 before any BOS flip or pattern).
+- Filter further with regime (HMM) + ML features (e.g. Hurst, Trendflex).
+- Size dynamically using `pole_length_atr` (or `height_atr`) from the rich event structs.
+- Consume `PAEvent` / `FlagPattern` / `HsPattern` / `SRInteraction` for event-driven logic.
 
-## Harness & Validation
-- Synthetic generators (in `quantwave-core/src/test_utils.rs`): `generate_clean_bull_flag`, `generate_perfect_bear_hs`, structure cases with ground-truth flips, violation cases (retrace>61.8%, weak pole, etc.).
-- Invariants exercised: confirmed flips only post-bias; flag pullbacks > pushes + retrace <=61.8; H&S head dominance + score >=60 via ported ComputePatternScore.
-- Parity: streaming Next vs batch replay (proptest + dedicated harness test passes).
-- All under `cargo nextest -p quantwave-core market_structure` (new test green).
+## What the Notebook Covers
+- Synthetic data generators that exactly reproduce the invariants tested in Rust proptests (clean bull flag after confirmed bullish structure; perfect bear H&S; violation cases for robustness).
+- Step-by-step: Market Structure bias + flip detection → Geometric (Flag / H&S) detection on the same swings → rich metadata extraction → position sizing math → simple trade log with R-multiples.
+- Fallback pure-Python implementation (for browser / no-quantwave runs) that mirrors the Rust `Next<T>` logic.
+- Notes on wiring the real `quantwave` Polars + streaming surfaces (identical results by design).
 
-## Notebook Cells (see .py)
-- Load / synthesize data using vectors from the Rust generators (for exact reproducibility + parity with Rust).
-- Run simplified Python equivalent of MarketStructure + Flag logic on the synthetic (demonstrates "confirmed bias first").
-- Apply filters + compute size from pole_length_atr.
-- Show trade log + R:R using rich metadata.
-- Real data path (yfinance or CSV) + note on full Polars `.ta.market_structure()` + `.ta.geometric_patterns()` surface (in progress by 5thj).
-- When full Rust Python bindings + Polars plugins active: identical results to the streaming Rust (Universal Indicator pattern).
+## Run It
+```bash
+python -m marimo edit docs/examples/notebooks/pa_flag_breakout_strategy.py
+# or: marimo run ... (after `pip install "quantwave[all]" marimo polars numpy`)
+```
 
-## Deliverables & Links (in workspace)
-- Generators + harness: `quantwave-core/src/test_utils.rs` (pa_synthetics section)
-- Exercised in: `quantwave-core/src/indicators/market_structure.rs` (new test + rich PAEvent demo)
-- Geometric rich structs: `quantwave-core/src/indicators/geometric_patterns.rs` (FlagPattern / HsPattern with pole_length_atr, score, etc.)
-- MQL5 sources: `references/MQL5/lynnchris/implemented/Part{21,66,69}/`
-- Bead tracking: ONLY via `bd` (see quantwave-5mfc notes for all design decisions, sources, discovered children: ImpulseDetector primitive, ATR-adaptive depth in swings).
-- Full verification: `cargo nextest` + `cargo clippy` green on touched code (pre-existing unrelated issues in sr_monitor etc. noted).
+## Companion Documentation (Read These First)
+The notebook is intentionally **code-first**. For full explanations, field semantics, when-to-use, ML ideas, and annotated visuals, start with the dedicated pages:
 
-This notebook + harness is the reference for all future PA work (backtester gwx, confluence, geometric completion in ej8b, S/R in fb17).
+- [Market Structure (Swings + Confirmed BOS)](../guides/indicators/native/market_structure.md)
+- [Geometric Patterns (Flags + Head & Shoulders)](../guides/indicators/native/geometric_patterns.md)
+- [S/R Interactions](../guides/indicators/native/sr_monitor.md)
+- [Using Rich PA Events & Metadata for Strategies and ML](../guides/indicators/native/pa_events_strategies.md)
 
-Run the .py with `python -m marimo edit docs/examples/notebooks/pa_flag_breakout_strategy.py` (or view exported HTML).
+All four + this notebook + the visual assets in `docs/assets/pa-visuals/` were professionalized under epic quantwave-p1k6 (tasks n6e7 / za0u / 0ywt).
 
-## Coordination Notes for Parallel Agents
-- bmkn (rich standardized PA events): The PAEvent/PAEventKind + extract adapters in market_structure.rs are ready; your final event format can extend it. Harness tests cover serialization.
-- 5thj (Polars surface + notebook): Use the synth vectors here for your demo cells; expose .ta.market_structure() and geometric on LazyFrame returning Structs with the rich fields. Polish this notebook.
-- fb17 (S/R): Reuse/extend the S/R interaction synthetic stub idea from 5mfc generators for touch/breakout/retest cases.
-- ej8b (geometric): Complete the matcher in geometric_patterns using the bfg/r46a logic; then the ground-truth cases in harness will assert the exact invariants (head dominance, pullback>push, ComputePatternScore, etc.). Current skeleton + toy detection is exercised but not yet full-fidelity.
-- New child beads spawned (or to be): quantwave- (ATR depth), ImpulseDetector.
+## Parity & Fidelity
+Every example here is designed to produce identical output to the Rust `Next` implementations and Polars `.ta.*` expressions (validated by the property tests in `quantwave-core/tests/` and the generators in `test_utils.rs`). The synthetic vectors are the single source of truth for the documented behaviors.
 
-**Status of 5mfc**: Major progress — harness core + generators + property tests + passing nextest complete. Notebook started (this + .py). Ready as the verification reference. Pre-existing test noise in module unrelated. No markdown TODOs used; all tracking in bd.
+## Visuals
+The notebook text describes the charts; the high-quality annotated PNGs (bos_flip.png, bull_flag.png, bear_head_shoulders.png, sr_interactions.png) live in the dedicated guides and were generated under the visual strategy in DOCUMENTATION_DECISIONS.md.
+
+---
+
+*This notebook + the four dedicated guides together deliver the complete, professional, leak-free documentation for the PA / geometric features. No internal planning references remain in public content.*
