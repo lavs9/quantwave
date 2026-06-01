@@ -34,7 +34,7 @@ Imagine a price series making a sequence of higher highs and higher lows (e.g., 
 
 ![Annotated chart showing synthetic price with labeled HH/HL swings establishing Bullish bias (banner), followed by confirmed BOS bearish flip (FlipEvent annotation with strength). Matches exact MarketStructureState fields and PAEvent output.](../../../assets/pa-visuals/bos_flip.png)
 
-*See also the fuller annotated examples and code in the [Price Action Patterns guide](../../../examples/notebooks/pa_flag_breakout_strategy.md). Visual generated under quantwave-0ywt strategy.*
+*See also the fuller annotated examples and code in the [Price Action Patterns guide](../../../examples/notebooks/pa_flag_breakout_strategy.md). Visual generated as part of the p1k6 documentation professionalization effort.*
 
 ## Practical Code Examples
 

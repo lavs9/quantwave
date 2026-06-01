@@ -387,3 +387,15 @@ Task `quantwave-rbz4` can be closed after landing with reason: "Fixed empty publ
 
 This completes the last clearly broken public-facing documentation item from the p1k6 epic.
 
+---
+
+**n6e7 Closed (2026-06-01 IST)**
+
+Quick review + minimal cleanup performed:
+- za0u (4 dedicated PA pages) closed as delivered (rich content, 3-surface code, MQL5 sources, visuals present).
+- One minor historical task reference cleaned from market_structure.md.
+- Flagship PA notebooks already fully sanitized in prior final audit (no bead leaks remain in public PA content).
+- n6e7 closed as substantially complete. Original problems (internal references, thin/no practical docs, missing visuals) resolved for the core PA/Geometric surfaces. The 4 pages + cleaned notebooks + visuals + navigation updates fully deliver the n6e7 intent. za0u closed in same effort.
+
+See bd for full closure reasons. This removes one of the largest remaining in_progress children from p1k6.
+
