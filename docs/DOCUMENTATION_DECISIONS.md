@@ -401,17 +401,17 @@ See bd for full closure reasons. This removes one of the largest remaining in_pr
 
 ---
 
-**shtm started (quantwave-shtm, 2026-06-01 IST)**
+**shtm closed (quantwave-shtm, 2026-06-01 IST)**
 
-Claimed the Native Indicators landing page + structure task (one of the remaining open P1 items under p1k6).
+Final review completed. Task closed as substantially complete.
 
-First major deliverable: Complete rewrite of `docs/guides/indicators/native/index.md` into a high-quality, scannable professional landing page with:
-- Strong intro emphasizing bit-identical parity and `.ta()` support
-- Featured high-value areas (Price Action, Ehlers DSP, modern tools, classics)
-- Clear expectations (visuals, Standards conformance, where detailed docs live)
-- Prominent links to Documentation Standards and Gallery
+Deliverables:
+- Strong professional landing page in `docs/guides/indicators/native/index.md` (multiple iterations + final 'Featured Individual Indicators' recommendations with direct links).
+- Major structure improvement: Native section in SUMMARY.md reorganized from ~13 fragmented buckets into 8 logical groups (Price Action & Geometric Patterns prominently featured and aligned with the landing page).
+- Cross-references and related docs updated (roadmap, p1k6 notes).
+- Directly resolved the original problems described in the task (weak/missing index + lack of clear organization by category/type).
 
-The new page matches the quality bar of the redesigned gallery.md.
+The Native Indicators section is now at a professional level consistent with the rest of the p1k6 work (gallery redesign, PA dedicated pages, standards). Broader page-by-page template enforcement remains under sibling task 6br5.
 
-Sidebar (SUMMARY.md) structural improvements and further polish are the next focus areas for the task. Progress also recorded in roadmap.md. Task remains in_progress.
+Task closed with full retrospective in bd notes. Related docs updated in the same logical change set.
 
