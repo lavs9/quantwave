@@ -24,13 +24,29 @@ These stand out for strategy development, risk management, and ML feature engine
 
 ## Organization
 
-The sidebar is organized into logical groups (Classic, Ehlers DSP, Patterns, Volatility, Volume & Flow, ML Features & Regimes, Options India, etc.).
+The sidebar is organized into 8 logical top-level groups that match the categories on this page:
 
-Use the search or the categories in the left navigation to browse. Most users will get the most value from:
+- Classic & Overlap
+- Ehlers DSP Suite
+- Price Action & Geometric Patterns (prominently featured)
+- Volatility, Channels & Trend
+- Volume & Flow
+- Candlestick & Simple Patterns
+- Advanced, ML Features & Regimes
+- TA-Lib Compatible
 
-- The **Price Action** subsection (for event-driven and ML work)
-- The **Ehlers DSP** subsection (for low-lag cycle analysis)
-- High-signal classics such as SuperTrend, TTM Squeeze, and Ichimoku
+Use the search or the categories in the left navigation to browse. Most users will get the most value from the **Price Action** and **Ehlers DSP** groups.
+
+## Featured Individual Indicators (Strong Starting Points)
+
+These specific pages are particularly well-regarded and representative:
+
+- [SuperTrend](native/supertrend.md) — Robust trend-following with dynamic stops (one of the most used in production).
+- [Cyber Cycle](native/cyber_cycle.md) — Foundational Ehlers low-lag cycle extractor.
+- [Market Structure](native/market_structure.md) — Core for confirmed swings and BOS (foundation for all PA tools).
+- [TTM Squeeze](native/ttm_squeeze.md) — Volatility contraction/expansion for high-probability breakouts.
+- [Ichimoku Cloud](native/ichimoku_cloud.md) — Complete trend, momentum, and dynamic S/R system.
+- [Geometric Patterns](native/geometric_patterns.md) — Flags and H&S with rich `pole_length_atr` for sizing.
 
 ## Important Notes
 
