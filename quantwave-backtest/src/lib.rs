@@ -105,6 +105,154 @@ impl Default for CostModel {
     }
 }
 
+/// Pluggable commission model (n1yc.2, QF-Lib inspired).
+pub trait CommissionModel: Send + Sync + std::fmt::Debug {
+    fn calculate_commission(&self, fill_quantity: f64, fill_price: f64) -> f64;
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct BpsCommissionModel {
+    /// Commission in basis points (e.g. 10.0 = 0.10%).
+    pub bps: f64,
+}
+
+impl CommissionModel for BpsCommissionModel {
+    fn calculate_commission(&self, fill_quantity: f64, fill_price: f64) -> f64 {
+        (fill_quantity.abs() * fill_price) * (self.bps / 10_000.0)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct FixedPerShareCommissionModel {
+    pub per_share: f64,
+}
+
+impl CommissionModel for FixedPerShareCommissionModel {
+    fn calculate_commission(&self, fill_quantity: f64, _fill_price: f64) -> f64 {
+        fill_quantity.abs() * self.per_share
+    }
+}
+
+/// Pluggable slippage model (n1yc.2/3).
+pub trait SlippageModel: Send + Sync + std::fmt::Debug {
+    fn apply(&self, price: f64, quantity: f64, is_buy: bool, adv: Option<f64>) -> f64;
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct BpsSlippageModel {
+    pub bps: f64,
+}
+
+impl SlippageModel for BpsSlippageModel {
+    fn apply(&self, price: f64, _quantity: f64, is_buy: bool, _adv: Option<f64>) -> f64 {
+        let s = self.bps / 10_000.0;
+        if is_buy { price * (1.0 + s) } else { price * (1.0 - s) }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct SquareRootMarketImpactSlippage {
+    pub impact_coef: f64,
+    pub max_participation: f64,
+}
+
+impl SlippageModel for SquareRootMarketImpactSlippage {
+    fn apply(&self, price: f64, quantity: f64, is_buy: bool, adv: Option<f64>) -> f64 {
+        let adv = adv.unwrap_or(1_000_000.0);
+        let part = (quantity.abs() / adv).min(self.max_participation);
+        let impact = self.impact_coef * part.sqrt();
+        if is_buy { price * (1.0 + impact) } else { price * (1.0 - impact) }
+    }
+}
+
+/// Execution model config (n1yc.2/3). Supports simple + high-fidelity with realistic models.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ExecutionModel {
+    Simple(CostModel),
+    HighFidelity {
+        commission: BpsCommissionModel,
+        slippage: SquareRootMarketImpactSlippage,
+    },
+}
+
+impl Default for ExecutionModel {
+    fn default() -> Self {
+        ExecutionModel::Simple(CostModel::default())
+    }
+}
+
+impl ExecutionModel {
+    pub fn commission_for(&self, qty: f64, px: f64) -> f64 {
+        match self {
+            ExecutionModel::Simple(cm) => (qty.abs() * px) * (cm.commission_bps / 10_000.0),
+            ExecutionModel::HighFidelity { commission, .. } => commission.calculate_commission(qty, px),
+        }
+    }
+    pub fn slippage_price(&self, price: f64, qty: f64, is_buy: bool, adv: Option<f64>) -> f64 {
+        match self {
+            ExecutionModel::Simple(cm) => {
+                let s = cm.slippage_bps / 10_000.0;
+                if is_buy { price * (1.0 + s) } else { price * (1.0 - s) }
+            }
+            ExecutionModel::HighFidelity { slippage, .. } => slippage.apply(price, qty, is_buy, adv),
+        }
+    }
+}
+
+/// Rich-Metadata-Aware Position Sizer (n1yc.1).
+/// Inspired by QF-Lib InitialRiskPositionSizer + Signal.fraction_at_risk.
+/// Supports PA structs via "pole_height_atr" or explicit "fraction_at_risk" in StrategySignal.metadata
+/// (populated by 06sz PAEvent integration and feature extractors).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InitialRiskPositionSizer {
+    /// Risk per trade as fraction of current equity (e.g. 0.01 for 1%).
+    pub initial_risk: f64,
+    /// Cap on target % of equity (e.g. 0.25).
+    pub max_target_pct: f64,
+}
+
+impl Default for InitialRiskPositionSizer {
+    fn default() -> Self {
+        Self { initial_risk: 0.01, max_target_pct: 0.25 }
+    }
+}
+
+impl InitialRiskPositionSizer {
+    /// Given raw signal exposure (or suggested) + rich metadata from PA/ features,
+    /// return the risk-budgeted target exposure in units.
+    /// Uses current equity and price for conversion.
+    pub fn compute_sized_exposure(
+        &self,
+        raw_exposure: f64,
+        meta: &Option<HashMap<String, f64>>,
+        price: f64,
+        equity: f64,
+    ) -> f64 {
+        let sign = if raw_exposure > 0.0 { 1.0 } else if raw_exposure < 0.0 { -1.0 } else { 0.0 };
+        if let Some(m) = meta {
+            // Prefer explicit fraction_at_risk from rich PA signal
+            if let Some(frac) = m.get("fraction_at_risk").copied() {
+                if frac > 0.0 {
+                    let target_pct = (self.initial_risk / frac).min(self.max_target_pct);
+                    let target_units = target_pct * equity / price * sign;
+                    return target_units;
+                }
+            }
+            // Fallback: PA pole_height_atr (common from Flag/H&S/MarketStructure)
+            if let Some(pole) = m.get("pole_height_atr").copied() {
+                if pole > 0.0 {
+                    // Treat pole_atr as risk unit proxy (adjust k per your PA convention; here illustrative 1% / pole)
+                    let frac = 0.01 / pole;
+                    let target_pct = (self.initial_risk / frac).min(self.max_target_pct);
+                    let target_units = target_pct * equity / price * sign;
+                    return target_units;
+                }
+            }
+        }
+        raw_exposure
+    }
+}
+
 /// Configuration for a backtest run.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BacktestConfig {
@@ -128,6 +276,12 @@ pub struct BacktestConfig {
     /// Optional f64 col: position size modulator (multiplies signal exposure).
     /// E.g. pole_height normalized or regime_prob. Enables 'sized by pole'.
     pub size_multiplier_col: Option<String>,
+
+    // v0.2 rich execution (n1yc.2/3) + sizer (n1yc.1)
+    pub execution_model: ExecutionModel,
+    /// If Some, the engine will apply risk-budgeted sizing using fraction_at_risk / pole_height_atr
+    /// from StrategySignal.metadata (or PAEvent converted) on top of raw exposure.
+    pub position_sizer: Option<InitialRiskPositionSizer>,
 }
 
 impl Default for BacktestConfig {
@@ -140,6 +294,8 @@ impl Default for BacktestConfig {
             signal_col: "signal".to_string(),
             entry_filter_col: None,
             size_multiplier_col: None,
+            execution_model: ExecutionModel::default(),
+            position_sizer: None,
         }
     }
 }
@@ -315,13 +471,15 @@ impl BacktestEngine {
 
         // Delegate to shared simulation core (ensures parity with streaming path).
         // Batch path: scalar exposures, no rich metadata.
-        let cm = &self.config.cost_model;
+        let exec = &self.config.execution_model;
+        let sizer = &self.config.position_sizer;
         let metas: Vec<Option<HashMap<String, f64>>> = vec![None; signal_vals.len()];
         let (trades, equity_points) = run_simulation(
             &timestamps,
             &closes,
             |i| (signal_vals[i], metas[i].clone()),
-            cm,
+            exec,
+            sizer,
         );
 
         // Build Polars DataFrames
@@ -329,19 +487,23 @@ impl BacktestEngine {
         let equity_df = self.equity_to_df(&equity_points)?;
 
         // Basic stats (MVP — richer via Polars later)
+        let initial_cash = match &self.config.execution_model {
+            ExecutionModel::Simple(cm) => cm.initial_cash,
+            _ => 100_000.0,
+        };
         let final_equity = equity_points
             .last()
             .map(|e| e.equity)
-            .unwrap_or(cm.initial_cash);
-        let total_return = (final_equity - cm.initial_cash) / cm.initial_cash;
+            .unwrap_or(initial_cash);
+        let total_return = (final_equity - initial_cash) / initial_cash;
         let num_trades = trades.len() as f64;
 
         let mut stats = HashMap::new();
-        stats.insert("initial_cash".to_string(), cm.initial_cash);
+        stats.insert("initial_cash".to_string(), initial_cash);
         stats.insert("final_equity".to_string(), final_equity);
         stats.insert("total_return".to_string(), total_return);
         stats.insert("num_trades".to_string(), num_trades);
-        stats.insert("net_pnl".to_string(), final_equity - cm.initial_cash);
+        stats.insert("net_pnl".to_string(), final_equity - initial_cash);
 
         Ok(BacktestResult {
             trades: trades_df,
@@ -473,12 +635,13 @@ fn run_simulation(
     timestamps: &[DateTime<Utc>],
     closes: &[f64],
     mut next_signal: impl FnMut(usize) -> (f64, Option<HashMap<String, f64>>),
-    cm: &CostModel,
+    exec: &ExecutionModel,
+    sizer: &Option<InitialRiskPositionSizer>,
 ) -> (Vec<Trade>, Vec<EquityPoint>) {
-    let slip = cm.slippage_bps / 10000.0;
-    let comm = cm.commission_bps / 10000.0;
-
-    let mut cash = cm.initial_cash;
+    let mut cash = match exec {
+        ExecutionModel::Simple(cm) => cm.initial_cash,
+        ExecutionModel::HighFidelity { .. } => 100_000.0,
+    };
     let mut current_exposure: f64 = 0.0;
     let mut entry_price: f64 = 0.0;
     let mut entry_ts: Option<DateTime<Utc>> = None;
@@ -501,7 +664,14 @@ fn run_simulation(
             continue;
         }
 
-        let (desired_exposure, meta) = next_signal(i);
+        let (raw_exposure, meta) = next_signal(i);
+        // Apply rich sizer if configured (n1yc.1) using current equity for % calc
+        let current_equity = cash + current_exposure * close;
+        let desired_exposure = if let Some(s) = sizer {
+            s.compute_sized_exposure(raw_exposure, &meta, close, current_equity)
+        } else {
+            raw_exposure
+        };
         let desired = if desired_exposure > 0.0 {
             desired_exposure
         } else {
@@ -512,10 +682,11 @@ fn run_simulation(
         let currently_in = current_exposure > 0.0;
 
         if desired > 0.0 && !currently_in {
-            // ENTRY with the desired size from signal (supports pole height sizing)
-            let fill_price = close * (1.0 + slip);
+            // ENTRY with the (rich-sized if sizer present) desired size from signal
+            let is_buy = true;
+            let fill_price = exec.slippage_price(close, desired, is_buy, None);
             let notional = fill_price * desired;
-            let cost = notional * comm;
+            let cost = exec.commission_for(desired, fill_price);
             cash -= notional + cost;
             current_exposure = desired;
             entry_price = fill_price;
@@ -523,9 +694,10 @@ fn run_simulation(
             trade_id += 1;
         } else if desired == 0.0 && currently_in {
             // EXIT full
-            let fill_price = close * (1.0 - slip);
+            let is_buy = false;
+            let fill_price = exec.slippage_price(close, current_exposure, is_buy, None);
             let notional = fill_price * current_exposure;
-            let cost = notional * comm;
+            let cost = exec.commission_for(current_exposure, fill_price);
             let gross_pnl = (fill_price - entry_price) * current_exposure;
             let net_pnl = gross_pnl - cost;
             cash += notional - cost;
@@ -612,7 +784,8 @@ where
     let timestamps: Vec<DateTime<Utc>> = bars.iter().map(|b| b.ts).collect();
     let closes: Vec<f64> = bars.iter().map(|b| b.close).collect();
 
-    let cm = &config.cost_model;
+    let exec = &config.execution_model;
+    let sizer = &config.position_sizer;
 
     let (trades, equity_points) = run_simulation(
         &timestamps,
@@ -621,7 +794,8 @@ where
             let sig = generator.next(&bars[i]);
             (sig.exposure, sig.metadata.clone())
         },
-        cm,
+        exec,
+        sizer,
     );
 
     // Build Polars (same as batch)
@@ -679,19 +853,23 @@ where
         ])?
     };
 
+    let initial_cash = match &config.execution_model {
+        ExecutionModel::Simple(cm) => cm.initial_cash,
+        _ => 100_000.0,
+    };
     let final_equity = equity_points
         .last()
         .map(|e| e.equity)
-        .unwrap_or(cm.initial_cash);
-    let total_return = (final_equity - cm.initial_cash) / cm.initial_cash;
+        .unwrap_or(initial_cash);
+    let total_return = (final_equity - initial_cash) / initial_cash;
     let num_trades = trades.len() as f64;
 
     let mut stats = HashMap::new();
-    stats.insert("initial_cash".to_string(), cm.initial_cash);
+    stats.insert("initial_cash".to_string(), initial_cash);
     stats.insert("final_equity".to_string(), final_equity);
     stats.insert("total_return".to_string(), total_return);
     stats.insert("num_trades".to_string(), num_trades);
-    stats.insert("net_pnl".to_string(), final_equity - cm.initial_cash);
+    stats.insert("net_pnl".to_string(), final_equity - initial_cash);
 
     Ok(BacktestResult {
         trades: trades_df,
@@ -1121,5 +1299,31 @@ mod integration_example_between_epics {
             result.trades.height()
         );
         assert!(result.equity_curve.height() == n);
+    }
+
+    #[test]
+    fn test_initial_risk_position_sizer_with_pole_height_and_fraction() {
+        // n1yc.1: verify rich sizer produces risk-budgeted sizes from PA metadata.
+        let sizer = InitialRiskPositionSizer { initial_risk: 0.01, max_target_pct: 0.5 };
+        let mut meta = HashMap::new();
+        meta.insert("pole_height_atr".to_string(), 2.0); // e.g. 2 ATR pole -> frac ~0.005
+        let sig = StrategySignal { exposure: 1.0, metadata: Some(meta) };
+        let sized = sizer.compute_sized_exposure(1.0, &sig.metadata, 100.0, 1_000_000.0);
+        // target_pct ~ 0.01 / (0.01/2) = 2.0 but capped at 0.5 -> 0.5 * equity / price = 5000 units? Wait calc:
+        // frac = 0.01 / 2.0 = 0.005; target_pct = 0.01 / 0.005 = 2.0 -> min(0.5) = 0.5; target_units = 0.5 * 1e6 / 100 = 5000
+        assert!((sized - 5000.0).abs() < 1.0);
+
+        // explicit fraction_at_risk
+        let mut meta2 = HashMap::new();
+        meta2.insert("fraction_at_risk".to_string(), 0.02);
+        let sig2 = StrategySignal { exposure: 1.0, metadata: Some(meta2) };
+        let sized2 = sizer.compute_sized_exposure(1.0, &sig2.metadata, 100.0, 1_000_000.0);
+        // 0.01 / 0.02 = 0.5; 0.5 * 1e6 /100 = 5000
+        assert!((sized2 - 5000.0).abs() < 1.0);
+
+        // no meta -> passthrough
+        let sig3 = StrategySignal { exposure: 123.0, metadata: None };
+        let sized3 = sizer.compute_sized_exposure(123.0, &sig3.metadata, 100.0, 1_000_000.0);
+        assert!((sized3 - 123.0).abs() < 1e-9);
     }
 }
