@@ -83,7 +83,11 @@ class ta:
     """
     pass
 
-# Populate from native extension (all pyfunctions + classes it registers)
+# Populate from native extension.
+# IMPORTANT for gqem (namespace cleanup): Do NOT dump *Result / *Protocol / internal
+# types to top-level globals (that was the ~150 item pollution). Only clean indicator
+# names go to top-level + ta. Result types live in quantwave.results (and ta if useful).
+# This directly advances the "move MacdResult, *Protocol etc out of top-level" goal.
 try:
     if hasattr(_quantwave, "__all__"):
         _native_syms = getattr(_quantwave, "__all__")
@@ -92,8 +96,10 @@ try:
     for _sym in _native_syms:
         try:
             _val = getattr(_quantwave, _sym)
-            setattr(ta, _sym, _val)
-            globals()[_sym] = _val  # top-level exposure (e.g. quantwave.rsi, quantwave.SuperTrend)
+            setattr(ta, _sym, _val)  # always available under qw.ta for discovery / advanced use
+            is_internal = _sym.endswith("Result") or _sym.endswith("Protocol") or _sym.endswith("Error") or "Protocol" in _sym
+            if not is_internal:
+                globals()[_sym] = _val  # clean top-level exposure only for indicators / public fns
         except Exception:
             pass
 except Exception as _e:
