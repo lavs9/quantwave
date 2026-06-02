@@ -5,6 +5,20 @@ pub trait Next<Input> {
 
     /// Process the next input and return the updated output.
     fn next(&mut self, input: Input) -> Self::Output;
+
+    /// Process a batch of inputs eagerly.
+    /// This allows implementations to override with vectorized logic,
+    /// while falling back to scalar processing by default.
+    fn next_batch(&mut self, inputs: &[Input]) -> Vec<Self::Output> 
+    where
+        Input: Copy,
+    {
+        let mut outputs = Vec::with_capacity(inputs.len());
+        for &input in inputs {
+            outputs.push(self.next(input));
+        }
+        outputs
+    }
 }
 
 /// A trait for algorithms that smooth a series of values (e.g., SMA, EMA).

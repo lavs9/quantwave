@@ -1,6 +1,6 @@
 use crate::indicators::metadata::IndicatorMetadata;
 use crate::traits::Next;
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 
 /// Bill Williams Alligator
 ///

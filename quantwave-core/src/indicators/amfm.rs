@@ -1,6 +1,6 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 use std::f64::consts::PI;
 
 /// AM Detector (Volatility)
@@ -23,7 +23,7 @@ impl AMDetector {
             highest_len,
             avg_len,
             deriv_history: VecDeque::with_capacity(highest_len),
-            envelope_history: VecDeque::with_capacity(avg_len),
+            envelope_history: VecDeque::with_capacity(20),
             sum_envelope: 0.0,
         }
     }
@@ -204,7 +204,7 @@ mod tests {
 
             // Batch implementation
             let mut batch_results = Vec::with_capacity(inputs.len());
-            let mut envelope_hist = VecDeque::new();
+            let mut envelope_hist = VecDeque::with_capacity(20);
             let mut sum_env = 0.0;
 
             for i in 0..inputs.len() {

@@ -1,7 +1,7 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::super_smoother::SuperSmoother;
 use crate::traits::Next;
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 
 /// Ehlers Reflex
 ///

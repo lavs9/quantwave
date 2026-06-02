@@ -1,7 +1,7 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 
 /// Simple Moving Average (SMA)
 #[derive(Debug, Clone, Serialize, Deserialize)]

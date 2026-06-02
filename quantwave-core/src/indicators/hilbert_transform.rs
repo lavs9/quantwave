@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 
 /// Hilbert Transform 7-tap FIR Filter
 ///

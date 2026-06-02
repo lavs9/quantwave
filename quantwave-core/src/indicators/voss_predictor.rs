@@ -1,7 +1,7 @@
 use crate::indicators::bandpass::BandPass;
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 
 /// Voss Predictive Filter
 ///
@@ -140,7 +140,7 @@ mod tests {
             let mut batch_results = Vec::with_capacity(inputs.len());
             let mut bp = BandPass::new(period, 0.25);
             let order = 3 * predict;
-            let mut v_hist = VecDeque::new();
+            let mut v_hist = VecDeque::with_capacity(order + 1);
 
             for &input in &inputs {
                 let filt = bp.next(input);

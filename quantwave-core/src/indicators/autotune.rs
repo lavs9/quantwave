@@ -1,7 +1,7 @@
 use crate::indicators::high_pass::HighPass;
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 use std::f64::consts::PI;
 
 /// AutoTune Filter
@@ -211,7 +211,7 @@ mod tests {
 
             // Batch-like verification of the state machine
             let mut hp = HighPass::new(window);
-            let mut filt_hist = VecDeque::new();
+            let mut filt_hist = VecDeque::with_capacity(2 * window);
             let mut dc_prev = window as f64;
             let mut price_prev = [0.0; 2];
             let mut bp_hist = [0.0; 2];

@@ -1,6 +1,6 @@
 use crate::indicators::metadata::IndicatorMetadata;
 use crate::traits::Next;
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 
 /// Bill Williams Fractals
 /// Identifies a bearish (up) fractal if High[t-2] is greater than High[t-4, t-3, t-1, t].

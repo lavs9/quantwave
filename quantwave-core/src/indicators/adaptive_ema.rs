@@ -1,6 +1,6 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 
 /// Adaptive Exponential Moving Average (AEMA)
 /// TASC April 2019, by Vitali Apirine

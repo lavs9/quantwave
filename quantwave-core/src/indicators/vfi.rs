@@ -2,7 +2,7 @@ use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::smoothing::{EMA, SMA};
 use crate::indicators::statistics::StandardDeviation;
 use crate::traits::Next;
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 
 pub const METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "VFI",
@@ -185,7 +185,7 @@ mod tests {
             let mut stddev = StandardDeviation::new(30);
             let mut v_sma = SMA::new(period);
             let mut prev_v_ave = 0.0;
-            let mut dir_vol_window = VecDeque::new();
+            let mut dir_vol_window = VecDeque::with_capacity(period);
             let mut dir_vol_sum = 0.0;
             let mut ema = EMA::new(smoothing);
 

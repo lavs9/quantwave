@@ -2,7 +2,7 @@ use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::roofing_filter::RoofingFilter;
 use crate::indicators::super_smoother::SuperSmoother;
 use crate::traits::Next;
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 
 /// MESA Stochastic
 ///
@@ -147,7 +147,7 @@ mod tests {
             let mut batch_results = Vec::with_capacity(inputs.len());
             let mut rf = RoofingFilter::new(hp_period, ss_period);
             let mut ss = SuperSmoother::new(ss_period);
-            let mut filt_hist = VecDeque::new();
+            let mut filt_hist = VecDeque::with_capacity(40);
 
             for &input in &inputs {
                 let filt = rf.next(input);

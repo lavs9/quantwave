@@ -1,7 +1,7 @@
 use crate::indicators::hilbert_transform::{EhlersWma4, HilbertFIR};
 use crate::indicators::metadata::IndicatorMetadata;
 use crate::traits::Next;
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 
 /// Phasor Indicator
 ///

@@ -4,7 +4,7 @@ use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::super_smoother::SuperSmoother;
 use crate::indicators::ultimate_smoother::UltimateSmoother;
 use crate::traits::Next;
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 use std::f64::consts::PI;
 
 /// Synthetic Oscillator
@@ -224,10 +224,10 @@ mod tests {
             let mut hann = HannFilter::new(12);
             let mut hp = HighPass::new(ub);
             let mut ss = SuperSmoother::new(lb);
-            let mut lp_win = VecDeque::new();
+            let mut lp_win = VecDeque::with_capacity(100);
             let mut lp_sum_sq = 0.0;
             let mut re_prev = 0.0;
-            let mut roc_win = VecDeque::new();
+            let mut roc_win = VecDeque::with_capacity(100);
             let mut roc_sum_sq = 0.0;
             let mut im_prev = 0.0;
             let mut dc_prev = lb as f64;

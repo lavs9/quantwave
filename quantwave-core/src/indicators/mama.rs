@@ -1,6 +1,6 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 
 /// MESA Adaptive Moving Average (MAMA)
 /// Adapts to price movement based on the rate change of phase as measured by the Hilbert Transform Discriminator.

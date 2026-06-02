@@ -7,7 +7,7 @@ use crate::traits::Next;
 use crate::regimes::MarketRegime;
 use crate::regimes::volatility_clustering::VolatilityClusterer;
 use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 
 /// A clusterer for identifying regimes across multiple assets.
 #[derive(Debug, Clone, Serialize, Deserialize)]

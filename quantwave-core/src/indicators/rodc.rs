@@ -1,7 +1,7 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::smoothing::SMA;
 use crate::traits::Next;
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 
 pub const METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Rate of Directional Change",

@@ -1,3 +1,4 @@
+use crate::utils::RingBuffer as VecDeque;
 // Math Transform
 talib_1_in_1_out_no_result!(ACOS, talib_rs::math_transform::acos);
 impl Default for ACOS {
@@ -94,7 +95,7 @@ impl Default for TANH {
 #[derive(Debug, Clone)]
 pub struct RMS {
     period: usize,
-    history: std::collections::VecDeque<f64>,
+    history: VecDeque<f64>,
     sum_sq: f64,
 }
 
@@ -102,7 +103,7 @@ impl RMS {
     pub fn new(period: usize) -> Self {
         Self {
             period,
-            history: std::collections::VecDeque::with_capacity(period),
+            history: VecDeque::with_capacity(period),
             sum_sq: 0.0,
         }
     }

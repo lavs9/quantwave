@@ -1,6 +1,6 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 use std::f64::consts::PI;
 
 /// Correlation Cycle Indicator
@@ -38,7 +38,7 @@ impl CorrelationCycle {
         }
     }
 
-    fn pearson_correlation(n: usize, x: &std::collections::VecDeque<f64>, y: &[f64]) -> f64 {
+    fn pearson_correlation(n: usize, x: &VecDeque<f64>, y: &[f64]) -> f64 {
         let mut sx = 0.0;
         let mut sy = 0.0;
         let mut sxx = 0.0;

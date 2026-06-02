@@ -1,7 +1,7 @@
 use crate::indicators::high_pass::HighPass;
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 
 /// Ehlers Ultimate Oscillator
 ///
@@ -121,7 +121,7 @@ mod tests {
             let mut batch_results = Vec::with_capacity(inputs.len());
             let mut hp1 = HighPass::new((band_edge as f64 * bandwidth) as usize);
             let mut hp2 = HighPass::new(band_edge);
-            let mut win = VecDeque::new();
+            let mut win = VecDeque::with_capacity(100);
             let mut sum_sq = 0.0;
 
             for &input in &inputs {

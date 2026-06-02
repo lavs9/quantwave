@@ -2,7 +2,7 @@ use crate::indicators::high_pass::HighPass;
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::super_smoother::SuperSmoother;
 use crate::traits::Next;
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 use std::f64::consts::PI;
 
 /// Griffiths Dominant Cycle

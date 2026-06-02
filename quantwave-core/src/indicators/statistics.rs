@@ -1,6 +1,6 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 
 talib_1_in_1_out!(TaSTDDEV, talib_rs::statistic::stddev, timeperiod: usize, nbdev: f64);
 talib_1_in_1_out!(TaVAR, talib_rs::statistic::var, timeperiod: usize, nbdev: f64);

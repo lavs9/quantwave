@@ -8,7 +8,7 @@
 //! This module identifies discrete volatility states (e.g., Low, Medium, High) by clustering
 //! recent ATR values.
 
-use std::collections::VecDeque;
+use crate::utils::RingBuffer as VecDeque;
 use crate::indicators::volatility::ATR;
 use crate::traits::Next;
 use crate::regimes::MarketRegime;
