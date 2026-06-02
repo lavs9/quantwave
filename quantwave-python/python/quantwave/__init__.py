@@ -43,13 +43,21 @@ except (PackageNotFoundError, Exception):
 from . import _quantwave  # noqa
 from . import polars      # noqa
 
-# Popular namespaces
-from . import ta          # type: ignore
-from . import results
-from . import options
-from . import talib
+# Popular namespaces (guarded: some may require full maturin build or follow-up on gqem/05q7)
+import warnings
+try:
+    from . import results
+    from . import options
+    from . import talib
+except Exception as _e:  # pragma: no cover
+    warnings.warn(f"quantwave namespace submodules (results/options/talib) partial load: {_e}")
+    # Provide minimal stand-ins so core DX (metadata, discovery, parity) still works
+    class _DummyNS: pass
+    results = _DummyNS()
+    options = _DummyNS()
+    talib = _DummyNS()
 
-# Pull in the clean metadata system
+# Pull in the clean metadata system (now the robust source for discovery too)
 from ._metadata import (
     IndicatorMeta,
     metadata,
@@ -63,19 +71,83 @@ from ._metadata import (
 # DX helpers (defined later in this file for now to avoid circularity during cleanup)
 # We will gradually move more of these out.
 
+# --- Dynamic ta namespace population (replaces fragile manual class + "from . import ta") ---
+# This makes indicators(), is_indicator(), streaming_class, and qw.ta.* robust
+# even when some advanced ML/PA feature objects are added in later tasks (tha, gw7s, ej8b).
+# Pulls from the native _quantwave (source of truth for compiled indicators + new uniffi/PyO3 objects)
+# + falls back to metadata keys. Also exposes at top-level for backward compat.
 
-# --- Basic Discovery API (quantwave-p3z9) ---
-# This is a first-pass implementation. It will be backed by real metadata later.
+class ta:
+    """Dynamic namespace aggregating available indicators (batch + streaming classes)
+    and feature/PA helpers. Populated at import time from the compiled extension.
+    """
+    pass
+
+# Populate from native extension (all pyfunctions + classes it registers)
+try:
+    if hasattr(_quantwave, "__all__"):
+        _native_syms = getattr(_quantwave, "__all__")
+    else:
+        _native_syms = [x for x in dir(_quantwave) if not x.startswith("_") and not x.startswith("Py")]
+    for _sym in _native_syms:
+        try:
+            _val = getattr(_quantwave, _sym)
+            setattr(ta, _sym, _val)
+            globals()[_sym] = _val  # top-level exposure (e.g. quantwave.rsi, quantwave.SuperTrend)
+        except Exception:
+            pass
+except Exception as _e:
+    warnings.warn(f"Partial native symbol import into quantwave.ta / top-level: {_e}")
+
+# Also ensure any metadata-registered indicators are attached (for pure-Py or future)
+for _meta in list_metadata():
+    _n = _meta.name
+    if not hasattr(ta, _n):
+        for _cand in (_n, _n.capitalize(), _n.replace("_", "")):
+            if hasattr(_quantwave, _cand):
+                _v = getattr(_quantwave, _cand)
+                setattr(ta, _n, _v)
+                globals()[_n] = _v
+                break
+
+# Special recently-wired objects (ML features, PA structs, regime) that may have specific casing
+for _special in [
+    "CyberCycleFeatureExtractor", "HurstFeatureExtractor",
+    "InstantaneousTrendlineFeatureExtractor", "TrendflexFeatureExtractor",
+    "GriffithsDominantCycleFeatureExtractor", "BullBearHMM",
+    "regime_to_features", "griffiths_dominant_cycle_features",
+    "MarketStructure", "GeometricPatternScanner", "market_structure_batch",
+]:
+    if not hasattr(ta, _special):
+        for _cand in (_special, _special.lower().replace("featureextractor", "feature_extractor")):
+            if hasattr(_quantwave, _cand):
+                _v = getattr(_quantwave, _cand)
+                setattr(ta, _special, _v)
+                globals()[_special] = _v
+                break
+
+# --- Basic Discovery API (quantwave-p3z9 / p0s) ---
+# Now backed primarily by metadata (reliable) + dir(ta) for anything extra the native exposes.
+# This closes the "first-pass" + "will be refined as metadata built" gap.
 
 def _build_indicator_names() -> set[str]:
-    """Build the set of indicator names from the ta namespace."""
+    """Build the set of indicator names from metadata (primary) + ta namespace."""
     names = set()
+    # Primary: our curated metadata (includes Ehlers, PA, ML core, classics)
+    for m in list_metadata():
+        names.add(m.name)
+        if m.name != m.name.lower():
+            names.add(m.name.lower())
+    # Secondary: anything callable exposed via the native/ ta namespace
     for name in dir(ta):
         if name.startswith("_"):
             continue
+        if name.endswith("Protocol") or "Protocol" in name:
+            continue  # uniffi internal, not user indicators
         obj = getattr(ta, name, None)
-        if callable(obj):
+        if callable(obj) or isinstance(obj, type):
             names.add(name)
+            names.add(name.lower())
     return names
 
 _INDICATOR_NAMES: set[str] = _build_indicator_names()
@@ -165,11 +237,18 @@ def assert_parity(
     if streaming_cls is None:
         raise ValueError(f"No streaming class found for: {indicator_name}")
 
-    # Run batch
+    # Run batch - native fns usually take explicit params then series= (or data as last positional).
+    # Use flexible try to support the generated signatures without hardcoding per-indicator.
+    meta = metadata(indicator_name)
+    call_params = {k: v for k, v in (params or {}).items()}
     try:
-        batch_result = batch_fn(data, **params, **kwargs)
-    except Exception as e:
-        raise RuntimeError(f"Batch mode failed: {e}") from e
+        batch_result = batch_fn(series=data, **call_params, **(kwargs or {}))
+    except TypeError:
+        try:
+            batch_result = batch_fn(data, **call_params, **(kwargs or {}))
+        except TypeError:
+            # Give up with clear error
+            raise RuntimeError(f"Batch call failed for {indicator_name} with params={call_params}. Check native signature.") from None
 
     # Run streaming
     try:
@@ -178,11 +257,38 @@ def assert_parity(
     except Exception as e:
         raise RuntimeError(f"Streaming mode failed: {e}") from e
 
-    # Normalize for comparison (handle single vs multi output)
+    # Use metadata for warmup awareness (976r) - skip or note initial bars in comparison
+    meta = metadata(indicator_name)
+    warmup = warmup_bars(indicator_name, params) if meta else 0
+
+    # Normalize for comparison (handle single vs multi output + result dataclasses)
     def _normalize(x):
         if isinstance(x, (list, tuple)):
             return x
         return [x]
+
+    def _close_enough(bv, sv):
+        import math
+        if isinstance(bv, (int, float)) and isinstance(sv, (int, float)):
+            if math.isnan(bv) and math.isnan(sv):
+                return True
+            if math.isinf(bv) and math.isinf(sv) and (bv > 0) == (sv > 0):
+                return True
+            return abs(bv - sv) <= tolerance
+        if repr(bv) == repr(sv):
+            return True
+        # Dataclass / result object: compare fields with tolerance on floats
+        try:
+            bdict = vars(bv) if hasattr(bv, "__dict__") else bv._asdict() if hasattr(bv, "_asdict") else None
+            sdict = vars(sv) if hasattr(sv, "__dict__") else sv._asdict() if hasattr(sv, "_asdict") else None
+            if bdict and sdict and set(bdict.keys()) == set(sdict.keys()):
+                for k in bdict:
+                    if not _close_enough(bdict[k], sdict[k]):
+                        return False
+                return True
+        except Exception:
+            pass
+        return False
 
     b = _normalize(batch_result)
     s = _normalize(stream_result)
@@ -191,21 +297,16 @@ def assert_parity(
         raise AssertionError(f"Length mismatch: batch={len(b)}, stream={len(s)}")
 
     for i, (bv, sv) in enumerate(zip(b, s)):
-        if isinstance(bv, (int, float)) and isinstance(sv, (int, float)):
-            if abs(bv - sv) > tolerance:
-                raise AssertionError(
-                    f"Mismatch at index {i}: batch={bv}, stream={sv}, diff={abs(bv-sv)}"
-                )
-        else:
-            # For complex results (dataclasses), do a simple repr comparison for now
-            if repr(bv) != repr(sv):
-                raise AssertionError(f"Result mismatch at index {i}")
+        if not _close_enough(bv, sv):
+            raise AssertionError(
+                f"Mismatch at index {i} (warmup={warmup}): batch={bv}, stream={sv}"
+            )
 
     return True
 
 
 # =============================================================================
-# Streaming Readiness Helpers (quantwave-p3z9)
+# Streaming Readiness Helpers (quantwave-p3z9 / 1l79)
 # =============================================================================
 
 class StreamingWrapper:
@@ -213,25 +314,36 @@ class StreamingWrapper:
     Lightweight wrapper that adds is_ready and bars_consumed tracking
     around any streaming (Next<T>) indicator instance.
 
+    Uses metadata.warmup_bars for accurate readiness (instead of conservative heuristic).
+
     Usage:
         st = quantwave.streaming_class("supertrend")(period=10, multiplier=3)
-        wrapped = quantwave.wrap_streaming(st)
+        wrapped = quantwave.wrap_streaming(st, name="supertrend")
         for price in data:
             val = wrapped.next(price)
             if wrapped.is_ready:
                 ...
     """
-    def __init__(self, streaming_instance):
+    def __init__(self, streaming_instance, name: str = None):
         self._inner = streaming_instance
         self._bars_consumed = 0
         self._is_ready = False
+        self._name = name
+        self._warmup = 0
+        if name:
+            try:
+                self._warmup = warmup_bars(name)
+            except Exception:
+                self._warmup = 0
 
     def next(self, value):
         result = self._inner.next(value)
         self._bars_consumed += 1
-        # Heuristic: most indicators become "ready" after their main period
-        # This is approximate; for exact use warmup_bars + metadata
-        self._is_ready = True  # Conservative: assume ready after first value for simplicity in 0.5.2
+        if self._warmup > 0:
+            self._is_ready = self._bars_consumed >= self._warmup
+        else:
+            # Fallback heuristic for unknown
+            self._is_ready = self._bars_consumed > 0
         return result
 
     @property
@@ -247,151 +359,16 @@ class StreamingWrapper:
         return getattr(self._inner, name)
 
 
-def wrap_streaming(streaming_instance):
-    """Wrap a streaming indicator instance to get is_ready / bars_consumed tracking."""
-    return StreamingWrapper(streaming_instance)
+def wrap_streaming(streaming_instance, name: str = None):
+    """Wrap a streaming indicator instance to get is_ready / bars_consumed tracking.
+    Pass name= for accurate warmup-based readiness from metadata.
+    """
+    return StreamingWrapper(streaming_instance, name=name)
 
-# Nice namespace
-class ta:
-    sma = sma
-    ema = ema
-    rsi = rsi
-    supertrend = SuperTrend
-    macd = Macd
-    atr = atr
-    adx = adx
-    cci = cci
-    stoch = stoch
-    aroon = Aroon
-    mama = Mama
-    kama = kama
-    t3 = T3
-    sar = sar
-    mom = mom
-    roc = roc
-    willr = willr
-    dema = dema
-    tema = tema
-    ichimoku = ichimoku
-    cg = cg
-    cybercycle = cybercycle
-    fisher = fisher
-    inverse_fisher = inversefisher
-    supersmoother = supersmoother
-    bandpass = bandpass
-    roofing_filter = roofingfilter
-    zerolag = zerolag
-    choppiness_index = choppinessindex
-    classic_laguerre = classiclaguerre
-    alligator = Alligator
-    alma = alma
-    atr_ts = AtrTs
-    butterworth2 = butterworth2
-    butterworth3 = butterworth3
-    channel_cycle = channelcycle
-    continuation_index = continuationindex
-    correlation_cycle = correlationcycle
-    correlation_trend = correlationtrend
-    cybernetic_oscillator = cyberneticoscillator
-    dmh = dmh
-    donchian = donchian
-    dsma = dsma
-    emd = emd
-    frama = frama
-    am_detector = amdetector
-    fm_demodulator = fmdemodulator
-    ehlers_autocorrelation = ehlersautocorrelation
-    ehlers_filter = ehlersfilter
-    ehlers_loops = ehlersloops
-    ehlers_stochastic = ehlersstochastic
-    ehlers_ultimate_oscillator = ehlersultimateoscillator
-    fisher_high_pass = fisherhighpass
-    fourier_series = fourierseries
-    fourier_dominant_cycle = fourierdominantcycle
-    fractals = fractals
-    gaussian = gaussian
-    generalized_laguerre = generalizedlaguerre
-    griffiths_dominant_cycle = griffithsdominantcycle
-    griffiths_predictor = griffithspredictor
-    griffiths_spectrum = griffithsspectrum
-    hamming = hamming
-    hann = hann
-    heikin_ashi = heikin_ashi
-    high_pass = highpass
-    hma = hma
-    ehlers_wma4 = ehlerswma4
-    instantaneous_trendline = instantaneoustrendline
-    undersampled_double_ma = undersampleddoublema
-    keltner = keltner
-    laguerre_filter = laguerrefilter
-    laguerre_oscillator = laguerreoscillator
-    laguerre_rsi = laguerrersi
-    noise_elimination = noiseelimination
-    pairs_rotation = pairsrotation
-    phasor = phasor
-    oc_price_rsi = ocpricersi
-    pivot_points = pivot_points
-    one_euro_filter = oneeurofilter
-    projected_moving_average = projectedmovingaverage
-    precision_trend = precisiontrend
-    reversion_index = reversionindex
-    sine_wave = sinewave
-    swiss_army_knife = swiss_army_knife
-    system_evaluator = systemevaluator
-    ttm_squeeze = ttmsqueeze
-    ultimate_bands = ultimate_bands
-    ultimate_channel = ultimate_channel
-    ultimate_smoother = ultimatesmoother
-    usi = usi
-    ad = ad
-    adosc = adosc
-    obv = obv
-    vortex = vortex
-    anchored_vwap = anchored_vwap
-    wavetrend = wavetrend
-    simple_predictor = simplepredictor
-    mad = mad
-    mesa_stochastic = mesastochastic
-    rsih = rsih
-    voss_predictor = vosspredictor
-    synthetic_oscillator = syntheticoscillator
-    cycle_trend_analytics = cycletrendanalytics
-    madh = madh
-    stc = stc
-    homodyne_discriminator = homodynediscriminator
-    universal_oscillator = universaloscillator
-    triangle_filter = trianglefilter
-    ht_dc_period = htdcperiod
-    ht_phasor = htphasor
-    ht_dc_phase = htdcphase
-    ht_sine = htsine
-    ht_trend_mode = httrendmode
-    hurst_exponent = hurstexponent
-    kalman_filter = kalmanfilter
-    market_state = marketstate
-    recursive_median = recursivemedian
-    recursive_median_oscillator = recursivemedianoscillator
-    reflex = reflex
-    rocket_rsi = rocketrsi
-    trendflex = trendflex
-    truncated_bandpass = truncatedbandpass
-    # ML features (gw7s notebook + harness + 4ps/gwx cross-epic deliverable)
-    cyber_cycle_feature_extractor = CyberCycleFeatureExtractor
-    hurst_feature_extractor = HurstFeatureExtractor
-    instantaneous_trendline_feature_extractor = InstantaneousTrendlineFeatureExtractor
-    trendflex_feature_extractor = TrendflexFeatureExtractor
-    regime_to_features = regime_to_features
-    # Newly wired for the E2E notebook (trivial parallel to above; completes the locked .ta.features.* surface in Python)
-    griffiths_dominant_cycle_feature_extractor = GriffithsDominantCycleFeatureExtractor
-    bull_bear_hmm = BullBearHMM
-    griffiths_dominant_cycle_features = griffiths_dominant_cycle_features  # batch helper
-    volume_profile = volumeprofile
-    # PA foundation (5thj): streaming access to rich MarketStructure (bias/flips) + Geometric (Flags/H&S with pole_length_atr)
-    # Use in notebooks exactly like feature extractors: loop or batch_ helpers to populate DF columns for strategy.
-    market_structure = MarketStructure
-    geometric_pattern_scanner = GeometricPatternScanner
-    market_structure_batch = market_structure_batch
-    # (geometric batch can be added later; use the object in loop for now)
+# (The old manual "class ta:" with 100+ hardcoded aliases has been replaced by the
+# dynamic population block earlier in this file. It pulls from _quantwave + _metadata
+# so it stays in sync automatically as new indicators / ML / PA objects are added in
+# tha, gw7s, cu03 children, etc. The options_india legacy compat class remains below.)
 
 class options_india:
     bs_call_price = bs_call_price
@@ -414,43 +391,15 @@ class options_india:
     nse_lot_size = nse_lot_size
     nse_risk_free_rate = nse_risk_free_rate
 
-__all__ = [
-    "ta", "options_india", "Sma", "Ema", "Rsi", "SuperTrend", "Macd", "Atr", "Adx", "Cci", "Stoch", 
-    "Aroon", "Mama", "Kama", "T3", "Sar", "Mom", "Roc", "Willr", "Dema", "Tema", 
-    "Ichimoku", "Cg", "CyberCycle", "Fisher", "InverseFisher", "SuperSmoother", 
-    "Bandpass", "RoofingFilter", "ZeroLag", "ChoppinessIndex", "ClassicLaguerre",
-    "Alligator", "AtrTs", "Aroon", "Donchian", "Emd", "ChannelCycle", "CorrelationCycle",
-    "EhlersAutocorrelation", "EhlersFilter", "EhlersLoops", "EhlersStochastic", 
-    "EhlersUltimateOscillator", "FisherHighPass", "FourierSeries", "FourierDominantCycle",
-    "Fractals", "Gaussian", "GeneralizedLaguerre", "GriffithsDominantCycle", 
-    "GriffithsPredictor", "GriffithsSpectrum", "Hamming", "Hann", "HeikinAshi", 
-    "HighPass", "Hma", "EhlersWma4", "InstantaneousTrendline", "UndersampledDoubleMa",
-    "Keltner", "LaguerreFilter", "LaguerreOscillator", "LaguerreRsi", "NoiseElimination",
-    "PairsRotation", "Phasor", "OcPriceRsi", "PivotPoints", "OneEuroFilter",
-    "ProjectedMovingAverage", "PrecisionTrend", "ReversionIndex", "SineWave",
-    "SwissArmyKnife", "SystemEvaluator", "RobustnessEvaluator", "TtmSqueeze",
-    "UltimateBands", "UltimateChannel", "UltimateSmoother", "Usi", "Ad", "Adosc", "Obv",
-    "Vortex", "AnchoredVwap", "WaveTrend", "SimplePredictor", "Mad", "MesaStochastic",
-    "Rsih", "VossPredictor", "SyntheticOscillator", "CycleTrendAnalytics", "Madh", "Stc",
-    "HomodyneDiscriminator", "UniversalOscillator", "TriangleFilter",
-    "HtDcPeriod", "HtPhasor", "HtDcPhase", "HtSine", "HtTrendMode",
-    "HurstExponent", "KalmanFilter", "MarketState", "RecursiveMedian",
-    "RecursiveMedianOscillator", "Reflex", "RocketRsi", "Trendflex",
-    "TruncatedBandpass", "VolumeProfile",
-    # PA / MarketStructure + Geometric foundation (quantwave-5thj)
-    "MarketStructure", "GeometricPatternScanner", "market_structure_batch",
-    "SwingPointResult", "FlipEventResult", "MarketStructureStateResult", "FlagPatternResult", "HsPatternResult", "GeometricNextResult",
-    # ML feature toolkit (quantwave-gw7s)
-    "CyberCycleFeatureExtractor", "HurstFeatureExtractor",
-    "InstantaneousTrendlineFeatureExtractor", "TrendflexFeatureExtractor",
-    "regime_to_features"
-]
+# (Removed the giant legacy __all__ that referenced many PascalCase / old names no longer
+# explicitly assigned here; the dynamic population + final clean __all__ below provide the
+# supported public surface. Top-level indicator names like sma/rsi/SuperTrend are still
+# available via the globals() population for backward compat.)
 
 # =============================================================================
-# Final clean public surface for 0.5.2 (quantwave-p3z9)
+# Final clean public surface for 0.5.2 / P0 DX (quantwave-p3z9 children)
 # =============================================================================
 
-# DX helpers (new in 0.5.2)
 __all__ = [
     "__version__",
     "indicators",
@@ -460,6 +409,8 @@ __all__ = [
     "warmup_bars",
     "get_indicator_signature",
     "IndicatorMeta",
+    "Param",
+    "Series",
     "assert_parity",
     "streaming_class",
     "wrap_streaming",
@@ -471,4 +422,5 @@ __all__ = [
     "results",
     "options",
     "talib",
+    "options_india",  # legacy compat (will warn in future)
 ]

@@ -73,12 +73,40 @@ _METADATA: Dict[str, IndicatorMeta] = {
     "ichimoku": IndicatorMeta("ichimoku", ["tenkan", "kijun", "senkou_b"], {}, ["high", "low", "close"], ["tenkan", "kijun", "senkou_a", "senkou_b", "chikou"], 52, "Trend"),
     "pivot_points": IndicatorMeta("pivot_points", [], {}, ["high", "low", "close"], ["pivot", "r1", "s1", "r2", "s2"], 1, "Support/Resistance"),
 
-    # Add more as needed...
+    # Price Action / Structure (cu03 / MQL5 inspired)
+    "fractals": IndicatorMeta("fractals", [], {}, ["high", "low"], ["fractal_high", "fractal_low"], 5, "Price Action"),
+    "heikin_ashi": IndicatorMeta("heikin_ashi", [], {}, ["open", "high", "low", "close"], ["ha_open", "ha_high", "ha_low", "ha_close"], 1, "Candlestick"),
+
+    # Volume / Money Flow
+    "mfi": IndicatorMeta("mfi", ["period"], {}, ["high", "low", "close", "volume"], ["mfi"], 14, "Volume / Momentum"),
+    "cmf": IndicatorMeta("cmf", ["period"], {}, ["high", "low", "close", "volume"], ["cmf"], 20, "Volume"),
+    "force_index": IndicatorMeta("force_index", ["period"], {}, ["close", "volume"], ["force"], 13, "Volume"),
+    "eom": IndicatorMeta("eom", ["period"], {}, ["high", "low", "close", "volume"], ["eom"], 14, "Volume"),
+    "nvi": IndicatorMeta("nvi", [], {}, ["close", "volume"], ["nvi"], 1, "Volume"),
+    "pvi": IndicatorMeta("pvi", [], {}, ["close", "volume"], ["pvi"], 1, "Volume"),
+
+    # Ehlers DSP / Cycle (core for ML features tha/gw7s)
+    "cybercycle": IndicatorMeta("cybercycle", ["period"], {}, ["close"], ["cycle", "trigger"], 30, "Cycle / Ehlers", description="Cyber Cycle (Ehlers)"),
+    "trendflex": IndicatorMeta("trendflex", ["period"], {}, ["close"], ["trendflex"], 30, "Cycle / Ehlers"),
+    "instantaneous_trendline": IndicatorMeta("instantaneous_trendline", ["period"], {}, ["close"], ["trendline", "price"], 30, "Cycle / Ehlers"),
+    "hurst_exponent": IndicatorMeta("hurst_exponent", ["period"], {}, ["close"], ["hurst"], 100, "Regime / Statistics", description="Hurst Exponent (regime feature)"),
+    "griffiths_dominant_cycle": IndicatorMeta("griffiths_dominant_cycle", ["period"], {}, ["close"], ["dominant_cycle"], 50, "Cycle / Ehlers"),
+
+    # Regime / State
+    "market_state": IndicatorMeta("market_state", [], {}, ["close"], ["state", "confidence"], 50, "Regime"),
+
+    # Add more via metadata expansion or future auto-gen (iqq7)
 }
 
 def metadata(name: str) -> Optional[IndicatorMeta]:
     key = name.lower()
-    return _METADATA.get(key)
+    if key in _METADATA:
+        return _METADATA[key]
+    # simple aliases
+    aliases = {"bollinger_bands": "bbands", "atr_trailing_stop": "atr_ts"}
+    if key in aliases:
+        return _METADATA.get(aliases[key])
+    return None
 
 def list_metadata() -> List[IndicatorMeta]:
     return list(_METADATA.values())
@@ -92,7 +120,7 @@ def warmup_bars(name: str, params: dict = None) -> int:
 
     p = params or {}
     max_period = 0
-    for key in ["period", "fast", "slow", "signal", "length", "fastk", "slowk", "slowd"]:
+    for key in ["period", "fast", "slow", "signal", "length", "fastk", "slowk", "slowd", "tenkan", "kijun"]:
         if key in p:
             try:
                 max_period = max(max_period, int(p[key]))
@@ -116,7 +144,8 @@ class Series(Generic[T]):
 def get_indicator_signature(name: str):
     """
     Returns a clear separation of parameters vs data inputs for an indicator.
-    This helps solve the historical ambiguity in function signatures.
+    This helps solve the historical ambiguity in function signatures (s8s3).
+    Use in combination with Param/Series markers for future typed APIs.
     """
     meta = metadata(name)
     if not meta:
@@ -126,16 +155,3 @@ def get_indicator_signature(name: str):
         "data": meta.data_inputs,
         "outputs": meta.outputs,
     }
-
-    # More common indicators (expanded for 0.5.2)
-    "bollinger_bands": IndicatorMeta("bollinger_bands", ["period"], {"std_dev": 2.0}, ["close"], ["upper", "middle", "lower"], 20, "Volatility"),
-    "atr_trailing_stop": IndicatorMeta("atr_trailing_stop", ["period", "multiplier"], {}, ["high", "low", "close"], ["stop"], None, "Volatility"),
-    "pivot_points": IndicatorMeta("pivot_points", [], {}, ["high", "low", "close"], ["pivot", "r1", "s1"], 1, "Support/Resistance"),
-    "fractals": IndicatorMeta("fractals", [], {}, ["high", "low"], ["fractal_high", "fractal_low"], 5, "Price Action"),
-    "heikin_ashi": IndicatorMeta("heikin_ashi", [], {}, ["open", "high", "low", "close"], ["ha_open", "ha_high", "ha_low", "ha_close"], 1, "Candlestick"),
-    "mfi": IndicatorMeta("mfi", ["period"], {}, ["high", "low", "close", "volume"], ["mfi"], 14, "Volume / Momentum"),
-    "cmf": IndicatorMeta("cmf", ["period"], {}, ["high", "low", "close", "volume"], ["cmf"], 20, "Volume"),
-    "force_index": IndicatorMeta("force_index", ["period"], {}, ["close", "volume"], ["force"], 13, "Volume"),
-    "eom": IndicatorMeta("eom", ["period"], {}, ["high", "low", "close", "volume"], ["eom"], 14, "Volume"),
-    "nvi": IndicatorMeta("nvi", [], {}, ["close", "volume"], ["nvi"], 1, "Volume"),
-    "pvi": IndicatorMeta("pvi", [], {}, ["close", "volume"], ["pvi"], 1, "Volume"),
