@@ -45,7 +45,7 @@ fn generate_synthetic_with_regime_shifts(n: usize) -> (Vec<f64>, Vec<&'static st
 
     // Segment 1: Trending (strong positive drift, low noise) ~ H>0.5
     let n1 = n / 4;
-    for i in 0..n1 {
+    for _i in 0..n1 {
         rng = (rng * 6364136223846793005u64 as f64 + 1.0).fract();
         let noise = (rng - 0.5) * 0.4;
         price += 0.25 + noise;
