@@ -39,12 +39,23 @@ try:
 except (PackageNotFoundError, Exception):
     __version__ = "0.5.2.dev"
 
-# Core compiled extension + polars layer
+# Core compiled extension
 from . import _quantwave  # noqa
-from . import polars      # noqa
+
+# polars layer is optional (core streaming/metadata/DX work without it; the
+# quantwave-plugins package is the Polars Expressions path and declares the dep).
+import warnings
+try:
+    from . import polars
+except Exception as _e:  # pragma: no cover
+    warnings.warn(
+        f"quantwave.polars submodule unavailable (polars not installed; "
+        f"use `pip install \"quantwave[polars]\"` for Polars layer): {_e}"
+    )
+    class _DummyNS: pass
+    polars = _DummyNS()
 
 # Popular namespaces (guarded: some may require full maturin build or follow-up on gqem/05q7)
-import warnings
 try:
     from . import results
     from . import options

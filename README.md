@@ -4,7 +4,7 @@
 
 150+ indicators · Full Ehlers DSP suite · Regime Detection · Complete Options India stack · Bit-identical streaming & batch
 
-**Python** `pip install quantwave` **Rust** `cargo add quantwave`
+**Python** `pip install quantwave` (or `pip install "quantwave[polars]"` for the Polars integration layer) **Rust** `cargo add quantwave`
 
 [📖 Documentation](https://lavs9.github.io/quantwave/) • [⭐ GitHub](https://github.com/lavs9/quantwave) • [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/lavs9/quantwave)
 

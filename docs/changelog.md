@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - **Empty Python API Reference page** (quantwave-rbz4): https://lavs9.github.io/quantwave/api/ was rendering completely empty on the public site. Rewrote `docs/gen_python_api.py` to produce a professional landing page that clearly explains the three Python surfaces and directs users to the high-quality manual documentation in the Guides. The auto-generated reference is now intentionally lightweight and useful as a package surface reference rather than a duplicate of the indicator docs. Updated workflow comment, mkdocs nav label, roadmap, and decision record in the same change set.
+- **Broken imports for quantwave >=0.4.1 on fresh installs without polars** (downstream report): `import quantwave` now succeeds cleanly even if `polars` is not present in the environment (previously the unconditional `from . import polars` + top-level `import polars as pl` in the submodule would raise). The Polars layer (`quantwave.polars`) is now optional and guarded like `results`/`options`/`talib`. Added `polars` and `all` extras in `quantwave-python/pyproject.toml`. Downstream projects pinning `quantwave>=0.4.0` will no longer be forced to the latest broken-on-import 0.5.x or have to manually pin 0.4.0. Updated install docs in READMEs and getting-started. Core DX (metadata, discovery, streaming, parity, talib, options) remains fully usable without polars.
 
 ## [0.5.2] - 2026-05-31
 

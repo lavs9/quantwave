@@ -7,7 +7,7 @@ QuantWave is evolving rapidly. Our goal is to provide the most comprehensive and
 - Regime Detection Suite (v0.2–v0.3): HMM, GMM, PELT change-point detection, volatility clustering, conditioned risk metrics — all with native Polars support
 - Options India Suite (v0.4.0): Full Black-Scholes Greeks, implied volatility solvers, chain analytics (Max Pain, PCR, GEX, OI Zones), NSE utilities, and Polars expressions
 - 150+ technical indicators, including the complete Ehlers Digital Signal Processing suite
-- High-performance Polars expressions + Python bindings (`pip install quantwave`)
+- High-performance Polars expressions + Python bindings (`pip install quantwave` or `pip install "quantwave[polars]"`)
 - Streaming and batch parity via the universal `Next<T>` trait
 - Extensive documentation (200+ indicator guides)
 - Gold-standard testing and batch/streaming parity validation

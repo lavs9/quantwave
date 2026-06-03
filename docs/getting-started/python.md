@@ -6,6 +6,7 @@ QuantWave is designed to feel like a natural extension of Polars.
 
 ```bash
 pip install quantwave
+# For Polars integration (used in many examples): pip install "quantwave[polars]"
 ```
 
 ## Quick Start

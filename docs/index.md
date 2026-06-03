@@ -4,7 +4,7 @@
 
 150+ indicators · Full Ehlers DSP suite · Regime Detection · Complete Options India stack · Bit-identical streaming & batch
 
-**Python**: `pip install quantwave`  
+**Python**: `pip install quantwave` (or `pip install "quantwave[polars]"`)  
 **Rust**: `cargo add quantwave`
 
 [Get Started (Python) →](./getting-started/python.md){ .md-button .md-button--primary }
