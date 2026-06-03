@@ -3,8 +3,10 @@ use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
 use pyo3::prelude::*;
 use serde::Deserialize;
+
 use quantwave_core::indicators::smoothing::SMA;
 use quantwave_core::traits::Next;
+use quantwave_core::indicators::incremental::macd::MACD;
 
 #[derive(Deserialize)]
 struct SmaKwargs {
@@ -25,6 +27,66 @@ fn sma(inputs: &[Series], kwargs: SmaKwargs) -> PolarsResult<Series> {
             None => None,
         }
     }).collect();
+    
+    Ok(out.into_series())
+}
+
+#[derive(Deserialize)]
+struct MacdKwargs {
+    fast: usize,
+    slow: usize,
+    signal: usize,
+}
+
+pub fn macd_output(_: &[Field]) -> PolarsResult<Field> {
+    Ok(Field::new(
+        "macd".into(),
+        DataType::Struct(vec![
+            Field::new("macd".into(), DataType::Float64),
+            Field::new("signal".into(), DataType::Float64),
+            Field::new("hist".into(), DataType::Float64),
+        ]),
+    ))
+}
+
+#[polars_expr(output_type_func=macd_output)]
+fn macd(inputs: &[Series], kwargs: MacdKwargs) -> PolarsResult<Series> {
+    let s = &inputs[0];
+    let s_f64 = s.f64()?;
+    
+    let mut indicator = MACD::new(kwargs.fast, kwargs.slow, kwargs.signal);
+    
+    let mut macd_vec = Vec::with_capacity(s_f64.len());
+    let mut signal_vec = Vec::with_capacity(s_f64.len());
+    let mut hist_vec = Vec::with_capacity(s_f64.len());
+    
+    for opt_v in s_f64.into_iter() {
+        match opt_v {
+            Some(v) if !v.is_nan() => {
+                let (m, s, h) = indicator.next(v);
+                macd_vec.push(Some(m));
+                signal_vec.push(Some(s));
+                hist_vec.push(Some(h));
+            }
+            Some(_) => {
+                macd_vec.push(Some(f64::NAN));
+                signal_vec.push(Some(f64::NAN));
+                hist_vec.push(Some(f64::NAN));
+            }
+            None => {
+                macd_vec.push(None);
+                signal_vec.push(None);
+                hist_vec.push(None);
+            }
+        }
+    }
+    
+    let ca_macd = Float64Chunked::new("macd".into(), macd_vec);
+    let ca_signal = Float64Chunked::new("signal".into(), signal_vec);
+    let ca_hist = Float64Chunked::new("hist".into(), hist_vec);
+    
+    let series_vec = vec![ca_macd.into_series(), ca_signal.into_series(), ca_hist.into_series()];
+    let out = StructChunked::from_series("macd".into(), s_f64.len(), series_vec.iter())?;
     
     Ok(out.into_series())
 }
