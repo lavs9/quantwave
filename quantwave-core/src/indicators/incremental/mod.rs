@@ -1,3 +1,12 @@
+pub mod bbands;
+pub mod cci;
 pub mod cdl_doji;
+pub mod cmo;
+pub mod dema;
+pub mod macd;
 pub mod mom;
+pub mod rsi;
+pub mod talib_ema;
+pub mod ta_atr;
 pub mod utils;
+pub mod willr;

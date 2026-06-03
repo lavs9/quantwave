@@ -40,6 +40,32 @@ macro_rules! talib_cdl {
                     0.0
                 }
             }
+
+            fn next_batch(&mut self, inputs: &[(f64, f64, f64, f64)]) -> Vec<Self::Output>
+            where
+                (f64, f64, f64, f64): Copy,
+            {
+                self.history_open.clear();
+                self.history_high.clear();
+                self.history_low.clear();
+                self.history_close.clear();
+                for &(o, h, l, c) in inputs {
+                    self.history_open.push(o);
+                    self.history_high.push(h);
+                    self.history_low.push(l);
+                    self.history_close.push(c);
+                }
+                $talib_func(
+                    &self.history_open,
+                    &self.history_high,
+                    &self.history_low,
+                    &self.history_close,
+                )
+                .unwrap_or_default()
+                .into_iter()
+                .map(|v| v as f64)
+                .collect()
+            }
         }
     };
 }
@@ -134,6 +160,15 @@ macro_rules! talib_1_in_1_out {
                 let res = $talib_func(&self.history, $( self.$param.clone() ),*).unwrap_or_default();
                 *res.last().unwrap_or(&f64::NAN)
             }
+
+            fn next_batch(&mut self, inputs: &[f64]) -> Vec<Self::Output>
+            where
+                f64: Copy,
+            {
+                self.history.clear();
+                self.history.extend_from_slice(inputs);
+                $talib_func(&self.history, $( self.$param.clone() ),*).unwrap_or_default()
+            }
         }
     };
 }
@@ -169,6 +204,19 @@ macro_rules! talib_2_in_1_out {
                 let res = $talib_func(&self.history_high, &self.history_low, $( self.$param.clone() ),*).unwrap_or_default();
                 *res.last().unwrap_or(&f64::NAN)
             }
+
+            fn next_batch(&mut self, inputs: &[(f64, f64)]) -> Vec<Self::Output>
+            where
+                (f64, f64): Copy,
+            {
+                self.history_high.clear();
+                self.history_low.clear();
+                for &(h, l) in inputs {
+                    self.history_high.push(h);
+                    self.history_low.push(l);
+                }
+                $talib_func(&self.history_high, &self.history_low, $( self.$param.clone() ),*).unwrap_or_default()
+            }
         }
     };
 }
@@ -203,6 +251,19 @@ macro_rules! talib_1_in_2_out {
                     (f64::NAN, f64::NAN)
                 }
             }
+
+            fn next_batch(&mut self, inputs: &[f64]) -> Vec<Self::Output>
+            where
+                f64: Copy,
+            {
+                self.history.clear();
+                self.history.extend_from_slice(inputs);
+                if let Ok((r1, r2)) = $talib_func(&self.history, $( self.$param.clone() ),*) {
+                    r1.into_iter().zip(r2).map(|(a, b)| (a, b)).collect()
+                } else {
+                    vec![(f64::NAN, f64::NAN); inputs.len()]
+                }
+            }
         }
     };
 }
@@ -235,6 +296,23 @@ macro_rules! talib_1_in_3_out {
                     (*res1.last().unwrap_or(&f64::NAN), *res2.last().unwrap_or(&f64::NAN), *res3.last().unwrap_or(&f64::NAN))
                 } else {
                     (f64::NAN, f64::NAN, f64::NAN)
+                }
+            }
+
+            fn next_batch(&mut self, inputs: &[f64]) -> Vec<Self::Output>
+            where
+                f64: Copy,
+            {
+                self.history.clear();
+                self.history.extend_from_slice(inputs);
+                if let Ok((r1, r2, r3)) = $talib_func(&self.history, $( self.$param.clone() ),*) {
+                    r1.into_iter()
+                        .zip(r2)
+                        .zip(r3)
+                        .map(|((a, b), c)| (a, b, c))
+                        .collect()
+                } else {
+                    vec![(f64::NAN, f64::NAN, f64::NAN); inputs.len()]
                 }
             }
         }
@@ -274,6 +352,23 @@ macro_rules! talib_2_in_2_out {
                     (f64::NAN, f64::NAN)
                 }
             }
+
+            fn next_batch(&mut self, inputs: &[(f64, f64)]) -> Vec<Self::Output>
+            where
+                (f64, f64): Copy,
+            {
+                self.history_1.clear();
+                self.history_2.clear();
+                for &(a, b) in inputs {
+                    self.history_1.push(a);
+                    self.history_2.push(b);
+                }
+                if let Ok((r1, r2)) = $talib_func(&self.history_1, &self.history_2, $( self.$param.clone() ),*) {
+                    r1.into_iter().zip(r2).map(|(x, y)| (x, y)).collect()
+                } else {
+                    vec![(f64::NAN, f64::NAN); inputs.len()]
+                }
+            }
         }
     };
 }
@@ -310,6 +405,27 @@ macro_rules! talib_3_in_1_out {
                 self.history_close.push(close);
                 let res = $talib_func(&self.history_high, &self.history_low, &self.history_close, $( self.$param.clone() ),*).unwrap_or_default();
                 *res.last().unwrap_or(&f64::NAN)
+            }
+
+            fn next_batch(&mut self, inputs: &[(f64, f64, f64)]) -> Vec<Self::Output>
+            where
+                (f64, f64, f64): Copy,
+            {
+                self.history_high.clear();
+                self.history_low.clear();
+                self.history_close.clear();
+                for &(h, l, c) in inputs {
+                    self.history_high.push(h);
+                    self.history_low.push(l);
+                    self.history_close.push(c);
+                }
+                $talib_func(
+                    &self.history_high,
+                    &self.history_low,
+                    &self.history_close,
+                    $( self.$param.clone() ),*
+                )
+                .unwrap_or_default()
             }
         }
     };
@@ -351,6 +467,30 @@ macro_rules! talib_3_in_2_out {
                     (f64::NAN, f64::NAN)
                 }
             }
+
+            fn next_batch(&mut self, inputs: &[(f64, f64, f64)]) -> Vec<Self::Output>
+            where
+                (f64, f64, f64): Copy,
+            {
+                self.history_high.clear();
+                self.history_low.clear();
+                self.history_close.clear();
+                for &(h, l, c) in inputs {
+                    self.history_high.push(h);
+                    self.history_low.push(l);
+                    self.history_close.push(c);
+                }
+                if let Ok((r1, r2)) = $talib_func(
+                    &self.history_high,
+                    &self.history_low,
+                    &self.history_close,
+                    $( self.$param.clone() ),*
+                ) {
+                    r1.into_iter().zip(r2).map(|(a, b)| (a, b)).collect()
+                } else {
+                    vec![(f64::NAN, f64::NAN); inputs.len()]
+                }
+            }
         }
     };
 }
@@ -390,6 +530,30 @@ macro_rules! talib_4_in_1_out {
                 self.history_4.push(in4);
                 let res = $talib_func(&self.history_1, &self.history_2, &self.history_3, &self.history_4, $( self.$param.clone() ),*).unwrap_or_default();
                 *res.last().unwrap_or(&f64::NAN)
+            }
+
+            fn next_batch(&mut self, inputs: &[(f64, f64, f64, f64)]) -> Vec<Self::Output>
+            where
+                (f64, f64, f64, f64): Copy,
+            {
+                self.history_1.clear();
+                self.history_2.clear();
+                self.history_3.clear();
+                self.history_4.clear();
+                for &(a, b, c, d) in inputs {
+                    self.history_1.push(a);
+                    self.history_2.push(b);
+                    self.history_3.push(c);
+                    self.history_4.push(d);
+                }
+                $talib_func(
+                    &self.history_1,
+                    &self.history_2,
+                    &self.history_3,
+                    &self.history_4,
+                    $( self.$param.clone() ),*
+                )
+                .unwrap_or_default()
             }
         }
     };

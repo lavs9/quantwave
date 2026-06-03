@@ -1,5 +1,6 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-talib_1_in_1_out!(DEMA, talib_rs::overlap::dema, timeperiod: usize);
+pub use crate::indicators::incremental::bbands::BBANDS;
+pub use crate::indicators::incremental::dema::DEMA;
 impl From<usize> for DEMA {
     fn from(p: usize) -> Self {
         Self::new(p)
@@ -19,7 +20,6 @@ impl From<usize> for KAMA {
 }
 talib_1_in_1_out!(T3, talib_rs::overlap::t3, timeperiod: usize, v_factor: f64);
 talib_1_in_2_out!(MAMA, talib_rs::overlap::mama, fastlimit: f64, slowlimit: f64);
-talib_1_in_3_out!(BBANDS, talib_rs::overlap::bbands, timeperiod: usize, nbdevup: f64, nbdevdn: f64, matype: talib_rs::MaType);
 talib_2_in_1_out!(SAR, talib_rs::overlap::sar, acceleration: f64, maximum: f64);
 talib_2_in_1_out!(SAREXT, talib_rs::overlap::sar_ext, startvalue: f64, offsetonreverse: f64, accelerationinitlong: f64, accelerationlong: f64, accelerationmaxlong: f64, accelerationinitshort: f64, accelerationshort: f64, accelerationmaxshort: f64);
 talib_1_in_1_out!(MIDPOINT, talib_rs::overlap::midpoint, timeperiod: usize);

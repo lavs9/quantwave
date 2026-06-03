@@ -1,11 +1,11 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-talib_1_in_1_out!(RSI, talib_rs::momentum::rsi, timeperiod: usize);
+pub use crate::indicators::incremental::macd::MACD;
+pub use crate::indicators::incremental::rsi::RSI;
 impl From<usize> for RSI {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_1_in_3_out!(MACD, talib_rs::momentum::macd, fastperiod: usize, slowperiod: usize, signalperiod: usize);
 talib_1_in_3_out!(MACDEXT, talib_rs::momentum::macd_ext, fastperiod: usize, fastmatype: talib_rs::MaType, slowperiod: usize, slowmatype: talib_rs::MaType, signalperiod: usize, signalmatype: talib_rs::MaType);
 talib_1_in_3_out!(MACDFIX, talib_rs::momentum::macd_fix, signalperiod: usize);
 
@@ -25,7 +25,7 @@ impl From<usize> for ADXR {
         Self::new(p)
     }
 }
-talib_3_in_1_out!(CCI, talib_rs::momentum::cci, timeperiod: usize);
+pub use crate::indicators::incremental::cci::CCI;
 impl From<usize> for CCI {
     fn from(p: usize) -> Self {
         Self::new(p)
@@ -57,7 +57,7 @@ impl From<usize> for ROCR100 {
         Self::new(p)
     }
 }
-talib_3_in_1_out!(WILLR, talib_rs::momentum::willr, timeperiod: usize);
+pub use crate::indicators::incremental::willr::WILLR;
 impl From<usize> for WILLR {
     fn from(p: usize) -> Self {
         Self::new(p)
@@ -71,7 +71,7 @@ impl Default for BOP {
         Self::new()
     }
 }
-talib_1_in_1_out!(CMO, talib_rs::momentum::cmo, timeperiod: usize);
+pub use crate::indicators::incremental::cmo::CMO;
 impl From<usize> for CMO {
     fn from(p: usize) -> Self {
         Self::new(p)

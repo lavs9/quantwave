@@ -3,7 +3,7 @@ use crate::indicators::smoothing::EMA;
 use crate::traits::Next;
 use serde::{Deserialize, Serialize};
 
-talib_3_in_1_out!(TaATR, talib_rs::volatility::atr, timeperiod: usize);
+pub use crate::indicators::incremental::ta_atr::TaATR;
 impl From<usize> for TaATR {
     fn from(p: usize) -> Self {
         Self::new(p)
