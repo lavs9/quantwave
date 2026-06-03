@@ -44,7 +44,6 @@ from . import _quantwave  # noqa
 
 # polars layer is optional (core streaming/metadata/DX work without it; the
 # quantwave-plugins package is the Polars Expressions path and declares the dep).
-import warnings
 try:
     from . import polars
 except Exception as _e:  # pragma: no cover
@@ -67,6 +66,25 @@ except Exception as _e:  # pragma: no cover
     results = _DummyNS()
     options = _DummyNS()
     talib = _DummyNS()
+
+# Public exception types (must be available even if native load is partial).
+# These are listed in __all__ and documented as part of the public surface.
+class QuantwaveError(Exception):
+    """Base exception for quantwave errors."""
+    pass
+
+InternalError = getattr(_quantwave, "InternalError", None)
+if InternalError is None:
+    class InternalError(QuantwaveError):
+        """Internal uniffi/FFI error from the native binding."""
+        pass
+else:
+    # Bind under our name so `from quantwave import InternalError` and
+    # `except quantwave.InternalError` work as advertised.
+    globals()["InternalError"] = InternalError
+
+globals()["QuantwaveError"] = QuantwaveError
+globals()["InternalError"] = InternalError
 
 # Pull in the clean metadata system (now the robust source for discovery too)
 from ._metadata import (
@@ -385,28 +403,30 @@ def wrap_streaming(streaming_instance, name: str = None):
 # (The old manual "class ta:" with 100+ hardcoded aliases has been replaced by the
 # dynamic population block earlier in this file. It pulls from _quantwave + _metadata
 # so it stays in sync automatically as new indicators / ML / PA objects are added in
-# tha, gw7s, cu03 children, etc. The options_india legacy compat class remains below.)
+# tha, gw7s, cu03 children, etc. The options_india legacy compat class remains below.
+# It is built safely via getattr to avoid NameError on import if the preceding
+# population was partial for any reason.)
 
 class options_india:
-    bs_call_price = bs_call_price
-    bs_put_price = bs_put_price
-    bs_delta = bs_delta
-    bs_gamma = bs_gamma
-    bs_theta = bs_theta
-    bs_vega = bs_vega
-    bs_rho = bs_rho
-    implied_vol = implied_vol
-    max_pain = max_pain
-    strike_pcr = strike_pcr
-    chain_pcr = chain_pcr
-    oi_zones = oi_zones
-    gex_per_strike = gex_per_strike
-    gex_flip_strike = gex_flip_strike
-    atm_straddle = atm_straddle
-    synthetic_futures = synthetic_futures
-    moneyness = moneyness
-    nse_lot_size = nse_lot_size
-    nse_risk_free_rate = nse_risk_free_rate
+    """Legacy top-level access for Options India helpers.
+
+    Prefer: from quantwave import options  (or from quantwave.options import ...)
+    This will be deprecated in a future release.
+    """
+    pass
+
+# Build safely (no bare-name RHS that can NameError if a symbol wasn't populated).
+_option_legacy_names = [
+    "bs_call_price", "bs_put_price", "bs_delta", "bs_gamma", "bs_theta",
+    "bs_vega", "bs_rho", "implied_vol", "max_pain", "strike_pcr",
+    "chain_pcr", "oi_zones", "gex_per_strike", "gex_flip_strike",
+    "atm_straddle", "synthetic_futures", "moneyness", "nse_lot_size",
+    "nse_risk_free_rate",
+]
+for _name in _option_legacy_names:
+    _val = globals().get(_name)
+    if _val is not None:
+        setattr(options_india, _name, _val)
 
 # (Removed the giant legacy __all__ that referenced many PascalCase / old names no longer
 # explicitly assigned here; the dynamic population + final clean __all__ below provide the
