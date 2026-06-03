@@ -17,6 +17,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 quantwave-core = { workspace = true }
+talib-rs = { workspace = true }
+
 polars = { workspace = true }
 polars-arrow = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
