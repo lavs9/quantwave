@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
-description.workspace = true
+description = "Polars expression plugins for quantwave"
 repository.workspace = true
 homepage.workspace = true
 readme = "../README.md"
@@ -13,7 +13,7 @@ keywords.workspace = true
 
 [lib]
 name = "quantwave_plugins"
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
 
 [dependencies]
 quantwave-core = { workspace = true }
@@ -21,3 +21,5 @@ polars = { workspace = true }
 polars-arrow = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
+pyo3 = { version = "0.23", features = ["extension-module"] }
+pyo3-polars = { version = "0.20", features = ["derive"] }

@@ -1,0 +1,66 @@
+name: Maturin Build & Test
+
+on:
+  push:
+    paths:
+      - 'quantwave-plugins/**'
+      - '.github/workflows/maturin.yml'
+  pull_request:
+    paths:
+      - 'quantwave-plugins/**'
+      - '.github/workflows/maturin.yml'
+  workflow_dispatch:
+
+jobs:
+  build-wheels:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          command: build
+          args: --release --manifest-path quantwave-plugins/Cargo.toml --out dist
+          
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: dist/*.whl
+
+  test-wheels:
+    needs: build-wheels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          
+      - name: Download wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-ubuntu-latest
+          path: dist
+          
+      - name: Install dependencies and wheel
+        run: |
+          python -m pip install --upgrade pip
+          pip install polars pytest
+          pip install dist/*.whl
+          
+      - name: Run Python tests
+        run: |
+          cd quantwave-plugins/tests
+          pytest test_dummy.py
