@@ -1,3 +1,90 @@
+/// O(1) CDL streaming: bounded OHLC window + single talib batch per bar.
+#[macro_export]
+macro_rules! native_cdl {
+    ($name:ident, $talib_func:path) => {
+        #[derive(Debug, Clone)]
+        #[allow(non_camel_case_types)]
+        pub struct $name {
+            open: Vec<f64>,
+            high: Vec<f64>,
+            low: Vec<f64>,
+            close: Vec<f64>,
+        }
+
+        impl $name {
+            const MAX_WINDOW: usize = 32;
+
+            pub fn new() -> Self {
+                Self {
+                    open: Vec::with_capacity(Self::MAX_WINDOW),
+                    high: Vec::with_capacity(Self::MAX_WINDOW),
+                    low: Vec::with_capacity(Self::MAX_WINDOW),
+                    close: Vec::with_capacity(Self::MAX_WINDOW),
+                }
+            }
+
+            #[inline]
+            fn trim_window(o: &mut Vec<f64>, h: &mut Vec<f64>, l: &mut Vec<f64>, c: &mut Vec<f64>) {
+                let max = Self::MAX_WINDOW;
+                if o.len() > max {
+                    let drop = o.len() - max;
+                    o.drain(0..drop);
+                    h.drain(0..drop);
+                    l.drain(0..drop);
+                    c.drain(0..drop);
+                }
+            }
+
+            #[inline]
+            fn last_signal(o: &[f64], h: &[f64], l: &[f64], c: &[f64]) -> f64 {
+                $talib_func(o, h, l, c)
+                    .ok()
+                    .and_then(|res| res.last().copied())
+                    .unwrap_or(0) as f64
+            }
+        }
+
+        impl $crate::traits::Next<(f64, f64, f64, f64)> for $name {
+            type Output = f64;
+
+            fn next(&mut self, (open, high, low, close): (f64, f64, f64, f64)) -> Self::Output {
+                self.open.push(open);
+                self.high.push(high);
+                self.low.push(low);
+                self.close.push(close);
+                Self::trim_window(
+                    &mut self.open,
+                    &mut self.high,
+                    &mut self.low,
+                    &mut self.close,
+                );
+                Self::last_signal(&self.open, &self.high, &self.low, &self.close)
+            }
+
+            fn next_batch(&mut self, inputs: &[(f64, f64, f64, f64)]) -> Vec<Self::Output>
+            where
+                (f64, f64, f64, f64): Copy,
+            {
+                self.open.clear();
+                self.high.clear();
+                self.low.clear();
+                self.close.clear();
+                for &(o, h, l, c) in inputs {
+                    self.open.push(o);
+                    self.high.push(h);
+                    self.low.push(l);
+                    self.close.push(c);
+                }
+                $talib_func(&self.open, &self.high, &self.low, &self.close)
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(|v| v as f64)
+                    .collect()
+            }
+        }
+    };
+}
+
 #[macro_export]
 macro_rules! talib_cdl {
     ($name:ident, $talib_func:path) => {

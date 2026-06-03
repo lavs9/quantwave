@@ -9,17 +9,13 @@ impl From<usize> for RSI {
 talib_1_in_3_out!(MACDEXT, talib_rs::momentum::macd_ext, fastperiod: usize, fastmatype: talib_rs::MaType, slowperiod: usize, slowmatype: talib_rs::MaType, signalperiod: usize, signalmatype: talib_rs::MaType);
 talib_1_in_3_out!(MACDFIX, talib_rs::momentum::macd_fix, signalperiod: usize);
 
-talib_3_in_2_out!(STOCH, talib_rs::momentum::stoch, fastk_period: usize, slowk_period: usize, slowk_matype: talib_rs::MaType, slowd_period: usize, slowd_matype: talib_rs::MaType);
-talib_3_in_2_out!(STOCHF, talib_rs::momentum::stochf, fastk_period: usize, fastd_period: usize, fastd_matype: talib_rs::MaType);
-talib_1_in_2_out!(STOCHRSI, talib_rs::momentum::stochrsi, timeperiod: usize, fastk_period: usize, fastd_period: usize, fastd_matype: talib_rs::MaType);
-
-talib_3_in_1_out!(ADX, talib_rs::momentum::adx, timeperiod: usize);
+pub use crate::indicators::incremental::stoch::{STOCH, STOCHF, STOCHRSI};
+pub use crate::indicators::incremental::dmi::{ADX, ADXR, DX, MINUS_DI, PLUS_DI};
 impl From<usize> for ADX {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_3_in_1_out!(ADXR, talib_rs::momentum::adxr, timeperiod: usize);
 impl From<usize> for ADXR {
     fn from(p: usize) -> Self {
         Self::new(p)
@@ -92,19 +88,16 @@ impl From<usize> for TRIX {
     }
 }
 talib_3_in_1_out!(ULTOSC, talib_rs::momentum::ultosc, timeperiod1: usize, timeperiod2: usize, timeperiod3: usize);
-talib_3_in_1_out!(DX, talib_rs::momentum::dx, timeperiod: usize);
 impl From<usize> for DX {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_3_in_1_out!(PLUS_DI, talib_rs::momentum::plus_di, timeperiod: usize);
 impl From<usize> for PLUS_DI {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_3_in_1_out!(MINUS_DI, talib_rs::momentum::minus_di, timeperiod: usize);
 impl From<usize> for MINUS_DI {
     fn from(p: usize) -> Self {
         Self::new(p)
