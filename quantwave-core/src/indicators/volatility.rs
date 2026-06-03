@@ -9,18 +9,13 @@ impl From<usize> for TaATR {
         Self::new(p)
     }
 }
-talib_3_in_1_out!(TaNATR, talib_rs::volatility::natr, timeperiod: usize);
+pub use crate::indicators::incremental::trange::{TaNATR, TaTRANGE};
 impl From<usize> for TaNATR {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_3_in_1_out!(TaTRANGE, talib_rs::volatility::trange);
-impl Default for TaTRANGE {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+
 
 /// True Range (TR)
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

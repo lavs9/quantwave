@@ -1,30 +1,7 @@
 use crate::indicators::metadata::IndicatorMetadata;
 use crate::traits::Next;
 
-talib_4_in_1_out!(AVGPRICE, talib_rs::price_transform::avgprice);
-impl Default for AVGPRICE {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-talib_2_in_1_out!(MEDPRICE, talib_rs::price_transform::medprice);
-impl Default for MEDPRICE {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-talib_3_in_1_out!(TYPPRICE, talib_rs::price_transform::typprice);
-impl Default for TYPPRICE {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-talib_3_in_1_out!(WCLPRICE, talib_rs::price_transform::wclprice);
-impl Default for WCLPRICE {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+pub use crate::indicators::incremental::price_transform::{AVGPRICE, MEDPRICE, TYPPRICE, WCLPRICE};
 
 /// (Open + Close) / 2
 ///

@@ -61,33 +61,37 @@ impl From<usize> for WILLR {
 }
 talib_1_in_1_out!(APO, talib_rs::momentum::apo, fastperiod: usize, slowperiod: usize, matype: talib_rs::MaType);
 talib_1_in_1_out!(PPO, talib_rs::momentum::ppo, fastperiod: usize, slowperiod: usize, matype: talib_rs::MaType);
-talib_4_in_1_out!(BOP, talib_rs::momentum::bop);
-impl Default for BOP {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+pub use crate::indicators::incremental::simple::BOP;
 pub use crate::indicators::incremental::cmo::CMO;
 impl From<usize> for CMO {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_2_in_2_out!(AROON, talib_rs::momentum::aroon, timeperiod: usize);
-talib_2_in_1_out!(AROONOSC, talib_rs::momentum::aroon_osc, timeperiod: usize);
+pub use crate::indicators::incremental::aroon::{AROON, AROONOSC};
+impl From<usize> for AROON {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
 impl From<usize> for AROONOSC {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_4_in_1_out!(MFI, talib_rs::momentum::mfi, timeperiod: usize);
-talib_1_in_1_out!(TRIX, talib_rs::momentum::trix, timeperiod: usize);
+pub use crate::indicators::incremental::simple::MFI;
+impl From<usize> for MFI {
+    fn from(p: usize) -> Self {
+        Self::new(p)
+    }
+}
+pub use crate::indicators::incremental::trix::TRIX;
 impl From<usize> for TRIX {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_3_in_1_out!(ULTOSC, talib_rs::momentum::ultosc, timeperiod1: usize, timeperiod2: usize, timeperiod3: usize);
+pub use crate::indicators::incremental::ultosc::ULTOSC;
 impl From<usize> for DX {
     fn from(p: usize) -> Self {
         Self::new(p)
@@ -103,13 +107,12 @@ impl From<usize> for MINUS_DI {
         Self::new(p)
     }
 }
-talib_2_in_1_out!(PLUS_DM, talib_rs::momentum::plus_dm, timeperiod: usize);
+pub use crate::indicators::incremental::dm::{MINUS_DM, PLUS_DM};
 impl From<usize> for PLUS_DM {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_2_in_1_out!(MINUS_DM, talib_rs::momentum::minus_dm, timeperiod: usize);
 impl From<usize> for MINUS_DM {
     fn from(p: usize) -> Self {
         Self::new(p)
