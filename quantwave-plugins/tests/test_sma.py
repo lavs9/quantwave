@@ -17,8 +17,9 @@ def test_sma():
     sma_vals = res.get_column("sma_3").to_list()
     print("SMA Values:", sma_vals)
     
-    assert math.isnan(sma_vals[0])
-    assert math.isnan(sma_vals[1])
+    # quantwave_core SMA uses partial averages initially
+    assert abs(sma_vals[0] - 10.0) < 1e-9
+    assert abs(sma_vals[1] - 15.0) < 1e-9
     assert abs(sma_vals[2] - 20.0) < 1e-9
     assert abs(sma_vals[3] - 30.0) < 1e-9
     assert abs(sma_vals[4] - 40.0) < 1e-9
