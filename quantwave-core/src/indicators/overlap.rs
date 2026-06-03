@@ -27,7 +27,7 @@ impl From<usize> for MIDPRICE {
         Self::new(p)
     }
 }
-talib_1_in_2_out!(MAMA, talib_rs::overlap::mama, fastlimit: f64, slowlimit: f64);
+pub use crate::indicators::mama::MAMA;
 pub use crate::indicators::incremental::sar::{SAR, SAREXT};
 talib_2_in_1_out!(MAVP, talib_rs::overlap::mavp, minperiod: usize, maxperiod: usize, matype: talib_rs::MaType);
 talib_1_in_1_out!(HT_TRENDLINE, talib_rs::overlap::ht_trendline);
@@ -304,30 +304,4 @@ SAR_{t+1} = SAR_t + AF \times (EP - SAR_t)
     category: "Classic",
 };
 
-pub const MAMA_METADATA: IndicatorMetadata = IndicatorMetadata {
-    name: "MESA Adaptive Moving Average (MAMA)",
-    description: "A moving average that adapts to price movement based on the rate of change of phase.",
-    usage: "Use as a highly responsive moving average that virtually eliminates overshoot while providing rapid response to price changes. The companion 'FAMA' (Following Adaptive Moving Average) provides a secondary line for crossover signals.",
-    keywords: &["moving-average", "adaptive", "ehlers", "dsp", "phase"],
-    ehlers_summary: "MAMA adapts to the price movement based on the Hilbert Transform phase rate of change. It provides a unique combination of fast response to price changes while remaining smooth during congested market periods. It is one of the most sophisticated adaptive moving averages available. — Rocket Science for Traders",
-    params: &[
-        ParamDef {
-            name: "fastlimit",
-            default: "0.5",
-            description: "Fast limit",
-        },
-        ParamDef {
-            name: "slowlimit",
-            default: "0.05",
-            description: "Slow limit",
-        },
-    ],
-    formula_source: "http://www.mesasoftware.com/Papers/MAMA.pdf",
-    formula_latex: r#"
-\[
-\alpha = \frac{\text{FastLimit}}{\text{PhaseRate}}
-\]
-"#,
-    gold_standard_file: "mama.json",
-    category: "Ehlers DSP",
-};
+pub use crate::indicators::mama::MAMA_METADATA;

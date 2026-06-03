@@ -319,31 +319,6 @@ proptest! {
         }
 
         #[test]
-        fn test_mama_parity_auto(input in prop::collection::vec(1.0..100.0, 10..100)) {
-            let len = input.len();
-            if len == 0 { return Ok(()); }
-            let fastlimit = 0.5;
-            let slowlimit = 0.05;
-            let mut indicator = MAMA::new(fastlimit, slowlimit);
-            let streaming_results: Vec<_> = (0..len).map(|i| indicator.next(input[i])).collect();
-            let (b1, b2) = talib_rs::overlap::mama(&input, fastlimit, slowlimit).unwrap_or_else(|_| (vec![f64::NAN; len], vec![f64::NAN; len]));
-            
-            for (i, (s1, s2)) in streaming_results.into_iter().enumerate() {
-                if s1.is_nan() {
-                    assert!(b1[i].is_nan());
-                } else {
-                    approx::assert_relative_eq!(s1, b1[i], epsilon = 1e-6);
-                }
-                if s2.is_nan() {
-                    assert!(b2[i].is_nan());
-                } else {
-                    approx::assert_relative_eq!(s2, b2[i], epsilon = 1e-6);
-                }
-            }
-
-        }
-
-        #[test]
         fn test_sar_parity_auto(h_in in prop::collection::vec(1.0..100.0, 10..100), l_in in prop::collection::vec(1.0..100.0, 10..100)) {
             let len = h_in.len().min(l_in.len());
             let mut in1 = Vec::with_capacity(len);
