@@ -3,7 +3,7 @@ use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
 use pyo3::prelude::*;
 use serde::Deserialize;
-use quantwave_core::indicators::SMA;
+use quantwave_core::indicators::smoothing::SMA;
 use quantwave_core::traits::Next;
 
 #[derive(Deserialize)]
@@ -18,13 +18,14 @@ fn sma(inputs: &[Series], kwargs: SmaKwargs) -> PolarsResult<Series> {
     
     let mut indicator = SMA::new(kwargs.period);
     
-    let out: Float64Chunked = s_f64.apply_values(|v| {
-        if v.is_nan() {
-            f64::NAN
-        } else {
-            indicator.next(v)
+    let out: Float64Chunked = s_f64.into_iter().map(|opt_v| {
+        match opt_v {
+            Some(v) if !v.is_nan() => Some(indicator.next(v)),
+            Some(_) => Some(f64::NAN),
+            None => None,
         }
-    });
+    }).collect();
+    
     Ok(out.into_series())
 }
 
