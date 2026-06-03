@@ -13,6 +13,8 @@ pub mod ma_stream;
 pub mod macd;
 pub mod macd_ext;
 pub mod sar;
+pub mod mavp;
+pub mod hilbert_ta;
 pub mod mom;
 pub mod overlap_ta;
 pub mod price_transform;

@@ -29,13 +29,8 @@ impl From<usize> for MIDPRICE {
 }
 pub use crate::indicators::mama::MAMA;
 pub use crate::indicators::incremental::sar::{SAR, SAREXT};
-talib_2_in_1_out!(MAVP, talib_rs::overlap::mavp, minperiod: usize, maxperiod: usize, matype: talib_rs::MaType);
-talib_1_in_1_out!(HT_TRENDLINE, talib_rs::overlap::ht_trendline);
-impl Default for HT_TRENDLINE {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+pub use crate::indicators::incremental::mavp::MAVP;
+pub use crate::indicators::incremental::hilbert_ta::HT_TRENDLINE;
 
 #[cfg(test)]
 mod tests {
