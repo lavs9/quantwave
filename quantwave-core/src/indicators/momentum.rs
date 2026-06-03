@@ -31,31 +31,27 @@ impl From<usize> for CCI {
         Self::new(p)
     }
 }
-talib_1_in_1_out!(MOM, talib_rs::momentum::mom, timeperiod: usize);
+pub use crate::indicators::incremental::mom::{MOM, ROC, ROCP, ROCR, ROCR100};
 impl From<usize> for MOM {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_1_in_1_out!(ROC, talib_rs::momentum::roc, timeperiod: usize);
 impl From<usize> for ROC {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_1_in_1_out!(ROCP, talib_rs::momentum::rocp, timeperiod: usize);
 impl From<usize> for ROCP {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_1_in_1_out!(ROCR, talib_rs::momentum::rocr, timeperiod: usize);
 impl From<usize> for ROCR {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_1_in_1_out!(ROCR100, talib_rs::momentum::rocr100, timeperiod: usize);
 impl From<usize> for ROCR100 {
     fn from(p: usize) -> Self {
         Self::new(p)

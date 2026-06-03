@@ -53,6 +53,7 @@ pub mod high_pass;
 pub mod hilbert_transform;
 pub mod hma;
 pub mod homodyne_discriminator;
+pub mod incremental;
 pub mod hurst;
 pub mod ichimoku;
 pub mod instantaneous_trendline;
