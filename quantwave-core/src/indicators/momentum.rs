@@ -6,8 +6,7 @@ impl From<usize> for RSI {
         Self::new(p)
     }
 }
-talib_1_in_3_out!(MACDEXT, talib_rs::momentum::macd_ext, fastperiod: usize, fastmatype: talib_rs::MaType, slowperiod: usize, slowmatype: talib_rs::MaType, signalperiod: usize, signalmatype: talib_rs::MaType);
-talib_1_in_3_out!(MACDFIX, talib_rs::momentum::macd_fix, signalperiod: usize);
+pub use crate::indicators::incremental::macd_ext::{MACDEXT, MACDFIX};
 
 pub use crate::indicators::incremental::stoch::{STOCH, STOCHF, STOCHRSI};
 pub use crate::indicators::incremental::dmi::{ADX, ADXR, DX, MINUS_DI, PLUS_DI};

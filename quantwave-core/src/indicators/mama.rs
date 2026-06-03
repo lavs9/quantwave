@@ -203,18 +203,13 @@ mod tests {
 
     proptest! {
         #[test]
-        fn test_mama_parity(input in prop::collection::vec(1.0..100.0, 10..100)) {
+        fn test_mama_streaming_consistency(input in prop::collection::vec(1.0..100.0, 10..100)) {
             let fast = 0.5;
             let slow = 0.05;
             let mut mama = MAMA::new(fast, slow);
-            let mut streaming_results = Vec::with_capacity(input.len());
-            for &val in &input {
-                streaming_results.push(mama.next(val));
-            }
-
-            let batch_results = mama_batch(input, fast, slow);
-
-            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
+            let streaming: Vec<_> = input.iter().map(|&x| mama.next(x)).collect();
+            let batch = mama_batch(input, fast, slow);
+            for (s, b) in streaming.iter().zip(batch.iter()) {
                 approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-6);
                 approx::assert_relative_eq!(s.1, b.1, epsilon = 1e-6);
             }
