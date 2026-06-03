@@ -2,14 +2,29 @@
 use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
 use pyo3::prelude::*;
+use serde::Deserialize;
+use quantwave_core::indicators::SMA;
+use quantwave_core::traits::Next;
+
+#[derive(Deserialize)]
+struct SmaKwargs {
+    period: usize,
+}
 
 #[polars_expr(output_type=Float64)]
-fn dummy_multiply(inputs: &[Series]) -> PolarsResult<Series> {
+fn sma(inputs: &[Series], kwargs: SmaKwargs) -> PolarsResult<Series> {
     let s = &inputs[0];
     let s_f64 = s.f64()?;
     
-    // Simple Arrow element-wise multiply by 2
-    let out: Float64Chunked = s_f64.apply_values(|v| v * 2.0);
+    let mut indicator = SMA::new(kwargs.period);
+    
+    let out: Float64Chunked = s_f64.apply_values(|v| {
+        if v.is_nan() {
+            f64::NAN
+        } else {
+            indicator.next(v)
+        }
+    });
     Ok(out.into_series())
 }
 
