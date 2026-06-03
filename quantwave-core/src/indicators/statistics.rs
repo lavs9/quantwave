@@ -2,45 +2,40 @@ use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use crate::utils::RingBuffer as VecDeque;
 
-talib_1_in_1_out!(TaSTDDEV, talib_rs::statistic::stddev, timeperiod: usize, nbdev: f64);
-talib_1_in_1_out!(TaVAR, talib_rs::statistic::var, timeperiod: usize, nbdev: f64);
-talib_2_in_1_out!(TaBETA, talib_rs::statistic::beta, timeperiod: usize);
+pub use crate::indicators::incremental::statistics_ta::{
+    TaBETA, TaCORREL, TaLINEARREG, TaLINEARREG_ANGLE, TaLINEARREG_INTERCEPT, TaLINEARREG_SLOPE,
+    TaSTDDEV, TaTSF, TaVAR,
+};
 impl From<usize> for TaBETA {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_2_in_1_out!(TaCORREL, talib_rs::statistic::correl, timeperiod: usize);
 impl From<usize> for TaCORREL {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_1_in_1_out!(TaLINEARREG, talib_rs::statistic::linearreg, timeperiod: usize);
 impl From<usize> for TaLINEARREG {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_1_in_1_out!(TaLINEARREG_SLOPE, talib_rs::statistic::linearreg_slope, timeperiod: usize);
 impl From<usize> for TaLINEARREG_SLOPE {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_1_in_1_out!(TaLINEARREG_INTERCEPT, talib_rs::statistic::linearreg_intercept, timeperiod: usize);
 impl From<usize> for TaLINEARREG_INTERCEPT {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_1_in_1_out!(TaLINEARREG_ANGLE, talib_rs::statistic::linearreg_angle, timeperiod: usize);
 impl From<usize> for TaLINEARREG_ANGLE {
     fn from(p: usize) -> Self {
         Self::new(p)
     }
 }
-talib_1_in_1_out!(TaTSF, talib_rs::statistic::tsf, timeperiod: usize);
 impl From<usize> for TaTSF {
     fn from(p: usize) -> Self {
         Self::new(p)

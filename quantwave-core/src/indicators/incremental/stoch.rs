@@ -1,34 +1,10 @@
 //! Native O(1) Stochastic family — TA-Lib parity (STOCH, STOCHF, STOCHRSI).
 
+use crate::indicators::incremental::ma_stream::MaStream;
 use crate::indicators::incremental::rsi::RSI;
-use crate::indicators::incremental::talib_ema::TalibEma;
-use crate::indicators::incremental::talib_sma::TalibSma;
 use crate::traits::Next;
 use crate::utils::RingBuffer;
 use talib_rs::MaType;
-
-/// Streaming moving average matching TA-Lib `compute_ma` for common types.
-#[derive(Debug, Clone)]
-enum MaStream {
-    Sma(TalibSma),
-    Ema(TalibEma),
-}
-
-impl MaStream {
-    fn new(period: usize, ma_type: MaType) -> Self {
-        match ma_type {
-            MaType::Ema => Self::Ema(TalibEma::new(period)),
-            _ => Self::Sma(TalibSma::new(period)),
-        }
-    }
-
-    fn next(&mut self, v: f64) -> f64 {
-        match self {
-            Self::Sma(s) => s.next(v),
-            Self::Ema(e) => e.next(v),
-        }
-    }
-}
 
 /// Rolling highest high / lowest low over `period` bars.
 #[derive(Debug, Clone)]

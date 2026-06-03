@@ -2,14 +2,13 @@ use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 #[allow(unused_imports)]
 use crate::traits::Next;
 
-talib_4_in_1_out!(AD, talib_rs::volume::ad);
+pub use crate::indicators::incremental::simple::OBV;
+pub use crate::indicators::incremental::volume_ta::{AD, ADOSC};
 impl Default for AD {
     fn default() -> Self {
         Self::new()
     }
 }
-talib_4_in_1_out!(ADOSC, talib_rs::volume::adosc, fastperiod: usize, slowperiod: usize);
-pub use crate::indicators::incremental::simple::OBV;
 impl Default for OBV {
     fn default() -> Self {
         Self::new()

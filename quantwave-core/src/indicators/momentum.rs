@@ -59,8 +59,7 @@ impl From<usize> for WILLR {
         Self::new(p)
     }
 }
-talib_1_in_1_out!(APO, talib_rs::momentum::apo, fastperiod: usize, slowperiod: usize, matype: talib_rs::MaType);
-talib_1_in_1_out!(PPO, talib_rs::momentum::ppo, fastperiod: usize, slowperiod: usize, matype: talib_rs::MaType);
+pub use crate::indicators::incremental::apo::{APO, PPO};
 pub use crate::indicators::incremental::simple::BOP;
 pub use crate::indicators::incremental::cmo::CMO;
 impl From<usize> for CMO {

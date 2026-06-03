@@ -30,7 +30,7 @@ impl Next<f64> for TalibEma {
     type Output = f64;
 
     fn next(&mut self, input: f64) -> Self::Output {
-        if self.period == 0 {
+        if self.period == 0 || input.is_nan() {
             return f64::NAN;
         }
         let i = self.bars_seen;
