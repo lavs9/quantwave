@@ -60,3 +60,9 @@ The `quantwave-backtest` crate (delivered via quantwave-1hr + ug9t) enforces the
 - **Date note (per conventions)**: Work completed 2026-05-30 IST.
 
 This separates QuantWave backtesting: any strategy using ML features or rich PA is proven identical in research (batch) vs live-like (streaming) modes.
+
+## 8. Backtest Engine Roadmap (quantwave-wnu research, 2026-06-03)
+
+Full landscape evaluation: `planning/BACKTEST_ENGINE_RESEARCH.md`.
+
+**Decision:** Extend `quantwave-backtest` (do not fork vectorbt or polars-backtest due to license constraints). Next implementation epic: Polars Backtester Core v1 — Python `.bt` API, analytics, multi-symbol.
