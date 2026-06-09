@@ -344,3 +344,54 @@ Store results in `quantwave-backtest/benches/` (criterion) + `docs/examples/note
 ## 11. Recommendation (one paragraph)
 
 QuantWave should **not** rewrite or embed vectorbt or polars-backtest due to **Commons Clause** and **PolyForm Noncommercial** restrictions. The correct path is to **extend `quantwave-backtest`** with polars-backtest-*inspired* `.bt` ergonomics and RaptorBT-*inspired* analytics, while preserving the **batch/streaming parity** and **rich PA/ML metadata** stack that no competitor offers. Treat RaptorBT and sigc as **MIT-safe reference implementations** for metrics and universe sweeps, not as runtime dependencies. Ship **Python + Polars namespace first** (biggest gap vs user expectations), then T+1/stops/sweeps to approach vectorbt research throughput.
+
+---
+
+## 12. Implementation Beads — epic `quantwave-cr6v`
+
+**Created:** 2026-06-09 · **Parent epic:** `quantwave-cr6v` (Polars Backtester Core v1)
+
+### P0 task DAG
+
+```text
+cr6v.1 (metrics) ──┬──► cr6v.2 (multi-symbol) ──► cr6v.3 (batch filter/size cols)
+                   │                                      │
+                   └──► cr6v.4 (PyO3) ────────────────────┴──► cr6v.5 (.bt namespace)
+                                                                      │
+                                                                      ├──► cr6v.6 (parity notebook)
+                                                                      │         └──► cr6v.7 (strategy notebook)
+                                                                      ├──► cr6v.12 (param sweep, P1)
+                                                                      └──► cr6v.13 (criterion benches, P1)
+cr6v.3 ──► cr6v.11 (Struct signal col, P1)
+```
+
+| Bead ID | Maps to §8 req | Title | Priority |
+|---------|----------------|-------|----------|
+| `quantwave-cr6v.1` | P0 #3 | `PerformanceMetrics` + `backtest_with_report` (Rust) | P1 |
+| `quantwave-cr6v.2` | P0 #4 | Multi-symbol long-format grouping + portfolio equity | P1 |
+| `quantwave-cr6v.3` | P0 #5 | Wire `entry_filter_col` + `size_multiplier_col` in batch `run()` | P1 |
+| `quantwave-cr6v.4` | P0 #1 | PyO3 — expose `BacktestEngine` + report in `quantwave-python` | P1 |
+| `quantwave-cr6v.5` | P0 #2 | Polars `.bt.backtest()` / `.bt.backtest_with_report()` | P1 |
+| `quantwave-cr6v.6` | P0 #6 | Upgrade `ml_feature_backtest_parity.py` — real Rust engine | P2 |
+| `quantwave-cr6v.7` | P0 #7 | Upgrade `strategy_backtest.py` — SuperTrend + `.bt` PnL/trades | P2 |
+
+### P1 backlog beads
+
+| Bead ID | Maps to §8 req | Title |
+|---------|----------------|-------|
+| `quantwave-cr6v.8` | P1 #8 | T+1 execution mode |
+| `quantwave-cr6v.9` | P1 #9 | Stop-loss / take-profit / trailing stops |
+| `quantwave-cr6v.10` | P1 #10 | Short positions |
+| `quantwave-cr6v.11` | P1 #11 | Struct signal column auto-parse |
+| `quantwave-cr6v.12` | P1 #12 | Param sweep helper `bt.sweep` |
+| `quantwave-cr6v.13` | P1 #13 | Criterion benchmarks vs naive Polars (§9) |
+
+### TDD policy (per `/tdd` skill)
+
+- **Vertical slices only** — one behavior → one RED test → minimal GREEN → REFACTOR; never horizontal "write all tests then all code."
+- **Rust gates:** `cargo nextest run -p quantwave-backtest` (or `-p quantwave-polars`); `cargo clippy -- -D warnings`.
+- **Python gates:** `pytest quantwave-python/tests/test_backtest.py`; notebook smoke via `marimo edit`.
+- **Parity gate:** ug9t batch↔streaming tolerances must stay green on every simulation-semantics change.
+- **Gold standard:** `quantwave-cr6v.1` adds `quantwave-backtest/tests/gold_standard/metrics_basic.json`.
+
+**Ready work:** `bd ready --json` → start with `quantwave-cr6v.1` (`bd update quantwave-cr6v.1 --claim`).
