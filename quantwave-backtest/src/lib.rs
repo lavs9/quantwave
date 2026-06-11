@@ -274,7 +274,7 @@ pub struct BacktestConfig {
     pub signal_col: String,
     /// Optional boolean col: dynamic entry filter (AND with signal). For regime
     /// labels/probs or feature thresholds (ta.features outputs). Batch path uses
-    /// pre-filtered DF or scalar exposure=0 when false; streaming uses in generator.
+    /// false forces exposure 0 (batch + streaming parity in quantwave-cr6v.3).
     pub entry_filter_col: Option<String>,
     /// Optional f64 col: position size modulator (multiplies signal exposure).
     /// E.g. pole_height normalized or regime_prob. Enables 'sized by pole'.
@@ -596,23 +596,54 @@ impl BacktestEngine {
                 .collect()
         };
 
+        let entry_filters = self.load_entry_filters(df)?;
+        let size_multipliers = self.load_size_multipliers(df)?;
+
+        let n = signal_vals.len();
+        if let Some(ref f) = entry_filters {
+            if f.len() != n {
+                return Err(BacktestError::InvalidInput(
+                    "entry_filter column length mismatch".into(),
+                ));
+            }
+        }
+        if let Some(ref m) = size_multipliers {
+            if m.len() != n {
+                return Err(BacktestError::InvalidInput(
+                    "size_multiplier column length mismatch".into(),
+                ));
+            }
+        }
+
+        let effective_signals: Vec<f64> = signal_vals
+            .iter()
+            .enumerate()
+            .map(|(i, &raw)| {
+                apply_signal_modifiers(
+                    raw,
+                    entry_filters.as_ref().map(|f| f[i]),
+                    size_multipliers.as_ref().map(|m| m[i]),
+                )
+            })
+            .collect();
+
         let timestamps = self.extract_timestamps(&ts_series)?;
         let closes: Vec<f64> = close_ca
             .into_iter()
             .map(|v| v.unwrap_or(f64::NAN))
             .collect();
 
-        if timestamps.len() != closes.len() || closes.len() != signal_vals.len() {
+        if timestamps.len() != closes.len() || closes.len() != effective_signals.len() {
             return Err(BacktestError::InvalidInput("column length mismatch".into()));
         }
 
         let exec = &self.config.execution_model;
         let sizer = &self.config.position_sizer;
-        let metas: Vec<Option<HashMap<String, f64>>> = vec![None; signal_vals.len()];
+        let metas: Vec<Option<HashMap<String, f64>>> = vec![None; effective_signals.len()];
         let (mut trades, mut equity_points) = run_simulation(
             &timestamps,
             &closes,
-            |i| (signal_vals[i], metas[i].clone()),
+            |i| (effective_signals[i], metas[i].clone()),
             exec,
             sizer,
         );
@@ -628,6 +659,34 @@ impl BacktestEngine {
         }
 
         Ok((trades, equity_points))
+    }
+
+    fn load_entry_filters(&self, df: &DataFrame) -> Result<Option<Vec<bool>>, BacktestError> {
+        let Some(col_name) = &self.config.entry_filter_col else {
+            return Ok(None);
+        };
+        if df.column(col_name).is_err() {
+            return Err(BacktestError::InvalidInput(format!(
+                "missing column: {}",
+                col_name
+            )));
+        }
+        extract_bool_column(df.column(col_name)?.clone())
+            .map(Some)
+    }
+
+    fn load_size_multipliers(&self, df: &DataFrame) -> Result<Option<Vec<f64>>, BacktestError> {
+        let Some(col_name) = &self.config.size_multiplier_col else {
+            return Ok(None);
+        };
+        if df.column(col_name).is_err() {
+            return Err(BacktestError::InvalidInput(format!(
+                "missing column: {}",
+                col_name
+            )));
+        }
+        extract_f64_column(df.column(col_name)?.clone())
+            .map(Some)
     }
 
     fn extract_timestamps(&self, col: &Column) -> Result<Vec<DateTime<Utc>>, BacktestError> {
@@ -745,6 +804,50 @@ impl BacktestEngine {
 
         DataFrame::new(cols)
     }
+}
+
+/// Apply optional entry filter (false → flat) and size multiplier to a raw signal.
+/// Shared semantics for batch `run()` and streaming parity tests (quantwave-cr6v.3).
+pub fn apply_signal_modifiers(
+    raw_signal: f64,
+    entry_filter: Option<bool>,
+    size_multiplier: Option<f64>,
+) -> f64 {
+    if matches!(entry_filter, Some(false)) {
+        return 0.0;
+    }
+    let mut exposure = raw_signal;
+    if let Some(m) = size_multiplier {
+        exposure *= m;
+    }
+    if exposure > 0.0 { exposure } else { 0.0 }
+}
+
+fn extract_bool_column(col: Column) -> Result<Vec<bool>, BacktestError> {
+    let s = col
+        .as_series()
+        .ok_or_else(|| BacktestError::InvalidInput("column has no series backing".into()))?;
+    if let Ok(ca) = s.bool() {
+        return Ok(ca
+            .into_iter()
+            .map(|opt| opt.unwrap_or(false))
+            .collect());
+    }
+    Err(BacktestError::InvalidInput(
+        "entry_filter column must be boolean".into(),
+    ))
+}
+
+fn extract_f64_column(col: Column) -> Result<Vec<f64>, BacktestError> {
+    let s = col
+        .as_series()
+        .ok_or_else(|| BacktestError::InvalidInput("column has no series backing".into()))?;
+    if let Ok(ca) = s.f64() {
+        return Ok(ca.into_iter().map(|opt| opt.unwrap_or(0.0)).collect());
+    }
+    Err(BacktestError::InvalidInput(
+        "size_multiplier column must be f64".into(),
+    ))
 }
 
 fn extract_string_column(col: Column) -> Result<Vec<String>, BacktestError> {
