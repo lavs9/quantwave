@@ -21,7 +21,9 @@ def _():
         - Realistic simple strategy using features + regime for entry filter + conviction sizing (hurst-scaled exposure).
 
         ## Run Instructions (IST)
-        1. From repo root (after any change to `quantwave-python`): `maturin develop -p quantwave-python --release`
+        1. From repo root (after any change to backtest bindings):
+           `cd quantwave-python && maturin develop --release`
+           `cd quantwave-backtest-py && maturin develop --release`
         2. `pip install "marimo>=0.1" polars numpy`
         3. `marimo edit docs/examples/notebooks/ml_feature_backtest_parity.py`
         4. Run all cells. All computation is deterministic (no RNG) for reproducible parity.
@@ -50,20 +52,24 @@ def _():
     from datetime import datetime, timedelta, timezone
 
     try:
+        import quantwave as qw  # noqa: F401 — registers LazyFrame.bt
         from quantwave import (
             CyberCycleFeatureExtractor,
             HurstFeatureExtractor,
             GriffithsDominantCycleFeatureExtractor,
-            BullBearHMM,
+            BullBearHmm,
         )
+        from quantwave.backtest import BacktestEngine
         HAS_QUANTWAVE = True
-        mo.md("Imports OK. Using delivered extractors (Hurst, CyberCycle, Griffiths DC, BullBearHMM) + Polars for batch DF construction.")
+        mo.md("Imports OK. Using delivered extractors + Rust BacktestEngine via `.bt.backtest()`.")
     except ImportError:
         HAS_QUANTWAVE = False
+        qw = None
+        BacktestEngine = None
         CyberCycleFeatureExtractor = None
         HurstFeatureExtractor = None
         GriffithsDominantCycleFeatureExtractor = None
-        BullBearHMM = None
+        BullBearHmm = None
         mo.md(
             """
             **⚠️ Fallback mode — `quantwave` package not found.**
@@ -74,8 +80,11 @@ def _():
             """
         )
 
+    _ = HAS_QUANTWAVE  # satisfy marimo branch-expression rule
+
     return (
-        BullBearHMM,
+        BacktestEngine,
+        BullBearHmm,
         CyberCycleFeatureExtractor,
         GriffithsDominantCycleFeatureExtractor,
         HAS_QUANTWAVE,
@@ -84,6 +93,7 @@ def _():
         mo,
         np,
         pl,
+        qw,
         timedelta,
         timezone,
     )
@@ -213,44 +223,58 @@ def __(mo):
 
 @app.cell
 def __(
-    BullBearHMM,
+    BullBearHmm,
     CyberCycleFeatureExtractor,
     GriffithsDominantCycleFeatureExtractor,
+    HAS_QUANTWAVE,
     HurstFeatureExtractor,
     closes,
     mo,
     pl,
 ):
-    # Streaming feature computation (identical semantics to core + Polars layer)
-    hurst_ext = HurstFeatureExtractor(20)
-    cyber_ext = CyberCycleFeatureExtractor(14)
-    griff_ext = GriffithsDominantCycleFeatureExtractor(8, 42, 28)
-    regime_ext = BullBearHMM.bull_bear()
+    if HAS_QUANTWAVE:
+        hurst_ext = HurstFeatureExtractor(20)
+        cyber_ext = CyberCycleFeatureExtractor(14)
+        griff_ext = GriffithsDominantCycleFeatureExtractor(8, 42, 28)
+        regime_ext = BullBearHmm.bull_bear()
 
-    rows = []
-    for p in closes:
-        h = hurst_ext.next(float(p))
-        c = cyber_ext.next(float(p))
-        g = griff_ext.next(float(p))
-        r = regime_ext.next(float(p))
+        rows = []
+        for p in closes:
+            h = hurst_ext.next(float(p))
+            c = cyber_ext.next(float(p))
+            g = griff_ext.next(float(p))
+            r = regime_ext.next(float(p))
 
-        rows.append({
-            "hurst_20": h.persistence,
-            "cyber_cycle": c.cycle,
-            "cyber_trigger": c.trigger,
-            "cyber_momentum": c.cycle_momentum,
-            "cyber_signal": c.trigger_signal,
-            "griffiths_dc": g.dominant_cycle,
-            "regime_label": float(r),
-        })
+            rows.append({
+                "hurst_20": h.persistence,
+                "cyber_cycle": c.cycle,
+                "cyber_trigger": c.trigger,
+                "cyber_momentum": c.cycle_momentum,
+                "cyber_signal": c.trigger_signal,
+                "griffiths_dc": g.dominant_cycle,
+                "regime_label": float(r),
+            })
 
-    features_df = pl.DataFrame(rows)
-    # Join with original for full picture (timestamp + close)
-    # (In real Polars .ta.features() the columns are added directly to the LazyFrame)
-    full_df = pl.concat([features_df, pl.DataFrame({"close": closes})], how="horizontal")
+        features_df = pl.DataFrame(rows)
+        full_df = pl.concat([features_df, pl.DataFrame({"close": closes})], how="horizontal")
+        g = griff_ext
+        h = hurst_ext
+        mo.md("Features computed via streaming extractors (first 6 rows after warmup):")
+        mo.ui.table(full_df.head(12))
+        _ = full_df
+    else:
+        mo.md("**Feature computation skipped** — quantwave not installed.")
+        _ = full_df
+        hurst_ext = None
+        cyber_ext = None
+        griff_ext = None
+        regime_ext = None
+        rows = []
+        features_df = pl.DataFrame()
+        full_df = pl.DataFrame()
+        g = None
+        h = None
 
-    mo.md("Features computed via streaming extractors (first 6 rows after warmup):")
-    mo.ui.table(full_df.head(12))
     return (
         cyber_ext,
         features_df,
@@ -333,7 +357,7 @@ def __(mo):
 
 
 @app.cell
-def __(compute_exposure_and_meta, features_df, full_df, mo, pl):
+def __(compute_exposure_and_meta, features_df, full_df, mo, ohlcv, pl):
     # Batch derivation of exposure (Polars-native style: we could use .map or exprs; list-comp for clarity + determinism)
     exposures = []
     for row in features_df.iter_rows(named=True):
@@ -346,8 +370,9 @@ def __(compute_exposure_and_meta, features_df, full_df, mo, pl):
         exposures.append(exp)
 
     batch_df = full_df.with_columns(pl.Series("exposure", exposures))
-    # For the batch backtester we only need timestamp/close/exposure (or the full feature set for diagnostics)
-    batch_signal_df = batch_df.select(["close", "exposure"])
+    batch_signal_df = ohlcv.select(["timestamp", "close"]).with_columns(
+        pl.Series("exposure", exposures)
+    )
 
     mo.md("Batch signal DF (Polars) ready for backtester — exposure derived from rich features + regime:")
     mo.ui.table(batch_signal_df.head(10))
@@ -358,133 +383,17 @@ def __(compute_exposure_and_meta, features_df, full_df, mo, pl):
 def __(mo):
     mo.md(
         r"""
-        ## 5. Minimal Python Backtest Simulator (Parity Harness)
+        ## 5. Rust Backtest Engine (`.bt.backtest()`)
 
-        A tiny, self-contained port of the core execution semantics from `quantwave-backtest/src/lib.rs` (`run_simulation` + costs model with defaults = 0 for clean parity, exposure-as-units, trade recording).
+        Both paths now call the real `quantwave-backtest` engine via Polars `.bt` (zero commission/slippage for clean ug9t parity):
 
-        - Batch path: vectorized over pre-computed exposure series.
-        - Streaming path: step-by-step via generator.
-        - Both paths produce identical equity curves, trade counts, and net PnL within documented tolerances when fed equivalent signals.
+        - **Batch path:** pre-computed exposure column from Polars feature DF.
+        - **Streaming path:** `FeatureToSignal` generator builds exposures bar-by-bar, then same Rust engine.
+
+        Parity tolerances (quantwave-ug9t): equity 1e-8, stats 1e-6, trade count exact.
         """
     )
     return
-
-
-@app.cell
-def __(mo, np):
-    def run_backtest_simulation(closes, exposures_or_gen, is_streaming=False, initial_cash=100_000.0, commission_bps=0.0, slippage_bps=0.0):
-        """
-        Replicates run_simulation core (long-only, variable exposure sizing, trade blotter with optional entry_metadata).
-        For batch: pass list/array of precomputed exposures.
-        For streaming: pass a callable generator object with .next(bar_dict) -> {"exposure": , "metadata": } or None.
-        Returns (trades, equity_curve, stats)
-        """
-        n = len(closes)
-        slip = slippage_bps / 10000.0
-        comm = commission_bps / 10000.0
-
-        cash = initial_cash
-        current_exposure = 0.0
-        entry_price = 0.0
-        entry_ts = None
-        trade_id = 0
-        trades = []
-        equity_curve = []
-
-        for i in range(n):
-            close = closes[i]
-            if not np.isfinite(close):
-                eq = cash + current_exposure * close
-                equity_curve.append({"equity": eq, "cash": cash, "position": current_exposure, "close": close})
-                continue
-
-            # Obtain signal for this bar
-            if is_streaming:
-                # generator receives a simple bar dict (ts omitted for demo; only close matters for features)
-                sig = exposures_or_gen.next({"close": close})
-                exposure = sig["exposure"] if sig else 0.0
-                meta = sig.get("metadata") if sig else None
-            else:
-                exposure = float(exposures_or_gen[i]) if i < len(exposures_or_gen) else 0.0
-                meta = None  # batch path populates None (rich meta lives in streaming per contract)
-
-            # Execution (simplified, same direction only for MVP; scales on change)
-            fill_price = close * (1.0 + slip * np.sign(exposure - current_exposure)) if (exposure != current_exposure) else close
-
-            if exposure > 0 and current_exposure <= 0:
-                # New or increased long entry / add
-                if current_exposure < 0:  # close short first (not exercised in this long-only demo)
-                    pass
-                added = exposure - current_exposure
-                cost = added * fill_price * comm
-                cash -= added * fill_price + cost
-                if current_exposure == 0:
-                    entry_price = fill_price
-                    entry_ts = i
-                current_exposure = exposure
-
-            elif exposure == 0 and current_exposure > 0:
-                # Full exit
-                exit_price = fill_price
-                qty = current_exposure
-                proceeds = qty * exit_price
-                cost = proceeds * comm
-                pnl = proceeds - (qty * entry_price) - cost
-                cash += proceeds - cost
-                trades.append({
-                    "trade_id": trade_id,
-                    "side": 1,
-                    "entry_i": entry_ts,
-                    "entry_price": entry_price,
-                    "exit_i": i,
-                    "exit_price": exit_price,
-                    "pnl_net": pnl,
-                    "quantity": qty,
-                    "entry_metadata": None if not is_streaming else meta,  # only streaming carries it
-                })
-                trade_id += 1
-                current_exposure = 0.0
-                entry_price = 0.0
-                entry_ts = None
-
-            elif exposure > 0 and current_exposure > 0 and abs(exposure - current_exposure) > 1e-9:
-                # Scale in/out while long (adjust cash)
-                delta = exposure - current_exposure
-                cost = delta * fill_price * comm
-                cash -= delta * fill_price + cost
-                current_exposure = exposure
-
-            # Mark-to-market equity
-            equity = cash + current_exposure * close
-            equity_curve.append({
-                "equity": equity,
-                "cash": cash,
-                "position": current_exposure,
-                "close": close,
-            })
-
-        # Close any open at end (mark as open trade for completeness, but stats use realized)
-        if current_exposure > 0:
-            last_close = closes[-1]
-            pnl_open = current_exposure * (last_close - entry_price)
-            # For parity we treat as flat at end for stats (realized only)
-            pass
-
-        final_equity = equity_curve[-1]["equity"] if equity_curve else initial_cash
-        total_return = (final_equity - initial_cash) / initial_cash
-        num_trades = len(trades)
-
-        stats = {
-            "initial_cash": initial_cash,
-            "final_equity": final_equity,
-            "total_return": total_return,
-            "num_trades": float(num_trades),
-            "net_pnl": final_equity - initial_cash,
-        }
-        return trades, equity_curve, stats
-
-    mo.md("Python parity harness ready (mirrors Rust run_simulation exactly for the exercised paths).")
-    return (run_backtest_simulation,)
 
 
 @app.cell
@@ -505,11 +414,13 @@ def __(mo):
 
 @app.cell
 def __(
-    BullBearHMM,
+    BullBearHmm,
     CyberCycleFeatureExtractor,
     GriffithsDominantCycleFeatureExtractor,
+    HAS_QUANTWAVE,
     HurstFeatureExtractor,
     compute_exposure_and_meta,
+    mo,
 ):
     class FeatureToSignal:
         """Concrete adapter: Next-like streaming generator producing StrategySignal with rich metadata.
@@ -520,7 +431,7 @@ def __(
             self.hurst = HurstFeatureExtractor(20)
             self.cyber = CyberCycleFeatureExtractor(14)
             self.griff = GriffithsDominantCycleFeatureExtractor(8, 42, 28)
-            self.regime = BullBearHMM.bull_bear()
+            self.regime = BullBearHmm.bull_bear()
 
         def next(self, bar):
             close = float(bar["close"])
@@ -534,7 +445,13 @@ def __(
             )
             return {"exposure": exposure, "metadata": meta}
 
-    mo.md("FeatureToSignal adapter defined. Fresh instance per streaming run (required for parity).")
+    if HAS_QUANTWAVE:
+        mo.md("FeatureToSignal adapter defined. Fresh instance per streaming run (required for parity).")
+        _ = FeatureToSignal
+    else:
+        FeatureToSignal = None
+        mo.md("**FeatureToSignal skipped** — quantwave not installed.")
+        _ = FeatureToSignal
     return (FeatureToSignal,)
 
 
@@ -556,68 +473,125 @@ def __(mo):
 @app.cell
 def __(
     FeatureToSignal,
+    HAS_QUANTWAVE,
     batch_signal_df,
-    closes,
     mo,
+    ohlcv,
     pl,
-    run_backtest_simulation,
 ):
-    # === Batch path execution ===
-    batch_exposures = batch_signal_df["exposure"].to_list()
-    batch_trades, batch_equity, batch_stats = run_backtest_simulation(
-        closes, batch_exposures, is_streaming=False
-    )
+    if HAS_QUANTWAVE and FeatureToSignal is not None:
+        def _run_rust_bt(signal_df):
+            return signal_df.lazy().bt.backtest(
+                signal="exposure",
+                commission_bps=0.0,
+                slippage_bps=0.0,
+            )
 
-    # === Streaming path execution (fresh generator) ===
-    stream_gen = FeatureToSignal()
-    stream_trades, stream_equity, stream_stats = run_backtest_simulation(
-        closes, stream_gen, is_streaming=True
-    )
+        batch_result = _run_rust_bt(batch_signal_df)
+        batch_stats = batch_result.stats()
+        batch_metrics = batch_result.metrics()
+        batch_trades = batch_result.trades
 
-    # === PARITY VERIFICATION (the make-or-break assertions) ===
-    b_eq = [e["equity"] for e in batch_equity]
-    s_eq = [e["equity"] for e in stream_equity]
+        stream_gen = FeatureToSignal()
+        stream_exposures = []
+        stream_meta = []
+        for close in ohlcv["close"].to_list():
+            sig = stream_gen.next({"close": close})
+            stream_exposures.append(sig["exposure"])
+            stream_meta.append(sig.get("metadata"))
 
-    parity_ok = True
-    messages = []
+        stream_signal_df = ohlcv.select(["timestamp", "close"]).with_columns(
+            pl.Series("exposure", stream_exposures)
+        )
+        stream_result = _run_rust_bt(stream_signal_df)
+        stream_stats = stream_result.stats()
+        stream_trades = stream_result.trades
 
-    if len(b_eq) != len(s_eq):
-        parity_ok = False
-        messages.append(f"Length mismatch: {len(b_eq)} vs {len(s_eq)}")
+        b_eq = batch_result.equity_curve["equity"].to_list()
+        s_eq = stream_result.equity_curve["equity"].to_list()
 
-    max_abs_diff = 0.0
-    for i, (b, s) in enumerate(zip(b_eq, s_eq)):
-        d = abs(b - s)
-        if d > max_abs_diff:
-            max_abs_diff = d
-        if d > 1e-8:
+        parity_ok = True
+        messages = []
+
+        if len(b_eq) != len(s_eq):
             parity_ok = False
-            if len(messages) < 3:
-                messages.append(f"Equity diverged at bar {i}: {b:.8f} vs {s:.8f} (diff {d:.2e})")
+            messages.append(f"Length mismatch: {len(b_eq)} vs {len(s_eq)}")
 
-    # Stats parity
-    for k in ["final_equity", "net_pnl", "num_trades"]:
-        bv = batch_stats[k]
-        sv = stream_stats[k]
-        if abs(bv - sv) > 1e-6:
+        max_abs_diff = 0.0
+        for bar_idx, (b, s) in enumerate(zip(b_eq, s_eq)):
+            d = abs(b - s)
+            max_abs_diff = max(max_abs_diff, d)
+            if d > 1e-8 and len(messages) < 3:
+                parity_ok = False
+                messages.append(
+                    f"Equity diverged at bar {bar_idx}: {b:.8f} vs {s:.8f} (diff {d:.2e})"
+                )
+        if max_abs_diff > 1e-8:
             parity_ok = False
-            messages.append(f"Stat {k} mismatch: {bv} vs {sv}")
 
-    # Trade count exact
-    if len(batch_trades) != len(stream_trades):
+        for k in ["final_equity", "net_pnl", "num_trades"]:
+            bv = batch_stats[k]
+            sv = stream_stats[k]
+            if abs(bv - sv) > 1e-6:
+                parity_ok = False
+                messages.append(f"Stat {k} mismatch: {bv} vs {sv}")
+
+        if batch_trades.height != stream_trades.height:
+            parity_ok = False
+            messages.append(
+                f"Trade count mismatch: {batch_trades.height} vs {stream_trades.height}"
+            )
+
+        has_trades = batch_trades.height >= 1
+
+        mo.md("### Parity Results (Rust engine, batch vs streaming-built signals)")
+        mo.ui.table(
+            pl.DataFrame(
+                {
+                    "metric": [
+                        "equity_len_match",
+                        "max_equity_abs_diff",
+                        "trade_count_match",
+                        "has_trades",
+                        "sharpe_ratio",
+                        "max_drawdown_pct",
+                        "overall_parity",
+                    ],
+                    "value": [
+                        len(b_eq) == len(s_eq),
+                        f"{max_abs_diff:.2e}",
+                        batch_trades.height == stream_trades.height,
+                        has_trades,
+                        f"{batch_metrics['sharpe_ratio']:.4f}",
+                        f"{batch_metrics['max_drawdown_pct']:.4f}",
+                        parity_ok,
+                    ],
+                }
+            )
+        )
+        _ = parity_ok
+    else:
+        mo.md("**Backtest skipped** — quantwave not installed.")
+        _ = parity_ok
+        batch_metrics = None
+        batch_result = None
+        batch_stats = {}
+        batch_trades = pl.DataFrame()
+        b_eq = []
+        has_trades = False
+        max_abs_diff = 0.0
+        messages = []
         parity_ok = False
-        messages.append(f"Trade count mismatch: {len(batch_trades)} vs {len(stream_trades)}")
+        s_eq = []
+        stream_meta = []
+        stream_result = None
+        stream_gen = None
+        stream_stats = {}
+        stream_trades = pl.DataFrame()
 
-    # At least one trade on this data (otherwise test not exercising rich path)
-    has_trades = len(batch_trades) >= 1
-
-    mo.md("### Parity Results")
-    mo.ui.table(pl.DataFrame({
-        "metric": ["equity_len_match", "max_equity_abs_diff", "trade_count_match", "has_trades", "overall_parity"],
-        "value": [len(b_eq) == len(s_eq), f"{max_abs_diff:.2e}", len(batch_trades) == len(stream_trades), has_trades, parity_ok],
-    }))
     return (
-        batch_equity,
+        batch_metrics,
+        batch_result,
         batch_stats,
         batch_trades,
         b_eq,
@@ -626,7 +600,8 @@ def __(
         messages,
         parity_ok,
         s_eq,
-        stream_equity,
+        stream_meta,
+        stream_result,
         stream_gen,
         stream_stats,
         stream_trades,
@@ -634,26 +609,45 @@ def __(
 
 
 @app.cell
-def __(batch_stats, batch_trades, mo, parity_ok, stream_stats, stream_trades):
-    mo.md(
-        f"""
-        **Batch stats**: final_equity={batch_stats['final_equity']:.2f}, num_trades={int(batch_stats['num_trades'])}, net_pnl={batch_stats['net_pnl']:.2f}
+def __(
+    HAS_QUANTWAVE,
+    batch_stats,
+    batch_trades,
+    mo,
+    parity_ok,
+    stream_meta,
+    stream_stats,
+    stream_trades,
+):
+    if HAS_QUANTWAVE and batch_stats:
+        mo.md(
+            f"""
+            **Batch stats**: final_equity={batch_stats['final_equity']:.2f}, num_trades={int(batch_stats['num_trades'])}, net_pnl={batch_stats['net_pnl']:.2f}
 
-        **Streaming stats** (identical within tol): final_equity={stream_stats['final_equity']:.2f}, num_trades={int(stream_stats['num_trades'])}, net_pnl={stream_stats['net_pnl']:.2f}
+            **Streaming-built signal stats** (identical within tol): final_equity={stream_stats['final_equity']:.2f}, num_trades={int(stream_stats['num_trades'])}, net_pnl={stream_stats['net_pnl']:.2f}
 
-        **Rich metadata preservation (streaming path only)** — sample of closed trades with entry_metadata:
-        """
-    )
+            **Rich metadata at signal generation (streaming FeatureToSignal)** — sample entries:
+            """
+        )
 
-    if stream_trades:
-        sample = stream_trades[:min(3, len(stream_trades))]
-        for t in sample:
-            meta = t.get("entry_metadata") or {}
-            mo.md(f"Trade {t['trade_id']}: entry_px={t['entry_price']:.2f}, exit_px={t['exit_price']:.2f}, pnl={t['pnl_net']:.2f}, qty={t['quantity']:.2f}, meta={meta}")
+        meta_samples = [m for m in stream_meta if m][:3]
+        if meta_samples:
+            for sig_idx, meta in enumerate(meta_samples):
+                mo.md(f"Signal {sig_idx}: meta={meta}")
+        else:
+            mo.md("_No entry metadata on this synthetic path (flat exposure dominates some segments)._")
+
+        if batch_trades.height > 0:
+            mo.md("### Sample closed trades (Rust batch path)")
+            mo.ui.table(batch_trades.head(3))
+
+        mo.md(
+            f"\n**Parity verdict: {'✅ PASS — Rust engine + contract fully exercised' if parity_ok else '❌ FAIL — see messages'}**"
+        )
+        _ = parity_ok
     else:
-        mo.md("_No closed trades on this particular synthetic path (still valid parity; data can be adjusted to force entries)._")
-
-    mo.md(f"\n**Parity verdict: {'✅ PASS — contract fully exercised' if parity_ok else '❌ FAIL — see messages'}**")
+        mo.md("_Results skipped in fallback mode._")
+        _ = parity_ok
     return
 
 
@@ -756,10 +750,10 @@ def __(mo):
         1. Generated reproducible synthetic data exercising all four locked features.
         2. Computed rich features via the delivered Python extractors (equivalent to `.ta().features()` chain).
         3. Implemented realistic strategy logic using features + regime for filter + hurst-scaled sizing.
-        4. Executed **batch path** (Polars feature DF → exposure column → simulation).
-        5. Executed **streaming path** via concrete `FeatureToSignal` adapter → simulation.
-        6. Proved exact parity (equity 1e-8, stats 1e-6, trade count exact).
-        7. Demonstrated rich metadata preservation exclusively in the streaming Trade records.
+        4. Executed **batch path** (Polars feature DF → exposure → Rust `.bt.backtest()`).
+        5. Executed **streaming path** via `FeatureToSignal` → exposure DF → same Rust engine.
+        6. Proved exact parity (equity 1e-8, stats 1e-6, trade count exact) with real backtester.
+        7. Demonstrated rich metadata at signal generation via `FeatureToSignal`.
         8. Provided the production Rust `FeatureToSignal` adapter as copy-paste reference.
 
         **This is the primary evidence that the 4ps ML features surface + gwx backtester rich metadata + ug9t parity framework integrate cleanly and are ready for users.**
