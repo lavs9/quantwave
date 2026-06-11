@@ -63,8 +63,11 @@
 //! (#[cfg(test)]). Respects quantwave-core/tests/ rule for gold-standard
 //! indicator work.
 
+mod metrics;
+
 use chrono::{DateTime, Utc};
 use polars::prelude::*;
+pub use metrics::{BacktestReport, PerformanceMetrics};
 #[allow(unused_imports)]
 use quantwave_core::traits::Next; // Re-exported for future streaming parity work (used in hybrid mode later per quantwave-ug9t)
 use serde::{Deserialize, Serialize};
@@ -341,9 +344,15 @@ pub struct BacktestResult {
     pub trades: DataFrame,
     /// Equity curve as Polars DataFrame (one row per bar).
     pub equity_curve: DataFrame,
-    /// Summary statistics (CAGR placeholder, trade count, net pnl, etc.).
-    /// Future: full sharpe, maxdd, winrate via Polars expressions.
+    /// Summary statistics (trade count, net pnl, initial/final equity, etc.).
     pub stats: HashMap<String, f64>,
+}
+
+impl BacktestResult {
+    /// Compute [`PerformanceMetrics`] from this result (quantwave-cr6v.1).
+    pub fn metrics(&self) -> PerformanceMetrics {
+        PerformanceMetrics::from_result(self)
+    }
 }
 
 /// A minimal bar struct for driving streaming simulation (timestamp + close sufficient
@@ -410,6 +419,13 @@ impl BacktestEngine {
 
     pub fn with_default_costs() -> Self {
         Self::new(BacktestConfig::default())
+    }
+
+    /// Run backtest and attach [`PerformanceMetrics`] in a [`BacktestReport`].
+    pub fn backtest_with_report(&self, lf: LazyFrame) -> Result<BacktestReport, BacktestError> {
+        let result = self.run(lf)?;
+        let metrics = PerformanceMetrics::from_result(&result);
+        Ok(BacktestReport { result, metrics })
     }
 
     /// Run vectorized simulation on a LazyFrame (collected internally for state machine).

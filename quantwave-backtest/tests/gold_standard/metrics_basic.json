@@ -1,0 +1,23 @@
+{
+  "description": "20-bar zero-cost long-only flip strategy: trade 1 +6, trade 2 -8",
+  "input": {
+    "initial_cash": 100000.0,
+    "closes": [
+      100.0, 100.0, 100.0, 102.0, 104.0, 106.0, 106.0, 106.0, 106.0, 106.0, 100.0,
+      98.0, 96.0, 94.0, 92.0, 92.0, 92.0, 92.0, 92.0, 92.0
+    ],
+    "signals": [
+      0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0,
+      0.0, 0.0, 0.0, 0.0
+    ]
+  },
+  "expected": {
+    "num_trades": 2.0,
+    "win_rate": 0.5,
+    "profit_factor": 0.75,
+    "max_drawdown_pct": 7.999520028798273e-5,
+    "total_return": -2e-5,
+    "final_equity": 99998.0,
+    "avg_trade_pnl": -1.0
+  }
+}
