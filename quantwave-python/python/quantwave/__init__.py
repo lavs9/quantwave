@@ -54,6 +54,17 @@ except Exception as _e:  # pragma: no cover
     class _DummyNS: pass
     polars = _DummyNS()
 
+# Backtest engine (PyO3 + pyo3-polars; requires polars extra)
+try:
+    from . import backtest
+except Exception as _e:  # pragma: no cover
+    warnings.warn(
+        f"quantwave.backtest submodule unavailable (requires polars; "
+        f"use `pip install \"quantwave[polars]\"`): {_e}"
+    )
+    class _DummyNS: pass
+    backtest = _DummyNS()
+
 # Popular namespaces (guarded: some may require full maturin build or follow-up on gqem/05q7)
 try:
     from . import results
@@ -456,6 +467,7 @@ __all__ = [
     "InternalError",
     "ta",
     "polars",
+    "backtest",
     "results",
     "options",
     "talib",

@@ -1,0 +1,23 @@
+[package]
+name = "quantwave-backtest-py"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "PyO3 Python bindings for quantwave-backtest"
+repository.workspace = true
+homepage.workspace = true
+readme = "../README.md"
+categories.workspace = true
+keywords.workspace = true
+
+[lib]
+name = "quantwave_backtest"
+path = "../quantwave-python/src/backtest.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+quantwave-backtest = { workspace = true }
+polars = { workspace = true, features = ["ipc"] }
+pyo3 = { version = "0.23", features = ["extension-module"] }
+pyo3-polars = { version = "0.20", features = ["derive"] }
