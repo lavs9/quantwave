@@ -13,7 +13,11 @@ keywords.workspace = true
 
 [dependencies]
 quantwave-core = { workspace = true }
+quantwave-backtest = { workspace = true }
 polars = { workspace = true }
 serde = { workspace = true }
 
 thiserror = { workspace = true }
+
+[dev-dependencies]
+approx = { workspace = true }

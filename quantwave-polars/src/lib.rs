@@ -2,12 +2,14 @@ use polars::prelude::*;
 use quantwave_core::traits::Next;
 use quantwave_core::*;
 
+pub mod bt;
+pub mod features; // implements .ta.features.hurst / cyber_cycle / griffiths_dominant_cycle / regime_features (see features.rs)
+
 pub mod prelude {
+    pub use crate::bt::{BtNamespace, BtOptions, QuantWaveBtExt};
     pub use crate::{QuantWaveExt, QuantWaveNamespace};
     pub use crate::features::TaFeaturesNamespace; // .ta().features() sub-namespace (locked minimal surface for 4ps cross-epic deliverable)
 }
-
-pub mod features; // implements .ta.features.hurst / cyber_cycle / griffiths_dominant_cycle / regime_features (see features.rs)
 
 pub trait QuantWaveExt {
     fn ta(&self) -> QuantWaveNamespace<'_>;
@@ -4505,3 +4507,5 @@ impl QuantWaveExt for LazyFrame {
         QuantWaveNamespace(self)
     }
 }
+
+pub use bt::{BtNamespace, BtOptions, QuantWaveBtExt};

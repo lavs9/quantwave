@@ -2343,7 +2343,9 @@ dependencies = [
 name = "quantwave-polars"
 version = "0.5.2"
 dependencies = [
+ "approx",
  "polars",
+ "quantwave-backtest",
  "quantwave-core",
  "serde",
  "thiserror 1.0.69",

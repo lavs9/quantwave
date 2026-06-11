@@ -46,6 +46,7 @@ from . import _quantwave  # noqa
 # quantwave-plugins package is the Polars Expressions path and declares the dep).
 try:
     from . import polars
+    from . import bt_polars  # noqa: F401 — registers LazyFrame.bt namespace
 except Exception as _e:  # pragma: no cover
     warnings.warn(
         f"quantwave.polars submodule unavailable (polars not installed; "

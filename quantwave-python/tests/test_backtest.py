@@ -84,3 +84,96 @@ def test_backtest_with_report():
     assert report_metrics["final_equity"] == pytest.approx(
         report.result.stats()["final_equity"]
     )
+
+
+# --- quantwave-cr6v.5: Polars LazyFrame `.bt` namespace ---
+
+
+def test_bt_namespace_exists():
+    lf = _single_trade_df().lazy()
+    assert hasattr(lf, "bt")
+    assert hasattr(lf.bt, "backtest")
+    assert hasattr(lf.bt, "backtest_with_report")
+
+
+def test_bt_backtest_lazyframe():
+    result = (
+        _single_trade_df()
+        .lazy()
+        .bt.backtest(commission_bps=0.0, slippage_bps=0.0)
+    )
+    assert result.trades.height == 1
+    assert result.stats()["num_trades"] == pytest.approx(1.0)
+
+
+def test_bt_backtest_custom_columns():
+    df = pl.DataFrame(
+        {
+            "ts": [1, 2, 3, 4, 5, 6],
+            "px": [100.0, 101.0, 102.5, 103.0, 102.0, 101.0],
+            "exposure": [0.0, 1.0, 1.0, 1.0, 0.0, 0.0],
+        }
+    )
+    result = df.lazy().bt.backtest(
+        signal="exposure",
+        timestamp_col="ts",
+        close_col="px",
+        commission_bps=0.0,
+        slippage_bps=0.0,
+    )
+    assert result.trades.height == 1
+
+
+def test_bt_backtest_with_report():
+    report = (
+        _single_trade_df()
+        .lazy()
+        .bt.backtest_with_report(commission_bps=0.0, slippage_bps=0.0)
+    )
+    assert report.result.trades.height == 1
+    assert report.metrics()["num_trades"] == pytest.approx(1.0)
+
+
+def test_bt_backtest_filter_and_multiplier():
+    df = pl.DataFrame(
+        {
+            "timestamp": [1, 2, 3, 4, 5, 6],
+            "close": [100.0, 100.0, 101.0, 102.0, 101.0, 100.0],
+            "signal": [0.0, 1.0, 1.0, 1.0, 0.0, 0.0],
+            "regime_ok": [True, False, True, True, True, True],
+            "size_mult": [1.0, 1.0, 0.5, 0.5, 1.0, 1.0],
+        }
+    )
+    result = df.lazy().bt.backtest(
+        entry_filter_col="regime_ok",
+        size_multiplier_col="size_mult",
+        commission_bps=0.0,
+        slippage_bps=0.0,
+    )
+    assert result.trades.height == 1
+
+
+def test_bt_backtest_multi_symbol_smoke():
+    df = pl.DataFrame(
+        {
+            "timestamp": [
+                1_700_010_000,
+                1_700_010_000,
+                1_700_010_001,
+                1_700_010_001,
+                1_700_010_002,
+                1_700_010_002,
+            ],
+            "symbol": ["AAA", "BBB", "AAA", "BBB", "AAA", "BBB"],
+            "close": [100.0, 50.0, 101.0, 51.0, 102.0, 52.0],
+            "signal": [0.0, 0.0, 1.0, 1.0, 0.0, 0.0],
+        }
+    )
+    result = df.lazy().bt.backtest(
+        symbol_col="symbol",
+        commission_bps=0.0,
+        slippage_bps=0.0,
+    )
+    assert result.trades.height == 2
+    assert "symbol" in result.trades.columns
+    assert result.stats()["num_symbols"] == pytest.approx(2.0)
