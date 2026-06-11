@@ -152,19 +152,16 @@ fn aggregate_trade_stats(pnls: &[f64]) -> (f64, f64, f64) {
 
 /// Peak-to-trough drawdown on the equity curve as a fraction (0.10 = 10%).
 fn compute_max_drawdown_pct(result: &BacktestResult) -> f64 {
-    let Ok(col) = result.equity_curve.column("equity") else {
+    let equity = portfolio_equity_values(result);
+    if equity.is_empty() {
         return 0.0;
-    };
-    let Ok(ca) = col.f64() else {
-        return 0.0;
-    };
+    }
 
     let mut peak = 0.0;
     let mut max_dd = 0.0;
     let mut seen = false;
 
-    for opt in ca.into_iter() {
-        let Some(eq) = opt else { continue };
+    for eq in equity {
         if !seen {
             peak = eq;
             seen = true;
@@ -183,12 +180,7 @@ fn compute_max_drawdown_pct(result: &BacktestResult) -> f64 {
 }
 
 fn equity_len(result: &BacktestResult) -> usize {
-    result
-        .equity_curve
-        .column("equity")
-        .ok()
-        .and_then(|c| c.f64().ok().map(|ca| ca.len()))
-        .unwrap_or(0)
+    portfolio_equity_values(result).len()
 }
 
 /// CAGR annualized with 252 trading days per year (clean-room).
@@ -204,13 +196,7 @@ fn compute_cagr(initial: f64, final_equity: f64, n_bars: usize) -> f64 {
 }
 
 fn per_bar_returns(result: &BacktestResult) -> Vec<f64> {
-    let Ok(col) = result.equity_curve.column("equity") else {
-        return Vec::new();
-    };
-    let Ok(ca) = col.f64() else {
-        return Vec::new();
-    };
-    let equity: Vec<f64> = ca.into_iter().flatten().collect();
+    let equity = portfolio_equity_values(result);
     equity
         .windows(2)
         .filter_map(|w| {
@@ -264,22 +250,39 @@ fn compute_sortino(returns: &[f64]) -> f64 {
     (mean / downside_std) * TRADING_DAYS_PER_YEAR.sqrt()
 }
 
+/// Equity series for analytics. When a `symbol` column exists, use portfolio rows
+/// (`symbol` null) to avoid double-counting per-symbol curves.
+fn portfolio_equity_values(result: &BacktestResult) -> Vec<f64> {
+    let Ok(eq_col) = result.equity_curve.column("equity") else {
+        return Vec::new();
+    };
+    let Ok(eq_ca) = eq_col.f64() else {
+        return Vec::new();
+    };
+
+    if let Ok(sym_col) = result.equity_curve.column("symbol") {
+        if let Ok(sym_ca) = sym_col.str() {
+            return eq_ca
+                .into_iter()
+                .zip(sym_ca.into_iter())
+                .filter_map(|(eq, sym)| {
+                    if sym.is_none() {
+                        eq
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+        }
+    }
+
+    eq_ca.into_iter().flatten().collect()
+}
+
 fn equity_first(result: &BacktestResult) -> Option<f64> {
-    result
-        .equity_curve
-        .column("equity")
-        .ok()?
-        .f64()
-        .ok()?
-        .get(0)
+    portfolio_equity_values(result).first().copied()
 }
 
 fn equity_last(result: &BacktestResult) -> Option<f64> {
-    let eq = result.equity_curve.column("equity").ok()?.f64().ok()?;
-    let n = eq.len();
-    if n == 0 {
-        None
-    } else {
-        eq.get(n - 1)
-    }
+    portfolio_equity_values(result).last().copied()
 }

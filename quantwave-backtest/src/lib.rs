@@ -406,8 +406,8 @@ pub struct PAEvent {
 ///
 /// Generalized from unit-size flips (1hr) to exposure-driven for feature/PA
 /// sizing parity verification. See `run_streaming_simulation` for Next<T> path.
-/// Long-format multi-symbol stub: if symbol_col present, groups logically
-/// but MVP processes as single stream (future work will split/group).
+/// When `BacktestConfig.symbol_col` is set, runs independent per-symbol simulations
+/// and returns symbol-tagged trades plus per-symbol and portfolio equity curves.
 pub struct BacktestEngine {
     config: BacktestConfig,
 }
@@ -438,7 +438,6 @@ impl BacktestEngine {
             return Err(BacktestError::InvalidInput("empty dataframe".into()));
         }
 
-        // MVP: require the three core columns exist
         let ts_col = &self.config.timestamp_col;
         let close_col = &self.config.close_col;
         let sig_col = &self.config.signal_col;
@@ -452,61 +451,17 @@ impl BacktestEngine {
             }
         }
 
-        // Extract columns (support f64 signal or bool cast)
-        let ts_series = df.column(ts_col)?.clone();
-        let close_ca = df.column(close_col)?.f64()?.clone();
-        let signal_series = df.column(sig_col)?;
-
-        // Normalize signal to f64 exposure (>0.0 means desired long exposure in units;
-        // generalized in ug9t for feature/PA variable sizing from thresholds + pole height).
-        let signal_vals: Vec<f64> = if signal_series.dtype().is_bool() {
-            signal_series
-                .bool()?
-                .into_iter()
-                .map(|b| if b.unwrap_or(false) { 1.0 } else { 0.0 })
-                .collect()
-        } else {
-            signal_series
-                .f64()?
-                .into_iter()
-                .map(|v| v.unwrap_or(0.0))
-                .collect()
-        };
-
-        // Timestamps: try datetime, fallback to i64 as "bars", or strings (MVP supports common cases)
-        let timestamps: Vec<DateTime<Utc>> = self.extract_timestamps(&ts_series)?;
-
-        let closes: Vec<f64> = close_ca
-            .into_iter()
-            .map(|v| v.unwrap_or(f64::NAN))
-            .collect();
-
-        if timestamps.len() != closes.len() || closes.len() != signal_vals.len() {
-            return Err(BacktestError::InvalidInput("column length mismatch".into()));
+        if self.config.symbol_col.is_some() {
+            return self.run_multi_symbol(df);
         }
 
-        // Delegate to shared simulation core (ensures parity with streaming path).
-        // Batch path: scalar exposures, no rich metadata.
-        let exec = &self.config.execution_model;
-        let sizer = &self.config.position_sizer;
-        let metas: Vec<Option<HashMap<String, f64>>> = vec![None; signal_vals.len()];
-        let (trades, equity_points) = run_simulation(
-            &timestamps,
-            &closes,
-            |i| (signal_vals[i], metas[i].clone()),
-            exec,
-            sizer,
-        );
+        self.run_single_symbol(df)
+    }
 
-        // Build Polars DataFrames
-        let trades_df = self.trades_to_df(&trades)?;
-        let equity_df = self.equity_to_df(&equity_points)?;
+    fn run_single_symbol(&self, df: DataFrame) -> Result<BacktestResult, BacktestError> {
+        let (trades, equity_points) = self.simulate_dataframe(&df, None)?;
 
-        // Basic stats (MVP — richer via Polars later)
-        let initial_cash = match &self.config.execution_model {
-            ExecutionModel::Simple(cm) => cm.initial_cash,
-            _ => 100_000.0,
-        };
+        let initial_cash = self.per_symbol_initial_cash();
         let final_equity = equity_points
             .last()
             .map(|e| e.equity)
@@ -522,10 +477,157 @@ impl BacktestEngine {
         stats.insert("net_pnl".to_string(), final_equity - initial_cash);
 
         Ok(BacktestResult {
-            trades: trades_df,
-            equity_curve: equity_df,
+            trades: self.trades_to_df(&trades, false)?,
+            equity_curve: self.equity_to_df(&equity_points, false)?,
             stats,
         })
+    }
+
+    fn run_multi_symbol(&self, df: DataFrame) -> Result<BacktestResult, BacktestError> {
+        let sym_col = self
+            .config
+            .symbol_col
+            .as_ref()
+            .expect("symbol_col set");
+
+        if df.column(sym_col).is_err() {
+            return Err(BacktestError::InvalidInput(format!(
+                "missing column: {}",
+                sym_col
+            )));
+        }
+
+        let ts_series = df.column(&self.config.timestamp_col)?.clone();
+        let timestamps = self.extract_timestamps(&ts_series)?;
+        let symbols = extract_string_column(df.column(sym_col)?.clone())?;
+        validate_sorted_timestamp_symbol(&timestamps, &symbols)?;
+
+        let mut unique_symbols: Vec<String> = Vec::new();
+        let mut seen = std::collections::HashSet::new();
+        for s in &symbols {
+            if seen.insert(s.clone()) {
+                unique_symbols.push(s.clone());
+            }
+        }
+
+        let per_symbol_initial = self.per_symbol_initial_cash();
+        let mut all_trades: Vec<Trade> = Vec::new();
+        let mut per_symbol_equity: HashMap<String, Vec<EquityPoint>> = HashMap::new();
+
+        for symbol in &unique_symbols {
+            let sub = df
+                .clone()
+                .lazy()
+                .filter(col(sym_col).eq(lit(symbol.as_str())))
+                .sort(
+                    [&self.config.timestamp_col],
+                    SortMultipleOptions::default(),
+                )
+                .collect()?;
+
+            let (mut trades, equity_points) = self.simulate_dataframe(&sub, Some(symbol))?;
+            all_trades.append(&mut trades);
+            per_symbol_equity.insert(symbol.clone(), equity_points);
+        }
+
+        let portfolio_equity = aggregate_portfolio_equity(&per_symbol_equity);
+        let mut combined_equity: Vec<EquityPoint> = per_symbol_equity
+            .values()
+            .flatten()
+            .cloned()
+            .collect();
+        combined_equity.extend(portfolio_equity.clone());
+
+        let n_symbols = unique_symbols.len() as f64;
+        let portfolio_initial = per_symbol_initial * n_symbols;
+        let portfolio_final = portfolio_equity
+            .last()
+            .map(|e| e.equity)
+            .unwrap_or(portfolio_initial);
+        let total_return = (portfolio_final - portfolio_initial) / portfolio_initial;
+        let num_trades = all_trades.len() as f64;
+
+        let mut stats = HashMap::new();
+        stats.insert("initial_cash".to_string(), portfolio_initial);
+        stats.insert("final_equity".to_string(), portfolio_final);
+        stats.insert("total_return".to_string(), total_return);
+        stats.insert("num_trades".to_string(), num_trades);
+        stats.insert("net_pnl".to_string(), portfolio_final - portfolio_initial);
+        stats.insert("num_symbols".to_string(), n_symbols);
+
+        Ok(BacktestResult {
+            trades: self.trades_to_df(&all_trades, true)?,
+            equity_curve: self.equity_to_df(&combined_equity, true)?,
+            stats,
+        })
+    }
+
+    fn per_symbol_initial_cash(&self) -> f64 {
+        match &self.config.execution_model {
+            ExecutionModel::Simple(cm) => cm.initial_cash,
+            _ => 100_000.0,
+        }
+    }
+
+    fn simulate_dataframe(
+        &self,
+        df: &DataFrame,
+        symbol: Option<&str>,
+    ) -> Result<(Vec<Trade>, Vec<EquityPoint>), BacktestError> {
+        let ts_col = &self.config.timestamp_col;
+        let close_col = &self.config.close_col;
+        let sig_col = &self.config.signal_col;
+
+        let ts_series = df.column(ts_col)?.clone();
+        let close_ca = df.column(close_col)?.f64()?.clone();
+        let signal_series = df.column(sig_col)?;
+
+        let signal_vals: Vec<f64> = if signal_series.dtype().is_bool() {
+            signal_series
+                .bool()?
+                .into_iter()
+                .map(|b| if b.unwrap_or(false) { 1.0 } else { 0.0 })
+                .collect()
+        } else {
+            signal_series
+                .f64()?
+                .into_iter()
+                .map(|v| v.unwrap_or(0.0))
+                .collect()
+        };
+
+        let timestamps = self.extract_timestamps(&ts_series)?;
+        let closes: Vec<f64> = close_ca
+            .into_iter()
+            .map(|v| v.unwrap_or(f64::NAN))
+            .collect();
+
+        if timestamps.len() != closes.len() || closes.len() != signal_vals.len() {
+            return Err(BacktestError::InvalidInput("column length mismatch".into()));
+        }
+
+        let exec = &self.config.execution_model;
+        let sizer = &self.config.position_sizer;
+        let metas: Vec<Option<HashMap<String, f64>>> = vec![None; signal_vals.len()];
+        let (mut trades, mut equity_points) = run_simulation(
+            &timestamps,
+            &closes,
+            |i| (signal_vals[i], metas[i].clone()),
+            exec,
+            sizer,
+        );
+
+        if let Some(sym) = symbol {
+            let sym_owned = sym.to_string();
+            for t in &mut trades {
+                t.symbol = Some(sym_owned.clone());
+            }
+            for e in &mut equity_points {
+                e.symbol = Some(sym_owned.clone());
+            }
+        }
+
+        Ok((trades, equity_points))
     }
 
     fn extract_timestamps(&self, col: &Column) -> Result<Vec<DateTime<Utc>>, BacktestError> {
@@ -569,16 +671,19 @@ impl BacktestEngine {
         ))
     }
 
-    fn trades_to_df(&self, trades: &[Trade]) -> Result<DataFrame, PolarsError> {
+    fn trades_to_df(&self, trades: &[Trade], include_symbol: bool) -> Result<DataFrame, PolarsError> {
         if trades.is_empty() {
-            // Return empty DF with schema
-            return Ok(DataFrame::new(vec![
+            let mut cols = vec![
                 Column::new("trade_id".into(), Vec::<u32>::new()),
                 Column::new("side".into(), Vec::<i8>::new()),
                 Column::new("entry_ts".into(), Vec::<i64>::new()),
                 Column::new("entry_price".into(), Vec::<f64>::new()),
                 Column::new("pnl_net".into(), Vec::<f64>::new()),
-            ])?);
+            ];
+            if include_symbol {
+                cols.push(Column::new("symbol".into(), Vec::<Option<String>>::new()));
+            }
+            return Ok(DataFrame::new(cols)?);
         }
 
         let ids: Vec<u32> = trades.iter().map(|t| t.trade_id).collect();
@@ -591,23 +696,33 @@ impl BacktestEngine {
             .collect();
         let pnl: Vec<f64> = trades.iter().map(|t| t.pnl_net).collect();
 
-        DataFrame::new(vec![
+        let mut cols = vec![
             Column::new("trade_id".into(), ids),
             Column::new("side".into(), sides),
             Column::new("entry_ts".into(), entry_ts),
             Column::new("entry_price".into(), entry_px),
             Column::new("exit_ts".into(), exit_ts),
             Column::new("pnl_net".into(), pnl),
-        ])
+        ];
+        if include_symbol {
+            let symbols: Vec<Option<String>> = trades.iter().map(|t| t.symbol.clone()).collect();
+            cols.push(Column::new("symbol".into(), symbols));
+        }
+
+        DataFrame::new(cols)
     }
 
-    fn equity_to_df(&self, points: &[EquityPoint]) -> Result<DataFrame, PolarsError> {
+    fn equity_to_df(&self, points: &[EquityPoint], include_symbol: bool) -> Result<DataFrame, PolarsError> {
         if points.is_empty() {
-            return Ok(DataFrame::new(vec![
+            let mut cols = vec![
                 Column::new("ts".into(), Vec::<i64>::new()),
                 Column::new("equity".into(), Vec::<f64>::new()),
                 Column::new("position".into(), Vec::<f64>::new()),
-            ])?);
+            ];
+            if include_symbol {
+                cols.push(Column::new("symbol".into(), Vec::<Option<String>>::new()));
+            }
+            return Ok(DataFrame::new(cols)?);
         }
 
         let ts: Vec<i64> = points.iter().map(|p| p.ts.timestamp()).collect();
@@ -616,14 +731,87 @@ impl BacktestEngine {
         let cash: Vec<f64> = points.iter().map(|p| p.cash).collect();
         let close: Vec<f64> = points.iter().map(|p| p.close).collect();
 
-        DataFrame::new(vec![
+        let mut cols = vec![
             Column::new("ts".into(), ts),
             Column::new("equity".into(), eq),
             Column::new("cash".into(), cash),
             Column::new("position".into(), pos),
             Column::new("close".into(), close),
-        ])
+        ];
+        if include_symbol {
+            let symbols: Vec<Option<String>> = points.iter().map(|p| p.symbol.clone()).collect();
+            cols.push(Column::new("symbol".into(), symbols));
+        }
+
+        DataFrame::new(cols)
     }
+}
+
+fn extract_string_column(col: Column) -> Result<Vec<String>, BacktestError> {
+    let s = col
+        .as_series()
+        .ok_or_else(|| BacktestError::InvalidInput("column has no series backing".into()))?;
+    if let Ok(ca) = s.str() {
+        return Ok(ca
+            .into_iter()
+            .map(|opt| opt.unwrap_or_default().to_string())
+            .collect());
+    }
+    Err(BacktestError::InvalidInput(
+        "symbol column must be Utf8/String".into(),
+    ))
+}
+
+fn validate_sorted_timestamp_symbol(
+    timestamps: &[DateTime<Utc>],
+    symbols: &[String],
+) -> Result<(), BacktestError> {
+    if timestamps.len() != symbols.len() {
+        return Err(BacktestError::InvalidInput("column length mismatch".into()));
+    }
+    for i in 1..timestamps.len() {
+        let prev = (&timestamps[i - 1], &symbols[i - 1]);
+        let curr = (&timestamps[i], &symbols[i]);
+        if curr < prev {
+            return Err(BacktestError::UnsortedData);
+        }
+    }
+    Ok(())
+}
+
+fn aggregate_portfolio_equity(per_symbol: &HashMap<String, Vec<EquityPoint>>) -> Vec<EquityPoint> {
+    use std::collections::BTreeSet;
+
+    let mut ts_set = BTreeSet::new();
+    for points in per_symbol.values() {
+        for p in points {
+            ts_set.insert(p.ts);
+        }
+    }
+
+    ts_set
+        .into_iter()
+        .map(|ts| {
+            let mut total_equity = 0.0;
+            let mut total_cash = 0.0;
+            let mut total_position = 0.0;
+            for points in per_symbol.values() {
+                if let Some(p) = points.iter().find(|p| p.ts == ts) {
+                    total_equity += p.equity;
+                    total_cash += p.cash;
+                    total_position += p.position;
+                }
+            }
+            EquityPoint {
+                ts,
+                symbol: None,
+                equity: total_equity,
+                cash: total_cash,
+                position: total_position,
+                close: 0.0,
+            }
+        })
+        .collect()
 }
 
 /// Convenience function for the most common "simple boolean signal" use case
