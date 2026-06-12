@@ -12,8 +12,18 @@ use pyo3_polars::PyDataFrame;
 use std::io::Cursor;
 use quantwave_backtest::{
     BacktestConfig, BacktestEngine, BacktestError, BacktestReport, BacktestResult, CostModel,
-    PerformanceMetrics,
+    ExecutionDelay, ExecutionModel, PerformanceMetrics,
 };
+
+fn parse_execution_delay(s: &str) -> PyResult<ExecutionDelay> {
+    match s.to_ascii_lowercase().as_str() {
+        "same_bar" | "samebar" | "t0" => Ok(ExecutionDelay::SameBar),
+        "next_bar" | "nextbar" | "t1" => Ok(ExecutionDelay::NextBar),
+        other => Err(PyValueError::new_err(format!(
+            "execution_delay must be 'same_bar' or 'next_bar', got '{other}'"
+        ))),
+    }
+}
 
 fn map_err(e: BacktestError) -> PyErr {
     PyValueError::new_err(e.to_string())
@@ -77,6 +87,7 @@ impl PyBacktestConfig {
         initial_cash = 100_000.0,
         commission_bps = 5.0,
         slippage_bps = 2.0,
+        execution_delay = "same_bar",
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -89,23 +100,27 @@ impl PyBacktestConfig {
         initial_cash: f64,
         commission_bps: f64,
         slippage_bps: f64,
-    ) -> Self {
-        Self {
+        execution_delay: &str,
+    ) -> PyResult<Self> {
+        let costs = CostModel {
+            commission_bps,
+            slippage_bps,
+            initial_cash,
+        };
+        Ok(Self {
             inner: BacktestConfig {
-                cost_model: CostModel {
-                    commission_bps,
-                    slippage_bps,
-                    initial_cash,
-                },
+                cost_model: costs.clone(),
+                execution_model: ExecutionModel::Simple(costs),
                 timestamp_col: timestamp_col.to_string(),
                 symbol_col,
                 close_col: close_col.to_string(),
                 signal_col: signal_col.to_string(),
                 entry_filter_col,
                 size_multiplier_col,
+                execution_delay: parse_execution_delay(execution_delay)?,
                 ..Default::default()
             },
-        }
+        })
     }
 }
 

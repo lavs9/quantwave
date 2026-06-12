@@ -5,6 +5,7 @@
 use polars::prelude::*;
 use quantwave_backtest::{
     BacktestConfig, BacktestEngine, BacktestError, BacktestReport, BacktestResult, CostModel,
+    ExecutionDelay,
 };
 
 /// Extension trait: `LazyFrame::bt()`.
@@ -27,6 +28,7 @@ pub struct BtOptions {
     pub commission_bps: f64,
     pub slippage_bps: f64,
     pub initial_cash: f64,
+    pub execution_delay: ExecutionDelay,
 }
 
 impl Default for BtOptions {
@@ -41,6 +43,7 @@ impl Default for BtOptions {
             commission_bps: 5.0,
             slippage_bps: 2.0,
             initial_cash: 100_000.0,
+            execution_delay: ExecutionDelay::SameBar,
         }
     }
 }
@@ -54,18 +57,21 @@ impl BtOptions {
     }
 
     pub fn into_config(self) -> BacktestConfig {
+        let costs = CostModel {
+            commission_bps: self.commission_bps,
+            slippage_bps: self.slippage_bps,
+            initial_cash: self.initial_cash,
+        };
         BacktestConfig {
-            cost_model: CostModel {
-                commission_bps: self.commission_bps,
-                slippage_bps: self.slippage_bps,
-                initial_cash: self.initial_cash,
-            },
+            cost_model: costs.clone(),
+            execution_model: quantwave_backtest::ExecutionModel::Simple(costs),
             timestamp_col: self.timestamp_col,
             symbol_col: self.symbol_col,
             close_col: self.close_col,
             signal_col: self.signal_col,
             entry_filter_col: self.entry_filter_col,
             size_multiplier_col: self.size_multiplier_col,
+            execution_delay: self.execution_delay,
             ..Default::default()
         }
     }

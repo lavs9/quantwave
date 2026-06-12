@@ -21,6 +21,8 @@
 //! - Ready for rich Struct signals (e.g. from future PA detectors containing
 //!   `pole_height`, `strength`, etc. for dynamic sizing/conviction).
 //! - Basic realistic execution: commission + slippage.
+//! - T+1 execution via `BacktestConfig.execution_delay` (`SameBar` default, `NextBar`
+//!   for polars-backtest-style next-bar fills — quantwave-cr6v.8).
 //! - Vectorized foundation now; streaming parity (Next<T> from quantwave-core)
 //!   and full rich PA/ML integration in sibling tasks (ug9t, 06sz).
 //! - All new code will eventually carry batch-vs-streaming proptests.
@@ -168,6 +170,16 @@ impl SlippageModel for SquareRootMarketImpactSlippage {
     }
 }
 
+/// When a signal observed at bar *t* may be executed (clean-room polars-backtest T+1).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum ExecutionDelay {
+    /// T+0: signal at bar *t* fills at bar *t* close (default).
+    #[default]
+    SameBar,
+    /// T+1: signal at bar *t* fills at bar *t+1* close (no same-bar look-ahead).
+    NextBar,
+}
+
 /// Execution model config (n1yc.2/3). Supports simple + high-fidelity with realistic models.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ExecutionModel {
@@ -282,6 +294,8 @@ pub struct BacktestConfig {
 
     // v0.2 rich execution (n1yc.2/3) + sizer (n1yc.1)
     pub execution_model: ExecutionModel,
+    /// Signal-to-fill timing (quantwave-cr6v.8). Default `SameBar` preserves T+0 behavior.
+    pub execution_delay: ExecutionDelay,
     /// If Some, the engine will apply risk-budgeted sizing using fraction_at_risk / pole_height_atr
     /// from StrategySignal.metadata (or PAEvent converted) on top of raw exposure.
     pub position_sizer: Option<InitialRiskPositionSizer>,
@@ -298,8 +312,17 @@ impl Default for BacktestConfig {
             entry_filter_col: None,
             size_multiplier_col: None,
             execution_model: ExecutionModel::default(),
+            execution_delay: ExecutionDelay::default(),
             position_sizer: None,
         }
+    }
+}
+
+/// Map simulation bar index to the signal bar used for execution decisions.
+fn signal_bar_index(bar: usize, delay: ExecutionDelay) -> Option<usize> {
+    match delay {
+        ExecutionDelay::SameBar => Some(bar),
+        ExecutionDelay::NextBar => bar.checked_sub(1),
     }
 }
 
@@ -640,12 +663,14 @@ impl BacktestEngine {
         let exec = &self.config.execution_model;
         let sizer = &self.config.position_sizer;
         let metas: Vec<Option<HashMap<String, f64>>> = vec![None; effective_signals.len()];
+        let delay = self.config.execution_delay;
         let (mut trades, mut equity_points) = run_simulation(
             &timestamps,
             &closes,
             |i| (effective_signals[i], metas[i].clone()),
             exec,
             sizer,
+            delay,
         );
 
         if let Some(sym) = symbol {
@@ -944,6 +969,7 @@ fn run_simulation(
     mut next_signal: impl FnMut(usize) -> (f64, Option<HashMap<String, f64>>),
     exec: &ExecutionModel,
     sizer: &Option<InitialRiskPositionSizer>,
+    execution_delay: ExecutionDelay,
 ) -> (Vec<Trade>, Vec<EquityPoint>) {
     let mut cash = match exec {
         ExecutionModel::Simple(cm) => cm.initial_cash,
@@ -971,7 +997,10 @@ fn run_simulation(
             continue;
         }
 
-        let (raw_exposure, meta) = next_signal(i);
+        let (raw_exposure, meta) = match signal_bar_index(i, execution_delay) {
+            Some(si) => next_signal(si),
+            None => (0.0, None),
+        };
         // Apply rich sizer if configured (n1yc.1) using current equity for % calc
         let current_equity = cash + current_exposure * close;
         let desired_exposure = if let Some(s) = sizer {
@@ -1094,6 +1123,7 @@ where
     let exec = &config.execution_model;
     let sizer = &config.position_sizer;
 
+    let delay = config.execution_delay;
     let (trades, equity_points) = run_simulation(
         &timestamps,
         &closes,
@@ -1103,6 +1133,7 @@ where
         },
         exec,
         sizer,
+        delay,
     );
 
     // Build Polars (same as batch)

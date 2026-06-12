@@ -153,6 +153,26 @@ def test_bt_backtest_filter_and_multiplier():
     assert result.trades.height == 1
 
 
+def test_bt_backtest_t1_delays_entry_one_bar():
+    """T+1: signal on bar 1 fills at bar 2 close (102.5)."""
+    result_t0 = (
+        _single_trade_df()
+        .lazy()
+        .bt.backtest(commission_bps=0.0, slippage_bps=0.0, execution_delay="same_bar")
+    )
+    result_t1 = (
+        _single_trade_df()
+        .lazy()
+        .bt.backtest(commission_bps=0.0, slippage_bps=0.0, execution_delay="next_bar")
+    )
+    assert result_t0.trades.height == 1
+    assert result_t1.trades.height == 1
+    t0_entry = result_t0.trades["entry_ts"][0]
+    t1_entry = result_t1.trades["entry_ts"][0]
+    assert t1_entry > t0_entry
+    assert result_t1.trades["entry_price"][0] == pytest.approx(102.5)
+
+
 def test_bt_backtest_multi_symbol_smoke():
     df = pl.DataFrame(
         {

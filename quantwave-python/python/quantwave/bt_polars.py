@@ -22,6 +22,7 @@ def _config_from_kwargs(
     initial_cash: float = 100_000.0,
     commission_bps: float = 5.0,
     slippage_bps: float = 2.0,
+    execution_delay: str = "same_bar",
 ) -> BacktestConfig:
     return BacktestConfig(
         signal_col=signal,
@@ -33,6 +34,7 @@ def _config_from_kwargs(
         initial_cash=initial_cash,
         commission_bps=commission_bps,
         slippage_bps=slippage_bps,
+        execution_delay=execution_delay,
     )
 
 
@@ -54,6 +56,7 @@ class BtLazyNamespace:
         initial_cash: float = 100_000.0,
         commission_bps: float = 5.0,
         slippage_bps: float = 2.0,
+        execution_delay: str = "same_bar",
     ):
         config = _config_from_kwargs(
             signal=signal,
@@ -65,6 +68,7 @@ class BtLazyNamespace:
             initial_cash=initial_cash,
             commission_bps=commission_bps,
             slippage_bps=slippage_bps,
+            execution_delay=execution_delay,
         )
         return BacktestEngine(config).run(self._ldf.collect())
 
@@ -79,6 +83,7 @@ class BtLazyNamespace:
         initial_cash: float = 100_000.0,
         commission_bps: float = 5.0,
         slippage_bps: float = 2.0,
+        execution_delay: str = "same_bar",
     ):
         config = _config_from_kwargs(
             signal=signal,
@@ -90,5 +95,6 @@ class BtLazyNamespace:
             initial_cash=initial_cash,
             commission_bps=commission_bps,
             slippage_bps=slippage_bps,
+            execution_delay=execution_delay,
         )
         return BacktestEngine(config).backtest_with_report(self._ldf.collect())
