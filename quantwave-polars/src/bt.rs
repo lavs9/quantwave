@@ -5,7 +5,7 @@
 use polars::prelude::*;
 use quantwave_backtest::{
     BacktestConfig, BacktestEngine, BacktestError, BacktestReport, BacktestResult, CostModel,
-    ExecutionDelay,
+    ExecutionDelay, StopConfig,
 };
 
 /// Extension trait: `LazyFrame::bt()`.
@@ -29,6 +29,9 @@ pub struct BtOptions {
     pub slippage_bps: f64,
     pub initial_cash: f64,
     pub execution_delay: ExecutionDelay,
+    pub stop_loss_pct: Option<f64>,
+    pub take_profit_pct: Option<f64>,
+    pub trailing_stop_pct: Option<f64>,
 }
 
 impl Default for BtOptions {
@@ -44,6 +47,9 @@ impl Default for BtOptions {
             slippage_bps: 2.0,
             initial_cash: 100_000.0,
             execution_delay: ExecutionDelay::SameBar,
+            stop_loss_pct: None,
+            take_profit_pct: None,
+            trailing_stop_pct: None,
         }
     }
 }
@@ -72,6 +78,11 @@ impl BtOptions {
             entry_filter_col: self.entry_filter_col,
             size_multiplier_col: self.size_multiplier_col,
             execution_delay: self.execution_delay,
+            stop_config: StopConfig {
+                stop_loss_pct: self.stop_loss_pct,
+                take_profit_pct: self.take_profit_pct,
+                trailing_stop_pct: self.trailing_stop_pct,
+            },
             ..Default::default()
         }
     }

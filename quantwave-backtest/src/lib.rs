@@ -23,6 +23,8 @@
 //! - Basic realistic execution: commission + slippage.
 //! - T+1 execution via `BacktestConfig.execution_delay` (`SameBar` default, `NextBar`
 //!   for polars-backtest-style next-bar fills — quantwave-cr6v.8).
+//! - Stop-loss / take-profit / trailing via `BacktestConfig.stop_config` (RaptorBT-inspired
+//!   clean-room — quantwave-cr6v.9).
 //! - Vectorized foundation now; streaming parity (Next<T> from quantwave-core)
 //!   and full rich PA/ML integration in sibling tasks (ug9t, 06sz).
 //! - All new code will eventually carry batch-vs-streaming proptests.
@@ -170,6 +172,28 @@ impl SlippageModel for SquareRootMarketImpactSlippage {
     }
 }
 
+/// Fixed / trailing stop and take-profit knobs (RaptorBT-inspired, clean-room).
+///
+/// Percentages are fractions of entry price for long positions (e.g. `0.02` = 2%).
+/// Trailing stop ratchets with bar highs (close used when OHLC unavailable).
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+pub struct StopConfig {
+    /// Fixed stop-loss below entry (long): exit when close <= entry * (1 - pct).
+    pub stop_loss_pct: Option<f64>,
+    /// Fixed take-profit above entry: exit when close >= entry * (1 + pct).
+    pub take_profit_pct: Option<f64>,
+    /// Trailing stop from peak high: stop = max(prev, high * (1 - pct)); exit on breach.
+    pub trailing_stop_pct: Option<f64>,
+}
+
+impl StopConfig {
+    pub fn has_stops(&self) -> bool {
+        self.stop_loss_pct.is_some()
+            || self.take_profit_pct.is_some()
+            || self.trailing_stop_pct.is_some()
+    }
+}
+
 /// When a signal observed at bar *t* may be executed (clean-room polars-backtest T+1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum ExecutionDelay {
@@ -296,6 +320,8 @@ pub struct BacktestConfig {
     pub execution_model: ExecutionModel,
     /// Signal-to-fill timing (quantwave-cr6v.8). Default `SameBar` preserves T+0 behavior.
     pub execution_delay: ExecutionDelay,
+    /// Optional stop-loss / take-profit / trailing (quantwave-cr6v.9).
+    pub stop_config: StopConfig,
     /// If Some, the engine will apply risk-budgeted sizing using fraction_at_risk / pole_height_atr
     /// from StrategySignal.metadata (or PAEvent converted) on top of raw exposure.
     pub position_sizer: Option<InitialRiskPositionSizer>,
@@ -313,6 +339,7 @@ impl Default for BacktestConfig {
             size_multiplier_col: None,
             execution_model: ExecutionModel::default(),
             execution_delay: ExecutionDelay::default(),
+            stop_config: StopConfig::default(),
             position_sizer: None,
         }
     }
@@ -664,6 +691,7 @@ impl BacktestEngine {
         let sizer = &self.config.position_sizer;
         let metas: Vec<Option<HashMap<String, f64>>> = vec![None; effective_signals.len()];
         let delay = self.config.execution_delay;
+        let stops = &self.config.stop_config;
         let (mut trades, mut equity_points) = run_simulation(
             &timestamps,
             &closes,
@@ -671,6 +699,7 @@ impl BacktestEngine {
             exec,
             sizer,
             delay,
+            stops,
         );
 
         if let Some(sym) = symbol {
@@ -778,6 +807,7 @@ impl BacktestEngine {
             .iter()
             .map(|t| t.exit_ts.map(|d| d.timestamp()))
             .collect();
+        let exit_px: Vec<Option<f64>> = trades.iter().map(|t| t.exit_price).collect();
         let pnl: Vec<f64> = trades.iter().map(|t| t.pnl_net).collect();
 
         let mut cols = vec![
@@ -786,6 +816,7 @@ impl BacktestEngine {
             Column::new("entry_ts".into(), entry_ts),
             Column::new("entry_price".into(), entry_px),
             Column::new("exit_ts".into(), exit_ts),
+            Column::new("exit_price".into(), exit_px),
             Column::new("pnl_net".into(), pnl),
         ];
         if include_symbol {
@@ -970,6 +1001,7 @@ fn run_simulation(
     exec: &ExecutionModel,
     sizer: &Option<InitialRiskPositionSizer>,
     execution_delay: ExecutionDelay,
+    stop_config: &StopConfig,
 ) -> (Vec<Trade>, Vec<EquityPoint>) {
     let mut cash = match exec {
         ExecutionModel::Simple(cm) => cm.initial_cash,
@@ -978,9 +1010,46 @@ fn run_simulation(
     let mut current_exposure: f64 = 0.0;
     let mut entry_price: f64 = 0.0;
     let mut entry_ts: Option<DateTime<Utc>> = None;
+    let mut entry_metadata: Option<HashMap<String, f64>> = None;
+    let mut trailing_stop_level: Option<f64> = None;
+    let mut need_signal_reset = false;
     let mut trade_id: u32 = 0;
     let mut trades: Vec<Trade> = Vec::new();
     let mut equity_points: Vec<EquityPoint> = Vec::with_capacity(closes.len());
+
+    let mut record_long_exit =
+        |cash: &mut f64,
+         tid: u32,
+         exposure: f64,
+         entry_px: f64,
+         ets: DateTime<Utc>,
+         exit_bar: usize,
+         meta: Option<HashMap<String, f64>>| {
+            let close = closes[exit_bar];
+            let is_buy = false;
+            let fill_price = exec.slippage_price(close, exposure, is_buy, None);
+            let notional = fill_price * exposure;
+            let cost = exec.commission_for(exposure, fill_price);
+            let gross_pnl = (fill_price - entry_px) * exposure;
+            let net_pnl = gross_pnl - cost;
+            *cash += notional - cost;
+            trades.push(Trade {
+                trade_id: tid,
+                symbol: None,
+                side: 1,
+                entry_ts: ets,
+                entry_price: entry_px,
+                entry_fill_price: entry_px,
+                exit_ts: Some(timestamps[exit_bar]),
+                exit_price: Some(close),
+                exit_fill_price: Some(fill_price),
+                pnl_gross: gross_pnl,
+                costs: cost,
+                pnl_net: net_pnl,
+                quantity: exposure,
+                entry_metadata: meta,
+            });
+        };
 
     for i in 0..closes.len() {
         let close = closes[i];
@@ -995,6 +1064,56 @@ fn run_simulation(
                 close,
             });
             continue;
+        }
+
+        // Stop / target checks while in position (before signal-driven entry).
+        if current_exposure > 0.0 && stop_config.has_stops() {
+            if let Some(trail_pct) = stop_config.trailing_stop_pct {
+                let high = close;
+                let new_level = high * (1.0 - trail_pct);
+                trailing_stop_level = Some(match trailing_stop_level {
+                    Some(prev) => prev.max(new_level),
+                    None => new_level,
+                });
+            }
+
+            let mut stop_out = false;
+            if let Some(tp) = stop_config.take_profit_pct {
+                if close >= entry_price * (1.0 + tp) {
+                    stop_out = true;
+                }
+            }
+            if !stop_out {
+                let mut effective_stop = f64::NEG_INFINITY;
+                if let Some(sl) = stop_config.stop_loss_pct {
+                    effective_stop = entry_price * (1.0 - sl);
+                }
+                if let Some(level) = trailing_stop_level {
+                    effective_stop = effective_stop.max(level);
+                }
+                if effective_stop > f64::NEG_INFINITY && close <= effective_stop {
+                    stop_out = true;
+                }
+            }
+
+            if stop_out {
+                if let Some(ets) = entry_ts.take() {
+                    record_long_exit(
+                        &mut cash,
+                        trade_id,
+                        current_exposure,
+                        entry_price,
+                        ets,
+                        i,
+                        entry_metadata.clone(),
+                    );
+                    current_exposure = 0.0;
+                    entry_price = 0.0;
+                    trailing_stop_level = None;
+                    entry_metadata = None;
+                    need_signal_reset = true;
+                }
+            }
         }
 
         let (raw_exposure, meta) = match signal_bar_index(i, execution_delay) {
@@ -1014,10 +1133,14 @@ fn run_simulation(
             0.0
         };
 
+        if desired == 0.0 {
+            need_signal_reset = false;
+        }
+
         // Discrete flip semantics generalized to sized exposure (ug9t)
         let currently_in = current_exposure > 0.0;
 
-        if desired > 0.0 && !currently_in {
+        if desired > 0.0 && !currently_in && !need_signal_reset {
             // ENTRY with the (rich-sized if sizer present) desired size from signal
             let is_buy = true;
             let fill_price = exec.slippage_price(close, desired, is_buy, None);
@@ -1027,38 +1150,25 @@ fn run_simulation(
             current_exposure = desired;
             entry_price = fill_price;
             entry_ts = Some(timestamps[i]);
+            entry_metadata = meta.clone();
             trade_id += 1;
+            trailing_stop_level = stop_config.trailing_stop_pct.map(|pct| fill_price * (1.0 - pct));
         } else if desired == 0.0 && currently_in {
-            // EXIT full
-            let is_buy = false;
-            let fill_price = exec.slippage_price(close, current_exposure, is_buy, None);
-            let notional = fill_price * current_exposure;
-            let cost = exec.commission_for(current_exposure, fill_price);
-            let gross_pnl = (fill_price - entry_price) * current_exposure;
-            let net_pnl = gross_pnl - cost;
-            cash += notional - cost;
-
-            if let Some(ets) = entry_ts {
-                trades.push(Trade {
+            if let Some(ets) = entry_ts.take() {
+                record_long_exit(
+                    &mut cash,
                     trade_id,
-                    symbol: None,
-                    side: 1,
-                    entry_ts: ets,
+                    current_exposure,
                     entry_price,
-                    entry_fill_price: entry_price,
-                    exit_ts: Some(timestamps[i]),
-                    exit_price: Some(close),
-                    exit_fill_price: Some(fill_price),
-                    pnl_gross: gross_pnl,
-                    costs: cost,
-                    pnl_net: net_pnl,
-                    quantity: current_exposure,
-                    entry_metadata: meta.clone(),
-                });
+                    ets,
+                    i,
+                    meta.clone(),
+                );
+                current_exposure = 0.0;
+                entry_price = 0.0;
+                trailing_stop_level = None;
+                entry_metadata = None;
             }
-            current_exposure = 0.0;
-            entry_price = 0.0;
-            entry_ts = None;
         }
 
         let equity = cash + current_exposure * close;
@@ -1124,6 +1234,7 @@ where
     let sizer = &config.position_sizer;
 
     let delay = config.execution_delay;
+    let stops = &config.stop_config;
     let (trades, equity_points) = run_simulation(
         &timestamps,
         &closes,
@@ -1134,6 +1245,7 @@ where
         exec,
         sizer,
         delay,
+        stops,
     );
 
     // Build Polars (same as batch)
@@ -1157,6 +1269,7 @@ where
             .iter()
             .map(|t| t.exit_ts.map(|d| d.timestamp()))
             .collect();
+        let exit_px: Vec<Option<f64>> = trades.iter().map(|t| t.exit_price).collect();
         let pnl: Vec<f64> = trades.iter().map(|t| t.pnl_net).collect();
 
         DataFrame::new(vec![
@@ -1165,6 +1278,7 @@ where
             Column::new("entry_ts".into(), entry_ts),
             Column::new("entry_price".into(), entry_px),
             Column::new("exit_ts".into(), exit_ts),
+            Column::new("exit_price".into(), exit_px),
             Column::new("pnl_net".into(), pnl),
         ])?
     };

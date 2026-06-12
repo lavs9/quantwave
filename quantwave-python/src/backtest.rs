@@ -12,7 +12,7 @@ use pyo3_polars::PyDataFrame;
 use std::io::Cursor;
 use quantwave_backtest::{
     BacktestConfig, BacktestEngine, BacktestError, BacktestReport, BacktestResult, CostModel,
-    ExecutionDelay, ExecutionModel, PerformanceMetrics,
+    ExecutionDelay, ExecutionModel, PerformanceMetrics, StopConfig,
 };
 
 fn parse_execution_delay(s: &str) -> PyResult<ExecutionDelay> {
@@ -88,6 +88,9 @@ impl PyBacktestConfig {
         commission_bps = 5.0,
         slippage_bps = 2.0,
         execution_delay = "same_bar",
+        stop_loss_pct = None,
+        take_profit_pct = None,
+        trailing_stop_pct = None,
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -101,6 +104,9 @@ impl PyBacktestConfig {
         commission_bps: f64,
         slippage_bps: f64,
         execution_delay: &str,
+        stop_loss_pct: Option<f64>,
+        take_profit_pct: Option<f64>,
+        trailing_stop_pct: Option<f64>,
     ) -> PyResult<Self> {
         let costs = CostModel {
             commission_bps,
@@ -118,6 +124,11 @@ impl PyBacktestConfig {
                 entry_filter_col,
                 size_multiplier_col,
                 execution_delay: parse_execution_delay(execution_delay)?,
+                stop_config: StopConfig {
+                    stop_loss_pct,
+                    take_profit_pct,
+                    trailing_stop_pct,
+                },
                 ..Default::default()
             },
         })

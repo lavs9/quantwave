@@ -23,6 +23,9 @@ def _config_from_kwargs(
     commission_bps: float = 5.0,
     slippage_bps: float = 2.0,
     execution_delay: str = "same_bar",
+    stop_loss_pct: float | None = None,
+    take_profit_pct: float | None = None,
+    trailing_stop_pct: float | None = None,
 ) -> BacktestConfig:
     return BacktestConfig(
         signal_col=signal,
@@ -35,6 +38,9 @@ def _config_from_kwargs(
         commission_bps=commission_bps,
         slippage_bps=slippage_bps,
         execution_delay=execution_delay,
+        stop_loss_pct=stop_loss_pct,
+        take_profit_pct=take_profit_pct,
+        trailing_stop_pct=trailing_stop_pct,
     )
 
 
@@ -57,6 +63,9 @@ class BtLazyNamespace:
         commission_bps: float = 5.0,
         slippage_bps: float = 2.0,
         execution_delay: str = "same_bar",
+        stop_loss_pct: float | None = None,
+        take_profit_pct: float | None = None,
+        trailing_stop_pct: float | None = None,
     ):
         config = _config_from_kwargs(
             signal=signal,
@@ -69,6 +78,9 @@ class BtLazyNamespace:
             commission_bps=commission_bps,
             slippage_bps=slippage_bps,
             execution_delay=execution_delay,
+            stop_loss_pct=stop_loss_pct,
+            take_profit_pct=take_profit_pct,
+            trailing_stop_pct=trailing_stop_pct,
         )
         return BacktestEngine(config).run(self._ldf.collect())
 
@@ -84,6 +96,9 @@ class BtLazyNamespace:
         commission_bps: float = 5.0,
         slippage_bps: float = 2.0,
         execution_delay: str = "same_bar",
+        stop_loss_pct: float | None = None,
+        take_profit_pct: float | None = None,
+        trailing_stop_pct: float | None = None,
     ):
         config = _config_from_kwargs(
             signal=signal,
@@ -96,5 +111,8 @@ class BtLazyNamespace:
             commission_bps=commission_bps,
             slippage_bps=slippage_bps,
             execution_delay=execution_delay,
+            stop_loss_pct=stop_loss_pct,
+            take_profit_pct=take_profit_pct,
+            trailing_stop_pct=trailing_stop_pct,
         )
         return BacktestEngine(config).backtest_with_report(self._ldf.collect())

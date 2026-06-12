@@ -153,6 +153,58 @@ def test_bt_backtest_filter_and_multiplier():
     assert result.trades.height == 1
 
 
+def test_bt_backtest_stop_loss_exits():
+    """2% SL exits long when close breaches stop (signal may stay 1)."""
+    df = pl.DataFrame(
+        {
+            "timestamp": [1_700_100_000 + i * 3600 for i in range(5)],
+            "close": [100.0, 100.0, 99.0, 97.0, 98.0],
+            "signal": [0.0, 1.0, 1.0, 1.0, 0.0],
+        }
+    )
+    result = df.lazy().bt.backtest(
+        commission_bps=0.0,
+        slippage_bps=0.0,
+        stop_loss_pct=0.02,
+    )
+    assert result.trades.height == 1
+    assert result.trades["exit_price"][0] == pytest.approx(97.0)
+
+
+def test_bt_backtest_take_profit_exits():
+    df = pl.DataFrame(
+        {
+            "timestamp": [1_700_200_000 + i * 3600 for i in range(5)],
+            "close": [100.0, 100.0, 101.0, 103.0, 104.0],
+            "signal": [0.0, 1.0, 1.0, 1.0, 1.0],
+        }
+    )
+    result = df.lazy().bt.backtest(
+        commission_bps=0.0,
+        slippage_bps=0.0,
+        take_profit_pct=0.03,
+    )
+    assert result.trades.height == 1
+    assert result.trades["exit_price"][0] == pytest.approx(103.0)
+
+
+def test_bt_backtest_trailing_stop_ratchets():
+    df = pl.DataFrame(
+        {
+            "timestamp": [1_700_300_000 + i * 3600 for i in range(4)],
+            "close": [100.0, 110.0, 104.0, 100.0],
+            "signal": [0.0, 1.0, 1.0, 0.0],
+        }
+    )
+    result = df.lazy().bt.backtest(
+        commission_bps=0.0,
+        slippage_bps=0.0,
+        trailing_stop_pct=0.05,
+    )
+    assert result.trades.height == 1
+    assert result.trades["exit_price"][0] == pytest.approx(104.0)
+
+
 def test_bt_backtest_t1_delays_entry_one_bar():
     """T+1: signal on bar 1 fills at bar 2 close (102.5)."""
     result_t0 = (
