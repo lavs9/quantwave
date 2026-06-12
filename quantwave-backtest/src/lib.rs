@@ -7,7 +7,7 @@
 //! ## Batch vs Streaming Parity (quantwave-ug9t)
 //! - `BacktestEngine::run` / `backtest_simple_bool_signal`: pure vectorized batch path
 //!   (pre-computed signals in DF column; fast for research sweeps). Signal f64 value
-//!   now interpreted as desired exposure (0=flat, >0=long units) enabling sizing.
+//!   now interpreted as signed exposure (0=flat, >0=long, <0=short units).
 //! - `run_streaming_simulation`: streaming path driven by any `Next<&Bar, Output=StrategySignal>`
 //!   generator (closer to live trading loop, supports rich metadata from features/PA/regimes).
 //! - Shared internal `run_simulation` core guarantees identical execution semantics
@@ -300,7 +300,7 @@ pub struct BacktestConfig {
     pub timestamp_col: String,
     pub symbol_col: Option<String>,
     pub close_col: String,
-    /// Signal column: f64 or bool/int. >0 means desired long exposure (units for sizing).
+    /// Signal column: f64 or bool/int. >0 long, <0 short, 0 flat (units for sizing).
     /// For rich PA + features/regime in batch DF path: pre-compute an 'exposure' col
     /// (e.g. via Polars exprs on ta.features + PA struct fields) and/or use the
     /// streaming path (run_streaming_simulation + Next impl emitting StrategySignal
@@ -418,8 +418,7 @@ pub struct Bar {
 /// metadata (pole height sizing, regime, features) into Trade records.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StrategySignal {
-    /// Desired long exposure in units (>0 opens/sets size; 0 = flat). Variable sizing
-    /// supported for pole-height etc. (generalized from binary 0/1 pre-ug9t).
+    /// Signed exposure in units (>0 long, <0 short, 0 flat). Variable sizing supported.
     pub exposure: f64,
     /// Optional rich metadata for the decision (e.g. "pole_height" => 2.34,
     /// "regime" => 0.0 for Steady). Used by parity test and future rich PA consumers.
@@ -876,7 +875,11 @@ pub fn apply_signal_modifiers(
     if let Some(m) = size_multiplier {
         exposure *= m;
     }
-    if exposure > 0.0 { exposure } else { 0.0 }
+    if exposure.is_finite() && exposure != 0.0 {
+        exposure
+    } else {
+        0.0
+    }
 }
 
 fn extract_bool_column(col: Column) -> Result<Vec<bool>, BacktestError> {
@@ -992,8 +995,8 @@ pub fn backtest_simple_bool_signal(
 /// guarantee parity on equity, trades, and stats for the same signal sequence.
 /// Generalized for variable `exposure` (sizing) + optional per-bar metadata.
 ///
-/// NOTE: long-only MVP; discrete entry (when crossing 0 -> exposure) / exit
-/// (exposure -> 0). No intra-trade rebalancing if exposure changes while long.
+/// Signed exposure: `>0` long units, `<0` short units, `0` flat. Discrete entry/exit
+/// and long↔short flips (close then open same bar). No intra-trade resizing.
 fn run_simulation(
     timestamps: &[DateTime<Utc>],
     closes: &[f64],
@@ -1017,26 +1020,36 @@ fn run_simulation(
     let mut trades: Vec<Trade> = Vec::new();
     let mut equity_points: Vec<EquityPoint> = Vec::with_capacity(closes.len());
 
-    let mut record_long_exit =
+    let mut record_position_exit =
         |cash: &mut f64,
          tid: u32,
-         exposure: f64,
+         side: i8,
+         qty: f64,
          entry_px: f64,
          ets: DateTime<Utc>,
          exit_bar: usize,
          meta: Option<HashMap<String, f64>>| {
             let close = closes[exit_bar];
-            let is_buy = false;
-            let fill_price = exec.slippage_price(close, exposure, is_buy, None);
-            let notional = fill_price * exposure;
-            let cost = exec.commission_for(exposure, fill_price);
-            let gross_pnl = (fill_price - entry_px) * exposure;
+            // Long exit = sell (is_buy false); short cover = buy (is_buy true).
+            let is_buy = side == -1;
+            let fill_price = exec.slippage_price(close, qty, is_buy, None);
+            let notional = fill_price * qty;
+            let cost = exec.commission_for(qty, fill_price);
+            let gross_pnl = if side == 1 {
+                (fill_price - entry_px) * qty
+            } else {
+                (entry_px - fill_price) * qty
+            };
             let net_pnl = gross_pnl - cost;
-            *cash += notional - cost;
+            if side == 1 {
+                *cash += notional - cost;
+            } else {
+                *cash -= notional + cost;
+            }
             trades.push(Trade {
                 trade_id: tid,
                 symbol: None,
-                side: 1,
+                side,
                 entry_ts: ets,
                 entry_price: entry_px,
                 entry_fill_price: entry_px,
@@ -1046,10 +1059,47 @@ fn run_simulation(
                 pnl_gross: gross_pnl,
                 costs: cost,
                 pnl_net: net_pnl,
-                quantity: exposure,
+                quantity: qty,
                 entry_metadata: meta,
             });
         };
+
+    let open_position = |cash: &mut f64,
+                             tid: u32,
+                             desired: f64,
+                             fill_bar: usize,
+                             meta: Option<HashMap<String, f64>>|
+     -> (u32, f64, f64, Option<DateTime<Utc>>, Option<HashMap<String, f64>>, Option<f64>) {
+        let qty = desired.abs();
+        let is_long = desired > 0.0;
+        let is_buy = is_long;
+        let close = closes[fill_bar];
+        let fill_price = exec.slippage_price(close, qty, is_buy, None);
+        let notional = fill_price * qty;
+        let cost = exec.commission_for(qty, fill_price);
+        if is_long {
+            *cash -= notional + cost;
+        } else {
+            *cash += notional - cost;
+        }
+        let new_tid = tid + 1;
+        let exposure = if is_long { qty } else { -qty };
+        let trail = stop_config.trailing_stop_pct.map(|pct| {
+            if is_long {
+                fill_price * (1.0 - pct)
+            } else {
+                fill_price * (1.0 + pct)
+            }
+        });
+        (
+            new_tid,
+            exposure,
+            fill_price,
+            Some(timestamps[fill_bar]),
+            meta,
+            trail,
+        )
+    };
 
     for i in 0..closes.len() {
         let close = closes[i];
@@ -1067,41 +1117,73 @@ fn run_simulation(
         }
 
         // Stop / target checks while in position (before signal-driven entry).
-        if current_exposure > 0.0 && stop_config.has_stops() {
+        if current_exposure != 0.0 && stop_config.has_stops() {
+            let is_long = current_exposure > 0.0;
+            let qty = current_exposure.abs();
+
             if let Some(trail_pct) = stop_config.trailing_stop_pct {
-                let high = close;
-                let new_level = high * (1.0 - trail_pct);
-                trailing_stop_level = Some(match trailing_stop_level {
-                    Some(prev) => prev.max(new_level),
-                    None => new_level,
-                });
+                if is_long {
+                    let new_level = close * (1.0 - trail_pct);
+                    trailing_stop_level = Some(match trailing_stop_level {
+                        Some(prev) => prev.max(new_level),
+                        None => new_level,
+                    });
+                } else {
+                    let new_level = close * (1.0 + trail_pct);
+                    trailing_stop_level = Some(match trailing_stop_level {
+                        Some(prev) => prev.min(new_level),
+                        None => new_level,
+                    });
+                }
             }
 
             let mut stop_out = false;
-            if let Some(tp) = stop_config.take_profit_pct {
-                if close >= entry_price * (1.0 + tp) {
-                    stop_out = true;
+            if is_long {
+                if let Some(tp) = stop_config.take_profit_pct {
+                    if close >= entry_price * (1.0 + tp) {
+                        stop_out = true;
+                    }
                 }
-            }
-            if !stop_out {
-                let mut effective_stop = f64::NEG_INFINITY;
-                if let Some(sl) = stop_config.stop_loss_pct {
-                    effective_stop = entry_price * (1.0 - sl);
+                if !stop_out {
+                    let mut effective_stop = f64::NEG_INFINITY;
+                    if let Some(sl) = stop_config.stop_loss_pct {
+                        effective_stop = entry_price * (1.0 - sl);
+                    }
+                    if let Some(level) = trailing_stop_level {
+                        effective_stop = effective_stop.max(level);
+                    }
+                    if effective_stop > f64::NEG_INFINITY && close <= effective_stop {
+                        stop_out = true;
+                    }
                 }
-                if let Some(level) = trailing_stop_level {
-                    effective_stop = effective_stop.max(level);
+            } else {
+                if let Some(tp) = stop_config.take_profit_pct {
+                    if close <= entry_price * (1.0 - tp) {
+                        stop_out = true;
+                    }
                 }
-                if effective_stop > f64::NEG_INFINITY && close <= effective_stop {
-                    stop_out = true;
+                if !stop_out {
+                    let mut effective_stop = f64::INFINITY;
+                    if let Some(sl) = stop_config.stop_loss_pct {
+                        effective_stop = entry_price * (1.0 + sl);
+                    }
+                    if let Some(level) = trailing_stop_level {
+                        effective_stop = effective_stop.min(level);
+                    }
+                    if effective_stop < f64::INFINITY && close >= effective_stop {
+                        stop_out = true;
+                    }
                 }
             }
 
             if stop_out {
                 if let Some(ets) = entry_ts.take() {
-                    record_long_exit(
+                    let side = if is_long { 1 } else { -1 };
+                    record_position_exit(
                         &mut cash,
                         trade_id,
-                        current_exposure,
+                        side,
+                        qty,
                         entry_price,
                         ets,
                         i,
@@ -1127,7 +1209,7 @@ fn run_simulation(
         } else {
             raw_exposure
         };
-        let desired = if desired_exposure > 0.0 {
+        let desired = if desired_exposure.is_finite() && desired_exposure != 0.0 {
             desired_exposure
         } else {
             0.0
@@ -1137,28 +1219,16 @@ fn run_simulation(
             need_signal_reset = false;
         }
 
-        // Discrete flip semantics generalized to sized exposure (ug9t)
-        let currently_in = current_exposure > 0.0;
+        let currently_in = current_exposure != 0.0;
 
-        if desired > 0.0 && !currently_in && !need_signal_reset {
-            // ENTRY with the (rich-sized if sizer present) desired size from signal
-            let is_buy = true;
-            let fill_price = exec.slippage_price(close, desired, is_buy, None);
-            let notional = fill_price * desired;
-            let cost = exec.commission_for(desired, fill_price);
-            cash -= notional + cost;
-            current_exposure = desired;
-            entry_price = fill_price;
-            entry_ts = Some(timestamps[i]);
-            entry_metadata = meta.clone();
-            trade_id += 1;
-            trailing_stop_level = stop_config.trailing_stop_pct.map(|pct| fill_price * (1.0 - pct));
-        } else if desired == 0.0 && currently_in {
+        if desired == 0.0 && currently_in {
             if let Some(ets) = entry_ts.take() {
-                record_long_exit(
+                let side = if current_exposure > 0.0 { 1 } else { -1 };
+                record_position_exit(
                     &mut cash,
                     trade_id,
-                    current_exposure,
+                    side,
+                    current_exposure.abs(),
                     entry_price,
                     ets,
                     i,
@@ -1168,6 +1238,42 @@ fn run_simulation(
                 entry_price = 0.0;
                 trailing_stop_level = None;
                 entry_metadata = None;
+            }
+        } else if desired != 0.0 && !need_signal_reset {
+            let want_long = desired > 0.0;
+            let in_long = current_exposure > 0.0;
+            let in_short = current_exposure < 0.0;
+            let flip = (want_long && in_short) || (!want_long && in_long);
+
+            if flip {
+                if let Some(ets) = entry_ts.take() {
+                    let side = if in_long { 1 } else { -1 };
+                    record_position_exit(
+                        &mut cash,
+                        trade_id,
+                        side,
+                        current_exposure.abs(),
+                        entry_price,
+                        ets,
+                        i,
+                        entry_metadata.clone(),
+                    );
+                    current_exposure = 0.0;
+                    entry_price = 0.0;
+                    trailing_stop_level = None;
+                    entry_metadata = None;
+                }
+            }
+
+            if current_exposure == 0.0 {
+                let (new_tid, exp, ep, ets, em, trail) =
+                    open_position(&mut cash, trade_id, desired, i, meta.clone());
+                trade_id = new_tid;
+                current_exposure = exp;
+                entry_price = ep;
+                entry_ts = ets;
+                entry_metadata = em;
+                trailing_stop_level = trail;
             }
         }
 
@@ -1183,14 +1289,20 @@ fn run_simulation(
     }
 
     // Close any open position at last bar (terminal MTM, no extra cost)
-    if current_exposure > 0.0 {
+    if current_exposure != 0.0 {
         let last_close = *closes.last().unwrap();
-        let gross = (last_close - entry_price) * current_exposure;
+        let qty = current_exposure.abs();
+        let side = if current_exposure > 0.0 { 1 } else { -1 };
+        let gross = if side == 1 {
+            (last_close - entry_price) * qty
+        } else {
+            (entry_price - last_close) * qty
+        };
         if let Some(ets) = entry_ts {
             trades.push(Trade {
                 trade_id,
                 symbol: None,
-                side: 1,
+                side,
                 entry_ts: ets,
                 entry_price,
                 entry_fill_price: entry_price,
@@ -1200,8 +1312,8 @@ fn run_simulation(
                 pnl_gross: gross,
                 costs: 0.0,
                 pnl_net: gross,
-                quantity: current_exposure,
-                entry_metadata: None, // terminal close has no new signal meta
+                quantity: qty,
+                entry_metadata: None,
             });
         }
     }

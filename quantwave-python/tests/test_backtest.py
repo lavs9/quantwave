@@ -205,6 +205,33 @@ def test_bt_backtest_trailing_stop_ratchets():
     assert result.trades["exit_price"][0] == pytest.approx(104.0)
 
 
+def test_bt_backtest_short_pnl_on_decline():
+    df = pl.DataFrame(
+        {
+            "timestamp": [1_800_100_000 + i for i in range(5)],
+            "close": [100.0, 100.0, 98.0, 95.0, 96.0],
+            "signal": [0.0, -1.0, -1.0, 0.0, 0.0],
+        }
+    )
+    result = df.lazy().bt.backtest(commission_bps=0.0, slippage_bps=0.0)
+    assert result.trades.height == 1
+    assert result.trades["side"][0] == -1
+    assert result.trades["pnl_net"][0] == pytest.approx(5.0)
+
+
+def test_bt_backtest_long_short_flip():
+    df = pl.DataFrame(
+        {
+            "timestamp": [1_800_300_000 + i for i in range(5)],
+            "close": [100.0, 100.0, 102.0, 101.0, 99.0],
+            "signal": [0.0, 1.0, 1.0, -1.0, 0.0],
+        }
+    )
+    result = df.lazy().bt.backtest(commission_bps=0.0, slippage_bps=0.0)
+    assert result.trades.height == 2
+    assert result.trades["side"].to_list() == [1, -1]
+
+
 def test_bt_backtest_t1_delays_entry_one_bar():
     """T+1: signal on bar 1 fills at bar 2 close (102.5)."""
     result_t0 = (
