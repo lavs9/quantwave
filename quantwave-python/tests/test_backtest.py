@@ -94,6 +94,7 @@ def test_bt_namespace_exists():
     assert hasattr(lf, "bt")
     assert hasattr(lf.bt, "backtest")
     assert hasattr(lf.bt, "backtest_with_report")
+    assert hasattr(lf.bt, "sweep")
 
 
 def test_bt_backtest_lazyframe():
@@ -312,3 +313,72 @@ def test_bt_backtest_multi_symbol_smoke():
     assert result.trades.height == 2
     assert "symbol" in result.trades.columns
     assert result.stats()["num_symbols"] == pytest.approx(2.0)
+
+
+# --- quantwave-cr6v.12: param sweep helper ---
+
+
+def _sweep_base_df():
+    return pl.DataFrame(
+        {
+            "timestamp": [1_700_000_000 + i * 3600 for i in range(6)],
+            "close": [100.0, 101.0, 102.5, 103.0, 102.0, 101.0],
+            "signal_early": [0.0, 1.0, 1.0, 1.0, 0.0, 0.0],
+            "signal_late": [0.0, 0.0, 1.0, 1.0, 0.0, 0.0],
+            "signal_flat": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        }
+    )
+
+
+def test_bt_sweep_returns_param_metrics_df():
+    sweep_df = _sweep_base_df().lazy().bt.sweep(
+        param_name="threshold",
+        param_values=[0.5, 1.0, 2.0],
+        signal_cols=["signal_early", "signal_late", "signal_flat"],
+        commission_bps=0.0,
+        slippage_bps=0.0,
+    )
+
+    assert sweep_df.height == 3
+    assert "threshold" in sweep_df.columns
+    assert "num_trades" in sweep_df.columns
+    assert "final_equity" in sweep_df.columns
+    assert sweep_df["threshold"].to_list() == [0.5, 1.0, 2.0]
+    assert sweep_df["num_trades"].to_list() == pytest.approx([1.0, 1.0, 0.0])
+
+
+def test_bt_sweep_variants_differ_in_final_equity():
+    sweep_df = _sweep_base_df().lazy().bt.sweep(
+        param_name="entry_bar",
+        param_values=[1.0, 2.0],
+        signal_cols=["signal_early", "signal_late"],
+        commission_bps=0.0,
+        slippage_bps=0.0,
+    )
+
+    equities = sweep_df["final_equity"].to_list()
+    assert equities[0] != pytest.approx(equities[1])
+
+
+def test_bt_sweep_metrics_columns_complete():
+    sweep_df = _sweep_base_df().lazy().bt.sweep(
+        param_name="threshold",
+        param_values=[0.5],
+        signal_cols=["signal_early"],
+        commission_bps=0.0,
+        slippage_bps=0.0,
+    )
+
+    expected_metrics = {
+        "num_trades",
+        "win_rate",
+        "profit_factor",
+        "max_drawdown_pct",
+        "cagr",
+        "sharpe_ratio",
+        "sortino_ratio",
+        "total_return",
+        "final_equity",
+        "avg_trade_pnl",
+    }
+    assert expected_metrics.issubset(set(sweep_df.columns))

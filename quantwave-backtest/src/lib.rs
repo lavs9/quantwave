@@ -26,6 +26,7 @@
 //! - Stop-loss / take-profit / trailing via `BacktestConfig.stop_config` (RaptorBT-inspired
 //!   clean-room — quantwave-cr6v.9).
 //! - Struct `signal_col` auto-parse with pole_height sizing (quantwave-cr6v.11).
+//! - Param sweep helper `run_param_sweep` / `SweepVariant` (quantwave-cr6v.12).
 //! - Vectorized foundation now; streaming parity (Next<T> from quantwave-core)
 //!   and full rich PA/ML integration in sibling tasks (ug9t, 06sz).
 //! - All new code will eventually carry batch-vs-streaming proptests.
@@ -69,10 +70,12 @@
 //! indicator work.
 
 mod metrics;
+mod sweep;
 
 use chrono::{DateTime, Utc};
 use polars::prelude::*;
 pub use metrics::{BacktestReport, PerformanceMetrics};
+pub use sweep::{run_param_sweep, single_param_variants, SweepVariant};
 #[allow(unused_imports)]
 use quantwave_core::traits::Next; // Re-exported for future streaming parity work (used in hybrid mode later per quantwave-ug9t)
 use serde::{Deserialize, Serialize};

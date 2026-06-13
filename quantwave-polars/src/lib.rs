@@ -7,6 +7,7 @@ pub mod features; // implements .ta.features.hurst / cyber_cycle / griffiths_dom
 
 pub mod prelude {
     pub use crate::bt::{BtNamespace, BtOptions, QuantWaveBtExt};
+    pub use quantwave_backtest::{run_param_sweep, single_param_variants, SweepVariant};
     pub use crate::{QuantWaveExt, QuantWaveNamespace};
     pub use crate::features::TaFeaturesNamespace; // .ta().features() sub-namespace (locked minimal surface for 4ps cross-epic deliverable)
 }
@@ -4509,3 +4510,4 @@ impl QuantWaveExt for LazyFrame {
 }
 
 pub use bt::{BtNamespace, BtOptions, QuantWaveBtExt};
+pub use quantwave_backtest::{run_param_sweep, single_param_variants, SweepVariant};

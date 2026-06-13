@@ -40,6 +40,46 @@ pub struct PerformanceMetrics {
 }
 
 impl PerformanceMetrics {
+    /// Column names for sweep / tabular export (stable order).
+    pub const fn column_names() -> &'static [&'static str] {
+        &[
+            "num_trades",
+            "win_rate",
+            "profit_factor",
+            "max_drawdown_pct",
+            "cagr",
+            "sharpe_ratio",
+            "sortino_ratio",
+            "total_return",
+            "final_equity",
+            "avg_trade_pnl",
+        ]
+    }
+
+    /// Metric values in [`Self::column_names`] order.
+    pub fn values(&self) -> [f64; 10] {
+        [
+            self.num_trades,
+            self.win_rate,
+            self.profit_factor,
+            self.max_drawdown_pct,
+            self.cagr,
+            self.sharpe_ratio,
+            self.sortino_ratio,
+            self.total_return,
+            self.final_equity,
+            self.avg_trade_pnl,
+        ]
+    }
+
+    /// Iterate (column name, value) pairs for sweep row assembly.
+    pub fn row_iter(&self) -> impl Iterator<Item = (&'static str, f64)> {
+        Self::column_names()
+            .iter()
+            .copied()
+            .zip(self.values())
+    }
+
     /// Compute metrics from a [`BacktestResult`].
     ///
     /// Uses `stats` for initial/final equity when present; falls back to the

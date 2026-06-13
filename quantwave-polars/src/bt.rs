@@ -4,8 +4,8 @@
 
 use polars::prelude::*;
 use quantwave_backtest::{
-    BacktestConfig, BacktestEngine, BacktestError, BacktestReport, BacktestResult, CostModel,
-    ExecutionDelay, StopConfig,
+    run_param_sweep, single_param_variants, BacktestConfig, BacktestEngine, BacktestError,
+    BacktestReport, BacktestResult, CostModel, ExecutionDelay, StopConfig, SweepVariant,
 };
 
 /// Extension trait: `LazyFrame::bt()`.
@@ -97,6 +97,27 @@ impl<'a> BtNamespace<'a> {
     /// Run backtest and attach [`BacktestReport`] metrics.
     pub fn backtest_with_report(self, options: BtOptions) -> Result<BacktestReport, BacktestError> {
         BacktestEngine::new(options.into_config()).backtest_with_report(self.0.clone())
+    }
+
+    /// Parameter sweep: one backtest per variant → param × metrics DataFrame (cr6v.12).
+    pub fn sweep(
+        self,
+        variants: &[SweepVariant],
+        options: BtOptions,
+    ) -> Result<DataFrame, BacktestError> {
+        run_param_sweep(self.0.clone(), variants, &options.into_config())
+    }
+
+    /// Convenience: single-param grid via parallel `param_values` and `signal_cols` slices.
+    pub fn sweep_single_param(
+        self,
+        param_name: &str,
+        param_values: &[f64],
+        signal_cols: &[&str],
+        options: BtOptions,
+    ) -> Result<DataFrame, BacktestError> {
+        let variants = single_param_variants(param_name, param_values, signal_cols)?;
+        self.sweep(&variants, options)
     }
 }
 
