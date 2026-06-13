@@ -27,6 +27,7 @@
 //!   clean-room — quantwave-cr6v.9).
 //! - Struct `signal_col` auto-parse with pole_height sizing (quantwave-cr6v.11).
 //! - Param sweep helper `run_param_sweep` / `SweepVariant` (quantwave-cr6v.12).
+//! - Criterion benches vs naive row-loop (`benches/backtest_vs_naive.rs`, cr6v.13).
 //! - Vectorized foundation now; streaming parity (Next<T> from quantwave-core)
 //!   and full rich PA/ML integration in sibling tasks (ug9t, 06sz).
 //! - All new code will eventually carry batch-vs-streaming proptests.

@@ -23,3 +23,8 @@ proptest = { workspace = true }
 approx = { workspace = true }
 rand = { workspace = true }
 serde_json = { workspace = true }
+criterion = { workspace = true }
+
+[[bench]]
+name = "backtest_vs_naive"
+harness = false

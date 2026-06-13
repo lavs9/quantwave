@@ -9,6 +9,9 @@ These pages are landing pages for the notebooks. For the best experience (full i
 - **[Strategy Backtesting](strategy_backtest.md)**  
   Steel-thread example using indicators inside the vectorized backtester with rich signal metadata.
 
+- **[Backtest Engine Benchmarks](backtest_benchmark.md)**  
+  Criterion harness comparing `quantwave-backtest` vs naive row-loop baselines (10K–1M rows, multi-symbol).
+
 - **[Multi-Indicator Analysis](multi_indicator_analysis.md)**  
   Clean chaining of multiple indicators (SMA, EMA, Momentum, SuperTrend, etc.) in one lazy Polars expression.
 
