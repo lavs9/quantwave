@@ -4,8 +4,9 @@
 
 use polars::prelude::*;
 use quantwave_backtest::{
-    run_param_sweep, single_param_variants, BacktestConfig, BacktestEngine, BacktestError,
-    BacktestReport, BacktestResult, CostModel, ExecutionDelay, StopConfig, SweepVariant,
+    run_cross_sectional_backtest, run_param_sweep, run_walk_forward, single_param_variants,
+    BacktestConfig, BacktestEngine, BacktestError, BacktestReport, BacktestResult, CostModel,
+    CrossSectionalConfig, ExecutionDelay, StopConfig, SweepVariant, WalkForwardConfig,
 };
 
 /// Extension trait: `LazyFrame::bt()`.
@@ -118,6 +119,24 @@ impl<'a> BtNamespace<'a> {
     ) -> Result<DataFrame, BacktestError> {
         let variants = single_param_variants(param_name, param_values, signal_cols)?;
         self.sweep(&variants, options)
+    }
+
+    /// Walk-forward OOS validation → fold × metrics DataFrame (cr6v.14).
+    pub fn walk_forward(
+        self,
+        wf: WalkForwardConfig,
+        options: BtOptions,
+    ) -> Result<DataFrame, BacktestError> {
+        run_walk_forward(self.0.clone(), &options.into_config(), &wf)
+    }
+
+    /// Cross-sectional factor rank → long/short backtest report (cr6v.15).
+    pub fn cross_sectional_backtest(
+        self,
+        cs: CrossSectionalConfig,
+        options: BtOptions,
+    ) -> Result<BacktestReport, BacktestError> {
+        run_cross_sectional_backtest(self.0.clone(), &cs, options.into_config())
     }
 }
 

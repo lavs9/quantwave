@@ -28,6 +28,9 @@
 //! - Struct `signal_col` auto-parse with pole_height sizing (quantwave-cr6v.11).
 //! - Param sweep helper `run_param_sweep` / `SweepVariant` (quantwave-cr6v.12).
 //! - Criterion benches vs naive row-loop (`benches/backtest_vs_naive.rs`, cr6v.13).
+//! - Walk-forward OOS + trade bootstrap Monte Carlo (cr6v.14).
+//! - Cross-sectional factor panel rank/long-short (sigc-inspired, cr6v.15).
+//! - `LiveBridge` trait for future Nautilus adapter (LGPL — cr6v.16).
 //! - Vectorized foundation now; streaming parity (Next<T> from quantwave-core)
 //!   and full rich PA/ML integration in sibling tasks (ug9t, 06sz).
 //! - All new code will eventually carry batch-vs-streaming proptests.
@@ -70,13 +73,25 @@
 //! (#[cfg(test)]). Respects quantwave-core/tests/ rule for gold-standard
 //! indicator work.
 
+mod cross_sectional;
+mod live_bridge;
 mod metrics;
+mod monte_carlo;
 mod sweep;
+mod walk_forward;
 
 use chrono::{DateTime, Utc};
 use polars::prelude::*;
+pub use cross_sectional::{
+    assign_long_short_exposure, run_cross_sectional_backtest, CrossSectionalConfig,
+};
+pub use live_bridge::{
+    LiveBridge, LiveBridgeError, LiveSignalEvent, RecordingLiveBridge,
+};
 pub use metrics::{BacktestReport, PerformanceMetrics};
+pub use monte_carlo::{monte_carlo_trade_bootstrap, MonteCarloConfig, MonteCarloSummary};
 pub use sweep::{run_param_sweep, single_param_variants, SweepVariant};
+pub use walk_forward::{run_walk_forward, WalkForwardConfig};
 #[allow(unused_imports)]
 use quantwave_core::traits::Next; // Re-exported for future streaming parity work (used in hybrid mode later per quantwave-ug9t)
 use serde::{Deserialize, Serialize};

@@ -17,6 +17,7 @@ polars = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true }
 chrono = { workspace = true }
+rand = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

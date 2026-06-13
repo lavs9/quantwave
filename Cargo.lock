@@ -2022,6 +2022,7 @@ dependencies = [
  "polars-error",
  "polars-schema",
  "polars-utils",
+ "rand 0.8.6",
  "rayon",
  "regex",
  "regex-syntax",

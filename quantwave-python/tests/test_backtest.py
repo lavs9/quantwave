@@ -95,6 +95,8 @@ def test_bt_namespace_exists():
     assert hasattr(lf.bt, "backtest")
     assert hasattr(lf.bt, "backtest_with_report")
     assert hasattr(lf.bt, "sweep")
+    assert hasattr(lf.bt, "walk_forward")
+    assert hasattr(lf.bt, "cross_sectional_backtest")
 
 
 def test_bt_backtest_lazyframe():
@@ -382,3 +384,47 @@ def test_bt_sweep_metrics_columns_complete():
         "avg_trade_pnl",
     }
     assert expected_metrics.issubset(set(sweep_df.columns))
+
+
+# --- quantwave-cr6v.14–16: P2 walk-forward, cross-sectional, live bridge ---
+
+
+def test_bt_walk_forward_returns_folds():
+    n = 80
+    df = pl.DataFrame(
+        {
+            "timestamp": [1_700_000_000 + i * 3600 for i in range(n)],
+            "close": [100.0 + i * 0.1 for i in range(n)],
+            "signal": [1.0 if (i // 15) % 2 == 0 else 0.0 for i in range(n)],
+        }
+    ).lazy()
+    wf_df = df.bt.walk_forward(
+        train_bars=20,
+        test_bars=15,
+        commission_bps=0.0,
+        slippage_bps=0.0,
+    )
+    assert wf_df.height >= 2
+    assert "fold_id" in wf_df.columns
+    assert "num_trades" in wf_df.columns
+
+
+def test_bt_cross_sectional_panel_smoke():
+    df = pl.DataFrame(
+        {
+            "timestamp": [1, 1, 1, 2, 2, 2],
+            "symbol": ["A", "B", "C", "A", "B", "C"],
+            "close": [10.0, 10.0, 10.0, 11.0, 11.0, 11.0],
+            "factor": [3.0, 2.0, 1.0, 3.0, 2.0, 1.0],
+        }
+    )
+    report = df.lazy().bt.cross_sectional_backtest(
+        factor_col="factor",
+        top_frac=0.34,
+        bottom_frac=0.34,
+        commission_bps=0.0,
+        slippage_bps=0.0,
+    )
+    assert report.metrics()["final_equity"] > 0
+
+
