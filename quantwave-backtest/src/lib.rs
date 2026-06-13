@@ -25,6 +25,7 @@
 //!   for polars-backtest-style next-bar fills — quantwave-cr6v.8).
 //! - Stop-loss / take-profit / trailing via `BacktestConfig.stop_config` (RaptorBT-inspired
 //!   clean-room — quantwave-cr6v.9).
+//! - Struct `signal_col` auto-parse with pole_height sizing (quantwave-cr6v.11).
 //! - Vectorized foundation now; streaming parity (Next<T> from quantwave-core)
 //!   and full rich PA/ML integration in sibling tasks (ug9t, 06sz).
 //! - All new code will eventually carry batch-vs-streaming proptests.
@@ -304,9 +305,8 @@ pub struct BacktestConfig {
     /// For rich PA + features/regime in batch DF path: pre-compute an 'exposure' col
     /// (e.g. via Polars exprs on ta.features + PA struct fields) and/or use the
     /// streaming path (run_streaming_simulation + Next impl emitting StrategySignal
-    /// with metadata for pole_height etc). Full native Struct signal_col support
-    /// (auto meta extract + filter/size cols) is the 06sz extension point (see
-    /// entry_filter_col etc below; implemented for streaming today).
+    /// with metadata for pole_height etc). Struct `signal_col` auto-parses
+    /// `{exposure, long, pole_height, …}` fields (quantwave-cr6v.11).
     pub signal_col: String,
     /// Optional boolean col: dynamic entry filter (AND with signal). For regime
     /// labels/probs or feature thresholds (ta.features outputs). Batch path uses
@@ -445,6 +445,105 @@ pub struct PAEvent {
     pub pole_height: Option<f64>,
     /// Strength/conviction score.
     pub strength: Option<f64>,
+}
+
+impl PAEvent {
+    /// Convert to [`StrategySignal`] (streaming / struct parity helper).
+    pub fn to_strategy_signal(&self) -> StrategySignal {
+        let mut meta = HashMap::new();
+        if let Some(p) = self.pole_height {
+            meta.insert("pole_height".to_string(), p);
+        }
+        if let Some(s) = self.strength {
+            meta.insert("strength".to_string(), s);
+        }
+        let exposure = if self.long {
+            self.pole_height
+                .map(pole_height_to_exposure)
+                .unwrap_or(1.0)
+        } else {
+            0.0
+        };
+        StrategySignal {
+            exposure,
+            metadata: if meta.is_empty() { None } else { Some(meta) },
+        }
+    }
+}
+
+/// Map PA pole height to exposure units (matches ug9t streaming parity test).
+pub fn pole_height_to_exposure(pole_height: f64) -> f64 {
+    (pole_height / 4.0).clamp(0.4, 2.2)
+}
+
+/// Parse one Polars Struct signal row into exposure + metadata (quantwave-cr6v.11).
+///
+/// Supported fields (clean-room 06sz contract):
+/// - `exposure` (f64): signed units, preferred when present
+/// - `long` / `short` (bool): direction when exposure absent
+/// - `pole_height`, `pole_height_atr`, `pole_length_atr` (f64): sizing + metadata
+/// - `fraction_at_risk`, `strength`, and other numeric fields → metadata
+pub fn parse_struct_signal_row(
+    ca: &StructChunked,
+    i: usize,
+) -> Result<(f64, Option<HashMap<String, f64>>), BacktestError> {
+    let mut meta = HashMap::new();
+
+    let exposure_direct = struct_field_f64(ca, "exposure", i);
+    let long = struct_field_bool(ca, "long", i);
+    let short = struct_field_bool(ca, "short", i);
+
+    if let DataType::Struct(fields) = ca.dtype() {
+        for field in fields {
+            let key = field.name.as_str();
+            if matches!(key, "exposure" | "long" | "short") {
+                continue;
+            }
+            if let Some(v) = struct_field_f64(ca, key, i) {
+                if v.is_finite() {
+                    meta.insert(key.to_string(), v);
+                }
+            }
+        }
+    }
+
+    let pole = ["pole_height", "pole_height_atr", "pole_length_atr"]
+        .iter()
+        .find_map(|name| meta.get(*name).copied())
+        .filter(|v| *v > 0.0);
+
+    let exposure = if let Some(e) = exposure_direct {
+        if e.is_finite() && e != 0.0 {
+            e
+        } else if short.unwrap_or(false) {
+            let mag = pole.map(pole_height_to_exposure).unwrap_or(1.0);
+            -mag
+        } else if long.unwrap_or(false) {
+            pole.map(pole_height_to_exposure).unwrap_or(1.0)
+        } else {
+            0.0
+        }
+    } else if short.unwrap_or(false) {
+        let mag = pole.map(pole_height_to_exposure).unwrap_or(1.0);
+        -mag
+    } else if long.unwrap_or(false) {
+        pole.map(pole_height_to_exposure).unwrap_or(1.0)
+    } else {
+        0.0
+    };
+
+    let metadata = if meta.is_empty() { None } else { Some(meta) };
+    Ok((exposure, metadata))
+}
+
+fn struct_field_f64(ca: &StructChunked, name: &str, i: usize) -> Option<f64> {
+    let field = ca.field_by_name(name).ok()?;
+    field.f64().ok().and_then(|arr| arr.get(i))
+}
+
+fn struct_field_bool(ca: &StructChunked, name: &str, i: usize) -> Option<bool> {
+    let field = ca.field_by_name(name).ok()?;
+    field.bool().ok().and_then(|arr| arr.get(i))
 }
 
 /// Core vectorized engine (MVP).
@@ -629,21 +728,7 @@ impl BacktestEngine {
 
         let ts_series = df.column(ts_col)?.clone();
         let close_ca = df.column(close_col)?.f64()?.clone();
-        let signal_series = df.column(sig_col)?;
-
-        let signal_vals: Vec<f64> = if signal_series.dtype().is_bool() {
-            signal_series
-                .bool()?
-                .into_iter()
-                .map(|b| if b.unwrap_or(false) { 1.0 } else { 0.0 })
-                .collect()
-        } else {
-            signal_series
-                .f64()?
-                .into_iter()
-                .map(|v| v.unwrap_or(0.0))
-                .collect()
-        };
+        let (signal_vals, signal_metas) = self.load_signals(df, sig_col)?;
 
         let entry_filters = self.load_entry_filters(df)?;
         let size_multipliers = self.load_size_multipliers(df)?;
@@ -688,13 +773,21 @@ impl BacktestEngine {
 
         let exec = &self.config.execution_model;
         let sizer = &self.config.position_sizer;
-        let metas: Vec<Option<HashMap<String, f64>>> = vec![None; effective_signals.len()];
+        let mut effective_metas: Vec<Option<HashMap<String, f64>>> =
+            Vec::with_capacity(effective_signals.len());
+        for (i, &raw) in effective_signals.iter().enumerate() {
+            if raw == 0.0 {
+                effective_metas.push(None);
+            } else {
+                effective_metas.push(signal_metas.get(i).cloned().flatten());
+            }
+        }
         let delay = self.config.execution_delay;
         let stops = &self.config.stop_config;
         let (mut trades, mut equity_points) = run_simulation(
             &timestamps,
             &closes,
-            |i| (effective_signals[i], metas[i].clone()),
+            |i| (effective_signals[i], effective_metas[i].clone()),
             exec,
             sizer,
             delay,
@@ -712,6 +805,46 @@ impl BacktestEngine {
         }
 
         Ok((trades, equity_points))
+    }
+
+    fn load_signals(
+        &self,
+        df: &DataFrame,
+        sig_col: &str,
+    ) -> Result<(Vec<f64>, Vec<Option<HashMap<String, f64>>>), BacktestError> {
+        let signal_series = df.column(sig_col)?;
+        let s = signal_series
+            .as_series()
+            .ok_or_else(|| BacktestError::InvalidInput("column has no series backing".into()))?;
+
+        if s.dtype().is_struct() {
+            let ca = s.struct_().map_err(|e| BacktestError::Polars(e))?;
+            let n = ca.len();
+            let mut exposures = Vec::with_capacity(n);
+            let mut metas = Vec::with_capacity(n);
+            for i in 0..n {
+                let (exp, meta) = parse_struct_signal_row(ca, i)?;
+                exposures.push(exp);
+                metas.push(meta);
+            }
+            return Ok((exposures, metas));
+        }
+
+        let signal_vals: Vec<f64> = if signal_series.dtype().is_bool() {
+            signal_series
+                .bool()?
+                .into_iter()
+                .map(|b| if b.unwrap_or(false) { 1.0 } else { 0.0 })
+                .collect()
+        } else {
+            signal_series
+                .f64()?
+                .into_iter()
+                .map(|v| v.unwrap_or(0.0))
+                .collect()
+        };
+        let metas = vec![None; signal_vals.len()];
+        Ok((signal_vals, metas))
     }
 
     fn load_entry_filters(&self, df: &DataFrame) -> Result<Option<Vec<bool>>, BacktestError> {
@@ -807,6 +940,7 @@ impl BacktestEngine {
             .map(|t| t.exit_ts.map(|d| d.timestamp()))
             .collect();
         let exit_px: Vec<Option<f64>> = trades.iter().map(|t| t.exit_price).collect();
+        let qty: Vec<f64> = trades.iter().map(|t| t.quantity).collect();
         let pnl: Vec<f64> = trades.iter().map(|t| t.pnl_net).collect();
 
         let mut cols = vec![
@@ -816,6 +950,7 @@ impl BacktestEngine {
             Column::new("entry_price".into(), entry_px),
             Column::new("exit_ts".into(), exit_ts),
             Column::new("exit_price".into(), exit_px),
+            Column::new("quantity".into(), qty),
             Column::new("pnl_net".into(), pnl),
         ];
         if include_symbol {

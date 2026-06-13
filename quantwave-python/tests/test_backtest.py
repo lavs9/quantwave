@@ -205,6 +205,42 @@ def test_bt_backtest_trailing_stop_ratchets():
     assert result.trades["exit_price"][0] == pytest.approx(104.0)
 
 
+def test_bt_backtest_struct_signal_exposure():
+    df = pl.DataFrame(
+        {
+            "timestamp": [1_900_100_000 + i for i in range(4)],
+            "close": [100.0, 100.0, 105.0, 104.0],
+            "signal": [
+                {"exposure": 0.0},
+                {"exposure": 1.0},
+                {"exposure": 1.0},
+                {"exposure": 0.0},
+            ],
+        }
+    )
+    result = df.lazy().bt.backtest(commission_bps=0.0, slippage_bps=0.0)
+    assert result.trades.height == 1
+    assert result.trades["pnl_net"][0] == pytest.approx(4.0)
+
+
+def test_bt_backtest_struct_signal_pole_height():
+    df = pl.DataFrame(
+        {
+            "timestamp": [1_900_200_000 + i for i in range(4)],
+            "close": [100.0, 100.0, 102.0, 101.0],
+            "signal": [
+                {"long": False, "pole_height": 0.0},
+                {"long": True, "pole_height": 8.0},
+                {"long": True, "pole_height": 8.0},
+                {"long": False, "pole_height": 0.0},
+            ],
+        }
+    )
+    result = df.lazy().bt.backtest(commission_bps=0.0, slippage_bps=0.0)
+    assert result.trades.height == 1
+    assert result.trades["quantity"][0] == pytest.approx(2.0)
+
+
 def test_bt_backtest_short_pnl_on_decline():
     df = pl.DataFrame(
         {
