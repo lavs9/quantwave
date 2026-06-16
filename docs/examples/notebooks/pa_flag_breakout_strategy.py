@@ -195,7 +195,7 @@ def _():
 
 
 @app.cell
-def _(flag, final_bias, flips, np, pl):
+def _(data, flag, final_bias, flips, HAS_QUANTWAVE, np, pl):
     # Regime/ML proxy (placeholder; real joins regimes/ + ML features from 4ps)
     regime = "trending"  # from Ehlers/HMM etc.
     ml_proxy = 0.72     # e.g. trendflex or cycle strength at detection
@@ -211,14 +211,31 @@ def _(flag, final_bias, flips, np, pl):
         print("  risk per unit (ATR units):", round(risk_per_unit, 2))
         print("  contracts (1% risk):", round(contracts, 1))
         print("  R:R potential (target 2x pole):", round(2.0, 1))
-        trade_log = pl.DataFrame({
-            "entry_bar": [flag.flag_end_bar],
-            "type": ["long_flag_breakout"],
-            "size_atr": [flag.pole_length_atr],
-            "regime": [regime],
-            "ml_proxy": [ml_proxy],
-            "contracts": [round(contracts, 1)],
-        })
+        
+        if HAS_QUANTWAVE:
+            from quantwave.pa_flag_strategy import build_pa_flag_signals
+            lf = build_pa_flag_signals(data.lazy())
+            report = lf.bt.backtest_with_report(
+                signal="signal",
+                close_col="close",
+                timestamp_col="bar",
+                entry_filter_col="regime_ok",
+                size_multiplier_col="pole_length_atr",
+                commission_bps=5.0,
+                slippage_bps=2.0
+            )
+            trade_log = report.result.trades
+            print("\nBacktest Metrics:")
+            print(report.metrics())
+        else:
+            trade_log = pl.DataFrame({
+                "entry_bar": [flag.flag_end_bar],
+                "type": ["long_flag_breakout"],
+                "size_atr": [flag.pole_length_atr],
+                "regime": [regime],
+                "ml_proxy": [ml_proxy],
+                "contracts": [round(contracts, 1)],
+            })
     else:
         print("No trade (filters or no confirmed structure + flag)")
         trade_log = pl.DataFrame({"note": ["no setup"]})
