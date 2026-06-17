@@ -133,6 +133,13 @@ fn bench_quantwave(df: &DataFrame) {
         .expect("quantwave backtest");
 }
 
+fn bench_quantwave_metrics_only(df: &DataFrame) {
+    let engine = BacktestEngine::new(zero_cost_config());
+    let _ = engine
+        .run_metrics_only(df.clone().lazy())
+        .expect("quantwave backtest metrics only");
+}
+
 fn bench_naive(df: &DataFrame) {
     let closes = extract_f64_col(df, "close");
     let signals = extract_f64_col(df, "signal");
@@ -149,6 +156,11 @@ fn bench_single_symbol(c: &mut Criterion) {
             BenchmarkId::new("quantwave_backtest", n_rows),
             &df,
             |b, data| b.iter(|| bench_quantwave(black_box(data))),
+        );
+        group.bench_with_input(
+            BenchmarkId::new("quantwave_metrics_only", n_rows),
+            &df,
+            |b, data| b.iter(|| bench_quantwave_metrics_only(black_box(data))),
         );
         group.bench_with_input(
             BenchmarkId::new("naive_row_loop", n_rows),
@@ -177,6 +189,15 @@ fn bench_multi_symbol(c: &mut Criterion) {
             let _ = engine
                 .run(black_box(df.clone().lazy()))
                 .expect("multi-symbol quantwave");
+        });
+    });
+
+    group.bench_function("quantwave_metrics_only", |b| {
+        b.iter(|| {
+            let engine = BacktestEngine::new(config.clone());
+            let _ = engine
+                .run_metrics_only(black_box(df.clone().lazy()))
+                .expect("multi-symbol quantwave metrics");
         });
     });
 

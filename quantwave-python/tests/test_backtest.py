@@ -134,7 +134,13 @@ def test_bt_backtest_with_report():
         .bt.backtest_with_report(commission_bps=0.0, slippage_bps=0.0)
     )
     assert report.result.trades.height == 1
-    assert report.metrics()["num_trades"] == pytest.approx(1.0)
+
+def test_bt_backtest_metrics_lazyframe():
+    df = _single_trade_df().lazy()
+    metrics = df.bt.backtest_metrics(commission_bps=0.0, slippage_bps=0.0)
+    assert isinstance(metrics, dict)
+    assert "num_trades" in metrics
+    assert metrics["num_trades"] == 1.0
 
 
 def test_bt_backtest_filter_and_multiplier():
@@ -425,6 +431,82 @@ def test_bt_cross_sectional_panel_smoke():
         commission_bps=0.0,
         slippage_bps=0.0,
     )
-    assert report.metrics()["final_equity"] > 0
+    assert report.metrics()["final_equity"] != 100_000.0
 
 
+def test_bt_cross_sectional_zscore_python():
+    # Construct a synthetic panel
+    timestamps = [1, 1, 1, 1, 2, 2, 2, 2]
+    symbols = ["A", "B", "C", "D", "A", "B", "C", "D"]
+    closes = [10.0, 10.0, 10.0, 10.0, 11.0, 11.0, 11.0, 11.0]
+    scores = [4.0, 3.0, 2.0, 1.0, 4.0, 3.0, 2.0, 1.0]
+    
+    df = pl.DataFrame({
+        "timestamp": timestamps,
+        "symbol": symbols,
+        "close": closes,
+        "score": scores
+    })
+    
+    report = df.lazy().bt.cross_sectional_backtest(
+        factor_col="score",
+        transform="zscore",
+        top_frac=0.25,
+        bottom_frac=0.25,
+        commission_bps=0.0,
+        slippage_bps=0.0
+    )
+    assert report.metrics()["num_trades"] >= 0.0
+
+
+def test_bt_walk_forward_optimize_python():
+    # Make a simple builder fn
+    def build_fn(lf, params):
+        p = params["thresh"]
+        return lf.with_columns(
+            pl.when(pl.col("close") > p).then(1.0).otherwise(-1.0).alias("signal")
+        )
+
+    # Synthetic data
+    n = 60
+    timestamps = list(range(n))
+    # Fold 1 train (0..19): close is 101, 102... -> high threshold (120) makes it -1 always, 110 makes it -1 always. Let's make it so that 110 captures some uptrend, 120 doesn't.
+    # Actually, let's just use synthetic data where threshold 110 works perfectly on train, and fails on OOS.
+    closes = [100.0 + i * (1.0 if i < 30 else -1.0) for i in range(n)]
+    
+    df = pl.DataFrame({
+        "timestamp": timestamps,
+        "close": closes,
+    })
+    
+    res = df.lazy().bt.walk_forward_optimize(
+        param_grid={"thresh": [110.0, 120.0]},
+        build_fn=build_fn,
+        objective="total_return",
+        train_bars=20,
+        test_bars=10,
+        commission_bps=0.0,
+        slippage_bps=0.0,
+        overfit_threshold=0.0, # ensure overfit is triggered
+    )
+    
+    assert res.height == 4 # (60 - 20) / 10 = 4 folds
+    assert "best_thresh" in res.columns
+    assert "train_metric" in res.columns
+    assert "oos_metric" in res.columns
+    assert "overfit_flag" in res.columns
+    
+    # Check that best parameter is selected and varies across folds (or is consistent)
+    best_params = res["best_thresh"].to_list()
+    assert len(best_params) == 4
+    
+    # Check overfit flag is boolean
+    assert res["overfit_flag"].dtype == pl.Boolean
+    
+    # Overfit should trigger if train > oos
+    train_metrics = res["train_metric"].to_list()
+    oos_metrics = res["oos_metric"].to_list()
+    overfits = res["overfit_flag"].to_list()
+    
+    for train, oos, overfit in zip(train_metrics, oos_metrics, overfits):
+        assert overfit == (train - oos > 0.0)

@@ -26,6 +26,48 @@ impl CrossSectionalConfig {
     }
 }
 
+/// Demean a factor within groups (e.g. sectors or timestamps).
+pub fn neutralize_factor(lf: LazyFrame, factor_col: &str, group_col: &str) -> LazyFrame {
+    lf.with_column(
+        (col(factor_col) - col(factor_col).mean().over([col(group_col)]))
+        .alias(factor_col)
+    )
+}
+
+/// Cross-sectional z-score (demean and divide by std deviation per timestamp).
+pub fn zscore_factor(lf: LazyFrame, factor_col: &str, timestamp_col: &str) -> LazyFrame {
+    let mean = col(factor_col).mean().over([col(timestamp_col)]);
+    let std = col(factor_col).std(1).over([col(timestamp_col)]);
+    lf.with_column(
+        ((col(factor_col) - mean) / std).alias(factor_col)
+    )
+}
+
+/// Clip outliers in a factor per timestamp beyond the given percentiles (0.0 to 1.0).
+pub fn winsorize_factor(
+    lf: LazyFrame,
+    factor_col: &str,
+    timestamp_col: &str,
+    lower_pct: f64,
+    upper_pct: f64,
+) -> LazyFrame {
+    let lower = col(factor_col)
+        .quantile(lit(lower_pct), QuantileMethod::Nearest)
+        .over([col(timestamp_col)]);
+    let upper = col(factor_col)
+        .quantile(lit(upper_pct), QuantileMethod::Nearest)
+        .over([col(timestamp_col)]);
+    
+    lf.with_column(
+        when(col(factor_col).lt(lower.clone()))
+            .then(lower)
+            .when(col(factor_col).gt(upper.clone()))
+            .then(upper)
+            .otherwise(col(factor_col))
+            .alias(factor_col)
+    )
+}
+
 /// Assign signed exposure from cross-sectional factor ranks per timestamp.
 ///
 /// Returns a LazyFrame with `exposure_col` added (equal-weight within long/short legs).
@@ -141,6 +183,55 @@ mod tests {
             Column::new("score".into(), factor),
         ])
         .unwrap()
+    }
+
+    #[test]
+    fn test_factor_neutralize_demean_within_sector() {
+        let df = DataFrame::new(vec![
+            Column::new("sector".into(), vec!["Tech", "Tech", "Fin", "Fin"]),
+            Column::new("score".into(), vec![10.0, 20.0, 100.0, 200.0]),
+        ]).unwrap();
+
+        let out = neutralize_factor(df.lazy(), "score", "sector").collect().unwrap();
+        let scores = out.column("score").unwrap().f64().unwrap();
+        
+        let ts: Vec<f64> = scores.into_iter().map(|v| v.unwrap()).collect();
+        assert_relative_eq!(ts[0], -5.0, epsilon = 1e-9);
+        assert_relative_eq!(ts[1], 5.0, epsilon = 1e-9);
+        assert_relative_eq!(ts[2], -50.0, epsilon = 1e-9);
+        assert_relative_eq!(ts[3], 50.0, epsilon = 1e-9);
+    }
+
+    #[test]
+    fn test_factor_zscore_zero_mean_smoke() {
+        let df = panel_df();
+        let out = zscore_factor(df.lazy(), "score", "timestamp").collect().unwrap();
+        let scores = out.column("score").unwrap().f64().unwrap();
+        let ts: Vec<f64> = scores.into_iter().map(|v| v.unwrap()).collect();
+        
+        // timestamp 1 (idx 0..4): values were 4, 3, 2, 1
+        // mean = 2.5. std ≈ 1.2909944
+        let mean_1 = (ts[0] + ts[1] + ts[2] + ts[3]) / 4.0;
+        assert_relative_eq!(mean_1, 0.0, epsilon = 1e-9);
+    }
+
+    #[test]
+    fn test_factor_winsorize_clips_extremes() {
+        let df = DataFrame::new(vec![
+            Column::new("timestamp".into(), vec![1i64, 1, 1, 1, 1]),
+            Column::new("score".into(), vec![0.0, 10.0, 20.0, 30.0, 100.0]),
+        ]).unwrap();
+
+        let out = winsorize_factor(df.lazy(), "score", "timestamp", 0.2, 0.8).collect().unwrap();
+        let scores = out.column("score").unwrap().f64().unwrap();
+        let ts: Vec<f64> = scores.into_iter().map(|v| v.unwrap()).collect();
+        
+        // 5 elements. 0.2 quantile is rank 1 (idx 1 if sorted, but nearest). 
+        // 0.2 quantile of [0, 10, 20, 30, 100] ≈ 10.0
+        // 0.8 quantile of [0, 10, 20, 30, 100] ≈ 30.0
+        assert_relative_eq!(ts[0], 10.0, epsilon = 1e-9); // clipped
+        assert_relative_eq!(ts[1], 10.0, epsilon = 1e-9);
+        assert_relative_eq!(ts[4], 30.0, epsilon = 1e-9); // clipped
     }
 
     #[test]

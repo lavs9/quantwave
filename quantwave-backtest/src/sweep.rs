@@ -99,7 +99,7 @@ pub fn run_param_sweep(
     DataFrame::new(columns).map_err(BacktestError::from)
 }
 
-fn sorted_param_keys(variants: &[SweepVariant]) -> Vec<String> {
+pub(crate) fn sorted_param_keys(variants: &[SweepVariant]) -> Vec<String> {
     let mut keys: Vec<String> = variants[0].params.keys().cloned().collect();
     keys.sort();
     keys

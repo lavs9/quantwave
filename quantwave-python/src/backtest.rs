@@ -173,6 +173,14 @@ impl PyBacktestEngine {
             .map_err(map_err)?;
         Ok(PyBacktestReport { inner: report })
     }
+
+    fn run_metrics_only<'py>(&self, py: Python<'py>, df: &Bound<'_, PyAny>) -> PyResult<Bound<'py, PyDict>> {
+        let metrics = self
+            .inner
+            .run_metrics_only(dataframe_from_py(df)?.lazy())
+            .map_err(map_err)?;
+        metrics_to_dict(py, &metrics)
+    }
 }
 
 #[pyclass(name = "BacktestResult")]

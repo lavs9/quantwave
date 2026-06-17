@@ -83,15 +83,19 @@ mod walk_forward;
 use chrono::{DateTime, Utc};
 use polars::prelude::*;
 pub use cross_sectional::{
-    assign_long_short_exposure, run_cross_sectional_backtest, CrossSectionalConfig,
+    assign_long_short_exposure, neutralize_factor, run_cross_sectional_backtest, winsorize_factor,
+    zscore_factor, CrossSectionalConfig,
 };
 pub use live_bridge::{
     LiveBridge, LiveBridgeError, LiveSignalEvent, RecordingLiveBridge,
 };
 pub use metrics::{BacktestReport, PerformanceMetrics};
-pub use monte_carlo::{monte_carlo_trade_bootstrap, MonteCarloConfig, MonteCarloSummary};
+pub use monte_carlo::{
+    monte_carlo_trade_bootstrap, MonteCarloConfig, MonteCarloSummary,
+    monte_carlo_return_paths, MonteCarloReturnConfig, MonteCarloPathSummary,
+};
 pub use sweep::{run_param_sweep, single_param_variants, SweepVariant};
-pub use walk_forward::{run_walk_forward, WalkForwardConfig};
+pub use walk_forward::{run_walk_forward, run_walk_forward_optimize, WalkForwardConfig};
 #[allow(unused_imports)]
 use quantwave_core::traits::Next; // Re-exported for future streaming parity work (used in hybrid mode later per quantwave-ug9t)
 use serde::{Deserialize, Serialize};
@@ -623,6 +627,90 @@ impl BacktestEngine {
         }
 
         self.run_single_symbol(df)
+    }
+
+    pub fn run_metrics_only(&self, lf: LazyFrame) -> Result<PerformanceMetrics, BacktestError> {
+        let df = lf.collect()?;
+
+        if df.height() == 0 {
+            return Err(BacktestError::InvalidInput("empty dataframe".into()));
+        }
+
+        let ts_col = &self.config.timestamp_col;
+        let close_col = &self.config.close_col;
+        let sig_col = &self.config.signal_col;
+
+        for c in [ts_col, close_col, sig_col] {
+            if df.column(c).is_err() {
+                return Err(BacktestError::InvalidInput(format!(
+                    "missing column: {}",
+                    c
+                )));
+            }
+        }
+
+        if self.config.symbol_col.is_some() {
+            return self.run_metrics_multi_symbol(df);
+        }
+
+        self.run_metrics_single_symbol(df)
+    }
+
+    fn run_metrics_single_symbol(&self, df: DataFrame) -> Result<PerformanceMetrics, BacktestError> {
+        let (trades, equity_points) = self.simulate_dataframe(&df, None)?;
+        Ok(PerformanceMetrics::from_raw(&trades, &equity_points, self.per_symbol_initial_cash()))
+    }
+
+    fn run_metrics_multi_symbol(&self, df: DataFrame) -> Result<PerformanceMetrics, BacktestError> {
+        let sym_col = self
+            .config
+            .symbol_col
+            .as_ref()
+            .expect("symbol_col set");
+
+        if df.column(sym_col).is_err() {
+            return Err(BacktestError::InvalidInput(format!(
+                "missing column: {}",
+                sym_col
+            )));
+        }
+
+        let ts_series = df.column(&self.config.timestamp_col)?.clone();
+        let timestamps = self.extract_timestamps(&ts_series)?;
+        let symbols = extract_string_column(df.column(sym_col)?.clone())?;
+        validate_sorted_timestamp_symbol(&timestamps, &symbols)?;
+
+        let mut unique_symbols: Vec<String> = Vec::new();
+        let mut seen = std::collections::HashSet::new();
+        for s in &symbols {
+            if seen.insert(s.clone()) {
+                unique_symbols.push(s.clone());
+            }
+        }
+
+        let mut all_trades: Vec<Trade> = Vec::new();
+        let mut per_symbol_equity: HashMap<String, Vec<EquityPoint>> = HashMap::new();
+
+        for symbol in &unique_symbols {
+            let sub = df
+                .clone()
+                .lazy()
+                .filter(col(sym_col).eq(lit(symbol.as_str())))
+                .sort(
+                    [&self.config.timestamp_col],
+                    SortMultipleOptions::default(),
+                )
+                .collect()?;
+
+            let (mut trades, equity_points) = self.simulate_dataframe(&sub, Some(symbol))?;
+            all_trades.append(&mut trades);
+            per_symbol_equity.insert(symbol.clone(), equity_points);
+        }
+
+        let portfolio_equity = aggregate_portfolio_equity(&per_symbol_equity);
+        let n_symbols = unique_symbols.len() as f64;
+        let portfolio_initial = self.per_symbol_initial_cash() * n_symbols;
+        Ok(PerformanceMetrics::from_raw(&all_trades, &portfolio_equity, portfolio_initial))
     }
 
     fn run_single_symbol(&self, df: DataFrame) -> Result<BacktestResult, BacktestError> {
@@ -1600,7 +1688,7 @@ where
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
-    use polars::prelude::*;
+    // use polars::prelude::*;
     use rand::Rng;
     // Core types needed for ug9t parity strategy (regime + feature + rich PA)
     use quantwave_core::features::CyberCycleFeatureExtractor;
@@ -1856,7 +1944,7 @@ mod tests {
         let n: usize = 120;
         let mut timestamps = Vec::with_capacity(n);
         let mut closes = Vec::with_capacity(n);
-        let mut price = 100.0_f64;
+        let mut price;
 
         for i in 0..n {
             let secs = 1_700_000_500i64 + (i as i64) * 3600;
@@ -1970,7 +2058,7 @@ mod tests {
 #[cfg(test)]
 mod integration_example_between_epics {
     use super::*;
-    use polars::prelude::*;
+    // use polars::prelude::*;
     use quantwave_core::features::HurstFeatureExtractor;
 
     #[test]

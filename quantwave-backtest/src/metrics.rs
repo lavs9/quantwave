@@ -134,6 +134,91 @@ impl PerformanceMetrics {
         }
     }
 
+    pub fn from_raw(trades: &[crate::Trade], equity: &[crate::EquityPoint], initial_cash: f64) -> Self {
+        let final_equity = equity.last().map(|e| e.equity).unwrap_or(initial_cash);
+        let total_return = if initial_cash.abs() > f64::EPSILON {
+            (final_equity - initial_cash) / initial_cash
+        } else {
+            0.0
+        };
+
+        let mut peak = 0.0;
+        let mut max_drawdown_pct = 0.0;
+        let mut seen = false;
+        for e in equity {
+            let eq = e.equity;
+            if !seen {
+                peak = eq;
+                seen = true;
+            } else if eq > peak {
+                peak = eq;
+            }
+            if peak > f64::EPSILON {
+                let dd = (peak - eq) / peak;
+                if dd > max_drawdown_pct {
+                    max_drawdown_pct = dd;
+                }
+            }
+        }
+
+        let num_trades = trades.len() as f64;
+        if num_trades == 0.0 && total_return.abs() < 1e-12 {
+            return Self::zero_trades_flat(final_equity, max_drawdown_pct);
+        }
+
+        let mut wins = 0.0;
+        let mut gross_profit = 0.0;
+        let mut gross_loss = 0.0;
+        let mut sum_pnl = 0.0;
+        for t in trades {
+            let pnl = t.pnl_net;
+            sum_pnl += pnl;
+            if pnl > 0.0 {
+                wins += 1.0;
+                gross_profit += pnl;
+            } else {
+                gross_loss += pnl.abs();
+            }
+        }
+
+        let win_rate = wins / num_trades;
+        let profit_factor = if gross_loss > f64::EPSILON {
+            gross_profit / gross_loss
+        } else if gross_profit > f64::EPSILON {
+            f64::INFINITY
+        } else {
+            0.0
+        };
+        let avg_trade_pnl = sum_pnl / num_trades;
+
+        let n_bars = equity.len();
+        let cagr = compute_cagr(initial_cash, final_equity, n_bars);
+
+        let returns: Vec<f64> = equity.windows(2).filter_map(|w| {
+            if w[0].equity.abs() > f64::EPSILON {
+                Some((w[1].equity - w[0].equity) / w[0].equity)
+            } else {
+                None
+            }
+        }).collect();
+
+        let sharpe_ratio = compute_sharpe(&returns);
+        let sortino_ratio = compute_sortino(&returns);
+
+        Self {
+            num_trades,
+            win_rate,
+            profit_factor,
+            max_drawdown_pct,
+            cagr,
+            sharpe_ratio,
+            sortino_ratio,
+            total_return,
+            final_equity,
+            avg_trade_pnl,
+        }
+    }
+
     fn zero_trades_flat(final_equity: f64, max_drawdown_pct: f64) -> Self {
         Self {
             num_trades: 0.0,
