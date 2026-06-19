@@ -11,6 +11,7 @@ QuantWave is evolving rapidly. Our goal is to provide the most comprehensive and
 - Streaming and batch parity via the universal `Next<T>` trait
 - Extensive documentation (200+ indicator guides)
 - Gold-standard testing and batch/streaming parity validation
+- Polars-native backtest engine (`quantwave-backtest`) with Python `.bt` namespace (see [Capability Matrix](guides/backtest/capability_matrix.md))
 
 ## In Progress
 

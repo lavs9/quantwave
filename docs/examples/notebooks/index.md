@@ -9,6 +9,9 @@ These pages are landing pages for the notebooks. For the best experience (full i
 - **[Strategy Backtesting](strategy_backtest.md)**  
   Steel-thread example using indicators inside the vectorized backtester with rich signal metadata.
 
+- **[Backtest Engine Showcase](backtest_showcase.md)**  
+  Comprehensive tour of the Polars-native backtester: param sweeps, walk-forward optimization, fast metrics, sizing filters, and cross-sectional panels.
+
 - **[Backtest Engine Benchmarks](backtest_benchmark.md)**  
   Criterion harness comparing `quantwave-backtest` vs naive row-loop baselines (10K–1M rows, multi-symbol).
 
@@ -23,6 +26,9 @@ These pages are landing pages for the notebooks. For the best experience (full i
 
 - **[PA Foundation Strategy (MarketStructure + Flags/H&S)](pa_foundation_strategy.py)**  
   Production-ready surface for the MQL5 PA toolkit foundation (Parts 21/66/69: swings/bias/flips + geometric). Realistic strategy: bull Flag breakout only on confirmed bullish MarketStructure + regime + ML (hurst) filter, dynamically sized from `pole_length_atr` rich metadata. Python streaming + Polars Rust paths + backtester sketch. Synthetic + notes for real data. See also the four dedicated PA guides under Native Indicators.
+
+- **[PA Flag Breakout Canonical E2E](pa_flag_breakout_strategy.md)**  
+  Runnable Marimo notebook demonstrating the exact production pattern for the PA geometric tools, complete with sizing via `pole_length_atr` and confirmed market structure filters.
 
 ### How to run any notebook locally
 

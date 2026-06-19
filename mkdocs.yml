@@ -52,6 +52,9 @@ nav:
   - Guides:
       - Indicator Gallery: guides/indicators/gallery.md
       - Indicators: guides/indicators/
+      - Backtest Engine:
+          - Quickstart: guides/backtest/quickstart.md
+          - Capability Matrix: guides/backtest/capability_matrix.md
       - Options India: guides/options_india.md
   - Examples:
       - Batch & Streaming: examples/batch-streaming.md
