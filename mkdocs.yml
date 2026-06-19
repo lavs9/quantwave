@@ -60,7 +60,10 @@ nav:
       - Batch & Streaming: examples/batch-streaming.md
       - Marimo Notebooks:
           - Overview: examples/notebooks/index.md
+          - Backtest Showcase: examples/notebooks/backtest_showcase.md
+          - Backtest Benchmarks: examples/notebooks/backtest_benchmark.md
           - Strategy Backtest: examples/notebooks/strategy_backtest.md
+          - PA Flag Breakout (E2E): examples/notebooks/pa_flag_breakout_strategy.md
           - Multi-Indicator Analysis: examples/notebooks/multi_indicator_analysis.md
           - ML Feature Stability: examples/notebooks/ml_feature_stability.md
           - ML Features → Backtest (E2E): examples/notebooks/ml_feature_backtest_parity.md

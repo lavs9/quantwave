@@ -2,7 +2,7 @@
 
 **Sources:** [`planning/BACKTEST_ENGINE_RESEARCH.md`](../../../planning/BACKTEST_ENGINE_RESEARCH.md) §8 (v1 requirements) + v2 gap closure (`quantwave-cr6v-v2`).
 
-**Epics:** `quantwave-cr6v` (v1, closed) · `quantwave-cr6v-v2` (v2, closed) · `quantwave-bt-prod` (productization, in progress)
+**Epics:** `quantwave-cr6v` (v1, closed) · `quantwave-cr6v-v2` (v2, closed) · `quantwave-bt-prod` (productization, complete)
 
 ---
 

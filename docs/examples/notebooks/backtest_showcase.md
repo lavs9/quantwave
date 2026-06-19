@@ -7,6 +7,7 @@ width: medium
 ```python {.marimo}
 import marimo as mo
 import polars as pl
+import quantwave  # registers LazyFrame.bt namespace
 from quantwave.backtest import BacktestEngine, BacktestConfig
 
 mo.md(
@@ -29,14 +30,13 @@ df_synthetic = pl.DataFrame({
 ```python {.marimo}
 mo.md("## Section A — Basic backtest + metrics")
 
-# Simple signal: long when feature > 2
 df_a = df_synthetic.with_columns(
     (pl.col("feature_col") > 2).cast(pl.Float64).alias("signal")
 )
 report_a = df_a.lazy().bt.backtest_with_report(
     signal="signal",
     commission_bps=0.0,
-    slippage_bps=0.0
+    slippage_bps=0.0,
 )
 assert report_a.result.trades.height >= 1
 
@@ -49,13 +49,13 @@ mo.md("## Section B — Costs, filters, sizing")
 df_b = df_synthetic.with_columns(
     (pl.col("feature_col") > 2).cast(pl.Float64).alias("signal"),
     (pl.col("feature_col") > 3).alias("entry_filter"),
-    (pl.col("feature_col") * 2).alias("size")
+    (pl.col("feature_col") * 2).alias("size"),
 )
 report_b = df_b.lazy().bt.backtest_with_report(
     signal="signal",
     entry_filter_col="entry_filter",
     size_multiplier_col="size",
-    commission_bps=5.0
+    commission_bps=5.0,
 )
 ```
 
@@ -71,26 +71,32 @@ mo.md("## Section D — Param sweep (pre-built cols)")
 df_d = df_synthetic.with_columns(
     (pl.col("feature_col") > 2).cast(pl.Float64).alias("signal_1"),
     (pl.col("feature_col") > 3).cast(pl.Float64).alias("signal_2"),
-    (pl.col("feature_col") > 4).cast(pl.Float64).alias("signal_3")
+    (pl.col("feature_col") > 4).cast(pl.Float64).alias("signal_3"),
 )
 sweep_df = df_d.lazy().bt.sweep(
-    param_values=[1, 2, 3],
-    signal_cols=["signal_1", "signal_2", "signal_3"]
+    param_name="threshold",
+    param_values=[1.0, 2.0, 3.0],
+    signal_cols=["signal_1", "signal_2", "signal_3"],
+    commission_bps=0.0,
+    slippage_bps=0.0,
 )
 ```
 
 ```python {.marimo}
 mo.md("## Section E — Param sweep (callback rebuild)")
 
-def build_fn(p, df_lazy):
-    return df_lazy.with_columns(
-        (pl.col("feature_col") > p).cast(pl.Float64).alias("signal")
+def build_fn(ldf, params):
+    thresh = params["thresh"]
+    return ldf.with_columns(
+        (pl.col("feature_col") > thresh).cast(pl.Float64).alias("signal")
     )
 
 sweep_cb_df = df_synthetic.lazy().bt.sweep_callback(
-    param_grid=[2, 3, 4],
+    param_grid={"thresh": [2.0, 3.0, 4.0]},
     build_fn=build_fn,
-    signal="signal"
+    signal="signal",
+    commission_bps=0.0,
+    slippage_bps=0.0,
 )
 ```
 
@@ -100,25 +106,30 @@ mo.md("## Section F — Walk-forward OOS")
 wfo_folds = df_a.lazy().bt.walk_forward(
     signal="signal",
     train_bars=40,
-    test_bars=20
+    test_bars=20,
+    commission_bps=0.0,
+    slippage_bps=0.0,
 )
 ```
 
 ```python {.marimo}
 mo.md("## Section G — Walk-forward optimize")
 
-def build_fn_wfo(p, df_lazy):
-    return df_lazy.with_columns(
-        (pl.col("feature_col") > p).cast(pl.Float64).alias("signal")
+def build_fn_wfo(ldf, params):
+    thresh = params["thresh"]
+    return ldf.with_columns(
+        (pl.col("feature_col") > thresh).cast(pl.Float64).alias("signal")
     )
 
 wfo_opt = df_synthetic.lazy().bt.walk_forward_optimize(
-    param_grid=[2, 3],
+    param_grid={"thresh": [2.0, 3.0]},
     build_fn=build_fn_wfo,
     signal="signal",
     train_bars=40,
     test_bars=20,
-    objective="sharpe_ratio"
+    objective="total_return",
+    commission_bps=0.0,
+    slippage_bps=0.0,
 )
 ```
 
@@ -129,23 +140,25 @@ panel_df = pl.DataFrame({
     "timestamp": list(range(10)) * 3,
     "symbol": ["A"] * 10 + ["B"] * 10 + ["C"] * 10,
     "close": [100 + i for i in range(30)],
-    "factor": [i % 3 for i in range(30)]
+    "factor": [i % 3 for i in range(30)],
 })
 
 report_cs = panel_df.lazy().bt.cross_sectional_backtest(
     factor_col="factor",
-    transform="zscore"
+    transform="zscore",
+    commission_bps=0.0,
+    slippage_bps=0.0,
 )
 ```
 
 ## Section I — Monte Carlo
 
-See `quantwave_backtest::monte_carlo_trade_bootstrap` in Rust for the trade bootstrap logic.
-<!---->
+See `quantwave_backtest::monte_carlo_trade_bootstrap` and `monte_carlo_return_paths` in Rust for bootstrap and return-path VaR/CVaR.
+
 ## Section J — PA moat pointer
 
 See [PA Flag Breakout](pa_flag_breakout_strategy.md) for canonical PA E2E.
-<!---->
+
 ## Section K — Parity callout
 
 QuantWave guarantees exact parity between streaming and batch mode. See [Batch & Streaming](../batch-streaming.md) and [ML Feature Parity](ml_feature_backtest_parity.md).

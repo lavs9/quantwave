@@ -35,7 +35,7 @@ Whether you are:
 - **Community driven** — MIT licensed, fully open, built for you
 
 We are just getting started.  
-Advanced risk metrics and portfolio tools are already on the roadmap.
+The Polars-native backtest engine is documented in the [Backtest Capability Matrix](guides/backtest/capability_matrix.md). Advanced risk metrics and portfolio tools remain on the roadmap.
 
 **Welcome to the next generation of open-source quant tooling.**
 

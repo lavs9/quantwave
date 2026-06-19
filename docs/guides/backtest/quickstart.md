@@ -21,8 +21,6 @@ pip install polars
 
 ## 2. Minimal script (copy-paste)
 
-<!-- AGENT: verify this block runs verbatim on current main -->
-
 ```python
 import polars as pl
 from quantwave.backtest import BacktestEngine, BacktestConfig
