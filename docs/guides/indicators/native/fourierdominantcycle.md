@@ -4,20 +4,25 @@
 
 Dominant cycle period estimation using resolution-enhanced DFT and center of gravity.
 
-## Usage
+## Visual Example
+
+> **Chart**: Sparkline or annotated price series showing **FourierDominantCycle** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only fourierdominantcycle` after extending the generator.
+
+*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/fourier_transform.rs`.*
+
+## Description
+
+Dominant cycle period estimation using resolution-enhanced DFT and center of gravity.
 
 Use to compute the dominant market cycle period via DFT. Feed the output period into adaptive indicators like DSMA or Ehlers Stochastic to make them cycle-synchronized.
 
-## Background
+Ehlers implements a Discrete Fourier Transform cycle measurement in Cybernetic Analysis using a Hann-windowed data segment. The DFT computes power across periods from 6 to 50 bars, and the peak power identifies the dominant cycle period driving price movement.
 
-> Ehlers implements a Discrete Fourier Transform cycle measurement in Cybernetic Analysis using a Hann-windowed data segment. The DFT computes power across periods from 6 to 50 bars, and the peak power identifies the dominant cycle period driving price movement.
+QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
 
-## Parameters
+## Formula / Specification
 
-- `window_len` (default: 50): DFT window length
-
-## Formula
-
+**Implementation** (`quantwave-core/src/indicators/fourier_transform.rs`):
 
 \[
 HP = \text{HighPass}(Price, 40)
@@ -35,5 +40,84 @@ DB(P) = \min\left(20, -10 \log_{10}\left(\frac{0.01}{1 - 0.99 \frac{Pwr(P)}{\max
 DC = \frac{\sum_{P=8}^{50} P \cdot (3 - DB(P)) \text{ where } DB(P) < 3}{\sum (3 - DB(P))}
 \]
 
+Gold-standard parity vectors: `quantwave-core/tests/gold_standard/fourier_dominant_cycle.json`.
 
-[Source](https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/FourierTransformForTraders.pdf)
+
+## Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `window_len` | 50 | DFT window length |
+
+
+## Usage Examples
+
+**Streaming (Rust)**
+
+```rust
+use quantwave_core::indicators::FOURIER_DOMINANT_CYCLE;
+use quantwave_core::traits::Next;
+
+let mut ind = FOURIER_DOMINANT_CYCLE::new(50);
+for price in &prices {
+    let value = ind.next(price);
+}
+```
+
+**Streaming (Python)**
+
+```python
+from quantwave import FOURIER_DOMINANT_CYCLE
+
+ind = FOURIER_DOMINANT_CYCLE(50)
+for price in prices:
+    value = ind.next(price)
+```
+
+**Polars Batch (Python)**
+
+```python
+import polars as pl
+import quantwave as qw
+
+def apply_fourierdominantcycle(series: pl.Series) -> pl.Series:
+    ind = qw.FOURIER_DOMINANT_CYCLE(50)
+    return pl.Series([ind.next(float(v)) for v in series.to_list()])
+
+df = (
+    pl.read_csv('ohlcv.csv')
+    .lazy()
+    .with_columns(
+        pl.col("close").map_batches(apply_fourierdominantcycle, return_dtype=pl.Float64).alias("fourierdominantcycle")
+    )
+    .collect()
+)
+```
+
+All surfaces are bit-identical via the single `Next<T>` implementation and proptests.
+
+## Edge Cases & Limitations
+
+- Recursive DSP filters require a warm-up period; first N bars may be unstable or raw-pass-through.
+- Designed for cyclic/mean-reverting regimes; trending markets can produce lag or drift.
+- Parameter `period` (or equivalent) controls cutoff — too small adds noise, too large adds lag.
+- Prefer chaining with other Ehlers tools (Roofing Filter, SuperSmoother) on noisy inputs.
+- Validated via proptests against gold-standard vectors where available.
+- No look-ahead bias; suitable for live streaming and batch feature pipelines.
+
+## Related Indicators & See Also
+
+- [Indicator Gallery](../gallery.md)
+- [Native Indicators index](index.md)
+- [Ehlers DSP guide](../ehlers/index.md)
+- [Cyber Cycle](cyber_cycle.md)
+- [SuperSmoother](supersmoother.md)
+
+## Sources & References
+
+**Primary Source**: https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/FourierTransformForTraders.pdf
+
+**Implementation**: `quantwave-core/src/indicators/fourier_transform.rs` (`FOURIER_DOMINANT_CYCLE` / `FOURIER_DOMINANT_CYCLE_METADATA`).
+**Parity**: `quantwave-core/tests/gold_standard/fourier_dominant_cycle.json`
+
+**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

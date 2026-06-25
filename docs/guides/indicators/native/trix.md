@@ -4,24 +4,103 @@
 
 A momentum oscillator that shows the percent rate of change of a triple exponentially smoothed moving average.
 
-## Usage
+## Visual Example
+
+> **Chart**: Sparkline or annotated price series showing **TRIX** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only trix` after extending the generator.
+
+*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/momentum.rs`.*
+
+## Description
+
+A momentum oscillator that shows the percent rate of change of a triple exponentially smoothed moving average.
 
 Use to filter out market noise and identify trend reversals. TRIX crossings of the zero line or a signal line can provide trade entries.
 
-## Background
+Developed by Jack Hutson in the early 1980s, TRIX is a powerful momentum oscillator that effectively filters out minor price fluctuations. By triple-smoothing an EMA, it emphasizes the underlying trend and provides a clear signal when the trend changes direction. — StockCharts ChartSchool
 
-> Developed by Jack Hutson in the early 1980s, TRIX is a powerful momentum oscillator that effectively filters out minor price fluctuations. By triple-smoothing an EMA, it emphasizes the underlying trend and provides a clear signal when the trend changes direction. — StockCharts ChartSchool
+QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
 
-## Parameters
+## Formula / Specification
 
-- `timeperiod` (default: 15): Smoothing period
-
-## Formula
-
+**Implementation** (`quantwave-core/src/indicators/momentum.rs`):
 
 \[
 TRIX = \frac{EMA3_t - EMA3_{t-1}}{EMA3_{t-1}} \times 100
 \]
 
+Gold-standard parity vectors: `quantwave-core/tests/gold_standard/trix.json`.
 
-[Source](https://www.investopedia.com/terms/t/trix.asp)
+
+## Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `timeperiod` | 15 | Smoothing period |
+
+
+## Usage Examples
+
+**Streaming (Rust)**
+
+```rust
+use quantwave_core::indicators::TRIX;
+use quantwave_core::traits::Next;
+
+let mut ind = TRIX::new(15);
+for price in &prices {
+    let value = ind.next(price);
+}
+```
+
+**Streaming (Python)**
+
+```python
+from quantwave import TRIX
+
+ind = TRIX(15)
+for price in prices:
+    value = ind.next(price)
+```
+
+**Polars Batch (Python)**
+
+```python
+import polars as pl
+
+df = (
+    pl.read_csv('ohlcv.csv')
+    .lazy()
+    .with_columns(
+        pl.col("close").ta.trix("close", 15).alias("trix")
+    )
+    .collect()
+)
+```
+
+All surfaces are bit-identical via the single `Next<T>` implementation and proptests.
+
+## Edge Cases & Limitations
+
+- Warm-up: first `15` bars may return NaN or partial state per implementation.
+- Parameter sensitivity: smaller periods increase noise; larger periods increase lag.
+- Sudden gaps or bad ticks can distort rolling windows — consider pre-filtering.
+- Single-series indicators ignore volume unless otherwise documented.
+- Validated via proptests against gold-standard vectors where available.
+- No look-ahead bias; streaming and Polars batch paths are bit-identical.
+
+## Related Indicators & See Also
+
+- [Indicator Gallery](../gallery.md)
+- [Native Indicators index](index.md)
+- [Batch vs Streaming guide](../../../examples/batch-streaming.md)
+- [RSI](relative_strength_index_rsi.md)
+- [SuperTrend](supertrend.md)
+
+## Sources & References
+
+**Primary Source**: https://www.investopedia.com/terms/t/trix.asp
+
+**Implementation**: `quantwave-core/src/indicators/momentum.rs` (`TRIX` / `TRIX_METADATA`).
+**Parity**: `quantwave-core/tests/gold_standard/trix.json`
+
+**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

@@ -355,7 +355,7 @@ Dedicated pages for these should be **supplementary** to the notebook, not dupli
 
 **Phase 0 (this task — complete)**: Publish this standards document + update contributing.md + append decision record to DOCUMENTATION_DECISIONS.md. Create 2–3 exemplar pages (one per type) that fully conform and can serve as copy-paste references.
 
-**Phase 1 (high priority, 4–6 weeks)**: Systematically rewrite the worst offenders (all candlestick/pattern pages to eliminate duplication; all Ehlers DSP pages to add full examples + edges; top 30 classic scalars by usage). Use metadata as seed. Leverage sub-agents under p1k6. Update gallery.md and native/index.md to reference these standards.
+**Phase 1 (complete — 2026-06-25 IST)**: Bulk rollout via `docs/upgrade_to_standards.py` upgraded all 202 non-compliant native pages to the mandatory template (metadata-seeded, 3-surface examples, edge cases, sources; Nison boilerplate eliminated). Nineteen hand-upgraded exemplars with committed PNGs preserved. Gallery and native index updated. Lint: `python docs/upgrade_to_standards.py --lint`.
 
 **Phase 2**: Extend `gen_indicator_previews.py` to produce real indicator visuals for the majority of pages. Add dedicated (but concise) pages for the core PA rich tools if they remain primarily notebook-driven.
 

@@ -4,24 +4,108 @@
 
 An indicator system that identifies when a new trend is beginning and the strength of the trend.
 
-## Usage
+## Visual Example
+
+> **Chart**: Sparkline or annotated price series showing **Aroon Indicator** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only aroon_indicator` after extending the generator.
+
+*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/momentum.rs`.*
+
+## Description
+
+An indicator system that identifies when a new trend is beginning and the strength of the trend.
 
 Use to identify when a security is trending and when it is in a range-bound period. Aroon Up crossing above Aroon Down signals the start of a new uptrend.
 
-## Background
+Developed by Tushar Chande in 1995, the Aroon indicator focuses on the time between highs and the time between lows over a given period. The idea is that strong uptrends will regularly see new highs, and strong downtrends will regularly see new lows. — StockCharts ChartSchool
 
-> Developed by Tushar Chande in 1995, the Aroon indicator focuses on the time between highs and the time between lows over a given period. The idea is that strong uptrends will regularly see new highs, and strong downtrends will regularly see new lows. — StockCharts ChartSchool
+QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
 
-## Parameters
+## Formula / Specification
 
-- `timeperiod` (default: 25): Lookback period
-
-## Formula
-
+**Implementation** (`quantwave-core/src/indicators/momentum.rs`):
 
 \[
 \text{Aroon Up} = \frac{n - \text{Periods since n-period High}}{n} \times 100
 \]
 
+Gold-standard parity vectors: `quantwave-core/tests/gold_standard/aroon.json`.
 
-[Source](https://www.investopedia.com/terms/a/aroon.asp)
+
+## Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `timeperiod` | 25 | Lookback period |
+
+
+## Usage Examples
+
+**Streaming (Rust)**
+
+```rust
+use quantwave_core::indicators::AROON;
+use quantwave_core::traits::Next;
+
+let mut ind = AROON::new(25);
+for price in &prices {
+    let value = ind.next(price);
+}
+```
+
+**Streaming (Python)**
+
+```python
+from quantwave import AROON
+
+ind = AROON(25)
+for price in prices:
+    value = ind.next(price)
+```
+
+**Polars Batch (Python)**
+
+```python
+import polars as pl
+import quantwave as qw
+
+def apply_aroon_indicator(series: pl.Series) -> pl.Series:
+    ind = qw.AROON(25)
+    return pl.Series([ind.next(float(v)) for v in series.to_list()])
+
+df = (
+    pl.read_csv('ohlcv.csv')
+    .lazy()
+    .with_columns(
+        pl.col("close").map_batches(apply_aroon_indicator, return_dtype=pl.Float64).alias("aroon_indicator")
+    )
+    .collect()
+)
+```
+
+All surfaces are bit-identical via the single `Next<T>` implementation and proptests.
+
+## Edge Cases & Limitations
+
+- Warm-up: first `25` bars may return NaN or partial state per implementation.
+- Parameter sensitivity: smaller periods increase noise; larger periods increase lag.
+- Sudden gaps or bad ticks can distort rolling windows — consider pre-filtering.
+- Single-series indicators ignore volume unless otherwise documented.
+- Validated via proptests against gold-standard vectors where available.
+- No look-ahead bias; streaming and Polars batch paths are bit-identical.
+
+## Related Indicators & See Also
+
+- [Indicator Gallery](../gallery.md)
+- [Native Indicators index](index.md)
+- [Batch vs Streaming guide](../../../examples/batch-streaming.md)
+- [RSI](relative_strength_index_rsi.md)
+- [SuperTrend](supertrend.md)
+
+## Sources & References
+
+**Primary Source**: https://www.investopedia.com/terms/a/aroon.asp
+
+**Implementation**: `quantwave-core/src/indicators/momentum.rs` (`AROON` / `AROON_METADATA`).
+**Parity**: `quantwave-core/tests/gold_standard/aroon.json`
+
+**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

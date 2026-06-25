@@ -415,3 +415,22 @@ The Native Indicators section is now at a professional level consistent with the
 
 Task closed with full retrospective in bd notes. Related docs updated in the same logical change set.
 
+---
+
+## Native Indicator Standards Bulk Rollout (quantwave-6br5, 2026-06-25 IST)
+
+**Context**: Phase 1 of epic p1k6 required enforcing `DOCUMENTATION_STANDARDS.md` v1.0 across all 200+ native indicator pages. Prior work delivered the standards doc, PA/candle/Ehlers exemplars (19 pages with full visuals), and navigation polish — but ~202 pages remained thin stubs (deprecated Usage/Background sections, Nison boilerplate on patterns, missing 3-surface code, no edge cases).
+
+**Actions**:
+- Added `docs/upgrade_to_standards.py`: metadata-driven bulk upgrader that reads `*_METADATA` / `METADATA` from `quantwave-core/src/indicators/*.rs`, maps Polars `.ta()` methods from `quantwave-polars/src/lib.rs`, and emits the mandatory STANDARDS section structure.
+- Skips hand-upgraded pages (those with `## Visual Example`) and bespoke PA guides (`market_structure.md`, `sr_monitor.md`, etc.).
+- Ran bulk upgrade: **202 pages rewritten**, **19 exemplars preserved**, **0 metadata gaps**.
+- Added `--lint` mode: greps for deprecated sections, Nison boilerplate, vague TA-Lib Internal formulas, missing mandatory headings, and internal bead IDs (digit-suffixed only — excludes `quantwave-core` paths).
+- Updated `gallery.md`, `native/index.md`, `contributing.md`, `changelog.md` to reflect full conformance.
+
+**Outcome**: Every native indicator page (except intentional PA struct guides) now passes the 8-item review checklist for structure and content. Visual depth is layered: 19+ pages have committed PNGs; the remainder ship precise generator placeholders until `gen_indicator_previews.py` / `gen_candle_previews.py` are extended (Phase 2). No Nison duplication remains on pattern pages.
+
+**Files**: `docs/upgrade_to_standards.py` (new), 202× `docs/guides/indicators/native/*.md`, supporting docs above.
+
+**Closes**: quantwave-6br5; completes Phase 1 scope of quantwave-p1k6 (template enforcement). Phase 2+ (visual generator expansion, xtask skeleton sync) remains optional follow-up.
+

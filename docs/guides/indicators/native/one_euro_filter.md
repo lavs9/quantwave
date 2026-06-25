@@ -4,21 +4,25 @@
 
 A speed-based adaptive low-pass filter that dynamically adjusts its smoothing coefficient.
 
-## Usage
+## Visual Example
+
+> **Chart**: Sparkline or annotated price series showing **One Euro Filter** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only one_euro_filter` after extending the generator.
+
+*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/one_euro_filter.rs`.*
+
+## Description
+
+A speed-based adaptive low-pass filter that dynamically adjusts its smoothing coefficient.
 
 Use in real-time systems where you need low lag at high speeds and low noise at low speeds. The adaptive cutoff frequency makes it self-tuning for different signal velocities.
 
-## Background
+The One Euro Filter, developed by Casiez et al. (2012), is an adaptive lowpass filter that adjusts its cutoff frequency based on the signal derivative. When the signal changes quickly (high speed) the cutoff is raised to reduce lag; when it changes slowly the cutoff is lowered to reduce noise — automatically balancing the speed-accuracy trade-off.
 
-> The One Euro Filter, developed by Casiez et al. (2012), is an adaptive lowpass filter that adjusts its cutoff frequency based on the signal derivative. When the signal changes quickly (high speed) the cutoff is raised to reduce lag; when it changes slowly the cutoff is lowered to reduce noise — automatically balancing the speed-accuracy trade-off.
+QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
 
-## Parameters
+## Formula / Specification
 
-- `period_min` (default: 10): Minimum cutoff period
-- `beta` (default: 0.2): Responsiveness factor
-
-## Formula
-
+**Implementation** (`quantwave-core/src/indicators/one_euro_filter.rs`):
 
 \[
 \alpha_{dx} = \frac{2\pi}{4\pi + 10}
@@ -36,5 +40,85 @@ Cutoff = PeriodMin + \beta |SmoothedDX|
 Smoothed = \alpha_3 Price + (1 - \alpha_3)Smoothed_{t-1}
 \]
 
+Gold-standard parity vectors: `quantwave-core/tests/gold_standard/one_euro_filter.json`.
 
-[Source](https://github.com/lavs9/quantwave/blob/main/references/traderstipsreference/TRADERS’%20TIPS%20-%20DECEMBER%202025.html)
+
+## Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `period_min` | 10 | Minimum cutoff period |
+| `beta` | 0.2 | Responsiveness factor |
+
+
+## Usage Examples
+
+**Streaming (Rust)**
+
+```rust
+use quantwave_core::indicators::ONE_EURO_FILTER;
+use quantwave_core::traits::Next;
+
+let mut ind = ONE_EURO_FILTER::new(10);
+for price in &prices {
+    let value = ind.next(price);
+}
+```
+
+**Streaming (Python)**
+
+```python
+from quantwave import ONE_EURO_FILTER
+
+ind = ONE_EURO_FILTER(10)
+for price in prices:
+    value = ind.next(price)
+```
+
+**Polars Batch (Python)**
+
+```python
+import polars as pl
+import quantwave as qw
+
+def apply_one_euro_filter(series: pl.Series) -> pl.Series:
+    ind = qw.ONE_EURO_FILTER(10)
+    return pl.Series([ind.next(float(v)) for v in series.to_list()])
+
+df = (
+    pl.read_csv('ohlcv.csv')
+    .lazy()
+    .with_columns(
+        pl.col("close").map_batches(apply_one_euro_filter, return_dtype=pl.Float64).alias("one_euro_filter")
+    )
+    .collect()
+)
+```
+
+All surfaces are bit-identical via the single `Next<T>` implementation and proptests.
+
+## Edge Cases & Limitations
+
+- Recursive DSP filters require a warm-up period; first N bars may be unstable or raw-pass-through.
+- Designed for cyclic/mean-reverting regimes; trending markets can produce lag or drift.
+- Parameter `period` (or equivalent) controls cutoff — too small adds noise, too large adds lag.
+- Prefer chaining with other Ehlers tools (Roofing Filter, SuperSmoother) on noisy inputs.
+- Validated via proptests against gold-standard vectors where available.
+- No look-ahead bias; suitable for live streaming and batch feature pipelines.
+
+## Related Indicators & See Also
+
+- [Indicator Gallery](../gallery.md)
+- [Native Indicators index](index.md)
+- [Ehlers DSP guide](../ehlers/index.md)
+- [Cyber Cycle](cyber_cycle.md)
+- [SuperSmoother](supersmoother.md)
+
+## Sources & References
+
+**Primary Source**: https://github.com/lavs9/quantwave/blob/main/references/traderstipsreference/TRADERS’%20TIPS%20-%20DECEMBER%202025.html
+
+**Implementation**: `quantwave-core/src/indicators/one_euro_filter.rs` (`ONE_EURO_FILTER` / `ONE_EURO_FILTER_METADATA`).
+**Parity**: `quantwave-core/tests/gold_standard/one_euro_filter.json`
+
+**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

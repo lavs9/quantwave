@@ -4,20 +4,25 @@
 
 RSI calculated over Laguerre-warped time for faster response.
 
-## Usage
+## Visual Example
+
+> **Chart**: Sparkline or annotated price series showing **Laguerre RSI** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only laguerre_rsi` after extending the generator.
+
+*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/laguerre_rsi.rs`.*
+
+## Description
+
+RSI calculated over Laguerre-warped time for faster response.
 
 Use as a faster lower-lag alternative to traditional RSI. Laguerre smoothing produces fewer whipsaws while remaining responsive to genuine momentum shifts.
 
-## Background
+Ehlers constructs the Laguerre RSI in Cybernetic Analysis by computing RSI on the four outputs of a Laguerre filter bank. The result has RSI-like scaling (0 to 1) but dramatically less lag and smoother behaviour than conventional RSI.
 
-> Ehlers constructs the Laguerre RSI in Cybernetic Analysis by computing RSI on the four outputs of a Laguerre filter bank. The result has RSI-like scaling (0 to 1) but dramatically less lag and smoother behaviour than conventional RSI.
+QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
 
-## Parameters
+## Formula / Specification
 
-- `gamma` (default: 0.5): Smoothing factor (0.0 to 1.0)
-
-## Formula
-
+**Implementation** (`quantwave-core/src/indicators/laguerre_rsi.rs`):
 
 \[
 L_0 = (1 - \gamma) \cdot Close + \gamma \cdot L_{0,t-1}
@@ -41,5 +46,84 @@ CD = \sum \max(L_{i+1} - L_{i}, 0)
 RSI = \frac{CU}{CU + CD}
 \]
 
+Gold-standard parity vectors: `quantwave-core/tests/gold_standard/laguerre_rsi.json`.
 
-[Source](https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/TimeWarp.pdf)
+
+## Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `gamma` | 0.5 | Smoothing factor (0.0 to 1.0) |
+
+
+## Usage Examples
+
+**Streaming (Rust)**
+
+```rust
+use quantwave_core::indicators::LAGUERRE_RSI;
+use quantwave_core::traits::Next;
+
+let mut ind = LAGUERRE_RSI::new(0.5);
+for price in &prices {
+    let value = ind.next(price);
+}
+```
+
+**Streaming (Python)**
+
+```python
+from quantwave import LAGUERRE_RSI
+
+ind = LAGUERRE_RSI(0.5)
+for price in prices:
+    value = ind.next(price)
+```
+
+**Polars Batch (Python)**
+
+```python
+import polars as pl
+import quantwave as qw
+
+def apply_laguerre_rsi(series: pl.Series) -> pl.Series:
+    ind = qw.LAGUERRE_RSI(0.5)
+    return pl.Series([ind.next(float(v)) for v in series.to_list()])
+
+df = (
+    pl.read_csv('ohlcv.csv')
+    .lazy()
+    .with_columns(
+        pl.col("close").map_batches(apply_laguerre_rsi, return_dtype=pl.Float64).alias("laguerre_rsi")
+    )
+    .collect()
+)
+```
+
+All surfaces are bit-identical via the single `Next<T>` implementation and proptests.
+
+## Edge Cases & Limitations
+
+- Recursive DSP filters require a warm-up period; first N bars may be unstable or raw-pass-through.
+- Designed for cyclic/mean-reverting regimes; trending markets can produce lag or drift.
+- Parameter `period` (or equivalent) controls cutoff — too small adds noise, too large adds lag.
+- Prefer chaining with other Ehlers tools (Roofing Filter, SuperSmoother) on noisy inputs.
+- Validated via proptests against gold-standard vectors where available.
+- No look-ahead bias; suitable for live streaming and batch feature pipelines.
+
+## Related Indicators & See Also
+
+- [Indicator Gallery](../gallery.md)
+- [Native Indicators index](index.md)
+- [Ehlers DSP guide](../ehlers/index.md)
+- [Cyber Cycle](cyber_cycle.md)
+- [SuperSmoother](supersmoother.md)
+
+## Sources & References
+
+**Primary Source**: https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/TimeWarp.pdf
+
+**Implementation**: `quantwave-core/src/indicators/laguerre_rsi.rs` (`LAGUERRE_RSI` / `LAGUERRE_RSI_METADATA`).
+**Parity**: `quantwave-core/tests/gold_standard/laguerre_rsi.json`
+
+**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

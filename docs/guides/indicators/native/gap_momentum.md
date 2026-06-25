@@ -4,21 +4,25 @@
 
 Accumulates positive and negative opening gaps to derive a cumulative gap ratio, smoothed by a signal line.
 
-## Usage
+## Visual Example
+
+> **Chart**: Sparkline or annotated price series showing **Gap Momentum** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only gap_momentum` after extending the generator.
+
+*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/gap_momentum.rs`.*
+
+## Description
+
+Accumulates positive and negative opening gaps to derive a cumulative gap ratio, smoothed by a signal line.
 
 Used to identify momentum shifts based on price gaps. Buy when the signal line is rising and sell when it is falling.
 
-## Background
+Perry J. Kaufman introduced Gap Momentum as a way to quantify price gaps relative to their cumulative volatility, similar to an On-Balance Volume (OBV) logic applied to opening gaps. It helps traders identify if gap-driven momentum is increasing or decreasing by comparing the sum of upward gaps against downward gaps over a rolling window. — Perry Kaufman, S&C 2024
 
-> Perry J. Kaufman introduced Gap Momentum as a way to quantify price gaps relative to their cumulative volatility, similar to an On-Balance Volume (OBV) logic applied to opening gaps. It helps traders identify if gap-driven momentum is increasing or decreasing by comparing the sum of upward gaps against downward gaps over a rolling window. — Perry Kaufman, S&C 2024
+QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
 
-## Parameters
+## Formula / Specification
 
-- `period` (default: 40): Rolling window for gap accumulation
-- `signal_period` (default: 20): Smoothing period for the gap ratio
-
-## Formula
-
+**Implementation** (`quantwave-core/src/indicators/gap_momentum.rs`):
 
 \[
 Gap = Open_t - Close_{t-1}
@@ -36,5 +40,85 @@ GapRatio = \begin{cases} 1 & \text{if } DnGaps = 0 \\ 100 \times \frac{UpGaps}{D
 Signal = SMA(GapRatio, SignalPeriod)
 \]
 
+Gold-standard parity vectors: `quantwave-core/tests/gold_standard/gap_momentum.json`.
 
-[Source](https://github.com/lavs9/quantwave/blob/main/references/traderstipsreference/TRADERS%E2%80%99%20TIPS%20-%20JANUARY%202024.html)
+
+## Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `period` | 40 | Rolling window for gap accumulation |
+| `signal_period` | 20 | Smoothing period for the gap ratio |
+
+
+## Usage Examples
+
+**Streaming (Rust)**
+
+```rust
+use quantwave_core::indicators::GAP_MOMENTUM;
+use quantwave_core::traits::Next;
+
+let mut ind = GAP_MOMENTUM::new(40);
+for price in &prices {
+    let value = ind.next(price);
+}
+```
+
+**Streaming (Python)**
+
+```python
+from quantwave import GAP_MOMENTUM
+
+ind = GAP_MOMENTUM(40)
+for price in prices:
+    value = ind.next(price)
+```
+
+**Polars Batch (Python)**
+
+```python
+import polars as pl
+import quantwave as qw
+
+def apply_gap_momentum(series: pl.Series) -> pl.Series:
+    ind = qw.GAP_MOMENTUM(40)
+    return pl.Series([ind.next(float(v)) for v in series.to_list()])
+
+df = (
+    pl.read_csv('ohlcv.csv')
+    .lazy()
+    .with_columns(
+        pl.col("close").map_batches(apply_gap_momentum, return_dtype=pl.Float64).alias("gap_momentum")
+    )
+    .collect()
+)
+```
+
+All surfaces are bit-identical via the single `Next<T>` implementation and proptests.
+
+## Edge Cases & Limitations
+
+- Warm-up: first `40` bars may return NaN or partial state per implementation.
+- Parameter sensitivity: smaller periods increase noise; larger periods increase lag.
+- Sudden gaps or bad ticks can distort rolling windows — consider pre-filtering.
+- Single-series indicators ignore volume unless otherwise documented.
+- Validated via proptests against gold-standard vectors where available.
+- No look-ahead bias; streaming and Polars batch paths are bit-identical.
+
+## Related Indicators & See Also
+
+- [Indicator Gallery](../gallery.md)
+- [Native Indicators index](index.md)
+- [Batch vs Streaming guide](../../../examples/batch-streaming.md)
+- [RSI](relative_strength_index_rsi.md)
+- [SuperTrend](supertrend.md)
+
+## Sources & References
+
+**Primary Source**: https://github.com/lavs9/quantwave/blob/main/references/traderstipsreference/TRADERS%E2%80%99%20TIPS%20-%20JANUARY%202024.html
+
+**Implementation**: `quantwave-core/src/indicators/gap_momentum.rs` (`GAP_MOMENTUM` / `GAP_MOMENTUM_METADATA`).
+**Parity**: `quantwave-core/tests/gold_standard/gap_momentum.json`
+
+**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

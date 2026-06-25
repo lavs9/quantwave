@@ -4,20 +4,102 @@
 
 Identifies the period of the dominant cycle in the price data using the Hilbert Transform.
 
-## Usage
+## Visual Example
+
+> **Chart**: Sparkline or annotated price series showing **Hilbert Transform - Dominant Cycle Period (HT_DCPERIOD)** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only hilbert_transform_dominant_cycle_period_ht_dcperiod` after extending the generator.
+
+*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/cycle.rs`.*
+
+## Description
+
+Identifies the period of the dominant cycle in the price data using the Hilbert Transform.
 
 Use to dynamically adjust the lookback periods of other indicators (e.g., adaptive moving averages). Knowing the current dominant cycle length allows for more accurate smoothing and trend detection.
 
-## Background
+John Ehlers popularized the use of the Hilbert Transform to identify the dominant cycle in financial time series. The DCPERIOD indicator tracks the length of this cycle in bars, providing a crucial parameter for creating market-responsive technical indicators that adapt to changing volatility. — Rocket Science for Traders
 
-> John Ehlers popularized the use of the Hilbert Transform to identify the dominant cycle in financial time series. The DCPERIOD indicator tracks the length of this cycle in bars, providing a crucial parameter for creating market-responsive technical indicators that adapt to changing volatility. — Rocket Science for Traders
+QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
 
-## Formula
+## Formula / Specification
 
+**Implementation** (`quantwave-core/src/indicators/cycle.rs`):
 
 \[
 \text{DCPERIOD}_t = \text{Recalculated Dominant Cycle using Hilbert Transform}
 \]
 
+Gold-standard parity vectors: `quantwave-core/tests/gold_standard/ht_dcperiod.json`.
 
-[Source](https://www.tradingview.com/support/solutions/43000502011-hilbert-transform-dominant-cycle-period-ht-dcperiod/)
+
+## Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| (none) | — | No tunable parameters for this detector. |
+
+## Usage Examples
+
+**Streaming (Rust)**
+
+```rust
+use quantwave_core::indicators::HT_DCPERIOD;
+use quantwave_core::traits::Next;
+
+let mut ind = HT_DCPERIOD::new(14);
+for price in &prices {
+    let value = ind.next(price);
+}
+```
+
+**Streaming (Python)**
+
+```python
+from quantwave import HT_DCPERIOD
+
+ind = HT_DCPERIOD(14)
+for price in prices:
+    value = ind.next(price)
+```
+
+**Polars Batch (Python)**
+
+```python
+import polars as pl
+
+df = (
+    pl.read_csv('ohlcv.csv')
+    .lazy()
+    .with_columns(
+        pl.col("close").ta.ht_dcperiod("close", 14).alias("hilbert_transform_dominant_cycle_period_ht_dcperiod")
+    )
+    .collect()
+)
+```
+
+All surfaces are bit-identical via the single `Next<T>` implementation and proptests.
+
+## Edge Cases & Limitations
+
+- Recursive DSP filters require a warm-up period; first N bars may be unstable or raw-pass-through.
+- Designed for cyclic/mean-reverting regimes; trending markets can produce lag or drift.
+- Parameter `period` (or equivalent) controls cutoff — too small adds noise, too large adds lag.
+- Prefer chaining with other Ehlers tools (Roofing Filter, SuperSmoother) on noisy inputs.
+- Validated via proptests against gold-standard vectors where available.
+- No look-ahead bias; suitable for live streaming and batch feature pipelines.
+
+## Related Indicators & See Also
+
+- [Indicator Gallery](../gallery.md)
+- [Native Indicators index](index.md)
+- [Ehlers DSP guide](../ehlers/index.md)
+- [Cyber Cycle](cyber_cycle.md)
+- [SuperSmoother](supersmoother.md)
+
+## Sources & References
+
+**Primary Source**: https://www.tradingview.com/support/solutions/43000502011-hilbert-transform-dominant-cycle-period-ht-dcperiod/
+
+**Implementation**: `quantwave-core/src/indicators/cycle.rs` (`HT_DCPERIOD` / `HT_DCPERIOD_METADATA`).
+**Parity**: `quantwave-core/tests/gold_standard/ht_dcperiod.json`
+
+**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

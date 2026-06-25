@@ -4,20 +4,107 @@
 
 An average of the High, Low, and Close prices, with double weight given to the Close price.
 
-## Usage
+## Visual Example
+
+> **Chart**: Sparkline or annotated price series showing **Weighted Close Price (WCLPRICE)** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only weighted_close_price_wclprice` after extending the generator.
+
+*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/price_transform.rs`.*
+
+## Description
+
+An average of the High, Low, and Close prices, with double weight given to the Close price.
 
 Use to emphasize the importance of the closing price while still accounting for the total range of the bar.
 
-## Background
+Weighted Close Price gives additional significance to the Close, reflecting the widely held belief that the closing price is the most important data point in a trading session. It provides a more nuanced input for smoothing algorithms. — TA-Lib Documentation
 
-> Weighted Close Price gives additional significance to the Close, reflecting the widely held belief that the closing price is the most important data point in a trading session. It provides a more nuanced input for smoothing algorithms. — TA-Lib Documentation
+QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
 
-## Formula
+## Formula / Specification
 
+**Implementation** (`quantwave-core/src/indicators/price_transform.rs`):
 
 \[
 WCLPRICE = \frac{High + Low + 2 \times Close}{4}
 \]
 
+Gold-standard parity vectors: `quantwave-core/tests/gold_standard/wclprice.json`.
 
-[Source](https://www.tradingview.com/support/solutions/43000502590-weighted-close-wclprice/)
+
+## Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| (none) | — | No tunable parameters for this detector. |
+
+## Usage Examples
+
+**Streaming (Rust)**
+
+```rust
+use quantwave_core::indicators::WCLPRICE;
+use quantwave_core::traits::Next;
+
+let mut ind = WCLPRICE::new(14);
+for price in &prices {
+    let value = ind.next(price);
+}
+```
+
+**Streaming (Python)**
+
+```python
+from quantwave import WCLPRICE
+
+ind = WCLPRICE(14)
+for price in prices:
+    value = ind.next(price)
+```
+
+**Polars Batch (Python)**
+
+```python
+import polars as pl
+import quantwave as qw
+
+def apply_weighted_close_price_wclprice(series: pl.Series) -> pl.Series:
+    ind = qw.WCLPRICE(14)
+    return pl.Series([ind.next(float(v)) for v in series.to_list()])
+
+df = (
+    pl.read_csv('ohlcv.csv')
+    .lazy()
+    .with_columns(
+        pl.col("close").map_batches(apply_weighted_close_price_wclprice, return_dtype=pl.Float64).alias("weighted_close_price_wclprice")
+    )
+    .collect()
+)
+```
+
+All surfaces are bit-identical via the single `Next<T>` implementation and proptests.
+
+## Edge Cases & Limitations
+
+- Warm-up: first `N` bars may return NaN or partial state per implementation.
+- Parameter sensitivity: smaller periods increase noise; larger periods increase lag.
+- Sudden gaps or bad ticks can distort rolling windows — consider pre-filtering.
+- Single-series indicators ignore volume unless otherwise documented.
+- Validated via proptests against gold-standard vectors where available.
+- No look-ahead bias; streaming and Polars batch paths are bit-identical.
+
+## Related Indicators & See Also
+
+- [Indicator Gallery](../gallery.md)
+- [Native Indicators index](index.md)
+- [Batch vs Streaming guide](../../../examples/batch-streaming.md)
+- [RSI](relative_strength_index_rsi.md)
+- [SuperTrend](supertrend.md)
+
+## Sources & References
+
+**Primary Source**: https://www.tradingview.com/support/solutions/43000502590-weighted-close-wclprice/
+
+**Implementation**: `quantwave-core/src/indicators/price_transform.rs` (`WCLPRICE` / `WCLPRICE_METADATA`).
+**Parity**: `quantwave-core/tests/gold_standard/wclprice.json`
+
+**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

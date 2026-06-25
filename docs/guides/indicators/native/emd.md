@@ -4,22 +4,25 @@
 
 Empirical Mode Decomposition separates cycles from trends using bandpass filtering and identifies market modes via adaptive thresholds.
 
-## Usage
+## Visual Example
+
+> **Chart**: Sparkline or annotated price series showing **EMD** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only emd` after extending the generator.
+
+*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/emd.rs`.*
+
+## Description
+
+Empirical Mode Decomposition separates cycles from trends using bandpass filtering and identifies market modes via adaptive thresholds.
 
 Use to decompose price into Intrinsic Mode Functions to separate cycles of different periods without any a priori period assumption. Useful for multi-timescale analysis.
 
-## Background
+Empirical Mode Decomposition is a data-driven method developed by Huang et al. (1998) that decomposes a signal into Intrinsic Mode Functions by iteratively sifting local extrema. Unlike Fourier methods, it requires no predetermined basis functions, making it adaptive to non-stationary market data.
 
-> Empirical Mode Decomposition is a data-driven method developed by Huang et al. (1998) that decomposes a signal into Intrinsic Mode Functions by iteratively sifting local extrema. Unlike Fourier methods, it requires no predetermined basis functions, making it adaptive to non-stationary market data.
+QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
 
-## Parameters
+## Formula / Specification
 
-- `period` (default: 20): Bandpass center period
-- `delta` (default: 0.5): Bandwidth half-width
-- `fraction` (default: 0.1): Threshold multiplier for peaks/valleys
-
-## Formula
-
+**Implementation** (`quantwave-core/src/indicators/emd.rs`):
 
 \[
 \beta = \cos\left(\frac{360}{P}\right), \gamma = \frac{1}{\cos\left(\frac{720\delta}{P}\right)}, \alpha = \gamma - \sqrt{\gamma^2 - 1}
@@ -34,5 +37,86 @@ Mean = \text{SMA}(BP, 2P)
 Threshold = \text{Fraction} \cdot \text{SMA}(\text{Peak/Valley}, 50)
 \]
 
+Gold-standard parity vectors: `quantwave-core/tests/gold_standard/emd.json`.
 
-[Source](https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/EmpiricalModeDecomposition.pdf)
+
+## Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `period` | 20 | Bandpass center period |
+| `delta` | 0.5 | Bandwidth half-width |
+| `fraction` | 0.1 | Threshold multiplier for peaks/valleys |
+
+
+## Usage Examples
+
+**Streaming (Rust)**
+
+```rust
+use quantwave_core::indicators::EMD;
+use quantwave_core::traits::Next;
+
+let mut ind = EMD::new(20);
+for price in &prices {
+    let value = ind.next(price);
+}
+```
+
+**Streaming (Python)**
+
+```python
+from quantwave import EMD
+
+ind = EMD(20)
+for price in prices:
+    value = ind.next(price)
+```
+
+**Polars Batch (Python)**
+
+```python
+import polars as pl
+import quantwave as qw
+
+def apply_emd(series: pl.Series) -> pl.Series:
+    ind = qw.EMD(20)
+    return pl.Series([ind.next(float(v)) for v in series.to_list()])
+
+df = (
+    pl.read_csv('ohlcv.csv')
+    .lazy()
+    .with_columns(
+        pl.col("close").map_batches(apply_emd, return_dtype=pl.Float64).alias("emd")
+    )
+    .collect()
+)
+```
+
+All surfaces are bit-identical via the single `Next<T>` implementation and proptests.
+
+## Edge Cases & Limitations
+
+- Recursive DSP filters require a warm-up period; first N bars may be unstable or raw-pass-through.
+- Designed for cyclic/mean-reverting regimes; trending markets can produce lag or drift.
+- Parameter `period` (or equivalent) controls cutoff — too small adds noise, too large adds lag.
+- Prefer chaining with other Ehlers tools (Roofing Filter, SuperSmoother) on noisy inputs.
+- Validated via proptests against gold-standard vectors where available.
+- No look-ahead bias; suitable for live streaming and batch feature pipelines.
+
+## Related Indicators & See Also
+
+- [Indicator Gallery](../gallery.md)
+- [Native Indicators index](index.md)
+- [Ehlers DSP guide](../ehlers/index.md)
+- [Cyber Cycle](cyber_cycle.md)
+- [SuperSmoother](supersmoother.md)
+
+## Sources & References
+
+**Primary Source**: https://github.com/lavs9/quantwave/blob/main/references/Ehlers%20Papers/EmpiricalModeDecomposition.pdf
+
+**Implementation**: `quantwave-core/src/indicators/emd.rs` (`EMD` / `EMD_METADATA`).
+**Parity**: `quantwave-core/tests/gold_standard/emd.json`
+
+**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

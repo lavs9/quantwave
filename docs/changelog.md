@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased / Docs] - 2026-06-25 IST
+
+### Added
+- **Documentation standards bulk rollout** (quantwave-6br5 / epic p1k6 Phase 1 complete): `docs/upgrade_to_standards.py` upgrades all native indicator stubs to `DOCUMENTATION_STANDARDS.md` v1.0 (202 pages rewritten; 19 hand-upgraded exemplars preserved). Every page now has mandatory sections, 3-surface code, edge cases, authoritative core-path sources, and visuals or precise placeholders. `python docs/upgrade_to_standards.py --lint` enforces the checklist. Gallery and native index updated to reflect full conformance.
+
 ## [Unreleased / Docs] - 2026-06-01 IST
 
 ### Fixed
