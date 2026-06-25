@@ -6,9 +6,9 @@ Accumulates positive and negative opening gaps to derive a cumulative gap ratio,
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Gap Momentum** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only gap_momentum` after extending the generator.
+![Gap Momentum — annotated preview mapping to core implementation](../../../assets/indicator-previews/gap_momentum.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/gap_momentum.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

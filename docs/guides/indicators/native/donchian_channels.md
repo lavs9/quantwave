@@ -6,9 +6,9 @@ Donchian Channels are volatility indicators formed by taking the highest high an
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Donchian Channels** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only donchian_channels` after extending the generator.
+![Donchian Channels — annotated preview mapping to core implementation](../../../assets/indicator-previews/donchian_channels.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/donchian.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

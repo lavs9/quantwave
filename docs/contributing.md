@@ -44,7 +44,7 @@ pytest
    - Unit tests in `quantwave-core`.
    - Parity tests (Streaming vs. Batch).
    - Add to `gold_standard` if applicable.
-4. **Document**: Add or update the page in `docs/guides/indicators/native/` following [DOCUMENTATION_STANDARDS.md](DOCUMENTATION_STANDARDS.md) (mandatory sections: Visual Example, Description, Formula, Parameters, 3-surface Usage Examples, Edge Cases, Related, Sources). Run `python docs/upgrade_to_standards.py --lint` before landing doc changes.
+4. **Document**: Add or update the page in `docs/guides/indicators/native/` following [DOCUMENTATION_STANDARDS.md](DOCUMENTATION_STANDARDS.md) (mandatory sections: Visual Example, Description, Formula, Parameters, 3-surface Usage Examples, Edge Cases, Related, Sources). Generate previews with `python docs/generate_all_previews.py --sync-docs`. Run `python docs/upgrade_to_standards.py --lint` before landing doc changes.
 
 ## Style Guidelines
 - Follow idiomatic Rust (run `cargo clippy`).

@@ -6,9 +6,9 @@ Nonlinear noise removal using Kendall correlation against a straight line.
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Noise Elimination Technology** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only noise_elimination_technology` after extending the generator.
+![Noise Elimination Technology — annotated preview mapping to core implementation](../../../assets/indicator-previews/noise_elimination_technology.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/noise_elimination.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

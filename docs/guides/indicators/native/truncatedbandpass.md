@@ -6,9 +6,9 @@ Truncated Bandpass filter for handling sharp price movements.
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **TruncatedBandpass** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only truncatedbandpass` after extending the generator.
+![TruncatedBandpass — annotated preview mapping to core implementation](../../../assets/indicator-previews/truncatedbandpass.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/truncated_bandpass.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

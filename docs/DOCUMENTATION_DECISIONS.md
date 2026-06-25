@@ -434,3 +434,19 @@ Task closed with full retrospective in bd notes. Related docs updated in the sam
 
 **Closes**: quantwave-6br5; completes Phase 1 scope of quantwave-p1k6 (template enforcement). Phase 2+ (visual generator expansion, xtask skeleton sync) remains optional follow-up.
 
+---
+
+## Full Visual Depth Layer (p1k6 Phase 2, 2026-06-25 IST)
+
+**Context**: Phase 1 enforced text structure on 202 pages but 198 still had visual placeholders. User requested completing the depth layer in full.
+
+**Actions**:
+- Added `docs/visual_utils.py` (shared matplotlib styling, synthetic regimes, viz-type heuristics, candle schematics).
+- Added `docs/generate_all_previews.py` (bulk generator + `--sync-docs` to embed PNGs in markdown). Preserves 11 hand-crafted candle + 12 hand-crafted indicator PNGs unless `--force`.
+- Generated **161** indicator previews + **61** candle previews; synced **198** placeholder pages to committed `![...](assets/...)` embeds.
+- Extended standards lint to fail on `Visual placeholder` / `> **Chart**:` blocks.
+- Added `matplotlib>=3.8` to `requirements-docs.txt`.
+- Updated gallery, native/index, contributing, changelog.
+
+**Outcome**: Zero visual placeholders remain on native indicator pages (excluding bespoke PA struct guides with their own annotated charts). All pages pass `upgrade_to_standards.py --lint` including visual requirements.
+

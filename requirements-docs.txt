@@ -6,6 +6,7 @@ pymdown-extensions>=10.14
 mkdocs-marimo
 marimo>=0.13
 mkdocs-git-revision-date-localized-plugin>=1.2
+matplotlib>=3.8
 
 # quantwave package from PyPI.
 # We install the latest released version so that `import quantwave` works

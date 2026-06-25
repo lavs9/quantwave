@@ -6,9 +6,9 @@ Measures the persistence or anti-persistence of a time series using R/S analysis
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Hurst Exponent** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only hurst_exponent` after extending the generator.
+![Hurst Exponent — annotated preview mapping to core implementation](../../../assets/indicator-previews/hurst_exponent.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/hurst.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

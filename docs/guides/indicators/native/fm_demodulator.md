@@ -6,9 +6,9 @@ Extracts market timing information by demodulating the frequency-modulated price
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **FM Demodulator** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only fm_demodulator` after extending the generator.
+![FM Demodulator — annotated preview mapping to core implementation](../../../assets/indicator-previews/fm_demodulator.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/amfm.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

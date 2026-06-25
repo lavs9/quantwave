@@ -6,9 +6,9 @@ Plots a sine wave and a lead-sine wave based on the cyclic phase of price moveme
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Sine Wave** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only sine_wave` after extending the generator.
+![Sine Wave — annotated preview mapping to core implementation](../../../assets/indicator-previews/sine_wave.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/sine_wave.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

@@ -6,9 +6,9 @@ A momentum oscillator that shows the percent rate of change of a triple exponent
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **TRIX** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only trix` after extending the generator.
+![TRIX — annotated preview mapping to core implementation](../../../assets/indicator-previews/trix.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/momentum.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

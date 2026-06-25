@@ -6,9 +6,9 @@ Ichimoku Kinko Hyo is a comprehensive indicator that defines support and resista
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Ichimoku Cloud** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only ichimoku_cloud` after extending the generator.
+![Ichimoku Cloud — annotated preview mapping to core implementation](../../../assets/indicator-previews/ichimoku_cloud.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/ichimoku.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

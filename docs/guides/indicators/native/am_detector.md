@@ -6,9 +6,9 @@ Recovers market volatility from the amplitude-modulated whitened price spectrum.
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **AM Detector** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only am_detector` after extending the generator.
+![AM Detector — annotated preview mapping to core implementation](../../../assets/indicator-previews/am_detector.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/amfm.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

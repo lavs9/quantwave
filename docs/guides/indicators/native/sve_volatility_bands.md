@@ -6,9 +6,9 @@ Volatility bands designed to highlight volatility changes especially when using 
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **SVE Volatility Bands** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only sve_volatility_bands` after extending the generator.
+![SVE Volatility Bands — annotated preview mapping to core implementation](../../../assets/indicator-previews/sve_volatility_bands.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/sve_volatility_bands.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

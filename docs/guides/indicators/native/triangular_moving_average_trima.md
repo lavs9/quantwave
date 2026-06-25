@@ -6,9 +6,9 @@ A double-smoothed simple moving average that gives more weight to the middle of 
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Triangular Moving Average (TRIMA)** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only triangular_moving_average_trima` after extending the generator.
+![Triangular Moving Average (TRIMA) — annotated preview mapping to core implementation](../../../assets/indicator-previews/triangular_moving_average_trima.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/overlap.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

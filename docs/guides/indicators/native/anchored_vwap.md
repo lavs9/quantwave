@@ -6,9 +6,9 @@ Volume Weighted Average Price anchored to a specific starting point.
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Anchored VWAP** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only anchored_vwap` after extending the generator.
+![Anchored VWAP — annotated preview mapping to core implementation](../../../assets/indicator-previews/anchored_vwap.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/vwap.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

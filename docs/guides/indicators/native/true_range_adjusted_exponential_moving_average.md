@@ -6,9 +6,9 @@ An exponential moving average that incorporates true range to measure volatility
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **True Range Adjusted Exponential Moving Average** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only true_range_adjusted_exponential_moving_average` after extending the generator.
+![True Range Adjusted Exponential Moving Average — annotated preview mapping to core implementation](../../../assets/indicator-previews/true_range_adjusted_exponential_moving_average.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/tradj_ema.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

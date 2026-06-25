@@ -6,9 +6,9 @@ An indicator system that identifies when a new trend is beginning and the streng
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Aroon Indicator** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only aroon_indicator` after extending the generator.
+![Aroon Indicator — annotated preview mapping to core implementation](../../../assets/indicator-previews/aroon_indicator.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/momentum.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

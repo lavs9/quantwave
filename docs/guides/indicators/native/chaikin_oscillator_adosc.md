@@ -6,9 +6,9 @@ An indicator that measures the momentum of the Accumulation/Distribution Line us
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Chaikin Oscillator (ADOSC)** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only chaikin_oscillator_adosc` after extending the generator.
+![Chaikin Oscillator (ADOSC) — annotated preview mapping to core implementation](../../../assets/indicator-previews/chaikin_oscillator_adosc.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/volume.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

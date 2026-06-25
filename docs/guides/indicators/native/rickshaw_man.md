@@ -6,9 +6,9 @@ A long-legged doji where the body is in the center of the range.
 
 ## Visual Example
 
-> **Chart**: Annotated candlestick diagram for **Rickshaw Man** showing the ideal TA-Lib recognition geometry (body/wick relationships and trend context). Extend `docs/gen_candle_previews.py` to add a dedicated generator for this pattern.
+![Rickshaw Man — annotated preview mapping to core implementation](../../../assets/candlestick-previews/rickshaw_man.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Recognition rules are authoritative in `quantwave-core/src/indicators/pattern.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

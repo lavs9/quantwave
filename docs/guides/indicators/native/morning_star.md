@@ -8,7 +8,7 @@ A bullish reversal pattern with three candles.
 
 ![Morning Star — annotated preview mapping to core implementation](../../../assets/candlestick-previews/morning_star.png)
 
-*Generated via `docs/gen_candle_previews.py` (synthetic ideal per library logic). Regenerated 2026-06-25 IST during p1k6 standards rollout.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

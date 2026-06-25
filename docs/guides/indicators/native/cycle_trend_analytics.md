@@ -6,9 +6,9 @@ A set of oscillators (Price - SMA) with lengths from 5 to 30 used to visualize c
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Cycle/Trend Analytics** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only cycle_trend_analytics` after extending the generator.
+![Cycle/Trend Analytics — annotated preview mapping to core implementation](../../../assets/indicator-previews/cycle_trend_analytics.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/cycle_trend_analytics.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

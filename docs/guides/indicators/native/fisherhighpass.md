@@ -6,9 +6,9 @@ Fisher Transform applied to normalized HighPass filtered prices.
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **FisherHighPass** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only fisherhighpass` after extending the generator.
+![FisherHighPass — annotated preview mapping to core implementation](../../../assets/indicator-previews/fisherhighpass.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/fisher_high_pass.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

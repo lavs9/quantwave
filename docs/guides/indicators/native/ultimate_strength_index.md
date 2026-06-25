@@ -6,9 +6,9 @@ A lag-reduced version of the RSI using UltimateSmoother on smoothed up/down comp
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Ultimate Strength Index** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only ultimate_strength_index` after extending the generator.
+![Ultimate Strength Index — annotated preview mapping to core implementation](../../../assets/indicator-previews/ultimate_strength_index.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/usi.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

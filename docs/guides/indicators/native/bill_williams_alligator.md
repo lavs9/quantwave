@@ -6,9 +6,9 @@ Trend-following indicator using three delayed smoothed moving averages.
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Bill Williams Alligator** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only bill_williams_alligator` after extending the generator.
+![Bill Williams Alligator — annotated preview mapping to core implementation](../../../assets/indicator-previews/bill_williams_alligator.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/alligator.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

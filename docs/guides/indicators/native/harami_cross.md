@@ -8,7 +8,7 @@ A Harami in which the second ("baby") candle is a Doji. The combination of conta
 
 ![Harami Cross: large directional candle containing a Doji whose body and wicks lie inside the prior range. Annotation stresses the Doji containment.](../../../assets/candlestick-previews/harami_cross.png)
 
-*Synthetic ideal per TA-Lib CDLHARAMICROSS. Generated 2026-05-31 IST via `docs/gen_candle_previews.py`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

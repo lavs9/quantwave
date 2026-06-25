@@ -6,9 +6,9 @@ A smooth, low-lag moving average that uses multiple exponential smoothing.
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Tilson T3 Moving Average** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only tilson_t3_moving_average` after extending the generator.
+![Tilson T3 Moving Average — annotated preview mapping to core implementation](../../../assets/indicator-previews/tilson_t3_moving_average.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/overlap.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

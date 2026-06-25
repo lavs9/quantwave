@@ -6,9 +6,9 @@ A fast-acting moving average that reduces lag by using two exponential moving av
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Double Exponential Moving Average (DEMA)** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only double_exponential_moving_average_dema` after extending the generator.
+![Double Exponential Moving Average (DEMA) — annotated preview mapping to core implementation](../../../assets/indicator-previews/double_exponential_moving_average_dema.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/overlap.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

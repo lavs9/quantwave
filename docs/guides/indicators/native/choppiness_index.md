@@ -6,9 +6,9 @@ Determines if the market is trending (low values) or ranging/choppy (high values
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Choppiness Index** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only choppiness_index` after extending the generator.
+![Choppiness Index — annotated preview mapping to core implementation](../../../assets/indicator-previews/choppiness_index.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/choppiness_index.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

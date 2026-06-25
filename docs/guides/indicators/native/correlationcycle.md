@@ -6,9 +6,9 @@ Determines cycle phase angle by correlating price with orthogonal sinusoids.
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **CorrelationCycle** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only correlationcycle` after extending the generator.
+![CorrelationCycle — annotated preview mapping to core implementation](../../../assets/indicator-previews/correlationcycle.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/correlation_cycle.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

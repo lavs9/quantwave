@@ -6,9 +6,9 @@ RSI calculated over Laguerre-warped time for faster response.
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Laguerre RSI** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only laguerre_rsi` after extending the generator.
+![Laguerre RSI — annotated preview mapping to core implementation](../../../assets/indicator-previews/laguerre_rsi.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/laguerre_rsi.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

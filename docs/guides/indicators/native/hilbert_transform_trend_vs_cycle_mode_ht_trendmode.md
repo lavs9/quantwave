@@ -6,9 +6,9 @@ A binary indicator that determines if the market is currently in a trending stat
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Hilbert Transform - Trend vs. Cycle Mode (HT_TRENDMODE)** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only hilbert_transform_trend_vs_cycle_mode_ht_trendmode` after extending the generator.
+![Hilbert Transform - Trend vs. Cycle Mode (HT_TRENDMODE) — annotated preview mapping to core implementation](../../../assets/indicator-previews/hilbert_transform_trend_vs_cycle_mode_ht_trendmode.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/cycle.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

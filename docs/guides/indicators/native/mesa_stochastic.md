@@ -6,9 +6,9 @@ Standard Stochastic calculation applied to Roofing Filtered data, followed by Su
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **MESA Stochastic** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only mesa_stochastic` after extending the generator.
+![MESA Stochastic — annotated preview mapping to core implementation](../../../assets/indicator-previews/mesa_stochastic.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/mesa_stochastic.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

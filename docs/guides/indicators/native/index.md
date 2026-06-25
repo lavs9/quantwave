@@ -51,7 +51,7 @@ These specific pages are particularly well-regarded and representative:
 ## Important Notes
 
 - Detailed formulas, visuals, edge cases, and rich usage examples live on the individual indicator pages (not here). Those pages are the primary reference.
-- All 200+ native indicator pages conform to `DOCUMENTATION_STANDARDS.md` (bulk upgrade 2026-06-25). Pages with dedicated generators include PNG previews; others ship precise visual placeholders until extended in `gen_indicator_previews.py` / `gen_candle_previews.py`.
+- All 200+ native indicator pages conform to `DOCUMENTATION_STANDARDS.md` with committed PNG previews (regenerate via `python docs/generate_all_previews.py`). Hand-crafted candle/Ehlers exemplars coexist with bulk-generated sparklines and schematics.
 - The auto-generated Python API reference (`/api/`) documents the thin Python surface and is intentionally secondary to the manual guides.
 
 ## Getting Started with Native Indicators

@@ -6,9 +6,9 @@ An indicator used to quantify trend strength without regard to trend direction.
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Average Directional Index (ADX)** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only average_directional_index_adx` after extending the generator.
+![Average Directional Index (ADX) — annotated preview mapping to core implementation](../../../assets/indicator-previews/average_directional_index_adx.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/momentum.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

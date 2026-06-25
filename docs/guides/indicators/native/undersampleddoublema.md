@@ -6,9 +6,9 @@ Undersampled price data smoothed by dual Hann filters to eliminate high frequenc
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **UndersampledDoubleMA** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only undersampleddoublema` after extending the generator.
+![UndersampledDoubleMA — annotated preview mapping to core implementation](../../../assets/indicator-previews/undersampleddoublema.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/just_ignore_them.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

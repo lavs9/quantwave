@@ -6,9 +6,9 @@ A momentum indicator that uses volume flow to predict changes in stock price.
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **On-Balance Volume (OBV)** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only on_balance_volume_obv` after extending the generator.
+![On-Balance Volume (OBV) — annotated preview mapping to core implementation](../../../assets/indicator-previews/on_balance_volume_obv.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/volume.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

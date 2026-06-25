@@ -6,9 +6,9 @@ A simple average of the Open and Close prices.
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Open-Close Average (OC2)** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only open_close_average_oc2` after extending the generator.
+![Open-Close Average (OC2) — annotated preview mapping to core implementation](../../../assets/indicator-previews/open_close_average_oc2.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/price_transform.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

@@ -6,9 +6,9 @@ An oscillator variant of the ADX where the sign reflects trend direction determi
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Harrington ADX Oscillator** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only harrington_adx_oscillator` after extending the generator.
+![Harrington ADX Oscillator — annotated preview mapping to core implementation](../../../assets/indicator-previews/harrington_adx_oscillator.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/harrington_adx.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

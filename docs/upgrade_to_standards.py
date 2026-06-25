@@ -55,6 +55,8 @@ VIOLATION_PATTERNS = [
     (re.compile(r"^## Background\s*$", re.M), "deprecated Background section"),
     (re.compile(r"Steve Nison in his 1991 book"), "Nison boilerplate"),
     (re.compile(r"TA-Lib Internal"), "vague TA-Lib Internal formula"),
+    (re.compile(r"Visual placeholder"), "missing committed visual asset"),
+    (re.compile(r"> \*\*Chart\*\*:"), "missing committed visual asset"),
     (
         re.compile(r"quantwave-(?=[a-z0-9]*\d)[a-z0-9]{3,6}\b"),
         "internal bead reference",
@@ -285,16 +287,11 @@ def render_visual(rec: IndicatorRecord) -> str:
     asset, kind = rel_asset(rec.slug, rec.is_pattern)
     if asset:
         alt = f"{rec.name} — annotated preview mapping to core implementation"
-        gen = (
-            "docs/gen_candle_previews.py"
-            if kind == "candle"
-            else "docs/gen_indicator_previews.py"
-        )
         return (
             f"## Visual Example\n\n"
             f"![{alt}]({asset})\n\n"
-            f"*Generated via `{gen}` (synthetic ideal per library logic). "
-            f"Regenerated {TODAY} IST during p1k6 standards rollout.*\n"
+            f"*Synthetic ideal per library logic. Generated {TODAY} IST via "
+            f"`docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*\n"
         )
     if rec.is_pattern:
         return (

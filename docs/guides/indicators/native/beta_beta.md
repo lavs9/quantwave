@@ -6,9 +6,9 @@ A measure of a security's volatility in relation to the overall market.
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Beta (BETA)** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only beta_beta` after extending the generator.
+![Beta (BETA) — annotated preview mapping to core implementation](../../../assets/indicator-previews/beta_beta.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/statistics.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

@@ -6,9 +6,9 @@ A volatility indicator consisting of a middle SMA and two outer bands based on s
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Bollinger Bands** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only bollinger_bands` after extending the generator.
+![Bollinger Bands — annotated preview mapping to core implementation](../../../assets/indicator-previews/bollinger_bands.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/overlap.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

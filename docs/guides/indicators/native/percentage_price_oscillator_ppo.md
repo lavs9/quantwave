@@ -6,9 +6,9 @@ A momentum oscillator that measures the difference between two moving averages a
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Percentage Price Oscillator (PPO)** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only percentage_price_oscillator_ppo` after extending the generator.
+![Percentage Price Oscillator (PPO) — annotated preview mapping to core implementation](../../../assets/indicator-previews/percentage_price_oscillator_ppo.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/momentum.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

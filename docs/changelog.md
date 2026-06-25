@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased / Docs] - 2026-06-25 IST
 
 ### Added
+- **Full visual depth layer** (p1k6 Phase 2): `docs/generate_all_previews.py` + `docs/visual_utils.py` generate and embed PNG previews for all 221 native indicator pages (161 indicator sparklines + 61 candle schematics). `python docs/generate_all_previews.py --sync-docs` regenerates assets and updates markdown. `matplotlib>=3.8` added to `requirements-docs.txt`. Standards lint now rejects visual placeholders.
 - **Documentation standards bulk rollout** (quantwave-6br5 / epic p1k6 Phase 1 complete): `docs/upgrade_to_standards.py` upgrades all native indicator stubs to `DOCUMENTATION_STANDARDS.md` v1.0 (202 pages rewritten; 19 hand-upgraded exemplars preserved). Every page now has mandatory sections, 3-surface code, edge cases, authoritative core-path sources, and visuals or precise placeholders. `python docs/upgrade_to_standards.py --lint` enforces the checklist. Gallery and native index updated to reflect full conformance.
 
 ## [Unreleased / Docs] - 2026-06-01 IST

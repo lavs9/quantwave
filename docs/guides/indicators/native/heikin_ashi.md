@@ -6,9 +6,9 @@ Heikin-Ashi candles filter market noise to reveal the underlying trend.
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Heikin-Ashi** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only heikin_ashi` after extending the generator.
+![Heikin-Ashi — annotated preview mapping to core implementation](../../../assets/indicator-previews/heikin_ashi.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/heikin_ashi.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

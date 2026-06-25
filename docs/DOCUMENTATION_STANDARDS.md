@@ -357,7 +357,7 @@ Dedicated pages for these should be **supplementary** to the notebook, not dupli
 
 **Phase 1 (complete — 2026-06-25 IST)**: Bulk rollout via `docs/upgrade_to_standards.py` upgraded all 202 non-compliant native pages to the mandatory template (metadata-seeded, 3-surface examples, edge cases, sources; Nison boilerplate eliminated). Nineteen hand-upgraded exemplars with committed PNGs preserved. Gallery and native index updated. Lint: `python docs/upgrade_to_standards.py --lint`.
 
-**Phase 2**: Extend `gen_indicator_previews.py` to produce real indicator visuals for the majority of pages. Add dedicated (but concise) pages for the core PA rich tools if they remain primarily notebook-driven.
+**Phase 2 (complete — 2026-06-25 IST)**: `docs/generate_all_previews.py` + `docs/visual_utils.py` generate committed PNGs for all native indicator pages (161 sparklines/charts + 61 candle schematics). Run `python docs/generate_all_previews.py --sync-docs` to regenerate and embed. Hand-crafted exemplars from `gen_indicator_previews.py` / `gen_candle_previews.py` preserved.
 
 **Phase 3**: Implement/activate the xtask documentation generator so new indicators automatically receive a conforming skeleton (metadata + formula + params + stub sections for examples/edges). Manual enrichment remains required for examples, visuals, and edges.
 

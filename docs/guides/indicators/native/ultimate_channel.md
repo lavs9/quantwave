@@ -6,9 +6,9 @@ A Keltner-style channel using UltimateSmoothers for both the center line and the
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Ultimate Channel** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only ultimate_channel` after extending the generator.
+![Ultimate Channel — annotated preview mapping to core implementation](../../../assets/indicator-previews/ultimate_channel.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/ultimate_channel.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

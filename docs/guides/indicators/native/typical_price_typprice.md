@@ -6,9 +6,9 @@ An average of the High, Low, and Close prices.
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Typical Price (TYPPRICE)** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only typical_price_typprice` after extending the generator.
+![Typical Price (TYPPRICE) — annotated preview mapping to core implementation](../../../assets/indicator-previews/typical_price_typprice.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/price_transform.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

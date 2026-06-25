@@ -8,7 +8,7 @@ A two-candle reversal pattern in which a large candle body completely engulfs th
 
 ![Bullish Engulfing: small red candle followed by a large green candle whose body fully engulfs the prior candle's range. Shaded region and annotation highlight the complete coverage of the prior high-low.](../../../assets/candlestick-previews/engulfing.png)
 
-*Synthetic ideal per TA-Lib CDLENGULFING body-containment rules (open \le prior close, close \ge prior open). Regenerated 2026-05-31 IST via `docs/gen_candle_previews.py` for p1k6 standards conformance.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

@@ -6,9 +6,9 @@ The simple average of the Open, High, Low, and Close prices for a given period.
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Average Price (AVGPRICE)** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only average_price_avgprice` after extending the generator.
+![Average Price (AVGPRICE) — annotated preview mapping to core implementation](../../../assets/indicator-previews/average_price_avgprice.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/price_transform.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

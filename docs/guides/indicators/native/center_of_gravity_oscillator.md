@@ -6,9 +6,9 @@ The CG Oscillator identifies price turning points with essentially zero lag by c
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Center of Gravity Oscillator** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only center_of_gravity_oscillator` after extending the generator.
+![Center of Gravity Oscillator — annotated preview mapping to core implementation](../../../assets/indicator-previews/center_of_gravity_oscillator.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/cg.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

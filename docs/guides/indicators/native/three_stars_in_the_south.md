@@ -6,9 +6,9 @@ A rare bullish reversal pattern in a downtrend.
 
 ## Visual Example
 
-> **Chart**: Annotated candlestick diagram for **Three Stars In The South** showing the ideal TA-Lib recognition geometry (body/wick relationships and trend context). Extend `docs/gen_candle_previews.py` to add a dedicated generator for this pattern.
+![Three Stars In The South — annotated preview mapping to core implementation](../../../assets/candlestick-previews/three_stars_in_the_south.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Recognition rules are authoritative in `quantwave-core/src/indicators/pattern.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

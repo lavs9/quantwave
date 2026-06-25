@@ -6,9 +6,9 @@ WaveTrend is an oscillator that helps identify overbought and oversold condition
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **WaveTrend Oscillator** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only wavetrend_oscillator` after extending the generator.
+![WaveTrend Oscillator — annotated preview mapping to core implementation](../../../assets/indicator-previews/wavetrend_oscillator.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/wavetrend.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

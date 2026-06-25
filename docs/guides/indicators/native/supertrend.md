@@ -8,7 +8,7 @@ Trend-following indicator that combines ATR for volatility bands to identify the
 
 ![SuperTrend — annotated preview mapping to core implementation](../../../assets/indicator-previews/supertrend.png)
 
-*Generated via `docs/gen_indicator_previews.py` (synthetic ideal per library logic). Regenerated 2026-06-25 IST during p1k6 standards rollout.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

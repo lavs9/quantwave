@@ -6,9 +6,9 @@ A trend-following indicator used to determine price direction and potential reve
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Parabolic SAR** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only parabolic_sar` after extending the generator.
+![Parabolic SAR — annotated preview mapping to core implementation](../../../assets/indicator-previews/parabolic_sar.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/overlap.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

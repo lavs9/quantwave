@@ -6,9 +6,9 @@ A hybrid indicator that applies a double-smoothed stochastic to MACD for faster 
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Schaff Trend Cycle** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only schaff_trend_cycle` after extending the generator.
+![Schaff Trend Cycle — annotated preview mapping to core implementation](../../../assets/indicator-previews/schaff_trend_cycle.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/stc.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

@@ -6,9 +6,9 @@ Estimates the dominant cycle period using a homodyne approach.
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Homodyne Discriminator** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only homodyne_discriminator` after extending the generator.
+![Homodyne Discriminator — annotated preview mapping to core implementation](../../../assets/indicator-previews/homodyne_discriminator.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/homodyne_discriminator.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

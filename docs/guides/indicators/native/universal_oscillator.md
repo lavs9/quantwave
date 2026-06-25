@@ -6,9 +6,9 @@ An adaptive oscillator that normalizes price momentum using a SuperSmoother filt
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Universal Oscillator** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only universal_oscillator` after extending the generator.
+![Universal Oscillator — annotated preview mapping to core implementation](../../../assets/indicator-previews/universal_oscillator.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/universal_oscillator.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

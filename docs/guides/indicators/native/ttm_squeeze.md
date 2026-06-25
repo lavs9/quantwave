@@ -6,9 +6,9 @@ TTM Squeeze measures the relationship between Bollinger Bands and Keltner Channe
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **TTM Squeeze** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only ttm_squeeze` after extending the generator.
+![TTM Squeeze — annotated preview mapping to core implementation](../../../assets/indicator-previews/ttm_squeeze.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/ttm_squeeze.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

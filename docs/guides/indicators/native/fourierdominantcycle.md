@@ -6,9 +6,9 @@ Dominant cycle period estimation using resolution-enhanced DFT and center of gra
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **FourierDominantCycle** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only fourierdominantcycle` after extending the generator.
+![FourierDominantCycle — annotated preview mapping to core implementation](../../../assets/indicator-previews/fourierdominantcycle.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/fourier_transform.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

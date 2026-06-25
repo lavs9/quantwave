@@ -6,9 +6,9 @@ An indicator that plots a sine wave and a lead-sine wave (shifted by 45 degrees)
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Hilbert Transform - Sine Wave (HT_SINE)** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only hilbert_transform_sine_wave_ht_sine` after extending the generator.
+![Hilbert Transform - Sine Wave (HT_SINE) — annotated preview mapping to core implementation](../../../assets/indicator-previews/hilbert_transform_sine_wave_ht_sine.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/cycle.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

@@ -6,9 +6,9 @@ Keltner Channels are volatility-based envelopes set above and below an exponenti
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Keltner Channels** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only keltner_channels` after extending the generator.
+![Keltner Channels — annotated preview mapping to core implementation](../../../assets/indicator-previews/keltner_channels.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/keltner.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

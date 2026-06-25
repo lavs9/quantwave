@@ -6,9 +6,9 @@ Deviation Scaled Moving Average adapts to price variations using standard deviat
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **DSMA** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only dsma` after extending the generator.
+![DSMA — annotated preview mapping to core implementation](../../../assets/indicator-previews/dsma.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/dsma.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

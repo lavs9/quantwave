@@ -6,9 +6,9 @@ A 2D Kalman filter tracking price and velocity to reduce lag in trends.
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Kinematic Kalman Filter** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only kinematic_kalman_filter` after extending the generator.
+![Kinematic Kalman Filter — annotated preview mapping to core implementation](../../../assets/indicator-previews/kinematic_kalman_filter.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/kinematic_kalman.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

@@ -6,9 +6,9 @@ A momentum indicator based on the classic stochastic oscillator applied to price
 
 ## Visual Example
 
-> **Chart**: Sparkline or annotated price series showing **Stochastic Distance Oscillator** behaviour on synthetic trending + cyclic data. Run `python docs/gen_indicator_previews.py --only stochastic_distance_oscillator` after extending the generator.
+![Stochastic Distance Oscillator — annotated preview mapping to core implementation](../../../assets/indicator-previews/stochastic_distance_oscillator.png)
 
-*Visual placeholder — standards bulk upgrade 2026-06-25 IST. Core logic in `quantwave-core/src/indicators/sdo.rs`.*
+*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 

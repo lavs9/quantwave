@@ -2,7 +2,7 @@
 
 QuantWave delivers **150+ production-grade technical indicators** in high-performance Rust, with first-class exposure through Polars (`.ta()` namespace) and streaming `Next<T>` implementations. **Every indicator guarantees bit-identical results** between batch and streaming modes, validated via proptests against gold-standard vectors.
 
-All dedicated indicator pages adhere to QuantWave's [Documentation Standards](../../DOCUMENTATION_STANDARDS.md): practical user-focused explanations, mathematical definitions or recognition logic, parameter tables, usage examples across Rust streaming / Python streaming / Polars batch, edge cases, visuals (or precise placeholders), and authoritative sources (Ehlers papers, MQL5 series, TA-Lib, TradingView, etc.).
+All dedicated indicator pages adhere to QuantWave's [Documentation Standards](../../DOCUMENTATION_STANDARDS.md): practical user-focused explanations, mathematical definitions or recognition logic, parameter tables, usage examples across Rust streaming / Python streaming / Polars batch, edge cases, committed PNG visuals (regenerate via `docs/generate_all_previews.py`), and authoritative sources (Ehlers papers, MQL5 series, TA-Lib, TradingView, etc.).
 
 Use the sidebar, search, or the categorized overview below to explore. Click any link to reach the dedicated page.
 
@@ -60,7 +60,7 @@ In addition, QuantWave ships 50+ classic candlestick patterns (Engulfing, Mornin
 Moving averages (SMA, EMA, HMA, KAMA, ALMA, FRAMA, T3, DEMA, TEMA, Zero-Lag variants), MACD, RSI, Stochastic, CCI, ADX, Bollinger Bands, ATR, Parabolic SAR, Vortex, and many more. See the Classic subsection in [Native Indicators](native/index.md).
 
 ### Ehlers DSP Suite
-30+ specialized low-lag tools from John Ehlers: Cyber Cycle, Instantaneous Trendline, Trendflex, Reflex, Ehlers Filter, Ehlers Stochastic, Ehlers Loops, UltimateSmoother, Fisher & Inverse Fisher, MAMA/MESA, Mesa Stochastic, Hilbert Transform variants (dominant cycle, phasor, sine wave, trend vs cycle), Autocorrelation, Roofing Filter, SuperSmoother, Butterworth, Laguerre family, and more. Every native Ehlers page now follows [DOCUMENTATION_STANDARDS.md](../../DOCUMENTATION_STANDARDS.md) (mandatory sections, 3-surface code + parity, edge cases, core-path sources; visuals via `gen_indicator_previews.py` or precise placeholders). See [Ehlers DSP guide](ehlers/index.md) and the Ehlers DSP subsection in the native index.
+30+ specialized low-lag tools from John Ehlers: Cyber Cycle, Instantaneous Trendline, Trendflex, Reflex, Ehlers Filter, Ehlers Stochastic, Ehlers Loops, UltimateSmoother, Fisher & Inverse Fisher, MAMA/MESA, Mesa Stochastic, Hilbert Transform variants (dominant cycle, phasor, sine wave, trend vs cycle), Autocorrelation, Roofing Filter, SuperSmoother, Butterworth, Laguerre family, and more. Every native Ehlers page follows [DOCUMENTATION_STANDARDS.md](../../DOCUMENTATION_STANDARDS.md) with committed PNG previews (regenerate via `docs/generate_all_previews.py`). See [Ehlers DSP guide](ehlers/index.md) and the Ehlers DSP subsection in the native index.
 
 ### Volatility, Channels & Bands
 Donchian Channels, Keltner Channels, TTM Squeeze, Ultimate Bands, SVE Volatility Bands, Exponential Deviation Bands, ATR Trailing Stop, and related.
@@ -69,7 +69,7 @@ Donchian Channels, Keltner Channels, TTM Squeeze, Ultimate Bands, SVE Volatility
 OBV, MFI, Accumulation/Distribution, Chaikin Oscillator, VFI, Volume Profile, Positive/Negative Volume, Anchored VWAP, and more.
 
 ### Patterns
-- 50+ candlestick and simple patterns — all conform to [DOCUMENTATION_STANDARDS.md](../DOCUMENTATION_STANDARDS.md) (TA-Lib recognition rules from core, 3-surface examples, edge cases, no Nison boilerplate; visuals via `gen_candle_previews.py` where generators exist, otherwise precise placeholders). Exemplars: Doji family, Harami, Three Black Crows / White Soldiers, Abandoned Baby, Engulfing. See [Native Indicators → Patterns](native/index.md).
+- 50+ candlestick and simple patterns — all conform to [DOCUMENTATION_STANDARDS.md](../DOCUMENTATION_STANDARDS.md) with committed candlestick PNGs (hand-crafted exemplars + bulk schematics via `docs/generate_all_previews.py`). See [Native Indicators → Patterns](native/index.md).
 - Geometric chart patterns and S/R (detailed above)
 - Bill Williams Fractals, Pivot Points, Heikin-Ashi, Ichimoku
 
