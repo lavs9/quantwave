@@ -325,3 +325,498 @@ class TaNamespace:
     def ht_trendline(self) -> pl.Expr:
         """Hilbert Transform - Instantaneous Trendline (HT_TRENDLINE)."""
         return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ht_trendline", is_elementwise=False)
+
+    # Auto-generated functions
+
+    def acos(self) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="acos", is_elementwise=False)
+
+    def asin(self) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="asin", is_elementwise=False)
+
+    def atan(self) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="atan", is_elementwise=False)
+
+    def ceil(self) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ceil", is_elementwise=False)
+
+    def cos(self) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="cos", is_elementwise=False)
+
+    def cosh(self) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="cosh", is_elementwise=False)
+
+    def exp(self) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="exp", is_elementwise=False)
+
+    def floor(self) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="floor", is_elementwise=False)
+
+    def ln(self) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ln", is_elementwise=False)
+
+    def log10(self) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="log10", is_elementwise=False)
+
+    def sin(self) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="sin", is_elementwise=False)
+
+    def sinh(self) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="sinh", is_elementwise=False)
+
+    def sqrt(self) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="sqrt", is_elementwise=False)
+
+    def tan(self) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="tan", is_elementwise=False)
+
+    def tanh(self) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="tanh", is_elementwise=False)
+
+    def max(self, timeperiod: int = 14) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="max", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+
+    def maxindex(self, timeperiod: int = 14) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="maxindex", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+
+    def min(self, timeperiod: int = 14) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="min", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+
+    def minindex(self, timeperiod: int = 14) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="minindex", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+
+    def sum(self, timeperiod: int = 14) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="sum", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+
+    def ta_linearreg(self, timeperiod: int = 14) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ta_linearreg", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+
+    def ta_linearreg_angle(self, timeperiod: int = 14) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ta_linearreg_angle", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+
+    def ta_linearreg_intercept(self, timeperiod: int = 14) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ta_linearreg_intercept", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+
+    def ta_linearreg_slope(self, timeperiod: int = 14) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ta_linearreg_slope", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+
+    def ta_tsf(self, timeperiod: int = 14) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ta_tsf", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+
+    def wma(self, timeperiod: int = 14) -> pl.Expr:
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="wma", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+
+    def add(self, in2: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(in2, str): in2 = pl.col(in2)
+        return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="add", is_elementwise=False)
+
+    def div(self, in2: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(in2, str): in2 = pl.col(in2)
+        return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="div", is_elementwise=False)
+
+    def mult(self, in2: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(in2, str): in2 = pl.col(in2)
+        return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="mult", is_elementwise=False)
+
+    def obv(self, in2: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(in2, str): in2 = pl.col(in2)
+        return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="obv", is_elementwise=False)
+
+    def sub(self, in2: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(in2, str): in2 = pl.col(in2)
+        return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="sub", is_elementwise=False)
+
+    def ta_beta(self, in2: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
+        if isinstance(in2, str): in2 = pl.col(in2)
+        return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="ta_beta", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+
+    def ta_correl(self, in2: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
+        if isinstance(in2, str): in2 = pl.col(in2)
+        return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="ta_correl", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+
+    def ta_trange(self, in2: Union[str, pl.Expr], in3: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(in2, str): in2 = pl.col(in2)
+        if isinstance(in3, str): in3 = pl.col(in3)
+        return register_plugin_function(args=[self._expr, in2, in3], plugin_path=Path(__file__).parent, function_name="ta_trange", is_elementwise=False)
+
+    def ta_atr(self, in2: Union[str, pl.Expr], in3: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
+        if isinstance(in2, str): in2 = pl.col(in2)
+        if isinstance(in3, str): in3 = pl.col(in3)
+        return register_plugin_function(args=[self._expr, in2, in3], plugin_path=Path(__file__).parent, function_name="ta_atr", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+
+    def ta_natr(self, in2: Union[str, pl.Expr], in3: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
+        if isinstance(in2, str): in2 = pl.col(in2)
+        if isinstance(in3, str): in3 = pl.col(in3)
+        return register_plugin_function(args=[self._expr, in2, in3], plugin_path=Path(__file__).parent, function_name="ta_natr", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+
+    def bop(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="bop", is_elementwise=False)
+
+    def cdl_2crows(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_2crows", is_elementwise=False)
+
+    def cdl_3blackcrows(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_3blackcrows", is_elementwise=False)
+
+    def cdl_3inside(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_3inside", is_elementwise=False)
+
+    def cdl_3linestrike(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_3linestrike", is_elementwise=False)
+
+    def cdl_3outside(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_3outside", is_elementwise=False)
+
+    def cdl_3starsinsouth(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_3starsinsouth", is_elementwise=False)
+
+    def cdl_3whitesoldiers(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_3whitesoldiers", is_elementwise=False)
+
+    def cdl_abandonedbaby(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_abandonedbaby", is_elementwise=False)
+
+    def cdl_advanceblock(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_advanceblock", is_elementwise=False)
+
+    def cdl_belthold(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_belthold", is_elementwise=False)
+
+    def cdl_breakaway(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_breakaway", is_elementwise=False)
+
+    def cdl_closingmarubozu(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_closingmarubozu", is_elementwise=False)
+
+    def cdl_concealbabyswall(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_concealbabyswall", is_elementwise=False)
+
+    def cdl_counterattack(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_counterattack", is_elementwise=False)
+
+    def cdl_darkcloudcover(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_darkcloudcover", is_elementwise=False)
+
+    def cdl_doji(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_doji", is_elementwise=False)
+
+    def cdl_dojistar(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_dojistar", is_elementwise=False)
+
+    def cdl_dragonflydoji(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_dragonflydoji", is_elementwise=False)
+
+    def cdl_engulfing(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_engulfing", is_elementwise=False)
+
+    def cdl_eveningdojistar(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_eveningdojistar", is_elementwise=False)
+
+    def cdl_eveningstar(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_eveningstar", is_elementwise=False)
+
+    def cdl_gapsidesidewhite(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_gapsidesidewhite", is_elementwise=False)
+
+    def cdl_gravestonedoji(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_gravestonedoji", is_elementwise=False)
+
+    def cdl_hammer(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_hammer", is_elementwise=False)
+
+    def cdl_hangingman(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_hangingman", is_elementwise=False)
+
+    def cdl_harami(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_harami", is_elementwise=False)
+
+    def cdl_haramicross(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_haramicross", is_elementwise=False)
+
+    def cdl_highwave(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_highwave", is_elementwise=False)
+
+    def cdl_hikkake(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_hikkake", is_elementwise=False)
+
+    def cdl_hikkakemod(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_hikkakemod", is_elementwise=False)
+
+    def cdl_homingpigeon(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_homingpigeon", is_elementwise=False)
+
+    def cdl_identical3crows(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_identical3crows", is_elementwise=False)
+
+    def cdl_inneck(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_inneck", is_elementwise=False)
+
+    def cdl_invertedhammer(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_invertedhammer", is_elementwise=False)
+
+    def cdl_kicking(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_kicking", is_elementwise=False)
+
+    def cdl_kickingbylength(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_kickingbylength", is_elementwise=False)
+
+    def cdl_ladderbottom(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_ladderbottom", is_elementwise=False)
+
+    def cdl_longleggeddoji(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_longleggeddoji", is_elementwise=False)
+
+    def cdl_longline(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_longline", is_elementwise=False)
+
+    def cdl_marubozu(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_marubozu", is_elementwise=False)
+
+    def cdl_matchinglow(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_matchinglow", is_elementwise=False)
+
+    def cdl_mathold(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_mathold", is_elementwise=False)
+
+    def cdl_morningdojistar(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_morningdojistar", is_elementwise=False)
+
+    def cdl_morningstar(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_morningstar", is_elementwise=False)
+
+    def cdl_onneck(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_onneck", is_elementwise=False)
+
+    def cdl_piercing(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_piercing", is_elementwise=False)
+
+    def cdl_rickshawman(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_rickshawman", is_elementwise=False)
+
+    def cdl_risefall3methods(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_risefall3methods", is_elementwise=False)
+
+    def cdl_separatinglines(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_separatinglines", is_elementwise=False)
+
+    def cdl_shootingstar(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_shootingstar", is_elementwise=False)
+
+    def cdl_shortline(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_shortline", is_elementwise=False)
+
+    def cdl_spinningtop(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_spinningtop", is_elementwise=False)
+
+    def cdl_stalledpattern(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_stalledpattern", is_elementwise=False)
+
+    def cdl_sticksandwich(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_sticksandwich", is_elementwise=False)
+
+    def cdl_takuri(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_takuri", is_elementwise=False)
+
+    def cdl_tasukigap(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_tasukigap", is_elementwise=False)
+
+    def cdl_thrusting(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_thrusting", is_elementwise=False)
+
+    def cdl_tristar(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_tristar", is_elementwise=False)
+
+    def cdl_unique3river(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_unique3river", is_elementwise=False)
+
+    def cdl_upsidegap2crows(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_upsidegap2crows", is_elementwise=False)
+
+    def cdl_xsidegap3methods(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        if isinstance(close, str): close = pl.col(close)
+        return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_xsidegap3methods", is_elementwise=False)
