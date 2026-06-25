@@ -8,6 +8,28 @@ This Python file is currently manually synced. See task quantwave-i9dn for the
 mandatory process rule.
 
 Long-term plan: Auto-generated from Rust (see quantwave-iqq7 and scripts/generate_indicator_metadata.py).
+
+Warmup / NaN semantics (quantwave-976r)
+---------------------------------------
+During the warmup period an indicator has not yet accumulated enough history to
+produce a meaningful value. QuantWave uses three conventions:
+
+1. **NaN (most common)** — batch Polars columns and streaming `next()` return
+   `float('nan')` (or a struct whose float fields are NaN) until `warmup_bars`
+   bars have been consumed. TA-Lib-compatible indicators (EMA, RSI, etc.) follow
+   this pattern.
+
+2. **Truncated / partial** — some cumulative indicators (OBV, NVI, PVI) emit a
+   value from bar 1 but the series is not yet "stable" for the configured period.
+   Treat `warmup_bars` as the bar count before the output is period-complete.
+
+3. **Event / struct output** — price-action indicators (MarketStructure, S/R monitor,
+   geometric patterns) return empty event lists or default structs during early bars;
+   there is no scalar NaN. Use `wrap_streaming(..., name=...)` and `is_ready`.
+
+Use `warmup_bars(name, params)` before backtesting or parity checks to skip or
+mask the initial bars. `metadata(name).warmup_bars` holds the curated value when
+known; otherwise a conservative heuristic derives it from `period` / `fast` / `slow`.
 """
 
 from dataclasses import dataclass
@@ -112,21 +134,67 @@ def list_metadata() -> List[IndicatorMeta]:
     return list(_METADATA.values())
 
 def warmup_bars(name: str, params: dict = None) -> int:
+    """Return the number of initial bars to treat as warmup for an indicator.
+
+    Warmup bars are the count of leading observations where output may be NaN,
+    truncated, or otherwise not yet period-complete. After this many bars (0-indexed:
+    indices ``0 .. warmup-1`` are warmup), the indicator is considered ready for
+    signal generation and parity comparison.
+
+    Args:
+        name: Indicator name (case-insensitive), e.g. ``"rsi"``, ``"supertrend"``.
+        params: Optional parameter dict used to refine the estimate when metadata
+            does not pin an explicit warmup (e.g. ``{"period": 21}``).
+
+    Returns:
+        Non-negative bar count. Returns ``0`` for unknown indicators (caller should
+        apply a conservative default or inspect output manually).
+
+    Example:
+        >>> warmup_bars("rsi", {"period": 14})
+        14
+        >>> warmup_bars("macd")  # uses metadata default slow=26
+        26
+    """
     meta = metadata(name)
     if not meta:
         return 0
-    if meta.warmup_bars is not None:
-        return meta.warmup_bars
 
-    p = params or {}
+    p = dict(meta.optional_params)
+    if params:
+        p.update(params)
+
+    period_keys = (
+        "period", "fast", "slow", "signal", "length",
+        "fastk", "slowk", "slowd", "tenkan", "kijun", "senkou_b",
+        "ema_period", "atr_period", "swing_strength", "rsi_length", "smooth_length",
+    )
+    explicit_period = params and any(k in params for k in period_keys)
+
     max_period = 0
-    for key in ["period", "fast", "slow", "signal", "length", "fastk", "slowk", "slowd", "tenkan", "kijun"]:
+    for key in period_keys:
         if key in p:
             try:
                 max_period = max(max_period, int(p[key]))
             except (ValueError, TypeError):
                 pass
-    return max_period + 5 if max_period > 0 else 20
+
+    # Caller-supplied periods override the curated metadata default.
+    if explicit_period and max_period > 0:
+        return max_period + (5 if name.lower() in ("supertrend", "ichimoku") else 0)
+
+    if meta.warmup_bars is not None:
+        return meta.warmup_bars
+
+    # Ichimoku and other multi-window indicators need the largest window + small buffer.
+    if max_period > 0:
+        return max_period + (5 if name.lower() in ("supertrend", "ichimoku") else 0)
+
+    # Event-driven / unknown: no scalar warmup; streaming wrapper uses bars_consumed > 0.
+    if meta.category and "price action" in meta.category.lower():
+        return 0
+
+    return 20
 
 from typing import TypeVar, Generic
 

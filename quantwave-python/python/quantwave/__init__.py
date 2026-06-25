@@ -112,6 +112,16 @@ from ._metadata import (
 # DX helpers (defined later in this file for now to avoid circularity during cleanup)
 # We will gradually move more of these out.
 
+# Options India helpers — namespaced under quantwave.options (quantwave-05q7).
+# Must NOT pollute top-level indicator discovery or qw.ta.
+_OPTIONS_SYMBOLS = frozenset({
+    "bs_call_price", "bs_put_price", "bs_delta", "bs_gamma", "bs_theta",
+    "bs_vega", "bs_rho", "implied_vol", "max_pain", "strike_pcr",
+    "chain_pcr", "oi_zones", "gex_per_strike", "gex_flip_strike",
+    "atm_straddle", "synthetic_futures", "moneyness", "nse_lot_size",
+    "nse_risk_free_rate",
+})
+
 # --- Dynamic ta namespace population (replaces fragile manual class + "from . import ta") ---
 # This makes indicators(), is_indicator(), streaming_class, and qw.ta.* robust
 # even when some advanced ML/PA feature objects are added in later tasks (tha, gw7s, ej8b).
@@ -135,6 +145,8 @@ try:
     else:
         _native_syms = [x for x in dir(_quantwave) if not x.startswith("_") and not x.startswith("Py")]
     for _sym in _native_syms:
+        if _sym in _OPTIONS_SYMBOLS:
+            continue  # options live in quantwave.options only (05q7)
         try:
             _val = getattr(_quantwave, _sym)
             setattr(ta, _sym, _val)  # always available under qw.ta for discovery / advanced use
@@ -188,6 +200,8 @@ def _build_indicator_names() -> set[str]:
     # Secondary: anything callable exposed via the native/ ta namespace
     for name in dir(ta):
         if name.startswith("_"):
+            continue
+        if name in _OPTIONS_SYMBOLS:
             continue
         if name.endswith("Protocol") or "Protocol" in name:
             continue  # uniffi internal, not user indicators
@@ -344,9 +358,16 @@ def assert_parity(
         raise AssertionError(f"Length mismatch: batch={len(b)}, stream={len(s)}")
 
     for i, (bv, sv) in enumerate(zip(b, s)):
+        if i < warmup:
+            # During warmup, both paths should agree on NaN / sentinel values.
+            if not _close_enough(bv, sv):
+                raise AssertionError(
+                    f"Warmup mismatch at index {i} (warmup={warmup}): batch={bv}, stream={sv}"
+                )
+            continue
         if not _close_enough(bv, sv):
             raise AssertionError(
-                f"Mismatch at index {i} (warmup={warmup}): batch={bv}, stream={sv}"
+                f"Mismatch at index {i} (post-warmup, warmup={warmup}): batch={bv}, stream={sv}"
             )
 
     return True
@@ -436,7 +457,7 @@ _option_legacy_names = [
     "nse_risk_free_rate",
 ]
 for _name in _option_legacy_names:
-    _val = globals().get(_name)
+    _val = getattr(options, _name, None)
     if _val is not None:
         setattr(options_india, _name, _val)
 
@@ -448,6 +469,18 @@ for _name in _option_legacy_names:
 # =============================================================================
 # Final clean public surface for 0.5.2 / P0 DX (quantwave-p3z9 children)
 # =============================================================================
+
+def __getattr__(name: str):
+    """Deprecated top-level access for options helpers (quantwave-05q7)."""
+    if name in _OPTIONS_SYMBOLS:
+        warnings.warn(
+            f"quantwave.{name} is deprecated; use quantwave.options.{name} instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return getattr(options, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = [
     "__version__",

@@ -4,8 +4,8 @@ Options India helpers.
 These were previously exposed at the top level of quantwave, which polluted
 the indicator namespace. They are now properly namespaced.
 
-For backward compatibility, the old top-level names still work but will
-emit DeprecationWarnings in a future release.
+For backward compatibility, the old top-level names (``quantwave.bs_call_price``,
+etc.) still work via ``__getattr__`` but emit ``DeprecationWarning``.
 """
 
 from ._quantwave import (

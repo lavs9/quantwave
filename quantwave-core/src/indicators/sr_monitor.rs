@@ -249,7 +249,8 @@ impl SRInteractionMonitor {
     /// Core detection for one level against the just-completed bar (H/L/C).
     /// Returns zero or more interactions (in logical order: Approach, Touch, Breakout, Reversal, Retest).
     fn detect_interactions_for_level(
-        // pure helper (no &self borrow) so we can hold &mut level from HashMap while calling
+        // Pure helper (no &self borrow) so we can hold &mut level from HashMap while calling.
+        current_bar: usize,
         touch_tolerance: f64,
         approach_zone: f64,
         level: &mut MonitoredLevel,
@@ -258,7 +259,6 @@ impl SRInteractionMonitor {
         close: f64,
     ) -> Vec<SRInteraction> {
         let mut events = Vec::new();
-        let _level_id: u32 = 0; // placeholder (available for future per-level logging)
 
         let level_price = level.price;
         let distance = (close - level_price).abs();
@@ -278,9 +278,6 @@ impl SRInteractionMonitor {
         }
 
         // 1. Approach (once until price exits the zone)
-        // NOTE: current_bar was not supplied (arity gap discovered during bmkn); using 0 placeholder.
-        // Proper fix + test in child bead discovered-from quantwave-bmkn.
-        let current_bar = 0usize;
         if distance <= approach_zone && !level.approached {
             events.push(SRInteraction {
                 bar: current_bar,
@@ -502,6 +499,7 @@ impl Next<(f64, f64, f64)> for SRInteractionMonitor {
         for id in level_ids {
             if let Some(level) = self.levels.get_mut(&id) {
                 let mut evs = SRInteractionMonitor::detect_interactions_for_level(
+                    self.bar_index,
                     touch_tol,
                     appr_zone,
                     level,
@@ -668,6 +666,41 @@ mod tests {
                 prop_assert_eq!(s_types, b_types);
             }
         }
+    }
+
+    #[test]
+    fn test_interaction_bar_indices_match_bar_counter() {
+        let mut mon = SRInteractionMonitor::new(2, 0.2, 1.0);
+        mon.add_user_level(100.0, "TestResist");
+
+        let series: Vec<(f64, f64, f64)> = vec![
+            (99.0, 98.5, 98.7),
+            (99.8, 99.6, 99.7),
+            (100.1, 99.9, 100.0),
+            (100.3, 100.1, 100.2),
+            (100.1, 99.9, 100.0),
+        ];
+
+        let n_bars = series.len();
+        let mut observed_bars = Vec::new();
+        for item in &series {
+            let out = mon.next(*item);
+            for ev in &out.interactions {
+                if ev.level_label == "TestResist" {
+                    observed_bars.push(ev.bar);
+                    assert_ne!(ev.bar, 0, "interaction bar must reflect the monitor bar counter");
+                }
+            }
+        }
+
+        assert!(
+            !observed_bars.is_empty(),
+            "expected at least one interaction on the user level"
+        );
+        assert!(
+            observed_bars.iter().all(|&b| (1..=n_bars).contains(&b)),
+            "interaction bars must be within 1..=len(series), got {observed_bars:?}"
+        );
     }
 
     #[test]
