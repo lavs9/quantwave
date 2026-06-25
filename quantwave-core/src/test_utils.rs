@@ -305,15 +305,23 @@ pub fn generate_clean_bull_flag(_swing_strength: usize, atr_proxy: f64) -> Synth
         lows[i] = 100.0 + (i as f64 - 5.0) * 0.9 * atr_proxy;
     }
     let pole_end = 7;
-    // Consolidation: controlled retrace, more counter (lower highs for bull flag? wait bull flag after up pole has lower highs? Classic bull flag has lower highs + higher lows? Use simple.
-    for i in 8..16 {
-        let retr = (i - 8) as f64 * 0.04; // small retrace
-        highs[i] = highs[pole_end] - retr * 0.6 * atr_proxy;
-        lows[i] = lows[pole_end] + retr * 0.3 * atr_proxy; // higher lows = pullbacks
+    let pole_high = highs[pole_end];
+    let pole_low = lows[5];
+    let pole_len = pole_high - pole_low;
+    let max_extreme = pole_high - pole_len * 0.55; // keep retrace under Part 69 61.8% cap
+    // Consolidation: lower highs (pullbacks) + shallow higher lows (pushes) per Part 69.
+    for i in 8..15 {
+        let t = (i - 8) as f64;
+        highs[i] = pole_high - t * 0.04 * atr_proxy;
+        lows[i] = max_extreme + t * 0.01 * atr_proxy;
     }
-    // Breakout
-    highs[17] = highs[pole_end] + 0.5 * atr_proxy;
-    lows[17] = highs[17] - 0.2 * atr_proxy;
+    // Breakout bar (index 15 = bar 16) — immediately after min_flag_bars consolidation
+    highs[15] = pole_high + 0.5 * atr_proxy;
+    lows[15] = highs[15] - 0.2 * atr_proxy;
+    for i in 16..30 {
+        highs[i] = highs[15];
+        lows[i] = lows[15];
+    }
 
     let data: Vec<_> = highs.into_iter().zip(lows).map(|(h,l)| (h.max(l), l.min(h))).collect();
 
@@ -324,7 +332,7 @@ pub fn generate_clean_bull_flag(_swing_strength: usize, atr_proxy: f64) -> Synth
             pole_length_atr_min: 1.2,
             max_retrace_observed: 0.55,
             pullbacks_gt_pushes: true,
-            breakout_bar_approx: 17,
+            breakout_bar_approx: 16,
         }],
         expected_hs: vec![],
         description: "clean bull flag per Part69: 3-bar impulse pole, pullbacks>pushes, retrace<61.8, breakout at pole high (r46a invariants)",
@@ -368,9 +376,10 @@ pub fn generate_perfect_bear_hs(_atr_proxy: f64) -> SyntheticGeometricCase {
 pub fn generate_flag_violation_retrace_too_deep() -> SyntheticGeometricCase {
     // Same as clean but force deep retrace >61.8%
     let mut case = generate_clean_bull_flag(2, 1.0);
-    // mutate last part of consolidation to deep retrace
+    // Deep dip during consolidation invalidates the flag (Part 69 MaxRetracePercent).
     if case.data.len() > 14 {
-        case.data[12].1 = case.data[7].1 - 0.8; // deep low
+        let (_, pole_low) = case.data[5];
+        case.data[12].1 = pole_low - 2.0;
     }
     case.description = "flag violation: retrace >61.8% of pole — must be rejected per r46a ValidateFlagConsolidation";
     case.expected_flags.clear(); // ground truth: no valid flag

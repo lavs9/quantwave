@@ -31,7 +31,12 @@ Both detectors emit **rich, machine-readable structs** (`FlagPattern`, `HsPatter
 - As sparse, high-signal labels or features for ML models.
 - In event-driven backtesters that consume rich metadata for dynamic sizing.
 
-The scanner only surfaces **breakout_confirmed** patterns in the current implementation, keeping signals clean.
+**Detection rules (MQL5-faithful):**
+
+- **Flags:** 3-bar impulse pole (≥ `min_pole_atr` × ATR), consolidation with retrace ≤ 61.8%, pullbacks ≥ pushes, breakout above/below pole extreme.
+- **H&S:** 5-swing window (H-L-H-L-H or inverse), shoulder symmetry ≤ 2%, height ≥ 1.5× ATR, composite score ≥ 60.
+
+Flags emit on **breakout_confirmed** only; H&S emits on high-score pattern detection (neckline breakout optional in streaming).
 
 ## Rich Metadata — The Real Power
 
@@ -124,6 +129,13 @@ features = bull_flag_events.select([
     # ... join other indicators at these exact bars
 ])
 ```
+
+### Canonical PA foundation notebook
+
+End-to-end strategy wiring (MarketStructure filter + flag breakout + pole sizing sketch):
+
+- [pa_foundation_strategy.py](../../../examples/notebooks/pa_foundation_strategy.py)
+- [pa_flag_breakout_strategy.py](../../../examples/notebooks/pa_flag_breakout_strategy.py) (full `.bt` backtest tour)
 
 ### Python Streaming
 

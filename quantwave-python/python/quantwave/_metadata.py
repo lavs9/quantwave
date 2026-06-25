@@ -97,6 +97,11 @@ _METADATA: Dict[str, IndicatorMeta] = {
 
     # Price Action / Structure (cu03 / MQL5 inspired)
     "fractals": IndicatorMeta("fractals", [], {}, ["high", "low"], ["fractal_high", "fractal_low"], 5, "Price Action"),
+    "geometric_patterns": IndicatorMeta(
+        "geometric_patterns", ["swing_strength"], {"min_pole_atr": 1.0},
+        ["high", "low"], ["flag", "hs"], 0, "Price Action",
+        description="Flag + Head & Shoulders scanner (event output; warmup_bars=0)",
+    ),
     "heikin_ashi": IndicatorMeta("heikin_ashi", [], {}, ["open", "high", "low", "close"], ["ha_open", "ha_high", "ha_low", "ha_close"], 1, "Candlestick"),
 
     # Volume / Money Flow

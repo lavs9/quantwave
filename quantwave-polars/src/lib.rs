@@ -3176,11 +3176,10 @@ impl<'a> QuantWaveNamespace<'a> {
     /// Returns a Struct column "geometric_patterns" containing:
     ///   flag: Struct(id, is_bull, pole_length, pole_length_atr, breakout_confirmed, breakout_price)
     ///   hs:   Struct(id, is_bearish, height, height_atr, score, breakout_confirmed)
-    /// (id==0 means no detection on that bar in the current skeleton impl).
+    /// (id==0 means no detection on that bar).
     ///
-    /// Delegates to quantwave_core::GeometricPatternScanner (composes internal MarketStructure).
-    /// This delivers the Polars surface + rich metadata shape (pole_length_atr for sizing!) for
-    /// strategy notebooks and backtesting. Full production detectors per MQL5 Parts 66/69.
+    /// Delegates to quantwave_core::GeometricPatternScanner (Part 69 flag + Part 66 H&S rules).
+    /// Emits rich metadata (`pole_length_atr`, `score`, `breakout_confirmed`) for sizing and filters.
     pub fn geometric_patterns(
         self,
         high: &str,
