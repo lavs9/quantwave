@@ -2,7 +2,7 @@
 Canonical PA Foundation Strategy Notebook: MarketStructure + Geometric Patterns (Flags + H&S)
 
 Demonstrates a complete, production-oriented vertical slice:
-- Rust Polars `.ta.market_structure()` + `.ta.geometric_patterns()` (rich Structs with pole_length_atr etc.)
+- Rust Polars `.ta.market_structure()` + `.ta.geometric_patterns()` + `.ta.sr_monitor()` (rich Structs)
 - Python streaming surface (MarketStructure / GeometricPatternScanner + batch helper)
 - Realistic strategy: "Only take bull Flag breakouts on confirmed Bullish MarketStructure,
   further filtered by bull regime (HMM) + ML feature (hurst persistence), sized by pole_length_atr"
@@ -123,6 +123,28 @@ df = df.with_columns([
 print("Added ms_bias, regime_label (HMM), hurst_20 for strategy filters")
 
 # ------------------------------------------------------------------
+# 2b. S/R interaction monitor (Python streaming path — mirrors .ta.sr_monitor())
+# ------------------------------------------------------------------
+print("\n--- S/R Interaction Monitor (Part 67) ---")
+try:
+    from quantwave import SRInteractionMonitor, SRInteractionType
+    sr = SRInteractionMonitor(3, 0.3, 1.5)
+    sr.add_user_level(float(df["close"][-20]), "NotebookResist")
+    sr_events = []
+    for i in range(n):
+        h, l = float(df["high"][i]), float(df["low"][i])
+        c = float(df["close"][i])
+        out = sr.next(h, l, c)
+        for ev in out.interactions:
+            sr_events.append((i, ev.interaction, ev.level_price, ev.strength))
+    print(f"S/R interactions detected: {len(sr_events)}")
+    if sr_events:
+        last = sr_events[-1]
+        print(f"  Last: bar={last[0]} type={last[1]} level={last[2]:.2f} strength={last[3]:.1f}")
+except ImportError:
+    print("  (SRInteractionMonitor Python binding not yet installed — use Rust Polars .ta.sr_monitor())")
+
+# ------------------------------------------------------------------
 # 3. Strategy: Flag breakout ONLY on confirmed Bullish MS + bull regime + hurst > 0.5
 #    Size = pole_length_atr (or 1.0 fallback). Generate exposure series.
 # ------------------------------------------------------------------
@@ -186,8 +208,9 @@ use quantwave_polars::prelude::*;
 let out = df.lazy()
     .ta().market_structure("high", "low", 3)
     .ta().geometric_patterns("high", "low", 3)
-    // then .with_columns( col("market_structure").struct.unnest() ... )
-    // filter bias==1 && regime==1 && hurst>0.5 && geometric_patterns.struct.field("flag").struct.field("id") > 0
+    .ta().sr_monitor("high", "low", "close", 3, 0.3, 1.5)
+    // filter bias==1 && regime==1 && hurst>0.5
+    // && sr_monitor.struct.field("has_interaction") for confluence entries
     .collect()?;
 """)
 

@@ -27,6 +27,11 @@ pub use indicators::ichimoku::IchimokuCloud;
 pub use indicators::keltner::KeltnerChannels;
 pub use indicators::market_structure::{
     Bias, FlipEvent, MarketStructure, MarketStructureState, PAEvent, PAEventKind, SwingPoint,
+    extract_all_pa_events, extract_pa_events,
+};
+pub use indicators::pa_confluence::{
+    ConfluenceContext, enrich_pa_event, filter_confluent_events, passes_confluence_filter,
+    regime_to_label, score_pa_event,
 };
 pub use indicators::sr_monitor::{
     LevelSource, SRInteraction, SRInteractionMonitor, SRInteractionType, SRMonitorOutput,

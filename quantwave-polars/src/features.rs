@@ -19,6 +19,10 @@
 //! 2. .ta.features.cyber_cycle(length) -> Struct column "cyber_cycle" with fields [cycle, trigger, momentum, signal]
 //! 3. .ta.features.griffiths_dominant_cycle(lower, upper, length) -> column "griffiths_dc" (f64)
 //! 4. .ta.features.regime_features() -> column "regime_label" (u32, from HMM bull_bear for MVP usability)
+//! 5. .ta.features.instantaneous_trendline() -> Struct "itl" {trend, strength}
+//! 6. .ta.features.regime_probs() -> Struct "regime_probs" {prob_bull, prob_bear, prob_steady, prob_crisis, prob_other}
+//! 7. .ta.features.trendflex(length) -> column "trendflex_{length}"
+//! 8. .ta.features.ehlers_autocorrelation(length, num_lags) -> Struct {dominant_lag, max_correlation}
 //!
 //! All are lazy (exprs built with with_columns + map UDFs; execution deferred to collect).
 //! All delegate directly to the Next<T> wrappers in quantwave-core (zero lookahead by construction).
@@ -190,6 +194,147 @@ impl<'a> TaFeaturesNamespace<'a> {
             )
             .alias("regime_label")])
     }
+
+    /// Instantaneous Trendline (Ehlers) with derived trend-strength feature.
+    /// Returns Struct column "itl" with fields: trend, strength (f64).
+    pub fn instantaneous_trendline(self) -> LazyFrame {
+        self.0.clone().with_columns([col("close")
+            .map(
+                move |s| {
+                    let mut extractor = rust_features::InstantaneousTrendlineFeatureExtractor::new();
+                    let ca: &Float64Chunked = s.f64()?;
+                    let mut trends = Vec::with_capacity(s.len());
+                    let mut strengths = Vec::with_capacity(s.len());
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        let f = extractor.next(val);
+                        trends.push(f.trend);
+                        strengths.push(f.strength);
+                    }
+                    let struct_series = StructChunked::from_series(
+                        "itl_result".into(),
+                        s.len(),
+                        [
+                            Series::new("trend".into(), trends),
+                            Series::new("strength".into(), strengths),
+                        ]
+                        .iter(),
+                    )?;
+                    Ok(Some(Column::from(struct_series.into_series())))
+                },
+                GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("trend".into(), DataType::Float64),
+                    Field::new("strength".into(), DataType::Float64),
+                ])),
+            )
+            .alias("itl")])
+    }
+
+    /// HMM soft regime probabilities (bull/bear forward probs from Viterbi deltas).
+    /// Returns Struct column "regime_probs" with prob_bull, prob_bear, prob_steady, prob_crisis, prob_other.
+    pub fn regime_probs(self) -> LazyFrame {
+        self.0.clone().with_columns([col("close")
+            .map(
+                move |s| {
+                    let mut extractor = rust_features::RegimeProbFeatureExtractor::bull_bear();
+                    let ca = s.f64()?;
+                    let mut bull = Vec::with_capacity(s.len());
+                    let mut bear = Vec::with_capacity(s.len());
+                    let mut steady = Vec::with_capacity(s.len());
+                    let mut crisis = Vec::with_capacity(s.len());
+                    let mut other = Vec::with_capacity(s.len());
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        let f = extractor.next(val);
+                        bull.push(f.probs[0]);
+                        bear.push(f.probs[1]);
+                        crisis.push(f.probs[2]);
+                        steady.push(f.probs[3]);
+                        other.push(f.probs[4]);
+                    }
+                    let struct_series = StructChunked::from_series(
+                        "regime_probs_result".into(),
+                        s.len(),
+                        [
+                            Series::new("prob_bull".into(), bull),
+                            Series::new("prob_bear".into(), bear),
+                            Series::new("prob_steady".into(), steady),
+                            Series::new("prob_crisis".into(), crisis),
+                            Series::new("prob_other".into(), other),
+                        ]
+                        .iter(),
+                    )?;
+                    Ok(Some(Column::from(struct_series.into_series())))
+                },
+                GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("prob_bull".into(), DataType::Float64),
+                    Field::new("prob_bear".into(), DataType::Float64),
+                    Field::new("prob_steady".into(), DataType::Float64),
+                    Field::new("prob_crisis".into(), DataType::Float64),
+                    Field::new("prob_other".into(), DataType::Float64),
+                ])),
+            )
+            .alias("regime_probs")])
+    }
+
+    /// Trendflex zero-lag trend component.
+    /// Output column: "trendflex_{length}" (f64).
+    pub fn trendflex(self, length: usize) -> LazyFrame {
+        self.0.clone().with_columns([col("close")
+            .map(
+                move |s| {
+                    let mut extractor = rust_features::TrendflexFeatureExtractor::new(length);
+                    let ca: &Float64Chunked = s.f64()?;
+                    let mut values = Vec::with_capacity(s.len());
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        values.push(extractor.next(val).trendflex);
+                    }
+                    Ok(Some(Column::from(Series::new(
+                        format!("trendflex_{}", length).into(),
+                        values,
+                    ))))
+                },
+                GetOutput::from_type(DataType::Float64),
+            )
+            .alias(&format!("trendflex_{}", length))])
+    }
+
+    /// Ehlers Autocorrelation summary features (dominant lag + max correlation).
+    /// Returns Struct column "ehlers_autocorr" with dominant_lag (u32), max_correlation (f64).
+    pub fn ehlers_autocorrelation(self, length: usize, num_lags: usize) -> LazyFrame {
+        self.0.clone().with_columns([col("close")
+            .map(
+                move |s| {
+                    let mut extractor =
+                        rust_features::EhlersAutocorrelationFeatureExtractor::new(length, num_lags);
+                    let ca: &Float64Chunked = s.f64()?;
+                    let mut lags = Vec::with_capacity(s.len());
+                    let mut max_corrs = Vec::with_capacity(s.len());
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        let f = extractor.next(val);
+                        lags.push(f.dominant_lag as u32);
+                        max_corrs.push(f.max_correlation);
+                    }
+                    let struct_series = StructChunked::from_series(
+                        "ehlers_autocorr_result".into(),
+                        s.len(),
+                        [
+                            Series::new("dominant_lag".into(), lags),
+                            Series::new("max_correlation".into(), max_corrs),
+                        ]
+                        .iter(),
+                    )?;
+                    Ok(Some(Column::from(struct_series.into_series())))
+                },
+                GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("dominant_lag".into(), DataType::UInt32),
+                    Field::new("max_correlation".into(), DataType::Float64),
+                ])),
+            )
+            .alias("ehlers_autocorr")])
+    }
 }
 
 // The struct is pub so it is reachable as quantwave_polars::features::TaFeaturesNamespace if needed for turbofish/docs.
@@ -261,11 +406,22 @@ mod tests {
         assert!(out.column("regime_label").is_ok());
         assert_eq!(out.column("regime_label")?.dtype(), &DataType::UInt32);
 
-        // All columns present on final DF for the deliverable use-case (verified via direct column access)
-        assert!(out.column("hurst_8").is_ok());
-        assert!(out.column("cyber_cycle").is_ok());
-        assert!(out.column("griffiths_dc").is_ok());
-        assert!(out.column("regime_label").is_ok());
+        let out = out.lazy().ta().features().instantaneous_trendline().collect()?;
+        assert!(out.column("itl").is_ok());
+
+        let out = out.lazy().ta().features().regime_probs().collect()?;
+        assert!(out.column("regime_probs").is_ok());
+
+        let out = out.lazy().ta().features().trendflex(20).collect()?;
+        assert!(out.column("trendflex_20").is_ok());
+
+        let out = out
+            .lazy()
+            .ta()
+            .features()
+            .ehlers_autocorrelation(30, 10)
+            .collect()?;
+        assert!(out.column("ehlers_autocorr").is_ok());
 
         Ok(())
     }

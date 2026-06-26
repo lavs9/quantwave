@@ -94,9 +94,12 @@ pub struct MarketStructureState {
 pub enum PAEventKind {
     /// Confirmed Break of Structure (BOS) flip from MarketStructure (bias-established only, per Part 21 rule).
     MarketStructureFlip(FlipEvent),
-    // Future expansion (no new file for vertical slice):
-    // GeometricFlag(FlagPattern), GeometricHs(HsPattern), SrInteraction(...)
-    // (Geometric rich structs already Serialize + carry identical metadata shape.)
+    /// Bull/bear flag breakout from GeometricPatternScanner.
+    GeometricFlag(crate::indicators::geometric_patterns::FlagPattern),
+    /// Head & Shoulders (or inverse) neckline breakout.
+    GeometricHs(crate::indicators::geometric_patterns::HsPattern),
+    /// S/R interaction event from SRInteractionMonitor.
+    SrInteraction(crate::indicators::sr_monitor::SRInteraction),
 }
 
 /// A bar-indexed, richly annotated PA event. The canonical output type for backtester/ML consumption.
@@ -123,15 +126,59 @@ impl PAEvent {
     /// Adapter: turn a FlipEvent (from MarketStructureState.current_flip) into rich PAEvent.
     /// This (plus extract_pa_events) is the "update ... to emit events using the new standard (or provide adapters)".
     pub fn from_market_structure_flip(flip: FlipEvent, bar: usize) -> Self {
-        let strength = (flip.structure_strength as f64 / 5.0).min(2.0); // heuristic; real usage normalizes by observed distribution or fixed max
+        let strength = (flip.structure_strength as f64 / 5.0).min(2.0);
         Self {
             bar,
             kind: PAEventKind::MarketStructureFlip(flip.clone()),
             strength,
-            size_atr: None, // can be augmented with ATR-at-bar by caller / polars join
-            confidence: 1.0, // confirmed after bias established (core Part 21 rule — avoids premature signals)
+            size_atr: None,
+            confidence: 1.0,
             regime_at_event: None,
             feature_values: vec![],
+        }
+    }
+
+    pub fn from_flag(flag: crate::indicators::geometric_patterns::FlagPattern, bar: usize) -> Self {
+        Self {
+            bar,
+            kind: PAEventKind::GeometricFlag(flag.clone()),
+            strength: flag.pole_strength.min(3.0),
+            size_atr: Some(flag.pole_length_atr),
+            confidence: if flag.breakout_confirmed { 1.0 } else { 0.5 },
+            regime_at_event: None,
+            feature_values: vec![
+                ("pole_length".into(), flag.pole_length),
+                ("pullbacks".into(), flag.pullbacks as f64),
+                ("pushes".into(), flag.pushes as f64),
+            ],
+        }
+    }
+
+    pub fn from_hs(hs: crate::indicators::geometric_patterns::HsPattern, bar: usize) -> Self {
+        Self {
+            bar,
+            kind: PAEventKind::GeometricHs(hs.clone()),
+            strength: (hs.score / 100.0).min(1.0),
+            size_atr: Some(hs.height_atr),
+            confidence: if hs.breakout_confirmed { 1.0 } else { hs.score / 100.0 },
+            regime_at_event: None,
+            feature_values: vec![
+                ("score".into(), hs.score),
+                ("price_symmetry".into(), hs.price_symmetry),
+                ("time_symmetry".into(), hs.time_symmetry),
+            ],
+        }
+    }
+
+    pub fn from_sr_interaction(sr: crate::indicators::sr_monitor::SRInteraction) -> Self {
+        Self {
+            bar: sr.bar,
+            kind: PAEventKind::SrInteraction(sr.clone()),
+            strength: sr.strength,
+            size_atr: None,
+            confidence: 0.9,
+            regime_at_event: None,
+            feature_values: vec![("distance".into(), sr.distance_at_event)],
         }
     }
 }
@@ -146,6 +193,30 @@ pub fn extract_pa_events(state: &MarketStructureState) -> Vec<PAEvent> {
     let mut events = Vec::new();
     if let Some(flip) = &state.current_flip {
         events.push(PAEvent::from_market_structure_flip(flip.clone(), state.bar_index));
+    }
+    events
+}
+
+/// Extract PA events from all available detector outputs on one bar (8aht confluence layer).
+pub fn extract_all_pa_events(
+    state: &MarketStructureState,
+    flag: Option<&crate::indicators::geometric_patterns::FlagPattern>,
+    hs: Option<&crate::indicators::geometric_patterns::HsPattern>,
+    sr_interactions: &[crate::indicators::sr_monitor::SRInteraction],
+) -> Vec<PAEvent> {
+    let mut events = extract_pa_events(state);
+    if let Some(f) = flag {
+        if f.breakout_confirmed {
+            events.push(PAEvent::from_flag(f.clone(), state.bar_index));
+        }
+    }
+    if let Some(h) = hs {
+        if h.breakout_confirmed {
+            events.push(PAEvent::from_hs(h.clone(), state.bar_index));
+        }
+    }
+    for sr in sr_interactions {
+        events.push(PAEvent::from_sr_interaction(sr.clone()));
     }
     events
 }

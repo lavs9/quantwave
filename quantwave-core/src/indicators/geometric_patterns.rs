@@ -138,6 +138,14 @@ struct ActiveFlagState {
     pushes: i32,
 }
 
+/// Tracks a detected H&S awaiting neckline breakout confirmation.
+#[derive(Debug, Clone)]
+struct ActiveHsState {
+    pattern: HsPattern,
+    neck_intercept: f64,
+    last_check_bar: usize,
+}
+
 /// Combined scanner producing Flags + H&S while sharing MarketStructure.
 #[derive(Debug, Clone)]
 pub struct GeometricPatternScanner {
@@ -150,6 +158,7 @@ pub struct GeometricPatternScanner {
     atr: f64,
     recent_swings: Vec<SwingPoint>,
     active_flags: Vec<ActiveFlagState>,
+    active_hs: Vec<ActiveHsState>,
     drawn_poles: HashSet<(usize, usize)>,
     seen_hs: HashSet<(usize, usize, usize)>,
     pending_poles: Vec<(usize, usize, bool)>,
@@ -173,6 +182,7 @@ impl GeometricPatternScanner {
             atr: 1.0,
             recent_swings: Vec::with_capacity(64),
             active_flags: Vec::new(),
+            active_hs: Vec::new(),
             drawn_poles: HashSet::new(),
             seen_hs: HashSet::new(),
             pending_poles: Vec::new(),
@@ -558,7 +568,8 @@ impl GeometricPatternScanner {
             self.seen_hs.insert(key);
             let id = self.next_id;
             self.next_id += 1;
-            return Some(HsPattern {
+            let intercept = y1 - slope * x1;
+            let pat = HsPattern {
                 id,
                 is_bearish: true,
                 ls_bar: ls.bar,
@@ -575,7 +586,13 @@ impl GeometricPatternScanner {
                 breakout_confirmed: false,
                 breakout_bar: None,
                 breakout_price: None,
+            };
+            self.active_hs.push(ActiveHsState {
+                pattern: pat,
+                neck_intercept: intercept,
+                last_check_bar: self.bar_index,
             });
+            return None;
         }
 
         // Inverse H&S
@@ -617,7 +634,8 @@ impl GeometricPatternScanner {
         self.seen_hs.insert(key);
         let id = self.next_id;
         self.next_id += 1;
-        Some(HsPattern {
+        let intercept = y1 - slope * x1;
+        let pat = HsPattern {
             id,
             is_bearish: false,
             ls_bar: ls.bar,
@@ -634,7 +652,52 @@ impl GeometricPatternScanner {
             breakout_confirmed: false,
             breakout_bar: None,
             breakout_price: None,
-        })
+        };
+        self.active_hs.push(ActiveHsState {
+            pattern: pat,
+            neck_intercept: intercept,
+            last_check_bar: self.bar_index,
+        });
+        None
+    }
+
+    fn update_active_hs(&mut self, close: f64) -> Option<HsPattern> {
+        let bar = self.bar_index;
+        let mut breakout: Option<HsPattern> = None;
+        let mut to_remove = Vec::new();
+
+        for (idx, ah) in self.active_hs.iter_mut().enumerate() {
+            if bar <= ah.last_check_bar {
+                continue;
+            }
+            ah.last_check_bar = bar;
+
+            let neck = ah.pattern.neck_slope * bar as f64 + ah.neck_intercept;
+            let confirmed = if ah.pattern.is_bearish {
+                close < neck
+            } else {
+                close > neck
+            };
+
+            if confirmed {
+                let mut pat = ah.pattern.clone();
+                pat.breakout_confirmed = true;
+                pat.breakout_bar = Some(bar);
+                pat.breakout_price = Some(close);
+                breakout = Some(pat);
+                to_remove.push(idx);
+                continue;
+            }
+
+            if bar.saturating_sub(ah.pattern.rs_bar) > 60 {
+                to_remove.push(idx);
+            }
+        }
+
+        for idx in to_remove.into_iter().rev() {
+            self.active_hs.remove(idx);
+        }
+        breakout
     }
 
     fn scan_for_new_poles(&mut self) {
@@ -830,7 +893,8 @@ impl Next<(f64, f64)> for GeometricPatternScanner {
         self.promote_pending_poles();
 
         let flag_out = self.update_active_flags(close);
-        let hs_out = self.detect_hs();
+        self.detect_hs();
+        let hs_out = self.update_active_hs(close);
 
         (state, flag_out, hs_out)
     }

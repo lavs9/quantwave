@@ -3311,6 +3311,124 @@ impl<'a> QuantWaveNamespace<'a> {
             .alias("geometric_patterns")])
     }
 
+    /// S/R Interaction Monitor (MQL5 Part 67) Polars accessor.
+    /// Returns struct column "sr_monitor" with per-bar structure summary + first interaction (if any).
+    /// Use `interaction_count > 0` to filter event bars; join with regimes/ML features for confluence.
+    pub fn sr_monitor(
+        self,
+        high: &str,
+        low: &str,
+        close: &str,
+        swing_strength: usize,
+        touch_tolerance: f64,
+        approach_zone: f64,
+    ) -> LazyFrame {
+        let high_str = high.to_string();
+        let low_str = low.to_string();
+        let close_str = close.to_string();
+        let strength = swing_strength;
+
+        self.0.clone().with_columns([as_struct(vec![
+            col(&high_str),
+            col(&low_str),
+            col(&close_str),
+        ])
+        .map(
+            move |s| {
+                let ca = s.struct_()?;
+                let s_h = ca.field_by_name(&high_str)?;
+                let s_l = ca.field_by_name(&low_str)?;
+                let s_c = ca.field_by_name(&close_str)?;
+                let highs = s_h.f64()?;
+                let lows = s_l.f64()?;
+                let closes = s_c.f64()?;
+
+                let mut mon = quantwave_core::SRInteractionMonitor::new(strength, touch_tolerance, approach_zone);
+                let n = s.len();
+
+                let mut bias_vals: Vec<u32> = Vec::with_capacity(n);
+                let mut active_levels: Vec<u32> = Vec::with_capacity(n);
+                let mut interaction_counts: Vec<u32> = Vec::with_capacity(n);
+                let mut has_interaction: Vec<bool> = Vec::with_capacity(n);
+                let mut interaction_types: Vec<u32> = Vec::with_capacity(n);
+                let mut level_prices: Vec<f64> = Vec::with_capacity(n);
+                let mut is_support_vals: Vec<bool> = Vec::with_capacity(n);
+                let mut strengths: Vec<f64> = Vec::with_capacity(n);
+                let mut distances: Vec<f64> = Vec::with_capacity(n);
+                let mut atr_vals: Vec<f64> = Vec::with_capacity(n);
+
+                for i in 0..n {
+                    let h = highs.get(i).unwrap_or(f64::NAN);
+                    let l = lows.get(i).unwrap_or(f64::NAN);
+                    let c = closes.get(i).unwrap_or(f64::NAN);
+                    let hh = if h.is_nan() || l.is_nan() { f64::NAN } else { h.max(l) };
+                    let ll = if h.is_nan() || l.is_nan() { f64::NAN } else { l.min(h) };
+                    let cc = if c.is_nan() { (hh + ll) / 2.0 } else { c.clamp(ll, hh) };
+
+                    let out = mon.next((hh, ll, cc));
+
+                    let b = match out.structure.bias {
+                        quantwave_core::Bias::Neutral => 0u32,
+                        quantwave_core::Bias::Bullish => 1,
+                        quantwave_core::Bias::Bearish => 2,
+                    };
+                    bias_vals.push(b);
+                    active_levels.push(mon.active_level_count() as u32);
+                    interaction_counts.push(out.interactions.len() as u32);
+
+                    if let Some(first) = out.interactions.first() {
+                        has_interaction.push(true);
+                        interaction_types.push(first.interaction as u32);
+                        level_prices.push(first.level_price);
+                        is_support_vals.push(first.is_support);
+                        strengths.push(first.strength);
+                        distances.push(first.distance_at_event);
+                    } else {
+                        has_interaction.push(false);
+                        interaction_types.push(0);
+                        level_prices.push(f64::NAN);
+                        is_support_vals.push(false);
+                        strengths.push(f64::NAN);
+                        distances.push(f64::NAN);
+                    }
+                    atr_vals.push(mon.current_atr());
+                }
+
+                let struct_series = StructChunked::from_series(
+                    "sr_monitor_result".into(),
+                    n,
+                    [
+                        Series::new("bias".into(), bias_vals),
+                        Series::new("active_levels".into(), active_levels),
+                        Series::new("interaction_count".into(), interaction_counts),
+                        Series::new("has_interaction".into(), has_interaction),
+                        Series::new("interaction_type".into(), interaction_types),
+                        Series::new("level_price".into(), level_prices),
+                        Series::new("is_support".into(), is_support_vals),
+                        Series::new("strength".into(), strengths),
+                        Series::new("distance".into(), distances),
+                        Series::new("atr".into(), atr_vals),
+                    ]
+                    .iter(),
+                )?;
+                Ok(Some(Column::from(struct_series.into_series())))
+            },
+            GetOutput::from_type(DataType::Struct(vec![
+                Field::new("bias".into(), DataType::UInt32),
+                Field::new("active_levels".into(), DataType::UInt32),
+                Field::new("interaction_count".into(), DataType::UInt32),
+                Field::new("has_interaction".into(), DataType::Boolean),
+                Field::new("interaction_type".into(), DataType::UInt32),
+                Field::new("level_price".into(), DataType::Float64),
+                Field::new("is_support".into(), DataType::Boolean),
+                Field::new("strength".into(), DataType::Float64),
+                Field::new("distance".into(), DataType::Float64),
+                Field::new("atr".into(), DataType::Float64),
+            ])),
+        )
+        .alias("sr_monitor")])
+    }
+
     pub fn ichimoku_cloud(
         self,
         high: &str,

@@ -71,6 +71,7 @@ pub mod madh;
 pub mod mama;
 pub mod market_state;
 pub mod market_structure;
+pub mod pa_confluence;
 pub mod sr_monitor;
 pub mod math;
 pub mod mesa_stochastic;

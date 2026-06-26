@@ -9,6 +9,8 @@
 //! Source: regimes/mod.rs (MarketRegime) + quantwave-4ub research notes (regime probs as meta-features).
 
 use crate::regimes::MarketRegime;
+use crate::regimes::hmm::HMM;
+use crate::traits::Next;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RegimeProbFeatures {
@@ -18,7 +20,7 @@ pub struct RegimeProbFeatures {
 }
 
 pub fn regime_to_prob_features(regime: MarketRegime) -> RegimeProbFeatures {
-    let mut probs = [0.05; 5]; // small uniform prior
+    let mut probs = [0.05; 5];
     let idx = match regime {
         MarketRegime::Bull => 0,
         MarketRegime::Bear => 1,
@@ -27,7 +29,6 @@ pub fn regime_to_prob_features(regime: MarketRegime) -> RegimeProbFeatures {
         MarketRegime::Cluster(c) => 4.min(c as usize),
     };
     probs[idx] = 0.80;
-    // normalize roughly
     let sum: f64 = probs.iter().sum();
     for p in &mut probs {
         *p /= sum;
@@ -35,6 +36,44 @@ pub fn regime_to_prob_features(regime: MarketRegime) -> RegimeProbFeatures {
     RegimeProbFeatures {
         probs,
         hard_label: regime,
+    }
+}
+
+/// Streaming extractor: HMM hard label + forward state probabilities as soft features.
+#[derive(Debug, Clone)]
+pub struct RegimeProbFeatureExtractor {
+    hmm: HMM,
+}
+
+impl RegimeProbFeatureExtractor {
+    pub fn bull_bear() -> Self {
+        Self {
+            hmm: HMM::bull_bear(),
+        }
+    }
+}
+
+impl Next<f64> for RegimeProbFeatureExtractor {
+    type Output = RegimeProbFeatures;
+
+    fn next(&mut self, input: f64) -> Self::Output {
+        let label = self.hmm.next(input);
+        let state_probs = self.hmm.state_probabilities();
+        let mut probs = [0.05; 5];
+        if state_probs.len() >= 2 {
+            probs[0] = state_probs[0];
+            probs[1] = state_probs[1];
+        }
+        let sum: f64 = probs.iter().sum();
+        if sum > 0.0 {
+            for p in &mut probs {
+                *p /= sum;
+            }
+        }
+        RegimeProbFeatures {
+            probs,
+            hard_label: label,
+        }
     }
 }
 

@@ -102,6 +102,16 @@ _METADATA: Dict[str, IndicatorMeta] = {
         ["high", "low"], ["flag", "hs"], 0, "Price Action",
         description="Flag + Head & Shoulders scanner (event output; warmup_bars=0)",
     ),
+    "sr_monitor": IndicatorMeta(
+        "sr_monitor",
+        ["swing_strength", "touch_tolerance", "approach_zone"],
+        {"touch_tol_atr_mult": 0.5, "approach_zone_atr_mult": 2.0},
+        ["high", "low", "close"],
+        ["bias", "active_levels", "interaction_count", "has_interaction", "interaction_type", "level_price", "strength", "distance", "atr"],
+        0,
+        "Price Action",
+        description="S/R interaction monitor (Approach/Touch/Breakout/Reversal/Retest); event struct output",
+    ),
     "heikin_ashi": IndicatorMeta("heikin_ashi", [], {}, ["open", "high", "low", "close"], ["ha_open", "ha_high", "ha_low", "ha_close"], 1, "Candlestick"),
 
     # Volume / Money Flow

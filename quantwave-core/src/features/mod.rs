@@ -45,7 +45,7 @@ pub use instantaneous_trendline::{
     InstantaneousTrendlineFeatureExtractor, InstantaneousTrendlineFeatures,
 };
 pub use regime::{RegimeFeatures, regime_to_features};
-pub use regime_probs::{RegimeProbFeatures, regime_to_prob_features};
+pub use regime_probs::{RegimeProbFeatureExtractor, RegimeProbFeatures, regime_to_prob_features};
 pub use trendflex::{TrendflexFeatureExtractor, TrendflexFeatures};
 
 // === wlx (Polars layer) preparation note (2026-05-30) ===

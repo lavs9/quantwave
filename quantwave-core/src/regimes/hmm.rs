@@ -68,6 +68,30 @@ impl HMM {
         let exponent = -((x - mu).powi(2)) / (2.0 * variance);
         exponent.exp() / denom
     }
+
+    /// Normalized state probabilities from Viterbi log-deltas (for soft regime features).
+    pub fn state_probabilities(&self) -> Vec<f64> {
+        if !self.initialized {
+            return self.pi.clone();
+        }
+        let max_log = self
+            .last_delta
+            .iter()
+            .cloned()
+            .fold(f64::NEG_INFINITY, f64::max);
+        let mut probs: Vec<f64> = self
+            .last_delta
+            .iter()
+            .map(|&d| (d - max_log).exp())
+            .collect();
+        let sum: f64 = probs.iter().sum();
+        if sum > 0.0 {
+            for p in &mut probs {
+                *p /= sum;
+            }
+        }
+        probs
+    }
 }
 
 impl Next<f64> for HMM {
