@@ -53,6 +53,7 @@ nav:
       - Indicator Gallery: guides/indicators/gallery.md
       - Indicators: guides/indicators/
       - ML Features: guides/ml_features.md
+      - Plugin vs .ta: guides/plugin_vs_ta.md
       - Backtest Engine:
           - Quickstart: guides/backtest/quickstart.md
           - Capability Matrix: guides/backtest/capability_matrix.md
@@ -71,6 +72,8 @@ nav:
   - API Reference:
       - Python (package surface): api/
   - Community:
+      - Comparison: comparison.md
+      - Release 0.5.2: releases/0.5.2.md
       - Contributing: contributing.md
       - Changelog: changelog.md
       - Documentation Decisions: DOCUMENTATION_DECISIONS.md

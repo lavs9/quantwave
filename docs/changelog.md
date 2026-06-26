@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased / v0.6 Tier 1] - 2026-06-26
+
+### Added
+- **CI metadata drift gate** (`quantwave-ttge`): `scripts/check_metadata_drift.py` + `.github/workflows/ci.yml`
+- **`quantwave verify`** CLI (`quantwave-072m`): `scripts/quantwave_verify.sh` — nextest + pytest smoke
+- **Plugin vs `.ta` guide** (`quantwave-q43g`): `docs/guides/plugin_vs_ta.md`
+- **Regime user guide** (`quantwave-bseb`): expanded `docs/guides/indicators/regimes/index.md`
+- **Comparison + release narrative** (`quantwave-l7xg`): `docs/comparison.md`, `docs/releases/0.5.2.md`
+- **Roadmap refresh** to v0.5.2 reality (`quantwave-q43g`)
+
 ## [Unreleased / Docs] - 2026-06-25 IST
 
 ### Added

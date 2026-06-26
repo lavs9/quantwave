@@ -16,7 +16,7 @@ QuantWave is past the “can we build this?” phase. The Rust engine is deep; t
 | **Indicators** | A engine, B+ packaging | PA + Ehlers + 216 metadata; doc long-tail still uneven |
 | **Backtest** | A research, B production | v1+v2+prod done; live bridge + tearsheets deferred |
 | **Rust/Python bridge** | A- | Codegen metadata + plugin parity + readiness shipped |
-| **Issue tracking** | **9 open beads** | Major epics closed; v0.6 = polish + backtest wrappers |
+| **Issue tracking** | **1 open bead** + v0.6 epic (`motd`) | Tier 1–3 beads filed; Tier 1 in flight |
 
 ---
 
@@ -70,14 +70,14 @@ From `AGENTS.md`, `DOCUMENTATION_STANDARDS.md`, gallery:
 |-----|-----|--------|---------|----------------|
 | Doc quality rollout — thin vs STANDARDS | High | **Closed** | `quantwave-6br5`, `quantwave-p1k6`, `quantwave-hbtm` | Long-tail indicator pages still uneven (low priority) |
 | Plugin migration — ~91 vs ~200+ | Medium | **Closed** | `quantwave-jlk6`, `quantwave-3f7g` | Document plugin vs `.ta` decision tree (no bead) |
-| Metadata sync — manual `_metadata.py` | Medium | **Closed** | `quantwave-iqq7` | Add **CI gate** on codegen drift; mkdocs from registry (future) |
+| Metadata sync — manual `_metadata.py` | Medium | **Closed** | `quantwave-iqq7`, `quantwave-ttge` | mkdocs from registry (future) |
 | Warmup / NaN semantics in Python | Medium | **Closed** | `quantwave-976r` | — |
 | S/R monitor bugs (arity/borrow) | Medium | **Closed** | `quantwave-epqh`, `quantwave-wmd2` | — |
 | Stale PA epics | Low | **Closed** | `quantwave-b7u`, `quantwave-cu03` | — |
 | PA Polars + confluence + ML features | Medium | **Closed** | `quantwave-8aht`, `quantwave-wlx`, `quantwave-22gw` | — |
 | ML / PA docs polish | Medium | **Closed** | `quantwave-hbtm` | — |
 | Per-indicator boundary docs | Low | **Closed** | `quantwave-p49i` | `boundary_info()` + guides |
-| Roadmap “portfolio backtest” stale | Low | **Open** | No bead | Update `docs/roadmap.md` |
+| Roadmap stale | Low | **Closed** | `quantwave-q43g` | — |
 
 ### 1.4 Indicators verdict
 
@@ -218,23 +218,20 @@ From `planning/BACKTEST_ENGINE_RESEARCH.md`:
 | `quantwave-epqh`, `quantwave-wmd2` | S/R monitor fixes |
 | `quantwave-6br5`, `quantwave-p1k6` | Doc standards rollout |
 
-### 4.2 Open — live (1 bead)
+### 4.2 Open — live
 
 | Area | Bead IDs |
 |------|----------|
-| Backtest live (deferred) | `quantwave-cr6v-v2.7` (P4 Nautilus) |
+| v0.6 SOA productization (parent) | `quantwave-motd` |
+| Tier 2 (research loop) | `quantwave-rdpk`, `quantwave-fsg3`, `quantwave-dk61` |
+| Tier 3 (deferred expansion) | `quantwave-wnd9`, `quantwave-0gi1`, `quantwave-8v4s`, `quantwave-cr6v-v2.7` |
 
-### 4.3 Gaps without beads (v0.6 candidates)
+### 4.3 Gaps without beads (remaining)
 
-- Python `.bt.monte_carlo()` wrapper
 - `winsorize` on Python `cross_sectional_backtest`
-- Tear-sheet / reporting layer
-- Portfolio optimization / wide-format engine
-- Roadmap refresh (backtest + PA shipped)
-- `quantwave-polars` Rust `.bt.walk_forward_optimize`
-- Metadata codegen **CI drift gate**
 - Workspace-wide clippy cleanup (or per-crate policy doc)
-- Plugin vs `.ta` decision-tree doc
+
+*(Most v0.6 candidates now tracked under `quantwave-motd` children.)*
 
 ---
 
@@ -287,12 +284,12 @@ Full parity achieved (`3f7g`). **Next:** document when to use plugin vs `.ta` la
 
 | # | Child | Status |
 |---|-------|--------|
-| 1 | Metadata codegen CI gate | **Partial** — pipeline shipped (`iqq7`), gate missing |
+| 1 | Metadata codegen CI gate | **Done** (`ttge`) |
 | 2 | Plugin migration top-N | **Done** (`3f7g`) |
 | 3 | Python MC + winsorize on `.bt` | **Open** |
-| 4 | Close PA epics + roadmap sync | **Done** (epics); roadmap update pending |
-| 5 | `quantwave verify` CLI | **Open** |
-| 6 | GitHub release + comparison one-pager | **Open** |
+| 4 | Close PA epics + roadmap sync | **Done** |
+| 5 | `quantwave verify` CLI | **Done** (`072m`) |
+| 6 | GitHub release + comparison one-pager | **Done** (`l7xg`) |
 | 7 | `hbtm` docs polish + `p49i` boundaries | **Done** |
 
 ---

@@ -1,58 +1,206 @@
-# Regime Detection
+# Regime Detection — User Guide
 
-Regime detection tools help identify different market states, such as Bull/Bear markets, High/Low volatility periods, or structural breaks in time series data.
+Regime detection identifies **market states** (bull/bear, volatility clusters, structural breaks) for filtering signals, sizing positions, and ML feature engineering.
 
-QuantWave provides several state-of-the-art algorithms for regime detection:
-
-## Available Algorithms
-
-### 1. Volatility Clustering
-Inspired by **Prakash et al. (2021)**, this tool uses rolling ATR and online K-Means clustering to identify discrete volatility regimes (e.g., Stable, Crisis).
-
-### 2. Hidden Markov Models (HMM)
-Based on **Hamilton (1989)**, this implements a regime-switching HMM with Gaussian emissions. It uses the Viterbi algorithm for real-time state decoding.
-
-### 3. Gaussian Mixture Models (GMM)
-Inspired by **Two Sigma (2021)**, this uses multi-variate clustering on factor data to identify latent market states.
-
-### 4. Changepoint Detection (PELT)
-Implementation of the **Pruned Exact Linear Time (PELT)** algorithm from **Killick et al. (2012)**. It provides exact segmentation of historical data based on statistical shifts.
+All algorithms live in `quantwave-core/src/regimes/` and expose batch (Polars) and streaming (`Next<T>`) paths with identical semantics.
 
 ---
 
-## Usage Examples
+## Algorithm overview
 
-### Polars (Batch)
+| Algorithm | Core type | Best for | Polars method |
+|-----------|-----------|----------|---------------|
+| **Volatility clustering** | Online K-means on ATR | Crisis vs stable vol regimes | `.ta().volatility_clusterer(...)` |
+| **HMM (Hamilton)** | Gaussian emissions + Viterbi | Bull/bear switching | `.ta().hmm_bull_bear(col)` |
+| **GMM** | Multi-variate clustering | Latent factor states | `.ta().gmm(cols, k)` |
+| **PELT** | Exact changepoint segmentation | Historical break dating | `.ta().pelt(col, penalty, min_dist)` |
+
+**Sources:** Hamilton (1989); Killick et al. (2012) PELT; Prakash et al. (2021) vol clustering; Two Sigma (2021) GMM notes.
+
+---
+
+## 1. Volatility clustering
+
+Identifies discrete volatility regimes (e.g. Stable → Crisis) using rolling ATR and online clustering.
+
+### Polars (batch)
 
 ```python
 import polars as pl
-import quantwave as qw
 
-df = pl.read_csv("market_data.csv")
-
-# Identify 3 volatility regimes (Low, Medium, High)
-df = df.lazy().ta().volatility_clusterer(
-    high="high", 
-    low="low", 
-    close="close", 
-    atr_period=14, 
-    window_size=100, 
-    k=3
-).collect()
-
-# Bull/Bear HMM
-df = df.lazy().ta().hmm_bull_bear("returns").collect()
+df = (
+    pl.read_csv("ohlcv.csv")
+    .lazy()
+    .ta()
+    .volatility_clusterer(
+        high="high",
+        low="low",
+        close="close",
+        atr_period=14,
+        window_size=100,
+        k=3,
+    )
+    .collect()
+)
+# Column: volatility_regime (u32 labels)
 ```
 
-### Rust (Streaming)
+### Rust (streaming)
 
 ```rust
-use quantwave_core::regimes::hmm::HMM;
+use quantwave_core::regimes::volatility_clustering::VolatilityClusterer;
 use quantwave_core::traits::Next;
 
-let mut hmm = HMM::bull_bear();
-for price in prices {
-    let regime = hmm.next(price);
-    println!("Current Regime: {:?}", regime);
+let mut clusterer = VolatilityClusterer::new(14, 100, 3);
+for (h, l, c) in ohlcv {
+    let regime = clusterer.next((h, l, c));
 }
 ```
+
+### Edge cases
+
+| Condition | Behavior |
+|-----------|----------|
+| `window_size` not filled | Partial / default cluster assignment |
+| `k=1` | Degenerate — use k ≥ 2 |
+| NaN OHLC | Skipped or propagates per bar |
+
+### ML integration
+
+Join `volatility_regime` with PA events or `.ta.features.regime_probs()` for confluence filters. See [ML Features guide](../../ml_features.md).
+
+---
+
+## 2. Hidden Markov Model (bull/bear)
+
+Regime-switching HMM with Gaussian emissions; Viterbi decoding for the most likely state path.
+
+### Polars (batch)
+
+```python
+df = (
+    df.lazy()
+    .with_columns(pl.col("close").pct_change().alias("returns"))
+    .ta()
+    .hmm_bull_bear("returns")
+    .collect()
+)
+# Column: hmm_regime (1=Bull, 2=Bear, 0=other)
+```
+
+### Python (streaming)
+
+```python
+import quantwave as qw
+
+hmm = qw.BullBearHMM.bull_bear()
+for ret in returns:
+    state = hmm.next(ret)
+```
+
+### Edge cases
+
+| Condition | Behavior |
+|-----------|----------|
+| Short series | Unstable state estimates; prefer ≥ 100 bars |
+| Zero variance returns | Emission collapse — watch for stuck states |
+
+### Strategy pattern
+
+```python
+# Long only in bull regime (label 1)
+df = df.with_columns(
+    (pl.col("hmm_regime") == 1).cast(pl.Float64).alias("regime_filter")
+)
+```
+
+Used in [ML Features → Backtest E2E](../../../examples/notebooks/ml_feature_backtest_parity.md).
+
+---
+
+## 3. Gaussian Mixture Model (GMM)
+
+Clusters multi-column factor data into latent regimes.
+
+### Polars (batch)
+
+```python
+df = (
+    df.lazy()
+    .ta()
+    .gmm(["returns", "volume_z"], k=4)
+    .collect()
+)
+# Column: gmm_regime
+```
+
+### Edge cases
+
+| Condition | Behavior |
+|-----------|----------|
+| `k` > row count | Fit degrades — reduce k |
+| Correlated columns | Consider orthogonal factors first |
+
+---
+
+## 4. PELT changepoint detection
+
+Pruned Exact Linear Time segmentation — finds statistically significant level shifts in a series.
+
+### Polars (batch)
+
+```python
+df = (
+    df.lazy()
+    .ta()
+    .pelt("close", penalty=1.0, min_dist=10)
+    .collect()
+)
+# Changepoint flags in output column
+```
+
+### Edge cases
+
+| Condition | Behavior |
+|-----------|----------|
+| Low `penalty` | Many changepoints (over-segmentation) |
+| High `penalty` | Few or no breaks detected |
+
+---
+
+## ML features shortcut
+
+For backtest-ready regime labels without manual HMM wiring:
+
+```python
+df = (
+    pl.read_csv("ohlcv.csv")
+    .lazy()
+    .ta()
+    .features()
+    .regime_features()   # HMM bull/bear label column
+    .collect()
+)
+```
+
+Also available: `.ta.features.regime_probs()` for probability struct output.
+
+---
+
+## Parity & validation
+
+Regime modules follow the Universal Indicator pattern where stateful. Use streaming wrappers in live systems:
+
+```python
+wrapped = qw.wrap_streaming(hmm, name="market_state")
+```
+
+Core tests: `cargo nextest run -p quantwave-core -- regimes`
+
+---
+
+## Related docs
+
+- [ML Features guide](../../ml_features.md)
+- [Indicator Gallery](../gallery.md) — Regime section
+- [PA confluence notebook](../../../examples/notebooks/pa_foundation_strategy.py)

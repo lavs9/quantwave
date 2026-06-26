@@ -19,6 +19,7 @@ The project is structured as a Rust workspace to maximize modularity and perform
 ### Key Commands
 - **Build All**: `cargo build`
 - **Test All**: `cargo nextest run` (MANDATORY: Use nextest only)
+- **Verify (CI parity)**: `./scripts/quantwave_verify.sh` — metadata drift + nextest + pytest smoke
 - **Run Benchmarks**: `cargo bench`
 - **Check Linting**: `cargo clippy`
 
