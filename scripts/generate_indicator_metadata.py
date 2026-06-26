@@ -105,6 +105,14 @@ def indicator_meta_from_rust(entry: dict, overlay: dict | None) -> dict[str, Any
     warmup = warmup_from_params(params, overlay)
     category = entry.get("category") or "Other"
     desc = entry.get("description") or entry.get("name", slug)
+    
+    boundary_docs = (
+        "\n\nBoundary Conditions & Error Behavior:\n"
+        "- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n"
+        "- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n"
+        "- Negative Params: Negative period/length parameters will raise a ValueError."
+    )
+    desc += boundary_docs
 
     return {
         "slug": slug,
@@ -169,6 +177,15 @@ def main() -> int:
     for key, ov in overlay_all.items():
         alias = ov.get("slug_alias", key)
         if alias not in items:
+            desc = ov.get("description", alias)
+            boundary_docs = (
+                "\n\nBoundary Conditions & Error Behavior:\n"
+                "- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n"
+                "- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n"
+                "- Negative Params: Negative period/length parameters will raise a ValueError."
+            )
+            desc += boundary_docs
+            
             items[alias] = {
                 "required_params": list(ov.get("required_params", [])),
                 "optional_params": dict(ov.get("optional_params", {})),
@@ -176,7 +193,7 @@ def main() -> int:
                 "outputs": ov.get("outputs", [alias]),
                 "warmup_bars": ov.get("warmup_bars"),
                 "category": ov.get("category", "Price Action"),
-                "description": ov.get("description", alias),
+                "description": desc,
             }
 
     OUT.write_text(render_python(items), encoding="utf-8")

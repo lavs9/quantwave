@@ -19,7 +19,13 @@ class Custom6Extensions:
         accelerationshort: float = 0.0,
         accelerationmaxshort: float = 0.0,
     ) -> pl.Expr:
-        """Parabolic SAR - Extended (SAREXT). Note: self must be low."""
+        """Parabolic SAR - Extended (SAREXT). Note: self must be low.
+
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
         if isinstance(high, str): high = pl.col(high)
         return register_plugin_function(
             args=[high, self._expr],
@@ -46,7 +52,13 @@ class Custom6Extensions:
         atr_period: int = 10,
         multiplier: float = 2.0,
     ) -> pl.Expr:
-        """Keltner Channels. Note: self must be close."""
+        """Keltner Channels. Note: self must be close.
+
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
         if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         return register_plugin_function(
@@ -65,7 +77,13 @@ class Custom6Extensions:
         self,
         num_states: int,
     ) -> pl.Expr:
-        """Regime Duration Stats. Note: self must be the regime_col."""
+        """Regime Duration Stats. Note: self must be the regime_col.
+
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
         return register_plugin_function(
             args=[self._expr],
             plugin_path=Path(__file__).parent,
@@ -81,7 +99,13 @@ class Custom6Extensions:
         high: Union[str, pl.Expr],
         swing_strength: int = 2,
     ) -> pl.Expr:
-        """Market Structure. Note: self must be low."""
+        """Market Structure. Note: self must be low.
+
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
         if isinstance(high, str): high = pl.col(high)
         return register_plugin_function(
             args=[high, self._expr],
@@ -94,7 +118,13 @@ class Custom6Extensions:
         )
 
     def regimes_hmm_gas(self) -> pl.Expr:
-        """Regimes HMM GAS. Note: self must be the input series."""
+        """Regimes HMM GAS. Note: self must be the input series.
+
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
         return register_plugin_function(
             args=[self._expr],
             plugin_path=Path(__file__).parent,

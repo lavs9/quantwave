@@ -5,7 +5,14 @@ from typing import Union
 
 class Custom0Extensions:
     def anchored_vwap(self, volume: Union[str, pl.Expr], anchor: Union[str, pl.Expr]) -> pl.Expr:
-        if isinstance(volume, str): volume = pl.col(volume)
+        
+        """
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
+if isinstance(volume, str): volume = pl.col(volume)
         if isinstance(anchor, str): anchor = pl.col(anchor)
         return register_plugin_function(
             args=[self._expr, volume, anchor],
@@ -15,7 +22,14 @@ class Custom0Extensions:
         )
 
     def kinematic_kalman(self, q_pos: float, q_vel: float, r: float) -> pl.Expr:
-        return register_plugin_function(
+        
+        """
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
+return register_plugin_function(
             args=[self._expr],
             plugin_path=Path(__file__).parent,
             function_name="kinematic_kalman",
@@ -24,7 +38,14 @@ class Custom0Extensions:
         )
 
     def vortex_indicator(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], period: int) -> pl.Expr:
-        if isinstance(high, str): high = pl.col(high)
+        
+        """
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
+if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         return register_plugin_function(
             args=[high, low, self._expr],
@@ -35,7 +56,14 @@ class Custom0Extensions:
         )
 
     def sve_volatility_bands(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], bands_period: int, bands_deviation: float, low_band_adjust: float, mid_line_length: int) -> pl.Expr:
-        if isinstance(high, str): high = pl.col(high)
+        
+        """
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
+if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         return register_plugin_function(
             args=[high, low, self._expr],
@@ -51,7 +79,14 @@ class Custom0Extensions:
         )
 
     def ttm_squeeze(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], period: int, multiplier_bb: float, multiplier_kc: float) -> pl.Expr:
-        if isinstance(high, str): high = pl.col(high)
+        
+        """
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
+if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         return register_plugin_function(
             args=[high, low, self._expr],

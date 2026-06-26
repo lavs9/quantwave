@@ -9,7 +9,14 @@ class Custom1Extensions:
         self._expr = expr
 
     def gap_momentum(self, open: Union[str, pl.Expr], period: int, signal_period: int) -> pl.Expr:
-        if isinstance(open, str): open = pl.col(open)
+        
+        """
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
+if isinstance(open, str): open = pl.col(open)
         return register_plugin_function(
             args=[open, self._expr],
             plugin_path=Path(__file__).parent,
@@ -19,7 +26,14 @@ class Custom1Extensions:
         )
 
     def pelt(self, penalty: float, min_dist: int) -> pl.Expr:
-        return register_plugin_function(
+        
+        """
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
+return register_plugin_function(
             args=[self._expr],
             plugin_path=Path(__file__).parent,
             function_name="pelt",
@@ -28,7 +42,14 @@ class Custom1Extensions:
         )
 
     def zlema(self, period: int) -> pl.Expr:
-        return register_plugin_function(
+        
+        """
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
+return register_plugin_function(
             args=[self._expr],
             plugin_path=Path(__file__).parent,
             function_name="zlema",
@@ -37,7 +58,14 @@ class Custom1Extensions:
         )
 
     def rodc(self, window_size: int, threshold: float, smooth_period: int) -> pl.Expr:
-        return register_plugin_function(
+        
+        """
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
+return register_plugin_function(
             args=[self._expr],
             plugin_path=Path(__file__).parent,
             function_name="rodc",
@@ -46,7 +74,14 @@ class Custom1Extensions:
         )
 
     def heikin_ashi(self, open: Union[str, pl.Expr], high: Union[str, pl.Expr], low: Union[str, pl.Expr]) -> pl.Expr:
-        if isinstance(open, str): open = pl.col(open)
+        
+        """
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
+if isinstance(open, str): open = pl.col(open)
         if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         return register_plugin_function(

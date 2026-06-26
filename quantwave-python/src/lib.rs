@@ -231,6 +231,10 @@ macro_rules! export_1_in_1_out {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 series.iter().map(|&x| indicator.next(x)).collect()
             }
+            #[doc = "Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError."]
             #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
             #[uniffi::export] impl $name {
                 #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
@@ -248,6 +252,10 @@ macro_rules! export_1_in_record_out {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 series.iter().map(|&x| { let $res_var = indicator.next(x); $body }).collect()
             }
+            #[doc = "Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError."]
             #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
             #[uniffi::export] impl $name {
                 #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
@@ -265,6 +273,10 @@ macro_rules! export_1_in_vec_out {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 series.iter().map(|&x| indicator.next(x)).collect()
             }
+            #[doc = "Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError."]
             #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
             #[uniffi::export] impl $name {
                 #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
@@ -282,6 +294,10 @@ macro_rules! export_ohlc_in_1_out {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 high.iter().zip(low.iter()).zip(close.iter()).map(|((&h, &l), &c)| indicator.next((h, l, c))).collect()
             }
+            #[doc = "Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError."]
             #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
             #[uniffi::export] impl $name {
                 #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
@@ -299,6 +315,10 @@ macro_rules! export_ohlc_in_record_out {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 high.iter().zip(low.iter()).zip(close.iter()).map(|((&h, &l), &c)| { let $res_var = indicator.next((h, l, c)); $body }).collect()
             }
+            #[doc = "Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError."]
             #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
             #[uniffi::export] impl $name {
                 #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
@@ -316,6 +336,10 @@ macro_rules! export_hl_in_1_out {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 high.iter().zip(low.iter()).map(|(&h, &l)| indicator.next((h, l))).collect()
             }
+            #[doc = "Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError."]
             #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
             #[uniffi::export] impl $name {
                 #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
@@ -333,6 +357,10 @@ macro_rules! export_hl_in_record_out {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 high.iter().zip(low.iter()).map(|(&h, &l)| { let $res_var = indicator.next((h, l)); $body }).collect()
             }
+            #[doc = "Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError."]
             #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
             #[uniffi::export] impl $name {
                 #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
@@ -350,6 +378,10 @@ macro_rules! export_co_in_1_out {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 close.iter().zip(open.iter()).map(|(&c, &o)| indicator.next((c, o))).collect()
             }
+            #[doc = "Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError."]
             #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
             #[uniffi::export] impl $name {
                 #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
@@ -367,6 +399,10 @@ macro_rules! export_co_in_record_out {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 close.iter().zip(open.iter()).map(|(&c, &o)| { let $res_var = indicator.next((c, o)); $body }).collect()
             }
+            #[doc = "Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError."]
             #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
             #[uniffi::export] impl $name {
                 #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
@@ -384,6 +420,10 @@ macro_rules! export_pv_in_1_out {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 price.iter().zip(volume.iter()).map(|(&p, &v)| indicator.next((p, v))).collect()
             }
+            #[doc = "Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError."]
             #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
             #[uniffi::export] impl $name {
                 #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
@@ -401,6 +441,10 @@ macro_rules! export_pv_in_record_out {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 price.iter().zip(volume.iter()).map(|(&p, &v)| { let $res_var = indicator.next((p, v)); $body }).collect()
             }
+            #[doc = "Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError."]
             #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
             #[uniffi::export] impl $name {
                 #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }

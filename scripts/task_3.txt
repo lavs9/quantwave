@@ -1,0 +1,250 @@
+Function: hma
+Signature: self, name: &str, period: usize
+Body: 
+        let name = name.to_string();
+        self.0.clone().with_columns([col(&name)
+            .map(
+                move |s| {
+                    let ca = s.f64()?;
+                    let mut hma = quantwave_core::HMA::new(period);
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(0.0);
+                        values.push(hma.next(val));
+                    }
+
+                    Ok(Some(Column::from(Series::new("hma".into(), values))))
+                },
+                GetOutput::from_type(DataType::Float64),
+            )
+            .alias("hma")])
+    }
+
+    
+
+---
+Function: obvm
+Signature: self,         high: &str,         low: &str,         close: &str,         volume: &str,         obvm_period: usize,         signal_period: usize,
+Body: 
+        let h_str = high.to_string();
+        let l_str = low.to_string();
+        let c_str = close.to_string();
+        let v_str = volume.to_string();
+
+        self.0.clone().with_columns([as_struct(vec![
+            col(&h_str),
+            col(&l_str),
+            col(&c_str),
+            col(&v_str),
+        ])
+        .map(
+            move |s| {
+                let ca = s.struct_()?;
+                let f_h = ca.field_by_name(&h_str)?;
+                let high = f_h.f64()?;
+                let f_l = ca.field_by_name(&l_str)?;
+                let low = f_l.f64()?;
+                let f_c = ca.field_by_name(&c_str)?;
+                let close = f_c.f64()?;
+                let f_v = ca.field_by_name(&v_str)?;
+                let volume = f_v.f64()?;
+
+                let mut indicator = quantwave_core::Obvm::new(obvm_period, signal_period);
+                let mut obvm_vals = Vec::with_capacity(s.len());
+                let mut signal_vals = Vec::with_capacity(s.len());
+
+                for i in 0..s.len() {
+                    let h = high.get(i).unwrap_or(f64::NAN);
+                    let l = low.get(i).unwrap_or(f64::NAN);
+                    let c = close.get(i).unwrap_or(f64::NAN);
+                    let v = volume.get(i).unwrap_or(f64::NAN);
+                    let (o, sig) = indicator.next((h, l, c, v));
+                    obvm_vals.push(o);
+                    signal_vals.push(sig);
+                }
+
+                let s_obvm = Series::new("obvm".into(), obvm_vals);
+                let s_signal = Series::new("signal".into(), signal_vals);
+                let struct_series = StructChunked::from_series(
+                    "obvm_data".into(),
+                    s.len(),
+                    [s_obvm, s_signal].iter(),
+                )?;
+                Ok(Some(Column::from(struct_series.into_series())))
+            },
+            GetOutput::from_type(DataType::Struct(vec![
+                Field::new("obvm".into(), DataType::Float64),
+                Field::new("signal".into(), DataType::Float64),
+            ])),
+        )
+        .alias("obvm_data")])
+    }
+
+    
+
+---
+Function: bill_williams_fractals
+Signature: self, high: &str, low: &str
+Body: 
+        let high = high.to_string();
+        let low = low.to_string();
+
+        self.0
+            .clone()
+            .with_columns([as_struct(vec![col(&high), col(&low)])
+                .map(
+                    move |s| {
+                        let ca = s.struct_()?;
+                        let s_high = ca.field_by_name(&high)?;
+                        let s_low = ca.field_by_name(&low)?;
+
+                        let high = s_high.f64()?;
+                        let low = s_low.f64()?;
+
+                        let mut fractals = quantwave_core::BillWilliamsFractals::new();
+                        let mut bearish_vals = Vec::with_capacity(s.len());
+                        let mut bullish_vals = Vec::with_capacity(s.len());
+
+                        for i in 0..s.len() {
+                            let h = high.get(i).unwrap_or(0.0);
+                            let l = low.get(i).unwrap_or(0.0);
+                            let (bear, bull) = fractals.next((h, l));
+                            bearish_vals.push(bear);
+                            bullish_vals.push(bull);
+                        }
+
+                        let bearish_series = Series::new("bearish".into(), bearish_vals);
+                        let bullish_series = Series::new("bullish".into(), bullish_vals);
+
+                        let out = StructChunked::from_series(
+                            "fractals_output".into(),
+                            s.len(),
+                            [bearish_series, bullish_series].iter(),
+                        )?;
+                        Ok(Some(Column::from(out.into_series())))
+                    },
+                    GetOutput::from_type(DataType::Struct(vec![
+                        Field::new("bearish".into(), DataType::Boolean),
+                        Field::new("bullish".into(), DataType::Boolean),
+                    ])),
+                )
+                .alias("fractals_data")])
+    }
+
+    /// Market Structure (swings + confirmed BOS flips) Polars accessor.
+    /// Returns a Struct column "market_structure" with rich per-bar state + flip metadata:
+    ///   bias (0=Neutral,1=Bullish,2=Bearish), last_*_price/bar (0/NaN if none),
+    ///   has_flip + flip_* fields (only meaningful when has_flip=true — these are the events),
+    ///   swing_depth, bar_index.
+    ///
+    /// This directly emits the foundation for the standardized PAEvent system:
+    /// - Use core `extract_pa_events(&state)` (or Python equivalent on the struct fields) to obtain
+    ///   typed `PAEvent` / `PAEventKind::MarketStructureFlip` carrying strength, confidence=1.0, bar etc.
+    /// - Filter/explode for events: `.filter(col("market_structure").struct_().field_by_name("has_flip"))`.
+    /// - Rich meta (structure_strength etc) drives backtester sizing/attribution
+    ///   and ML confluence (feature_values/regime_at_event slots filled by join).
+    ///
+    /// Delegates to quantwave_core::MarketStructure (Next<(f64,f64)> -> MarketStructureState + PAEvent adapters).
+    /// Primary Polars surface for Part 21 PA foundation + rich event standardization.
+    ///
+    /// Matches project patterns (see fractals, supertrend, features.rs cyber_cycle).
+    ///
+    /// Sources: market_structure.rs (MQL5 Part 21 https://www.mql5.com/en/articles/17891 + 66/69 lessons).
+    
+
+---
+Function: donchian_channels
+Signature: self, high: &str, low: &str, period: usize
+Body: 
+        let high = high.to_string();
+        let low = low.to_string();
+
+        self.0
+            .clone()
+            .with_columns([as_struct(vec![col(&high), col(&low)])
+                .map(
+                    move |s| {
+                        let ca = s.struct_()?;
+                        let s_high = ca.field_by_name(&high)?;
+                        let s_low = ca.field_by_name(&low)?;
+
+                        let high = s_high.f64()?;
+                        let low = s_low.f64()?;
+
+                        let mut dc = quantwave_core::DonchianChannels::new(period);
+                        let mut uppers = Vec::with_capacity(s.len());
+                        let mut middles = Vec::with_capacity(s.len());
+                        let mut lowers = Vec::with_capacity(s.len());
+
+                        for i in 0..s.len() {
+                            let h = high.get(i).unwrap_or(0.0);
+                            let l = low.get(i).unwrap_or(0.0);
+                            let (upper, middle, lower) = dc.next((h, l));
+                            uppers.push(upper);
+                            middles.push(middle);
+                            lowers.push(lower);
+                        }
+
+                        let upper_series = Series::new("upper".into(), uppers);
+                        let middle_series = Series::new("middle".into(), middles);
+                        let lower_series = Series::new("lower".into(), lowers);
+
+                        let out = StructChunked::from_series(
+                            "donchian_output".into(),
+                            s.len(),
+                            [upper_series, middle_series, lower_series].iter(),
+                        )?;
+                        Ok(Some(Column::from(out.into_series())))
+                    },
+                    GetOutput::from_type(DataType::Struct(vec![
+                        Field::new("upper".into(), DataType::Float64),
+                        Field::new("middle".into(), DataType::Float64),
+                        Field::new("lower".into(), DataType::Float64),
+                    ])),
+                )
+                .alias("donchian_data")])
+    }
+
+    
+
+---
+Function: gmm
+Signature: self, columns: &[&str], _k: usize
+Body: 
+        let cols: Vec<String> = columns.iter().map(|s| s.to_string()).collect();
+        let col_exprs: Vec<Expr> = cols.iter().map(|c| col(c)).collect();
+
+        self.0.clone().with_columns([as_struct(col_exprs)
+            .map(
+                move |s| {
+                    let ca = s.struct_()?;
+                    let n_rows = s.len();
+                    let n_dims = cols.len();
+
+                    let mut data = Vec::with_capacity(n_rows);
+                    for i in 0..n_rows {
+                        let mut row = Vec::with_capacity(n_dims);
+                        for c_name in &cols {
+                            let f = ca.field_by_name(c_name)?;
+                            let val = f.f64()?.get(i).unwrap_or(f64::NAN);
+                            row.push(val);
+                        }
+                        data.push(row);
+                    }
+
+                    // Placeholder GMM: requires fitting or pre-trained params.
+                    // For now, we'll use a simple default clusterer based on means.
+                    let mut values = Vec::with_capacity(n_rows);
+                    for _ in 0..n_rows {
+                        values.push(0u32);
+                    }
+
+                    Ok(Some(Column::from(Series::new("gmm_regime".into(), values))))
+                },
+                GetOutput::from_type(DataType::UInt32),
+            )
+            .alias("gmm_regime")])
+    }
+
+    

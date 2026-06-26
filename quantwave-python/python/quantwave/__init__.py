@@ -25,8 +25,12 @@ still works but is deprecated and will be removed in a future major version.
 
 Boundary conditions & error behavior:
 Most indicators return NaN or truncated output during their warmup period.
-Passing invalid parameters (negative period, etc.) will typically raise ValueError.
-See individual docstrings and `metadata(name)` for details.
+Use ``boundary_info(name)`` for curated per-kind semantics. Invalid parameters
+typically raise ``InvalidParameterError`` or ``ValueError``.
+
+Exception contract (``quantwave.QuantwaveError`` hierarchy):
+``IndicatorNotFoundError``, ``InvalidParameterError``, ``ParityError``,
+``StreamingError``, and ``InternalError`` (native FFI). See ``quantwave._errors``.
 """
 
 from typing import List, Dict, Any
@@ -79,32 +83,39 @@ except Exception as _e:  # pragma: no cover
     options = _DummyNS()
     talib = _DummyNS()
 
-# Public exception types (must be available even if native load is partial).
-# These are listed in __all__ and documented as part of the public surface.
-class QuantwaveError(Exception):
-    """Base exception for quantwave errors."""
-    pass
+# Public exception types (quantwave-1x2z; must survive partial native load).
+from ._errors import (
+    QuantwaveError,
+    IndicatorNotFoundError,
+    InvalidParameterError,
+    ParityError,
+    StreamingError,
+)
 
-InternalError = getattr(_quantwave, "InternalError", None)
-if InternalError is None:
+_native_internal = getattr(_quantwave, "InternalError", None)
+if _native_internal is None:
     class InternalError(QuantwaveError):
         """Internal uniffi/FFI error from the native binding."""
         pass
 else:
-    # Bind under our name so `from quantwave import InternalError` and
-    # `except quantwave.InternalError` work as advertised.
-    globals()["InternalError"] = InternalError
+    class InternalError(QuantwaveError, _native_internal):
+        """Internal uniffi/FFI error from the native binding."""
+        pass
 
-globals()["QuantwaveError"] = QuantwaveError
 globals()["InternalError"] = InternalError
 
 # Pull in the clean metadata system (now the robust source for discovery too)
 from ._metadata import (
     IndicatorMeta,
+    BoundaryInfo,
     metadata,
     list_metadata,
     warmup_bars,
     get_indicator_signature,
+    boundary_info,
+    categories,
+    indicators_by_category,
+    category,
     Param,
     Series,
 )
@@ -292,11 +303,11 @@ def assert_parity(
     """
     batch_fn = getattr(ta, indicator_name, None)
     if batch_fn is None:
-        raise ValueError(f"Unknown indicator: {indicator_name}")
+        raise IndicatorNotFoundError(f"Unknown indicator: {indicator_name}")
 
     streaming_cls = streaming_class(indicator_name)
     if streaming_cls is None:
-        raise ValueError(f"No streaming class found for: {indicator_name}")
+        raise IndicatorNotFoundError(f"No streaming class found for: {indicator_name}")
 
     # Run batch - native fns usually take explicit params then series= (or data as last positional).
     # Use flexible try to support the generated signatures without hardcoding per-indicator.
@@ -308,15 +319,19 @@ def assert_parity(
         try:
             batch_result = batch_fn(data, **call_params, **(kwargs or {}))
         except TypeError:
-            # Give up with clear error
-            raise RuntimeError(f"Batch call failed for {indicator_name} with params={call_params}. Check native signature.") from None
+            raise InvalidParameterError(
+                f"Batch call failed for {indicator_name} with params={call_params}. "
+                "Check native signature and required parameters."
+            ) from None
 
     # Run streaming
     try:
         streamer = streaming_cls(**params, **kwargs)
         stream_result = [streamer.next(v) for v in data]
+    except (TypeError, ValueError) as e:
+        raise InvalidParameterError(f"Invalid streaming params for {indicator_name}: {e}") from e
     except Exception as e:
-        raise RuntimeError(f"Streaming mode failed: {e}") from e
+        raise StreamingError(f"Streaming mode failed for {indicator_name}: {e}") from e
 
     # Use metadata for warmup awareness (976r) - skip or note initial bars in comparison
     meta = metadata(indicator_name)
@@ -355,18 +370,18 @@ def assert_parity(
     s = _normalize(stream_result)
 
     if len(b) != len(s):
-        raise AssertionError(f"Length mismatch: batch={len(b)}, stream={len(s)}")
+        raise ParityError(f"Length mismatch: batch={len(b)}, stream={len(s)}")
 
     for i, (bv, sv) in enumerate(zip(b, s)):
         if i < warmup:
             # During warmup, both paths should agree on NaN / sentinel values.
             if not _close_enough(bv, sv):
-                raise AssertionError(
+                raise ParityError(
                     f"Warmup mismatch at index {i} (warmup={warmup}): batch={bv}, stream={sv}"
                 )
             continue
         if not _close_enough(bv, sv):
-            raise AssertionError(
+            raise ParityError(
                 f"Mismatch at index {i} (post-warmup, warmup={warmup}): batch={bv}, stream={sv}"
             )
 
@@ -500,7 +515,12 @@ __all__ = [
     "list_metadata",
     "warmup_bars",
     "get_indicator_signature",
+    "boundary_info",
+    "categories",
+    "indicators_by_category",
+    "category",
     "IndicatorMeta",
+    "BoundaryInfo",
     "Param",
     "Series",
     "assert_parity",
@@ -509,6 +529,10 @@ __all__ = [
     "track_streaming",
     "StreamingWrapper",
     "QuantwaveError",
+    "IndicatorNotFoundError",
+    "InvalidParameterError",
+    "ParityError",
+    "StreamingError",
     "InternalError",
     "ta",
     "polars",

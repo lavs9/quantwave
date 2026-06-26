@@ -1,0 +1,165 @@
+Function: autotune_filter
+Signature: self, name: &str, window: usize, bandwidth: f64
+Body: 
+        let name_str = name.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    let ca = s.f64()?;
+                    let mut indicator = quantwave_core::AutoTuneFilter::new(window, bandwidth);
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next(val));
+                    }
+
+                    Ok(Some(Column::from(Series::new("autotune".into(), values))))
+                },
+                GetOutput::from_type(DataType::Float64),
+            )
+            .alias("autotune")])
+    }
+
+    
+
+---
+Function: tradj_ema
+Signature: self,         high: &str,         low: &str,         close: &str,         period: usize,         pds: usize,         mltp: f64,
+Body: 
+        let h_str = high.to_string();
+        let l_str = low.to_string();
+        let c_str = close.to_string();
+
+        self.0.clone().with_columns([as_struct(vec![col(&h_str), col(&l_str), col(&c_str)])
+            .map(
+                move |s| {
+                    let ca = s.struct_()?;
+                    let f_h = ca.field_by_name(&h_str)?;
+                    let high = f_h.f64()?;
+                    let f_l = ca.field_by_name(&l_str)?;
+                    let low = f_l.f64()?;
+                    let f_c = ca.field_by_name(&c_str)?;
+                    let close = f_c.f64()?;
+
+                    let mut indicator = quantwave_core::TRAdjEMA::new(period, pds, mltp);
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let h = high.get(i).unwrap_or(f64::NAN);
+                        let l = low.get(i).unwrap_or(f64::NAN);
+                        let c = close.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next((h, l, c)));
+                    }
+
+                    Ok(Some(Column::from(Series::new("tradj_ema".into(), values))))
+                },
+                GetOutput::from_type(DataType::Float64),
+            )
+            .alias("tradj_ema")])
+    }
+
+    
+
+---
+Function: tema
+Signature: self, name: &str, period: usize
+Body: 
+        let name = name.to_string();
+        self.0.clone().with_columns([col(&name)
+            .map(
+                move |s| {
+                    let ca = s.f64()?;
+                    let mut tema = quantwave_core::TEMA::new(period);
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(0.0);
+                        values.push(tema.next(val));
+                    }
+
+                    Ok(Some(Column::from(Series::new("tema".into(), values))))
+                },
+                GetOutput::from_type(DataType::Float64),
+            )
+            .alias("tema")])
+    }
+
+    
+
+---
+Function: rsmk
+Signature: self, price: &str, benchmark: &str, length: usize, ema_length: usize
+Body: 
+        let p_str = price.to_string();
+        let b_str = benchmark.to_string();
+
+        self.0.clone().with_columns([as_struct(vec![col(&p_str), col(&b_str)])
+            .map(
+                move |s| {
+                    let ca = s.struct_()?;
+                    let f_p = ca.field_by_name(&p_str)?;
+                    let price = f_p.f64()?;
+                    let f_b = ca.field_by_name(&b_str)?;
+                    let benchmark = f_b.f64()?;
+
+                    let mut indicator = quantwave_core::RSMK::new(length, ema_length);
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let p = price.get(i).unwrap_or(f64::NAN);
+                        let b = benchmark.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next((p, b)));
+                    }
+
+                    Ok(Some(Column::from(Series::new("rsmk".into(), values))))
+                },
+                GetOutput::from_type(DataType::Float64),
+            )
+            .alias("rsmk")])
+    }
+
+    
+
+---
+Function: exp_dev_bands
+Signature: self,         name: &str,         period: usize,         multiplier: f64,         use_sma: bool,
+Body: 
+        let name_str = name.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    let ca = s.f64()?;
+                    let mut indicator = quantwave_core::ExpDevBands::new(period, multiplier, use_sma);
+                    let mut upper_vals = Vec::with_capacity(s.len());
+                    let mut mid_vals = Vec::with_capacity(s.len());
+                    let mut lower_vals = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        let (upper, mid, lower) = indicator.next(val);
+                        upper_vals.push(upper);
+                        mid_vals.push(mid);
+                        lower_vals.push(lower);
+                    }
+
+                    let s_upper = Series::new("upper".into(), upper_vals);
+                    let s_mid = Series::new("middle".into(), mid_vals);
+                    let s_lower = Series::new("lower".into(), lower_vals);
+                    let struct_series = StructChunked::from_series(
+                        "exp_dev_bands_data".into(),
+                        s.len(),
+                        [s_upper, s_mid, s_lower].iter(),
+                    )?;
+                    Ok(Some(Column::from(struct_series.into_series())))
+                },
+                GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("upper".into(), DataType::Float64),
+                    Field::new("middle".into(), DataType::Float64),
+                    Field::new("lower".into(), DataType::Float64),
+                ])),
+            )
+            .alias("exp_dev_bands_data")])
+    }
+
+    

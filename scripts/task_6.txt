@@ -1,0 +1,326 @@
+Function: sarext
+Signature: self,         high: &str,         low: &str,         startvalue: f64,         offsetonreverse: f64,         accelerationinitlong: f64,         accelerationlong: f64,         accelerationmaxlong: f64,         accelerationinitshort: f64,         accelerationshort: f64,         accelerationmaxshort: f64,
+Body: 
+        let high_str = high.to_string();
+        let low_str = low.to_string();
+        self.0.clone().with_columns([as_struct(vec![
+            col(&high_str),
+            col(&low_str),
+        ])
+        .map(
+            move |s| {
+                let ca = s.struct_()?;
+                let s_h = ca.field_by_name(&high_str)?;
+                let s_l = ca.field_by_name(&low_str)?;
+                let high = s_h.f64()?;
+                let low = s_l.f64()?;
+
+                let mut indicator = SAREXT::new(
+                    startvalue,
+                    offsetonreverse,
+                    accelerationinitlong,
+                    accelerationlong,
+                    accelerationmaxlong,
+                    accelerationinitshort,
+                    accelerationshort,
+                    accelerationmaxshort,
+                );
+                let mut values = Vec::with_capacity(s.len());
+
+                for i in 0..s.len() {
+                    let h = high.get(i).unwrap_or(f64::NAN);
+                    let l = low.get(i).unwrap_or(f64::NAN);
+                    values.push(indicator.next((h, l)));
+                }
+
+                Ok(Some(Column::from(Series::new("sarext".into(), values))))
+            },
+            GetOutput::from_type(DataType::Float64),
+        )
+        .alias("sarext")])
+    }
+
+    
+
+---
+Function: keltner_channels
+Signature: self,         high: &str,         low: &str,         close: &str,         ema_period: usize,         atr_period: usize,         multiplier: f64,
+Body: 
+        let high = high.to_string();
+        let low = low.to_string();
+        let close = close.to_string();
+
+        self.0
+            .clone()
+            .with_columns([as_struct(vec![col(&high), col(&low), col(&close)])
+                .map(
+                    move |s| {
+                        let ca = s.struct_()?;
+                        let s_high = ca.field_by_name(&high)?;
+                        let s_low = ca.field_by_name(&low)?;
+                        let s_close = ca.field_by_name(&close)?;
+
+                        let high = s_high.f64()?;
+                        let low = s_low.f64()?;
+                        let close = s_close.f64()?;
+
+                        let mut kc = quantwave_core::KeltnerChannels::new(
+                            ema_period, atr_period, multiplier,
+                        );
+                        let mut uppers = Vec::with_capacity(s.len());
+                        let mut middles = Vec::with_capacity(s.len());
+                        let mut lowers = Vec::with_capacity(s.len());
+
+                        for i in 0..s.len() {
+                            let h = high.get(i).unwrap_or(0.0);
+                            let l = low.get(i).unwrap_or(0.0);
+                            let c = close.get(i).unwrap_or(0.0);
+                            let (upper, middle, lower) = kc.next((h, l, c));
+                            uppers.push(upper);
+                            middles.push(middle);
+                            lowers.push(lower);
+                        }
+
+                        let upper_series = Series::new("upper".into(), uppers);
+                        let middle_series = Series::new("middle".into(), middles);
+                        let lower_series = Series::new("lower".into(), lowers);
+
+                        let out = StructChunked::from_series(
+                            "keltner_output".into(),
+                            s.len(),
+                            [upper_series, middle_series, lower_series].iter(),
+                        )?;
+                        Ok(Some(Column::from(out.into_series())))
+                    },
+                    GetOutput::from_type(DataType::Struct(vec![
+                        Field::new("upper".into(), DataType::Float64),
+                        Field::new("middle".into(), DataType::Float64),
+                        Field::new("lower".into(), DataType::Float64),
+                    ])),
+                )
+                .alias("keltner_data")])
+    }
+
+    
+
+---
+Function: regimes_duration_stats
+Signature: self, regime_col: &str, num_states: usize
+Body: 
+        let name_str = regime_col.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    let ca = s.u32()?;
+                    let states: Vec<u32> = ca.into_iter().map(|v| v.unwrap_or(0)).collect();
+                    let stats = quantwave_core::RegimeAnalytics::duration_stats(&states, num_states);
+                    
+                    // Convert stats to a Struct
+                    let mut regime_ids = Vec::new();
+                    let mut means = Vec::new();
+                    let mut medians = Vec::new();
+                    let mut stds = Vec::new();
+                    let mut maxes = Vec::new();
+                    let mut totals = Vec::new();
+                    
+                    for stat in stats {
+                        regime_ids.push(stat.regime_id);
+                        means.push(stat.mean_duration);
+                        medians.push(stat.median_duration);
+                        stds.push(stat.std_duration);
+                        maxes.push(stat.max_duration as u32);
+                        totals.push(stat.total_observations as u32);
+                    }
+                    
+                    let s_id = Series::new("regime_id".into(), regime_ids);
+                    let s_mean = Series::new("mean_duration".into(), means);
+                    let s_median = Series::new("median_duration".into(), medians);
+                    let s_std = Series::new("std_duration".into(), stds);
+                    let s_max = Series::new("max_duration".into(), maxes);
+                    let s_total = Series::new("total_observations".into(), totals);
+                    
+                    let struct_series = StructChunked::from_series(
+                        "duration_stats".into(),
+                        s_id.len(),
+                        [s_id, s_mean, s_median, s_std, s_max, s_total].iter(),
+                    )?;
+                    Ok(Some(Column::from(struct_series.into_series())))
+                },
+                GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("regime_id".into(), DataType::UInt32),
+                    Field::new("mean_duration".into(), DataType::Float64),
+                    Field::new("median_duration".into(), DataType::Float64),
+                    Field::new("std_duration".into(), DataType::Float64),
+                    Field::new("max_duration".into(), DataType::UInt32),
+                    Field::new("total_observations".into(), DataType::UInt32),
+                ])),
+            )
+            .alias("regime_duration_stats")])
+    }
+
+    
+
+---
+Function: market_structure
+Signature: self,         high: &str,         low: &str,         swing_strength: usize,
+Body: 
+        let high_str = high.to_string();
+        let low_str = low.to_string();
+        let strength = swing_strength;
+
+        self.0.clone().with_columns([as_struct(vec![col(&high_str), col(&low_str)])
+            .map(
+                move |s| {
+                    let ca = s.struct_()?;
+                    let s_h = ca.field_by_name(&high_str)?;
+                    let s_l = ca.field_by_name(&low_str)?;
+                    let highs = s_h.f64()?;
+                    let lows = s_l.f64()?;
+
+                    let mut ms = quantwave_core::MarketStructure::new(strength);
+                    let n = s.len();
+
+                    let mut bias_vals: Vec<u32> = Vec::with_capacity(n);
+                    let mut lh_p: Vec<f64> = Vec::with_capacity(n);
+                    let mut lh_b: Vec<u64> = Vec::with_capacity(n);
+                    let mut ll_p: Vec<f64> = Vec::with_capacity(n);
+                    let mut ll_b: Vec<u64> = Vec::with_capacity(n);
+                    let mut has_f: Vec<bool> = Vec::with_capacity(n);
+                    let mut f_bear: Vec<bool> = Vec::with_capacity(n);
+                    let mut f_p: Vec<f64> = Vec::with_capacity(n);
+                    let mut f_ba: Vec<u64> = Vec::with_capacity(n);
+                    let mut f_str: Vec<u32> = Vec::with_capacity(n);
+                    let mut depths: Vec<u32> = Vec::with_capacity(n);
+                    let mut bars: Vec<u64> = Vec::with_capacity(n);
+
+                    for i in 0..n {
+                        let h = highs.get(i).unwrap_or(f64::NAN);
+                        let l = lows.get(i).unwrap_or(f64::NAN);
+                        // Guard ordering
+                        let hh = if h.is_nan() || l.is_nan() { f64::NAN } else { h.max(l) };
+                        let ll = if h.is_nan() || l.is_nan() { f64::NAN } else { l.min(h) };
+                        let state = ms.next((hh, ll));
+
+                        let b = match state.bias {
+                            quantwave_core::Bias::Neutral => 0u32,
+                            quantwave_core::Bias::Bullish => 1,
+                            quantwave_core::Bias::Bearish => 2,
+                        };
+                        bias_vals.push(b);
+
+                        match &state.last_swing_high {
+                            Some(sh) => { lh_p.push(sh.price); lh_b.push(sh.bar as u64); }
+                            None => { lh_p.push(f64::NAN); lh_b.push(0); }
+                        }
+                        match &state.last_swing_low {
+                            Some(sl) => { ll_p.push(sl.price); ll_b.push(sl.bar as u64); }
+                            None => { ll_p.push(f64::NAN); ll_b.push(0); }
+                        }
+
+                        if let Some(f) = &state.current_flip {
+                            has_f.push(true);
+                            f_bear.push(f.is_bearish);
+                            f_p.push(f.price);
+                            f_ba.push(f.bar as u64);
+                            f_str.push(f.structure_strength);
+                        } else {
+                            has_f.push(false);
+                            f_bear.push(false);
+                            f_p.push(f64::NAN);
+                            f_ba.push(0);
+                            f_str.push(0);
+                        }
+
+                        depths.push(state.swing_depth_used as u32);
+                        bars.push(state.bar_index as u64);
+                    }
+
+                    let s_bias = Series::new("bias".into(), bias_vals);
+                    let s_lhp = Series::new("last_high_price".into(), lh_p);
+                    let s_lhb = Series::new("last_high_bar".into(), lh_b);
+                    let s_llp = Series::new("last_low_price".into(), ll_p);
+                    let s_llb = Series::new("last_low_bar".into(), ll_b);
+                    let s_hasf = Series::new("has_flip".into(), has_f);
+                    let s_fb = Series::new("flip_bearish".into(), f_bear);
+                    let s_fp = Series::new("flip_price".into(), f_p);
+                    let s_fba = Series::new("flip_bar".into(), f_ba);
+                    let s_fstr = Series::new("flip_strength".into(), f_str);
+                    let s_dep = Series::new("swing_depth".into(), depths);
+                    let s_bar = Series::new("bar_index".into(), bars);
+
+                    let struct_series = StructChunked::from_series(
+                        "market_structure_result".into(),
+                        s.len(),
+                        [
+                            s_bias, s_lhp, s_lhb, s_llp, s_llb, s_hasf, s_fb, s_fp, s_fba, s_fstr,
+                            s_dep, s_bar,
+                        ]
+                        .iter(),
+                    )?;
+                    Ok(Some(Column::from(struct_series.into_series())))
+                },
+                GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("bias".into(), DataType::UInt32),
+                    Field::new("last_high_price".into(), DataType::Float64),
+                    Field::new("last_high_bar".into(), DataType::UInt64),
+                    Field::new("last_low_price".into(), DataType::Float64),
+                    Field::new("last_low_bar".into(), DataType::UInt64),
+                    Field::new("has_flip".into(), DataType::Boolean),
+                    Field::new("flip_bearish".into(), DataType::Boolean),
+                    Field::new("flip_price".into(), DataType::Float64),
+                    Field::new("flip_bar".into(), DataType::UInt64),
+                    Field::new("flip_strength".into(), DataType::UInt32),
+                    Field::new("swing_depth".into(), DataType::UInt32),
+                    Field::new("bar_index".into(), DataType::UInt64),
+                ])),
+            )
+            .alias("market_structure")])
+
+    }
+
+    /// Geometric Pattern Scanner (Flags + H&S) Polars accessor, built on the MarketStructure foundation.
+    /// Returns a Struct column "geometric_patterns" containing:
+    ///   flag: Struct(id, is_bull, pole_length, pole_length_atr, breakout_confirmed, breakout_price)
+    ///   hs:   Struct(id, is_bearish, height, height_atr, score, breakout_confirmed)
+    /// (id==0 means no detection on that bar).
+    ///
+    /// Delegates to quantwave_core::GeometricPatternScanner (Part 69 flag + Part 66 H&S rules).
+    /// Emits rich metadata (`pole_length_atr`, `score`, `breakout_confirmed`) for sizing and filters.
+    
+
+---
+Function: regimes_hmm_gas
+Signature: self, name: &str
+Body: 
+        let name_str = name.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    let ca = s.f64()?;
+                    let mut model = quantwave_core::regimes::hmm_gas::HMMGAS::new(
+                        [0.1, 0.05, 0.9], // p11 params
+                        [0.1, 0.05, 0.9], // p22 params
+                        [0.001, -0.002],
+                        [0.01, 0.02],
+                    );
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        let regime = model.next(val);
+                        let out = match regime {
+                            quantwave_core::regimes::MarketRegime::Steady => 0u32,
+                            quantwave_core::regimes::MarketRegime::Crisis => 1,
+                            _ => 2,
+                        };
+                        values.push(out);
+                    }
+
+                    Ok(Some(Column::from(Series::new("hmm_gas_regime".into(), values))))
+                },
+                GetOutput::from_type(DataType::UInt32),
+            )
+            .alias("hmm_gas_regime")])
+    }
+
+    

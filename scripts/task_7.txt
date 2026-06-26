@@ -1,0 +1,205 @@
+Function: regimes_ms_garch
+Signature: self, returns_col: &str
+Body: 
+        let name_str = returns_col.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    let ca = s.f64()?;
+                    let mut model = quantwave_core::regimes::ms_garch::MSGarch::low_high_vol();
+                    let mut regimes = Vec::with_capacity(s.len());
+                    let mut vols = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let ret = ca.get(i).unwrap_or(0.0);
+                        let (regime, vol) = model.next(ret);
+                        
+                        let r_val = match regime {
+                            quantwave_core::regimes::MarketRegime::Steady => 0u32,
+                            quantwave_core::regimes::MarketRegime::Crisis => 1,
+                            quantwave_core::regimes::MarketRegime::Bull => 2,
+                            quantwave_core::regimes::MarketRegime::Bear => 3,
+                            quantwave_core::regimes::MarketRegime::Cluster(c) => 4 + (c as u32),
+                        };
+                        regimes.push(r_val);
+                        vols.push(vol);
+                    }
+
+                    let s_regime = Series::new("regime".into(), regimes);
+                    let s_vol = Series::new("estimated_vol".into(), vols);
+                    let struct_series = StructChunked::from_series(
+                        "ms_garch_data".into(),
+                        s.len(),
+                        [s_regime, s_vol].iter(),
+                    )?;
+                    Ok(Some(Column::from(struct_series.into_series())))
+                },
+                GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("regime".into(), DataType::UInt32),
+                    Field::new("estimated_vol".into(), DataType::Float64),
+                ])),
+            )
+            .alias("ms_garch_data")])
+    }
+
+    
+
+---
+Function: adaptive_ema
+Signature: self,         high: &str,         low: &str,         close: &str,         period: usize,         pds: usize,
+Body: 
+        let h_str = high.to_string();
+        let l_str = low.to_string();
+        let c_str = close.to_string();
+
+        self.0.clone().with_columns([as_struct(vec![col(&h_str), col(&l_str), col(&c_str)])
+            .map(
+                move |s| {
+                    let ca = s.struct_()?;
+                    let f_h = ca.field_by_name(&h_str)?;
+                    let high = f_h.f64()?;
+                    let f_l = ca.field_by_name(&l_str)?;
+                    let low = f_l.f64()?;
+                    let f_c = ca.field_by_name(&c_str)?;
+                    let close = f_c.f64()?;
+
+                    let mut indicator = quantwave_core::AdaptiveEMA::new(period, pds);
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let h = high.get(i).unwrap_or(f64::NAN);
+                        let l = low.get(i).unwrap_or(f64::NAN);
+                        let c = close.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next((h, l, c)));
+                    }
+
+                    Ok(Some(Column::from(Series::new("adaptive_ema".into(), values))))
+                },
+                GetOutput::from_type(DataType::Float64),
+            )
+            .alias("adaptive_ema")])
+    }
+
+    
+
+---
+Function: regimes_transition_matrix
+Signature: self, regime_col: &str, num_states: usize
+Body: 
+        let name_str = regime_col.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    let ca = s.u32()?;
+                    let states: Vec<u32> = ca.into_iter().map(|v| v.unwrap_or(0)).collect();
+                    let matrix = quantwave_core::RegimeAnalytics::transition_matrix(&states, num_states);
+                    
+                    // Return as a List of Lists (effectively a matrix)
+                    let mut builders = ListPrimitiveChunkedBuilder::<Float64Type>::new(
+                        "transition_matrix".into(),
+                        matrix.len(),
+                        matrix.len() * num_states,
+                        DataType::Float64,
+                    );
+                    for row in matrix {
+                        builders.append_slice(&row);
+                    }
+                    
+                    let list_ca = builders.finish();
+                    Ok(Some(Column::from(list_ca.into_series())))
+                },
+                GetOutput::from_type(DataType::List(Box::new(DataType::Float64))),
+            )
+            .alias("regime_transition_matrix")])
+    }
+
+    
+
+---
+Function: vpn
+Signature: self,         high: &str,         low: &str,         close: &str,         volume: &str,         period: usize,         smooth_period: usize,
+Body: 
+        let high_str = high.to_string();
+        let low_str = low.to_string();
+        let close_str = close.to_string();
+        let volume_str = volume.to_string();
+
+        self.0.clone().with_columns([as_struct(vec![
+            col(&high_str),
+            col(&low_str),
+            col(&close_str),
+            col(&volume_str),
+        ])
+        .map(
+            move |s| {
+                let ca = s.struct_()?;
+                let s_h = ca.field_by_name(&high_str)?;
+                let s_l = ca.field_by_name(&low_str)?;
+                let s_c = ca.field_by_name(&close_str)?;
+                let s_v = ca.field_by_name(&volume_str)?;
+
+                let high = s_h.f64()?;
+                let low = s_l.f64()?;
+                let close = s_c.f64()?;
+                let volume = s_v.f64()?;
+
+                let mut indicator = quantwave_core::VPNIndicator::new(period, smooth_period);
+                let mut values = Vec::with_capacity(s.len());
+
+                for i in 0..s.len() {
+                    let h = high.get(i).unwrap_or(f64::NAN);
+                    let l = low.get(i).unwrap_or(f64::NAN);
+                    let c = close.get(i).unwrap_or(f64::NAN);
+                    let v = volume.get(i).unwrap_or(f64::NAN);
+                    values.push(indicator.next((h, l, c, v)));
+                }
+
+                Ok(Some(Column::from(Series::new("vpn".into(), values))))
+            },
+            GetOutput::from_type(DataType::Float64),
+        )
+        .alias("vpn")])
+    }
+
+    
+
+---
+Function: regimes_hsmm
+Signature: self, name: &str
+Body: 
+        let name_str = name.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    let ca = s.f64()?;
+                    // Default 2-state HSMM: Poisson durations (5 days Bull, 2 days Bear)
+                    let mut model = quantwave_core::regimes::hsmm::HSMM::new(
+                        vec![vec![0.0, 1.0], vec![1.0, 0.0]], // Always switch
+                        vec![0.001, -0.002],
+                        vec![0.01, 0.02],
+                        vec![
+                            quantwave_core::regimes::hsmm::DurationDistribution::Poisson { lambda: 5.0 },
+                            quantwave_core::regimes::hsmm::DurationDistribution::Poisson { lambda: 2.0 },
+                        ],
+                    );
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        let regime = model.next(val);
+                        let out = match regime {
+                            quantwave_core::regimes::MarketRegime::Steady => 0u32,
+                            quantwave_core::regimes::MarketRegime::Crisis => 1,
+                            _ => 2, // Map others
+                        };
+                        values.push(out);
+                    }
+
+                    Ok(Some(Column::from(Series::new("hsmm_regime".into(), values))))
+                },
+                GetOutput::from_type(DataType::UInt32),
+            )
+            .alias("hsmm_regime")])
+    }
+
+    

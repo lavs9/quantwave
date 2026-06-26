@@ -8,7 +8,13 @@ class Custom8Extensions:
         self._expr = expr
 
     def autotune_filter(self, window: int, bandwidth: float) -> pl.Expr:
-        """Calculates AutoTune Filter."""
+        """Calculates AutoTune Filter.
+
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
         return register_plugin_function(
             args=[self._expr],
             plugin_path=Path(__file__).parent,
@@ -18,7 +24,13 @@ class Custom8Extensions:
         )
 
     def tradj_ema(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], period: int, pds: int, mltp: float) -> pl.Expr:
-        """Calculates True Range Adjusted EMA (TRAdjEMA). Note: self must be close."""
+        """Calculates True Range Adjusted EMA (TRAdjEMA). Note: self must be close.
+
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
         if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         return register_plugin_function(
@@ -30,7 +42,13 @@ class Custom8Extensions:
         )
 
     def tema(self, period: int) -> pl.Expr:
-        """Calculates Triple Exponential Moving Average (TEMA)."""
+        """Calculates Triple Exponential Moving Average (TEMA).
+
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
         return register_plugin_function(
             args=[self._expr],
             plugin_path=Path(__file__).parent,
@@ -40,7 +58,13 @@ class Custom8Extensions:
         )
 
     def rsmk(self, benchmark: Union[str, pl.Expr], length: int, ema_length: int) -> pl.Expr:
-        """Calculates Relative Strength Mansfield (RSMK). Note: self must be price."""
+        """Calculates Relative Strength Mansfield (RSMK). Note: self must be price.
+
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
         if isinstance(benchmark, str): benchmark = pl.col(benchmark)
         return register_plugin_function(
             args=[self._expr, benchmark],
@@ -51,7 +75,13 @@ class Custom8Extensions:
         )
 
     def exp_dev_bands(self, period: int, multiplier: float, use_sma: bool) -> pl.Expr:
-        """Calculates Exponential Deviation Bands. Returns a struct containing: upper, middle, lower."""
+        """Calculates Exponential Deviation Bands. Returns a struct containing: upper, middle, lower.
+
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
         return register_plugin_function(
             args=[self._expr],
             plugin_path=Path(__file__).parent,

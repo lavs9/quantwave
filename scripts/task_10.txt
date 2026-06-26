@@ -1,0 +1,63 @@
+Function: harrington_adx
+Signature: self,         high: &str,         low: &str,         close: &str,         adx_length: usize,         adx_smooth_length: usize,
+Body: 
+        let h_str = high.to_string();
+        let l_str = low.to_string();
+        let c_str = close.to_string();
+
+        self.0.clone().with_columns([as_struct(vec![col(&h_str), col(&l_str), col(&c_str)])
+            .map(
+                move |s| {
+                    let ca = s.struct_()?;
+                    let f_h = ca.field_by_name(&h_str)?;
+                    let high = f_h.f64()?;
+                    let f_l = ca.field_by_name(&l_str)?;
+                    let low = f_l.f64()?;
+                    let f_c = ca.field_by_name(&c_str)?;
+                    let close = f_c.f64()?;
+
+                    let mut indicator = quantwave_core::HarringtonADXOscillator::new(adx_length, adx_smooth_length);
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let h = high.get(i).unwrap_or(f64::NAN);
+                        let l = low.get(i).unwrap_or(f64::NAN);
+                        let c = close.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next((h, l, c)));
+                    }
+
+                    Ok(Some(Column::from(Series::new("harrington_adx".into(), values))))
+                },
+                GetOutput::from_type(DataType::Float64),
+            )
+            .alias("harrington_adx")])
+    }
+
+    
+
+---
+Function: kalman
+Signature: self, name: &str, q: f64, r: f64
+Body: 
+        let name = name.to_string();
+        self.0.clone().with_columns([col(&name)
+            .map(
+                move |s| {
+                    let ca = s.f64()?;
+                    let mut indicator =
+                        quantwave_core::indicators::kalman::KalmanFilter::new(q, r);
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next(val));
+                    }
+
+                    Ok(Some(Column::from(Series::new("kalman".into(), values))))
+                },
+                GetOutput::from_type(DataType::Float64),
+            )
+            .alias("kalman")])
+    }
+
+    

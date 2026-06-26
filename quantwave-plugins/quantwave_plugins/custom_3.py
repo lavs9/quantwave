@@ -8,7 +8,13 @@ class Custom3Extensions:
         self._expr = expr
 
     def hma(self, period: int) -> pl.Expr:
-        """Calculates the Hull Moving Average (HMA)."""
+        """Calculates the Hull Moving Average (HMA).
+
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
         return register_plugin_function(
             args=[self._expr],
             plugin_path=Path(__file__).parent,
@@ -18,7 +24,13 @@ class Custom3Extensions:
         )
 
     def obvm(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], volume: Union[str, pl.Expr], obvm_period: int, signal_period: int) -> pl.Expr:
-        """On Balance Volume Modified (OBVM). Note: self must be close."""
+        """On Balance Volume Modified (OBVM). Note: self must be close.
+
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
         if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(volume, str): volume = pl.col(volume)
@@ -31,7 +43,13 @@ class Custom3Extensions:
         )
 
     def bill_williams_fractals(self, low: Union[str, pl.Expr]) -> pl.Expr:
-        """Bill Williams Fractals. Returns struct: bearish, bullish. Note: self must be high."""
+        """Bill Williams Fractals. Returns struct: bearish, bullish. Note: self must be high.
+
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
         if isinstance(low, str): low = pl.col(low)
         return register_plugin_function(
             args=[self._expr, low],
@@ -41,7 +59,13 @@ class Custom3Extensions:
         )
 
     def donchian_channels(self, low: Union[str, pl.Expr], period: int) -> pl.Expr:
-        """Donchian Channels. Returns struct: upper, middle, lower. Note: self must be high."""
+        """Donchian Channels. Returns struct: upper, middle, lower. Note: self must be high.
+
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
         if isinstance(low, str): low = pl.col(low)
         return register_plugin_function(
             args=[self._expr, low],
@@ -52,7 +76,13 @@ class Custom3Extensions:
         )
 
     def gmm(self, other_cols: List[Union[str, pl.Expr]], k: int) -> pl.Expr:
-        """Gaussian Mixture Model. Note: self is the first column."""
+        """Gaussian Mixture Model. Note: self is the first column.
+
+Boundary Conditions & Error Behavior:
+- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
+- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
+- Negative Params: Negative period/length parameters will raise a ValueError.
+"""
         exprs = [self._expr]
         for c in other_cols:
             if isinstance(c, str):

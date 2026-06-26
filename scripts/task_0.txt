@@ -1,0 +1,245 @@
+Function: anchored_vwap
+Signature: self, price: &str, volume: &str, anchor: &str
+Body: 
+        let price = price.to_string();
+        let volume = volume.to_string();
+        let anchor = anchor.to_string();
+
+        self.0
+            .clone()
+            .with_columns([as_struct(vec![col(&price), col(&volume), col(&anchor)])
+                .map(
+                    move |s| {
+                        let ca = s.struct_()?;
+                        let s_price = ca.field_by_name(&price)?;
+                        let s_volume = ca.field_by_name(&volume)?;
+                        let s_anchor = ca.field_by_name(&anchor)?;
+
+                        let price = s_price.f64()?;
+                        let volume = s_volume.f64()?;
+                        let anchor = s_anchor.bool()?;
+
+                        let mut avwap = quantwave_core::AnchoredVWAP::new();
+                        let mut values = Vec::with_capacity(s.len());
+
+                        for i in 0..s.len() {
+                            let p = price.get(i).unwrap_or(0.0);
+                            let v = volume.get(i).unwrap_or(0.0);
+                            let a = anchor.get(i).unwrap_or(false);
+                            values.push(avwap.next((p, v, a)));
+                        }
+
+                        Ok(Some(Column::from(Series::new(
+                            "anchored_vwap".into(),
+                            values,
+                        ))))
+                    },
+                    GetOutput::from_type(DataType::Float64),
+                )
+                .alias("avwap")])
+    }
+
+    
+
+---
+Function: kinematic_kalman
+Signature: self, name: &str, q_pos: f64, q_vel: f64, r: f64
+Body: 
+        let name = name.to_string();
+        self.0.clone().with_columns([col(&name)
+            .map(
+                move |s| {
+                    let ca = s.f64()?;
+                    let mut indicator =
+                        quantwave_core::indicators::kinematic_kalman::KinematicKalmanFilter::new(
+                            q_pos, q_vel, r,
+                        );
+                    let mut values = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next(val));
+                    }
+
+                    Ok(Some(Column::from(Series::new(
+                        "kinematic_kalman".into(),
+                        values,
+                    ))))
+                },
+                GetOutput::from_type(DataType::Float64),
+            )
+            .alias("kinematic_kalman")])
+    }
+
+    
+
+---
+Function: vortex_indicator
+Signature: self, high: &str, low: &str, close: &str, period: usize
+Body: 
+        let high = high.to_string();
+        let low = low.to_string();
+        let close = close.to_string();
+
+        self.0
+            .clone()
+            .with_columns([as_struct(vec![col(&high), col(&low), col(&close)])
+                .map(
+                    move |s| {
+                        let ca = s.struct_()?;
+                        let s_high = ca.field_by_name(&high)?;
+                        let s_low = ca.field_by_name(&low)?;
+                        let s_close = ca.field_by_name(&close)?;
+
+                        let high = s_high.f64()?;
+                        let low = s_low.f64()?;
+                        let close = s_close.f64()?;
+
+                        let mut vi = quantwave_core::VortexIndicator::new(period);
+                        let mut plus_vals = Vec::with_capacity(s.len());
+                        let mut minus_vals = Vec::with_capacity(s.len());
+
+                        for i in 0..s.len() {
+                            let h = high.get(i).unwrap_or(0.0);
+                            let l = low.get(i).unwrap_or(0.0);
+                            let c = close.get(i).unwrap_or(0.0);
+                            let (plus, minus) = vi.next((h, l, c));
+                            plus_vals.push(plus);
+                            minus_vals.push(minus);
+                        }
+
+                        let plus_series = Series::new("vi_plus".into(), plus_vals);
+                        let minus_series = Series::new("vi_minus".into(), minus_vals);
+
+                        let out = StructChunked::from_series(
+                            "vortex_output".into(),
+                            s.len(),
+                            [plus_series, minus_series].iter(),
+                        )?;
+                        Ok(Some(Column::from(out.into_series())))
+                    },
+                    GetOutput::from_type(DataType::Struct(vec![
+                        Field::new("vi_plus".into(), DataType::Float64),
+                        Field::new("vi_minus".into(), DataType::Float64),
+                    ])),
+                )
+                .alias("vortex_data")])
+    }
+
+    
+
+---
+Function: sve_volatility_bands
+Signature: self,         high: &str,         low: &str,         close: &str,         bands_period: usize,         bands_deviation: f64,         low_band_adjust: f64,         mid_line_length: usize,
+Body: 
+        let h_str = high.to_string();
+        let l_str = low.to_string();
+        let c_str = close.to_string();
+
+        self.0.clone().with_columns([as_struct(vec![col(&h_str), col(&l_str), col(&c_str)])
+            .map(
+                move |s| {
+                    let ca = s.struct_()?;
+                    let f_h = ca.field_by_name(&h_str)?;
+                    let high = f_h.f64()?;
+                    let f_l = ca.field_by_name(&l_str)?;
+                    let low = f_l.f64()?;
+                    let f_c = ca.field_by_name(&c_str)?;
+                    let close = f_c.f64()?;
+
+                    let mut indicator = quantwave_core::SVEVolatilityBands::new(
+                        bands_period,
+                        bands_deviation,
+                        low_band_adjust,
+                        mid_line_length,
+                    );
+                    let mut upper_vals = Vec::with_capacity(s.len());
+                    let mut mid_vals = Vec::with_capacity(s.len());
+                    let mut lower_vals = Vec::with_capacity(s.len());
+
+                    for i in 0..s.len() {
+                        let h = high.get(i).unwrap_or(f64::NAN);
+                        let l = low.get(i).unwrap_or(f64::NAN);
+                        let c = close.get(i).unwrap_or(f64::NAN);
+                        let (upper, mid, lower) = indicator.next((h, l, c));
+                        upper_vals.push(upper);
+                        mid_vals.push(mid);
+                        lower_vals.push(lower);
+                    }
+
+                    let s_upper = Series::new("upper".into(), upper_vals);
+                    let s_mid = Series::new("middle".into(), mid_vals);
+                    let s_lower = Series::new("lower".into(), lower_vals);
+                    let struct_series = StructChunked::from_series(
+                        "sve_bands_data".into(),
+                        s.len(),
+                        [s_upper, s_mid, s_lower].iter(),
+                    )?;
+                    Ok(Some(Column::from(struct_series.into_series())))
+                },
+                GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("upper".into(), DataType::Float64),
+                    Field::new("middle".into(), DataType::Float64),
+                    Field::new("lower".into(), DataType::Float64),
+                ])),
+            )
+            .alias("sve_bands_data")])
+    }
+
+    
+
+---
+Function: ttm_squeeze
+Signature: self,         high: &str,         low: &str,         close: &str,         period: usize,         multiplier_bb: f64,         multiplier_kc: f64,
+Body: 
+        let high = high.to_string();
+        let low = low.to_string();
+        let close = close.to_string();
+
+        self.0
+            .clone()
+            .with_columns([as_struct(vec![col(&high), col(&low), col(&close)])
+                .map(
+                    move |s| {
+                        let ca = s.struct_()?;
+                        let s_high = ca.field_by_name(&high)?;
+                        let s_low = ca.field_by_name(&low)?;
+                        let s_close = ca.field_by_name(&close)?;
+
+                        let high = s_high.f64()?;
+                        let low = s_low.f64()?;
+                        let close = s_close.f64()?;
+
+                        let mut ttm =
+                            quantwave_core::TTMSqueeze::new(period, multiplier_bb, multiplier_kc);
+                        let mut histograms = Vec::with_capacity(s.len());
+                        let mut squeezed = Vec::with_capacity(s.len());
+
+                        for i in 0..s.len() {
+                            let h = high.get(i).unwrap_or(0.0);
+                            let l = low.get(i).unwrap_or(0.0);
+                            let c = close.get(i).unwrap_or(0.0);
+                            let (hist, is_sq) = ttm.next((h, l, c));
+                            histograms.push(hist);
+                            squeezed.push(is_sq);
+                        }
+
+                        let hist_series = Series::new("histogram".into(), histograms);
+                        let squeezed_series = Series::new("is_squeezed".into(), squeezed);
+
+                        let out = StructChunked::from_series(
+                            "ttm_squeeze_output".into(),
+                            s.len(),
+                            [hist_series, squeezed_series].iter(),
+                        )?;
+                        Ok(Some(Column::from(out.into_series())))
+                    },
+                    GetOutput::from_type(DataType::Struct(vec![
+                        Field::new("histogram".into(), DataType::Float64),
+                        Field::new("is_squeezed".into(), DataType::Boolean),
+                    ])),
+                )
+                .alias("ttm_squeeze_data")])
+    }
+
+    

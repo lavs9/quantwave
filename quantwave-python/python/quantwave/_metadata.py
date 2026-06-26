@@ -31,7 +31,18 @@ known; otherwise a conservative heuristic derives it from `period` / `fast` / `s
 """
 
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Mapping
+
+
+@dataclass(frozen=True)
+class BoundaryInfo:
+    """Boundary conditions and error behavior for an indicator (quantwave-p49i)."""
+
+    warmup_behavior: str
+    period_gt_len: str
+    nan_inputs: str
+    invalid_params: str
+    empty_data: str
 
 
 @dataclass(frozen=True)
@@ -261,3 +272,101 @@ def get_indicator_signature(name: str):
         "data": meta.data_inputs,
         "outputs": meta.outputs,
     }
+
+
+# --- Boundary conditions (quantwave-p49i) ---
+
+_BOUNDARY_BY_KIND: Dict[str, BoundaryInfo] = {
+    "scalar": BoundaryInfo(
+        warmup_behavior="Leading bars return NaN until warmup_bars is satisfied.",
+        period_gt_len="When period exceeds series length, output is all NaN.",
+        nan_inputs="NaN in input propagates to output (NaN out).",
+        invalid_params="Non-positive period or missing required params raise ValueError.",
+        empty_data="Empty input returns an empty result series.",
+    ),
+    "cumulative": BoundaryInfo(
+        warmup_behavior="Output starts from bar 1; warmup_bars marks period-stability, not NaN.",
+        period_gt_len="Cumulative sum continues; period only affects smoothed variants.",
+        nan_inputs="NaN inputs may produce NaN or skip depending on indicator.",
+        invalid_params="Invalid params raise ValueError.",
+        empty_data="Empty input returns an empty result series.",
+    ),
+    "event": BoundaryInfo(
+        warmup_behavior="Early bars return empty event lists or default structs (no scalar NaN).",
+        period_gt_len="Insufficient history yields no events rather than NaN scalars.",
+        nan_inputs="NaN OHLC typically suppresses event detection for that bar.",
+        invalid_params="Invalid swing_strength or tolerance raises ValueError.",
+        empty_data="Empty input returns empty event collections.",
+    ),
+    "pattern": BoundaryInfo(
+        warmup_behavior="Pattern functions emit 0 (no pattern) until enough bars exist.",
+        period_gt_len="Short series returns all zeros (no pattern detected).",
+        nan_inputs="Bars with NaN OHLC are treated as no pattern (0).",
+        invalid_params="N/A for most candlestick patterns.",
+        empty_data="Empty input returns an empty integer series.",
+    ),
+}
+
+
+def _boundary_kind(meta: IndicatorMeta) -> str:
+    cat = (meta.category or "").lower()
+    if "price action" in cat or meta.name in ("sr_monitor", "geometric_patterns", "market_structure"):
+        return "event"
+    if "pattern" in cat or meta.name.startswith("cdl"):
+        return "pattern"
+    if meta.name in ("obv", "ad", "nvi", "pvi", "vwap", "anchored_vwap"):
+        return "cumulative"
+    return "scalar"
+
+
+def boundary_info(name: str) -> Optional[BoundaryInfo]:
+    """Return boundary conditions and error behavior for an indicator.
+
+    Use alongside ``metadata(name)`` for UIs, doc generation, and defensive
+    strategy code. Values are curated defaults by indicator kind; see the
+    per-indicator guides for formula-specific edge cases.
+
+    Example:
+        >>> info = boundary_info("rsi")
+        >>> "NaN" in info.warmup_behavior
+        True
+    """
+    meta = metadata(name)
+    if not meta:
+        return None
+    return _BOUNDARY_BY_KIND[_boundary_kind(meta)]
+
+
+# --- Categories API (quantwave-l99s) ---
+
+_UNCATEGORIZED = "Uncategorized"
+
+
+def categories() -> List[str]:
+    """Return sorted unique indicator categories from the metadata registry."""
+    cats = {_UNCATEGORIZED}
+    for m in _METADATA.values():
+        cats.add(m.category or _UNCATEGORIZED)
+    return sorted(cats)
+
+
+def indicators_by_category() -> Dict[str, List[str]]:
+    """Map each category to a sorted list of indicator slugs."""
+    by_cat: Dict[str, List[str]] = {}
+    for slug, m in sorted(_METADATA.items()):
+        cat = m.category or _UNCATEGORIZED
+        by_cat.setdefault(cat, []).append(slug)
+    return by_cat
+
+
+def category(name: str) -> List[str]:
+    """Return indicator slugs belonging to a category (case-insensitive)."""
+    if not name:
+        return []
+    key = name.strip()
+    by_cat = indicators_by_category()
+    # Exact match first
+    for cat, slugs in by_cat.items():
+        if cat.lower() == key.lower():
+            return list(slugs)
+    return []
