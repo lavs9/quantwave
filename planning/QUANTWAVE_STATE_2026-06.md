@@ -1,6 +1,6 @@
 # QuantWave — Platform State Assessment
 
-**Date:** 2026-06-19  
+**Date:** 2026-06-26  
 **Version:** `0.5.2` on `main`  
 **Purpose:** Single reference for indicator, backtest, and Rust/Python bridge coverage — expectations, gaps, beads, and SOA recommendations.  
 **Audience:** Product/strategy (idea brain) + implementation agents.
@@ -9,27 +9,27 @@
 
 ## Executive summary
 
-QuantWave is past the “can we build this?” phase. The Rust engine is deep; the Polars backtester is research-complete (v1 + v2 + productization). The main gaps are **packaging consistency** (docs, metadata pipeline, plugin migration) and **conscious deferrals** (live bridge, tearsheets), not core math.
+QuantWave is past the “can we build this?” phase. The Rust engine is deep; the Polars backtester is research-complete (v1 + v2 + productization). **June 2026 close-out** shipped PA foundation end-to-end, full plugin parity, metadata codegen, and streaming readiness. Remaining gaps are **docs polish**, **Python DX niceties**, and **conscious deferrals** (live bridge, tearsheets) — not core math.
 
 | Pillar | Grade | One-line |
 |--------|-------|----------|
-| **Indicators** | A- engine, B- packaging | World-class Rust depth; docs/plugins/metadata sync behind |
+| **Indicators** | A engine, B+ packaging | PA + Ehlers + 216 metadata; doc long-tail still uneven |
 | **Backtest** | A research, B production | v1+v2+prod done; live bridge + tearsheets deferred |
-| **Rust/Python bridge** | B+ | Works; needs codegen metadata + plugin parity |
-| **Issue tracking** | ~27 open beads | Good for engineering; needs epic close-out + v0.6 planning |
+| **Rust/Python bridge** | A- | Codegen metadata + plugin parity + readiness shipped |
+| **Issue tracking** | **9 open beads** | Major epics closed; v0.6 = polish + backtest wrappers |
 
 ---
 
 ## Architecture snapshot
 
 ```text
-quantwave-core          Next<T>, indicators, PA, regimes, metadata
+quantwave-core          Next<T>, indicators, PA, regimes, metadata (216 registered)
         ↓
-quantwave-polars        lf.ta.*()  (~204 methods)
-quantwave-plugins       Polars expression plugins (~91 registered)
+quantwave-polars        lf.ta.*()  (~205 methods) + lf.ta.features.* (8)
+quantwave-plugins       Polars expression plugins (~219 .ta methods, full parity)
 quantwave-backtest      sim, metrics, sweep, WFO, MC, cross-sectional
         ↓
-quantwave-python        PyO3, qw.*, lf.bt.*
+quantwave-python        PyO3, qw.*, lf.bt.*, _metadata_generated.py
         ↓
 docs + notebooks + mkdocs + capability_matrix
 ```
@@ -44,15 +44,16 @@ docs + notebooks + mkdocs + capability_matrix
 
 | Layer | Scale | Notes |
 |-------|-------|-------|
-| Rust core (`Next<T>`) | ~218 `_METADATA` constants | Single source of mathematical truth |
-| Batch Polars (`.ta()`) | ~204 `pub fn` in `quantwave-polars` | Primary research UX |
-| Expression plugins | ~91 in `quantwave-plugins` | Zero-copy vectorized subset |
-| Native doc pages | ~227 under `docs/guides/indicators/native/` | Quality uneven |
-| PA suite | Market Structure, Flags/H&S, S/R, geometric_patterns | MQL5 Parts 21/66/67/69 |
+| Rust core (`Next<T>`) | **216** `_METADATA` constants (`metadata_registry.rs`) | Single source of mathematical truth |
+| Batch Polars (`.ta()`) | **~205** `pub fn` in `quantwave-polars` + **8** `.ta.features.*` | Includes `sr_monitor`, `market_structure`, `geometric_patterns` |
+| Expression plugins | **~219** `.ta` methods in `quantwave-plugins` | Full parity per closed `quantwave-3f7g` |
+| Python metadata | **217** codegen entries + hand overrides → **545** `qw.indicators()` | `scripts/generate_indicator_metadata.py` |
+| Native doc pages | ~227 under `docs/guides/indicators/native/` | Quality uneven on long tail |
+| PA suite | Market Structure, Flags/H&S (**neckline breakout**), S/R (ATR-relative + Polars), confluence | MQL5 Parts 21/66/67/69 — `quantwave-cu03` closed |
 | Ehlers DSP | 30+ indicators | Deep niche |
 | Regimes | HMM, GMM, PELT, vol clustering | Implemented; thin docs (1 index page) |
-| Options India | BS, IV, chain analytics | v0.4.0 |
-| Testing | proptest, gold_standard in `quantwave-core/tests/` | Parity enforced |
+| Options India | BS, IV, chain analytics | `quantwave.options` namespace (`quantwave-05q7` closed) |
+| Testing | **510** core + **548** polars nextest; proptest + gold_standard | Parity enforced |
 
 ### 1.2 Expectations (project standard)
 
@@ -60,25 +61,27 @@ From `AGENTS.md`, `DOCUMENTATION_STANDARDS.md`, gallery:
 
 - Every indicator: **batch ↔ streaming parity**, gold-standard or proptest validation.
 - `IndicatorMetadata` (`*_METADATA`) — source of truth for docs + Python (`quantwave-i9dn` rule).
-- PA: rich structs (`pole_length_atr`, `PAEvent`, etc.) for sizing and ML.
+- PA: rich structs (`pole_length_atr`, `PAEvent`, confluence helpers) for sizing and ML.
 - Polars-native: `.ta()` on LazyFrame; plugins for performance-critical paths.
 
-### 1.3 Gaps
+### 1.3 Gaps — status (2026-06-26)
 
-| Gap | Severity | Bead(s) |
-|-----|----------|---------|
-| Doc quality rollout — many pages still thin vs STANDARDS | High (positioning) | `quantwave-6br5`, epic `quantwave-p1k6` |
-| Plugin migration — ~91 vs ~200+ indicators | Medium (perf) | `quantwave-jlk6` (epic, open) |
-| Metadata sync — Python `_metadata.py` manually synced | Medium (drift) | `quantwave-i9dn` (rule), `quantwave-iqq7` (auto-gen, P2) |
-| Warmup / NaN semantics not uniform in Python | Medium | `quantwave-976r` |
-| S/R monitor bugs (arity/borrow) | Medium | `quantwave-epqh`, `quantwave-wmd2` |
-| Stale PA epics (core shipped) | Low (hygiene) | `quantwave-b7u`, `quantwave-cu03` — reconcile/close |
-| Roadmap says “portfolio backtest” as future | Low | No bead — update `docs/roadmap.md` |
-| ML feature surface polish | Medium | `quantwave-wlx`, `quantwave-hbtm`, `quantwave-8aht` (P2) |
+| Gap | Was | Status | Bead(s) | Remaining work |
+|-----|-----|--------|---------|----------------|
+| Doc quality rollout — thin vs STANDARDS | High | **Closed** | `quantwave-6br5`, `quantwave-p1k6` | Long-tail indicator pages still uneven — polish via `quantwave-hbtm` |
+| Plugin migration — ~91 vs ~200+ | Medium | **Closed** | `quantwave-jlk6`, `quantwave-3f7g` | Document plugin vs `.ta` decision tree (no bead) |
+| Metadata sync — manual `_metadata.py` | Medium | **Closed** | `quantwave-iqq7` | Add **CI gate** on codegen drift; mkdocs from registry (future) |
+| Warmup / NaN semantics in Python | Medium | **Closed** | `quantwave-976r` | — |
+| S/R monitor bugs (arity/borrow) | Medium | **Closed** | `quantwave-epqh`, `quantwave-wmd2` | — |
+| Stale PA epics | Low | **Closed** | `quantwave-b7u`, `quantwave-cu03` | — |
+| PA Polars + confluence + ML features | Medium | **Closed** | `quantwave-8aht`, `quantwave-wlx`, `quantwave-22gw` | — |
+| ML / PA docs polish | Medium | **Open** | `quantwave-hbtm` | Guides, examples, API docstrings |
+| Per-indicator boundary docs | Low | **Open** | `quantwave-p49i` | Error/edge-case docs |
+| Roadmap “portfolio backtest” stale | Low | **Open** | No bead | Update `docs/roadmap.md` |
 
 ### 1.4 Indicators verdict
 
-**Depth > breadth achieved in Rust.** Packaging (docs uniformity, metadata pipeline, plugin parity) lags the engine. External story: **gallery + PA + Ehlers** is strong; long tail of indicator pages is not uniformly brochure-quality.
+**Depth and packaging both strong in Rust.** External story: **gallery + PA + Ehlers** is demo-ready. Remaining packaging gap is **documentation uniformity** on the indicator long tail, not engine capability.
 
 ---
 
@@ -104,21 +107,21 @@ Authoritative checklist: [`docs/guides/backtest/capability_matrix.md`](../docs/g
 From `planning/BACKTEST_ENGINE_RESEARCH.md`:
 
 - vectorbt-*inspired* UX, polars-backtest-*inspired* long-format, RaptorBT-*inspired* analytics — **no** NC/GPL runtime deps.
-- Canonical PA notebook with regime + pole sizing + costs — **met**.
+- Canonical PA notebook with regime + pole sizing + costs — **met** (`pa_flag_breakout_strategy.py`, `pa_foundation_strategy.py`).
 - ug9t batch ↔ streaming parity + nextest — **met**.
 
-### 2.3 Gaps
+### 2.3 Gaps — status (unchanged; backtest scope stable)
 
-| Gap | Severity | Bead(s) |
-|-----|----------|---------|
-| Live execution (Nautilus) | Deferred by design | `quantwave-cr6v-v2.7` (P4, HITL LGPL, +6m defer) |
-| Python MC — bootstrap/VaR not on `.bt` | Medium | **No bead** |
-| `winsorize_factor` — Rust yes; Python cross_sectional partial | Low | **No bead** |
-| Tear sheets / HTML reports | Low | **No bead** |
-| Portfolio optimization / wide-format matrix | Future | Roadmap only |
-| Partial fills, bar magnifier, liquidity | Future | **No bead** |
-| `metrics_only` perf — parity with full, not large speedup | Low | Documented honestly in benchmarks |
-| `quantwave-polars` `.bt.walk_forward_optimize` | Low | Python has it; Rust polars namespace does not |
+| Gap | Severity | Status | Bead(s) |
+|-----|----------|--------|---------|
+| Live execution (Nautilus) | Deferred | **Open (deferred)** | `quantwave-cr6v-v2.7` (P4, HITL LGPL) |
+| Python MC — bootstrap/VaR not on `.bt` | Medium | **Open** | **No bead** — v0.6 candidate |
+| `winsorize_factor` — Rust yes; Python partial | Low | **Open** | **No bead** |
+| Tear sheets / HTML reports | Low | **Open** | **No bead** |
+| Portfolio optimization / wide-format matrix | Future | Deferred | Roadmap only |
+| Partial fills, bar magnifier, liquidity | Future | Deferred | **No bead** |
+| `metrics_only` perf — parity, not large speedup | Low | Accepted | Documented in benchmarks |
+| `quantwave-polars` `.bt.walk_forward_optimize` | Low | **Open** | Python has it; Rust polars namespace does not |
 
 ### 2.4 Python `.bt` API (complete)
 
@@ -141,6 +144,7 @@ From `planning/BACKTEST_ENGINE_RESEARCH.md`:
 | Quickstart | `docs/guides/backtest/quickstart.md` |
 | Full tour | `docs/examples/notebooks/backtest_showcase.py` |
 | PA canonical | `docs/examples/notebooks/pa_flag_breakout_strategy.py` |
+| PA foundation | `docs/examples/notebooks/pa_foundation_strategy.py` |
 | Benchmarks | `docs/examples/notebooks/backtest_benchmark.md` |
 | ML E2E | `docs/examples/notebooks/ml_feature_backtest_parity.py` |
 
@@ -155,78 +159,89 @@ From `planning/BACKTEST_ENGINE_RESEARCH.md`:
 ### 3.1 Surfaces
 
 ```text
-1. Streaming   qw.wrap_streaming(cls) / Next<T>     — parity truth
-2. Batch       lf.ta.*()  (quantwave-polars)        — research default
-3. Plugins     Polars expressions (quantwave-plugins)
+1. Streaming   qw.wrap_streaming / qw.track_streaming + Rust TrackedNext   — parity + readiness
+2. Batch       lf.ta.*()  (quantwave-polars)                              — research default
+3. Plugins     col("x").ta.*()  (quantwave-plugins, ~219 methods)         — full parity
 4. Backtest    lf.bt.*()  (bt_polars + PyO3)
 ```
 
 ### 3.2 What works
 
 - `import quantwave` registers `.bt` with polars extra.
-- Discovery: `qw.indicators()`, `qw.metadata()`, `qw.assert_parity()`.
+- Discovery: `qw.indicators()` (**545** names), `qw.metadata()`, `qw.assert_parity()`.
+- Metadata codegen: Rust registry → `_metadata_generated.py` (217 entries).
+- Streaming readiness: `TrackedNext` / `StreamingReadiness` (Rust) + `wrap_streaming(..., warmup_bars_count=)` (Python).
 - Backtest: `BacktestEngine` + full `.bt` namespace.
-- Options / regimes / talib namespaces (guarded imports).
+- Options / regimes / talib namespaces (`quantwave.options` for India helpers).
 - Getting started links backtest quickstart.
 
-### 3.3 Gaps
+### 3.3 Gaps — status (2026-06-26)
 
-| Gap | Impact | Bead(s) |
-|-----|--------|---------|
-| Metadata dual-write (Rust + `_metadata.py`) | Drift risk | `quantwave-i9dn`, `quantwave-iqq7` |
-| Incomplete plugin ↔ `.ta` parity | Some indicators one path only | `quantwave-jlk6` |
-| Rust-only analytics (MC return paths, full factor ops) | Python users need Rust or wrappers | **No bead** |
-| WFO Python reimplements Rust optimize | Two code paths | Architectural — **no bead** |
-| Options namespace cleanup | `quantwave-05q7` | Open P1 |
-| Error taxonomy | `quantwave-1x2z` | Open P2 |
-| Streaming readiness API | `quantwave-h6xe` | Open P2 |
-| Workspace clippy (`quantwave-core` warnings) | CI noise if workspace-wide | Chore — **no bead** |
+| Gap | Impact | Status | Bead(s) | Remaining |
+|-----|--------|--------|---------|-----------|
+| Metadata dual-write | Drift risk | **Closed** | `quantwave-iqq7` | CI gate on `generate_indicator_metadata.py` output |
+| Plugin ↔ `.ta` parity | One-path-only indicators | **Closed** | `quantwave-3f7g`, `quantwave-jlk6` | — |
+| Options namespace cleanup | DX | **Closed** | `quantwave-05q7` | — |
+| Streaming readiness API | Live systems | **Closed** | `quantwave-h6xe` | — |
+| Rust-only analytics (MC return paths) | Python users | **Open** | **No bead** | `.bt.monte_carlo()` wrapper |
+| WFO Python reimplements Rust optimize | Two code paths | **Open** | **No bead** | Architectural |
+| Error taxonomy | DX | **Open** | `quantwave-1x2z` | `QuantwaveError` base |
+| PyPI doc links broken | Discovery | **Open** | `quantwave-l9ha` | — |
+| `__version__` missing | DX | **Open** | `quantwave-2klk` | — |
+| Linux arm64 wheel | Release matrix | **In progress** | `quantwave-7zsb` | — |
+| Explicit `quantwave.talib` submodule | DX | **Open** | `quantwave-xwiw` | — |
+| Workspace clippy (`quantwave-core` warnings) | CI noise | **Open** | Chore — **no bead** | Per-crate policy |
 
 ### 3.4 Bridge verdict
 
-**Usable and demo-ready.** Barrier to “install and forget Rust”: metadata sync and plugin parity.
+**Production-grade for research workflows.** Metadata codegen and plugin parity removed the main “install and maintain two sources” barrier. Remaining bridge work is **polish** (errors, version, wheels, talib entry point) and **Python wrappers** for Rust-only analytics.
 
 ---
 
 ## 4. Issue tracking (beads)
 
-> **Note:** Bead counts from `.beads/backup/issues.jsonl` snapshot. Run `bd ready --json` for live Dolt state.
+> Run `bd ready --json` for live Dolt state. Snapshot: **2026-06-26**.
 
-### 4.1 Closed (major milestones)
+### 4.1 Closed (major milestones — June 2026 session)
 
-| Epic | Status |
-|------|--------|
-| `quantwave-cr6v` | Closed — backtest v1 |
-| `quantwave-cr6v-v2` | Closed — v2.1–v2.6 |
-| `quantwave-bt-prod` | Closed — productization artifacts |
+| Epic / task | Status |
+|-------------|--------|
+| `quantwave-cr6v`, `cr6v-v2`, `bt-prod` | Backtest v1 + v2 + productization |
+| `quantwave-cu03` | PA foundation (MS, S/R, flags/H&S, confluence) |
+| `quantwave-b7u` | MQL5 research epic → implementation delivered |
+| `quantwave-3f7g`, `quantwave-jlk6` | Plugin migration — full `.ta` parity (~219 methods) |
+| `quantwave-iqq7` | Metadata registry + Python codegen pipeline |
+| `quantwave-h6xe` | `TrackedNext` + Python `track_streaming` |
+| `quantwave-976r`, `quantwave-05q7` | Warmup semantics + options namespace |
+| `quantwave-8aht`, `quantwave-wlx`, `quantwave-22gw` | Confluence + ML features Polars surface |
+| `quantwave-epqh`, `quantwave-wmd2` | S/R monitor fixes |
+| `quantwave-6br5`, `quantwave-p1k6` | Doc standards rollout |
 
-### 4.2 Open — by area
+### 4.2 Open — live (9 beads)
 
 | Area | Bead IDs |
 |------|----------|
-| Docs / visual standards | `quantwave-6br5`, `quantwave-p1k6` |
-| Plugin migration | `quantwave-jlk6` |
-| Backtest live (deferred) | `quantwave-cr6v-v2.7` |
-| PA / ML follow-on | `quantwave-b7u`, `quantwave-cu03`, `quantwave-8aht`, `quantwave-wlx`, `quantwave-hbtm` |
-| S/R bugs | `quantwave-epqh`, `quantwave-wmd2` |
-| DX polish | `quantwave-iutt`, `quantwave-976r`, `quantwave-05q7`, `quantwave-iqq7` |
-| Python errors / readiness | `quantwave-1x2z`, `quantwave-h6xe` |
+| ML / PA docs polish | `quantwave-hbtm` |
+| Python DX | `quantwave-1x2z` (errors), `quantwave-2klk` (`__version__`), `quantwave-xwiw` (talib), `quantwave-l9ha` (PyPI links), `quantwave-l99s` (categories API) |
+| Release | `quantwave-7zsb` (Linux arm64 wheel, in_progress) |
+| Indicator docs | `quantwave-p49i` (boundary conditions) |
+| Backtest live (deferred) | `quantwave-cr6v-v2.7` (P4 Nautilus) |
 
-### 4.3 Gaps without beads (candidates for v0.6 epic)
+### 4.3 Gaps without beads (v0.6 candidates)
 
 - Python `.bt.monte_carlo()` wrapper
 - `winsorize` on Python `cross_sectional_backtest`
 - Tear-sheet / reporting layer
 - Portfolio optimization / wide-format engine
-- Roadmap refresh (backtest shipped)
+- Roadmap refresh (backtest + PA shipped)
 - `quantwave-polars` Rust `.bt.walk_forward_optimize`
+- Metadata codegen **CI drift gate**
 - Workspace-wide clippy cleanup (or per-crate policy doc)
+- Plugin vs `.ta` decision-tree doc
 
 ---
 
 ## 5. Recommendations — SOA-grade standalone library
-
-*SOA here = modular, contract-driven, standalone excellence (clear crate boundaries + stable public APIs).*
 
 ### 5.1 Freeze public API tiers
 
@@ -237,9 +252,11 @@ From `planning/BACKTEST_ENGINE_RESEARCH.md`:
 | **2** | `quantwave-python`, plugins | `qw.metadata()` + pytest gates |
 | **3** | `quantwave-nautilus` (future) | Separate license; HITL before merge |
 
-### 5.2 One metadata pipeline (highest ROI)
+### 5.2 One metadata pipeline — **shipped; gate it**
 
-Rust `*_METADATA` → codegen → Python + mkdocs. Kill manual `_metadata.py` sync (`quantwave-iqq7`). CI: new indicator without metadata = fail.
+✅ `regenerate_metadata_registry.py` → `generate_indicator_metadata.py` → `_metadata_generated.py`
+
+**Next:** CI fails if generated output drifts; optional mkdocs feed from same JSON export.
 
 ### 5.3 Contract tests as product
 
@@ -249,15 +266,15 @@ Rust `*_METADATA` → codegen → Python + mkdocs. Kill manual `_metadata.py` sy
 
 ### 5.4 Complete the research loop in Python
 
-One path: indicators → signals → `.bt` → sweep/WFO → metrics. Close: `.bt.monte_carlo()` wrapper; fix capability matrix wording where Python already has WFO.
+One path: indicators → signals → `.bt` → sweep/WFO → metrics. **Still open:** `.bt.monte_carlo()` wrapper.
 
-### 5.5 Plugin migration — strategic, not total
+### 5.5 Plugin migration — **done**
 
-Migrate **top ~20** indicators (RSI, EMA, ATR, SuperTrend, market_structure, geometric_patterns). Document “plugin vs `.ta`” decision tree.
+Full parity achieved (`3f7g`). **Next:** document when to use plugin vs `.ta` lazy map (performance vs ergonomics).
 
 ### 5.6 GTM / visibility
 
-- GitHub release narrative for 0.5.2 backtest story.
+- GitHub release narrative for 0.5.2+ (backtest + PA + plugins + metadata codegen).
 - Demo script from `backtest_showcase` + PA flag notebook.
 - Comparison table: QuantWave vs vectorbt vs polars-backtest (license + parity column).
 
@@ -267,31 +284,41 @@ Migrate **top ~20** indicators (RSI, EMA, ATR, SuperTrend, market_structure, geo
 - Portfolio opt / wide-format until user story exists.
 - Clippy: per-crate gates (`quantwave-backtest` already clean).
 
-### 5.8 Proposed next epic (not yet created)
+### 5.8 Proposed v0.6 epic (refined)
 
-**`quantwave-v06` — DX & contract hardening**
+**`quantwave-v06` — Polish & Python research loop completion**
 
-Suggested children:
-
-1. Metadata codegen + CI gate (`iqq7`)
-2. Plugin migration milestone — top 20 (`jlk6` slice)
-3. Python MC + winsorize on `.bt`
-4. Close/reconcile stale PA epics + roadmap sync
-5. `quantwave verify` CLI or documented one-liner
-6. GitHub release + comparison one-pager
+| # | Child | Status |
+|---|-------|--------|
+| 1 | Metadata codegen CI gate | **Partial** — pipeline shipped (`iqq7`), gate missing |
+| 2 | Plugin migration top-N | **Done** (`3f7g`) |
+| 3 | Python MC + winsorize on `.bt` | **Open** |
+| 4 | Close PA epics + roadmap sync | **Done** (epics); roadmap update pending |
+| 5 | `quantwave verify` CLI | **Open** |
+| 6 | GitHub release + comparison one-pager | **Open** |
+| 7 | `hbtm` docs polish + `p49i` boundaries | **Open** |
 
 ---
 
 ## 6. Quality gates (current)
 
 ```bash
-cargo nextest run -p quantwave-backtest    # 73 passed (2026-06-19)
-cargo nextest run -p quantwave-core        # parity + gold standard
+cargo nextest run -p quantwave-core        # 510 passed (2026-06-26)
+cargo nextest run -p quantwave-polars      # 548 passed (incl. features + sr_monitor smoke)
+cargo nextest run -p quantwave-backtest    # 73 passed
 pytest quantwave-python/tests/test_backtest.py \
        quantwave-python/tests/test_pa_flag_backtest.py \
-       quantwave-python/tests/test_sweep_callback.py
+       quantwave-python/tests/test_metadata_codegen.py \
+       quantwave-python/tests/test_streaming_readiness.py
 cargo clippy -p quantwave-backtest -- -D warnings   # clean
 # workspace-wide clippy -D warnings fails on quantwave-core pre-existing noise
+```
+
+**Metadata codegen refresh:**
+
+```bash
+python scripts/regenerate_metadata_registry.py
+python scripts/generate_indicator_metadata.py
 ```
 
 ---
@@ -307,6 +334,7 @@ cargo clippy -p quantwave-backtest -- -D warnings   # clean
 | Documentation standards | `docs/DOCUMENTATION_STANDARDS.md` |
 | Roadmap | `docs/roadmap.md` |
 | Agents / landing plane | `AGENTS.md` |
+| Metadata codegen | `scripts/generate_indicator_metadata.py`, `quantwave-core/src/bin/export_metadata.rs` |
 
 ---
 
@@ -315,5 +343,6 @@ cargo clippy -p quantwave-backtest -- -D warnings   # clean
 | Date | Change |
 |------|--------|
 | 2026-06-19 | Initial capture after cr6v-v2 + bt-prod close; post-showcase/benchmark fixes (`8ab92da8`) |
+| 2026-06-26 | Gap reconciliation: PA foundation, plugins (3f7g), metadata codegen (iqq7), streaming readiness (h6xe), warmup/options closed; 9 open beads; updated coverage counts and grades |
 
 *Update this file when closing major epics or shifting v0.6 priorities.*
