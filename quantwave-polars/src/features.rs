@@ -335,6 +335,37 @@ impl<'a> TaFeaturesNamespace<'a> {
             )
             .alias("ehlers_autocorr")])
     }
+
+    /// Build the recommended ML feature matrix (all locked `.ta.features.*` outputs).
+    ///
+    /// Chains: hurst, cyber_cycle (struct), griffiths_dc, regime_label, itl (struct),
+    /// regime_probs (struct), trendflex, ehlers_autocorr (struct).
+    /// Matches the `recommended` preset in `quantwave.build_feature_matrix()` (rdpk).
+    pub fn recommended_matrix(self) -> LazyFrame {
+        use crate::QuantWaveExt;
+        self.hurst(100)
+            .ta()
+            .features()
+            .cyber_cycle(30)
+            .ta()
+            .features()
+            .griffiths_dominant_cycle(6, 50, 30)
+            .ta()
+            .features()
+            .regime_features()
+            .ta()
+            .features()
+            .instantaneous_trendline()
+            .ta()
+            .features()
+            .regime_probs()
+            .ta()
+            .features()
+            .trendflex(30)
+            .ta()
+            .features()
+            .ehlers_autocorrelation(30, 10)
+    }
 }
 
 // The struct is pub so it is reachable as quantwave_polars::features::TaFeaturesNamespace if needed for turbofish/docs.

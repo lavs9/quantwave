@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased / v0.6 Tier 2] - 2026-06-26
+
+### Added
+- **`qw.build_feature_matrix()`** (`quantwave-rdpk`): batch ML feature matrix from OHLCV
+- **`lf.ta().features().recommended_matrix()`** (Rust Polars)
+- **`lf.bt.monte_carlo()`** (`quantwave-fsg3`): trade bootstrap + return-path VaR/CVaR
+- **Rust Polars `.bt`**: `walk_forward_optimize`, `monte_carlo_trade_bootstrap` (`quantwave-dk61`)
+
 ## [Unreleased / v0.6 Tier 1] - 2026-06-26
 
 ### Added

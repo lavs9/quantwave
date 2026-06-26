@@ -4,9 +4,11 @@
 
 use polars::prelude::*;
 use quantwave_backtest::{
-    run_cross_sectional_backtest, run_param_sweep, run_walk_forward, single_param_variants,
+    monte_carlo_return_paths, monte_carlo_trade_bootstrap, run_cross_sectional_backtest,
+    run_param_sweep, run_walk_forward, run_walk_forward_optimize, single_param_variants,
     BacktestConfig, BacktestEngine, BacktestError, BacktestReport, BacktestResult, CostModel,
-    CrossSectionalConfig, ExecutionDelay, StopConfig, SweepVariant, WalkForwardConfig,
+    CrossSectionalConfig, ExecutionDelay, MonteCarloConfig, MonteCarloPathSummary,
+    MonteCarloReturnConfig, MonteCarloSummary, StopConfig, SweepVariant, WalkForwardConfig,
 };
 
 /// Extension trait: `LazyFrame::bt()`.
@@ -137,6 +139,44 @@ impl<'a> BtNamespace<'a> {
         options: BtOptions,
     ) -> Result<BacktestReport, BacktestError> {
         run_cross_sectional_backtest(self.0.clone(), &cs, options.into_config())
+    }
+
+    /// Walk-forward with in-fold parameter optimization (quantwave-dk61).
+    pub fn walk_forward_optimize(
+        self,
+        wf: WalkForwardConfig,
+        variants: &[SweepVariant],
+        objective_metric: &str,
+        options: BtOptions,
+    ) -> Result<DataFrame, BacktestError> {
+        run_walk_forward_optimize(
+            self.0.clone(),
+            &options.into_config(),
+            &wf,
+            variants,
+            objective_metric,
+        )
+    }
+
+    /// Trade PnL bootstrap Monte Carlo after backtest (quantwave-fsg3 / dk61).
+    pub fn monte_carlo_trade_bootstrap(
+        self,
+        options: BtOptions,
+        mc: MonteCarloConfig,
+    ) -> Result<MonteCarloSummary, BacktestError> {
+        let initial_cash = options.initial_cash;
+        let result = self.backtest(options)?;
+        monte_carlo_trade_bootstrap(&result, initial_cash, &mc)
+    }
+
+    /// Return-path resampling Monte Carlo (VaR/CVaR) after backtest.
+    pub fn monte_carlo_return_paths(
+        self,
+        options: BtOptions,
+        mc: MonteCarloReturnConfig,
+    ) -> Result<MonteCarloPathSummary, BacktestError> {
+        let result = self.backtest(options)?;
+        monte_carlo_return_paths(&result, &mc)
     }
 }
 

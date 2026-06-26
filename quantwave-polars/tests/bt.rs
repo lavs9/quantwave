@@ -4,6 +4,7 @@
 
 use approx::assert_relative_eq;
 use polars::prelude::*;
+use quantwave_backtest::{MonteCarloConfig, SweepVariant, WalkForwardConfig};
 use quantwave_polars::prelude::*;
 
 fn single_trade_df() -> DataFrame {
@@ -150,4 +151,63 @@ fn test_bt_backtest_multi_symbol_smoke() {
         2.0,
         epsilon = 1e-9
     );
+}
+
+#[test]
+fn test_bt_walk_forward_optimize_smoke() {
+    let n = 60i64;
+    let timestamps: Vec<i64> = (0..n).collect();
+    let closes: Vec<f64> = (0..n)
+        .map(|i| 100.0 + if i < 30 { i as f64 } else { 30.0 - (i - 30) as f64 })
+        .collect();
+    let signals_a: Vec<f64> = (0..n).map(|i| if i % 2 == 0 { 1.0 } else { -1.0 }).collect();
+    let signals_b: Vec<f64> = vec![1.0; n as usize];
+
+    let df = DataFrame::new(vec![
+        Column::new("timestamp".into(), timestamps),
+        Column::new("close".into(), closes),
+        Column::new("signal_a".into(), signals_a),
+        Column::new("signal_b".into(), signals_b),
+    ])
+    .unwrap();
+
+    let variants = vec![
+        SweepVariant {
+            params: std::collections::HashMap::from([("thresh".into(), 1.0)]),
+            signal_col: "signal_a".into(),
+        },
+        SweepVariant {
+            params: std::collections::HashMap::from([("thresh".into(), 2.0)]),
+            signal_col: "signal_b".into(),
+        },
+    ];
+
+    let wf = WalkForwardConfig::new(20, 10);
+    let out = df
+        .lazy()
+        .bt()
+        .walk_forward_optimize(wf, &variants, "total_return", zero_cost_options("signal_a"))
+        .expect("wfo optimize");
+
+    assert!(out.height() >= 1);
+    assert!(out.column("best_thresh").is_ok());
+}
+
+#[test]
+fn test_bt_monte_carlo_trade_bootstrap_smoke() {
+    let summary = single_trade_df()
+        .lazy()
+        .bt()
+        .monte_carlo_trade_bootstrap(
+            zero_cost_options("signal"),
+            MonteCarloConfig {
+                n_simulations: 50,
+                seed: 7,
+            },
+        )
+        .expect("mc bootstrap");
+
+    assert_eq!(summary.n_simulations, 50);
+    assert!(summary.n_trades_sampled >= 1);
+    assert!(summary.p50_final_equity.is_finite());
 }

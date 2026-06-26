@@ -67,9 +67,25 @@ Use `qw.track_streaming(inst, name="hurst_exponent")` for warmup-aware readiness
 
 ## Feature matrix for ML pipelines
 
+### Python (recommended)
+
+```python
+import quantwave as qw
+
+df = qw.build_feature_matrix(ohlcv_df, features="recommended")
+# Or drop warmup rows before training:
+df = qw.build_feature_matrix(ohlcv_df, drop_warmup=True, warmup_bars=100)
+```
+
+### Polars (Rust)
+
+```python
+# lf.ta().features().recommended_matrix()  # via quantwave-polars
+```
+
 Build a wide matrix without lookahead:
 
-1. Compute features on a **LazyFrame** with `.ta.*` or `.ta.features.*` accessors.
+1. Use `qw.build_feature_matrix()` or `.ta.features.recommended_matrix()`.
 2. Call `qw.warmup_bars(name, params)` per column and mask or drop leading rows.
 3. Join regime labels (`market_state`, HMM outputs) on the same bar index.
 4. Assert batch/streaming parity in CI with `qw.assert_parity(...)`.

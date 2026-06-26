@@ -495,6 +495,15 @@ for _name in _option_legacy_names:
 # Final clean public surface for 0.5.2 / P0 DX (quantwave-p3z9 children)
 # =============================================================================
 
+# ML feature matrix (rdpk) — imported after ``ta`` is populated to avoid circular import.
+from .features import (
+    FeatureSpec,
+    RECOMMENDED_PRESET,
+    build_feature_matrix,
+    feature_column_names,
+)
+
+
 def __getattr__(name: str):
     """Deprecated top-level access for options helpers (quantwave-05q7)."""
     if name in _OPTIONS_SYMBOLS:
@@ -515,6 +524,10 @@ __all__ = [
     "list_metadata",
     "warmup_bars",
     "get_indicator_signature",
+    "build_feature_matrix",
+    "feature_column_names",
+    "FeatureSpec",
+    "RECOMMENDED_PRESET",
     "boundary_info",
     "categories",
     "indicators_by_category",

@@ -16,7 +16,7 @@ QuantWave is past the “can we build this?” phase. The Rust engine is deep; t
 | **Indicators** | A engine, B+ packaging | PA + Ehlers + 216 metadata; doc long-tail still uneven |
 | **Backtest** | A research, B production | v1+v2+prod done; live bridge + tearsheets deferred |
 | **Rust/Python bridge** | A- | Codegen metadata + plugin parity + readiness shipped |
-| **Issue tracking** | **1 open bead** + v0.6 epic (`motd`) | Tier 1–3 beads filed; Tier 1 in flight |
+| **Issue tracking** | Tier 3 beads + `motd` epic | Tiers 1–2 closed |
 
 ---
 
@@ -121,7 +121,7 @@ From `planning/BACKTEST_ENGINE_RESEARCH.md`:
 | Portfolio optimization / wide-format matrix | Future | Deferred | Roadmap only |
 | Partial fills, bar magnifier, liquidity | Future | Deferred | **No bead** |
 | `metrics_only` perf — parity, not large speedup | Low | Accepted | Documented in benchmarks |
-| `quantwave-polars` `.bt.walk_forward_optimize` | Low | **Open** | Python has it; Rust polars namespace does not |
+| `quantwave-polars` `.bt.walk_forward_optimize` | Low | **Closed** | `quantwave-dk61` |
 
 ### 2.4 Python `.bt` API (complete)
 
@@ -183,7 +183,7 @@ From `planning/BACKTEST_ENGINE_RESEARCH.md`:
 | Plugin ↔ `.ta` parity | One-path-only indicators | **Closed** | `quantwave-3f7g`, `quantwave-jlk6` | — |
 | Options namespace cleanup | DX | **Closed** | `quantwave-05q7` | — |
 | Streaming readiness API | Live systems | **Closed** | `quantwave-h6xe` | — |
-| Rust-only analytics (MC return paths) | Python users | **Open** | **No bead** | `.bt.monte_carlo()` wrapper |
+| Rust-only analytics (MC return paths) | Python users | **Closed** | `quantwave-fsg3` | `lf.bt.monte_carlo()` |
 | WFO Python reimplements Rust optimize | Two code paths | **Open** | **No bead** | Architectural |
 | Error taxonomy | DX | **Closed** | `quantwave-1x2z` | `QuantwaveError` hierarchy + `ParityError` |
 | PyPI doc links broken | Discovery | **Closed** | `quantwave-l9ha` | `lavs9.github.io/quantwave` in README + pyproject |
@@ -223,8 +223,9 @@ From `planning/BACKTEST_ENGINE_RESEARCH.md`:
 | Area | Bead IDs |
 |------|----------|
 | v0.6 SOA productization (parent) | `quantwave-motd` |
-| Tier 2 (research loop) | `quantwave-rdpk`, `quantwave-fsg3`, `quantwave-dk61` |
-| Tier 3 (deferred expansion) | `quantwave-wnd9`, `quantwave-0gi1`, `quantwave-8v4s`, `quantwave-cr6v-v2.7` |
+| Tier 3 (deferred) | `quantwave-wnd9`, `quantwave-0gi1`, `quantwave-8v4s`, `quantwave-cr6v-v2.7` |
+
+
 
 ### 4.3 Gaps without beads (remaining)
 
@@ -286,7 +287,7 @@ Full parity achieved (`3f7g`). **Next:** document when to use plugin vs `.ta` la
 |---|-------|--------|
 | 1 | Metadata codegen CI gate | **Done** (`ttge`) |
 | 2 | Plugin migration top-N | **Done** (`3f7g`) |
-| 3 | Python MC + winsorize on `.bt` | **Open** |
+| 3 | Python MC + winsorize on `.bt` | **Done** (`fsg3` MC; winsorize still open) |
 | 4 | Close PA epics + roadmap sync | **Done** |
 | 5 | `quantwave verify` CLI | **Done** (`072m`) |
 | 6 | GitHub release + comparison one-pager | **Done** (`l7xg`) |

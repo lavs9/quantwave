@@ -482,3 +482,67 @@ class BtLazyNamespace:
             execution_delay=execution_delay,
         )
         return BacktestEngine(config).backtest_with_report(ranked)
+
+    def monte_carlo(
+        self,
+        *,
+        signal: str = "signal",
+        timestamp_col: str = "timestamp",
+        close_col: str = "close",
+        symbol_col: str | None = None,
+        entry_filter_col: str | None = None,
+        size_multiplier_col: str | None = None,
+        initial_cash: float = 100_000.0,
+        commission_bps: float = 5.0,
+        slippage_bps: float = 2.0,
+        execution_delay: str = "same_bar",
+        stop_loss_pct: float | None = None,
+        take_profit_pct: float | None = None,
+        trailing_stop_pct: float | None = None,
+        n_simulations: int = 1000,
+        seed: int = 42,
+        mode: str = "trade_bootstrap",
+        n_bars_forward: int = 252,
+    ) -> dict:
+        """Run backtest then Monte Carlo robustness (quantwave-fsg3).
+
+        Args:
+            mode: ``trade_bootstrap`` (resample closed-trade PnLs) or
+                ``return_paths`` (return-path VaR/CVaR).
+        """
+        config = _config_from_kwargs(
+            signal=signal,
+            timestamp_col=timestamp_col,
+            close_col=close_col,
+            symbol_col=symbol_col,
+            entry_filter_col=entry_filter_col,
+            size_multiplier_col=size_multiplier_col,
+            initial_cash=initial_cash,
+            commission_bps=commission_bps,
+            slippage_bps=slippage_bps,
+            execution_delay=execution_delay,
+            stop_loss_pct=stop_loss_pct,
+            take_profit_pct=take_profit_pct,
+            trailing_stop_pct=trailing_stop_pct,
+        )
+        from quantwave._backtest import (
+            monte_carlo_return_paths_py,
+            monte_carlo_trade_bootstrap_py,
+        )
+
+        result = BacktestEngine(config).run(self._ldf.collect())
+        if mode == "return_paths":
+            return monte_carlo_return_paths_py(
+                result,
+                n_simulations=n_simulations,
+                seed=seed,
+                n_bars_forward=n_bars_forward,
+            )
+        if mode != "trade_bootstrap":
+            raise ValueError("mode must be 'trade_bootstrap' or 'return_paths'")
+        return monte_carlo_trade_bootstrap_py(
+            result,
+            initial_cash=initial_cash,
+            n_simulations=n_simulations,
+            seed=seed,
+        )

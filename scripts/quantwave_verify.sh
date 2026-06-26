@@ -45,6 +45,7 @@ if [[ "$SKIP_PYTHON" -eq 0 ]]; then
     quantwave-python/tests/test_metadata_codegen.py \
     quantwave-python/tests/test_streaming_readiness.py \
     quantwave-python/tests/test_backtest.py \
+    quantwave-python/tests/test_tier2.py \
     -q
 fi
 

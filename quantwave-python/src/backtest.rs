@@ -11,8 +11,10 @@ use pyo3::types::{PyBytes, PyDict, PyType};
 use pyo3_polars::PyDataFrame;
 use std::io::Cursor;
 use quantwave_backtest::{
-    BacktestConfig, BacktestEngine, BacktestError, BacktestReport, BacktestResult, CostModel,
-    ExecutionDelay, ExecutionModel, PerformanceMetrics, StopConfig,
+    monte_carlo_return_paths, monte_carlo_trade_bootstrap, BacktestConfig, BacktestEngine,
+    BacktestError, BacktestReport, BacktestResult, CostModel, ExecutionDelay, ExecutionModel,
+    MonteCarloConfig, MonteCarloPathSummary, MonteCarloReturnConfig, MonteCarloSummary,
+    PerformanceMetrics, StopConfig,
 };
 
 fn parse_execution_delay(s: &str) -> PyResult<ExecutionDelay> {
@@ -236,6 +238,67 @@ impl PyBacktestReport {
     }
 }
 
+fn mc_summary_to_dict<'py>(py: Python<'py>, s: &MonteCarloSummary) -> PyResult<Bound<'py, PyDict>> {
+    let dict = PyDict::new(py);
+    dict.set_item("mean_final_equity", s.mean_final_equity)?;
+    dict.set_item("p5_final_equity", s.p5_final_equity)?;
+    dict.set_item("p50_final_equity", s.p50_final_equity)?;
+    dict.set_item("p95_final_equity", s.p95_final_equity)?;
+    dict.set_item("probability_of_loss", s.probability_of_loss)?;
+    dict.set_item("n_simulations", s.n_simulations)?;
+    dict.set_item("n_trades_sampled", s.n_trades_sampled)?;
+    Ok(dict)
+}
+
+fn mc_path_summary_to_dict<'py>(
+    py: Python<'py>,
+    s: &MonteCarloPathSummary,
+) -> PyResult<Bound<'py, PyDict>> {
+    let dict = PyDict::new(py);
+    dict.set_item("var_95", s.var_95)?;
+    dict.set_item("cvar_95", s.cvar_95)?;
+    dict.set_item("p5_terminal_equity", s.p5_terminal_equity)?;
+    dict.set_item("p50_terminal_equity", s.p50_terminal_equity)?;
+    dict.set_item("p95_terminal_equity", s.p95_terminal_equity)?;
+    dict.set_item("probability_of_loss", s.probability_of_loss)?;
+    Ok(dict)
+}
+
+#[pyfunction]
+#[pyo3(signature = (result, initial_cash=100_000.0, n_simulations=1000, seed=42))]
+fn monte_carlo_trade_bootstrap_py<'py>(
+    py: Python<'py>,
+    result: &PyBacktestResult,
+    initial_cash: f64,
+    n_simulations: usize,
+    seed: u64,
+) -> PyResult<Bound<'py, PyDict>> {
+    let cfg = MonteCarloConfig {
+        n_simulations,
+        seed,
+    };
+    let summary = monte_carlo_trade_bootstrap(&result.inner, initial_cash, &cfg).map_err(map_err)?;
+    mc_summary_to_dict(py, &summary)
+}
+
+#[pyfunction]
+#[pyo3(signature = (result, n_simulations=1000, seed=42, n_bars_forward=252))]
+fn monte_carlo_return_paths_py<'py>(
+    py: Python<'py>,
+    result: &PyBacktestResult,
+    n_simulations: usize,
+    seed: u64,
+    n_bars_forward: usize,
+) -> PyResult<Bound<'py, PyDict>> {
+    let cfg = MonteCarloReturnConfig {
+        n_simulations,
+        seed,
+        n_bars_forward,
+    };
+    let summary = monte_carlo_return_paths(&result.inner, &cfg).map_err(map_err)?;
+    mc_path_summary_to_dict(py, &summary)
+}
+
 /// Native backtest engine (PyO3 + pyo3-polars).
 #[pymodule]
 fn _backtest(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -243,5 +306,7 @@ fn _backtest(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyBacktestEngine>()?;
     m.add_class::<PyBacktestResult>()?;
     m.add_class::<PyBacktestReport>()?;
+    m.add_function(wrap_pyfunction!(monte_carlo_trade_bootstrap_py, m)?)?;
+    m.add_function(wrap_pyfunction!(monte_carlo_return_paths_py, m)?)?;
     Ok(())
 }
