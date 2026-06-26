@@ -188,14 +188,14 @@ From `planning/BACKTEST_ENGINE_RESEARCH.md`:
 | Error taxonomy | DX | **Closed** | `quantwave-1x2z` | `QuantwaveError` hierarchy + `ParityError` |
 | PyPI doc links broken | Discovery | **Closed** | `quantwave-l9ha` | `lavs9.github.io/quantwave` in README + pyproject |
 | `__version__` missing | DX | **Closed** | `quantwave-2klk` | `importlib.metadata` + test |
-| Linux arm64 wheel | Release matrix | **In progress** | `quantwave-7zsb` | — |
+| Linux arm64 wheel | Release matrix | **Closed** | `quantwave-7zsb` | `manylinux_2_34_aarch64` on PyPI 0.5.2 |
 | Explicit `quantwave.talib` submodule | DX | **Closed** | `quantwave-xwiw` | `list_functions()` + 20 TA-Lib names |
 | Categories API | DX | **Closed** | `quantwave-l99s` | `categories()`, `category()`, `indicators_by_category()` |
 | Workspace clippy (`quantwave-core` warnings) | CI noise | **Open** | Chore — **no bead** | Per-crate policy |
 
 ### 3.4 Bridge verdict
 
-**Production-grade for research workflows.** Metadata codegen and plugin parity removed the main “install and maintain two sources” barrier. Remaining bridge work is **release matrix** (arm64 wheels) and **Python wrappers** for Rust-only analytics.
+**Production-grade for research workflows.** Metadata codegen and plugin parity removed the main “install and maintain two sources” barrier. Remaining bridge work is **Python wrappers** for Rust-only analytics (MC return paths, etc.).
 
 ---
 
@@ -218,11 +218,10 @@ From `planning/BACKTEST_ENGINE_RESEARCH.md`:
 | `quantwave-epqh`, `quantwave-wmd2` | S/R monitor fixes |
 | `quantwave-6br5`, `quantwave-p1k6` | Doc standards rollout |
 
-### 4.2 Open — live (2 beads)
+### 4.2 Open — live (1 bead)
 
 | Area | Bead IDs |
 |------|----------|
-| Release | `quantwave-7zsb` (Linux arm64 wheel, in_progress) |
 | Backtest live (deferred) | `quantwave-cr6v-v2.7` (P4 Nautilus) |
 
 ### 4.3 Gaps without beads (v0.6 candidates)
