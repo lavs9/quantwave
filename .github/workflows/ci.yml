@@ -48,7 +48,7 @@ jobs:
         run: |
           python -m venv .venv
           source .venv/bin/activate
-          pip install pytest polars maturin
+          pip install pytest polars maturin "uniffi-bindgen==0.31.0"
           maturin develop --manifest-path quantwave-python/Cargo.toml --release
           maturin develop --manifest-path quantwave-backtest-py/Cargo.toml --release
       - run: chmod +x scripts/quantwave_verify.sh
