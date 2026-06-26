@@ -75,8 +75,13 @@ We have made major improvements to the Python developer experience:
 
 **Other:**
 - `quantwave.__version__` is now properly exposed.
+- `quantwave.categories()` / `category(name)` for programmatic discovery.
+- `quantwave.boundary_info(name)` for warmup and error semantics.
+- `quantwave.talib` submodule with `list_functions()` for TA-Lib migration.
+- Structured errors: `QuantwaveError`, `ParityError`, `IndicatorNotFoundError`, etc.
 - Linux arm64 wheels are available.
-- `quantwave.talib` submodule for easier TA-Lib migration.
+
+**Documentation:** [https://lavs9.github.io/quantwave/](https://lavs9.github.io/quantwave/) — ML Features guide, Backtest quickstart, and API reference.
 
 See the full list of changes in the main [changelog](https://github.com/lavs9/quantwave/blob/main/docs/changelog.md).
 

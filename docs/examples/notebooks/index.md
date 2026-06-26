@@ -22,6 +22,7 @@ These pages are landing pages for the notebooks. For the best experience (full i
   Builds feature matrices from the new toolkit, proves batch/streaming parity + no-lookahead, trains a tiny regime+direction model with per-regime metrics.
 
 - **[ML Features → Realistic Backtest (E2E)](ml_feature_backtest_parity.md)** — *Primary cross-epic reference* (closed epics 4ps + gwx)  
+  See also the [ML Features guide](../../guides/ml_features.md) for Polars/streaming patterns.  
   End-to-end demonstration of the locked features surface feeding the backtester. Shows batch vs streaming parity with rich metadata preserved all the way into trades.
 
 - **[PA Foundation Strategy (MarketStructure + Flags/H&S)](pa_foundation_strategy.py)**  

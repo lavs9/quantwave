@@ -77,6 +77,52 @@ for price in closes:
 
 Use `qw.assert_parity()` for batch vs streaming checks — it compares warmup bars for agreement, then enforces equality on post-warmup values.
 
+## Discovery, categories & boundaries
+
+```python
+import quantwave as qw
+
+qw.indicators()              # sorted list of ~500+ names
+qw.categories()              # e.g. "Classic", "Ehlers DSP", "Momentum", ...
+qw.category("Ehlers DSP")    # indicators in one category
+qw.indicators_by_category()  # full map for UIs / autocomplete
+
+meta = qw.metadata("rsi")
+info = qw.boundary_info("rsi")  # warmup, NaN, invalid-param semantics
+```
+
+## TA-Lib migration
+
+```python
+from quantwave import talib as ta
+
+print(ta.list_functions())   # uppercase TA-Lib names in this build
+rsi = ta.RSI(closes, timeperiod=14)
+```
+
+## Exception contract
+
+```python
+import quantwave as qw
+
+try:
+    qw.assert_parity("rsi", {"period": 14}, closes)
+except qw.ParityError:
+    ...  # batch vs streaming mismatch
+except qw.IndicatorNotFoundError:
+    ...  # unknown name
+except qw.QuantwaveError:
+    ...  # any library-specific error
+```
+
+`qw.__version__` is exposed via `importlib.metadata` (e.g. `"0.5.2"`).
+
+## ML features & backtesting
+
+- [ML Feature Engineering guide](../guides/ml_features.md)
+- [Backtest Quickstart](../guides/backtest/quickstart.md)
+- [ML Features → Backtest (E2E)](../examples/notebooks/ml_feature_backtest_parity.md)
+
 ## Options (India)
 
 Options chain analytics and Black–Scholes helpers live under `quantwave.options` (not the top-level indicator namespace):

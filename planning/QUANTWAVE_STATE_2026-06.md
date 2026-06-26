@@ -68,15 +68,15 @@ From `AGENTS.md`, `DOCUMENTATION_STANDARDS.md`, gallery:
 
 | Gap | Was | Status | Bead(s) | Remaining work |
 |-----|-----|--------|---------|----------------|
-| Doc quality rollout — thin vs STANDARDS | High | **Closed** | `quantwave-6br5`, `quantwave-p1k6` | Long-tail indicator pages still uneven — polish via `quantwave-hbtm` |
+| Doc quality rollout — thin vs STANDARDS | High | **Closed** | `quantwave-6br5`, `quantwave-p1k6`, `quantwave-hbtm` | Long-tail indicator pages still uneven (low priority) |
 | Plugin migration — ~91 vs ~200+ | Medium | **Closed** | `quantwave-jlk6`, `quantwave-3f7g` | Document plugin vs `.ta` decision tree (no bead) |
 | Metadata sync — manual `_metadata.py` | Medium | **Closed** | `quantwave-iqq7` | Add **CI gate** on codegen drift; mkdocs from registry (future) |
 | Warmup / NaN semantics in Python | Medium | **Closed** | `quantwave-976r` | — |
 | S/R monitor bugs (arity/borrow) | Medium | **Closed** | `quantwave-epqh`, `quantwave-wmd2` | — |
 | Stale PA epics | Low | **Closed** | `quantwave-b7u`, `quantwave-cu03` | — |
 | PA Polars + confluence + ML features | Medium | **Closed** | `quantwave-8aht`, `quantwave-wlx`, `quantwave-22gw` | — |
-| ML / PA docs polish | Medium | **Open** | `quantwave-hbtm` | Guides, examples, API docstrings |
-| Per-indicator boundary docs | Low | **Open** | `quantwave-p49i` | Error/edge-case docs |
+| ML / PA docs polish | Medium | **Closed** | `quantwave-hbtm` | — |
+| Per-indicator boundary docs | Low | **Closed** | `quantwave-p49i` | `boundary_info()` + guides |
 | Roadmap “portfolio backtest” stale | Low | **Open** | No bead | Update `docs/roadmap.md` |
 
 ### 1.4 Indicators verdict
@@ -185,16 +185,17 @@ From `planning/BACKTEST_ENGINE_RESEARCH.md`:
 | Streaming readiness API | Live systems | **Closed** | `quantwave-h6xe` | — |
 | Rust-only analytics (MC return paths) | Python users | **Open** | **No bead** | `.bt.monte_carlo()` wrapper |
 | WFO Python reimplements Rust optimize | Two code paths | **Open** | **No bead** | Architectural |
-| Error taxonomy | DX | **Open** | `quantwave-1x2z` | `QuantwaveError` base |
-| PyPI doc links broken | Discovery | **Open** | `quantwave-l9ha` | — |
-| `__version__` missing | DX | **Open** | `quantwave-2klk` | — |
+| Error taxonomy | DX | **Closed** | `quantwave-1x2z` | `QuantwaveError` hierarchy + `ParityError` |
+| PyPI doc links broken | Discovery | **Closed** | `quantwave-l9ha` | `lavs9.github.io/quantwave` in README + pyproject |
+| `__version__` missing | DX | **Closed** | `quantwave-2klk` | `importlib.metadata` + test |
 | Linux arm64 wheel | Release matrix | **In progress** | `quantwave-7zsb` | — |
-| Explicit `quantwave.talib` submodule | DX | **Open** | `quantwave-xwiw` | — |
+| Explicit `quantwave.talib` submodule | DX | **Closed** | `quantwave-xwiw` | `list_functions()` + 20 TA-Lib names |
+| Categories API | DX | **Closed** | `quantwave-l99s` | `categories()`, `category()`, `indicators_by_category()` |
 | Workspace clippy (`quantwave-core` warnings) | CI noise | **Open** | Chore — **no bead** | Per-crate policy |
 
 ### 3.4 Bridge verdict
 
-**Production-grade for research workflows.** Metadata codegen and plugin parity removed the main “install and maintain two sources” barrier. Remaining bridge work is **polish** (errors, version, wheels, talib entry point) and **Python wrappers** for Rust-only analytics.
+**Production-grade for research workflows.** Metadata codegen and plugin parity removed the main “install and maintain two sources” barrier. Remaining bridge work is **release matrix** (arm64 wheels) and **Python wrappers** for Rust-only analytics.
 
 ---
 
@@ -217,14 +218,11 @@ From `planning/BACKTEST_ENGINE_RESEARCH.md`:
 | `quantwave-epqh`, `quantwave-wmd2` | S/R monitor fixes |
 | `quantwave-6br5`, `quantwave-p1k6` | Doc standards rollout |
 
-### 4.2 Open — live (9 beads)
+### 4.2 Open — live (2 beads)
 
 | Area | Bead IDs |
 |------|----------|
-| ML / PA docs polish | `quantwave-hbtm` |
-| Python DX | `quantwave-1x2z` (errors), `quantwave-2klk` (`__version__`), `quantwave-xwiw` (talib), `quantwave-l9ha` (PyPI links), `quantwave-l99s` (categories API) |
 | Release | `quantwave-7zsb` (Linux arm64 wheel, in_progress) |
-| Indicator docs | `quantwave-p49i` (boundary conditions) |
 | Backtest live (deferred) | `quantwave-cr6v-v2.7` (P4 Nautilus) |
 
 ### 4.3 Gaps without beads (v0.6 candidates)
@@ -296,7 +294,7 @@ Full parity achieved (`3f7g`). **Next:** document when to use plugin vs `.ta` la
 | 4 | Close PA epics + roadmap sync | **Done** (epics); roadmap update pending |
 | 5 | `quantwave verify` CLI | **Open** |
 | 6 | GitHub release + comparison one-pager | **Open** |
-| 7 | `hbtm` docs polish + `p49i` boundaries | **Open** |
+| 7 | `hbtm` docs polish + `p49i` boundaries | **Done** |
 
 ---
 

@@ -61,7 +61,7 @@ QuantWave's Python package provides three primary surfaces:
 
 - **Polars batch** — the `.ta` namespace (`df.lazy().with_columns(pl.col("close").ta.rsi(14), ...)`)
 - **Streaming** — lightweight Python wrappers around the same `Next<T>` Rust implementations (`from quantwave import RSI; rsi = RSI(14)`)
-- **Low-level / advanced** — direct access to result structs, options helpers, TA-Lib compatible functions, and India-specific analytics
+- **Low-level / advanced** — direct access to result structs, options helpers, TA-Lib compatible functions (`quantwave.talib`), discovery (`categories`, `boundary_info`), and India-specific analytics
 
 All three surfaces are backed by the same high-performance Rust core and are guaranteed to be bit-identical (validated by property tests against gold-standard vectors).
 
