@@ -1,0 +1,39 @@
+{
+  "_comment": "Python-specific fields not in Rust IndicatorMetadata. Keys override/extend Rust codegen slugs.",
+  "rsi": {
+    "data_inputs": ["close"],
+    "outputs": ["rsi"],
+    "warmup_bars": 14,
+    "required_params": ["period"]
+  },
+  "macd": {
+    "data_inputs": ["close"],
+    "outputs": ["macd", "signal", "histogram"],
+    "warmup_bars": 26,
+    "optional_params": {"fast": 12, "slow": 26, "signal": 9}
+  },
+  "supertrend": {
+    "data_inputs": ["high", "low", "close"],
+    "outputs": ["supertrend", "direction"],
+    "required_params": ["period", "multiplier"]
+  },
+  "geometric_patterns": {
+    "data_inputs": ["high", "low"],
+    "outputs": ["flag", "hs"],
+    "warmup_bars": 0,
+    "required_params": ["swing_strength"]
+  },
+  "sr_interaction_monitor": {
+    "slug_alias": "sr_monitor",
+    "data_inputs": ["high", "low", "close"],
+    "outputs": ["bias", "active_levels", "interaction_count", "has_interaction", "interaction_type", "level_price", "strength", "distance", "atr"],
+    "warmup_bars": 0,
+    "required_params": ["swing_strength", "touch_tolerance", "approach_zone"]
+  },
+  "market_structure": {
+    "data_inputs": ["high", "low"],
+    "outputs": ["bias", "has_flip", "flip_bearish", "flip_price", "flip_strength"],
+    "warmup_bars": 0,
+    "required_params": ["swing_strength"]
+  }
+}

@@ -3,6 +3,7 @@ pub mod features;
 pub mod indicators;
 pub mod options_india;
 pub mod regimes;
+pub mod streaming;
 pub mod traits;
 
 pub use regimes::analytics::*;
@@ -65,6 +66,7 @@ pub use indicators::vortex::VortexIndicator;
 pub use indicators::vpn::VPNIndicator;
 pub use indicators::vwap::AnchoredVWAP;
 pub use indicators::wavetrend::WaveTrend;
+pub use streaming::{StreamingReadiness, TrackedNext, track, warmup_from_params};
 pub use traits::{IndicatorConfig, Next, SmoothingAlgorithm};
 
 /// Re-export talib-rs for convenience

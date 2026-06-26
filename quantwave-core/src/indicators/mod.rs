@@ -2,6 +2,7 @@
 pub mod talib_wrapper;
 
 pub mod metadata;
+pub mod metadata_registry;
 
 pub mod adaptive_ema;
 pub mod alligator;

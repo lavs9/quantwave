@@ -9,16 +9,18 @@
 //! - Documentation generation (mkdocs)
 //! - Python package DX features
 //!
-//! Long-term this will be auto-generated (see quantwave-iqq7).
+//! Python metadata is codegen'd from this registry (quantwave-iqq7):
+//!   python scripts/regenerate_metadata_registry.py
+//!   python scripts/generate_indicator_metadata.py
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct ParamDef {
     pub name: &'static str,
     pub default: &'static str,
     pub description: &'static str,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct IndicatorMetadata {
     pub name: &'static str,
     /// One-sentence plain-English description of what the indicator computes.

@@ -1,13 +1,11 @@
 """
 Internal metadata registry for indicators (Python side).
 
-NOTE: The primary source of truth is in Rust (`quantwave-core/src/indicators/metadata.rs`
-and the per-indicator `*_METADATA` constants).
+Primary source of truth: Rust `*_METADATA` constants in quantwave-core, exported via
+`scripts/generate_indicator_metadata.py` into `_metadata_generated.py`.
 
-This Python file is currently manually synced. See task quantwave-i9dn for the
-mandatory process rule.
-
-Long-term plan: Auto-generated from Rust (see quantwave-iqq7 and scripts/generate_indicator_metadata.py).
+Hand-curated entries in `_HAND_METADATA` override generated slugs for Python DX
+(TA-Lib names, data_inputs, warmup). See quantwave-iqq7.
 
 Warmup / NaN semantics (quantwave-976r)
 ---------------------------------------
@@ -51,9 +49,8 @@ class IndicatorMeta:
     description: Optional[str] = None
 
 
-# This dictionary is currently hand-maintained.
-# Goal for future releases: generate it automatically from Rust.
-_METADATA: Dict[str, IndicatorMeta] = {
+# Hand-curated overrides for high-traffic Python/Ta-Lib indicators (win on slug collision).
+_HAND_METADATA: Dict[str, IndicatorMeta] = {
     # Momentum / Oscillators
     "rsi": IndicatorMeta("rsi", ["period"], {}, ["close"], ["rsi"], 14, "Momentum", description="Relative Strength Index"),
     "macd": IndicatorMeta("macd", [], {"fast": 12, "slow": 26, "signal": 9}, ["close"], ["macd", "signal", "histogram"], 26, "Momentum"),
@@ -132,8 +129,34 @@ _METADATA: Dict[str, IndicatorMeta] = {
     # Regime / State
     "market_state": IndicatorMeta("market_state", [], {}, ["close"], ["state", "confidence"], 50, "Regime"),
 
-    # Add more via metadata expansion or future auto-gen (iqq7)
 }
+
+
+def _build_metadata_registry() -> Dict[str, IndicatorMeta]:
+    """Merge Rust-generated entries with hand-curated overrides."""
+    merged: Dict[str, IndicatorMeta] = {}
+    try:
+        from quantwave._metadata_generated import GENERATED_ENTRIES
+
+        for slug, fields in GENERATED_ENTRIES.items():
+            merged[slug] = IndicatorMeta(
+                slug,
+                fields.get("required_params", []),
+                fields.get("optional_params", {}),
+                fields.get("data_inputs", ["close"]),
+                fields.get("outputs", [slug]),
+                fields.get("warmup_bars"),
+                fields.get("category"),
+                description=fields.get("description"),
+            )
+    except ImportError:
+        pass
+    merged.update(_HAND_METADATA)
+    return merged
+
+
+_METADATA: Dict[str, IndicatorMeta] = _build_metadata_registry()
+
 
 def metadata(name: str) -> Optional[IndicatorMeta]:
     key = name.lower()

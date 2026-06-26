@@ -382,7 +382,8 @@ class StreamingWrapper:
     Lightweight wrapper that adds is_ready and bars_consumed tracking
     around any streaming (Next<T>) indicator instance.
 
-    Uses metadata.warmup_bars for accurate readiness (instead of conservative heuristic).
+    Mirrors Rust ``quantwave_core::TrackedNext`` / ``StreamingReadiness`` (h6xe).
+    Uses metadata.warmup_bars for accurate readiness when ``name`` is provided.
 
     Usage:
         st = quantwave.streaming_class("supertrend")(period=10, multiplier=3)
@@ -392,13 +393,15 @@ class StreamingWrapper:
             if wrapped.is_ready:
                 ...
     """
-    def __init__(self, streaming_instance, name: str = None):
+    def __init__(self, streaming_instance, name: str = None, warmup_bars_count: int = None):
         self._inner = streaming_instance
         self._bars_consumed = 0
         self._is_ready = False
         self._name = name
         self._warmup = 0
-        if name:
+        if warmup_bars_count is not None:
+            self._warmup = int(warmup_bars_count)
+        elif name:
             try:
                 self._warmup = warmup_bars(name)
             except Exception:
@@ -427,11 +430,18 @@ class StreamingWrapper:
         return getattr(self._inner, name)
 
 
-def wrap_streaming(streaming_instance, name: str = None):
+def wrap_streaming(streaming_instance, name: str = None, warmup_bars_count: int = None):
     """Wrap a streaming indicator instance to get is_ready / bars_consumed tracking.
-    Pass name= for accurate warmup-based readiness from metadata.
+
+    Pass ``name=`` for warmup-based readiness from metadata, or ``warmup_bars_count=``
+    for an explicit bar count (Rust ``TrackedNext`` parity).
     """
-    return StreamingWrapper(streaming_instance, name=name)
+    return StreamingWrapper(streaming_instance, name=name, warmup_bars_count=warmup_bars_count)
+
+
+def track_streaming(streaming_instance, warmup_bars_count: int = None, name: str = None):
+    """Alias for ``wrap_streaming`` — explicit readiness tracking API (h6xe)."""
+    return wrap_streaming(streaming_instance, name=name, warmup_bars_count=warmup_bars_count)
 
 # (The old manual "class ta:" with 100+ hardcoded aliases has been replaced by the
 # dynamic population block earlier in this file. It pulls from _quantwave + _metadata
@@ -496,6 +506,7 @@ __all__ = [
     "assert_parity",
     "streaming_class",
     "wrap_streaming",
+    "track_streaming",
     "StreamingWrapper",
     "QuantwaveError",
     "InternalError",
