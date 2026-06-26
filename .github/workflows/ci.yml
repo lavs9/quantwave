@@ -46,8 +46,13 @@ jobs:
           key: ${{ runner.os }}-cargo-verify-${{ hashFiles('**/Cargo.lock') }}
       - name: Install Python deps and native extensions
         run: |
+          python -m venv .venv
+          source .venv/bin/activate
           pip install pytest polars maturin
           maturin develop --manifest-path quantwave-python/Cargo.toml --release
           maturin develop --manifest-path quantwave-backtest-py/Cargo.toml --release
       - run: chmod +x scripts/quantwave_verify.sh
-      - run: ./scripts/quantwave_verify.sh --skip-metadata
+      - name: quantwave verify
+        run: |
+          source .venv/bin/activate
+          ./scripts/quantwave_verify.sh --skip-metadata
