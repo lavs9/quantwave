@@ -3,8 +3,32 @@ from polars.plugins import register_plugin_function
 from pathlib import Path
 from typing import Union
 
+from .custom_0 import Custom0Extensions
+from .custom_1 import Custom1Extensions
+from .custom_2 import Custom2Extensions
+from .custom_3 import Custom3Extensions
+from .custom_4 import Custom4Extensions
+from .custom_5 import Custom5Extensions
+from .custom_6 import Custom6Extensions
+from .custom_7 import Custom7Extensions
+from .custom_8 import Custom8Extensions
+from .custom_9 import Custom9Extensions
+from .custom_10 import Custom10Extensions
+
 @pl.api.register_expr_namespace("ta")
-class TaNamespace:
+class TaNamespace(
+    Custom0Extensions,
+    Custom1Extensions,
+    Custom2Extensions,
+    Custom3Extensions,
+    Custom4Extensions,
+    Custom5Extensions,
+    Custom6Extensions,
+    Custom7Extensions,
+    Custom8Extensions,
+    Custom9Extensions,
+    Custom10Extensions
+):
     def __init__(self, expr: pl.Expr):
         self._expr = expr
 
@@ -27,6 +51,12 @@ class TaNamespace:
     def bbands(self, timeperiod: int = 5, nbdevup: float = 2.0, nbdevdn: float = 2.0, matype: int = 0) -> pl.Expr:
         """Calculates Bollinger Bands. Returns a struct containing: upper, middle, lower. matype defaults to 0 (SMA)."""
         return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="bbands", is_elementwise=False, kwargs={"timeperiod": timeperiod, "nbdevup": nbdevup, "nbdevdn": nbdevdn, "matype": matype})
+
+    def supertrend(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], period: int = 10, multiplier: float = 3.0) -> pl.Expr:
+        """Calculates SuperTrend. Returns a struct containing: supertrend, direction. Note: self must be close."""
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        return register_plugin_function(args=[high, low, self._expr], plugin_path=Path(__file__).parent, function_name="supertrend", is_elementwise=False, kwargs={"period": period, "multiplier": multiplier})
 
     # --------------------------------------------------------------------------------
     # Momentum & Trend

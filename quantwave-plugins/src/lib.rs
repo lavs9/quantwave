@@ -229,3 +229,15 @@ fn quantwave_plugins(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     Ok(())
 }
 pub mod generated;
+pub mod custom;
+pub mod custom_0;
+pub mod custom_1;
+pub mod custom_2;
+pub mod custom_3;
+pub mod custom_4;
+pub mod custom_5;
+pub mod custom_6;
+pub mod custom_7;
+pub mod custom_8;
+pub mod custom_9;
+pub mod custom_10;
