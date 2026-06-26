@@ -67,13 +67,17 @@ If we meet those four, indicators are SOA for research and production signal gen
 |------|------|----------------|----------|
 | `quantwave-wnd9` | Fractional differencing indicator + Polars/Python | ML pipelines get stationary features without ad-hoc hacks; aligns with Prado-style workflows | P3 (Tier 3) |
 
-### No bead yet (optional / low urgency)
+### Doc SOA epic (filed 2026-06-26)
 
-| Gap | Impact if ignored | Suggested action |
-|-----|-------------------|------------------|
-| Long-tail indicator pages below STANDARDS | Evaluators hitting obscure indicators see thin docs; math still works | File bead when doing doc sprint, or auto-gen from metadata |
-| mkdocs pages from `export_metadata` JSON | Manual doc drift vs registry | File bead under `motd` or doc epic |
-| Per-indicator `boundary_info` in generated mkdocs | Boundary rules only in Python API, not every native page | Extend doc generator (xtask) |
+Parent: **`quantwave-frq0`** — [planning/beads_doc_soa_epic.md](./beads_doc_soa_epic.md)
+
+| Bead | Work | Blocks |
+|------|------|--------|
+| `quantwave-frq0.1` | Depth lint (thin page detection) | — start here |
+| `quantwave-frq0.3` | Metadata-driven doc generator | — parallel with .1 |
+| `quantwave-frq0.4` | `boundary_info` on native pages | `.3` |
+| `quantwave-frq0.2` | Long-tail page enrichment | `.1`, `.4` |
+| `quantwave-frq0.5` | CI doc drift gate + verify | `.2`, `.3` |
 
 ---
 

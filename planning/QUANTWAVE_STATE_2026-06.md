@@ -52,10 +52,10 @@ Run `bd ready --json` for current state. Snapshot:
 
 | Gap | Area | Impact |
 |-----|------|--------|
-| Long-tail indicator pages uneven | Indicators | Thin docs on obscure names; code works |
-| mkdocs from metadata registry | Indicators | Manual doc drift |
 | `winsorize` on Python cross-sectional | Backtest | Manual winsorize in Polars instead |
 | Workspace clippy noise | Chore | CI lint not strict workspace-wide |
+
+Indicator doc gaps (long-tail depth, metadata-driven mkdocs, boundary_info on pages) → epic **`quantwave-frq0`** — see [INDICATORS_SOA.md](./INDICATORS_SOA.md).
 
 ---
 
