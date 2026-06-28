@@ -8,9 +8,19 @@ cd "$ROOT"
 
 VERSION="${1:-$(grep -m1 '^\s*version\s*=' Cargo.toml | sed -E 's/.*"([^"]+)".*/\1/')}"
 
+crate_on_registry() {
+  local crate="$1"
+  local version="$2"
+  curl -sf "https://crates.io/api/v1/crates/${crate}/${version}" >/dev/null 2>&1
+}
+
 publish_crate() {
   local pkg="$1"
   echo "== Publishing ${pkg} =="
+  if crate_on_registry "${pkg}" "${VERSION}"; then
+    echo "Skip ${pkg}: ${VERSION} already on crates.io"
+    return 0
+  fi
   set +e
   local output
   output="$(cargo publish -p "${pkg}" 2>&1)"
@@ -21,7 +31,8 @@ publish_crate() {
     echo "Published ${pkg}"
     return 0
   fi
-  if echo "${output}" | grep -qiE 'already been uploaded|already exists on registry'; then
+  # Race: published between our check and cargo publish.
+  if echo "${output}" | grep -qiE 'already (been uploaded|exists)'; then
     echo "Skip ${pkg}: version already on crates.io"
     return 0
   fi
@@ -34,7 +45,7 @@ wait_for_crate() {
   local version="$2"
   local attempts="${3:-36}"
   for ((i = 1; i <= attempts; i++)); do
-    if curl -sf "https://crates.io/api/v1/crates/${crate}/${version}" >/dev/null; then
+    if crate_on_registry "${crate}" "${version}"; then
       echo "Indexed: ${crate} ${version}"
       return 0
     fi
