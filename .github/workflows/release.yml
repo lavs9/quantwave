@@ -1,3 +1,12 @@
+# Release — push a version tag (v*)
+#
+# Pipeline:
+#   1. publish-rust      — crates.io (core → polars → plugins → backtest → quantwave)
+#   2. build-python-*    — wheels (linux x64/arm, macOS, windows) + sdist
+#   3. publish-python    — PyPI via twine
+#
+# Day-to-day CI is .github/workflows/ci.yml (no publish).
+
 name: Release
 
 on:
@@ -7,31 +16,29 @@ on:
 
 jobs:
   publish-rust:
-    name: Publish Rust Crates
+    name: Publish Rust crates
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-      
-      - name: Cache Cargo
-        uses: actions/cache@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Publish quantwave-core
         run: cargo publish -p quantwave-core
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
-        
-      - name: Wait for quantwave-core to be available
+
+      - name: Wait for quantwave-core on crates.io
         run: sleep 45
-        
+
       - name: Publish quantwave-polars
         run: cargo publish -p quantwave-polars
         env:
@@ -47,7 +54,7 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
 
-      - name: Wait for dependencies to be available
+      - name: Wait for dependencies on crates.io
         run: sleep 45
 
       - name: Publish quantwave
@@ -56,23 +63,20 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
 
   build-python-wheels:
-    name: Build Python Wheels (${{ matrix.platform }})
+    name: Python wheels (${{ matrix.platform }})
     needs: [publish-rust]
     runs-on: ${{ matrix.platform }}
     strategy:
       matrix:
         platform: [ubuntu-latest, ubuntu-22.04-arm, macos-latest, windows-latest]
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
 
       - name: Install maturin and uniffi-bindgen
         run: pip install maturin uniffi-bindgen==0.31.0
@@ -84,83 +88,74 @@ jobs:
         env:
           MACOSX_DEPLOYMENT_TARGET: "11.0"
 
-      - name: Upload wheels
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.platform }}
           path: dist/*.whl
 
   build-python-sdist:
-    name: Build Python Source Distribution
+    name: Python sdist
     needs: [publish-rust]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install maturin and uniffi-bindgen
-        run: pip install maturin uniffi-bindgen==0.31.0
+
+      - run: pip install maturin uniffi-bindgen==0.31.0
+
       - name: Build sdist
         run: |
           cd quantwave-python
           maturin sdist --out ../dist
-      - name: Upload sdist
-        uses: actions/upload-artifact@v4
+
+      - uses: actions/upload-artifact@v4
         with:
           name: wheels-sdist
           path: dist/*.tar.gz
 
   publish-python:
-    name: Publish Python to PyPI
+    name: Publish Python (PyPI)
     needs: [build-python-wheels, build-python-sdist]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # Download wheels from each platform explicitly for better reliability
-      - name: Download Ubuntu x86_64 wheels
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: wheels-ubuntu-latest
           path: dist
 
-      - name: Download Ubuntu arm64 wheels
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: wheels-ubuntu-22.04-arm
           path: dist
 
-      - name: Download macOS wheels
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: wheels-macos-latest
           path: dist
 
-      - name: Download Windows wheels
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: wheels-windows-latest
           path: dist
 
-      - name: Download sdist
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: wheels-sdist
           path: dist
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install twine
-        run: pip install twine
+      - run: pip install twine
 
       - name: Publish to PyPI
         run: |
-          echo "Contents of dist directory:"
           ls -la dist/
           twine upload --skip-existing dist/*
         env:

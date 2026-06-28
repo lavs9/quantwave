@@ -1,3 +1,12 @@
+# CI — every push/PR to main
+#
+# Pipeline:
+#   1. verify   — ./scripts/quantwave_verify.sh (metadata, docs, nextest, pytest)
+#   2. plugins  — plugin wheel smoke test (only when quantwave-plugins/ changes)
+#   3. docs     — mkdocs gh-pages deploy (main branch only, after verify passes)
+#
+# Release (crates.io + PyPI) is a separate workflow: release.yml on v* tags.
+
 name: CI
 
 on:
@@ -7,59 +16,118 @@ on:
     branches: [main]
   workflow_dispatch:
 
-jobs:
-  metadata-drift:
-    name: Metadata codegen drift
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-metadata-${{ hashFiles('**/Cargo.lock') }}
-      - name: Check metadata drift
-        run: python3 scripts/check_metadata_drift.py
-      - name: Check doc drift
-        run: python3 scripts/check_doc_drift.py
-      - name: Lint doc structure
-        run: python3 docs/upgrade_to_standards.py --lint
-      - name: Lint doc depth
-        run: python3 docs/upgrade_to_standards.py --depth-lint
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
+jobs:
   verify:
-    name: quantwave verify
+    name: Quality gate
     runs-on: ubuntu-latest
-    needs: [metadata-drift]
     steps:
       - uses: actions/checkout@v4
+
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@nextest
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-verify-${{ hashFiles('**/Cargo.lock') }}
-      - name: Install Python deps and native extensions
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build Python extensions
         run: |
           python -m venv .venv
           source .venv/bin/activate
           pip install pytest polars maturin "uniffi-bindgen==0.31.0"
           maturin develop --manifest-path quantwave-python/Cargo.toml --release
           maturin develop --manifest-path quantwave-backtest-py/Cargo.toml --release
-      - run: chmod +x scripts/quantwave_verify.sh
+
       - name: quantwave verify
         run: |
           source .venv/bin/activate
-          ./scripts/quantwave_verify.sh --skip-metadata
+          chmod +x scripts/quantwave_verify.sh
+          ./scripts/quantwave_verify.sh
+
+  plugins:
+    name: Plugin wheels
+    needs: [verify]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            plugins:
+              - 'quantwave-plugins/**'
+
+      - uses: actions/setup-python@v5
+        if: steps.changes.outputs.plugins == 'true' || github.event_name == 'workflow_dispatch'
+        with:
+          python-version: "3.12"
+
+      - uses: dtolnay/rust-toolchain@stable
+        if: steps.changes.outputs.plugins == 'true' || github.event_name == 'workflow_dispatch'
+
+      - name: Build plugin wheel
+        if: steps.changes.outputs.plugins == 'true' || github.event_name == 'workflow_dispatch'
+        uses: PyO3/maturin-action@v1
+        with:
+          command: build
+          args: --release --manifest-path quantwave-plugins/Cargo.toml --out dist
+
+      - name: Test plugin wheel
+        if: steps.changes.outputs.plugins == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          pip install polars pytest
+          pip install dist/*.whl
+          pytest quantwave-plugins/tests -q
+
+      - name: Skipped (no plugin changes)
+        if: steps.changes.outputs.plugins != 'true' && github.event_name != 'workflow_dispatch'
+        run: echo "quantwave-plugins/ unchanged — plugin wheel job skipped."
+
+  deploy-docs:
+    name: Deploy docs
+    needs: [verify]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      DISABLE_MKDOCS_2_WARNING: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: actions/cache@v4
+        with:
+          path: .cache
+          key: mkdocs-material-${{ runner.os }}-${{ hashFiles('requirements-docs.txt') }}
+          restore-keys: mkdocs-material-${{ runner.os }}-
+
+      - name: Install docs dependencies
+        run: pip install -r requirements-docs.txt
+
+      - name: Install quantwave from PyPI (notebook export)
+        run: pip install quantwave || echo "PyPI wheel not yet available; notebook export may use fallbacks."
+
+      - run: cargo run --package quantwave-xtask
+      - run: python docs/export_notebooks.py
+      - run: mkdocs gh-deploy --force

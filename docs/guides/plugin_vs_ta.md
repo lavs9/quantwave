@@ -85,7 +85,7 @@ import quantwave as qw
 qw.assert_parity("rsi", {"period": 14}, closes)
 ```
 
-CI runs `scripts/quantwave_verify.sh` (nextest + pytest) on every push to `main`.
+CI (`.github/workflows/ci.yml`) runs `scripts/quantwave_verify.sh` on every push/PR to `main`; docs deploy and plugin wheels are jobs in the same workflow. See `.github/workflows/README.md`.
 
 ---
 

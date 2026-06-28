@@ -2,7 +2,7 @@
 """
 Export marimo notebooks to self-contained HTML for embedding in the static docs site.
 
-This script is run during the documentation build (see .github/workflows/docs.yml).
+This script is run during the documentation build (see .github/workflows/ci.yml deploy-docs job).
 
 We install the released `quantwave` package from PyPI before running this script.
 This allows the notebooks to actually execute (including `import quantwave` and
