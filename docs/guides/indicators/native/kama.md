@@ -84,7 +84,7 @@ df = (
     pl.read_csv('ohlcv.csv')
     .lazy()
     .with_columns(
-        pl.col("close").ta.kama("close", 10).alias("kama")
+        pl.col("close").ta.kama(10).alias("kama")
     )
     .collect()
 )

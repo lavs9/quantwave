@@ -76,7 +76,7 @@ df = (
     pl.read_csv('ohlcv.csv')
     .lazy()
     .with_columns(
-        pl.col("close").ta.sma("close", 14).alias("simple_moving_average")
+        pl.col("close").ta.sma(14).alias("simple_moving_average")
     )
     .collect()
 )

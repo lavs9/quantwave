@@ -76,7 +76,7 @@ df = (
     pl.read_csv('ohlcv.csv')
     .lazy()
     .with_columns(
-        pl.col("close").ta.trix("close", 15).alias("trix")
+        pl.col("close").ta.trix(15).alias("trix")
     )
     .collect()
 )

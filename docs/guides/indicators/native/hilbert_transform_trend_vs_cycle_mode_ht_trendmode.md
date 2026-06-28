@@ -75,7 +75,7 @@ df = (
     pl.read_csv('ohlcv.csv')
     .lazy()
     .with_columns(
-        pl.col("close").ta.ht_trendmode("close", 14).alias("hilbert_transform_trend_vs_cycle_mode_ht_trendmode")
+        pl.col("close").ta.ht_trendmode(14).alias("hilbert_transform_trend_vs_cycle_mode_ht_trendmode")
     )
     .collect()
 )

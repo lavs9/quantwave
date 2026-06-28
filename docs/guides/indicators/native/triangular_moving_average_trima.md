@@ -76,7 +76,7 @@ df = (
     pl.read_csv('ohlcv.csv')
     .lazy()
     .with_columns(
-        pl.col("close").ta.trima("close", 30).alias("triangular_moving_average_trima")
+        pl.col("close").ta.trima(30).alias("triangular_moving_average_trima")
     )
     .collect()
 )

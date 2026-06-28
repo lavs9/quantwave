@@ -76,7 +76,7 @@ df = (
     pl.read_csv('ohlcv.csv')
     .lazy()
     .with_columns(
-        pl.col("close").ta.mom("close", 10).alias("momentum_mom")
+        pl.col("close").ta.mom(10).alias("momentum_mom")
     )
     .collect()
 )

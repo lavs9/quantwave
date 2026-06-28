@@ -75,7 +75,7 @@ df = (
     pl.read_csv('ohlcv.csv')
     .lazy()
     .with_columns(
-        pl.col("close").ta.ht_dcperiod("close", 14).alias("hilbert_transform_dominant_cycle_period_ht_dcperiod")
+        pl.col("close").ta.ht_dcperiod(14).alias("hilbert_transform_dominant_cycle_period_ht_dcperiod")
     )
     .collect()
 )

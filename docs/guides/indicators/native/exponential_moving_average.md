@@ -76,7 +76,7 @@ df = (
     pl.read_csv('ohlcv.csv')
     .lazy()
     .with_columns(
-        pl.col("close").ta.ema("close", 14).alias("exponential_moving_average")
+        pl.col("close").ta.ema(14).alias("exponential_moving_average")
     )
     .collect()
 )

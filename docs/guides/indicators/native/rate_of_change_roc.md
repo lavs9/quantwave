@@ -76,7 +76,7 @@ df = (
     pl.read_csv('ohlcv.csv')
     .lazy()
     .with_columns(
-        pl.col("close").ta.roc("close", 10).alias("rate_of_change_roc")
+        pl.col("close").ta.roc(10).alias("rate_of_change_roc")
     )
     .collect()
 )

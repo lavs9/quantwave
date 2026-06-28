@@ -76,7 +76,7 @@ df = (
     pl.read_csv('ohlcv.csv')
     .lazy()
     .with_columns(
-        pl.col("close").ta.cmo("close", 14).alias("chande_momentum_oscillator_cmo")
+        pl.col("close").ta.cmo(14).alias("chande_momentum_oscillator_cmo")
     )
     .collect()
 )

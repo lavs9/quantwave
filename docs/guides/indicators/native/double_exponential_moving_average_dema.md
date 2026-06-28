@@ -76,7 +76,7 @@ df = (
     pl.read_csv('ohlcv.csv')
     .lazy()
     .with_columns(
-        pl.col("close").ta.dema("close", 30).alias("double_exponential_moving_average_dema")
+        pl.col("close").ta.dema(30).alias("double_exponential_moving_average_dema")
     )
     .collect()
 )

@@ -75,7 +75,7 @@ df = (
     pl.read_csv('ohlcv.csv')
     .lazy()
     .with_columns(
-        pl.col("close").ta.ht_dcphase("close", 14).alias("hilbert_transform_dominant_cycle_phase_ht_dcphase")
+        pl.col("close").ta.ht_dcphase(14).alias("hilbert_transform_dominant_cycle_phase_ht_dcphase")
     )
     .collect()
 )

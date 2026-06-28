@@ -539,7 +539,7 @@ def render_usage(rec: IndicatorRecord, api: dict[str, dict]) -> str:
                 "    pl.read_csv('ohlcv.csv')\n"
                 "    .lazy()\n"
                 "    .with_columns(\n"
-                f'        pl.col("close").ta.{method}("close", {period}).alias("{rec.slug}")\n'
+                f'        pl.col("close").ta.{method}({period}).alias("{rec.slug}")\n'
                 "    )\n"
                 "    .collect()\n"
                 ")\n```"

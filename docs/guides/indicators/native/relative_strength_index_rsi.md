@@ -76,7 +76,7 @@ df = (
     pl.read_csv('ohlcv.csv')
     .lazy()
     .with_columns(
-        pl.col("close").ta.rsi("close", 14).alias("relative_strength_index_rsi")
+        pl.col("close").ta.rsi(14).alias("relative_strength_index_rsi")
     )
     .collect()
 )
