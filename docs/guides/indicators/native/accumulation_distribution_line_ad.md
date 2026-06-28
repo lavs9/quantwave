@@ -12,13 +12,18 @@ A volume-based indicator designed to measure the cumulative flow of money into a
 
 ## Description
 
-A volume-based indicator designed to measure the cumulative flow of money into and out of a security.
+The Accumulation/Distribution Line (AD) indicator is a technical analysis tool that a volume-based indicator designed to measure the cumulative flow of money into and out of a security.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Use to confirm price trends or identify potential reversals through divergences. Rising AD confirms an uptrend; falling AD confirms a downtrend.
 
 Developed by Marc Chaikin, the AD line uses the relationship between price and volume to determine whether a security is being accumulated or distributed. It is calculated by multiplying the Money Flow Multiplier by the period's volume and adding it to a cumulative total. — StockCharts ChartSchool
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -86,6 +91,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Single-series indicators ignore volume unless otherwise documented.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; streaming and Polars batch paths are bit-identical.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Output starts from bar 1; warmup_bars marks period-stability, not NaN. |
+| period > len | Cumulative sum continues; period only affects smoothed variants. |
+| NaN inputs | NaN inputs may produce NaN or skip depending on indicator. |
+| Invalid params | Invalid params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

@@ -12,13 +12,18 @@ An oscillator introduced by John Ehlers that models the cyclical component of a 
 
 ## Description
 
-An oscillator introduced by John Ehlers that models the cyclical component of a time series using FIR smoothing.
+The Cyber Cycle indicator is a technical analysis tool that an oscillator introduced by john ehlers that models the cyclical component of a time series using fir smoothing.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Use as a high-resolution short-term cycle oscillator to time entries and exits around cycle turns. Pair with a trend classifier to suppress signals in trending conditions.
 
 Ehlers introduces the Cyber Cycle in Cybernetic Analysis (2004) as a bandpass-like filter isolating the short-term cyclical component. The trigger line is the Cyber Cycle delayed by one bar, creating a clean crossover signal without derivative noise.
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -98,6 +103,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Prefer chaining with other Ehlers tools (Roofing Filter, SuperSmoother) on noisy inputs.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; suitable for live streaming and batch feature pipelines.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

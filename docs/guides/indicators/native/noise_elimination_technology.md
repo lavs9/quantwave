@@ -12,13 +12,18 @@ Nonlinear noise removal using Kendall correlation against a straight line.
 
 ## Description
 
-Nonlinear noise removal using Kendall correlation against a straight line.
+The Noise Elimination Technology indicator is a technical analysis tool that nonlinear noise removal using kendall correlation against a straight line.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Use as a pre-filter to remove spike noise from price or intermediate indicator data without introducing lag. Particularly useful when raw tick or 1-minute data is used.
 
 Ehlers Noise Elimination Technology (NET) is a nonlinear filter that removes isolated noise spikes while leaving genuine price moves intact. It works by comparing each bar to its neighbors and replacing outliers with interpolated values, achieving noise reduction without the lag of conventional smoothers.
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -98,6 +103,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Prefer chaining with other Ehlers tools (Roofing Filter, SuperSmoother) on noisy inputs.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; suitable for live streaming and batch feature pipelines.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

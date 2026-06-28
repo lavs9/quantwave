@@ -86,6 +86,7 @@ class IndicatorRecord:
     formula_latex: str = ""
     gold_standard_file: str = ""
     category: str = ""
+    boundary_kind: str = ""
 
     @property
     def slug(self) -> str:
@@ -241,6 +242,61 @@ def parse_polars_api() -> dict[str, dict]:
 
 def is_compliant(content: str) -> bool:
     return "## Visual Example" in content
+
+
+
+def depth_lint_violations(rec: IndicatorRecord, content: str) -> list[str]:
+    issues = []
+    
+    # 1. Description duplication
+    desc_match = re.search(r"## Description\n\n(.*?)(?=\n\n|\n##)", content, re.S)
+    if desc_match:
+        first_para = desc_match.group(1).strip()
+        clean_para = re.sub(r'[*_]', '', first_para).strip()
+        clean_meta = re.sub(r'[*_]', '', rec.description).strip()
+        if clean_para == clean_meta:
+            issues.append("Description duplication (verbatim copy of metadata)")
+    
+    # 2. Generic edge bullets
+    edge_match = re.search(r"## Edge Cases & Limitations\n\n(.*?)(?=\n\n|\n##)", content, re.S)
+    if edge_match:
+        edges_text = edge_match.group(1).strip()
+        if "universal Next<T> trait" in edges_text:
+            issues.append("Generic edge bullets (contains bulk boilerplate)")
+        bullets = [b for b in edges_text.split("\n") if b.strip().startswith("- ")]
+        if len(bullets) < 4:
+            issues.append(f"Generic edge bullets (only {len(bullets)} bullets, need 4+)")
+    else:
+        issues.append("Missing Edge Cases section")
+        
+    # 3. Broken Polars example
+    usage_match = re.search(r"## Usage Examples\n\n(.*?)(?=\n\n|\n##)", content, re.S)
+    if usage_match:
+        usage_text = usage_match.group(1)
+        if re.search(r"\.ta\.\w+\(\"close\",", usage_text):
+            issues.append("Broken Polars example (wrong signature `.ta.<method>(\"close\",`)")
+        if "map_batches" in usage_text:
+            issues.append("Broken Polars example (uses map_batches instead of native plugin)")
+            
+    # 4. Missing warmup specificity
+    if rec.category.lower() != "patterns" and not rec.is_pattern and rec.boundary_kind == "scalar":
+        if edge_match:
+            edges_text = edge_match.group(1).lower()
+            if "warm-up" in edges_text or "warmup" in edges_text:
+                if not re.search(r"\d+", edges_text):
+                    issues.append("Missing warmup specificity (no numeric bar count)")
+            else:
+                issues.append("Missing warmup specificity (no mention of warmup)")
+                
+    # 5. Low word count
+    between_match = re.search(r"## Description\n(.*?)\n## Formula", content, re.S)
+    if between_match:
+        words = len(between_match.group(1).split())
+        min_words = 50 if rec.is_pattern else 80
+        if words < min_words:
+            issues.append(f"Low word count ({words} words, need {min_words}+)")
+            
+    return issues
 
 
 def lint_violations(content: str) -> list[str]:
@@ -599,6 +655,51 @@ def render_sources(rec: IndicatorRecord) -> str:
     return "\n".join(lines) + "\n"
 
 
+
+_BOUNDARY_BY_KIND = {
+    "scalar": [
+        "| Condition | Behavior |",
+        "|-----------|----------|",
+        "| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |",
+        "| period > len | When period exceeds series length, output is all NaN. |",
+        "| NaN inputs | NaN in input propagates to output (NaN out). |",
+        "| Invalid params | Non-positive period or missing required params raise ValueError. |",
+        "| Empty data | Empty input returns an empty result series. |"
+    ],
+    "cumulative": [
+        "| Condition | Behavior |",
+        "|-----------|----------|",
+        "| Warm-up | Output starts from bar 1; warmup_bars marks period-stability, not NaN. |",
+        "| period > len | Cumulative sum continues; period only affects smoothed variants. |",
+        "| NaN inputs | NaN inputs may produce NaN or skip depending on indicator. |",
+        "| Invalid params | Invalid params raise ValueError. |",
+        "| Empty data | Empty input returns an empty result series. |"
+    ],
+    "event": [
+        "| Condition | Behavior |",
+        "|-----------|----------|",
+        "| Warm-up | Early bars return empty event lists or default structs (no scalar NaN). |",
+        "| period > len | Insufficient history yields no events rather than NaN scalars. |",
+        "| NaN inputs | NaN OHLC typically suppresses event detection for that bar. |",
+        "| Invalid params | Invalid swing_strength or tolerance raises ValueError. |",
+        "| Empty data | Empty input returns empty event collections. |"
+    ],
+    "pattern": [
+        "| Condition | Behavior |",
+        "|-----------|----------|",
+        "| Warm-up | Pattern functions emit 0 (no pattern) until enough bars exist. |",
+        "| period > len | Short series returns all zeros (no pattern detected). |",
+        "| NaN inputs | Bars with NaN OHLC are treated as no pattern (0). |",
+        "| Invalid params | N/A for most candlestick patterns. |",
+        "| Empty data | Empty input returns an empty integer series. |"
+    ],
+}
+
+def render_boundary(rec: IndicatorRecord) -> str:
+    kind = rec.boundary_kind or "scalar"
+    lines = _BOUNDARY_BY_KIND.get(kind, _BOUNDARY_BY_KIND["scalar"])
+    return "## Boundary Behavior\n\n" + "\n".join(lines) + "\n"
+
 def render_page(rec: IndicatorRecord, api: dict[str, dict]) -> str:
     parts = [
         f"# {rec.name}\n",
@@ -612,6 +713,7 @@ def render_page(rec: IndicatorRecord, api: dict[str, dict]) -> str:
         render_params(rec),
         render_usage(rec, api),
         render_edges(rec),
+        render_boundary(rec),
         render_related(rec),
         render_sources(rec),
     ]
@@ -650,6 +752,31 @@ def upgrade_all(dry_run: bool = False) -> tuple[int, int, int]:
     return upgraded, skipped, missing
 
 
+
+def depth_lint_all() -> int:
+    failures = 0
+    metadata = parse_metadata_files()
+    for md_path in sorted(NATIVE_DOCS.glob("*.md")):
+        if md_path.name in SKIP_FILES:
+            continue
+        slug = SLUG_ALIASES.get(md_path.stem, md_path.stem)
+        rec = metadata.get(slug)
+        if not rec:
+            rec = next((r for r in metadata.values() if r.slug == slug), None)
+        if not rec:
+            continue
+            
+        issues = depth_lint_violations(rec, md_path.read_text(encoding="utf-8"))
+        if issues:
+            failures += 1
+            print(f"FAIL {md_path.name}: {', '.join(issues)}")
+    if failures:
+        print(f"\n{failures} pages failed depth lint")
+        return 1
+    print("All native indicator pages pass depth lint")
+    return 0
+
+
 def lint_all() -> int:
     failures = 0
     for md_path in sorted(NATIVE_DOCS.glob("*.md")):
@@ -670,7 +797,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--lint", action="store_true", help="Lint pages against standards")
+    parser.add_argument("--depth-lint", action="store_true", help="Depth lint pages against standards")
     args = parser.parse_args()
+
+    if args.depth_lint:
+        return depth_lint_all()
 
     if args.lint:
         return lint_all()

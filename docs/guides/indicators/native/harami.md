@@ -59,6 +59,16 @@ Bit-identical results across all three surfaces.
 - Harami Cross (second candle is Doji) is generally stronger.
 - Most useful after a clear impulse move, not in chop.
 
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Pattern functions emit 0 (no pattern) until enough bars exist. |
+| period > len | Short series returns all zeros (no pattern detected). |
+| NaN inputs | Bars with NaN OHLC are treated as no pattern (0). |
+| Invalid params | N/A for most candlestick patterns. |
+| Empty data | Empty input returns an empty integer series. |
+
 ## Related Indicators & See Also
 
 - [Harami Cross](harami_cross.md), [Doji](doji.md) family, [Engulfing](engulfing.md)

@@ -12,13 +12,18 @@ A momentum oscillator that shows the percent rate of change of a triple exponent
 
 ## Description
 
-A momentum oscillator that shows the percent rate of change of a triple exponentially smoothed moving average.
+The TRIX indicator is a technical analysis tool that a momentum oscillator that shows the percent rate of change of a triple exponentially smoothed moving average.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Use to filter out market noise and identify trend reversals. TRIX crossings of the zero line or a signal line can provide trade entries.
 
 Developed by Jack Hutson in the early 1980s, TRIX is a powerful momentum oscillator that effectively filters out minor price fluctuations. By triple-smoothing an EMA, it emphasizes the underlying trend and provides a clear signal when the trend changes direction. — StockCharts ChartSchool
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -87,6 +92,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Single-series indicators ignore volume unless otherwise documented.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; streaming and Polars batch paths are bit-identical.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

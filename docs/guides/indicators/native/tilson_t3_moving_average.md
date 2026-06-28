@@ -12,13 +12,18 @@ A smooth, low-lag moving average that uses multiple exponential smoothing.
 
 ## Description
 
-A smooth, low-lag moving average that uses multiple exponential smoothing.
+The Tilson T3 Moving Average indicator is a technical analysis tool that a smooth, low-lag moving average that uses multiple exponential smoothing.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Use for trend following in noisy markets. T3 offers a superior balance between lag reduction and smoothness compared to DEMA or TEMA.
 
 Developed by Tim Tilson in 1998, the T3 moving average uses a 'v-factor' (volume factor) to control how much the indicator reacts to price changes. It is essentially a sextuple EMA smoothing process that provides a very smooth curve with remarkably little lag. — Technical Analysis of Stocks & Commodities
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -93,6 +98,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Single-series indicators ignore volume unless otherwise documented.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; streaming and Polars batch paths are bit-identical.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

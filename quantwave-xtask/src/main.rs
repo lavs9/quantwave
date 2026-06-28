@@ -120,144 +120,39 @@ For more information, visit the [official TA-Lib website](https://ta-lib.org/) o
     Ok(())
 }
 
-fn generate_native_docs(docs_dir: &Path, indicators_dir: &Path) -> Result<Vec<(String, String, String)>> {
-    let mut generated = Vec::new();
-
-    for entry in fs::read_dir(indicators_dir).with_context(|| format!("Failed to read indicators directory: {:?}", indicators_dir))? {
-        let entry = entry.context("Failed to read directory entry")?;
-        let path = entry.path();
-        if path.extension().unwrap_or_default() == "rs" {
-            let content = fs::read_to_string(&path).with_context(|| format!("Failed to read indicator file: {:?}", path))?;
-            if let Ok(ast) = syn::parse_file(&content) {
-                for item in ast.items {
-                    if let syn::Item::Const(item_const) = item {
-                        let is_metadata = match &*item_const.ty {
-                            syn::Type::Path(type_path) => {
-                                type_path.path.segments.last().map(|s| s.ident.to_string())
-                                    == Some("IndicatorMetadata".to_string())
-                            }
-                            _ => false,
-                        };
-
-                        if is_metadata && let syn::Expr::Struct(expr_struct) = &*item_const.expr {
-                            let mut name = String::new();
-                            let mut desc = String::new();
-                            let mut usage = String::new();
-                            let mut keywords: Vec<String> = Vec::new();
-                            let mut ehlers_summary = String::new();
-                            let mut latex = String::new();
-                            let mut source = String::new();
-                            let mut category = String::new();
-                            let mut params_str = String::new();
-
-                            for field in &expr_struct.fields {
-                                if let syn::Member::Named(ident) = &field.member {
-                                    let field_name = ident.to_string();
-
-                                    // Simple &'static str fields
-                                    if let syn::Expr::Lit(expr_lit) = &field.expr && let syn::Lit::Str(lit_str) = &expr_lit.lit {
-                                        match field_name.as_str() {
-                                            "name" => name = lit_str.value(),
-                                            "description" => desc = lit_str.value(),
-                                            "usage" => usage = lit_str.value(),
-                                            "ehlers_summary" => ehlers_summary = lit_str.value(),
-                                            "formula_source" => source = lit_str.value(),
-                                            "formula_latex" => latex = lit_str.value(),
-                                            "category" => category = lit_str.value(),
-                                            _ => {}
-                                        }
-                                    } else if let syn::Expr::Reference(expr_ref) = &field.expr && let syn::Expr::Array(expr_array) = &*expr_ref.expr {
-                                        if field_name == "keywords" {
-                                            for elem in &expr_array.elems {
-                                                if let syn::Expr::Lit(kw_lit) = elem && let syn::Lit::Str(s) = &kw_lit.lit {
-                                                    keywords.push(s.value());
-                                                }
-                                            }
-                                        } else if field_name == "params" {
-                                            for elem in &expr_array.elems {
-                                                if let syn::Expr::Struct(param_struct) = elem {
-                                                    let mut p_name = String::new();
-                                                    let mut p_def = String::new();
-                                                    let mut p_desc = String::new();
-                                                    for p_field in &param_struct.fields {
-                                                        if let syn::Member::Named(p_ident) = &p_field.member && let syn::Expr::Lit(p_expr_lit) = &p_field.expr && let syn::Lit::Str(p_lit_str) = &p_expr_lit.lit {
-                                                            match p_ident.to_string().as_str() {
-                                                                "name" => { p_name = p_lit_str.value() }
-                                                                "default" => { p_def = p_lit_str.value() }
-                                                                "description" => { p_desc = p_lit_str.value() }
-                                                                _ => {}
-                                                            }
-                                                        }
-                                                    }
-                                                    params_str.push_str(&format!(
-                                                        "- `{}` (default: {}): {}\n",
-                                                        p_name, p_def, p_desc
-                                                    ));
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            let filename = name.to_lowercase()
-                                .chars()
-                                .map(|c| if c.is_alphanumeric() { c } else { '_' })
-                                .collect::<String>()
-                                .split('_')
-                                .filter(|s| !s.is_empty())
-                                .collect::<Vec<_>>()
-                                .join("_");
-
-                            let mut md = String::new();
-                            md.push_str(&format!("# {}\n\n", name));
-                            let cat_label = if category.is_empty() { "General" } else { &category };
-                            let mut meta_line = format!(
-                                "<div class=\"indicator-meta\"><span class=\"category-badge\">{}</span>",
-                                cat_label
-                            );
-                            for kw in &keywords {
-                                meta_line.push_str(&format!(" <span class=\"kw-badge\">{}</span>", kw));
-                            }
-                            meta_line.push_str("</div>\n\n");
-                            md.push_str(&meta_line);
-                            md.push_str(&format!("{}\n\n", desc));
-
-                            if !usage.is_empty() {
-                                md.push_str("## Usage\n\n");
-                                md.push_str(&format!("{}\n\n", usage));
-                            }
-
-                            if !ehlers_summary.is_empty() {
-                                md.push_str("## Background\n\n");
-                                md.push_str(&format!("> {}\n\n", ehlers_summary));
-                            }
-
-                            if !params_str.is_empty() {
-                                md.push_str("## Parameters\n\n");
-                                md.push_str(&params_str);
-                                md.push('\n');
-                            }
-
-                            md.push_str("## Formula\n\n");
-                            md.push_str(&latex);
-                            md.push_str("\n\n");
-
-                            if !source.is_empty() {
-                                md.push_str(&format!("[Source]({})\n", source));
-                            }
-
-                            let out_path = docs_dir.join(format!("indicators/native/{}.md", filename));
-                            fs::write(&out_path, md).with_context(|| format!("Failed to write indicator documentation: {:?}", out_path))?;
-                            generated.push((name, filename, category));
-                        }
-                    }
-                }
-            }
-        }
+fn generate_native_docs(_docs_dir: &Path, _indicators_dir: &Path) -> Result<Vec<(String, String, String)>> {
+    // Legacy Rust-based parser removed per quantwave-frq0.3
+    // Use `python scripts/generate_native_docs.py` for standard docs.
+    // We just return an empty vec here so the summary doesn't break,
+    // or we could parse the JSON if we wanted to build the summary.
+    // For now, we will execute the python script from here to ensure the pipeline runs!
+    println!("Delegating native doc generation to python scripts/generate_native_docs.py...");
+    let status = std::process::Command::new("python")
+        .arg("scripts/generate_native_docs.py")
+        .status()?;
+    if !status.success() {
+        return Err(anyhow::anyhow!("generate_native_docs.py failed"));
     }
-
-    generated.sort_by(|a, b| a.0.cmp(&b.0));
+    
+    // We can fetch the metadata JSON to build the summary
+    let output = std::process::Command::new("cargo")
+        .args(&["run", "-p", "quantwave-core", "--bin", "export_metadata"])
+        .output()?;
+    if !output.status.success() {
+        return Err(anyhow::anyhow!("export_metadata failed"));
+    }
+    
+    let json_str = String::from_utf8(output.stdout)?;
+    let metadata: Vec<serde_json::Value> = serde_json::from_str(&json_str)?;
+    
+    let mut generated = Vec::new();
+    for item in metadata {
+        let name = item["name"].as_str().unwrap_or("").to_string();
+        let slug = item["slug"].as_str().unwrap_or("").to_string();
+        let category = item["category"].as_str().unwrap_or("").to_string();
+        generated.push((name, slug, category));
+    }
+    
     Ok(generated)
 }
 

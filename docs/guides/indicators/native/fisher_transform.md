@@ -87,6 +87,16 @@ All surfaces are bit-identical (enforced by the universal `Next<T>` trait and pr
 - The ±1.5 / ±1.8 / ±2.0 thresholds are conventional; backtest the exact level on your instrument and timeframe.
 - No look-ahead bias (pure function of current bar).
 
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
+
 ## Related Indicators & See Also
 
 - [Inverse Fisher Transform](inverse_fisher_transform.md) — the approximate inverse (useful for visualization or certain ML targets)

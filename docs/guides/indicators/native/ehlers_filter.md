@@ -100,6 +100,16 @@ All three surfaces are bit-identical by construction: the Python and Rust classe
 - Best used in confluence with a regime classifier (e.g. Cyber Cycle or market structure bias) so that aggressive adaptation is only trusted when the regime actually supports it.
 - No look-ahead bias; every output depends only on data up to and including the current bar.
 
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
+
 ## Related Indicators & See Also
 
 - [UltimateSmoother](ultimatesmoother.md) — preferred zero-lag general-purpose smoother from the same author

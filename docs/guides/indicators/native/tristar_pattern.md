@@ -12,11 +12,16 @@ A rare reversal pattern consisting of three dojis.
 
 ## Description
 
-A rare reversal pattern consisting of three dojis.
+The Tristar Pattern indicator is a technical analysis tool that a rare reversal pattern consisting of three dojis.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Signals an extreme shift in momentum.
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -83,6 +88,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Signed output (+/−/0) should be consumed as events, not continuous features without encoding.
 - Combine with volume expansion or higher-timeframe confirmation for production use.
 - No look-ahead bias; signal is known only after the pattern window closes.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Pattern functions emit 0 (no pattern) until enough bars exist. |
+| period > len | Short series returns all zeros (no pattern detected). |
+| NaN inputs | Bars with NaN OHLC are treated as no pattern (0). |
+| Invalid params | N/A for most candlestick patterns. |
+| Empty data | Empty input returns an empty integer series. |
 
 ## Related Indicators & See Also
 

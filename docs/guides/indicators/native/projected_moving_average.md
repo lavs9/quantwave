@@ -12,13 +12,18 @@ A lag-compensated moving average that uses linear regression slope to project th
 
 ## Description
 
-A lag-compensated moving average that uses linear regression slope to project the average forward.
+The Projected Moving Average indicator is a technical analysis tool that a lag-compensated moving average that uses linear regression slope to project the average forward.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Use as a predictive moving average that uses linear regression projection to anticipate where price will be rather than where it has been, reducing effective lag.
 
 The Projected Moving Average uses linear regression over the lookback window to project the best-fit line forward to the current bar. This predictive approach shifts the MA output toward the leading edge of price movement, achieving reduced lag compared to conventional MAs of the same period.
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -98,6 +103,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Prefer chaining with other Ehlers tools (Roofing Filter, SuperSmoother) on noisy inputs.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; suitable for live streaming and batch feature pipelines.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

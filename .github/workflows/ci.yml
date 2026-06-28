@@ -24,7 +24,14 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-metadata-${{ hashFiles('**/Cargo.lock') }}
-      - run: python3 scripts/check_metadata_drift.py
+      - name: Check metadata drift
+        run: python3 scripts/check_metadata_drift.py
+      - name: Check doc drift
+        run: python3 scripts/check_doc_drift.py
+      - name: Lint doc structure
+        run: python3 docs/upgrade_to_standards.py --lint
+      - name: Lint doc depth
+        run: python3 docs/upgrade_to_standards.py --depth-lint
 
   verify:
     name: quantwave verify

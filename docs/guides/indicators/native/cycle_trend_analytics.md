@@ -12,13 +12,18 @@ A set of oscillators (Price - SMA) with lengths from 5 to 30 used to visualize c
 
 ## Description
 
-A set of oscillators (Price - SMA) with lengths from 5 to 30 used to visualize cycles and trends.
+The Cycle/Trend Analytics indicator is a technical analysis tool that a set of oscillators (price - sma) with lengths from 5 to 30 used to visualize cycles and trends.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Use to classify the current market mode as trending or cycling before selecting your strategy. Apply trend-following systems in trend mode and mean-reversion systems in cycle mode.
 
 Ehlers presents Cycle/Trend Analytics in Cycle Analytics for Traders as a framework for determining the dominant market mode. By measuring the correlation between price and the best-fit dominant cycle, the indicator classifies market behavior, enabling traders to switch between trend and cycle trading strategies dynamically.
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -93,6 +98,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Prefer chaining with other Ehlers tools (Roofing Filter, SuperSmoother) on noisy inputs.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; suitable for live streaming and batch feature pipelines.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

@@ -12,13 +12,18 @@ A second-order High Pass filter that rejects low-frequency components.
 
 ## Description
 
-A second-order High Pass filter that rejects low-frequency components.
+The HighPass indicator is a technical analysis tool that a second-order high pass filter that rejects low-frequency components.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Apply to price to isolate the cyclical component by attenuating the low-frequency trend. Use as the first stage before an oscillator or spectrum analyser.
 
 Ehlers derives the one-pole high-pass filter in Cycle Analytics for Traders analogously to EMA derivation, but applied to price differences rather than levels. It removes the DC component and low-frequency trend, leaving the cyclical content for downstream analysis.
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -104,6 +109,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Prefer chaining with other Ehlers tools (Roofing Filter, SuperSmoother) on noisy inputs.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; suitable for live streaming and batch feature pipelines.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

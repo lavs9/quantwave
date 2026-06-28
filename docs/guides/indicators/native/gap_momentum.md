@@ -12,13 +12,18 @@ Accumulates positive and negative opening gaps to derive a cumulative gap ratio,
 
 ## Description
 
-Accumulates positive and negative opening gaps to derive a cumulative gap ratio, smoothed by a signal line.
+The Gap Momentum indicator is a technical analysis tool that accumulates positive and negative opening gaps to derive a cumulative gap ratio, smoothed by a signal line.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Used to identify momentum shifts based on price gaps. Buy when the signal line is rising and sell when it is falling.
 
 Perry J. Kaufman introduced Gap Momentum as a way to quantify price gaps relative to their cumulative volatility, similar to an On-Balance Volume (OBV) logic applied to opening gaps. It helps traders identify if gap-driven momentum is increasing or decreasing by comparing the sum of upward gaps against downward gaps over a rolling window. — Perry Kaufman, S&C 2024
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -105,6 +110,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Single-series indicators ignore volume unless otherwise documented.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; streaming and Polars batch paths are bit-identical.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

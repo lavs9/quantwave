@@ -12,13 +12,18 @@ A compressive transform that forces oscillator values towards +1 or -1, creating
 
 ## Description
 
-A compressive transform that forces oscillator values towards +1 or -1, creating clear buy/sell signals.
+The Inverse Fisher Transform indicator is a technical analysis tool that a compressive transform that forces oscillator values towards +1 or -1, creating clear buy/sell signals.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Apply to RSI or other oscillators to rescale them to a ±1 range with sharp threshold behaviour. Values near ±1 indicate high-confidence overbought/oversold conditions.
 
 The Inverse Fisher Transform maps input values to (-1, +1) via a hyperbolic tangent function. Ehlers uses it in Cybernetic Analysis to create oscillators whose output clusters near the extremes, making crossovers of fixed thresholds reliable trading signals.
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -91,6 +96,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Prefer chaining with other Ehlers tools (Roofing Filter, SuperSmoother) on noisy inputs.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; suitable for live streaming and batch feature pipelines.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

@@ -96,6 +96,16 @@ All surfaces are bit-identical via the single `Next<f64>` implementation and its
 - Preferred when the downstream consumer is another Ehlers cycle tool (Reflex, Cyber Cycle, etc.) that benefits from the minimal phase distortion.
 - No look-ahead bias.
 
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
+
 ## Related Indicators & See Also
 
 - [Super Smoother](supersmoother.md) — the more common 2-pole smoother; slightly more lag but very robust

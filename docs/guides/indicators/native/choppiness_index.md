@@ -12,13 +12,18 @@ Determines if the market is trending (low values) or ranging/choppy (high values
 
 ## Description
 
-Determines if the market is trending (low values) or ranging/choppy (high values).
+The Choppiness Index indicator is a technical analysis tool that determines if the market is trending (low values) or ranging/choppy (high values).
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Use to determine whether a market is trending or choppy before selecting a trading strategy. Values above 61.8 indicate chop; values below 38.2 indicate a strong trend.
 
 The Choppiness Index, developed by E.W. Dreiss, measures how much of the total ATR-based range is consumed by the actual net price move over N bars. A value near 100 means price wandered back and forth using all available range without net progress (maximum chop); near 0 means a straight directional move with minimal retracement. — StockCharts ChartSchool
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -92,6 +97,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Single-series indicators ignore volume unless otherwise documented.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; streaming and Polars batch paths are bit-identical.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

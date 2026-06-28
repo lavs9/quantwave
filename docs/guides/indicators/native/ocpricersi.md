@@ -12,13 +12,18 @@ RSI calculated using the average of Open and Close prices to reduce noise.
 
 ## Description
 
-RSI calculated using the average of Open and Close prices to reduce noise.
+The OCPriceRSI indicator is a technical analysis tool that rsi calculated using the average of open and close prices to reduce noise.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Use to measure momentum on the open-to-close price differential rather than close-to-close, capturing intraday directional strength more directly.
 
 Ehlers computes this RSI variant on the difference between the open and close price of each bar rather than on the closing price series. The open-close differential captures the net directional pressure within each bar, producing a momentum oscillator more sensitive to intraday commitment than standard RSI.
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -95,6 +100,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Prefer chaining with other Ehlers tools (Roofing Filter, SuperSmoother) on noisy inputs.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; suitable for live streaming and batch feature pipelines.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

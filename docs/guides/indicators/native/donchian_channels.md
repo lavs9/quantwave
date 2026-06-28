@@ -12,13 +12,18 @@ Donchian Channels are volatility indicators formed by taking the highest high an
 
 ## Description
 
-Donchian Channels are volatility indicators formed by taking the highest high and the lowest low of the last N periods.
+The Donchian Channels indicator is a technical analysis tool that donchian channels are volatility indicators formed by taking the highest high and the lowest low of the last n periods.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Use for breakout trading systems: a close above the N-period high signals a long entry; below the N-period low signals a short entry. The Turtle Traders famously used 20 and 55-day Donchian channels.
 
 Developed by Richard Donchian in the 1970s, Donchian Channels plot the highest high and lowest low over N bars. They define the current trading range and signal breakouts when price escapes the channel. The Turtle Trading system of Richard Dennis built its entire entry and exit logic on 20 and 55-day Donchian channels. — TurtleTrader.com
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -92,6 +97,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Single-series indicators ignore volume unless otherwise documented.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; streaming and Polars batch paths are bit-identical.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

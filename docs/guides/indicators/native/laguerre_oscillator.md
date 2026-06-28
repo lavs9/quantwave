@@ -12,13 +12,18 @@ A low-lag trend oscillator derived from Laguerre polynomials and normalized by R
 
 ## Description
 
-A low-lag trend oscillator derived from Laguerre polynomials and normalized by RMS volatility.
+The Laguerre Oscillator indicator is a technical analysis tool that a low-lag trend oscillator derived from laguerre polynomials and normalized by rms volatility.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Use to detect overbought and oversold conditions with very low lag. The single gamma parameter lets you tune it from aggressive to smooth.
 
 Ehlers describes the Laguerre Oscillator in Cybernetic Analysis as measuring the difference between the first and last elements of a 4-element Laguerre filter bank, extracting the high-frequency component as a zero-lag momentum measure.
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -103,6 +108,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Prefer chaining with other Ehlers tools (Roofing Filter, SuperSmoother) on noisy inputs.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; suitable for live streaming and batch feature pipelines.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

@@ -92,6 +92,16 @@ All surfaces are bit-identical (enforced by the universal `Next<T>` trait and pr
 - Best paired with Market Structure or Ehlers regime tools rather than used in isolation.
 - No look-ahead bias.
 
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Pattern functions emit 0 (no pattern) until enough bars exist. |
+| period > len | Short series returns all zeros (no pattern detected). |
+| NaN inputs | Bars with NaN OHLC are treated as no pattern (0). |
+| Invalid params | N/A for most candlestick patterns. |
+| Empty data | Empty input returns an empty integer series. |
+
 ## Related Indicators & See Also
 
 - [Gravestone Doji](gravestone_doji.md), [Dragonfly Doji](dragonfly_doji.md), [Long-Legged Doji](long_legged_doji.md), [Spinning Top](spinning_top.md)

@@ -12,13 +12,18 @@ A versatile indicator that can be used to identify a new trend or warn of extrem
 
 ## Description
 
-A versatile indicator that can be used to identify a new trend or warn of extreme conditions.
+The Commodity Channel Index (CCI) indicator is a technical analysis tool that a versatile indicator that can be used to identify a new trend or warn of extreme conditions.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Use to identify cyclical turns in commodities or stocks. Readings above +100 imply a strong uptrend, while readings below -100 imply a strong downtrend.
 
 Developed by Donald Lambert in 1980, the CCI measures the current price level relative to an average price level over a given period. CCI is relatively high when prices are far above their average and relatively low when prices are far below their average. — StockCharts ChartSchool
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -92,6 +97,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Single-series indicators ignore volume unless otherwise documented.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; streaming and Polars batch paths are bit-identical.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

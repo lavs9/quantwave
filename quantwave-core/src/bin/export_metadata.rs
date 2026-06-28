@@ -3,7 +3,7 @@
 //! Run: `cargo run -p quantwave-core --bin export_metadata > metadata_export.json`
 
 use quantwave_core::indicators::metadata::IndicatorMetadata;
-use quantwave_core::indicators::metadata_registry::ALL_REGISTERED;
+use quantwave_core::indicators::metadata_registry::{RegisteredMetadata, ALL_REGISTERED};
 use serde::Serialize;
 use std::io::{self, Write};
 
@@ -24,12 +24,34 @@ struct ExportedMetadata {
     keywords: Vec<String>,
     params: Vec<ExportedParam>,
     formula_source: String,
+    formula_latex: String,
     gold_standard_file: String,
+    ehlers_summary: String,
+    struct_name: String,
+    source_file: String,
+    boundary_kind: String,
 }
 
-fn export_one(slug: &str, meta: &IndicatorMetadata) -> ExportedMetadata {
+fn infer_boundary_kind(r: &RegisteredMetadata) -> &'static str {
+    let cat = r.meta.category.to_lowercase();
+    let name = r.slug;
+    
+    if cat.contains("price action") || name == "sr_monitor" || name == "geometric_patterns" || name == "market_structure" {
+        return "event";
+    }
+    if cat.contains("pattern") || name.starts_with("cdl") {
+        return "pattern";
+    }
+    if name == "obv" || name == "ad" || name == "nvi" || name == "pvi" || name == "vwap" || name == "anchored_vwap" {
+        return "cumulative";
+    }
+    "scalar"
+}
+
+fn export_one(r: &RegisteredMetadata) -> ExportedMetadata {
+    let meta = r.meta;
     ExportedMetadata {
-        slug: slug.to_string(),
+        slug: r.slug.to_string(),
         name: meta.name.to_string(),
         description: meta.description.to_string(),
         usage: meta.usage.to_string(),
@@ -45,14 +67,19 @@ fn export_one(slug: &str, meta: &IndicatorMetadata) -> ExportedMetadata {
             })
             .collect(),
         formula_source: meta.formula_source.to_string(),
+        formula_latex: meta.formula_latex.to_string(),
         gold_standard_file: meta.gold_standard_file.to_string(),
+        ehlers_summary: meta.ehlers_summary.to_string(),
+        struct_name: r.struct_name.to_string(),
+        source_file: r.source_file.to_string(),
+        boundary_kind: infer_boundary_kind(r).to_string(),
     }
 }
 
 fn main() -> io::Result<()> {
     let mut out: Vec<ExportedMetadata> = ALL_REGISTERED
         .iter()
-        .map(|r| export_one(r.slug, r.meta))
+        .map(|r| export_one(r))
         .collect();
 
     out.sort_by(|a, b| a.slug.cmp(&b.slug));

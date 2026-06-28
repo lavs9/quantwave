@@ -12,13 +12,18 @@ Ichimoku Kinko Hyo is a comprehensive indicator that defines support and resista
 
 ## Description
 
-Ichimoku Kinko Hyo is a comprehensive indicator that defines support and resistance, identifies trend direction, gauges momentum and provides trading signals.
+The Ichimoku Cloud indicator is a technical analysis tool that ichimoku kinko hyo is a comprehensive indicator that defines support and resistance, identifies trend direction, gauges momentum and provides trading signals.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Use as a complete trend system providing support, resistance, momentum, and cloud-based bias in a single indicator. The Kumo cloud thickness indicates trend strength.
 
 Ichimoku Kinko Hyo was developed by Goichi Hosoda in the 1960s. The system comprises five components: Tenkan-sen (9-period midpoint), Kijun-sen (26-period midpoint), Senkou Span A and B (cloud), and Chikou Span (lagged close). Price above the cloud is bullish; the cloud thickness quantifies the strength of support or resistance. — Ichimoku Charts, Nicole Elliott
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -94,6 +99,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Single-series indicators ignore volume unless otherwise documented.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; streaming and Polars batch paths are bit-identical.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

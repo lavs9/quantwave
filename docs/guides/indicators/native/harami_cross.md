@@ -37,9 +37,22 @@ Streaming / Polars examples identical in structure to Harami (substitute `CDLHAR
 
 ## Edge Cases & Limitations
 
-- Two-bar requirement.
-- Still benefits enormously from trend/structure context; isolated occurrences in ranges are low value.
-- Stronger than plain Harami but not infallible — always seek confirmation.
+- Warm-up: first 14 bars may return NaN or partial state per implementation.
+- Parameter sensitivity: smaller periods increase noise; larger periods increase lag.
+- Sudden gaps or bad ticks can distort rolling windows — consider pre-filtering.
+- Single-series indicators ignore volume unless otherwise documented.
+- Validated via proptests against gold-standard vectors where available.
+- No look-ahead bias; streaming and Polars batch paths are bit-identical.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Pattern functions emit 0 (no pattern) until enough bars exist. |
+| period > len | Short series returns all zeros (no pattern detected). |
+| NaN inputs | Bars with NaN OHLC are treated as no pattern (0). |
+| Invalid params | N/A for most candlestick patterns. |
+| Empty data | Empty input returns an empty integer series. |
 
 ## Related Indicators & See Also
 

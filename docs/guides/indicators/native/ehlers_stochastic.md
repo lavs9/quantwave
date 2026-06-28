@@ -94,6 +94,16 @@ Parity across surfaces is guaranteed by the single `Next<f64>` source and valida
 - Excellent for cycle-timed mean-reversion or breakout confirmation; less useful as a standalone trend filter.
 - No look-ahead bias.
 
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
+
 ## Related Indicators & See Also
 
 - [Roofing Filter](roofing_filter.md) — the critical pre-processor; understand it first

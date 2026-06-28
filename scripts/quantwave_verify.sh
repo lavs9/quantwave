@@ -26,6 +26,15 @@ echo "== quantwave verify =="
 if [[ "$SKIP_METADATA" -eq 0 ]]; then
   echo "-- metadata codegen drift check"
   python3 scripts/check_metadata_drift.py
+  
+  echo "-- documentation drift check"
+  python3 scripts/check_doc_drift.py
+  
+  echo "-- documentation standards lint"
+  python3 docs/upgrade_to_standards.py --lint
+  
+  echo "-- documentation depth lint"
+  python3 docs/upgrade_to_standards.py --depth-lint
 fi
 
 if [[ "$SKIP_RUST" -eq 0 ]]; then

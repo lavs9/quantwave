@@ -46,6 +46,16 @@ Most powerful after a downtrend or at support. As with all single-candle pattern
 - Highest edge when occurring at structure support after established bearish bias.
 - Confirmation bar strongly advised.
 
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Pattern functions emit 0 (no pattern) until enough bars exist. |
+| period > len | Short series returns all zeros (no pattern detected). |
+| NaN inputs | Bars with NaN OHLC are treated as no pattern (0). |
+| Invalid params | N/A for most candlestick patterns. |
+| Empty data | Empty input returns an empty integer series. |
+
 ## Related Indicators & See Also
 
 - [Doji](doji.md), [Gravestone Doji](gravestone_doji.md), [Hammer](hammer.md), [Takuri](takuri.md)

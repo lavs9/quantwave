@@ -91,6 +91,16 @@ All surfaces share the identical `Next<f64>` implementation; parity is proven by
 - Best paired with a regime gate (e.g. only take Reflex zero-cross signals when Cyber Cycle momentum is high and market structure bias agrees).
 - No look-ahead bias.
 
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
+
 ## Related Indicators & See Also
 
 - [Cyber Cycle](cyber_cycle.md) — companion cycle oscillator; use together for regime confirmation

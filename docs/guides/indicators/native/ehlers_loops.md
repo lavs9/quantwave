@@ -93,6 +93,16 @@ df = (
 - Volume channel (when used) must be supplied separately to a second instance or via the full struct API.
 - No look-ahead bias; fully causal.
 
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
+
 ## Related Indicators & See Also
 
 - [Cyber Cycle](cyber_cycle.md), [Homodyne Discriminator](homodyne_discriminator.md) — other tools for measuring dominant cycle and regime

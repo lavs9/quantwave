@@ -12,13 +12,18 @@ RSI calculated over Laguerre-warped time for faster response.
 
 ## Description
 
-RSI calculated over Laguerre-warped time for faster response.
+The Laguerre RSI indicator is a technical analysis tool that rsi calculated over laguerre-warped time for faster response.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Use as a faster lower-lag alternative to traditional RSI. Laguerre smoothing produces fewer whipsaws while remaining responsive to genuine momentum shifts.
 
 Ehlers constructs the Laguerre RSI in Cybernetic Analysis by computing RSI on the four outputs of a Laguerre filter bank. The result has RSI-like scaling (0 to 1) but dramatically less lag and smoother behaviour than conventional RSI.
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -110,6 +115,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Prefer chaining with other Ehlers tools (Roofing Filter, SuperSmoother) on noisy inputs.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; suitable for live streaming and batch feature pipelines.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

@@ -12,13 +12,18 @@ Standard Stochastic calculation applied to Roofing Filtered data, followed by Su
 
 ## Description
 
-Standard Stochastic calculation applied to Roofing Filtered data, followed by SuperSmoothing.
+The MESA Stochastic indicator is a technical analysis tool that standard stochastic calculation applied to roofing filtered data, followed by supersmoothing.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Use as a cycle-synchronized stochastic that automatically scales its lookback to the measured dominant cycle period for consistent overbought/oversold signals.
 
 The MESA Stochastic extends Ehlers adaptive stochastic concept by using the MESA-measured dominant cycle period as the lookback window. Unlike traditional stochastics with fixed periods, it adapts to the current market rhythm, keeping the oscillator calibrated to one full cycle at all times.
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -100,6 +105,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Prefer chaining with other Ehlers tools (Roofing Filter, SuperSmoother) on noisy inputs.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; suitable for live streaming and batch feature pipelines.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

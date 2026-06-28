@@ -12,13 +12,18 @@ The original Laguerre filter from John Ehlers' 2002 'Time Warp' paper.
 
 ## Description
 
-The original Laguerre filter from John Ehlers' 2002 'Time Warp' paper.
+The Classic Laguerre Filter indicator is a technical analysis tool that the original laguerre filter from john ehlers' 2002 'time warp' paper.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 Use when a smooth trend estimate with controllable lag using only 4 state variables is needed. Preferred over long EMAs when computational memory is constrained.
 
 The Classic Laguerre Filter uses four first-order IIR sections sharing the same gamma coefficient. In Cybernetic Analysis (2004) Ehlers shows gamma maps directly to an effective period, making it highly tunable with minimal computation.
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -104,6 +109,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Prefer chaining with other Ehlers tools (Roofing Filter, SuperSmoother) on noisy inputs.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; suitable for live streaming and batch feature pipelines.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 

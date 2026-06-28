@@ -12,13 +12,18 @@ An oscillator variant of the ADX where the sign reflects trend direction determi
 
 ## Description
 
-An oscillator variant of the ADX where the sign reflects trend direction determined by DMI+ and DMI-.
+The Harrington ADX Oscillator indicator is a technical analysis tool that an oscillator variant of the adx where the sign reflects trend direction determined by dmi+ and dmi-.
+
+This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+
+Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
 
 The oscillator is positive when DMI+ > DMI- and negative when DMI- > DMI+. The magnitude represents trend strength (ADX). Thresholds at 15 and 40 are often used to identify trend initiation and overextended states.
 
 While originally created by Wilder, this revisualization by Harrington transforms the unipolar ADX into a bipolar oscillator. This allows for simultaneous identification of trend strength and direction in a single histogram display, simplifying the interpretation of complex directional movement data.
 
 QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+
 
 ## Formula / Specification
 
@@ -114,6 +119,16 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - Single-series indicators ignore volume unless otherwise documented.
 - Validated via proptests against gold-standard vectors where available.
 - No look-ahead bias; streaming and Polars batch paths are bit-identical.
+
+## Boundary Behavior
+
+| Condition | Behavior |
+|-----------|----------|
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 
