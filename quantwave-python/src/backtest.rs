@@ -11,10 +11,10 @@ use pyo3::types::{PyBytes, PyDict, PyType};
 use pyo3_polars::PyDataFrame;
 use std::io::Cursor;
 use quantwave_backtest::{
-    monte_carlo_return_paths, monte_carlo_trade_bootstrap, BacktestConfig, BacktestEngine,
-    BacktestError, BacktestReport, BacktestResult, CostModel, ExecutionDelay, ExecutionModel,
-    MonteCarloConfig, MonteCarloPathSummary, MonteCarloReturnConfig, MonteCarloSummary,
-    PerformanceMetrics, StopConfig,
+    monte_carlo_return_paths, monte_carlo_trade_bootstrap, render_tearsheet_html,
+    BacktestConfig, BacktestEngine, BacktestError, BacktestReport, BacktestResult, CostModel,
+    ExecutionDelay, ExecutionModel, MonteCarloConfig, MonteCarloPathSummary,
+    MonteCarloReturnConfig, MonteCarloSummary, PerformanceMetrics, StopConfig, TearsheetOptions,
 };
 
 fn parse_execution_delay(s: &str) -> PyResult<ExecutionDelay> {
@@ -235,6 +235,23 @@ impl PyBacktestReport {
 
     fn metrics<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
         metrics_to_dict(py, &self.inner.metrics)
+    }
+
+    /// Self-contained HTML tear sheet (equity, drawdown, metrics, trades).
+    #[pyo3(signature = (title=None))]
+    fn to_html(&self, title: Option<String>) -> String {
+        let opts = TearsheetOptions {
+            title: title.unwrap_or_else(|| "QuantWave Backtest Report".to_string()),
+            ..Default::default()
+        };
+        render_tearsheet_html(&self.inner, &opts)
+    }
+
+    /// Write tear sheet HTML to `path`.
+    #[pyo3(signature = (path, title=None))]
+    fn save_html(&self, path: &str, title: Option<String>) -> PyResult<()> {
+        std::fs::write(path, self.to_html(title))
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))
     }
 }
 

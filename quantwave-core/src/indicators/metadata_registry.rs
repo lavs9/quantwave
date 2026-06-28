@@ -41,6 +41,7 @@ use crate::indicators::fisher::FISHER_METADATA;
 use crate::indicators::fisher_high_pass::FISHER_HIGH_PASS_METADATA;
 use crate::indicators::fourier_series::FOURIER_SERIES_MODEL_METADATA;
 use crate::indicators::fourier_transform::FOURIER_DOMINANT_CYCLE_METADATA;
+use crate::indicators::frac_diff::FRAC_DIFF_METADATA;
 use crate::indicators::fractals::FRACTALS_METADATA;
 use crate::indicators::frama::FRAMA_METADATA;
 use crate::indicators::gap_momentum::GAP_MOMENTUM_METADATA;
@@ -340,6 +341,7 @@ pub static ALL_REGISTERED: &[RegisteredMetadata] = &[
     RegisteredMetadata { slug: "fourier_dominant_cycle", meta: &FOURIER_DOMINANT_CYCLE_METADATA, struct_name: "FourierDominantCycle", source_file: "fourier_transform" },
     RegisteredMetadata { slug: "fourier_series_model", meta: &FOURIER_SERIES_MODEL_METADATA, struct_name: "FourierSeriesModel", source_file: "fourier_series" },
     RegisteredMetadata { slug: "fractals", meta: &FRACTALS_METADATA, struct_name: "BillWilliamsFractals", source_file: "fractals" },
+    RegisteredMetadata { slug: "frac_diff", meta: &FRAC_DIFF_METADATA, struct_name: "FracDiff", source_file: "frac_diff" },
     RegisteredMetadata { slug: "frama", meta: &FRAMA_METADATA, struct_name: "Frama", source_file: "frama" },
     RegisteredMetadata { slug: "gap_momentum", meta: &GAP_MOMENTUM_METADATA, struct_name: "GapMomentum", source_file: "gap_momentum" },
     RegisteredMetadata { slug: "gaussian_filter", meta: &GAUSSIAN_FILTER_METADATA, struct_name: "GaussianFilter", source_file: "gaussian" },
@@ -560,6 +562,7 @@ pub static ALL_INDICATOR_METADATA: &[&IndicatorMetadata] = &[
     &FOURIER_DOMINANT_CYCLE_METADATA,
     &FOURIER_SERIES_MODEL_METADATA,
     &FRACTALS_METADATA,
+    &FRAC_DIFF_METADATA,
     &FRAMA_METADATA,
     &GAP_MOMENTUM_METADATA,
     &GAUSSIAN_FILTER_METADATA,
@@ -669,4 +672,4 @@ pub static ALL_INDICATOR_METADATA: &[&IndicatorMetadata] = &[
     &ZLEMA_METADATA,
 ];
 
-pub const METADATA_COUNT: usize = 216;
+pub const METADATA_COUNT: usize = 217;

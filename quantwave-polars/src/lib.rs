@@ -147,6 +147,26 @@ impl<'a> QuantWaveNamespace<'a> {
         self.math_operator_1_in_1_out_period::<CMO>(name, period, "cmo")
     }
 
+    /// Prado fractional differentiation (`d` order, weight truncation `threshold`).
+    pub fn frac_diff(self, name: &str, d: f64, threshold: f64) -> LazyFrame {
+        let name = name.to_string();
+        self.0.clone().with_columns([col(&name)
+            .map(
+                move |s| {
+                    let ca = s.f64()?;
+                    let mut indicator = FracDiff::new(d, threshold);
+                    let mut values = Vec::with_capacity(s.len());
+                    for i in 0..s.len() {
+                        let val = ca.get(i).unwrap_or(f64::NAN);
+                        values.push(indicator.next(val));
+                    }
+                    Ok(Some(Column::from(Series::new("frac_diff".into(), values))))
+                },
+                GetOutput::from_type(DataType::Float64),
+            )
+            .alias("frac_diff")])
+    }
+
     pub fn adx(self, high: &str, low: &str, close: &str, period: usize) -> LazyFrame {
         self.ta_3_in_1_out_period::<ADX>(high, low, close, period, "adx")
     }

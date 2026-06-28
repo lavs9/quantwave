@@ -18,6 +18,7 @@ pub use indicators::autotune::AutoTuneFilter;
 pub use indicators::cycle::*;
 pub use indicators::donchian::DonchianChannels;
 pub use indicators::exp_dev_bands::ExpDevBands;
+pub use indicators::frac_diff::FracDiff;
 pub use indicators::fractals::BillWilliamsFractals;
 pub use indicators::gap_momentum::GapMomentum;
 pub use indicators::geometric_patterns::{FlagPattern, GeometricPatternScanner, HsPattern};

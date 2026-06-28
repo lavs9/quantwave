@@ -78,6 +78,7 @@ mod live_bridge;
 mod metrics;
 mod monte_carlo;
 mod sweep;
+mod tearsheet;
 mod walk_forward;
 
 use chrono::{DateTime, Utc};
@@ -90,6 +91,7 @@ pub use live_bridge::{
     LiveBridge, LiveBridgeError, LiveSignalEvent, RecordingLiveBridge,
 };
 pub use metrics::{BacktestReport, PerformanceMetrics};
+pub use tearsheet::{render_tearsheet_html, TearsheetOptions};
 pub use monte_carlo::{
     monte_carlo_trade_bootstrap, MonteCarloConfig, MonteCarloSummary,
     monte_carlo_return_paths, MonteCarloReturnConfig, MonteCarloPathSummary,

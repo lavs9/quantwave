@@ -37,6 +37,7 @@ pub mod fisher;
 pub mod fisher_high_pass;
 pub mod fourier_series;
 pub mod fourier_transform;
+pub mod frac_diff;
 pub mod fractals;
 pub mod frama;
 pub mod gap_momentum;

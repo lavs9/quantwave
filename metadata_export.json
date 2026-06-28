@@ -2608,6 +2608,39 @@
     "boundary_kind": "scalar"
   },
   {
+    "slug": "frac_diff",
+    "name": "Fractional Differentiation",
+    "description": "Applies Prado-style fractional differencing to preserve memory while reducing non-stationarity in price series.",
+    "usage": "Use as an ML feature primitive on log-prices or returns. Lower d (e.g. 0.3–0.5) retains more memory than integer differencing while improving stationarity for tree models and neural nets.",
+    "category": "ML Features",
+    "keywords": [
+      "ml",
+      "stationarity",
+      "prado",
+      "feature-engineering",
+      "fractional"
+    ],
+    "params": [
+      {
+        "name": "d",
+        "default": "0.4",
+        "description": "Fractional differentiation order (0 = identity, 1 = full integer diff)"
+      },
+      {
+        "name": "threshold",
+        "default": "1e-5",
+        "description": "Truncate weights when |w_k| falls below this value"
+      }
+    ],
+    "formula_source": "https://www.wiley.com/en-us/Advances+in+Financial+Machine+Learning-p-9781119482086",
+    "formula_latex": "\n\\[\nw_0 = 1,\\quad w_k = -w_{k-1}\\frac{d - k + 1}{k},\\quad\n\\tilde{X}_t = \\sum_{k=0}^{K} w_k X_{t-k}\n\\]\n",
+    "gold_standard_file": "frac_diff.json",
+    "ehlers_summary": "",
+    "struct_name": "FracDiff",
+    "source_file": "frac_diff",
+    "boundary_kind": "scalar"
+  },
+  {
     "slug": "fractals",
     "name": "Bill Williams Fractals",
     "description": "Fractals are indicators on candlestick charts that identify reversal points in the market.",
