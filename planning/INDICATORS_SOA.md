@@ -2,7 +2,7 @@
 
 **Updated:** 2026-06-28  
 **Version:** 0.6.0  
-**One sentence:** The indicator *engine* and *documentation* are SOA-grade; what’s left is one ML primitive (frac-diff).
+**One sentence:** Indicators are **SOA-complete** for research and production signal generation — engine, docs, and ML primitives (including Prado frac-diff) are landed.
 
 ---
 
@@ -23,7 +23,7 @@ If we meet those four, indicators are SOA for research and production signal gen
 
 | Capability | What it means for you |
 |------------|------------------------|
-| **216 registered indicators** | Breadth at or above TA-Lib++, plus Ehlers and PA |
+| **217 registered indicators** | Breadth at or above TA-Lib++, plus Ehlers, PA, and frac-diff |
 | **Batch ↔ streaming parity** | Research on historical data matches live bars—no silent drift |
 | **`.ta()` + plugins (~219 methods)** | Fast Polars research *or* expression-plugin hot paths |
 | **Price action suite** | Market structure, S/R, flags/H&S, confluence—for sizing and filters |
@@ -43,7 +43,7 @@ If we meet those four, indicators are SOA for research and production signal gen
 | Universal `Next<T>` — one math core | ✅ Done | All indicators share streaming truth |
 | Batch Polars `.ta()` | ✅ Done | ~205 methods + 8 feature methods |
 | Expression plugins parity | ✅ Done | `quantwave-3f7g` closed |
-| `IndicatorMetadata` per indicator | ✅ Done | 216 entries; `quantwave-i9dn` rule |
+| `IndicatorMetadata` per indicator | ✅ Done | 217 entries; `quantwave-i9dn` rule |
 | Python metadata codegen | ✅ Done | `quantwave-iqq7`, CI gate `quantwave-ttge` |
 | Gold standard / proptest parity | ✅ Done | Core + polars test suites |
 | PA (MS, S/R, patterns, confluence) | ✅ Done | `quantwave-cu03` and children |
@@ -51,21 +51,19 @@ If we meet those four, indicators are SOA for research and production signal gen
 | Regime detection (HMM, GMM, PELT, vol) | ✅ Done | Code + [regime guide](../docs/guides/indicators/regimes/index.md) |
 | Discovery & warmup APIs | ✅ Done | `quantwave-p3z9` children closed |
 | Boundary / error semantics | ✅ Done | `boundary_info()`, `quantwave-p49i` |
-| Every native page at doc STANDARDS | ✅ Done | 216 pages pass structural and depth lints (`quantwave-frq0`) |
-| Docs auto-generated from metadata | ✅ Done | Integrated with Python registry generator (`quantwave-frq0`) |
-| Fractional differencing (Prado) | ❌ Not started | Bead: `quantwave-wnd9` |
+| Every native page at doc STANDARDS | ✅ Done | Native pages pass structural + depth lints (`quantwave-frq0`) |
+| Docs auto-generated from metadata | ✅ Done | `scripts/generate_native_docs.py` + CI drift (`quantwave-frq0`) |
+| Fractional differencing (Prado) | ✅ Done | `FracDiff` + Polars/Python (`quantwave-wnd9`) |
 
-**Indicator SOA grade: A engine, A product.** Engine, APIs, and docs are fully state-of-the-art; frac-diff is the final mathematical gap.
+**Indicator SOA grade: A engine, A+ product.** No open indicator beads; checklist is complete.
 
 ---
 
 ## What’s pending (indicators only)
 
-### Has a bead
+**Nothing open.** All indicator SOA checklist items and beads are closed.
 
-| Bead | Work | Impact if done | Priority |
-|------|------|----------------|----------|
-| `quantwave-wnd9` | Fractional differencing indicator + Polars/Python | ML pipelines get stationary features without ad-hoc hacks; aligns with Prado-style workflows | P3 (Tier 3) |
+Optional future work (no beads filed): plugin surface for `frac_diff`, add `frac_diff` to `build_feature_matrix` recommended preset, workspace clippy cleanup.
 
 ---
 
@@ -74,6 +72,7 @@ If we meet those four, indicators are SOA for research and production signal gen
 Major indicator epics/tasks already shipped—no action needed:
 
 - `quantwave-frq0` — Doc SOA epic (metadata-driven doc gen, depth lints, CI drift gates)
+- `quantwave-wnd9` — Fractional differentiation (Prado `FracDiff`)
 - `quantwave-3f7g`, `quantwave-jlk6` — plugin parity  
 - `quantwave-iqq7`, `quantwave-ttge` — metadata codegen + CI  
 - `quantwave-h6xe` — streaming readiness  
