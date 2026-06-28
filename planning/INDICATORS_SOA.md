@@ -1,8 +1,8 @@
 # Indicators — SOA Status
 
-**Updated:** 2026-06-26  
-**Version:** 0.5.2  
-**One sentence:** The indicator *engine* is SOA-grade; what’s left is mostly polish and one ML primitive—not missing core math.
+**Updated:** 2026-06-28  
+**Version:** 0.6.0  
+**One sentence:** The indicator *engine* and *documentation* are SOA-grade; what’s left is one ML primitive (frac-diff).
 
 ---
 
@@ -51,11 +51,11 @@ If we meet those four, indicators are SOA for research and production signal gen
 | Regime detection (HMM, GMM, PELT, vol) | ✅ Done | Code + [regime guide](../docs/guides/indicators/regimes/index.md) |
 | Discovery & warmup APIs | ✅ Done | `quantwave-p3z9` children closed |
 | Boundary / error semantics | ✅ Done | `boundary_info()`, `quantwave-p49i` |
-| Every native page at doc STANDARDS | ⚠️ Partial | Long tail uneven—cosmetic, not functional |
-| Docs auto-generated from metadata | ❌ Not started | No bead |
+| Every native page at doc STANDARDS | ✅ Done | 216 pages pass structural and depth lints (`quantwave-frq0`) |
+| Docs auto-generated from metadata | ✅ Done | Integrated with Python registry generator (`quantwave-frq0`) |
 | Fractional differencing (Prado) | ❌ Not started | Bead: `quantwave-wnd9` |
 
-**Indicator SOA grade: A engine, A- product.** Engine and APIs are there; long-tail docs and frac-diff are the gaps.
+**Indicator SOA grade: A engine, A product.** Engine, APIs, and docs are fully state-of-the-art; frac-diff is the final mathematical gap.
 
 ---
 
@@ -67,24 +67,13 @@ If we meet those four, indicators are SOA for research and production signal gen
 |------|------|----------------|----------|
 | `quantwave-wnd9` | Fractional differencing indicator + Polars/Python | ML pipelines get stationary features without ad-hoc hacks; aligns with Prado-style workflows | P3 (Tier 3) |
 
-### Doc SOA epic (filed 2026-06-26)
-
-Parent: **`quantwave-frq0`** — [planning/beads_doc_soa_epic.md](./beads_doc_soa_epic.md)
-
-| Bead | Work | Blocks |
-|------|------|--------|
-| `quantwave-frq0.1` | Depth lint (thin page detection) | — start here |
-| `quantwave-frq0.3` | Metadata-driven doc generator | — parallel with .1 |
-| `quantwave-frq0.4` | `boundary_info` on native pages | `.3` |
-| `quantwave-frq0.2` | Long-tail page enrichment | `.1`, `.4` |
-| `quantwave-frq0.5` | CI doc drift gate + verify | `.2`, `.3` |
-
 ---
 
 ## Closed work (reference)
 
 Major indicator epics/tasks already shipped—no action needed:
 
+- `quantwave-frq0` — Doc SOA epic (metadata-driven doc gen, depth lints, CI drift gates)
 - `quantwave-3f7g`, `quantwave-jlk6` — plugin parity  
 - `quantwave-iqq7`, `quantwave-ttge` — metadata codegen + CI  
 - `quantwave-h6xe` — streaming readiness  
