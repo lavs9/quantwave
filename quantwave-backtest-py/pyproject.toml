@@ -4,8 +4,8 @@ build-backend = "maturin"
 
 [project]
 name = "quantwave-backtest-native"
-version = "0.5.2"
-description = "Native PyO3 backtest extension for quantwave (internal)"
+dynamic = ["version"]
+description = "Native PyO3 backtest extension for quantwave (bundled in quantwave wheel)"
 requires-python = ">=3.9"
 
 [tool.maturin]

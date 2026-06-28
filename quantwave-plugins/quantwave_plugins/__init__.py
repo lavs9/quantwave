@@ -744,7 +744,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="acos", is_elementwise=False)
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="acos", is_elementwise=False)
 
     def asin(self) -> pl.Expr:
         
@@ -754,7 +754,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="asin", is_elementwise=False)
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="asin", is_elementwise=False)
 
     def atan(self) -> pl.Expr:
         
@@ -764,7 +764,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="atan", is_elementwise=False)
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="atan", is_elementwise=False)
 
     def ceil(self) -> pl.Expr:
         
@@ -774,7 +774,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ceil", is_elementwise=False)
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ceil", is_elementwise=False)
 
     def cos(self) -> pl.Expr:
         
@@ -784,7 +784,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="cos", is_elementwise=False)
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="cos", is_elementwise=False)
 
     def cosh(self) -> pl.Expr:
         
@@ -794,7 +794,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="cosh", is_elementwise=False)
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="cosh", is_elementwise=False)
 
     def exp(self) -> pl.Expr:
         
@@ -804,7 +804,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="exp", is_elementwise=False)
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="exp", is_elementwise=False)
 
     def floor(self) -> pl.Expr:
         
@@ -814,7 +814,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="floor", is_elementwise=False)
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="floor", is_elementwise=False)
 
     def ln(self) -> pl.Expr:
         
@@ -824,7 +824,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ln", is_elementwise=False)
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ln", is_elementwise=False)
 
     def log10(self) -> pl.Expr:
         
@@ -834,7 +834,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="log10", is_elementwise=False)
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="log10", is_elementwise=False)
 
     def sin(self) -> pl.Expr:
         
@@ -844,7 +844,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="sin", is_elementwise=False)
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="sin", is_elementwise=False)
 
     def sinh(self) -> pl.Expr:
         
@@ -854,7 +854,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="sinh", is_elementwise=False)
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="sinh", is_elementwise=False)
 
     def sqrt(self) -> pl.Expr:
         
@@ -864,7 +864,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="sqrt", is_elementwise=False)
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="sqrt", is_elementwise=False)
 
     def tan(self) -> pl.Expr:
         
@@ -874,7 +874,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="tan", is_elementwise=False)
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="tan", is_elementwise=False)
 
     def tanh(self) -> pl.Expr:
         
@@ -884,7 +884,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="tanh", is_elementwise=False)
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="tanh", is_elementwise=False)
 
     def max(self, timeperiod: int = 14) -> pl.Expr:
         
@@ -894,7 +894,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="max", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="max", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def maxindex(self, timeperiod: int = 14) -> pl.Expr:
         
@@ -904,7 +904,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="maxindex", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="maxindex", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def min(self, timeperiod: int = 14) -> pl.Expr:
         
@@ -914,7 +914,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="min", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="min", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def minindex(self, timeperiod: int = 14) -> pl.Expr:
         
@@ -924,7 +924,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="minindex", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="minindex", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def sum(self, timeperiod: int = 14) -> pl.Expr:
         
@@ -934,7 +934,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="sum", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="sum", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def ta_linearreg(self, timeperiod: int = 14) -> pl.Expr:
         
@@ -944,7 +944,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ta_linearreg", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ta_linearreg", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def ta_linearreg_angle(self, timeperiod: int = 14) -> pl.Expr:
         
@@ -954,7 +954,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ta_linearreg_angle", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ta_linearreg_angle", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def ta_linearreg_intercept(self, timeperiod: int = 14) -> pl.Expr:
         
@@ -964,7 +964,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ta_linearreg_intercept", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ta_linearreg_intercept", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def ta_linearreg_slope(self, timeperiod: int = 14) -> pl.Expr:
         
@@ -974,7 +974,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ta_linearreg_slope", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ta_linearreg_slope", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def ta_tsf(self, timeperiod: int = 14) -> pl.Expr:
         
@@ -984,7 +984,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ta_tsf", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ta_tsf", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def wma(self, timeperiod: int = 14) -> pl.Expr:
         
@@ -994,7 +994,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="wma", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="wma", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def add(self, in2: Union[str, pl.Expr]) -> pl.Expr:
         
@@ -1004,7 +1004,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(in2, str): in2 = pl.col(in2)
+        if isinstance(in2, str): in2 = pl.col(in2)
         return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="add", is_elementwise=False)
 
     def div(self, in2: Union[str, pl.Expr]) -> pl.Expr:
@@ -1015,7 +1015,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(in2, str): in2 = pl.col(in2)
+        if isinstance(in2, str): in2 = pl.col(in2)
         return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="div", is_elementwise=False)
 
     def mult(self, in2: Union[str, pl.Expr]) -> pl.Expr:
@@ -1026,7 +1026,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(in2, str): in2 = pl.col(in2)
+        if isinstance(in2, str): in2 = pl.col(in2)
         return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="mult", is_elementwise=False)
 
     def obv(self, in2: Union[str, pl.Expr]) -> pl.Expr:
@@ -1037,7 +1037,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(in2, str): in2 = pl.col(in2)
+        if isinstance(in2, str): in2 = pl.col(in2)
         return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="obv", is_elementwise=False)
 
     def sub(self, in2: Union[str, pl.Expr]) -> pl.Expr:
@@ -1048,7 +1048,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(in2, str): in2 = pl.col(in2)
+        if isinstance(in2, str): in2 = pl.col(in2)
         return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="sub", is_elementwise=False)
 
     def ta_beta(self, in2: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
@@ -1059,7 +1059,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(in2, str): in2 = pl.col(in2)
+        if isinstance(in2, str): in2 = pl.col(in2)
         return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="ta_beta", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def ta_correl(self, in2: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
@@ -1070,7 +1070,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(in2, str): in2 = pl.col(in2)
+        if isinstance(in2, str): in2 = pl.col(in2)
         return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="ta_correl", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def ta_trange(self, in2: Union[str, pl.Expr], in3: Union[str, pl.Expr]) -> pl.Expr:
@@ -1081,7 +1081,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(in2, str): in2 = pl.col(in2)
+        if isinstance(in2, str): in2 = pl.col(in2)
         if isinstance(in3, str): in3 = pl.col(in3)
         return register_plugin_function(args=[self._expr, in2, in3], plugin_path=Path(__file__).parent, function_name="ta_trange", is_elementwise=False)
 
@@ -1093,7 +1093,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(in2, str): in2 = pl.col(in2)
+        if isinstance(in2, str): in2 = pl.col(in2)
         if isinstance(in3, str): in3 = pl.col(in3)
         return register_plugin_function(args=[self._expr, in2, in3], plugin_path=Path(__file__).parent, function_name="ta_atr", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
@@ -1105,7 +1105,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(in2, str): in2 = pl.col(in2)
+        if isinstance(in2, str): in2 = pl.col(in2)
         if isinstance(in3, str): in3 = pl.col(in3)
         return register_plugin_function(args=[self._expr, in2, in3], plugin_path=Path(__file__).parent, function_name="ta_natr", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
@@ -1117,7 +1117,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="bop", is_elementwise=False)
@@ -1130,7 +1130,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_2crows", is_elementwise=False)
@@ -1143,7 +1143,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_3blackcrows", is_elementwise=False)
@@ -1156,7 +1156,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_3inside", is_elementwise=False)
@@ -1169,7 +1169,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_3linestrike", is_elementwise=False)
@@ -1182,7 +1182,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_3outside", is_elementwise=False)
@@ -1195,7 +1195,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_3starsinsouth", is_elementwise=False)
@@ -1208,7 +1208,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_3whitesoldiers", is_elementwise=False)
@@ -1221,7 +1221,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_abandonedbaby", is_elementwise=False)
@@ -1234,7 +1234,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_advanceblock", is_elementwise=False)
@@ -1247,7 +1247,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_belthold", is_elementwise=False)
@@ -1260,7 +1260,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_breakaway", is_elementwise=False)
@@ -1273,7 +1273,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_closingmarubozu", is_elementwise=False)
@@ -1286,7 +1286,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_concealbabyswall", is_elementwise=False)
@@ -1299,7 +1299,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_counterattack", is_elementwise=False)
@@ -1312,7 +1312,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_darkcloudcover", is_elementwise=False)
@@ -1325,7 +1325,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_doji", is_elementwise=False)
@@ -1338,7 +1338,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_dojistar", is_elementwise=False)
@@ -1351,7 +1351,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_dragonflydoji", is_elementwise=False)
@@ -1364,7 +1364,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_engulfing", is_elementwise=False)
@@ -1377,7 +1377,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_eveningdojistar", is_elementwise=False)
@@ -1390,7 +1390,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_eveningstar", is_elementwise=False)
@@ -1403,7 +1403,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_gapsidesidewhite", is_elementwise=False)
@@ -1416,7 +1416,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_gravestonedoji", is_elementwise=False)
@@ -1429,7 +1429,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_hammer", is_elementwise=False)
@@ -1442,7 +1442,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_hangingman", is_elementwise=False)
@@ -1455,7 +1455,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_harami", is_elementwise=False)
@@ -1468,7 +1468,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_haramicross", is_elementwise=False)
@@ -1481,7 +1481,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_highwave", is_elementwise=False)
@@ -1494,7 +1494,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_hikkake", is_elementwise=False)
@@ -1507,7 +1507,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_hikkakemod", is_elementwise=False)
@@ -1520,7 +1520,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_homingpigeon", is_elementwise=False)
@@ -1533,7 +1533,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_identical3crows", is_elementwise=False)
@@ -1546,7 +1546,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_inneck", is_elementwise=False)
@@ -1559,7 +1559,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_invertedhammer", is_elementwise=False)
@@ -1572,7 +1572,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_kicking", is_elementwise=False)
@@ -1585,7 +1585,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_kickingbylength", is_elementwise=False)
@@ -1598,7 +1598,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_ladderbottom", is_elementwise=False)
@@ -1611,7 +1611,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_longleggeddoji", is_elementwise=False)
@@ -1624,7 +1624,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_longline", is_elementwise=False)
@@ -1637,7 +1637,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_marubozu", is_elementwise=False)
@@ -1650,7 +1650,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_matchinglow", is_elementwise=False)
@@ -1663,7 +1663,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_mathold", is_elementwise=False)
@@ -1676,7 +1676,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_morningdojistar", is_elementwise=False)
@@ -1689,7 +1689,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_morningstar", is_elementwise=False)
@@ -1702,7 +1702,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_onneck", is_elementwise=False)
@@ -1715,7 +1715,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_piercing", is_elementwise=False)
@@ -1728,7 +1728,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_rickshawman", is_elementwise=False)
@@ -1741,7 +1741,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_risefall3methods", is_elementwise=False)
@@ -1754,7 +1754,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_separatinglines", is_elementwise=False)
@@ -1767,7 +1767,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_shootingstar", is_elementwise=False)
@@ -1780,7 +1780,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_shortline", is_elementwise=False)
@@ -1793,7 +1793,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_spinningtop", is_elementwise=False)
@@ -1806,7 +1806,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_stalledpattern", is_elementwise=False)
@@ -1819,7 +1819,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_sticksandwich", is_elementwise=False)
@@ -1832,7 +1832,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_takuri", is_elementwise=False)
@@ -1845,7 +1845,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_tasukigap", is_elementwise=False)
@@ -1858,7 +1858,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_thrusting", is_elementwise=False)
@@ -1871,7 +1871,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_tristar", is_elementwise=False)
@@ -1884,7 +1884,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_unique3river", is_elementwise=False)
@@ -1897,7 +1897,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_upsidegap2crows", is_elementwise=False)
@@ -1910,7 +1910,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         if isinstance(close, str): close = pl.col(close)
         return register_plugin_function(args=[self._expr, high, low, close], plugin_path=Path(__file__).parent, function_name="cdl_xsidegap3methods", is_elementwise=False)

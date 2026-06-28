@@ -78,13 +78,11 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
-      - name: Install maturin and uniffi-bindgen
-        run: pip install maturin uniffi-bindgen==0.31.0
+      - name: Install build tools
+        run: pip install maturin uniffi-bindgen==0.31.0 wheel
 
-      - name: Build wheels
-        run: |
-          cd quantwave-python
-          maturin build --release --out ../dist
+      - name: Build unified wheel (core + backtest + plugins)
+        run: python scripts/build_unified_wheel.py --out dist
         env:
           MACOSX_DEPLOYMENT_TARGET: "11.0"
 
@@ -93,32 +91,9 @@ jobs:
           name: wheels-${{ matrix.platform }}
           path: dist/*.whl
 
-  build-python-sdist:
-    name: Python sdist
-    needs: [publish-rust]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - run: pip install maturin uniffi-bindgen==0.31.0
-
-      - name: Build sdist
-        run: |
-          cd quantwave-python
-          maturin sdist --out ../dist
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: wheels-sdist
-          path: dist/*.tar.gz
-
   publish-python:
     name: Publish Python (PyPI)
-    needs: [build-python-wheels, build-python-sdist]
+    needs: [build-python-wheels]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -141,11 +116,6 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: wheels-windows-latest
-          path: dist
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: wheels-sdist
           path: dist
 
       - uses: actions/setup-python@v5

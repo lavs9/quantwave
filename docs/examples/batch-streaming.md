@@ -8,10 +8,12 @@ QuantWave allows you to use the same logic for both batch processing and streami
 
     ```python
     import polars as pl
-    from quantwave import ta
+    import quantwave  # registers pl.col().ta (bundled in PyPI wheel)
 
     df = pl.read_parquet("data.parquet")
-    df = df.with_columns(ta.rsi("close", 14).alias("rsi"))
+    df = df.lazy().with_columns(
+        pl.col("close").ta.rsi(timeperiod=14).alias("rsi"),
+    ).collect()
     ```
 
 === "Rust"
@@ -30,18 +32,23 @@ QuantWave indicators implement the universal `Next<T>` trait. This is the single
 === "Python"
 
     ```python
-    from quantwave import RSI, SuperTrend
+    import quantwave as qw
 
     # Simple streaming example
-    rsi = RSI(14)
+    Rsi = qw.streaming_class("rsi")
+    rsi = qw.wrap_streaming(Rsi(14), name="rsi")
     for price in prices:
-        print(rsi.next(price))
+        val = rsi.next(price)
+        if rsi.is_ready:
+            print(val)
 
     # SuperTrend streaming example
-    st = SuperTrend(10, 3.0)
+    St = qw.streaming_class("supertrend")
+    st = qw.wrap_streaming(St(period=10, multiplier=3.0), name="supertrend")
     for high, low, close in ohlcv_data:
-        signal = st.next(high, low, close)
-        print(signal)
+        signal = st.next((high, low, close))
+        if st.is_ready:
+            print(signal)
     ```
 
 === "Rust"

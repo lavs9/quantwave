@@ -66,20 +66,20 @@ Complex recursive indicators (the ones that matter most for real strategies) are
 ## Quickstart (Python)
 
 ```bash
-pip install quantwave
+pip install "quantwave[polars]"
+quantwave doctor
 ```
 
 ```python
 import polars as pl
-from quantwave import ta
+import quantwave  # registers pl.col().ta and LazyFrame.bt
 
 df = pl.read_parquet("ohlcv.parquet")
 
-df = df.with_columns(
-    ta.rsi("close", 14).alias("rsi"),
-    ta.mama("close").alias("mama"),
-    ta.supertrend("high", "low", "close", period=10, multiplier=3.0).alias("supertrend"),
-)
+df = df.lazy().with_columns(
+    pl.col("close").ta.rsi(timeperiod=14).alias("rsi"),
+    pl.col("close").ta.ema(period=20).alias("ema"),
+).collect()
 ```
 
 [More examples → Documentation](https://lavs9.github.io/quantwave/examples/batch-streaming/)

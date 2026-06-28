@@ -58,10 +58,13 @@ def process_file(filepath):
             new_source = re.sub(pattern, replacer, new_source, flags=re.DOTALL)
         else:
             # Insert new docstring right after def
-            pattern = r'(def\s+' + func_name + r'\s*\(.*?\)\s*->\s*pl\.Expr:\s*)'
+            pattern = r'(def\s+' + func_name + r'\s*\(.*?\)\s*->\s*pl\.Expr:)(\s*)'
             def replacer(match):
                 prefix = match.group(1)
-                return f'{prefix}\n        """{docstring_to_add}"""\n'
+                trailing = match.group(2)
+                if "\n" not in trailing:
+                    trailing = "\n"
+                return f'{prefix}{trailing}        """{docstring_to_add}"""\n'
             new_source = re.sub(pattern, replacer, new_source, flags=re.DOTALL)
 
     if new_source != source:

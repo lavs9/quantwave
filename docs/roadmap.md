@@ -2,7 +2,7 @@
 
 QuantWave is a high-performance, Polars-native technical analysis library. The engine phase is complete; v0.6 shipped product guardrails and research-loop polish.
 
-## Current Status (v0.6.0 — 2026-06)
+## Current Status (v0.6.0 — released 2026-06-28)
 
 ### Shipped
 

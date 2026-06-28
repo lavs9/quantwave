@@ -13,7 +13,7 @@ verify ──┬──► plugins (only if quantwave-plugins/ changed)
 
 | Job | What it runs | When |
 |-----|----------------|------|
-| **Quality gate** | `./scripts/quantwave_verify.sh` — metadata drift, doc lint/depth, nextest, pytest | Always |
+| **Quality gate** | `./scripts/quantwave_verify.sh` — metadata drift, doc lint/depth, unified wheel smoke, nextest, pytest | Always |
 | **Plugin wheels** | Build `quantwave-plugins` wheel + pytest | `quantwave-plugins/**` changed, or manual dispatch |
 | **Deploy docs** | mkdocs → GitHub Pages | `main` push only, after quality gate |
 
@@ -25,14 +25,12 @@ verify ──┬──► plugins (only if quantwave-plugins/ changed)
 
 ```
 publish-rust ──► build-python-wheels (matrix) ──► publish-python (PyPI)
-              └──► build-python-sdist ────────────┘
 ```
 
 | Job | What |
 |-----|------|
 | **Publish Rust crates** | `cargo publish` chain on crates.io |
-| **Python wheels** | linux x64, linux arm64, macOS, Windows |
-| **Python sdist** | source tarball |
+| **Python wheels** | Unified wheel via `scripts/build_unified_wheel.py` (core + backtest + plugins) on linux x64, linux arm64, macOS, Windows |
 | **Publish Python** | `twine upload` to PyPI |
 
 **Secrets:** `CRATES_IO_TOKEN`, `PYPI_API_TOKEN`

@@ -26,6 +26,9 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 
+[project.scripts]
+quantwave = "quantwave.cli:main"
+
 [project.optional-dependencies]
 polars = ["polars>=1.20.0,<2.0.0"]
 all = ["polars>=1.20.0,<2.0.0"]

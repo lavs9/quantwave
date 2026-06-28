@@ -12,7 +12,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(volume, str): volume = pl.col(volume)
+        if isinstance(volume, str): volume = pl.col(volume)
         if isinstance(anchor, str): anchor = pl.col(anchor)
         return register_plugin_function(
             args=[self._expr, volume, anchor],
@@ -29,7 +29,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(
+        return register_plugin_function(
             args=[self._expr],
             plugin_path=Path(__file__).parent,
             function_name="kinematic_kalman",
@@ -45,7 +45,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         return register_plugin_function(
             args=[high, low, self._expr],
@@ -63,7 +63,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         return register_plugin_function(
             args=[high, low, self._expr],
@@ -86,7 +86,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(high, str): high = pl.col(high)
+        if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         return register_plugin_function(
             args=[high, low, self._expr],

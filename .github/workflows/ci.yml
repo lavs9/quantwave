@@ -46,9 +46,20 @@ jobs:
         run: |
           python -m venv .venv
           source .venv/bin/activate
-          pip install pytest polars maturin "uniffi-bindgen==0.31.0"
+          pip install pytest polars maturin "uniffi-bindgen==0.31.0" wheel
           maturin develop --manifest-path quantwave-python/Cargo.toml --release
           maturin develop --manifest-path quantwave-backtest-py/Cargo.toml --release
+          maturin develop --manifest-path quantwave-plugins/Cargo.toml --release
+
+      - name: Build unified PyPI wheel
+        run: |
+          source .venv/bin/activate
+          python scripts/build_unified_wheel.py --out dist
+
+      - name: PyPI wheel smoke test
+        run: |
+          source .venv/bin/activate
+          python scripts/pypi_smoke_test.py dist/quantwave-*.whl
 
       - name: quantwave verify
         run: |

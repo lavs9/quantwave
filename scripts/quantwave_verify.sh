@@ -9,13 +9,15 @@ cd "$ROOT"
 SKIP_RUST=0
 SKIP_PYTHON=0
 SKIP_METADATA=0
+SKIP_WHEEL=0
 for arg in "$@"; do
   case "$arg" in
     --skip-rust) SKIP_RUST=1 ;;
     --skip-python) SKIP_PYTHON=1 ;;
     --skip-metadata) SKIP_METADATA=1 ;;
+    --skip-wheel) SKIP_WHEEL=1 ;;
     -h|--help)
-      echo "Usage: $0 [--skip-rust] [--skip-python] [--skip-metadata]"
+      echo "Usage: $0 [--skip-rust] [--skip-python] [--skip-metadata] [--skip-wheel]"
       exit 0
       ;;
   esac
@@ -47,6 +49,13 @@ if [[ "$SKIP_RUST" -eq 0 ]]; then
   cargo nextest run -p quantwave-polars
   echo "-- cargo nextest (backtest)"
   cargo nextest run -p quantwave-backtest
+fi
+
+if [[ "$SKIP_WHEEL" -eq 0 ]]; then
+  echo "-- unified PyPI wheel build + smoke test"
+  python3 -m pip install -q wheel maturin "uniffi-bindgen==0.31.0" 2>/dev/null || true
+  python3 scripts/build_unified_wheel.py --out dist
+  python3 scripts/pypi_smoke_test.py dist/quantwave-*.whl
 fi
 
 if [[ "$SKIP_PYTHON" -eq 0 ]]; then

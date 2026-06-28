@@ -6,41 +6,61 @@ QuantWave is designed to feel like a natural extension of Polars.
 
 ```bash
 pip install quantwave
-# For Polars integration (used in many examples): pip install "quantwave[polars]"
+# Polars batch/backtest examples also need:
+pip install "quantwave[polars]"
+```
+
+The PyPI wheel bundles the core extension, Polars expression plugins (`pl.col().ta`), and the backtest engine. The `[polars]` extra installs the Polars Python package.
+
+Verify your install:
+
+```bash
+quantwave doctor
+quantwave list --category "Classic"
+quantwave info rsi
 ```
 
 ## Quick Start
 
+### Polars batch (recommended)
+
 ```python
 import polars as pl
-from quantwave import ta
+import quantwave  # registers pl.col().ta and LazyFrame.bt
 
-# Load your data
 df = pl.read_parquet("ohlcv.parquet")
 
-# Add indicators using the .ta namespace
-df = df.with_columns(
-    ta.rsi("close", 14).alias("rsi"),
-    ta.mama("close").alias("mama"),
-)
+df = df.lazy().with_columns(
+    pl.col("close").ta.rsi(timeperiod=14).alias("rsi"),
+    pl.col("close").ta.ema(period=20).alias("ema"),
+).collect()
 
 print(df.head())
 ```
 
-## Batch vs Streaming
-
-While the above example shows batch processing with Polars, QuantWave also supports streaming:
+### List-based batch API
 
 ```python
-from quantwave import SuperTrend
+import quantwave as qw
 
-# Initialize the indicator
-st = SuperTrend(10, 3.0)
+closes = [float(x) for x in range(1, 100)]
+rsi = qw.ta.rsi(14, closes)
+```
 
-# Process ticks
+## Batch vs Streaming
+
+Polars batch and streaming share the same math. For live or tick-by-tick use:
+
+```python
+import quantwave as qw
+
+cls = qw.streaming_class("supertrend")
+st = qw.wrap_streaming(cls(period=10, multiplier=3.0), name="supertrend")
+
 for high, low, close in price_data:
-    signal = st.next(high, low, close)
-    print(signal)
+    signal = st.next((high, low, close))
+    if st.is_ready:
+        print(signal)
 ```
 
 The streaming API is powered by the universal `Next<T>` trait. Every indicator implements this single trait, which is the same mathematical core used by the Polars expressions. This design guarantees that batch results (via the `ta` namespace or `.ta` on LazyFrame) and streaming results are **bit-identical**.
@@ -115,7 +135,7 @@ except qw.QuantwaveError:
     ...  # any library-specific error
 ```
 
-`qw.__version__` is exposed via `importlib.metadata` (e.g. `"0.5.2"`).
+`qw.__version__` is exposed via `importlib.metadata` (e.g. `"0.6.0"`).
 
 ## ML features & backtesting
 

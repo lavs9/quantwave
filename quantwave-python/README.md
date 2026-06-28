@@ -29,19 +29,20 @@ We built QuantWave to give you both.
 ## Quickstart (Python)
 
 ```bash
-pip install quantwave
+pip install "quantwave[polars]"
+quantwave doctor
 ```
 
 ```python
 import polars as pl
-from quantwave import ta
+import quantwave  # registers pl.col().ta and LazyFrame.bt
 
 df = pl.read_parquet("ohlcv.parquet")
 
-df = df.with_columns(
-    ta.rsi("close", 14).alias("rsi"),
-    ta.mama("close").alias("mama"),
-)
+df = df.lazy().with_columns(
+    pl.col("close").ta.rsi(timeperiod=14).alias("rsi"),
+    pl.col("close").ta.ema(period=20).alias("ema"),
+).collect()
 ```
 
 [Full examples → Documentation](https://lavs9.github.io/quantwave/examples/batch-streaming/)
@@ -58,6 +59,21 @@ df = df.with_columns(
 - [Python Guide](https://lavs9.github.io/quantwave/getting-started/python/)
 - [Rust Guide](https://lavs9.github.io/quantwave/getting-started/rust/)
 - [Options Greeks & Pricing (roadmap)](https://lavs9.github.io/quantwave/purpose/)
+
+## CLI
+
+```bash
+quantwave list                  # all indicators by category
+quantwave info rsi              # metadata for one indicator
+quantwave doctor                # verify core, polars, plugins, backtest
+quantwave version
+```
+
+## Python 0.6.0 packaging
+
+- **Unified PyPI wheel** — core + `quantwave_plugins` + `quantwave._backtest` in one install
+- **`quantwave doctor`** — environment diagnostics for production pipelines
+- **`pip install "quantwave[polars]"`** — adds Polars for batch `.ta` and `.bt` namespaces
 
 ## Python 0.5.2 DX Improvements (quantwave-p3z9)
 

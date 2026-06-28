@@ -41,16 +41,14 @@ try:
     from importlib.metadata import version, PackageNotFoundError
     __version__ = version("quantwave")
 except (PackageNotFoundError, Exception):
-    __version__ = "0.5.2.dev"
+    __version__ = "0.6.0.dev"
 
 # Core compiled extension
 from . import _quantwave  # noqa
 
-# polars layer is optional (core streaming/metadata/DX work without it; the
-# quantwave-plugins package is the Polars Expressions path and declares the dep).
+# Polars helpers submodule (optional; core streaming/metadata/DX work without it).
 try:
     from . import polars
-    from . import bt_polars  # noqa: F401 — registers LazyFrame.bt namespace
 except Exception as _e:  # pragma: no cover
     warnings.warn(
         f"quantwave.polars submodule unavailable (polars not installed; "
@@ -59,7 +57,36 @@ except Exception as _e:  # pragma: no cover
     class _DummyNS: pass
     polars = _DummyNS()
 
-# Backtest engine (PyO3 + pyo3-polars; requires polars extra)
+# Native backtest extension (bundled in unified PyPI wheel as quantwave._backtest).
+_backtest_available = False
+try:
+    from . import _backtest  # noqa: F401
+    _backtest_available = True
+except Exception as _e:  # pragma: no cover
+    warnings.warn(
+        f"quantwave._backtest unavailable (reinstall quantwave wheel; unified build bundles backtest): {_e}"
+    )
+
+# LazyFrame `.bt` namespace — requires polars + _backtest.
+if _backtest_available:
+    try:
+        import polars as _pl  # noqa: F401
+        from . import bt_polars  # noqa: F401
+    except Exception as _e:  # pragma: no cover
+        warnings.warn(
+            f"quantwave.bt_polars unavailable (requires polars; "
+            f"use `pip install \"quantwave[polars]\"`): {_e}"
+        )
+
+# Polars expression plugins — bundled in unified wheel; registers pl.col().ta.
+try:
+    import quantwave_plugins  # noqa: F401
+except ImportError:
+    pass
+except Exception as _e:  # pragma: no cover
+    warnings.warn(f"quantwave_plugins unavailable: {_e}")
+
+# Backtest Python API (PyO3 + pyo3-polars; requires polars extra).
 try:
     from . import backtest
 except Exception as _e:  # pragma: no cover

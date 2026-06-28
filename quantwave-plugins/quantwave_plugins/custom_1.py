@@ -16,7 +16,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(open, str): open = pl.col(open)
+        if isinstance(open, str): open = pl.col(open)
         return register_plugin_function(
             args=[open, self._expr],
             plugin_path=Path(__file__).parent,
@@ -33,7 +33,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(
+        return register_plugin_function(
             args=[self._expr],
             plugin_path=Path(__file__).parent,
             function_name="pelt",
@@ -49,7 +49,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(
+        return register_plugin_function(
             args=[self._expr],
             plugin_path=Path(__file__).parent,
             function_name="zlema",
@@ -65,7 +65,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-return register_plugin_function(
+        return register_plugin_function(
             args=[self._expr],
             plugin_path=Path(__file__).parent,
             function_name="rodc",
@@ -81,7 +81,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-if isinstance(open, str): open = pl.col(open)
+        if isinstance(open, str): open = pl.col(open)
         if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
         return register_plugin_function(

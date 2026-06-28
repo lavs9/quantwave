@@ -4,7 +4,8 @@ build-backend = "maturin"
 
 [project]
 name = "quantwave-plugins"
-requires-python = ">=3.8"
+description = "Polars expression plugins for QuantWave (bundled in quantwave wheel)"
+requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
