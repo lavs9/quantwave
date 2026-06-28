@@ -76,8 +76,8 @@ OBV, MFI, Accumulation/Distribution, Chaikin Oscillator, VFI, Volume Profile, Po
 ### Advanced, Filters, Statistics & ML Features
 Precision Trend Analysis, Choppiness Index, Schaff Trend Cycle, Gap Momentum, Hurst Exponent, multiple Kalman variants, One Euro Filter, Noise Elimination Technology, System Evaluator, Reversion Index, and the complete Regime Detection suite (HMM, GMM, PELT, etc. — see dedicated [Regimes guide](../regimes/index.md)).
 
-### TA-Lib Compatible
-Native, high-performance replacements for the complete TA-Lib function set (see [TA-Lib section](talib/index.md)).
+### Native classics & modern tools
+All classic TA-Lib-style functions (RSI, MACD, Bollinger Bands, candlestick patterns, etc.) are implemented **natively in Rust** — see the [complete catalog](native/index.md).
 
 ## Getting the Most from QuantWave Indicators
 

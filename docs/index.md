@@ -1,75 +1,122 @@
+<div class="qw-hero" markdown="1">
+
 # QuantWave
 
-**High-performance, Polars-native technical analysis — in Python and Rust**
+<div class="qw-tagline">
+High-performance, Polars-native quantitative finance — <strong>217 native indicators</strong>, full Ehlers DSP suite, regime detection, backtest engine, and bit-identical streaming parity.
+</div>
 
-150+ indicators · Full Ehlers DSP suite · Regime Detection · Complete Options India stack · Bit-identical streaming & batch
+[Get Started (Python)](getting-started/python.md){ .md-button .md-button--primary }
+[Explore Indicators](guides/indicators/native/index.md){ .md-button }
+[Run Benchmarks](benchmarks.md){ .md-button }
 
-**Python**: `pip install quantwave` (or `pip install "quantwave[polars]"`)  
-**Rust**: `cargo add quantwave`
+</div>
 
-[Get Started (Python) →](./getting-started/python.md){ .md-button .md-button--primary }
-[Get Started (Rust) →](./getting-started/rust.md){ .md-button }
-[Explore Indicators →](./guides/indicators/){ .md-button }
+<div class="qw-stats" markdown="1">
 
----
+<div class="qw-stat"><strong>217</strong><span>Native indicators</span></div>
+<div class="qw-stat"><strong>30+</strong><span>Ehlers DSP tools</span></div>
+<div class="qw-stat"><strong>1</strong><span>Mathematical truth (`Next&lt;T&gt;`)</span></div>
+<div class="qw-stat"><strong>0</strong><span>Batch vs streaming drift</span></div>
+
+</div>
 
 ## Why QuantWave?
 
-Most quantitative libraries force an uncomfortable compromise.
+Most quant stacks force a tradeoff: **Python convenience** or **Rust speed** — rarely both with **Polars-native** ergonomics and **research-to-production parity**.
 
-**Python-first libraries** (pandas-ta, TA-Lib Python wrappers, etc.) are convenient but fall apart on large datasets, recursive indicators, or live streaming — often becoming 10-100× slower than native code.
+QuantWave is built as a Rust workspace with a single source of mathematical truth. Every indicator implements `Next<T>`; Polars plugins and Python streaming wrappers consume the same logic, validated by gold-standard vectors and proptests.
 
-**Pure Rust libraries** are fast, but they rarely integrate cleanly with modern Polars-based research pipelines and lack the breadth of advanced techniques (Ehlers DSP, regime detection, full Options India analytics).
+| Approach | Large-data speed | Polars-native | Streaming parity | Ehlers + PA + regimes |
+|----------|------------------|---------------|------------------|------------------------|
+| pandas-ta / TA-Lib (Python) | Slow | Partial | Rare | Limited |
+| Other Rust TA crates | Fast | Weak | Rare | Limited |
+| **QuantWave** | **Fast** | **Native** | **Guaranteed** | **Deep** |
 
-**QuantWave removes the tradeoff.**
+## What you get
 
-It delivers **institutional-grade Rust performance** through zero-copy Polars expressions, while offering a first-class, productive experience in both Python and Rust. Every indicator is built on a single mathematical source of truth — the `Next<T>` trait — guaranteeing that batch results (Polars) and real-time streaming results are **bit-identical**.
+<div class="qw-grid" markdown="1">
 
-### How We Compare
+<div class="qw-card" markdown="1">
 
-| Approach                  | Speed on large data | Polars-native | Streaming parity | Breadth (Ehlers + Regimes + Options) |
-|---------------------------|---------------------|---------------|------------------|--------------------------------------|
-| pandas-ta / TA-Lib (Python) | Poor–Average       | Partial      | Rare             | Limited                              |
-| Other Rust TA crates      | Excellent           | Poor         | Rare             | Limited                              |
-| **QuantWave**             | **Excellent**       | **Native**   | **Guaranteed**   | **Strong**                           |
+### Indicators
+217 Rust-native indicators with metadata, gold-standard tests, and full docs. Classic TA, Ehlers DSP, candlestick patterns, price action, and fractional differencing.
 
-## What We’ve Built
+[Browse catalog →](guides/indicators/native/index.md)
 
-QuantWave now ships with meaningful depth across several domains:
+</div>
 
-- **150+ Technical Indicators** with strong TA-Lib parity and one of the most complete open-source Ehlers Digital Signal Processing suites available.
-- **Full Regime Detection Suite** — HMM, GMM, PELT change-point detection, volatility clustering, and conditioned risk metrics.
-- **Complete Options India Stack** — Black-Scholes Greeks, implied volatility solvers, and advanced chain analytics (Max Pain, PCR, GEX, OI Zones), all exposed as native Polars expressions.
-- **Streaming & Batch Parity** — The same mathematical logic powers both high-speed Polars pipelines and low-latency streaming.
+<div class="qw-card" markdown="1">
 
-## Real-World Performance
+### Polars `.ta()` + plugins
+Zero-copy expression plugins for hot paths, or the ergonomic `.ta()` namespace for research. Same math either way.
 
-We don’t just claim to be fast. On 1 million rows of realistic OHLCV data:
+[Plugin vs `.ta` →](guides/plugin_vs_ta.md)
 
-- **SuperTrend**: 7.4 ms (QuantWave) vs >200 ms (Pandas) → **~27× faster**
-- **CyberCycle** (Ehlers): 5.0 ms vs >500 ms (Pandas) → **~100× faster**
-- **Memory footprint** on realistic multi-ticker data: **2–5× lower** than Pandas
+</div>
 
-→ [Full benchmarks](https://lavs9.github.io/quantwave/benchmarks/)
+<div class="qw-card" markdown="1">
 
-## Explore the Indicators
+### Backtest engine
+Sweep, walk-forward, Monte Carlo, cross-sectional runs, and HTML tear sheets — Rust core with Python Polars integration.
 
-- [All Indicators →](./guides/indicators/)
-- [Ehlers DSP Suite →](./guides/indicators/ehlers/)
-- [Regime Detection →](./guides/indicators/regimes/)
-- [Options India →](./guides/options_india/)
+[Backtest quickstart →](guides/backtest/quickstart.md)
 
----
+</div>
 
-**Primary paths**
-- [Get Started with Python](getting-started/python.md)
-- [Get Started with Rust](getting-started/rust.md)
+<div class="qw-card" markdown="1">
 
-**Explore further**
-- [Browse All Indicators](guides/indicators/)
-- [See Real Benchmarks](benchmarks/)
-- [Learn Our Purpose](purpose.md)
+### Python DX
+`qw.indicators()`, `qw.metadata()`, `qw.assert_parity()`, `build_feature_matrix()`, and arm64 wheels.
 
----
+[Python guide →](getting-started/python.md)
 
-**Made with ❤️ for the quant community**
+</div>
+
+</div>
+
+## Quickstart
+
+=== "Python"
+
+```python
+import polars as pl
+import quantwave as qw
+
+print(len(qw.indicators()), "indicators")
+meta = qw.metadata("supertrend")
+
+df = pl.DataFrame({"close": [100.0, 101.0, 102.0, 101.5, 103.0]})
+out = df.lazy().ta.supertrend("high", "low", "close", 10, 3.0).collect()
+```
+
+=== "Rust"
+
+```rust
+use quantwave_core::indicators::supertrend::SuperTrend;
+use quantwave_core::Next;
+
+let mut st = SuperTrend::new(10, 3.0);
+let v = st.next((100.0, 105.0, 95.0, 102.0));
+```
+
+Install: `pip install "quantwave[polars]"` or `cargo add quantwave`.
+
+## Performance snapshot
+
+On 1M rows of realistic OHLCV:
+
+- **SuperTrend**: ~27× faster than common Python implementations
+- **CyberCycle** (Ehlers): ~100× faster than pandas loops
+- **Memory**: 2–5× lower than pandas on multi-ticker workloads
+
+[Full benchmarks →](benchmarks.md)
+
+## Explore
+
+- [Complete indicator catalog](guides/indicators/native/index.md) — all 217 indicators by category
+- [Indicator gallery](guides/indicators/gallery.md) — curated starting points
+- [Ehlers DSP suite](guides/indicators/ehlers/index.md)
+- [ML features](guides/ml_features.md)
+- [Options India](guides/options_india.md)
+- [Examples & notebooks](examples/notebooks/index.md)

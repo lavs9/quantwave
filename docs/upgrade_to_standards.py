@@ -49,6 +49,7 @@ SLUG_ALIASES = {
     "exponential_deviation_bands": "exponential_deviation_bands",
     "relative_strength_markos_katsanos": "relative_strength_markos_katsanos",
     "rate_of_directional_change": "rate_of_directional_change",
+    "market_structure_swings_bos": "market_structure",
 }
 
 VIOLATION_PATTERNS = [
@@ -760,6 +761,9 @@ def depth_lint_all() -> int:
     for md_path in sorted(NATIVE_DOCS.glob("*.md")):
         if md_path.name in SKIP_FILES:
             continue
+        content = md_path.read_text(encoding="utf-8")
+        if is_redirect_stub(content):
+            continue
         slug = SLUG_ALIASES.get(md_path.stem, md_path.stem)
         rec = metadata.get(slug)
         if not rec:
@@ -767,7 +771,7 @@ def depth_lint_all() -> int:
         if not rec:
             continue
             
-        issues = depth_lint_violations(rec, md_path.read_text(encoding="utf-8"))
+        issues = depth_lint_violations(rec, content)
         if issues:
             failures += 1
             print(f"FAIL {md_path.name}: {', '.join(issues)}")
@@ -778,12 +782,19 @@ def depth_lint_all() -> int:
     return 0
 
 
+def is_redirect_stub(content: str) -> bool:
+    return content.startswith("<!-- redirect-stub:")
+
+
 def lint_all() -> int:
     failures = 0
     for md_path in sorted(NATIVE_DOCS.glob("*.md")):
         if md_path.name in SKIP_FILES:
             continue
-        issues = lint_violations(md_path.read_text(encoding="utf-8"))
+        content = md_path.read_text(encoding="utf-8")
+        if is_redirect_stub(content):
+            continue
+        issues = lint_violations(content)
         if issues:
             failures += 1
             print(f"FAIL {md_path.name}: {', '.join(issues)}")

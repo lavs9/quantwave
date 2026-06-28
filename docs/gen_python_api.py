@@ -102,7 +102,7 @@ See the full patterns in [Batch & Streaming Examples](../examples/batch-streamin
 | Polars `.ta` extension   | `pl.col("close").ta.xxx(...)`               | Feature engineering, research     | Guides → Indicators |
 | Streaming wrappers       | `from quantwave import RSI, SuperTrend`     | Live systems, custom backtesters  | Per-indicator pages + notebooks |
 | Result / Options structs | `from quantwave import results, options`    | Post-processing, risk, India ops  | This reference + docstrings |
-| TA-Lib compatible        | `from quantwave import talib`               | Porting existing TA-Lib code      | Guides → TA-Lib section |
+| Native indicator catalog | `qw.metadata("rsi")`                        | Discovery + docs by slug          | [Complete catalog](../guides/indicators/native/index.md) |
 | Market Structure / PA    | `from quantwave import MarketStructure`     | Event-driven strategies           | Dedicated PA guides + flagship notebook |
 
 ## Important Notes

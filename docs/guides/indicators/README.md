@@ -1,8 +1,10 @@
 # Indicator Suite
 
-The QuantWave indicator suite is divided into two primary categories to give you maximum flexibility and coverage:
+QuantWave provides **217 native indicators** implemented in Rust — classic technical analysis, Ehlers DSP, candlestick patterns, price action, regimes, and ML features.
 
-- **Native Indicators**: Highly optimized, modern indicators implemented natively in Rust. These include modern DSP suites, order flow tools, and advanced moving averages.
-- **TA-Lib Wrappers**: A comprehensive suite of 158 classic indicators wrapping the battle-tested `ta-lib` C library.
+Every indicator supports:
 
-Every single indicator, regardless of its category, supports both live streaming (`Next` trait) and batch Polars processing (`.ta()` namespace).
+- **Batch**: Polars `.ta()` namespace and expression plugins
+- **Streaming**: `Next<T>` structs with bit-identical parity
+
+See the [complete catalog](native/index.md) or [gallery](gallery.md) to browse.

@@ -1,58 +1,118 @@
+#!/usr/bin/env python3
+"""Verify native doc pages and slug redirect stubs match the metadata registry."""
+
 import json
-import sys
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from docs.upgrade_to_standards import SKIP_FILES
+
+from docs.upgrade_to_standards import SKIP_FILES, SLUG_ALIASES, slugify  # noqa: E402
 
 NATIVE_DOCS = ROOT / "docs" / "guides" / "indicators" / "native"
 METADATA_FILE = ROOT / "metadata_export.json"
 
-def main():
-    # Run export_metadata to ensure we have the latest
+
+def is_redirect_stub(text: str) -> bool:
+    return text.startswith("<!-- redirect-stub:")
+
+
+def canonical_stems() -> set[str]:
+    stems: set[str] = set()
+    for path in NATIVE_DOCS.glob("*.md"):
+        if path.name == "index.md":
+            continue
+        text = path.read_text(encoding="utf-8")
+        if is_redirect_stub(text):
+            continue
+        stems.add(path.stem)
+    return stems
+
+
+def resolve_stem(slug: str, name: str, stems: set[str]) -> str | None:
+    if slug in stems:
+        return slug
+    candidates = [slugify(name)]
+    for stem, aliased in SLUG_ALIASES.items():
+        if aliased == slug:
+            candidates.append(stem)
+    for candidate in candidates:
+        if candidate in stems:
+            return candidate
+    return None
+
+
+def main() -> None:
     subprocess.run(["cargo", "run", "--bin", "export_metadata"], cwd=ROOT, check=True)
-    
+
     if not METADATA_FILE.exists():
         print("metadata_export.json not found!", file=sys.stderr)
         sys.exit(1)
-        
-    with open(METADATA_FILE) as f:
+
+    with METADATA_FILE.open(encoding="utf-8") as f:
         data = json.load(f)
-        
-    expected_files = set()
+
+    stems = canonical_stems()
+    missing_canonical: list[str] = []
+    missing_redirects: list[str] = []
+
     for item in data:
-        # Match legacy xtask naming logic
-        raw_name = item["name"].lower()
-        filename = "".join(c if c.isalnum() else "_" for c in raw_name)
-        filename = "_".join(part for part in filename.split("_") if part)
-        md_name = f"{filename}.md"
-        if md_name not in SKIP_FILES:
-            expected_files.add(md_name)
-        
-    actual_files = {p.name for p in NATIVE_DOCS.glob("*.md") if p.name not in SKIP_FILES}
-    
-    missing = expected_files - actual_files
-    orphans = actual_files - expected_files
-    
+        slug = item["slug"]
+        name = item["name"]
+        stem = resolve_stem(slug, name, stems)
+        if not stem:
+            missing_canonical.append(slug)
+            continue
+        if stem != slug:
+            redirect = NATIVE_DOCS / f"{slug}.md"
+            if not redirect.exists():
+                missing_redirects.append(slug)
+            else:
+                text = redirect.read_text(encoding="utf-8")
+                if not is_redirect_stub(text) or f"→{stem}" not in text.splitlines()[0]:
+                    missing_redirects.append(slug)
+
+    # Orphans: canonical pages with no metadata (excluding hand-crafted PA guides)
+    metadata_stems: set[str] = set()
+    for item in data:
+        stem = resolve_stem(item["slug"], item["name"], stems)
+        if stem:
+            metadata_stems.add(stem)
+    orphans = sorted(
+        s
+        for s in stems
+        if s not in metadata_stems and f"{s}.md" not in SKIP_FILES
+    )
+
     failed = False
-    if missing:
-        print("FAIL: Missing documentation pages for registered indicators:", file=sys.stderr)
-        for m in sorted(missing):
-            print(f"  - {m}", file=sys.stderr)
+    if missing_canonical:
+        print("FAIL: Missing canonical documentation pages:", file=sys.stderr)
+        for slug in sorted(missing_canonical):
+            print(f"  - {slug}", file=sys.stderr)
         failed = True
-        
+
+    if missing_redirects:
+        print("FAIL: Missing slug redirect stubs (run sync_indicator_docs.py):", file=sys.stderr)
+        for slug in sorted(missing_redirects):
+            print(f"  - {slug}", file=sys.stderr)
+        failed = True
+
     if orphans:
-        print("FAIL: Orphan documentation pages found (no corresponding indicator in registry):", file=sys.stderr)
-        for o in sorted(orphans):
-            print(f"  - {o}", file=sys.stderr)
+        print("FAIL: Orphan documentation pages (no metadata entry):", file=sys.stderr)
+        for stem in orphans:
+            print(f"  - {stem}.md", file=sys.stderr)
         failed = True
-        
+
     if failed:
         sys.exit(1)
-        
-    print("Doc drift check passed: native pages perfectly match metadata registry.")
+
+    print(
+        f"Doc drift check passed: {len(data)} indicators, "
+        f"{len(stems)} canonical pages, slug redirects verified."
+    )
+
 
 if __name__ == "__main__":
     main()

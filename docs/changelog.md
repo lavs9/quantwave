@@ -2,35 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased / v0.6 Tier 2] - 2026-06-26
+## [0.6.0] - 2026-06-28
 
 ### Added
-- **`qw.build_feature_matrix()`** (`quantwave-rdpk`): batch ML feature matrix from OHLCV
-- **`lf.ta().features().recommended_matrix()`** (Rust Polars)
-- **`lf.bt.monte_carlo()`** (`quantwave-fsg3`): trade bootstrap + return-path VaR/CVaR
-- **Rust Polars `.bt`**: `walk_forward_optimize`, `monte_carlo_trade_bootstrap` (`quantwave-dk61`)
+- **Fractional differencing (`FracDiff`)** (`quantwave-wnd9`): Prado-style stationary features; Rust `Next<f64>`, Polars `lf.ta.frac_diff()`, Python `fracdiff()`
+- **HTML tear sheets** (`quantwave-0gi1`): `BacktestReport.to_html()` / `save_html()` with equity, drawdown, and trade tables
+- **Research loop (Tier 2)**: `qw.build_feature_matrix()`, `lf.ta().features().recommended_matrix()`, `lf.bt.monte_carlo()`, Rust `.bt` WFO-optimize + MC bootstrap
+- **Product guardrails (Tier 1)**: `scripts/quantwave_verify.sh`, metadata drift gate, streamlined CI (verify → plugins → deploy-docs)
+- **55 custom Polars expression plugins** and **98 auto-generated pyo3-polars bindings** for standard indicators
+- **PA foundation**: S/R Polars, confluence, geometric patterns with H&S neckline breakout
+- **Streaming readiness** (`quantwave-h6xe`) and Rust metadata codegen (`quantwave-iqq7`)
+- **Plugin vs `.ta` guide**, expanded regime user guide, comparison one-pager
+- **Indicator doc SOA complete** (`quantwave-frq0`): 220+ native pages under `DOCUMENTATION_STANDARDS.md` with PNG previews, doc drift script in verify
+- **Full visual depth layer** (p1k6): `docs/generate_all_previews.py` + standards lint rejecting placeholders
 
-## [Unreleased / v0.6 Tier 1] - 2026-06-26
-
-### Added
-- **CI metadata drift gate** (`quantwave-ttge`): `scripts/check_metadata_drift.py` + `.github/workflows/ci.yml`
-- **`quantwave verify`** CLI (`quantwave-072m`): `scripts/quantwave_verify.sh` — nextest + pytest smoke
-- **Plugin vs `.ta` guide** (`quantwave-q43g`): `docs/guides/plugin_vs_ta.md`
-- **Regime user guide** (`quantwave-bseb`): expanded `docs/guides/indicators/regimes/index.md`
-- **Comparison + release narrative** (`quantwave-l7xg`): `docs/comparison.md`, `docs/releases/0.5.2.md`
-- **Roadmap refresh** to v0.5.2 reality (`quantwave-q43g`)
-
-## [Unreleased / Docs] - 2026-06-25 IST
-
-### Added
-- **Full visual depth layer** (p1k6 Phase 2): `docs/generate_all_previews.py` + `docs/visual_utils.py` generate and embed PNG previews for all 221 native indicator pages (161 indicator sparklines + 61 candle schematics). `python docs/generate_all_previews.py --sync-docs` regenerates assets and updates markdown. `matplotlib>=3.8` added to `requirements-docs.txt`. Standards lint now rejects visual placeholders.
-- **Documentation standards bulk rollout** (quantwave-6br5 / epic p1k6 Phase 1 complete): `docs/upgrade_to_standards.py` upgrades all native indicator stubs to `DOCUMENTATION_STANDARDS.md` v1.0 (202 pages rewritten; 19 hand-upgraded exemplars preserved). Every page now has mandatory sections, 3-surface code, edge cases, authoritative core-path sources, and visuals or precise placeholders. `python docs/upgrade_to_standards.py --lint` enforces the checklist. Gallery and native index updated to reflect full conformance.
-
-## [Unreleased / Docs] - 2026-06-01 IST
+### Changed
+- GitHub Actions consolidated from four workflows to **CI** + **Release** (`v*` → crates.io + PyPI)
+- Platform planning docs split into `INDICATORS_SOA.md` and `BACKTEST_SOA.md`
 
 ### Fixed
-- **Empty Python API Reference page** (quantwave-rbz4): https://lavs9.github.io/quantwave/api/ was rendering completely empty on the public site. Rewrote `docs/gen_python_api.py` to produce a professional landing page that clearly explains the three Python surfaces and directs users to the high-quality manual documentation in the Guides. The auto-generated reference is now intentionally lightweight and useful as a package surface reference rather than a duplicate of the indicator docs. Updated workflow comment, mkdocs nav label, roadmap, and decision record in the same change set.
-- **Broken imports for quantwave >=0.4.1 on fresh installs without polars** (downstream report): `import quantwave` now succeeds cleanly even if `polars` is not present in the environment (previously the unconditional `from . import polars` + top-level `import polars as pl` in the submodule would raise). The Polars layer (`quantwave.polars`) is now optional and guarded like `results`/`options`/`talib`. Added `polars` and `all` extras in `quantwave-python/pyproject.toml`. Downstream projects pinning `quantwave>=0.4.0` will no longer be forced to the latest broken-on-import 0.5.x or have to manually pin 0.4.0. Updated install docs in READMEs and getting-started. Core DX (metadata, discovery, streaming, parity, talib, options) remains fully usable without polars.
+- CI: `cargo-nextest`, maturin venv, `uniffi-bindgen==0.31.0` for verify job
+- Doc lint for `fractional_differentiation.md` (preview PNG + description depth)
+- Empty Python API Reference page (`quantwave-rbz4`)
+- Broken imports for `quantwave >=0.4.1` on fresh installs without polars
 
 ## [0.5.2] - 2026-05-31
 

@@ -27,6 +27,9 @@ if [[ "$SKIP_METADATA" -eq 0 ]]; then
   echo "-- metadata codegen drift check"
   python3 scripts/check_metadata_drift.py
   
+  echo "-- indicator nav + slug redirect sync"
+  python3 scripts/sync_indicator_docs.py
+
   echo "-- documentation drift check"
   python3 scripts/check_doc_drift.py
   

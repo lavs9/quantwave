@@ -44,7 +44,6 @@ extra:
 nav:
   - Home: index.md
   - Purpose: purpose.md
-  - Roadmap: roadmap.md
   - Benchmarks: benchmarks.md
   - Getting Started:
       - Python: getting-started/python.md
@@ -72,7 +71,9 @@ nav:
   - API Reference:
       - Python (package surface): api/
   - Community:
+      - Roadmap: roadmap.md
       - Comparison: comparison.md
+      - Release 0.6.0: releases/0.6.0.md
       - Release 0.5.2: releases/0.5.2.md
       - Contributing: contributing.md
       - Changelog: changelog.md
@@ -80,6 +81,7 @@ nav:
 
 extra_css:
   - assets/indicator-badges.css
+  - assets/landing.css
 
 plugins:
   - search
