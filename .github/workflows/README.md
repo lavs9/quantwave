@@ -29,7 +29,7 @@ publish-rust ──► build-python-wheels (matrix) ──► publish-python (Py
 
 | Job | What |
 |-----|------|
-| **Publish Rust crates** | `cargo publish` chain on crates.io |
+| **Publish Rust crates** | `scripts/publish_crates.sh` — core → backtest/plugins → polars → quantwave (idempotent) |
 | **Python wheels** | Unified wheel via `scripts/build_unified_wheel.py` (core + backtest + plugins) on linux x64, linux arm64, macOS, Windows |
 | **Publish Python** | `twine upload` to PyPI |
 

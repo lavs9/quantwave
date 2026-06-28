@@ -1,7 +1,7 @@
 # Release — push a version tag (v*)
 #
 # Pipeline:
-#   1. publish-rust      — crates.io (core → polars → plugins → backtest → quantwave)
+#   1. publish-rust      — crates.io (core → backtest/plugins → polars → quantwave)
 #   2. build-python-*    — wheels (linux x64/arm, macOS, windows) + sdist
 #   3. publish-python    — PyPI via twine
 #
@@ -31,34 +31,10 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Publish quantwave-core
-        run: cargo publish -p quantwave-core
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
-
-      - name: Wait for quantwave-core on crates.io
-        run: sleep 45
-
-      - name: Publish quantwave-polars
-        run: cargo publish -p quantwave-polars
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
-
-      - name: Publish quantwave-plugins
-        run: cargo publish -p quantwave-plugins
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
-
-      - name: Publish quantwave-backtest
-        run: cargo publish -p quantwave-backtest
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
-
-      - name: Wait for dependencies on crates.io
-        run: sleep 45
-
-      - name: Publish quantwave
-        run: cargo publish -p quantwave
+      - name: Publish Rust crates (ordered + idempotent)
+        run: |
+          chmod +x scripts/publish_crates.sh
+          ./scripts/publish_crates.sh
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
 
