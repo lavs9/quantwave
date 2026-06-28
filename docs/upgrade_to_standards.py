@@ -44,6 +44,7 @@ SKIP_FILES = {
 
 # md stem -> metadata slug when filenames predate slug rules.
 SLUG_ALIASES = {
+    "fractional_differentiation": "frac_diff",
     "mesa_adaptive_moving_average_mama": "mesa_adaptive_moving_average",
     "exponential_deviation_bands": "exponential_deviation_bands",
     "relative_strength_markos_katsanos": "relative_strength_markos_katsanos",
