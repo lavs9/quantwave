@@ -11,7 +11,7 @@ This file is a **short index**. Detailed SOA status lives in dedicated docs—re
 
 | Topic | Doc | Grade (plain English) |
 |-------|-----|------------------------|
-| **Indicators** | [INDICATORS_SOA.md](./INDICATORS_SOA.md) | **A engine, A- product** — math and APIs are SOA; long-tail docs + frac-diff pending |
+| **Indicators** | [INDICATORS_SOA.md](./INDICATORS_SOA.md) | **A engine, A+ product** — SOA-complete; no open indicator beads |
 | **Backtest** | [BACKTEST_SOA.md](./BACKTEST_SOA.md) | **A research, B production** — full research loop; tearsheets/portfolio/live deferred |
 | **Roadmap (public)** | [docs/roadmap.md](../docs/roadmap.md) | User-facing priorities |
 | **Agents / landing** | [AGENTS.md](../AGENTS.md) | Build, test, push workflow |
@@ -39,7 +39,7 @@ Run `bd ready --json` for current state. Snapshot:
 | Bead | Area | What it unlocks |
 |------|------|-----------------|
 | `quantwave-motd` | Parent epic | v0.6 SOA productization (Tiers 1–2 done) |
-| `quantwave-wnd9` | Indicators | Fractional differencing for ML |
+
 | `quantwave-0gi1` | Backtest | HTML tear sheets |
 | `quantwave-8v4s` | Backtest | Portfolio-wide engine (epic) |
 | `quantwave-cr6v-v2.7` | Backtest | Nautilus live (deferred, LGPL) |
