@@ -7,15 +7,38 @@ use polars::io::ipc::IpcReader;
 use polars::prelude::*;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict, PyType};
+use pyo3::types::{PyBytes, PyDict, PyList, PyType};
 use pyo3_polars::PyDataFrame;
 use std::io::Cursor;
 use quantwave_backtest::{
     monte_carlo_return_paths, monte_carlo_trade_bootstrap, render_tearsheet_html,
-    BacktestConfig, BacktestEngine, BacktestError, BacktestReport, BacktestResult, CostModel,
-    ExecutionDelay, ExecutionModel, MonteCarloConfig, MonteCarloPathSummary,
-    MonteCarloReturnConfig, MonteCarloSummary, PerformanceMetrics, StopConfig, TearsheetOptions,
+    run_walk_forward, run_walk_forward_optimize, BacktestConfig, BacktestEngine, BacktestError,
+    BacktestReport, BacktestResult, CostModel, ExecutionDelay, ExecutionModel, MonteCarloConfig,
+    MonteCarloPathSummary, MonteCarloReturnConfig, MonteCarloSummary, PerformanceMetrics,
+    PortfolioAllocator, PortfolioMode, StopConfig, SweepVariant, TearsheetOptions, WalkForwardConfig,
 };
+
+fn parse_portfolio_mode(s: &str) -> PyResult<PortfolioMode> {
+    match s.to_ascii_lowercase().as_str() {
+        "independent" | "independent_books" | "independentbooks" => {
+            Ok(PortfolioMode::IndependentBooks)
+        }
+        "shared_capital" | "shared" | "sharedcapital" => Ok(PortfolioMode::SharedCapital),
+        other => Err(PyValueError::new_err(format!(
+            "portfolio_mode must be 'independent_books' or 'shared_capital', got '{other}'"
+        ))),
+    }
+}
+
+fn parse_portfolio_allocator(s: &str) -> PyResult<PortfolioAllocator> {
+    match s.to_ascii_lowercase().as_str() {
+        "equal_weight" | "equalweight" | "equal" => Ok(PortfolioAllocator::EqualWeight),
+        "signal_weighted" | "signalweighted" | "signal" => Ok(PortfolioAllocator::SignalWeighted),
+        other => Err(PyValueError::new_err(format!(
+            "portfolio_allocator must be 'equal_weight' or 'signal_weighted', got '{other}'"
+        ))),
+    }
+}
 
 fn parse_execution_delay(s: &str) -> PyResult<ExecutionDelay> {
     match s.to_ascii_lowercase().as_str() {
@@ -93,6 +116,8 @@ impl PyBacktestConfig {
         stop_loss_pct = None,
         take_profit_pct = None,
         trailing_stop_pct = None,
+        portfolio_mode = "independent_books",
+        portfolio_allocator = "equal_weight",
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -109,6 +134,8 @@ impl PyBacktestConfig {
         stop_loss_pct: Option<f64>,
         take_profit_pct: Option<f64>,
         trailing_stop_pct: Option<f64>,
+        portfolio_mode: &str,
+        portfolio_allocator: &str,
     ) -> PyResult<Self> {
         let costs = CostModel {
             commission_bps,
@@ -131,6 +158,8 @@ impl PyBacktestConfig {
                     take_profit_pct,
                     trailing_stop_pct,
                 },
+                portfolio_mode: parse_portfolio_mode(portfolio_mode)?,
+                portfolio_allocator: parse_portfolio_allocator(portfolio_allocator)?,
                 ..Default::default()
             },
         })
@@ -316,6 +345,64 @@ fn monte_carlo_return_paths_py<'py>(
     mc_path_summary_to_dict(py, &summary)
 }
 
+#[pyfunction]
+#[pyo3(signature = (df, config, train_bars, test_bars, step_bars=None))]
+fn run_walk_forward_py(
+    df: &Bound<'_, PyAny>,
+    config: PyBacktestConfig,
+    train_bars: usize,
+    test_bars: usize,
+    step_bars: Option<usize>,
+) -> PyResult<PyDataFrame> {
+    let mut wf = WalkForwardConfig::new(train_bars, test_bars);
+    wf.step_bars = step_bars;
+    let out = run_walk_forward(
+        dataframe_from_py(df)?.lazy(),
+        &config.inner,
+        &wf,
+    )
+    .map_err(map_err)?;
+    Ok(PyDataFrame(out))
+}
+
+fn sweep_variants_from_py_list(variants: &Bound<'_, PyList>) -> PyResult<Vec<SweepVariant>> {
+    let mut out = Vec::with_capacity(variants.len());
+    for item in variants.iter() {
+        let (params, signal_col): (std::collections::HashMap<String, f64>, String) =
+            item.extract()?;
+        out.push(SweepVariant { params, signal_col });
+    }
+    Ok(out)
+}
+
+#[pyfunction]
+#[pyo3(signature = (df, config, train_bars, test_bars, variants, objective_metric="sharpe_ratio", step_bars=None, overfit_threshold=1.0))]
+#[allow(clippy::too_many_arguments)]
+fn run_walk_forward_optimize_py(
+    df: &Bound<'_, PyAny>,
+    config: PyBacktestConfig,
+    train_bars: usize,
+    test_bars: usize,
+    variants: &Bound<'_, PyList>,
+    objective_metric: &str,
+    step_bars: Option<usize>,
+    overfit_threshold: f64,
+) -> PyResult<PyDataFrame> {
+    let mut wf = WalkForwardConfig::new(train_bars, test_bars);
+    wf.step_bars = step_bars;
+    wf.overfit_threshold = overfit_threshold;
+    let sweep_variants = sweep_variants_from_py_list(variants)?;
+    let out = run_walk_forward_optimize(
+        dataframe_from_py(df)?.lazy(),
+        &config.inner,
+        &wf,
+        &sweep_variants,
+        objective_metric,
+    )
+    .map_err(map_err)?;
+    Ok(PyDataFrame(out))
+}
+
 /// Native backtest engine (PyO3 + pyo3-polars).
 #[pymodule]
 fn _backtest(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -325,5 +412,7 @@ fn _backtest(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyBacktestReport>()?;
     m.add_function(wrap_pyfunction!(monte_carlo_trade_bootstrap_py, m)?)?;
     m.add_function(wrap_pyfunction!(monte_carlo_return_paths_py, m)?)?;
+    m.add_function(wrap_pyfunction!(run_walk_forward_py, m)?)?;
+    m.add_function(wrap_pyfunction!(run_walk_forward_optimize_py, m)?)?;
     Ok(())
 }

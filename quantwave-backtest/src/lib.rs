@@ -77,6 +77,7 @@ mod cross_sectional;
 mod live_bridge;
 mod metrics;
 mod monte_carlo;
+mod portfolio;
 mod sweep;
 mod tearsheet;
 mod walk_forward;
@@ -97,6 +98,9 @@ pub use monte_carlo::{
     monte_carlo_return_paths, MonteCarloReturnConfig, MonteCarloPathSummary,
 };
 pub use sweep::{run_param_sweep, single_param_variants, SweepVariant};
+pub use portfolio::{
+    PortfolioAllocator, PortfolioBar, PortfolioMode, run_shared_capital_streaming_simulation,
+};
 pub use walk_forward::{run_walk_forward, run_walk_forward_optimize, WalkForwardConfig};
 #[allow(unused_imports)]
 use quantwave_core::traits::Next; // Re-exported for future streaming parity work (used in hybrid mode later per quantwave-ug9t)
@@ -350,6 +354,10 @@ pub struct BacktestConfig {
     /// If Some, the engine will apply risk-budgeted sizing using fraction_at_risk / pole_height_atr
     /// from StrategySignal.metadata (or PAEvent converted) on top of raw exposure.
     pub position_sizer: Option<InitialRiskPositionSizer>,
+    /// Multi-symbol capital model (`IndependentBooks` default — quantwave-qzpi.6).
+    pub portfolio_mode: PortfolioMode,
+    /// Budget split when opening positions in `SharedCapital` mode.
+    pub portfolio_allocator: PortfolioAllocator,
 }
 
 impl Default for BacktestConfig {
@@ -366,6 +374,8 @@ impl Default for BacktestConfig {
             execution_delay: ExecutionDelay::default(),
             stop_config: StopConfig::default(),
             position_sizer: None,
+            portfolio_mode: PortfolioMode::default(),
+            portfolio_allocator: PortfolioAllocator::default(),
         }
     }
 }
@@ -625,7 +635,10 @@ impl BacktestEngine {
         }
 
         if self.config.symbol_col.is_some() {
-            return self.run_multi_symbol(df);
+            return match self.config.portfolio_mode {
+                PortfolioMode::SharedCapital => self.run_shared_capital_multi_symbol(df),
+                PortfolioMode::IndependentBooks => self.run_multi_symbol(df),
+            };
         }
 
         self.run_single_symbol(df)
@@ -652,7 +665,10 @@ impl BacktestEngine {
         }
 
         if self.config.symbol_col.is_some() {
-            return self.run_metrics_multi_symbol(df);
+            return match self.config.portfolio_mode {
+                PortfolioMode::SharedCapital => self.run_metrics_shared_capital(df),
+                PortfolioMode::IndependentBooks => self.run_metrics_multi_symbol(df),
+            };
         }
 
         self.run_metrics_single_symbol(df)
@@ -815,6 +831,138 @@ impl BacktestEngine {
         Ok(BacktestResult {
             trades: self.trades_to_df(&all_trades, true)?,
             equity_curve: self.equity_to_df(&combined_equity, true)?,
+            stats,
+        })
+    }
+
+    fn run_shared_capital_multi_symbol(&self, df: DataFrame) -> Result<BacktestResult, BacktestError> {
+        let sym_col = self
+            .config
+            .symbol_col
+            .as_ref()
+            .expect("symbol_col set");
+
+        let ts_series = df.column(&self.config.timestamp_col)?.clone();
+        let timestamps = self.extract_timestamps(&ts_series)?;
+        let symbols = extract_string_column(df.column(sym_col)?.clone())?;
+        validate_sorted_timestamp_symbol(&timestamps, &symbols)?;
+
+        let close_ca = df.column(&self.config.close_col)?.f64()?.clone();
+        let closes: Vec<f64> = close_ca.into_iter().map(|v| v.unwrap_or(0.0)).collect();
+        let (signal_vals, signal_metas) = self.load_signals(&df, &self.config.signal_col)?;
+        let entry_filters = self.load_entry_filters(&df)?;
+        let size_multipliers = self.load_size_multipliers(&df)?;
+
+        let mut adjusted_signals: Vec<f64> = Vec::with_capacity(signal_vals.len());
+        for i in 0..signal_vals.len() {
+            let filter = entry_filters.as_ref().and_then(|f| f.get(i).copied());
+            let mult = size_multipliers.as_ref().and_then(|m| m.get(i).copied());
+            adjusted_signals.push(apply_signal_modifiers(signal_vals[i], filter, mult));
+        }
+
+        // Apply execution delay per timestamp group (T+1 at portfolio bar level).
+        use std::collections::BTreeMap;
+        let mut by_ts: BTreeMap<DateTime<Utc>, Vec<usize>> = BTreeMap::new();
+        for (i, t) in timestamps.iter().enumerate() {
+            by_ts.entry(*t).or_default().push(i);
+        }
+        let unique_ts: Vec<DateTime<Utc>> = by_ts.keys().copied().collect();
+        let mut delayed_signals = vec![0.0; adjusted_signals.len()];
+        let mut delayed_metas: Vec<Option<HashMap<String, f64>>> = vec![None; signal_metas.len()];
+        for (gi, ts) in unique_ts.iter().enumerate() {
+            let source_by_sym: HashMap<String, (f64, Option<HashMap<String, f64>>)> =
+                if let Some(si) = signal_bar_index(gi, self.config.execution_delay) {
+                    by_ts
+                        .get(&unique_ts[si])
+                        .into_iter()
+                        .flatten()
+                        .map(|&idx| {
+                            (
+                                symbols[idx].clone(),
+                                (adjusted_signals[idx], signal_metas[idx].clone()),
+                            )
+                        })
+                        .collect()
+                } else {
+                    HashMap::new()
+                };
+            for &idx in by_ts.get(ts).unwrap_or(&vec![]) {
+                if let Some((s, m)) = source_by_sym.get(&symbols[idx]) {
+                    delayed_signals[idx] = *s;
+                    delayed_metas[idx] = m.clone();
+                }
+            }
+        }
+
+        let groups = portfolio::build_timestamp_groups(
+            &delayed_signals,
+            &delayed_metas,
+            &symbols,
+            &timestamps,
+            &closes,
+        );
+
+        let (trades, per_symbol_equity, portfolio_eq) = portfolio::simulate_shared_capital(
+            &groups,
+            &self.config.execution_model,
+            &self.config.position_sizer,
+            self.config.execution_delay,
+            &self.config.stop_config,
+            self.config.portfolio_allocator,
+        );
+
+        Self::assemble_shared_capital_result(
+            &self.config,
+            trades,
+            per_symbol_equity,
+            portfolio_eq,
+        )
+    }
+
+    fn run_metrics_shared_capital(&self, df: DataFrame) -> Result<PerformanceMetrics, BacktestError> {
+        let result = self.run_shared_capital_multi_symbol(df)?;
+        Ok(PerformanceMetrics::from_result(&result))
+    }
+
+    /// Assemble [`BacktestResult`] from shared-capital simulation output.
+    pub(crate) fn assemble_shared_capital_result(
+        config: &BacktestConfig,
+        trades: Vec<Trade>,
+        per_symbol_equity: HashMap<String, Vec<EquityPoint>>,
+        portfolio_equity: Vec<EquityPoint>,
+    ) -> Result<BacktestResult, BacktestError> {
+        let engine = BacktestEngine::new(config.clone());
+        let mut combined_equity: Vec<EquityPoint> = per_symbol_equity
+            .values()
+            .flatten()
+            .cloned()
+            .collect();
+        combined_equity.extend(portfolio_equity.clone());
+
+        let initial_cash = match &config.execution_model {
+            ExecutionModel::Simple(cm) => cm.initial_cash,
+            _ => 100_000.0,
+        };
+        let portfolio_final = portfolio_equity
+            .last()
+            .map(|e| e.equity)
+            .unwrap_or(initial_cash);
+        let total_return = (portfolio_final - initial_cash) / initial_cash;
+        let num_trades = trades.len() as f64;
+        let n_symbols = per_symbol_equity.len() as f64;
+
+        let mut stats = HashMap::new();
+        stats.insert("initial_cash".to_string(), initial_cash);
+        stats.insert("final_equity".to_string(), portfolio_final);
+        stats.insert("total_return".to_string(), total_return);
+        stats.insert("num_trades".to_string(), num_trades);
+        stats.insert("net_pnl".to_string(), portfolio_final - initial_cash);
+        stats.insert("num_symbols".to_string(), n_symbols);
+        stats.insert("portfolio_mode".to_string(), 1.0); // 1.0 = shared_capital sentinel
+
+        Ok(BacktestResult {
+            trades: engine.trades_to_df(&trades, true)?,
+            equity_curve: engine.equity_to_df(&combined_equity, true)?,
             stats,
         })
     }

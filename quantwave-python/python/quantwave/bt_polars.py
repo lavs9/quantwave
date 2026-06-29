@@ -26,6 +26,8 @@ def _config_from_kwargs(
     stop_loss_pct: float | None = None,
     take_profit_pct: float | None = None,
     trailing_stop_pct: float | None = None,
+    portfolio_mode: str = "independent_books",
+    portfolio_allocator: str = "equal_weight",
 ) -> BacktestConfig:
     return BacktestConfig(
         signal_col=signal,
@@ -41,6 +43,8 @@ def _config_from_kwargs(
         stop_loss_pct=stop_loss_pct,
         take_profit_pct=take_profit_pct,
         trailing_stop_pct=trailing_stop_pct,
+        portfolio_mode=portfolio_mode,
+        portfolio_allocator=portfolio_allocator,
     )
 
 
@@ -149,6 +153,45 @@ class BtLazyNamespace:
             trailing_stop_pct=trailing_stop_pct,
         )
         return BacktestEngine(config).run_metrics_only(self._ldf.collect())
+
+    def portfolio_backtest(
+        self,
+        *,
+        signal: str = "signal",
+        timestamp_col: str = "timestamp",
+        close_col: str = "close",
+        symbol_col: str = "symbol",
+        entry_filter_col: str | None = None,
+        size_multiplier_col: str | None = None,
+        initial_cash: float = 100_000.0,
+        commission_bps: float = 5.0,
+        slippage_bps: float = 2.0,
+        execution_delay: str = "same_bar",
+        stop_loss_pct: float | None = None,
+        take_profit_pct: float | None = None,
+        trailing_stop_pct: float | None = None,
+        portfolio_mode: str = "shared_capital",
+        portfolio_allocator: str = "equal_weight",
+    ):
+        """Shared-capital multi-symbol backtest (quantwave-qzpi.9)."""
+        config = _config_from_kwargs(
+            signal=signal,
+            timestamp_col=timestamp_col,
+            close_col=close_col,
+            symbol_col=symbol_col,
+            entry_filter_col=entry_filter_col,
+            size_multiplier_col=size_multiplier_col,
+            initial_cash=initial_cash,
+            commission_bps=commission_bps,
+            slippage_bps=slippage_bps,
+            execution_delay=execution_delay,
+            stop_loss_pct=stop_loss_pct,
+            take_profit_pct=take_profit_pct,
+            trailing_stop_pct=trailing_stop_pct,
+            portfolio_mode=portfolio_mode,
+            portfolio_allocator=portfolio_allocator,
+        )
+        return BacktestEngine(config).backtest_with_report(self._ldf.collect())
 
     def sweep(
         self,
@@ -269,14 +312,13 @@ class BtLazyNamespace:
         slippage_bps: float = 2.0,
         execution_delay: str = "same_bar",
     ) -> pl.DataFrame:
-        """Rolling OOS walk-forward → fold × metrics DataFrame (cr6v.14)."""
+        """Rolling OOS walk-forward → fold × metrics DataFrame (delegates to Rust)."""
         if train_bars <= 0 or test_bars <= 0:
             raise ValueError("train_bars and test_bars must be > 0")
 
-        df = self._ldf.collect()
-        timestamps = df[timestamp_col].unique().sort().to_list()
-        step = step_bars or test_bars
-        base_kwargs = dict(
+        from quantwave._backtest import run_walk_forward_py
+
+        config = _config_from_kwargs(
             signal=signal,
             timestamp_col=timestamp_col,
             close_col=close_col,
@@ -286,35 +328,13 @@ class BtLazyNamespace:
             slippage_bps=slippage_bps,
             execution_delay=execution_delay,
         )
-
-        rows: list[dict[str, float]] = []
-        fold = 0
-        start = 0
-        while start + train_bars + test_bars <= len(timestamps):
-            test_ts = timestamps[start + train_bars : start + train_bars + test_bars]
-            oos = df.filter(pl.col(timestamp_col).is_in(test_ts))
-            report = BacktestEngine(_config_from_kwargs(**base_kwargs)).backtest_with_report(
-                oos
-            )
-            rows.append(
-                {
-                    "fold_id": float(fold),
-                    "oos_start_ts": float(test_ts[0]),
-                    "oos_end_ts": float(test_ts[-1]),
-                    "train_bars": float(train_bars),
-                    "test_bars": float(test_bars),
-                    **report.metrics(),
-                }
-            )
-            fold += 1
-            start += step
-
-        if not rows:
-            raise ValueError(
-                f"insufficient bars for walk-forward: need >= {train_bars + test_bars} "
-                f"unique timestamps, got {len(timestamps)}"
-            )
-        return pl.DataFrame(rows)
+        return run_walk_forward_py(
+            self._ldf.collect(),
+            config,
+            train_bars,
+            test_bars,
+            step_bars,
+        )
 
     def walk_forward_optimize(
         self,
@@ -335,19 +355,37 @@ class BtLazyNamespace:
         slippage_bps: float = 2.0,
         execution_delay: str = "same_bar",
     ) -> pl.DataFrame:
-        """Walk-forward with train-window parameter optimization."""
+        """Walk-forward with train-window parameter optimization (Rust core)."""
         import itertools
+
         if not param_grid:
             raise ValueError("param_grid cannot be empty")
         if not callable(build_fn):
             raise ValueError("build_fn must be callable")
-            
+        if train_bars <= 0 or test_bars <= 0:
+            raise ValueError("train_bars and test_bars must be > 0")
+
+        from quantwave._backtest import run_walk_forward_optimize_py
+
         df = self._ldf.collect()
-        timestamps = df[timestamp_col].unique().sort().to_list()
-        step = step_bars or test_bars
-        
-        base_kwargs = dict(
-            signal=signal,
+        keys = list(param_grid.keys())
+        values_lists = [param_grid[k] for k in keys]
+
+        enriched = df.clone()
+        variants: list[tuple[dict[str, float], str]] = []
+        for combo in itertools.product(*values_lists):
+            params = dict(zip(keys, combo, strict=True))
+            sig_col = "__qw_wfo_" + "_".join(f"{k}{v:g}" for k, v in params.items())
+            built = build_fn(self._ldf, params).collect()
+            if signal not in built.columns:
+                raise ValueError(f"build_fn must return a frame with signal column '{signal}'")
+            if built.height != enriched.height:
+                raise ValueError("build_fn must preserve row count of input frame")
+            enriched = enriched.with_columns(built[signal].alias(sig_col))
+            variants.append((params, sig_col))
+
+        config = _config_from_kwargs(
+            signal=variants[0][1],
             timestamp_col=timestamp_col,
             close_col=close_col,
             symbol_col=symbol_col,
@@ -356,64 +394,16 @@ class BtLazyNamespace:
             slippage_bps=slippage_bps,
             execution_delay=execution_delay,
         )
-        
-        keys = list(param_grid.keys())
-        values_lists = [param_grid[k] for k in keys]
-        
-        rows: list[dict[str, float | bool]] = []
-        fold = 0
-        start = 0
-        while start + train_bars + test_bars <= len(timestamps):
-            train_ts = timestamps[start : start + train_bars]
-            test_ts = timestamps[start + train_bars : start + train_bars + test_bars]
-            
-            train_df = df.filter(pl.col(timestamp_col).is_in(train_ts))
-            
-            # Sweep on train window
-            best_val = -float("inf")
-            best_params = None
-            best_signal_col = None
-            
-            for combo in itertools.product(*values_lists):
-                params = dict(zip(keys, combo))
-                built_lf = build_fn(train_df.lazy(), params)
-                config = _config_from_kwargs(**base_kwargs)
-                report = BacktestEngine(config).backtest_with_report(built_lf.collect())
-                
-                val = report.metrics().get(objective, -float("inf"))
-                if val > best_val or (best_val == -float("inf") and val != -float("inf")):
-                    best_val = val
-                    best_params = params
-                    
-            if best_params is None:
-                raise ValueError("No valid param found during train sweep")
-                
-            # OOS evaluation using best params
-            oos_df = df.filter(pl.col(timestamp_col).is_in(test_ts))
-            built_oos = build_fn(oos_df.lazy(), best_params)
-            config = _config_from_kwargs(**base_kwargs)
-            report = BacktestEngine(config).backtest_with_report(built_oos.collect())
-            
-            oos_val = report.metrics().get(objective, 0.0)
-            overfit = (best_val - oos_val) > overfit_threshold
-            
-            row = {
-                "fold_id": float(fold),
-                "oos_start_ts": float(test_ts[0]),
-                "oos_end_ts": float(test_ts[-1]),
-                "train_metric": float(best_val),
-                "oos_metric": float(oos_val),
-                "overfit_flag": bool(overfit),
-                **{f"best_{k}": float(v) for k, v in best_params.items()},
-                **report.metrics(),
-            }
-            rows.append(row)
-            fold += 1
-            start += step
-
-        if not rows:
-            raise ValueError("insufficient bars for wfo")
-        return pl.DataFrame(rows)
+        return run_walk_forward_optimize_py(
+            enriched,
+            config,
+            train_bars,
+            test_bars,
+            variants,
+            objective,
+            step_bars,
+            overfit_threshold,
+        )
 
     def cross_sectional_backtest(
         self,
