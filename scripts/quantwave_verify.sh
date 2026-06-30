@@ -69,6 +69,7 @@ if [[ "$SKIP_PYTHON" -eq 0 ]]; then
     quantwave-python/tests/test_tier2.py \
     quantwave-python/tests/test_frac_diff.py \
     quantwave-python/tests/test_tearsheet.py \
+    quantwave-python/tests/test_portfolio_backtest.py \
     -q
 fi
 

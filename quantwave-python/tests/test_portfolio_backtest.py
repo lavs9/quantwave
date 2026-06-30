@@ -1,6 +1,7 @@
 """Shared-capital portfolio backtest Python smoke (quantwave-qzpi.9)."""
 
 import polars as pl
+import quantwave
 
 
 def test_portfolio_backtest_two_symbol_smoke():
@@ -45,3 +46,23 @@ def test_portfolio_backtest_differs_from_independent():
         slippage_bps=0.0,
     )
     assert shared.metrics()["final_equity"] != independent.metrics()["final_equity"]
+
+def test_portfolio_backtest_five_symbols_stress():
+    df = pl.DataFrame(
+        {
+            "timestamp": [1] * 5 + [2] * 5 + [3] * 5,
+            "symbol": ["A", "B", "C", "D", "E"] * 3,
+            "close": [100.0, 101.0, 102.0, 103.0, 104.0] * 3,
+            "signal": [1.0, 0.0, -1.0, 1.0, 0.0] * 3,
+        }
+    ).lazy()
+
+    shared = df.bt.portfolio_backtest(
+        symbol_col="symbol",
+        commission_bps=0.0,
+        slippage_bps=0.0,
+        portfolio_mode="shared_capital",
+        initial_cash=100_000.0,
+    )
+    metrics = shared.metrics()
+    assert metrics["num_trades"] > 0

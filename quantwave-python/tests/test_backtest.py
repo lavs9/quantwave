@@ -459,6 +459,31 @@ def test_bt_cross_sectional_zscore_python():
     assert report.metrics()["num_trades"] >= 0.0
 
 
+def test_bt_cross_sectional_winsorize_python():
+    timestamps = [1, 1, 1, 2, 2, 2]
+    symbols = ["A", "B", "C", "A", "B", "C"]
+    closes = [10.0, 10.0, 10.0, 11.0, 11.0, 11.0]
+    scores = [100.0, 4.0, 3.0, 2.0, 1.0, -100.0]
+    
+    df = pl.DataFrame({
+        "timestamp": timestamps,
+        "symbol": symbols,
+        "close": closes,
+        "score": scores
+    })
+    
+    report = df.lazy().bt.cross_sectional_backtest(
+        factor_col="score",
+        transform="winsorize",
+        top_frac=0.3,
+        bottom_frac=0.3,
+        commission_bps=0.0,
+        slippage_bps=0.0
+    )
+    assert report.metrics()["num_trades"] >= 0.0
+
+
+
 def test_bt_walk_forward_optimize_python():
     # Make a simple builder fn
     def build_fn(lf, params):

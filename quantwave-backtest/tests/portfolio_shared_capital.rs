@@ -134,3 +134,41 @@ fn test_shared_capital_independent_mode_regression() {
     );
     assert_eq!(result.trades.height(), 3);
 }
+fn make_five_symbol_df() -> DataFrame {
+    let mut timestamps = Vec::new();
+    let mut symbols = Vec::new();
+    let mut closes = Vec::new();
+    let mut signals = Vec::new();
+
+    let syms = ["A", "B", "C", "D", "E"];
+    for i in 0..10 {
+        for s in syms.iter() {
+            timestamps.push(1_700_010_000 + i as i64);
+            symbols.push(*s);
+            closes.push(100.0 + (i as f64));
+            signals.push(if i % 2 == 0 { 1.0 } else { 0.0 });
+        }
+    }
+
+    DataFrame::new(vec![
+        Column::new("timestamp".into(), timestamps),
+        Column::new("symbol".into(), symbols),
+        Column::new("close".into(), closes),
+        Column::new("signal".into(), signals),
+    ])
+    .unwrap()
+}
+
+#[test]
+fn test_shared_capital_five_symbols_stress() {
+    let df = make_five_symbol_df();
+    let engine = BacktestEngine::new(shared_capital_config("signal"));
+    let result = engine.run(df.lazy()).expect("five symbol run");
+
+    assert_relative_eq!(
+        *result.stats.get("initial_cash").unwrap(),
+        100_000.0,
+        epsilon = 1e-6
+    );
+    assert_eq!(result.trades.height(), 25);
+}

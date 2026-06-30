@@ -20,8 +20,7 @@ QuantWave ships a **Polars-native, clean-room backtest engine** (`quantwave-back
 **What it is not (yet):**
 
 - Live order routing (→ deferred `quantwave-cr6v-v2.7`, Nautilus HITL)
-- Portfolio optimization / wide-format matrix engine
-- Tear-sheet HTML plots (metrics dict + DataFrames only)
+- Portfolio optimization / wide-format matrix engine (⏸)
 
 ---
 
@@ -73,8 +72,9 @@ Legend: ✅ Shipped · ⏸ Deferred · ❌ Out of scope v1/v2
 | 15 | Monte Carlo (trade bootstrap) | ✅ | cr6v.14 | `monte_carlo_trade_bootstrap` | `quantwave-backtest/tests/p2_features.rs` |
 | 15b | Monte Carlo (return-path VaR/CVaR) | ✅ | cr6v-v2.2 | `monte_carlo_return_paths` | `monte_carlo.rs` tests |
 | 16 | Cross-sectional factor panel (rank long/short) | ✅ | cr6v.15 / 6ypp | `.bt.cross_sectional_backtest()` | `test_cross_sectional_*` |
-| 16b | Factor transforms (neutralize, zscore, winsorize) | ✅ | cr6v-v2.3 | `transform=` kwarg + Rust helpers | `test_factor_*`, `test_bt_cross_sectional_zscore_python` |
+| 16b | Factor transforms (neutralize, zscore, winsorize) | ✅ | cr6v-v2.3 | `transform=` kwarg + Rust helpers | `test_bt_cross_sectional_winsorize_python`, `test_bt_cross_sectional_zscore_python` |
 | 17 | Nautilus live bridge | ⏸ | cr6v-v2.7 | `LiveBridge` trait stub only | `../../../planning/NAUTILUS_LIVE_BRIDGE_ADR.md` |
+| 18 | HTML Tear Sheets | ✅ | qzpi.17 | `tearsheet.render_html` | `test_tearsheet.py` |
 
 ### v2 additions (not in original §8 table)
 
@@ -107,8 +107,10 @@ Rust-only (no Python wrapper yet): `run_walk_forward_optimize`, `monte_carlo_ret
 
 | Artifact | Path | Audience |
 |----------|------|----------|
+| Overview | `docs/guides/backtest/index.md` (qzpi.2) | Landing page |
 | Quickstart (5 min) | `docs/guides/backtest/quickstart.md` (bt-prod.5) | New evaluators |
 | Full `.bt` tour | `docs/examples/notebooks/backtest_showcase.py` (bt-prod.2) | Demo / sales |
+| Tear Sheets | `docs/guides/backtest/tear_sheets.md` (qzpi.17) | Tear sheets |
 | PA canonical strategy | [pa_flag_breakout_strategy.md](../../examples/notebooks/pa_flag_breakout_strategy.md) | PA moat |
 | Benchmarks | [backtest_benchmark.md](../../examples/notebooks/backtest_benchmark.md) | Performance story |
 | ML → backtest E2E | [ml_feature_backtest_parity.md](../../examples/notebooks/ml_feature_backtest_parity.md) | ML pipeline |

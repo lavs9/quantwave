@@ -26,7 +26,10 @@ import sys
 from pathlib import Path
 
 NOTEBOOKS = [
+    "backtest_showcase.py",
     "strategy_backtest.py",
+    "pa_flag_breakout_strategy.py",
+    "portfolio_shared_capital_backtest.py",
     "multi_indicator_analysis.py",
     "ml_feature_stability.py",
     "ml_feature_backtest_parity.py",

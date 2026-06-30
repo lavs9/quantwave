@@ -433,6 +433,12 @@ class BtLazyNamespace:
         elif transform == "neutralize":
             mean = pl.col(factor_col).mean().over(timestamp_col)
             df = df.with_columns((pl.col(factor_col) - mean).alias(factor_col))
+        elif transform == "winsorize":
+            lower = pl.col(factor_col).quantile(0.05).over(timestamp_col)
+            upper = pl.col(factor_col).quantile(0.95).over(timestamp_col)
+            df = df.with_columns(
+                pl.col(factor_col).clip(lower_bound=lower, upper_bound=upper).alias(factor_col)
+            )
             
         ranked = (
             df.with_columns(

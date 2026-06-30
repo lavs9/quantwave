@@ -1,8 +1,8 @@
 # Backtest Engine — SOA Status
 
-**Updated:** 2026-06-26  
-**Version:** 0.5.2  
-**One sentence:** The backtester is **research-SOA** today; production-SOA needs tearsheets, portfolio engine, and (optionally) live execution.
+**Updated:** 2026-06-30  
+**Version:** 0.7  
+**One sentence:** The backtester is **production-SOA**, providing tearsheets, shared-capital portfolio simulation, and comprehensive research tools.
 
 > This doc is separate from indicators on purpose. See [INDICATORS_SOA.md](./INDICATORS_SOA.md) for the indicator library.
 
@@ -17,7 +17,7 @@ A state-of-the-art **research** backtester lets you:
 3. **Trust results** — costs, T+1, stops, multi-symbol, rich metadata on trades (PA/ML).
 4. **Reproduce** — same Rust core in Python `.bt` and Rust `lf.bt()`.
 
-A state-of-the-art **production** backtester also adds analyst reporting, portfolio-wide simulation, and optional live bridge. We defer those consciously.
+A state-of-the-art **production** backtester also adds analyst reporting, portfolio-wide simulation, and optional live bridge. We now support HTML tear sheets and shared-capital portfolio simulation!
 
 ---
 
@@ -33,8 +33,10 @@ A state-of-the-art **production** backtester also adds analyst reporting, portfo
 | `.bt.monte_carlo()` | Trade bootstrap + return-path VaR/CVaR (`quantwave-fsg3`) |
 | Rust `lf.bt()` parity | Same engine from Rust Polars (`quantwave-dk61` for WFO+MC) |
 | PA + ML notebooks | Flag breakout, foundation strategy, ML→backtest E2E with metadata |
+| `.bt.portfolio_backtest` | Shared-capital portfolio simulation across multiple symbols |
+| HTML Tear Sheets | Shareable HTML analyst reports with equity curves and metrics |
 
-**Bottom line:** You can run a full quant research loop (signals → backtest → sweep/WFO → MC) without leaving Polars. You cannot yet get HTML tear sheets or portfolio-opt from one API call.
+**Bottom line:** You can run a full quant research loop (signals → backtest → sweep/WFO → MC) without leaving Polars. You also have access to HTML tear sheets and shared-capital portfolio simulation.
 
 ---
 
@@ -50,14 +52,14 @@ A state-of-the-art **production** backtester also adds analyst reporting, portfo
 | Python `.bt.monte_carlo()` | ✅ Done | `quantwave-fsg3` |
 | Canonical PA + ML E2E notebooks | ✅ Done | parity verified |
 | Capability matrix doc | ✅ Done | [capability_matrix.md](../docs/guides/backtest/capability_matrix.md) |
-| `winsorize` on Python cross-sectional | ⚠️ Partial | Rust yes; Python path incomplete — **no bead** |
-| HTML / PDF tear sheets | ❌ Not started | Bead: `quantwave-0gi1` |
-| Portfolio-wide / wide-format engine | ❌ Deferred | Bead: `quantwave-8v4s` (epic) |
+| `winsorize` on Python cross-sectional | ✅ Done | `quantwave-qzpi.12` |
+| HTML / PDF tear sheets | ✅ Done | `quantwave-qzpi.17` |
+| Portfolio-wide / wide-format engine | ✅ Done | `quantwave-qzpi.9` (epic `quantwave-8v4s`) |
 | Live execution (Nautilus) | ❌ Deferred | Bead: `quantwave-cr6v-v2.7` (LGPL HITL) |
 | Partial fills / bar magnifier | ❌ Deferred | No bead |
 | `metrics_only` large speedup | ⚠️ Accepted | Parity path exists; not a big perf win yet |
 
-**Backtest SOA grade: A research, B production.** Research loop is complete; analyst output and portfolio scale are not.
+**Backtest SOA grade: A research, A- production.** Research loop is complete; analyst output and portfolio scale are shipped.
 
 ---
 
@@ -73,6 +75,7 @@ A state-of-the-art **production** backtester also adds analyst reporting, portfo
 | `lf.bt.walk_forward()` | Rolling OOS folds |
 | `lf.bt.walk_forward_optimize()` | Train-window sweep + locked OOS |
 | `lf.bt.cross_sectional_backtest()` | Universe rank long/short |
+| `lf.bt.portfolio_backtest()` | Shared-capital portfolio simulation |
 | `lf.bt.monte_carlo()` | Trade bootstrap or return-path MC |
 
 ---
@@ -83,15 +86,12 @@ A state-of-the-art **production** backtester also adds analyst reporting, portfo
 
 | Bead | Work | Impact if done | Priority |
 |------|------|----------------|----------|
-| `quantwave-0gi1` | Tear sheets / HTML reporting | Analysts get shareable reports without Jupyter glue | P3 |
-| `quantwave-8v4s` | Portfolio-wide vectorized backtest | Multi-asset book simulation in one pass | P4 (epic) |
 | `quantwave-cr6v-v2.7` | Nautilus live bridge | Paper/live execution from same signals; LGPL decision required | P4 (deferred) |
 
 ### No bead yet
 
 | Gap | Impact | Suggested action |
 |-----|--------|------------------|
-| `winsorize_factor` on Python `.bt.cross_sectional_backtest` | Factor research may need manual winsorize in Polars | Small task bead under `motd` |
 | Partial fills / liquidity model | Institutional realism gap | Defer until user story |
 | WFO Python vs Rust duplicate logic | Two code paths to maintain | Architectural bead if consolidating |
 
@@ -104,6 +104,7 @@ A state-of-the-art **production** backtester also adds analyst reporting, portfo
 - `quantwave-bt-prod` — productization, showcase notebooks  
 - `quantwave-fsg3` — Python MC wrapper  
 - `quantwave-dk61` — Rust Polars `.bt` alignment  
+- `quantwave-qzpi` — Backtest Engine v0.7 — Portfolio SOA + Documentation
 
 Parent epic `quantwave-motd` tracks Tier 3 backtest items above.
 
@@ -116,6 +117,7 @@ Parent epic `quantwave-motd` tracks Tier 3 backtest items above.
 | Capability matrix | [docs/guides/backtest/capability_matrix.md](../docs/guides/backtest/capability_matrix.md) |
 | Quickstart | [docs/guides/backtest/quickstart.md](../docs/guides/backtest/quickstart.md) |
 | Full tour | [docs/examples/notebooks/backtest_showcase.py](../docs/examples/notebooks/backtest_showcase.py) |
+| Portfolio Shared Capital | [docs/examples/notebooks/portfolio_shared_capital_backtest.py](../docs/examples/notebooks/portfolio_shared_capital_backtest.py) |
 | PA canonical | [docs/examples/notebooks/pa_flag_breakout_strategy.py](../docs/examples/notebooks/pa_flag_breakout_strategy.py) |
 | ML E2E | [docs/examples/notebooks/ml_feature_backtest_parity.py](../docs/examples/notebooks/ml_feature_backtest_parity.py) |
 

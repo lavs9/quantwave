@@ -48,26 +48,30 @@ nav:
   - Getting Started:
       - Python: getting-started/python.md
       - Rust: getting-started/rust.md
-  - Guides:
+  - Indicators:
       - Indicator Gallery: guides/indicators/gallery.md
-      - Indicators: guides/indicators/
+      - Catalog: guides/indicators/
       - ML Features: guides/ml_features.md
       - Plugin vs .ta: guides/plugin_vs_ta.md
-      - Backtest Engine:
-          - Quickstart: guides/backtest/quickstart.md
-          - Capability Matrix: guides/backtest/capability_matrix.md
       - Options India: guides/options_india.md
-  - Examples:
-      - Batch & Streaming: examples/batch-streaming.md
-      - Marimo Notebooks:
-          - Overview: examples/notebooks/index.md
+  - Backtest Engine:
+      - Overview: guides/backtest/index.md
+      - Quickstart: guides/backtest/quickstart.md
+      - Capability Matrix: guides/backtest/capability_matrix.md
+      - Tear Sheets: guides/backtest/tear_sheets.md
+      - Notebooks:
           - Backtest Showcase: examples/notebooks/backtest_showcase.md
           - Backtest Benchmarks: examples/notebooks/backtest_benchmark.md
+          - Portfolio Shared Capital: examples/notebooks/portfolio_shared_capital_backtest.md
           - Strategy Backtest: examples/notebooks/strategy_backtest.md
           - PA Flag Breakout (E2E): examples/notebooks/pa_flag_breakout_strategy.md
+          - ML Features → Backtest (E2E): examples/notebooks/ml_feature_backtest_parity.md
+  - Examples:
+      - Batch & Streaming: examples/batch-streaming.md
+      - Notebooks:
+          - Overview: examples/notebooks/index.md
           - Multi-Indicator Analysis: examples/notebooks/multi_indicator_analysis.md
           - ML Feature Stability: examples/notebooks/ml_feature_stability.md
-          - ML Features → Backtest (E2E): examples/notebooks/ml_feature_backtest_parity.md
   - API Reference:
       - Python (package surface): api/
   - Community:

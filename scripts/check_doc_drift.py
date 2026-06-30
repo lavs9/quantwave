@@ -2,6 +2,7 @@
 """Verify native doc pages and slug redirect stubs match the metadata registry."""
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -42,6 +43,26 @@ def resolve_stem(slug: str, name: str, stems: set[str]) -> str | None:
         if candidate in stems:
             return candidate
     return None
+
+
+def check_backtest_docs_exist() -> bool:
+    mkdocs_file = ROOT / "mkdocs.yml"
+    if not mkdocs_file.exists():
+        return True
+    
+    text = mkdocs_file.read_text(encoding="utf-8")
+    paths = re.findall(r':\s+([\w\-\/\.]+\.md)', text)
+    
+    failed = False
+    for path_str in paths:
+        path_str = path_str.strip()
+        if path_str.startswith("guides/backtest/") or path_str.startswith("examples/notebooks/"):
+            target = ROOT / "docs" / path_str
+            if not target.exists():
+                print(f"FAIL: mkdocs.yml references missing file: {path_str}", file=sys.stderr)
+                failed = True
+                
+    return not failed
 
 
 def main() -> None:
@@ -103,6 +124,9 @@ def main() -> None:
         print("FAIL: Orphan documentation pages (no metadata entry):", file=sys.stderr)
         for stem in orphans:
             print(f"  - {stem}.md", file=sys.stderr)
+        failed = True
+
+    if not check_backtest_docs_exist():
         failed = True
 
     if failed:
