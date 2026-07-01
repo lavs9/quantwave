@@ -1,26 +1,22 @@
 # Backtest Engine — Capability Matrix
 
-**Sources:** [`planning/BACKTEST_ENGINE_RESEARCH.md`](../../../planning/BACKTEST_ENGINE_RESEARCH.md) §8 (v1 requirements) + v2 gap closure (`quantwave-cr6v-v2`).
-
-**Epics:** `quantwave-cr6v` (v1, closed) · `quantwave-cr6v-v2` (v2, closed) · `quantwave-bt-prod` (productization, complete)
-
----
+QuantWave ships a **Polars-native, clean-room backtest engine** (`quantwave-backtest`) with Python `.bt` namespace ergonomics. It is **vectorbt-inspired** research UX on top of QuantWave's **batch ↔ streaming parity** moat.
 
 ## Executive summary
-
-QuantWave ships a **Polars-native, clean-room backtest engine** (`quantwave-backtest`) with Python `.bt` namespace ergonomics. It is **not** a vectorbt or polars-backtest fork — it is **vectorbt-*inspired*** research UX on top of QuantWave's unique **batch ↔ streaming parity** moat.
 
 **What it is:**
 
 - Long-format LazyFrame input (single- and multi-symbol)
 - Realistic costs, execution delay, stops, shorts, sizing filters
 - Research analytics: sweeps, walk-forward optimization, Monte Carlo, cross-sectional panels
+- Shared-capital portfolio simulation across symbols
+- HTML tear sheets and rich `PerformanceMetrics`
 - Rich PA/ML metadata preserved into trades
 
 **What it is not (yet):**
 
-- Live order routing (→ deferred `quantwave-cr6v-v2.7`, Nautilus HITL)
-- Portfolio optimization / wide-format matrix engine (⏸)
+- Live order routing (Nautilus bridge deferred)
+- Wide-format matrix / portfolio optimization engine
 
 ---
 
@@ -36,53 +32,54 @@ QuantWave ships a **Polars-native, clean-room backtest engine** (`quantwave-back
 
 ---
 
-## Feature matrix (research §8 → shipped)
+## Feature matrix
 
-Legend: ✅ Shipped · ⏸ Deferred · ❌ Out of scope v1/v2
+Legend: ✅ Shipped · ⏸ Deferred · ❌ Out of scope
 
-### P0 — Core user-facing (cr6v v1)
+### Core user-facing
 
-| # | Requirement | Status | Bead | API / module | Proof (test or notebook) |
-|---|-------------|--------|------|--------------|--------------------------|
-| 1 | Python `BacktestEngine` + config (PyO3) | ✅ | cr6v.4 | `quantwave.backtest.BacktestEngine` | `quantwave-python/tests/test_backtest.py::test_backtest_engine_run_single_trade` |
-| 2 | `.bt.backtest()` / `.bt.backtest_with_report()` | ✅ | cr6v.5 | `quantwave-python/python/quantwave/bt_polars.py` | `test_bt_backtest_with_report` |
-| 3 | PerformanceMetrics (Sharpe, Sortino, max DD, CAGR, win rate, PF, num trades) | ✅ | cr6v.1 | `quantwave-backtest/src/metrics.rs` | `test_backtest_metrics_dict_keys` |
-| 4 | Multi-symbol long-format grouping + portfolio equity | ✅ | cr6v.2 | `BacktestEngine::run` multi-symbol path | `test_backtest_multi_symbol_*` in `test_backtest.py` |
-| 5 | `entry_filter_col` + `size_multiplier_col` in batch `run()` | ✅ | cr6v.3 | `BacktestConfig` | `test_backtest_entry_filter_*` |
-| 6 | `ml_feature_backtest_parity.py` uses real Rust engine | ✅ | cr6v.6 | notebook | [ml_feature_backtest_parity.md](../../examples/notebooks/ml_feature_backtest_parity.md) |
-| 7 | `strategy_backtest.py` shows PnL via `.bt` | ✅ | cr6v.7 | notebook | [strategy_backtest.md](../../examples/notebooks/strategy_backtest.md) |
+| # | Requirement | Status | API / module | Proof |
+|---|-------------|--------|--------------|-------|
+| 1 | Python `BacktestEngine` + config (PyO3) | ✅ | `quantwave.backtest.BacktestEngine` | `test_backtest_engine_run_single_trade` |
+| 2 | `.bt.backtest()` / `.bt.backtest_with_report()` | ✅ | `quantwave/bt_polars.py` | `test_bt_backtest_with_report` |
+| 3 | `PerformanceMetrics` (Sharpe, Sortino, max DD, CAGR, win rate, PF) | ✅ | `quantwave-backtest/src/metrics.rs` | `test_backtest_metrics_dict_keys` |
+| 4 | Multi-symbol long-format grouping | ✅ | `BacktestEngine::run` | `test_backtest_multi_symbol_*` |
+| 5 | `entry_filter_col` + `size_multiplier_col` | ✅ | `BacktestConfig` | `test_backtest_entry_filter_*` |
+| 6 | ML feature → backtest E2E notebook | ✅ | notebook | [ml_feature_backtest_parity.md](../../examples/notebooks/ml_feature_backtest_parity.md) |
+| 7 | Strategy backtest notebook | ✅ | notebook | [strategy_backtest.md](../../examples/notebooks/strategy_backtest.md) |
 
-### P1 — Execution depth (cr6v v1)
+### Execution depth
 
-| # | Requirement | Status | Bead | API | Proof |
-|---|-------------|--------|------|-----|-------|
-| 8 | T+1 execution (`execution_delay`) | ✅ | cr6v.8 | `BacktestConfig.execution_delay` | nextest `execution_delay` |
-| 9 | Stop-loss / take-profit / trailing | ✅ | cr6v.9 | `StopConfig` | nextest `stop_*` |
-| 10 | Short positions (signed exposure) | ✅ | cr6v.10 | signal f64 negative | nextest `short_*` |
-| 11 | Struct signal column auto-parse + pole sizing | ✅ | cr6v.11 | `signal_col` Struct | nextest struct signal tests |
-| 12 | Param sweep helper | ✅ | cr6v.12 | `.bt.sweep()` / `run_param_sweep` | `test_bt_sweep_*` |
-| 13 | Criterion benches vs naive loop | ✅ | cr6v.13 | `benches/backtest_vs_naive.rs` | [backtest_benchmark.md](../../examples/notebooks/backtest_benchmark.md) |
+| # | Requirement | Status | API | Proof |
+|---|-------------|--------|-----|-------|
+| 8 | T+1 execution (`execution_delay`) | ✅ | `BacktestConfig.execution_delay` | nextest `execution_delay` |
+| 9 | Stop-loss / take-profit / trailing | ✅ | `StopConfig` | nextest `stop_*` |
+| 10 | Short positions (signed exposure) | ✅ | signal f64 negative | nextest `short_*` |
+| 11 | Struct signal column auto-parse + pole sizing | ✅ | `signal_col` Struct | nextest struct signal tests |
+| 12 | Param sweep helper | ✅ | `.bt.sweep()` | `test_bt_sweep_*` |
+| 13 | Criterion benches vs naive loop | ✅ | `benches/backtest_vs_naive.rs` | [backtest_benchmark.md](../../examples/notebooks/backtest_benchmark.md) |
 
-### P2 — Research robustness (cr6v v1 + v2)
+### Research robustness
 
-| # | Requirement | Status | Bead | API | Proof |
-|---|-------------|--------|------|-----|-------|
-| 14 | Walk-forward OOS | ✅ | cr6v.14 / xibc | `.bt.walk_forward()` / `run_walk_forward` | `test_bt_walk_forward_returns_folds` |
-| 14b | Walk-forward **with in-fold optimization** | ✅ | cr6v-v2.1 | `.bt.walk_forward_optimize()` / `run_walk_forward_optimize` | `test_wfo_opt_*`, `test_bt_walk_forward_optimize_python` |
-| 15 | Monte Carlo (trade bootstrap) | ✅ | cr6v.14 | `monte_carlo_trade_bootstrap` | `quantwave-backtest/tests/p2_features.rs` |
-| 15b | Monte Carlo (return-path VaR/CVaR) | ✅ | cr6v-v2.2 | `monte_carlo_return_paths` | `monte_carlo.rs` tests |
-| 16 | Cross-sectional factor panel (rank long/short) | ✅ | cr6v.15 / 6ypp | `.bt.cross_sectional_backtest()` | `test_cross_sectional_*` |
-| 16b | Factor transforms (neutralize, zscore, winsorize) | ✅ | cr6v-v2.3 | `transform=` kwarg + Rust helpers | `test_bt_cross_sectional_winsorize_python`, `test_bt_cross_sectional_zscore_python` |
-| 17 | Nautilus live bridge | ⏸ | cr6v-v2.7 | `LiveBridge` trait stub only | `../../../planning/NAUTILUS_LIVE_BRIDGE_ADR.md` |
-| 18 | HTML Tear Sheets | ✅ | qzpi.17 | `tearsheet.render_html` | `test_tearsheet.py` |
+| # | Requirement | Status | API | Proof |
+|---|-------------|--------|-----|-------|
+| 14 | Walk-forward OOS | ✅ | `.bt.walk_forward()` | `test_bt_walk_forward_returns_folds` |
+| 14b | Walk-forward with in-fold optimization | ✅ | `.bt.walk_forward_optimize()` | `test_wfo_opt_*` |
+| 15 | Monte Carlo (trade bootstrap) | ✅ | `monte_carlo_trade_bootstrap` | `quantwave-backtest/tests/p2_features.rs` |
+| 15b | Monte Carlo (return-path VaR/CVaR) | ✅ | `monte_carlo_return_paths` | `monte_carlo.rs` tests |
+| 16 | Cross-sectional factor panel | ✅ | `.bt.cross_sectional_backtest()` | `test_cross_sectional_*` |
+| 16b | Factor transforms (neutralize, zscore, winsorize) | ✅ | `transform=` kwarg | `test_bt_cross_sectional_*` |
+| 17 | Nautilus live bridge | ⏸ | `LiveBridge` trait stub | planning ADR |
+| 18 | HTML tear sheets | ✅ | `tearsheet.render_html` | `test_tearsheet.py` |
+| 19 | Shared-capital portfolio backtest | ✅ | `.bt.portfolio_backtest()` | `test_portfolio_backtest.py`, [portfolio notebook](../../examples/notebooks/portfolio_shared_capital_backtest.md) |
 
-### v2 additions (not in original §8 table)
+### Additional shipped features
 
-| Feature | Status | Bead | API | Proof |
-|---------|--------|------|-----|-------|
-| Canonical PA flag → `.bt` E2E | ✅ | cr6v-v2.4 | PA notebook + tests | `test_pa_flag_backtest_*`, [pa_flag_breakout_strategy.py](../../examples/notebooks/pa_flag_breakout_strategy.py) |
-| Fast metrics-only path | ✅ | cr6v-v2.5 | `.bt.backtest_metrics()` / `run_metrics_only` | `test_metrics_only_*`, bench `quantwave_metrics_only` |
-| Sweep with signal rebuild callback | ✅ | cr6v-v2.6 | `.bt.sweep_callback()` | `quantwave-python/tests/test_sweep_callback.py` |
+| Feature | Status | API | Proof |
+|---------|--------|-----|-------|
+| PA flag → `.bt` E2E | ✅ | PA notebook + tests | `test_pa_flag_backtest_*`, [pa_flag_breakout_strategy.md](../../examples/notebooks/pa_flag_breakout_strategy.md) |
+| Fast metrics-only path | ✅ | `.bt.backtest_metrics()` | `test_metrics_only_*` |
+| Sweep with signal rebuild callback | ✅ | `.bt.sweep_callback()` | `test_sweep_callback.py` |
 
 ---
 
@@ -98,8 +95,9 @@ Legend: ✅ Shipped · ⏸ Deferred · ❌ Out of scope v1/v2
 | `lf.bt.walk_forward()` | Rolling OOS folds |
 | `lf.bt.walk_forward_optimize()` | Train-window sweep + locked OOS param |
 | `lf.bt.cross_sectional_backtest()` | Universe rank long/short (`transform=` optional) |
+| `lf.bt.portfolio_backtest()` | Shared-capital multi-symbol simulation |
 
-Rust-only (no Python wrapper yet): `run_walk_forward_optimize`, `monte_carlo_return_paths`, `neutralize_factor` / `zscore_factor` / `winsorize_factor` — document as Rust API; Python uses equivalent paths where noted above.
+Rust-only helpers (no thin Python wrapper): `monte_carlo_return_paths`, factor transform primitives — Python uses equivalent `.bt` paths where noted above.
 
 ---
 
@@ -107,30 +105,21 @@ Rust-only (no Python wrapper yet): `run_walk_forward_optimize`, `monte_carlo_ret
 
 | Artifact | Path | Audience |
 |----------|------|----------|
-| Overview | `docs/guides/backtest/index.md` (qzpi.2) | Landing page |
-| Quickstart (5 min) | `docs/guides/backtest/quickstart.md` (bt-prod.5) | New evaluators |
-| Full `.bt` tour | `docs/examples/notebooks/backtest_showcase.py` (bt-prod.2) | Demo / sales |
-| Tear Sheets | `docs/guides/backtest/tear_sheets.md` (qzpi.17) | Tear sheets |
+| Overview | [index.md](index.md) | Landing page |
+| Quickstart (5 min) | [quickstart.md](quickstart.md) | New evaluators |
+| Full `.bt` tour | [backtest_showcase.md](../../examples/notebooks/backtest_showcase.md) | Demo / sales |
+| Tear Sheets | [tear_sheets.md](tear_sheets.md) | HTML reports |
+| Portfolio shared capital | [portfolio_shared_capital_backtest.md](../../examples/notebooks/portfolio_shared_capital_backtest.md) | Multi-symbol books |
 | PA canonical strategy | [pa_flag_breakout_strategy.md](../../examples/notebooks/pa_flag_breakout_strategy.md) | PA moat |
 | Benchmarks | [backtest_benchmark.md](../../examples/notebooks/backtest_benchmark.md) | Performance story |
 | ML → backtest E2E | [ml_feature_backtest_parity.md](../../examples/notebooks/ml_feature_backtest_parity.md) | ML pipeline |
 
 ---
 
-## Verification gates (global)
+## Verification gates
 
 ```bash
 cargo nextest run -p quantwave-backtest
-pytest quantwave-python/tests/test_backtest.py quantwave-python/tests/test_pa_flag_backtest.py quantwave-python/tests/test_sweep_callback.py -q
+pytest quantwave-python/tests/test_backtest.py quantwave-python/tests/test_pa_flag_backtest.py quantwave-python/tests/test_sweep_callback.py quantwave-python/tests/test_portfolio_backtest.py -q
 cargo clippy -p quantwave-backtest -- -D warnings
 ```
-
----
-
-## Agent completion checklist (bt-prod.1)
-
-- [x] Verify every ✅ row link resolves (fix broken paths)
-- [x] Add `docs/guides/backtest/` to `mkdocs.yml` under Guides
-- [x] Cross-link from `docs/purpose.md` or `docs/roadmap.md` (one line each)
-- [x] Remove "Draft outline" header when done
-- [x] `mkdocs build` green

@@ -7,7 +7,7 @@ High-performance, Polars-native quantitative finance — <strong>217 native indi
 </div>
 
 [Get Started (Python)](getting-started/python.md){ .md-button .md-button--primary }
-[Explore Indicators](guides/indicators/native/index.md){ .md-button }
+[Explore Indicators](guides/indicators/native/){ .md-button }
 [Run Benchmarks](benchmarks.md){ .md-button }
 
 </div>
@@ -42,7 +42,7 @@ QuantWave is built as a Rust workspace with a single source of mathematical trut
 ### Indicators
 217 Rust-native indicators with metadata, gold-standard tests, and full docs. Classic TA, Ehlers DSP, candlestick patterns, price action, and fractional differencing.
 
-[Browse catalog →](guides/indicators/native/index.md)
+[Browse catalog →](guides/indicators/native/)
 
 </div>
 
@@ -87,7 +87,13 @@ print(len(qw.indicators()), "indicators")
 meta = qw.metadata("supertrend")
 
 df = pl.DataFrame({"close": [100.0, 101.0, 102.0, 101.5, 103.0]})
-out = df.lazy().ta.supertrend("high", "low", "close", 10, 3.0).collect()
+out = (
+    df.lazy()
+    .with_columns(
+        pl.col("close").ta.supertrend("high", "low", period=10, multiplier=3.0).alias("st")
+    )
+    .collect()
+)
 ```
 
 === "Rust"
@@ -114,7 +120,7 @@ On 1M rows of realistic OHLCV:
 
 ## Explore
 
-- [Complete indicator catalog](guides/indicators/native/index.md) — all 217 indicators by category
+- [Complete indicator catalog](guides/indicators/native/) — all 217 indicators by category
 - [Indicator gallery](guides/indicators/gallery.md) — curated starting points
 - [Ehlers DSP suite](guides/indicators/ehlers/index.md)
 - [ML features](guides/ml_features.md)

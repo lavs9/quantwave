@@ -49,6 +49,7 @@
         - [Simple Moving Average](native/simple_moving_average.md)
         - [Standard Deviation](native/standard_deviation.md)
         - [Stochastic Oscillator](native/stochastic_oscillator.md)
+        - [SuperTrend](native/supertrend.md)
         - [Tilson T3 Moving Average](native/tilson_t3_moving_average.md)
         - [Triangular Moving Average (TRIMA)](native/triangular_moving_average_trima.md)
         - [Triple Exponential Moving Average](native/triple_exponential_moving_average.md)

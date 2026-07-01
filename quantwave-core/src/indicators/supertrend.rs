@@ -2,7 +2,7 @@ use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::volatility::ATR;
 use crate::traits::Next;
 
-pub const METADATA: IndicatorMetadata = IndicatorMetadata {
+pub const SUPERTREND_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "SuperTrend",
     description: "Trend-following indicator that combines ATR for volatility bands to identify the primary market direction.",
     usage: "Use as a primary trend-following indicator and dynamic stop-loss. A SuperTrend flip from bearish to bullish (or vice versa) provides a clear, rule-based entry and exit signal.",

@@ -109,7 +109,7 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - [Native Indicators index](index.md)
 - [Batch vs Streaming guide](../../../examples/batch-streaming.md)
 - [RSI](relative_strength_index_rsi.md)
-- [SuperTrend](supertrend.md)
+- [SuperTrend](supertrend/)
 
 ## Sources & References
 

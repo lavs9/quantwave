@@ -4920,6 +4920,39 @@
     "boundary_kind": "scalar"
   },
   {
+    "slug": "supertrend",
+    "name": "SuperTrend",
+    "description": "Trend-following indicator that combines ATR for volatility bands to identify the primary market direction.",
+    "usage": "Use as a primary trend-following indicator and dynamic stop-loss. A SuperTrend flip from bearish to bullish (or vice versa) provides a clear, rule-based entry and exit signal.",
+    "category": "Classic",
+    "keywords": [
+      "trend",
+      "atr",
+      "stop-loss",
+      "classic",
+      "breakout"
+    ],
+    "params": [
+      {
+        "name": "period",
+        "default": "10",
+        "description": "ATR length"
+      },
+      {
+        "name": "multiplier",
+        "default": "3.0",
+        "description": "ATR multiplier"
+      }
+    ],
+    "formula_source": "https://www.tradingview.com/script/7zF0a4f8-SuperTrend-by-Mobius/",
+    "formula_latex": "\n\\[\n\\text{SuperTrend} = \\begin{cases}\n\\text{LowerBand} & \\text{if trend is up} \\\\\n\\text{UpperBand} & \\text{if trend is down}\n\\end{cases}\n\\]\n",
+    "gold_standard_file": "supertrend_10_3.json",
+    "ehlers_summary": "SuperTrend computes upper and lower ATR-based bands around the midpoint of each bar. The active line flips from upper to lower (and vice versa) only when price closes beyond the band, providing a clean directional bias and a trailing stop level in one indicator. — TradingView Community",
+    "struct_name": "Supertrend",
+    "source_file": "supertrend",
+    "boundary_kind": "scalar"
+  },
+  {
     "slug": "swiss_army_knife",
     "name": "Swiss Army Knife Indicator",
     "description": "A versatile indicator that can be configured as EMA, SMA, Gaussian, Butterworth, High Pass, Band Pass, or Band Stop filter.",

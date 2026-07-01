@@ -11,7 +11,7 @@ We decided to build something better.
 ### Our Mission
 To create the **fastest, most complete, and most Polars-native** quantitative toolkit in existence — combining:
 
-- **150+ technical indicators** with perfect TA-Lib parity  
+- **217 native indicators** with gold-standard parity  
 - **Full Ehlers Digital Signal Processing suite** (the most advanced cycle and trend tools available in open source)  
 - **Options India Suite**: Native Black-Scholes, IV solvers, and Greeks optimized for the Indian market.
 - **Zero-copy, vectorized Polars expressions** that run at Rust speed

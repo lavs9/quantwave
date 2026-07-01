@@ -523,12 +523,13 @@ def render_usage(rec: IndicatorRecord, api: dict[str, dict]) -> str:
         elif kind == "supertrend":
             polars_code = (
                 "```python\n"
-                "import polars as pl\n\n"
+                "import polars as pl\n"
+                "import quantwave  # registers pl.col().ta\n\n"
                 "df = (\n"
                 "    pl.read_csv('ohlcv.csv')\n"
                 "    .lazy()\n"
                 "    .with_columns(\n"
-                f'        pl.col("close").ta.supertrend({period}, 3.0).alias("{rec.slug}")\n'
+                f'        pl.col("close").ta.supertrend("high", "low", period={period}, multiplier=3.0).alias("{rec.slug}")\n'
                 "    )\n"
                 "    .collect()\n"
                 ")\n```"
@@ -627,7 +628,7 @@ def render_related(rec: IndicatorRecord) -> str:
         links += [
             "- [Batch vs Streaming guide](../../../examples/batch-streaming.md)",
             "- [RSI](relative_strength_index_rsi.md)",
-            "- [SuperTrend](supertrend.md)",
+            "- [SuperTrend](supertrend/)",
         ]
     return "## Related Indicators & See Also\n\n" + "\n".join(links) + "\n"
 

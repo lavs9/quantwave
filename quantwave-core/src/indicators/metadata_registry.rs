@@ -192,6 +192,7 @@ use crate::indicators::statistics::LINREG_METADATA;
 use crate::indicators::statistics::STDDEV_METADATA;
 use crate::indicators::stc::STC_METADATA;
 use crate::indicators::super_smoother::SUPER_SMOOTHER_METADATA;
+use crate::indicators::supertrend::SUPERTREND_METADATA;
 use crate::indicators::swiss_army_knife::SWISS_ARMY_KNIFE_METADATA;
 use crate::indicators::synthetic_oscillator::SYNTHETIC_OSCILLATOR_METADATA;
 use crate::indicators::system_evaluator::SYSTEM_EVALUATOR_METADATA;
@@ -416,6 +417,7 @@ pub static ALL_REGISTERED: &[RegisteredMetadata] = &[
     RegisteredMetadata { slug: "stc", meta: &STC_METADATA, struct_name: "SchaffTrendCycle", source_file: "stc" },
     RegisteredMetadata { slug: "stddev", meta: &STDDEV_METADATA, struct_name: "StandardDeviation", source_file: "statistics" },
     RegisteredMetadata { slug: "stoch", meta: &STOCH_METADATA, struct_name: "", source_file: "momentum" },
+    RegisteredMetadata { slug: "supertrend", meta: &SUPERTREND_METADATA, struct_name: "Supertrend", source_file: "supertrend" },
     RegisteredMetadata { slug: "super_smoother", meta: &SUPER_SMOOTHER_METADATA, struct_name: "SuperSmoother", source_file: "super_smoother" },
     RegisteredMetadata { slug: "swiss_army_knife", meta: &SWISS_ARMY_KNIFE_METADATA, struct_name: "SwissArmyKnife", source_file: "swiss_army_knife" },
     RegisteredMetadata { slug: "synthetic_oscillator", meta: &SYNTHETIC_OSCILLATOR_METADATA, struct_name: "SyntheticOscillator", source_file: "synthetic_oscillator" },
@@ -637,6 +639,7 @@ pub static ALL_INDICATOR_METADATA: &[&IndicatorMetadata] = &[
     &STC_METADATA,
     &STDDEV_METADATA,
     &STOCH_METADATA,
+    &SUPERTREND_METADATA,
     &SUPER_SMOOTHER_METADATA,
     &SWISS_ARMY_KNIFE_METADATA,
     &SYNTHETIC_OSCILLATOR_METADATA,
@@ -672,4 +675,4 @@ pub static ALL_INDICATOR_METADATA: &[&IndicatorMetadata] = &[
     &ZLEMA_METADATA,
 ];
 
-pub const METADATA_COUNT: usize = 217;
+pub const METADATA_COUNT: usize = 218;

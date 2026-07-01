@@ -1,6 +1,6 @@
 # Indicator Gallery
 
-QuantWave delivers **150+ production-grade technical indicators** in high-performance Rust, with first-class exposure through Polars (`.ta()` namespace) and streaming `Next<T>` implementations. **Every indicator guarantees bit-identical results** between batch and streaming modes, validated via proptests against gold-standard vectors.
+QuantWave delivers **217 production-grade native indicators** in high-performance Rust, with first-class exposure through Polars (`.ta()` namespace) and streaming `Next<T>` implementations. **Every indicator guarantees bit-identical results** between batch and streaming modes, validated via proptests against gold-standard vectors.
 
 All dedicated indicator pages adhere to QuantWave's [Documentation Standards](../../DOCUMENTATION_STANDARDS.md): practical user-focused explanations, mathematical definitions or recognition logic, parameter tables, usage examples across Rust streaming / Python streaming / Polars batch, edge cases, committed PNG visuals (regenerate via `docs/generate_all_previews.py`), and authoritative sources (Ehlers papers, MQL5 series, TA-Lib, TradingView, etc.).
 
@@ -10,23 +10,23 @@ Use the sidebar, search, or the categorized overview below to explore. Click any
 
 These tools deliver outsized practical value for strategies, risk management, and ML feature engineering:
 
-- **[SuperTrend](native/supertrend.md)**: ATR-based trend-following with dynamic stops. One of the most widely used signals in production. Exceptional performance (~27× faster than common Python implementations on large datasets).
+- **[SuperTrend](native/supertrend/)**: ATR-based trend-following with dynamic stops. One of the most widely used signals in production. Exceptional performance (~27× faster than common Python implementations on large datasets).
 
-- **[Cyber Cycle](native/cyber_cycle.md)** (Ehlers DSP): Low-lag cycle extractor that cleanly separates trend from cycle. A foundational tool for regime-aware systems (~100× speedup vs pandas on 1M rows).
+- **[Cyber Cycle](native/cyber_cycle/)** (Ehlers DSP): Low-lag cycle extractor that cleanly separates trend from cycle. A foundational tool for regime-aware systems (~100× speedup vs pandas on 1M rows).
 
-- **[Market Structure](native/market_structure.md)** (MQL5 Part 21): Adaptive swing detection with Bullish/Bearish/Neutral bias and confirmed Break-of-Structure (BOS) flips (only after structure established). Rich `MarketStructureState` + `PAEvent` for gating strategies and ML. See dedicated guide + [notebook](../../examples/notebooks/pa_flag_breakout_strategy.md).
+- **[Market Structure](native/market_structure/)** (MQL5 Part 21): Adaptive swing detection with Bullish/Bearish/Neutral bias and confirmed Break-of-Structure (BOS) flips (only after structure established). Rich `MarketStructureState` + `PAEvent` for gating strategies and ML. See dedicated guide + [notebook](../../examples/notebooks/pa_flag_breakout_strategy.md).
 
-- **[Geometric Patterns (Flags + H&S)](native/geometric_patterns.md)** (MQL5 Parts 66 & 69): Continuation Flags and reversal Head & Shoulders built on Market Structure. Rich structs with `pole_length_atr` (sizing), `score`, symmetry, `breakout_confirmed`. Ideal for ML features and dynamic risk. Full guide + examples in the dedicated page and [notebook](../../examples/notebooks/pa_flag_breakout_strategy.md).
+- **[Geometric Patterns (Flags + H&S)](native/geometric_patterns/)** (MQL5 Parts 66 & 69): Continuation Flags and reversal Head & Shoulders built on Market Structure. Rich structs with `pole_length_atr` (sizing), `score`, symmetry, `breakout_confirmed`. Ideal for ML features and dynamic risk. Full guide + examples in the dedicated page and [notebook](../../examples/notebooks/pa_flag_breakout_strategy.md).
 
-- **[S/R Interactions](native/sr_monitor.md)** (MQL5 Part 67): Real-time classification of horizontal level interactions (Approach/Touch/Breakout/Reversal/Retest) with rich provenance. Perfect confluence with geometric patterns.
+- **[S/R Interactions](native/sr_monitor/)** (MQL5 Part 67): Real-time classification of horizontal level interactions (Approach/Touch/Breakout/Reversal/Retest) with rich provenance. Perfect confluence with geometric patterns.
 
-- **[Pivot Points](native/pivot_points.md)**: Classic and variant floor-trader levels with full integration to structure and S/R workflows.
+- **[Pivot Points](native/pivot_points/)**: Classic and variant floor-trader levels with full integration to structure and S/R workflows.
 
-- **[Ichimoku Cloud](native/ichimoku_cloud.md)**: Complete trend, momentum, and dynamic S/R system in a single indicator.
+- **[Ichimoku Cloud](native/ichimoku_cloud/)**: Complete trend, momentum, and dynamic S/R system in a single indicator.
 
-- **[TTM Squeeze](native/ttm_squeeze.md)**: Volatility contraction/expansion detector prized for high-probability breakout entries.
+- **[TTM Squeeze](native/ttm_squeeze/)**: Volatility contraction/expansion detector prized for high-probability breakout entries.
 
-- **[Swiss Army Knife Indicator](native/swiss_army_knife_indicator.md)**: Versatile Ehlers multi-measurement tool combining several analytical dimensions.
+- **[Swiss Army Knife Indicator](native/swiss_army_knife_indicator/)**: Versatile Ehlers multi-measurement tool combining several analytical dimensions.
 
 Dozens more classics, filters, and unique implementations are available.
 
@@ -57,7 +57,7 @@ In addition, QuantWave ships 50+ classic candlestick patterns (Engulfing, Mornin
 ## Categories
 
 ### Classic & Overlap
-Moving averages (SMA, EMA, HMA, KAMA, ALMA, FRAMA, T3, DEMA, TEMA, Zero-Lag variants), MACD, RSI, Stochastic, CCI, ADX, Bollinger Bands, ATR, Parabolic SAR, Vortex, and many more. See the Classic subsection in [Native Indicators](native/index.md).
+Moving averages (SMA, EMA, HMA, KAMA, ALMA, FRAMA, T3, DEMA, TEMA, Zero-Lag variants), MACD, RSI, Stochastic, CCI, ADX, Bollinger Bands, ATR, Parabolic SAR, Vortex, and many more. See the Classic subsection in [Native Indicators](native/).
 
 ### Ehlers DSP Suite
 30+ specialized low-lag tools from John Ehlers: Cyber Cycle, Instantaneous Trendline, Trendflex, Reflex, Ehlers Filter, Ehlers Stochastic, Ehlers Loops, UltimateSmoother, Fisher & Inverse Fisher, MAMA/MESA, Mesa Stochastic, Hilbert Transform variants (dominant cycle, phasor, sine wave, trend vs cycle), Autocorrelation, Roofing Filter, SuperSmoother, Butterworth, Laguerre family, and more. Every native Ehlers page follows [DOCUMENTATION_STANDARDS.md](../../DOCUMENTATION_STANDARDS.md) with committed PNG previews (regenerate via `docs/generate_all_previews.py`). See [Ehlers DSP guide](ehlers/index.md) and the Ehlers DSP subsection in the native index.
@@ -69,15 +69,15 @@ Donchian Channels, Keltner Channels, TTM Squeeze, Ultimate Bands, SVE Volatility
 OBV, MFI, Accumulation/Distribution, Chaikin Oscillator, VFI, Volume Profile, Positive/Negative Volume, Anchored VWAP, and more.
 
 ### Patterns
-- 50+ candlestick and simple patterns — all conform to [DOCUMENTATION_STANDARDS.md](../DOCUMENTATION_STANDARDS.md) with committed candlestick PNGs (hand-crafted exemplars + bulk schematics via `docs/generate_all_previews.py`). See [Native Indicators → Patterns](native/index.md).
+- 50+ candlestick and simple patterns — all conform to [DOCUMENTATION_STANDARDS.md](../../DOCUMENTATION_STANDARDS.md) with committed candlestick PNGs (hand-crafted exemplars + bulk schematics via `docs/generate_all_previews.py`). See [Native Indicators → Patterns](native/).
 - Geometric chart patterns and S/R (detailed above)
 - Bill Williams Fractals, Pivot Points, Heikin-Ashi, Ichimoku
 
 ### Advanced, Filters, Statistics & ML Features
-Precision Trend Analysis, Choppiness Index, Schaff Trend Cycle, Gap Momentum, Hurst Exponent, multiple Kalman variants, One Euro Filter, Noise Elimination Technology, System Evaluator, Reversion Index, and the complete Regime Detection suite (HMM, GMM, PELT, etc. — see dedicated [Regimes guide](../regimes/index.md)).
+Precision Trend Analysis, Choppiness Index, Schaff Trend Cycle, Gap Momentum, Hurst Exponent, multiple Kalman variants, One Euro Filter, Noise Elimination Technology, System Evaluator, Reversion Index, and the complete Regime Detection suite (HMM, GMM, PELT, etc. — see dedicated [Regimes guide](regimes/)).
 
 ### Native classics & modern tools
-All classic TA-Lib-style functions (RSI, MACD, Bollinger Bands, candlestick patterns, etc.) are implemented **natively in Rust** — see the [complete catalog](native/index.md).
+All classic TA-Lib-style functions (RSI, MACD, Bollinger Bands, candlestick patterns, etc.) are implemented **natively in Rust** — see the [complete catalog](native/).
 
 ## Getting the Most from QuantWave Indicators
 
@@ -97,9 +97,9 @@ All classic TA-Lib-style functions (RSI, MACD, Bollinger Bands, candlestick patt
    - [Price Action Flag Breakout Strategy Notebook](../../examples/notebooks/pa_flag_breakout_strategy.md) (essential for Geometric / Market Structure usage)
 
 3. **Deepen your understanding**
-   - [Native Indicators](native/index.md) — the complete browsable catalog with SUMMARY navigation
+   - [Native Indicators](native/) — the complete browsable catalog with SUMMARY navigation
    - [Ehlers DSP Suite](ehlers/index.md)
-   - [Documentation Standards](../../DOCUMENTATION_STANDARDS.md) (for contributors and page quality expectations)
+   - [Documentation Standards](../../../DOCUMENTATION_STANDARDS.md) (for contributors and page quality expectations)
    - [Benchmarks](../../benchmarks.md)
 
 4. **Participate**

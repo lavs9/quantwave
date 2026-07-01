@@ -79,17 +79,9 @@ Full key list: see [Capability Matrix](capability_matrix.md#python-bt-api-surfac
 
 | Goal | Go to |
 |------|-------|
-| Full feature tour | [Backtest Showcase](../../examples/notebooks/backtest_showcase.md) (bt-prod.2) |
+| Full feature tour | [Backtest Showcase](../../examples/notebooks/backtest_showcase.md) |
+| Shared-capital portfolio | [Portfolio Shared Capital](../../examples/notebooks/portfolio_shared_capital_backtest.md) |
 | PA strategy E2E | [PA Flag Breakout](../../examples/notebooks/pa_flag_breakout_strategy.md) |
-| Param sweeps / WFO | [Capability Matrix — P2 table](capability_matrix.md) |
+| Param sweeps / WFO | [Capability Matrix](capability_matrix.md) |
 | Benchmarks | [Backtest Benchmarks](../../examples/notebooks/backtest_benchmark.md) |
 | Batch ↔ streaming parity | [Batch & Streaming](../../examples/batch-streaming.md) |
-
----
-
-## Agent completion checklist (bt-prod.5)
-
-- [x] Run minimal script locally; fix API if drift
-- [x] Add mkdocs nav entry (parent: Guides → Backtest)
-- [x] Link from `docs/getting-started/python.md` (one paragraph)
-- [x] Remove "Draft outline" header

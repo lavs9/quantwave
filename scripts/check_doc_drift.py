@@ -14,6 +14,19 @@ from docs.upgrade_to_standards import SKIP_FILES, SLUG_ALIASES, slugify  # noqa:
 
 NATIVE_DOCS = ROOT / "docs" / "guides" / "indicators" / "native"
 METADATA_FILE = ROOT / "metadata_export.json"
+DOCS_ROOT = ROOT / "docs"
+
+# Hub pages whose internal links must resolve (no broken featured paths).
+HUB_PAGES = [
+    DOCS_ROOT / "index.md",
+    DOCS_ROOT / "guides" / "indicators" / "gallery.md",
+    DOCS_ROOT / "guides" / "indicators" / "index.md",
+    DOCS_ROOT / "guides" / "backtest" / "index.md",
+    DOCS_ROOT / "guides" / "backtest" / "quickstart.md",
+    DOCS_ROOT / "guides" / "backtest" / "capability_matrix.md",
+]
+
+LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 
 
 def is_redirect_stub(text: str) -> bool:
@@ -65,12 +78,67 @@ def check_backtest_docs_exist() -> bool:
     return not failed
 
 
-def main() -> None:
-    subprocess.run(["cargo", "run", "--bin", "export_metadata"], cwd=ROOT, check=True)
+def resolve_doc_link(source: Path, href: str) -> Path | None:
+    """Resolve a markdown href from *source* to a docs-root-relative path."""
+    href = href.strip()
+    if not href or href.startswith(("http://", "https://", "mailto:", "#")):
+        return None
+    if href.startswith("/"):
+        return DOCS_ROOT / href.lstrip("/")
+    return (source.parent / href).resolve()
 
-    if not METADATA_FILE.exists():
-        print("metadata_export.json not found!", file=sys.stderr)
-        sys.exit(1)
+
+def link_target_exists(path: Path) -> bool:
+    if path.suffix == ".md":
+        return path.exists()
+    # MkDocs directory URLs: foo/ → foo.md or foo/index.md
+    md = path.with_suffix(".md")
+    if md.exists():
+        return True
+    return (path / "index.md").exists()
+
+
+def check_hub_links() -> list[str]:
+    """Return human-readable failures for broken links on hub pages."""
+    failures: list[str] = []
+    for hub in HUB_PAGES:
+        if not hub.exists():
+            failures.append(f"missing hub page: {hub.relative_to(ROOT)}")
+            continue
+        text = hub.read_text(encoding="utf-8")
+        for href in LINK_RE.findall(text):
+            target = resolve_doc_link(hub, href)
+            if target is None:
+                continue
+            try:
+                target.relative_to(DOCS_ROOT)
+            except ValueError:
+                continue
+            if not link_target_exists(target):
+                failures.append(
+                    f"{hub.relative_to(ROOT)}: broken link `{href}`"
+                )
+            # Featured native paths should not use .md suffix (MkDocs directory URLs).
+            if "native/" in href and href.endswith(".md"):
+                failures.append(
+                    f"{hub.relative_to(ROOT)}: use directory URL for `{href}` (drop .md)"
+                )
+    return failures
+
+
+def export_metadata_json() -> None:
+    result = subprocess.run(
+        ["cargo", "run", "-p", "quantwave-core", "--bin", "export_metadata"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    METADATA_FILE.write_text(result.stdout, encoding="utf-8")
+
+
+def main() -> None:
+    export_metadata_json()
 
     with METADATA_FILE.open(encoding="utf-8") as f:
         data = json.load(f)
@@ -104,7 +172,9 @@ def main() -> None:
     orphans = sorted(
         s
         for s in stems
-        if s not in metadata_stems and f"{s}.md" not in SKIP_FILES
+        if s not in metadata_stems
+        and f"{s}.md" not in SKIP_FILES
+        and s not in SLUG_ALIASES
     )
 
     failed = False
@@ -127,6 +197,13 @@ def main() -> None:
         failed = True
 
     if not check_backtest_docs_exist():
+        failed = True
+
+    hub_failures = check_hub_links()
+    if hub_failures:
+        print("FAIL: Broken or non-canonical hub page links:", file=sys.stderr)
+        for msg in hub_failures:
+            print(f"  - {msg}", file=sys.stderr)
         failed = True
 
     if failed:
