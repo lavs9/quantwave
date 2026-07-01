@@ -8,22 +8,26 @@ RSI calculated using the average of Open and Close prices to reduce noise.
 
 ![OCPriceRSI — annotated preview mapping to core implementation](../../../assets/indicator-previews/ocpricersi.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The OCPriceRSI indicator is a technical analysis tool that rsi calculated using the average of open and close prices to reduce noise.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+RSI calculated using the average of Open and Close prices to reduce noise.
 
 Use to measure momentum on the open-to-close price differential rather than close-to-close, capturing intraday directional strength more directly.
 
+Part of QuantWave's Ehlers digital signal processing suite. Designed for low-lag cycle and trend work — pair with Roofing Filter or SuperSmoother on noisy inputs.
+
 Ehlers computes this RSI variant on the difference between the open and close price of each bar rather than on the closing price series. The open-close differential captures the net directional pressure within each bar, producing a momentum oscillator more sensitive to intraday commitment than standard RSI.
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Use for cycle timing in mean-reverting regimes
+- Gate with Hurst exponent or ADX before taking cycle signals
+- Allow `14`+ bars warm-up for filter state to stabilise
+- Chain with Roofing Filter when input is noisy
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -126,4 +130,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/oc_price_rsi.rs` (`OC_PRICE_RSI` / `OC_PRICE_RSI_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/oc_price_rsi.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

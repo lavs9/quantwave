@@ -8,22 +8,26 @@ A binary indicator that determines if the market is currently in a trending stat
 
 ![Hilbert Transform - Trend vs. Cycle Mode (HT_TRENDMODE) — annotated preview mapping to core implementation](../../../assets/indicator-previews/hilbert_transform_trend_vs_cycle_mode_ht_trendmode.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Hilbert Transform - Trend vs. Cycle Mode (HT_TRENDMODE) indicator is a technical analysis tool that a binary indicator that determines if the market is currently in a trending state (1) or a cyclical state (0).
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+A binary indicator that determines if the market is currently in a trending state (1) or a cyclical state (0).
 
 Use as a master filter for strategy selection. Deploy trend-following tools when TRENDMODE is 1, and mean-reversion tools when TRENDMODE is 0.
 
+Part of QuantWave's Ehlers digital signal processing suite. Designed for low-lag cycle and trend work — pair with Roofing Filter or SuperSmoother on noisy inputs.
+
 Determining the current market regime is the 'holy grail' of technical analysis. The HT_TRENDMODE indicator uses the rate of change of the dominant cycle phase to distinguish between trending and ranging price action, allowing traders to avoid 'whipsaws' in non-conducive environments. — Rocket Science for Traders
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Use for cycle timing in mean-reverting regimes
+- Gate with Hurst exponent or ADX before taking cycle signals
+- Allow `N`+ bars warm-up for filter state to stabilise
+- Chain with Roofing Filter when input is noisy
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -70,6 +74,7 @@ for price in prices:
 
 ```python
 import polars as pl
+import quantwave  # registers pl.col().ta
 
 df = (
     pl.read_csv('ohlcv.csv')
@@ -117,4 +122,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/cycle.rs` (`HT_TRENDMODE` / `HT_TRENDMODE_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/ht_trendmode.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

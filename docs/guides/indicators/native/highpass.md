@@ -8,22 +8,26 @@ A second-order High Pass filter that rejects low-frequency components.
 
 ![HighPass — annotated preview mapping to core implementation](../../../assets/indicator-previews/highpass.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The HighPass indicator is a technical analysis tool that a second-order high pass filter that rejects low-frequency components.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+A second-order High Pass filter that rejects low-frequency components.
 
 Apply to price to isolate the cyclical component by attenuating the low-frequency trend. Use as the first stage before an oscillator or spectrum analyser.
 
+Part of QuantWave's Ehlers digital signal processing suite. Designed for low-lag cycle and trend work — pair with Roofing Filter or SuperSmoother on noisy inputs.
+
 Ehlers derives the one-pole high-pass filter in Cycle Analytics for Traders analogously to EMA derivation, but applied to price differences rather than levels. It removes the DC component and low-frequency trend, leaving the cyclical content for downstream analysis.
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Use for cycle timing in mean-reverting regimes
+- Gate with Hurst exponent or ADX before taking cycle signals
+- Allow `20`+ bars warm-up for filter state to stabilise
+- Chain with Roofing Filter when input is noisy
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -135,4 +139,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/high_pass.rs` (`HIGH_PASS` / `HIGH_PASS_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/high_pass.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

@@ -8,22 +8,26 @@ The CG Oscillator identifies price turning points with essentially zero lag by c
 
 ![Center of Gravity Oscillator — annotated preview mapping to core implementation](../../../assets/indicator-previews/center_of_gravity_oscillator.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Center of Gravity Oscillator indicator is a technical analysis tool that the cg oscillator identifies price turning points with essentially zero lag by calculating the balance point of prices.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+The CG Oscillator identifies price turning points with essentially zero lag by calculating the balance point of prices.
 
 Use as a zero-lag momentum oscillator to detect cycle turning points. Crossovers of the trigger line provide high-accuracy entry and exit signals.
 
+Part of QuantWave's Ehlers digital signal processing suite. Designed for low-lag cycle and trend work — pair with Roofing Filter or SuperSmoother on noisy inputs.
+
 Ehlers introduces the Center of Gravity oscillator in Cybernetic Analysis (2004) as a near-zero-lag indicator. It computes the center of mass of a price series over a lookback window, producing an oscillator whose turning points lead price turns — a reversal of the usual indicator lag relationship.
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Use for cycle timing in mean-reverting regimes
+- Gate with Hurst exponent or ADX before taking cycle signals
+- Allow `10`+ bars warm-up for filter state to stabilise
+- Chain with Roofing Filter when input is noisy
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -123,4 +127,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/cg.rs` (`CG` / `CG_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/cg.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

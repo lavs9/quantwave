@@ -8,22 +8,26 @@ Linear Regression plots a straight line that best fits the data prices.
 
 ![Linear Regression — annotated preview mapping to core implementation](../../../assets/indicator-previews/linear_regression.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Linear Regression indicator is a technical analysis tool that linear regression plots a straight line that best fits the data prices.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+Linear Regression plots a straight line that best fits the data prices.
 
 Use for statistical analysis of price series: linear regression, standard deviation, correlation coefficients, and other descriptive statistics used as indicator inputs.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 Standard statistical measures provide the mathematical foundation for many technical indicators. Linear regression finds the best-fit line through price, standard deviation quantifies dispersion, and correlation coefficients measure how closely two series move together — all are essential for quantitative strategy construction.
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Size stops and position risk from band width or ATR expansion
+- Detect squeeze conditions (narrow bands) before breakout systems
+- Warm-up: first `14` bars build rolling volatility state
+- Combine with trend direction (SuperTrend, MACD) for breakout bias
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -123,4 +127,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/statistics.rs` (`LINREG` / `LINREG_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/linreg.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

@@ -1,72 +1,123 @@
 # Abandoned Baby
 
-<div class="indicator-meta"><span class="category-badge">Patterns</span> <span class="kw-badge">candlestick</span> <span class="kw-badge">reversal</span> <span class="kw-badge">rare</span></div>
+<div class="indicator-meta"><span class="category-badge">Patterns</span> <span class="kw-badge">pattern</span> <span class="kw-badge">candlestick</span> <span class="kw-badge">classic</span></div>
 
-A rare and high-confidence three-candle reversal pattern. A long candle is followed by a Doji that gaps away from it ("abandoned"), which is itself gapped away from a strong reversal candle in the opposite direction. The isolated Doji visually demonstrates a complete vacuum of conviction.
+A very rare reversal pattern with a doji gapping away.
 
 ## Visual Example
 
-![Abandoned Baby (bullish): long bear candle, gapped-down Doji (abandoned), then gapped-up strong bull candle that closes well into the first candle's body. Annotations highlight both gaps.](../../../assets/candlestick-previews/abandoned_baby.png)
+![Abandoned Baby — annotated preview mapping to core implementation](../../../assets/candlestick-previews/abandoned_baby.png)
 
-*Synthetic ideal satisfying TA-Lib CDLABANDONEDBABY gap + Doji isolation rules. Generated 2026-05-31 IST via `docs/gen_candle_previews.py`.*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Abandoned Baby is the candlestick equivalent of a "blow-off" or capitulation followed by immediate rejection. Because two gaps are required, it is statistically rare but carries significant weight when it appears.
+A very rare reversal pattern with a doji gapping away.
 
-Practitioners treat confirmed Abandoned Baby events as high-conviction regime-shift signals suitable for larger position sizing or as premium labels in ML datasets. It pairs exceptionally well with Market Structure BOS flips.
+One of the most reliable reversal signals.
+
+QuantWave evaluates this pattern on completed OHLC windows using TA-Lib-aligned geometry rules. Output is an event signal (+100 bullish, −100 bearish, 0 none) — ideal for rule-based strategies and encoded ML features.
+
+**Typical applications:**
+
+- Scan for completed pattern windows — never act on partial formations
+- Combine with [Market Structure](market_structure/) or trend filters in production
+- Encode signed output (+/−/0) before ML training
+- Expect false positives in choppy ranges; require volume or HTF confirmation
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
-**Recognition Rules (exact implementation in QuantWave / TA-Lib CDLABANDONEDBABY)**:
+**Recognition Rules (TA-Lib-compatible, `CDLABANDONEDBABY` in `quantwave-core/src/indicators/pattern.rs`)**:
 
-1. Candle 1: long body in the direction of the prior trend.
-2. Candle 2: Doji that gaps away from Candle 1 (no overlap in ranges).
-3. Candle 3: strong opposite-color body that gaps away from the Doji.
-4. The Doji is "abandoned" on both sides.
-5. Pattern completes on bar 3; TA-Lib sign convention.
+1. Stateless candlestick pattern evaluated on OHLC windows.
+2. Returns a signed signal (+100 bullish, −100 bearish, 0 none) on the completion bar.
+3. Exact threshold geometry (body ratios, gap requirements, shadow lengths) matches the TA-Lib reference implementation wrapped via `talib_cdl!` in `quantwave-core/src/indicators/pattern.rs`.
+4. Validate against `quantwave-core/tests/gold_standard/` vectors where present.
+
 
 ## Parameters
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| (none) | — | Pattern recognition only; no tunable parameters. |
+| (none) | — | No tunable parameters for this detector. |
 
 ## Usage Examples
 
-Streaming (Rust/Python) and Polars examples follow the three-bar multi-input pattern (use `CDLABANDONEDBABY` / `.ta.cdl_abandonedbaby(...)`). Full parity across surfaces.
+**Streaming (Rust)**
+
+```rust
+use quantwave_core::indicators::CDLABANDONEDBABY;
+use quantwave_core::traits::Next;
+
+let mut det = CDLABANDONEDBABY::new();
+for (o, h, l, c) in &ohlcv {
+    let sig = det.next((o, h, l, c));
+}
+```
+
+**Streaming (Python)**
+
+```python
+from quantwave import CDLABANDONEDBABY
+
+det = CDLABANDONEDBABY()
+for o, h, l, c in ohlcv:
+    sig = det.next((o, h, l, c))
+```
+
+**Polars Batch (Python)**
+
+```python
+import polars as pl
+import quantwave  # registers pl.col().ta
+
+df = (
+    pl.read_csv('ohlcv.csv')
+    .lazy()
+    .with_columns(
+        pl.col("open").ta.cdl_abandonedbaby("open", "high", "low", "close").alias("abandoned_baby")
+    )
+    .collect()
+)
+```
+
+All surfaces are bit-identical via the single `Next<T>` implementation and proptests.
 
 ## Edge Cases & Limitations
 
-- Warm-up: first 14 bars may return NaN or partial state per implementation.
-- Parameter sensitivity: smaller periods increase noise; larger periods increase lag.
-- Sudden gaps or bad ticks can distort rolling windows — consider pre-filtering.
-- Single-series indicators ignore volume unless otherwise documented.
-- Validated via proptests against gold-standard vectors where available.
-- No look-ahead bias; streaming and Polars batch paths are bit-identical.
+- Requires sufficient complete OHLC bars; early bars yield no signal.
+- False positives are common in sideways markets — gate with trend or structure filters.
+- Pattern semantics follow TA-Lib body/shadow rules; literature variants may differ.
+- Signed output (+/−/0) should be consumed as events, not continuous features without encoding.
+- Combine with volume expansion or higher-timeframe confirmation for production use.
+- No look-ahead bias; signal is known only after the pattern window closes.
 
 ## Boundary Behavior
 
 | Condition | Behavior |
 |-----------|----------|
-| Warm-up | Pattern functions emit 0 (no pattern) until enough bars exist. |
-| period > len | Short series returns all zeros (no pattern detected). |
-| NaN inputs | Bars with NaN OHLC are treated as no pattern (0). |
-| Invalid params | N/A for most candlestick patterns. |
-| Empty data | Empty input returns an empty integer series. |
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 
-- [Morning Star](morning_star.md), [Evening Star](evening_star.md), [Doji Star](doji_star.md)
-- [Market Structure](market_structure.md) — the ideal confluence partner for this rare event
-- Gallery, native index, PA notebook
+- [Indicator Gallery](../gallery.md)
+- [Native Indicators index](index.md)
+- [Engulfing](engulfing.md)
+- [Market Structure](../price_action/market_structure.md)
+- [PA Flag Breakout notebook](../../../examples/notebooks/pa_flag_breakout_strategy.md)
 
 ## Sources & References
 
-**Primary Source**: TA-Lib CDLABANDONEDBABY via `quantwave-core/src/indicators/pattern.rs`.
+**Primary Source**: https://www.investopedia.com/articles/active-trading/062315/using-bullish-candlestick-patterns-buy-stocks.asp
 
-**Visual**: `docs/gen_candle_previews.py`, 2026-05-31 IST.
+**Implementation**: `quantwave-core/src/indicators/pattern.rs` (`CDLABANDONEDBABY` / `CDLABANDONEDBABY_METADATA`).
+**Pattern reference**: TA-Lib CDL family via `talib_cdl!` in `pattern.rs`. Nison (1991) cited for psychology only — no duplicated boilerplate.
+**Parity**: `quantwave-core/tests/gold_standard/cdlabandonedbaby.json`
 
-**Context**: Nison (1991) for "abandoned" psychology (no duplication). MQL5 PA series.
-
-**Provenance**: Next<T> + Polars parity.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

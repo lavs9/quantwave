@@ -32,6 +32,28 @@ NISON_BOILERPLATE = (
     "Candlestick patterns were popularized in the West by Steve Nison in his 1991 book"
 )
 
+# Legacy bulk-upgrade filler — must not appear on enriched pages.
+GENERIC_BOILERPLATE_PHRASES = (
+    "primarily used for identifying key market conditions",
+    "distinct balance of responsiveness and stability",
+    "Traders often combine this with other metrics",
+    "technical analysis tool that a ",
+    "technical analysis tool that an ",
+    "remains a standard tool for systematic trading models",
+)
+
+# Hand-written gold pages — never bulk-overwrite.
+GOLD_PAGE_STEMS = {
+    "supertrend",
+    "relative_strength_index_rsi",
+    "moving_average_convergence_divergence_macd",
+    "cyber_cycle",
+    "market_structure",
+    "geometric_patterns",
+    "sr_monitor",
+    "fractional_differentiation",
+}
+
 # Pages with bespoke structure (PA guides) — never bulk-overwrite.
 SKIP_FILES = {
     "README.md",
@@ -50,6 +72,7 @@ SLUG_ALIASES = {
     "relative_strength_markos_katsanos": "relative_strength_markos_katsanos",
     "rate_of_directional_change": "rate_of_directional_change",
     "market_structure_swings_bos": "market_structure",
+    "s_r_interaction_monitor_part_67": "sr_interaction_monitor",
 }
 
 VIOLATION_PATTERNS = [
@@ -107,6 +130,18 @@ class IndicatorRecord:
 def slugify(name: str) -> str:
     raw = "".join(c.lower() if c.isalnum() else "_" for c in name)
     return "_".join(part for part in raw.split("_") if part)
+
+
+def resolve_rec(metadata: dict[str, IndicatorRecord], stem: str) -> IndicatorRecord | None:
+    """Resolve IndicatorRecord for a doc stem (handles SLUG_ALIASES and legacy keys)."""
+    slug = SLUG_ALIASES.get(stem, stem)
+    for key in (stem, slug):
+        if key in metadata:
+            return metadata[key]
+    for rec in metadata.values():
+        if rec.slug in (stem, slug):
+            return rec
+    return None
 
 
 def extract_rust_string(block: str, key: str) -> str:
@@ -246,18 +281,48 @@ def is_compliant(content: str) -> bool:
     return "## Visual Example" in content
 
 
+def has_generic_boilerplate(content: str) -> bool:
+    lower = content.lower()
+    return any(p in lower for p in GENERIC_BOILERPLATE_PHRASES)
 
-def depth_lint_violations(rec: IndicatorRecord, content: str) -> list[str]:
+
+def is_protected_page(stem: str) -> bool:
+    return stem in GOLD_PAGE_STEMS
+
+
+def needs_enrichment(
+    content: str,
+    rec: IndicatorRecord | None = None,
+    api: dict[str, dict] | None = None,
+) -> bool:
+    if is_redirect_stub(content):
+        return False
+    if has_generic_boilerplate(content):
+        return True
+    if "## Visual Example" not in content:
+        return True
+    if rec is not None:
+        return bool(depth_lint_violations(rec, content, api))
+    return False
+
+
+def depth_lint_violations(
+    rec: IndicatorRecord,
+    content: str,
+    api: dict[str, dict] | None = None,
+) -> list[str]:
     issues = []
     
-    # 1. Description duplication
-    desc_match = re.search(r"## Description\n\n(.*?)(?=\n\n|\n##)", content, re.S)
+    # 1. Thin / duplicated description (metadata-only stub)
+    desc_match = re.search(r"## Description\n\n(.*?)(?=\n##)", content, re.S)
     if desc_match:
-        first_para = desc_match.group(1).strip()
-        clean_para = re.sub(r'[*_]', '', first_para).strip()
-        clean_meta = re.sub(r'[*_]', '', rec.description).strip()
-        if clean_para == clean_meta:
-            issues.append("Description duplication (verbatim copy of metadata)")
+        desc_body = desc_match.group(1).strip()
+        if "**Typical applications:**" not in desc_body and not has_generic_boilerplate(desc_body):
+            first_para = desc_body.split("\n\n")[0]
+            clean_para = re.sub(r"[*_]", "", first_para).strip()
+            clean_meta = re.sub(r"[*_]", "", rec.description).strip()
+            if clean_para == clean_meta:
+                issues.append("Description duplication (verbatim copy of metadata)")
     
     # 2. Generic edge bullets
     edge_match = re.search(r"## Edge Cases & Limitations\n\n(.*?)(?=\n\n|\n##)", content, re.S)
@@ -272,13 +337,16 @@ def depth_lint_violations(rec: IndicatorRecord, content: str) -> list[str]:
         issues.append("Missing Edge Cases section")
         
     # 3. Broken Polars example
-    usage_match = re.search(r"## Usage Examples\n\n(.*?)(?=\n\n|\n##)", content, re.S)
+    usage_match = re.search(r"## Usage Examples\n\n(.*?)(?=\n## )", content, re.S)
     if usage_match:
         usage_text = usage_match.group(1)
         if re.search(r"\.ta\.\w+\(\"close\",", usage_text):
             issues.append("Broken Polars example (wrong signature `.ta.<method>(\"close\",`)")
-        if "map_batches" in usage_text:
+        has_plugin = api is not None and rec.struct_name in api
+        if has_plugin and "map_batches" in usage_text:
             issues.append("Broken Polars example (uses map_batches instead of native plugin)")
+        if has_plugin and not re.search(r"(?:^|\n)\s*import quantwave|from quantwave import", usage_text):
+            issues.append("Polars example missing `import quantwave` plugin registration")
             
     # 4. Missing warmup specificity
     if rec.category.lower() != "patterns" and not rec.is_pattern and rec.boundary_kind == "scalar":
@@ -297,7 +365,11 @@ def depth_lint_violations(rec: IndicatorRecord, content: str) -> list[str]:
         min_words = 50 if rec.is_pattern else 80
         if words < min_words:
             issues.append(f"Low word count ({words} words, need {min_words}+)")
-            
+
+    # 6. Legacy template boilerplate
+    if has_generic_boilerplate(content):
+        issues.append("Generic template boilerplate (legacy bulk-upgrade filler)")
+
     return issues
 
 
@@ -370,19 +442,95 @@ def render_visual(rec: IndicatorRecord) -> str:
     )
 
 
+def _category_framing(rec: IndicatorRecord) -> str:
+    cat = (rec.category or "").lower()
+    if rec.is_pattern:
+        return (
+            "QuantWave evaluates this pattern on completed OHLC windows using TA-Lib-aligned "
+            "geometry rules. Output is an event signal (+100 bullish, −100 bearish, 0 none) — "
+            "ideal for rule-based strategies and encoded ML features."
+        )
+    if rec.is_ehlers or cat == "ehlers dsp":
+        return (
+            "Part of QuantWave's Ehlers digital signal processing suite. Designed for "
+            "low-lag cycle and trend work — pair with Roofing Filter or SuperSmoother on noisy inputs."
+        )
+    if "price action" in cat:
+        return (
+            "Price-action tooling with streaming and Polars batch parity. Rich outputs feed "
+            "backtest signals, regime filters, and ML feature pipelines."
+        )
+    if cat == "patterns":
+        return "Candlestick pattern in the native TA-Lib CDL family."
+    if cat in {"volume", "volume indicators"}:
+        return "Volume-flow indicator for confirming price moves and detecting accumulation/distribution."
+    if cat == "ml features":
+        return "Research-oriented feature for ML pipelines; validated for batch ↔ streaming parity."
+    return (
+        "Native Rust implementation with gold-standard or TA-Lib parity tests where applicable."
+    )
+
+
+def _application_bullets(rec: IndicatorRecord) -> str:
+    warmup = first_param_default(rec, "N")
+    bullets: list[str] = []
+    if rec.is_pattern:
+        bullets = [
+            "Scan for completed pattern windows — never act on partial formations",
+            "Combine with [Market Structure](market_structure/) or trend filters in production",
+            "Encode signed output (+/−/0) before ML training",
+            "Expect false positives in choppy ranges; require volume or HTF confirmation",
+        ]
+    elif rec.is_ehlers:
+        bullets = [
+            "Use for cycle timing in mean-reverting regimes",
+            "Gate with Hurst exponent or ADX before taking cycle signals",
+            f"Allow `{warmup}`+ bars warm-up for filter state to stabilise",
+            "Chain with Roofing Filter when input is noisy",
+        ]
+    elif any(k in rec.keywords for k in ("volatility", "bands", "atr")):
+        bullets = [
+            "Size stops and position risk from band width or ATR expansion",
+            "Detect squeeze conditions (narrow bands) before breakout systems",
+            f"Warm-up: first `{warmup}` bars build rolling volatility state",
+            "Combine with trend direction (SuperTrend, MACD) for breakout bias",
+        ]
+    elif any(k in rec.keywords for k in ("momentum", "oscillator")):
+        bullets = [
+            "Fade extremes in ranges; trade with trend on recoveries from oversold/overbought",
+            "Use divergences as early warning — confirm with structure or volume",
+            f"Parameter default `{warmup}` — shorten for sensitivity, lengthen for stability",
+            "Drop into `build_feature_matrix()` for ML research",
+        ]
+    elif any(k in rec.keywords for k in ("trend", "moving-average", "moving_average")):
+        bullets = [
+            "Trend filter or signal line for systematic entries",
+            f"Default lookback `{warmup}` — tune per asset volatility",
+            "Cross with faster oscillator for entry timing",
+            "Streaming and Polars paths are bit-identical for production parity",
+        ]
+    else:
+        bullets = [
+            f"See Parameters — default period/length `{warmup}`",
+            "Validated via proptests and gold-standard vectors where available",
+            "Use Polars `.ta` plugins for batch; `streaming_class()` for live",
+        ]
+    return "\n".join(f"- {b}" for b in bullets[:4])
+
+
 def render_description(rec: IndicatorRecord) -> str:
-    paras = [rec.description]
+    paras: list[str] = [rec.description.strip()]
     if rec.usage:
-        paras.append(rec.usage)
-    if rec.is_ehlers and rec.ehlers_summary and NISON_BOILERPLATE not in rec.ehlers_summary:
-        paras.append(rec.ehlers_summary)
-    elif not rec.is_pattern and rec.ehlers_summary and NISON_BOILERPLATE not in rec.ehlers_summary:
-        paras.append(rec.ehlers_summary)
-    body = "\n\n".join(p.strip() for p in paras if p.strip())
+        paras.append(rec.usage.strip())
+    paras.append(_category_framing(rec))
+    if rec.ehlers_summary and NISON_BOILERPLATE not in rec.ehlers_summary:
+        paras.append(rec.ehlers_summary.strip())
+    body = "\n\n".join(p for p in paras if p)
     body += (
-        "\n\nQuantWave implements this indicator via the universal `Next<T>` trait, "
-        "guaranteeing bit-identical results between Rust streaming, Python streaming, "
-        "and Polars batch (`.ta()` / `map_batches`) surfaces."
+        "\n\n**Typical applications:**\n\n"
+        f"{_application_bullets(rec)}\n\n"
+        "QuantWave implements this via the universal `Next<T>` trait — bit-identical across "
+        "Rust streaming, Python streaming, and Polars `.ta()` batch plugins."
     )
     return f"## Description\n\n{body}\n"
 
@@ -497,7 +645,8 @@ def render_usage(rec: IndicatorRecord, api: dict[str, dict]) -> str:
         if kind == "cdl":
             polars_code = (
                 "```python\n"
-                "import polars as pl\n\n"
+                "import polars as pl\n"
+                "import quantwave  # registers pl.col().ta\n\n"
                 "df = (\n"
                 "    pl.read_csv('ohlcv.csv')\n"
                 "    .lazy()\n"
@@ -510,7 +659,8 @@ def render_usage(rec: IndicatorRecord, api: dict[str, dict]) -> str:
         elif kind == "2col_period":
             polars_code = (
                 "```python\n"
-                "import polars as pl\n\n"
+                "import polars as pl\n"
+                "import quantwave  # registers pl.col().ta\n\n"
                 "df = (\n"
                 "    pl.read_csv('ohlcv.csv')\n"
                 "    .lazy()\n"
@@ -537,7 +687,8 @@ def render_usage(rec: IndicatorRecord, api: dict[str, dict]) -> str:
         else:
             polars_code = (
                 "```python\n"
-                "import polars as pl\n\n"
+                "import polars as pl\n"
+                "import quantwave  # registers pl.col().ta\n\n"
                 "df = (\n"
                 "    pl.read_csv('ohlcv.csv')\n"
                 "    .lazy()\n"
@@ -723,7 +874,7 @@ def render_page(rec: IndicatorRecord, api: dict[str, dict]) -> str:
     return "\n".join(parts)
 
 
-def upgrade_all(dry_run: bool = False) -> tuple[int, int, int]:
+def upgrade_all(dry_run: bool = False, enrich_only: bool = False) -> tuple[int, int, int]:
     metadata = parse_metadata_files()
     api = parse_polars_api()
     upgraded = skipped = missing = 0
@@ -731,18 +882,24 @@ def upgrade_all(dry_run: bool = False) -> tuple[int, int, int]:
     for md_path in sorted(NATIVE_DOCS.glob("*.md")):
         if md_path.name in SKIP_FILES:
             continue
-        slug = SLUG_ALIASES.get(md_path.stem, md_path.stem)
-        content = md_path.read_text(encoding="utf-8")
-        if is_compliant(content):
+        if is_protected_page(md_path.stem):
             skipped += 1
             continue
-        rec = metadata.get(slug)
-        if not rec:
-            # try fuzzy: some slugs differ slightly
-            rec = next((r for r in metadata.values() if r.slug == slug), None)
+        slug = SLUG_ALIASES.get(md_path.stem, md_path.stem)
+        content = md_path.read_text(encoding="utf-8")
+        if is_redirect_stub(content):
+            skipped += 1
+            continue
+        rec = resolve_rec(metadata, md_path.stem)
         if not rec:
             print(f"  skip (no metadata): {md_path.name}", file=sys.stderr)
             missing += 1
+            continue
+        if enrich_only and not has_generic_boilerplate(content):
+            skipped += 1
+            continue
+        if not needs_enrichment(content, rec, api):
+            skipped += 1
             continue
         new_content = render_page(rec, api)
         if dry_run:
@@ -759,20 +916,20 @@ def upgrade_all(dry_run: bool = False) -> tuple[int, int, int]:
 def depth_lint_all() -> int:
     failures = 0
     metadata = parse_metadata_files()
+    api = parse_polars_api()
     for md_path in sorted(NATIVE_DOCS.glob("*.md")):
         if md_path.name in SKIP_FILES:
+            continue
+        if is_protected_page(md_path.stem):
             continue
         content = md_path.read_text(encoding="utf-8")
         if is_redirect_stub(content):
             continue
-        slug = SLUG_ALIASES.get(md_path.stem, md_path.stem)
-        rec = metadata.get(slug)
-        if not rec:
-            rec = next((r for r in metadata.values() if r.slug == slug), None)
+        rec = resolve_rec(metadata, md_path.stem)
         if not rec:
             continue
-            
-        issues = depth_lint_violations(rec, content)
+
+        issues = depth_lint_violations(rec, content, api)
         if issues:
             failures += 1
             print(f"FAIL {md_path.name}: {', '.join(issues)}")
@@ -811,6 +968,11 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--lint", action="store_true", help="Lint pages against standards")
     parser.add_argument("--depth-lint", action="store_true", help="Depth lint pages against standards")
+    parser.add_argument(
+        "--enrich-only",
+        action="store_true",
+        help="Only rewrite pages containing legacy generic boilerplate",
+    )
     args = parser.parse_args()
 
     if args.depth_lint:
@@ -819,8 +981,11 @@ def main() -> int:
     if args.lint:
         return lint_all()
 
-    print(f"Upgrading native indicator docs to STANDARDS ({TODAY})...")
-    upgraded, skipped, missing = upgrade_all(dry_run=args.dry_run)
+    label = "enriching" if args.enrich_only else "upgrading"
+    print(f"{label.capitalize()} native indicator docs to STANDARDS ({TODAY})...")
+    upgraded, skipped, missing = upgrade_all(
+        dry_run=args.dry_run, enrich_only=args.enrich_only
+    )
     print(
         f"Done: upgraded={upgraded}, skipped_compliant={skipped}, missing_metadata={missing}"
     )

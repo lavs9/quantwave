@@ -8,22 +8,26 @@ A Bollinger-style band using UltimateSmoother for the center line and standard d
 
 ![Ultimate Bands — annotated preview mapping to core implementation](../../../assets/indicator-previews/ultimate_bands.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Ultimate Bands indicator is a technical analysis tool that a bollinger-style band using ultimatesmoother for the center line and standard deviation of the price-smooth difference for width.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+A Bollinger-style band using UltimateSmoother for the center line and standard deviation of the price-smooth difference for width.
 
 Use as volatility bands that automatically widen during high-energy cycle phases and narrow during quiet phases. Better than fixed-multiple ATR bands in strongly cyclical markets.
 
+Part of QuantWave's Ehlers digital signal processing suite. Designed for low-lag cycle and trend work — pair with Roofing Filter or SuperSmoother on noisy inputs.
+
 Ehlers Ultimate Bands compute upper and lower price envelopes using the RMS amplitude of the dominant cycle rather than a fixed ATR multiple. This makes the bands proportional to the current cycle energy, expanding when the market is actively cycling and contracting when it enters a low-energy consolidation.
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Use for cycle timing in mean-reverting regimes
+- Gate with Hurst exponent or ADX before taking cycle signals
+- Allow `20`+ bars warm-up for filter state to stabilise
+- Chain with Roofing Filter when input is noisy
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -133,4 +137,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/ultimate_bands.rs` (`ULTIMATE_BANDS` / `ULTIMATE_BANDS_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/ultimate_bands.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

@@ -8,22 +8,26 @@ A momentum oscillator designed to capture momentum across three different timefr
 
 ![Ultimate Oscillator — annotated preview mapping to core implementation](../../../assets/indicator-previews/ultimate_oscillator.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Ultimate Oscillator indicator is a technical analysis tool that a momentum oscillator designed to capture momentum across three different timeframes.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+A momentum oscillator designed to capture momentum across three different timeframes.
 
 Use to avoid the pitfalls of oscillators that are limited to a single timeframe. Buy signals are generated when there is bullish divergence between price and the indicator.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 Developed by Larry Williams in 1976, the Ultimate Oscillator uses weighted averages of three different timeframes to reduce the volatility and false signals common in other oscillators. It remains a staple for identifying divergence across short, medium, and long-term price action. — StockCharts ChartSchool
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Fade extremes in ranges; trade with trend on recoveries from oversold/overbought
+- Use divergences as early warning — confirm with structure or volume
+- Parameter default `7` — shorten for sensitivity, lengthen for stability
+- Drop into `build_feature_matrix()` for ML research
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -125,4 +129,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/momentum.rs` (`ULTOSC` / `ULTOSC_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/ultosc.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

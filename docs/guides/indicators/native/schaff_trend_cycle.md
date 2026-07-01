@@ -8,22 +8,26 @@ A hybrid indicator that applies a double-smoothed stochastic to MACD for faster 
 
 ![Schaff Trend Cycle — annotated preview mapping to core implementation](../../../assets/indicator-previews/schaff_trend_cycle.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Schaff Trend Cycle indicator is a technical analysis tool that a hybrid indicator that applies a double-smoothed stochastic to macd for faster trend identification.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+A hybrid indicator that applies a double-smoothed stochastic to MACD for faster trend identification.
 
 Use as a faster trend-cycle momentum indicator. STC typically reaches overbought/oversold levels sooner than MACD while generating fewer false signals than a raw stochastic.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 The Schaff Trend Cycle, developed by Doug Schaff, applies the stochastic oscillator formula twice to MACD values rather than to price. This double stochastic smoothing produces faster, more defined overbought and oversold levels than MACD alone, while the cycle component reduces the lag of a conventional stochastic. — investopedia.com
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Fade extremes in ranges; trade with trend on recoveries from oversold/overbought
+- Use divergences as early warning — confirm with structure or volume
+- Parameter default `10` — shorten for sensitivity, lengthen for stability
+- Drop into `build_feature_matrix()` for ML research
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -128,4 +132,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/stc.rs` (`STC` / `STC_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/stc.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

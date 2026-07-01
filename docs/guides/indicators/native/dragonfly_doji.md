@@ -1,73 +1,123 @@
 # Dragonfly Doji
 
-<div class="indicator-meta"><span class="category-badge">Patterns</span> <span class="kw-badge">candlestick</span> <span class="kw-badge">indecision</span> <span class="kw-badge">bullish</span></div>
+<div class="indicator-meta"><span class="category-badge">Patterns</span> <span class="kw-badge">pattern</span> <span class="kw-badge">candlestick</span> <span class="kw-badge">classic</span></div>
 
-A Doji variant with a long lower wick, a very small body located near the high of the range, and little or no upper wick. It records a successful defense of lower prices and carries bullish implications after a decline.
+A doji with a long lower shadow and no upper shadow.
 
 ## Visual Example
 
-![Dragonfly Doji: small body near the high with a long lower wick and virtually no upper wick. Annotation highlights the lower support test.](../../../assets/candlestick-previews/dragonfly_doji.png)
+![Dragonfly Doji — annotated preview mapping to core implementation](../../../assets/candlestick-previews/dragonfly_doji.png)
 
-*Synthetic ideal matching TA-Lib CDLDRAGONFLYDOJI (long lower shadow + open\approx close\approx high). Generated 2026-05-31 IST via `docs/gen_candle_previews.py`.*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Dragonfly Doji appears when sellers drive price sharply lower during the session but buyers step in aggressively and push the close back near the open/high. The long lower shadow is the visual footprint of that successful defense.
+A doji with a long lower shadow and no upper shadow.
 
-Most powerful after a downtrend or at support. As with all single-candle patterns, confirmation (next bar close above the Dragonfly high) is required for high-confidence use. It serves as an excellent sparse feature in ML models that already ingest Market Structure bias or Ehlers cycle regime.
+Signals a potential bullish reversal.
+
+QuantWave evaluates this pattern on completed OHLC windows using TA-Lib-aligned geometry rules. Output is an event signal (+100 bullish, −100 bearish, 0 none) — ideal for rule-based strategies and encoded ML features.
+
+**Typical applications:**
+
+- Scan for completed pattern windows — never act on partial formations
+- Combine with [Market Structure](market_structure/) or trend filters in production
+- Encode signed output (+/−/0) before ML training
+- Expect false positives in choppy ranges; require volume or HTF confirmation
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
-**Recognition Rules (exact implementation in QuantWave / TA-Lib CDLDRAGONFLYDOJI)**:
+**Recognition Rules (TA-Lib-compatible, `CDLDRAGONFLYDOJI` in `quantwave-core/src/indicators/pattern.rs`)**:
 
-1. Body length negligible (Doji condition).
-2. Lower shadow (min(open, close) − low) long relative to body/range.
-3. Upper shadow (high − max(open, close)) negligible.
-4. Output follows TA-Lib convention.
-5. Single-bar stateless recognition after history buffering.
+1. Stateless candlestick pattern evaluated on OHLC windows.
+2. Returns a signed signal (+100 bullish, −100 bearish, 0 none) on the completion bar.
+3. Exact threshold geometry (body ratios, gap requirements, shadow lengths) matches the TA-Lib reference implementation wrapped via `talib_cdl!` in `quantwave-core/src/indicators/pattern.rs`.
+4. Validate against `quantwave-core/tests/gold_standard/` vectors where present.
+
 
 ## Parameters
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| (none) | — | Pattern recognition only; no tunable parameters. |
+| (none) | — | No tunable parameters for this detector. |
 
 ## Usage Examples
 
-(Identical surface examples as Doji/Gravestone, substituting `CDLDRAGONFLYDOJI` / `.ta.cdl_dragonflydoji(...)`.)
+**Streaming (Rust)**
 
-**Streaming (Rust / Python / Polars)** — see Doji page for pattern; only the type/column name changes. Bit-identical parity holds.
+```rust
+use quantwave_core::indicators::CDLDRAGONFLYDOJI;
+use quantwave_core::traits::Next;
+
+let mut det = CDLDRAGONFLYDOJI::new();
+for (o, h, l, c) in &ohlcv {
+    let sig = det.next((o, h, l, c));
+}
+```
+
+**Streaming (Python)**
+
+```python
+from quantwave import CDLDRAGONFLYDOJI
+
+det = CDLDRAGONFLYDOJI()
+for o, h, l, c in ohlcv:
+    sig = det.next((o, h, l, c))
+```
+
+**Polars Batch (Python)**
+
+```python
+import polars as pl
+import quantwave  # registers pl.col().ta
+
+df = (
+    pl.read_csv('ohlcv.csv')
+    .lazy()
+    .with_columns(
+        pl.col("open").ta.cdl_dragonflydoji("open", "high", "low", "close").alias("dragonfly_doji")
+    )
+    .collect()
+)
+```
+
+All surfaces are bit-identical via the single `Next<T>` implementation and proptests.
 
 ## Edge Cases & Limitations
 
-- First bar yields 0.
-- Can be ignored in strong downtrends without confirmation.
-- Low-range bars distort shadow significance; use ATR filter.
-- Highest edge when occurring at structure support after established bearish bias.
-- Confirmation bar strongly advised.
+- Requires sufficient complete OHLC bars; early bars yield no signal.
+- False positives are common in sideways markets — gate with trend or structure filters.
+- Pattern semantics follow TA-Lib body/shadow rules; literature variants may differ.
+- Signed output (+/−/0) should be consumed as events, not continuous features without encoding.
+- Combine with volume expansion or higher-timeframe confirmation for production use.
+- No look-ahead bias; signal is known only after the pattern window closes.
 
 ## Boundary Behavior
 
 | Condition | Behavior |
 |-----------|----------|
-| Warm-up | Pattern functions emit 0 (no pattern) until enough bars exist. |
-| period > len | Short series returns all zeros (no pattern detected). |
-| NaN inputs | Bars with NaN OHLC are treated as no pattern (0). |
-| Invalid params | N/A for most candlestick patterns. |
-| Empty data | Empty input returns an empty integer series. |
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 
-- [Doji](doji.md), [Gravestone Doji](gravestone_doji.md), [Hammer](hammer.md), [Takuri](takuri.md)
-- [Market Structure](market_structure.md), [S/R Interactions](sr_monitor.md)
-- Gallery, native index, PA strategy notebook
+- [Indicator Gallery](../gallery.md)
+- [Native Indicators index](index.md)
+- [Engulfing](engulfing.md)
+- [Market Structure](../price_action/market_structure.md)
+- [PA Flag Breakout notebook](../../../examples/notebooks/pa_flag_breakout_strategy.md)
 
 ## Sources & References
 
-**Primary Source**: TA-Lib CDLDRAGONFLYDOJI via `quantwave-core/src/indicators/pattern.rs`.
+**Primary Source**: https://www.investopedia.com/articles/active-trading/062315/using-bullish-candlestick-patterns-buy-stocks.asp
 
-**Visual**: `docs/gen_candle_previews.py` 2026-05-31 IST.
+**Implementation**: `quantwave-core/src/indicators/pattern.rs` (`CDLDRAGONFLYDOJI` / `CDLDRAGONFLYDOJI_METADATA`).
+**Pattern reference**: TA-Lib CDL family via `talib_cdl!` in `pattern.rs`. Nison (1991) cited for psychology only — no duplicated boilerplate.
+**Parity**: `quantwave-core/tests/gold_standard/cdldragonflydoji.json`
 
-**Context**: Nison (1991) psychology only; MQL5 PA for confluence usage.
-
-**Provenance**: `Next<T>` + Polars parity contract.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

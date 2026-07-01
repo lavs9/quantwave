@@ -8,22 +8,26 @@ A double-smoothed simple moving average that gives more weight to the middle of 
 
 ![Triangular Moving Average (TRIMA) — annotated preview mapping to core implementation](../../../assets/indicator-previews/triangular_moving_average_trima.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Triangular Moving Average (TRIMA) indicator is a technical analysis tool that a double-smoothed simple moving average that gives more weight to the middle of the lookback period.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+A double-smoothed simple moving average that gives more weight to the middle of the lookback period.
 
 Use for extremely smooth trend identification. TRIMA is significantly smoother than a standard SMA but introduces more lag; it is ideal for identifying long-term cycles.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 The Triangular Moving Average is an SMA of an SMA. For a period N, it averages the values over N/2 periods twice. This results in a weight distribution that is triangular, peaking at the center of the window, making it very effective at filtering out high-frequency noise. — StockCharts ChartSchool
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Trend filter or signal line for systematic entries
+- Default lookback `30` — tune per asset volatility
+- Cross with faster oscillator for entry timing
+- Streaming and Polars paths are bit-identical for production parity
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -71,6 +75,7 @@ for price in prices:
 
 ```python
 import polars as pl
+import quantwave  # registers pl.col().ta
 
 df = (
     pl.read_csv('ohlcv.csv')
@@ -118,4 +123,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/overlap.rs` (`TRIMA` / `TRIMA_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/trima.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

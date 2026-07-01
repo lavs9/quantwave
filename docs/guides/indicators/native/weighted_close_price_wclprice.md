@@ -8,22 +8,25 @@ An average of the High, Low, and Close prices, with double weight given to the C
 
 ![Weighted Close Price (WCLPRICE) — annotated preview mapping to core implementation](../../../assets/indicator-previews/weighted_close_price_wclprice.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Weighted Close Price (WCLPRICE) indicator is a technical analysis tool that an average of the high, low, and close prices, with double weight given to the close price.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+An average of the High, Low, and Close prices, with double weight given to the Close price.
 
 Use to emphasize the importance of the closing price while still accounting for the total range of the bar.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 Weighted Close Price gives additional significance to the Close, reflecting the widely held belief that the closing price is the most important data point in a trading session. It provides a more nuanced input for smoothing algorithms. — TA-Lib Documentation
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- See Parameters — default period/length `N`
+- Validated via proptests and gold-standard vectors where available
+- Use Polars `.ta` plugins for batch; `streaming_class()` for live
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -122,4 +125,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/price_transform.rs` (`WCLPRICE` / `WCLPRICE_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/wclprice.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

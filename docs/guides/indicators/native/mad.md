@@ -8,22 +8,26 @@ Moving Average Difference: 100 * (SMA(short) - SMA(long)) / SMA(long)
 
 ![MAD — annotated preview mapping to core implementation](../../../assets/indicator-previews/mad.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The MAD indicator is a technical analysis tool that moving average difference: 100 * (sma(short) - sma(long)) / sma(long)
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+Moving Average Difference: 100 * (SMA(short) - SMA(long)) / SMA(long)
 
 Use as a robust volatility measure when outliers or fat-tailed distributions would distort standard deviation. Works well for position sizing and volatility-based stop placement.
 
+Part of QuantWave's Ehlers digital signal processing suite. Designed for low-lag cycle and trend work — pair with Roofing Filter or SuperSmoother on noisy inputs.
+
 Mean Absolute Deviation measures dispersion as the average absolute difference from the median rather than the squared difference from the mean used by standard deviation. It is less sensitive to outliers, making it a more robust volatility estimate for financial time series with fat tails.
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Use for cycle timing in mean-reverting regimes
+- Gate with Hurst exponent or ADX before taking cycle signals
+- Allow `8`+ bars warm-up for filter state to stabilise
+- Chain with Roofing Filter when input is noisy
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -124,4 +128,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/mad.rs` (`MAD` / `MAD_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/mad.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

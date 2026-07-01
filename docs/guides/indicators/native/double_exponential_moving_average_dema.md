@@ -8,22 +8,26 @@ A fast-acting moving average that reduces lag by using two exponential moving av
 
 ![Double Exponential Moving Average (DEMA) — annotated preview mapping to core implementation](../../../assets/indicator-previews/double_exponential_moving_average_dema.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Double Exponential Moving Average (DEMA) indicator is a technical analysis tool that a fast-acting moving average that reduces lag by using two exponential moving averages.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+A fast-acting moving average that reduces lag by using two exponential moving averages.
 
 Use as a replacement for EMA when faster signal generation is required without excessive noise. DEMA reacts more quickly to price changes than a standard EMA.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 Developed by Patrick Mulloy in 1994, DEMA provides a less-laggy alternative to traditional moving averages. It is calculated by taking a single EMA and then subtracting it from a double EMA of the same period. This effectively cancels out some of the lag inherent in the EMA calculation. — StockCharts ChartSchool
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Trend filter or signal line for systematic entries
+- Default lookback `30` — tune per asset volatility
+- Cross with faster oscillator for entry timing
+- Streaming and Polars paths are bit-identical for production parity
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -71,6 +75,7 @@ for price in prices:
 
 ```python
 import polars as pl
+import quantwave  # registers pl.col().ta
 
 df = (
     pl.read_csv('ohlcv.csv')
@@ -118,4 +123,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/overlap.rs` (`DEMA` / `DEMA_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/dema.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

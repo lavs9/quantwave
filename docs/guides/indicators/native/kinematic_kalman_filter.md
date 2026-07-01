@@ -8,22 +8,26 @@ A 2D Kalman filter tracking price and velocity to reduce lag in trends.
 
 ![Kinematic Kalman Filter — annotated preview mapping to core implementation](../../../assets/indicator-previews/kinematic_kalman_filter.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Kinematic Kalman Filter indicator is a technical analysis tool that a 2d kalman filter tracking price and velocity to reduce lag in trends.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+A 2D Kalman filter tracking price and velocity to reduce lag in trends.
 
 Optimized for trend-following strategies where lag reduction is critical. q_pos controls price sensitivity, q_vel controls momentum sensitivity, and r controls overall smoothing.
 
+Research-oriented feature for ML pipelines; validated for batch ↔ streaming parity.
+
 The Kinematic Kalman Filter extends the 1D model by incorporating a velocity state. This allows the filter to 'anticipate' the next price based on current momentum, providing a zero-lag-like response during strong trends while maintaining smoothness via its optimal error-correction logic.
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Fade extremes in ranges; trade with trend on recoveries from oversold/overbought
+- Use divergences as early warning — confirm with structure or volume
+- Parameter default `0.001` — shorten for sensitivity, lengthen for stability
+- Drop into `build_feature_matrix()` for ML research
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -137,4 +141,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/kinematic_kalman.rs` (`KINEMATIC_KALMAN` / `KINEMATIC_KALMAN_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/kinematic_kalman.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

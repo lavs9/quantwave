@@ -1,36 +1,47 @@
 # Harami
 
-<div class="indicator-meta"><span class="category-badge">Patterns</span> <span class="kw-badge">candlestick</span> <span class="kw-badge">reversal</span> <span class="kw-badge">exhaustion</span></div>
+<div class="indicator-meta"><span class="category-badge">Patterns</span> <span class="kw-badge">pattern</span> <span class="kw-badge">candlestick</span> <span class="kw-badge">classic</span></div>
 
-A two-candle pattern in which a small candle (the "baby") forms entirely within the body of the preceding large candle (the "mother"). It signals a potential pause or reversal after a strong directional move.
+A two-candle reversal pattern where the second is inside the first.
 
 ## Visual Example
 
-![Harami: large red candle followed by a small green candle whose entire body (and ideally range) lies inside the prior candle's body. Annotation labels the containment relationship.](../../../assets/candlestick-previews/harami.png)
+![Harami — annotated preview mapping to core implementation](../../../assets/candlestick-previews/harami.png)
 
-*Synthetic ideal satisfying TA-Lib CDLHARAMI containment rules. Generated 2026-05-31 IST via `docs/gen_candle_previews.py`.*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Harami reflects a sudden contraction in volatility and a loss of conviction by the dominant side. The small second candle demonstrates that the prior aggressive buying or selling has been contained.
+A two-candle reversal pattern where the second is inside the first.
 
-It is a higher-probability warning when the first candle is a long body in the direction of the trend and the second candle is a Doji (Harami Cross). Traders and strategy developers use it as a trigger filter inside established Market Structure bias or as an ML feature indicating "volatility collapse after impulse."
+Signals a potential trend exhaustion.
+
+QuantWave evaluates this pattern on completed OHLC windows using TA-Lib-aligned geometry rules. Output is an event signal (+100 bullish, −100 bearish, 0 none) — ideal for rule-based strategies and encoded ML features.
+
+**Typical applications:**
+
+- Scan for completed pattern windows — never act on partial formations
+- Combine with [Market Structure](market_structure/) or trend filters in production
+- Encode signed output (+/−/0) before ML training
+- Expect false positives in choppy ranges; require volume or HTF confirmation
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
-**Recognition Rules (exact implementation in QuantWave / TA-Lib CDLHARAMI)**:
+**Recognition Rules (TA-Lib-compatible, `CDLHARAMI` in `quantwave-core/src/indicators/pattern.rs`)**:
 
-1. Candle 1: large body (direction determines bullish/bearish context).
-2. Candle 2: small body whose high and low (or at minimum open/close) lie strictly inside Candle 1's body.
-3. The pattern completes on the close of the second bar.
-4. Output follows TA-Lib +100/−100/0 convention.
-5. Two-bar window; the streaming wrapper retains the necessary prior bar state.
+1. Stateless candlestick pattern evaluated on OHLC windows.
+2. Returns a signed signal (+100 bullish, −100 bearish, 0 none) on the completion bar.
+3. Exact threshold geometry (body ratios, gap requirements, shadow lengths) matches the TA-Lib reference implementation wrapped via `talib_cdl!` in `quantwave-core/src/indicators/pattern.rs`.
+4. Validate against `quantwave-core/tests/gold_standard/` vectors where present.
+
 
 ## Parameters
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| (none) | — | Pattern recognition only; no tunable parameters. |
+| (none) | — | No tunable parameters for this detector. |
 
 ## Usage Examples
 
@@ -40,47 +51,73 @@ It is a higher-probability warning when the first candle is a long body in the d
 use quantwave_core::indicators::CDLHARAMI;
 use quantwave_core::traits::Next;
 
-let mut h = CDLHARAMI::new();
-for (o, h_, l, c) in &ohlcv {
-    let sig = h.next((o, h_, l, c));
-    ...
+let mut det = CDLHARAMI::new();
+for (o, h, l, c) in &ohlcv {
+    let sig = det.next((o, h, l, c));
 }
 ```
 
-**Streaming (Python) / Polars Batch** — analogous to Doji examples, using `CDLHARAMI` / `.ta.cdl_harami("open","high","low","close")`.
+**Streaming (Python)**
 
-Bit-identical results across all three surfaces.
+```python
+from quantwave import CDLHARAMI
+
+det = CDLHARAMI()
+for o, h, l, c in ohlcv:
+    sig = det.next((o, h, l, c))
+```
+
+**Polars Batch (Python)**
+
+```python
+import polars as pl
+import quantwave  # registers pl.col().ta
+
+df = (
+    pl.read_csv('ohlcv.csv')
+    .lazy()
+    .with_columns(
+        pl.col("open").ta.cdl_harami("open", "high", "low", "close").alias("harami")
+    )
+    .collect()
+)
+```
+
+All surfaces are bit-identical via the single `Next<T>` implementation and proptests.
 
 ## Edge Cases & Limitations
 
-- Requires two completed bars.
-- False positives frequent in low-volatility ranges; require trend context or volume confirmation.
-- "Inside body" vs. "inside full range" definitions vary in literature — QuantWave follows the TA-Lib body-containment rule.
-- Harami Cross (second candle is Doji) is generally stronger.
-- Most useful after a clear impulse move, not in chop.
+- Requires sufficient complete OHLC bars; early bars yield no signal.
+- False positives are common in sideways markets — gate with trend or structure filters.
+- Pattern semantics follow TA-Lib body/shadow rules; literature variants may differ.
+- Signed output (+/−/0) should be consumed as events, not continuous features without encoding.
+- Combine with volume expansion or higher-timeframe confirmation for production use.
+- No look-ahead bias; signal is known only after the pattern window closes.
 
 ## Boundary Behavior
 
 | Condition | Behavior |
 |-----------|----------|
-| Warm-up | Pattern functions emit 0 (no pattern) until enough bars exist. |
-| period > len | Short series returns all zeros (no pattern detected). |
-| NaN inputs | Bars with NaN OHLC are treated as no pattern (0). |
-| Invalid params | N/A for most candlestick patterns. |
-| Empty data | Empty input returns an empty integer series. |
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 
-- [Harami Cross](harami_cross.md), [Doji](doji.md) family, [Engulfing](engulfing.md)
-- [Market Structure](market_structure.md), [Geometric Patterns](geometric_patterns.md)
-- Gallery, native index, PA notebook
+- [Indicator Gallery](../gallery.md)
+- [Native Indicators index](index.md)
+- [Engulfing](engulfing.md)
+- [Market Structure](../price_action/market_structure.md)
+- [PA Flag Breakout notebook](../../../examples/notebooks/pa_flag_breakout_strategy.md)
 
 ## Sources & References
 
-**Primary Source**: TA-Lib CDLHARAMI via `quantwave-core/src/indicators/pattern.rs`.
+**Primary Source**: https://www.investopedia.com/articles/active-trading/062315/using-bullish-candlestick-patterns-buy-stocks.asp
 
-**Visual**: `docs/gen_candle_previews.py`, 2026-05-31 IST.
+**Implementation**: `quantwave-core/src/indicators/pattern.rs` (`CDLHARAMI` / `CDLHARAMI_METADATA`).
+**Pattern reference**: TA-Lib CDL family via `talib_cdl!` in `pattern.rs`. Nison (1991) cited for psychology only — no duplicated boilerplate.
+**Parity**: `quantwave-core/tests/gold_standard/cdlharami.json`
 
-**Context**: Nison (1991) for exhaustion psychology (no boilerplate duplication). MQL5 for structure confluence.
-
-**Provenance**: Next<T> parity contract.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

@@ -1,76 +1,127 @@
 # Three White Soldiers
 
-<div class="indicator-meta"><span class="category-badge">Patterns</span> <span class="kw-badge">candlestick</span> <span class="kw-badge">reversal</span> <span class="kw-badge">bullish</span></div>
+<div class="indicator-meta"><span class="category-badge">Patterns</span> <span class="kw-badge">pattern</span> <span class="kw-badge">candlestick</span> <span class="kw-badge">classic</span></div>
 
-A three-candle bullish reversal pattern consisting of three consecutive long green (bullish) bodies. Each candle opens inside the prior body and closes near its own high, forming a steady upward staircase that frequently terminates a downtrend.
+A bullish reversal pattern with three long green candles.
 
 ## Visual Example
 
-![Three White Soldiers: three successive long green candles, each opening inside the previous body and closing near its high. Annotations mark the progressive higher closes.](../../../assets/candlestick-previews/three_white_soldiers.png)
+![Three White Soldiers — annotated preview mapping to core implementation](../../../assets/candlestick-previews/three_white_soldiers.png)
 
-*Synthetic ideal satisfying TA-Lib CDL3WHITESOLDIERS stepping logic. Generated 2026-05-31 IST via `docs/gen_candle_previews.py`.*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The mirror image of Three Black Crows. Sustained buying over three periods with no meaningful pullback produces a high-conviction bullish reversal signal when it appears after a decline and at support or a Market Structure level.
+A bullish reversal pattern with three long green candles.
 
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+Signals a major trend reversal to the upside.
 
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+QuantWave evaluates this pattern on completed OHLC windows using TA-Lib-aligned geometry rules. Output is an event signal (+100 bullish, −100 bearish, 0 none) — ideal for rule-based strategies and encoded ML features.
 
-Used in quant workflows as a strong long-event feature or regime label.
+**Typical applications:**
+
+- Scan for completed pattern windows — never act on partial formations
+- Combine with [Market Structure](market_structure/) or trend filters in production
+- Encode signed output (+/−/0) before ML training
+- Expect false positives in choppy ranges; require volume or HTF confirmation
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
-**Recognition Rules (exact implementation in QuantWave / TA-Lib CDL3WHITESOLDIERS)**:
+**Recognition Rules (TA-Lib-compatible, `CDL3WHITESOLDIERS` in `quantwave-core/src/indicators/pattern.rs`)**:
 
-1. Three consecutive green bodies (close > open).
-2. Each opens inside the body of the prior bar.
-3. Each closes near its own high.
-4. Completes on bar 3.
-5. Three-bar state in streaming wrapper.
+1. Stateless candlestick pattern evaluated on OHLC windows.
+2. Returns a signed signal (+100 bullish, −100 bearish, 0 none) on the completion bar.
+3. Exact threshold geometry (body ratios, gap requirements, shadow lengths) matches the TA-Lib reference implementation wrapped via `talib_cdl!` in `quantwave-core/src/indicators/pattern.rs`.
+4. Validate against `quantwave-core/tests/gold_standard/` vectors where present.
+
 
 ## Parameters
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| (none) | — | Pattern recognition only; no tunable parameters. |
+| (none) | — | No tunable parameters for this detector. |
 
 ## Usage Examples
 
-Streaming / Polars identical in form to Three Black Crows (substitute the CDL3WHITESOLDIERS type / `.ta.cdl_3whitesoldiers(...)` method). Guaranteed parity.
+**Streaming (Rust)**
+
+```rust
+use quantwave_core::indicators::CDL3WHITESOLDIERS;
+use quantwave_core::traits::Next;
+
+let mut det = CDL3WHITESOLDIERS::new();
+for (o, h, l, c) in &ohlcv {
+    let sig = det.next((o, h, l, c));
+}
+```
+
+**Streaming (Python)**
+
+```python
+from quantwave import CDL3WHITESOLDIERS
+
+det = CDL3WHITESOLDIERS()
+for o, h, l, c in ohlcv:
+    sig = det.next((o, h, l, c))
+```
+
+**Polars Batch (Python)**
+
+```python
+import polars as pl
+import quantwave as qw
+
+def apply_three_white_soldiers(series: pl.Series) -> pl.Series:
+    ind = qw.CDL3WHITESOLDIERS(14)
+    return pl.Series([ind.next(float(v)) for v in series.to_list()])
+
+df = (
+    pl.read_csv('ohlcv.csv')
+    .lazy()
+    .with_columns(
+        pl.col("close").map_batches(apply_three_white_soldiers, return_dtype=pl.Float64).alias("three_white_soldiers")
+    )
+    .collect()
+)
+```
+
+All surfaces are bit-identical via the single `Next<T>` implementation and proptests.
 
 ## Edge Cases & Limitations
 
-- Warm-up: first 14 bars may return NaN or partial state per implementation.
-- Parameter sensitivity: smaller periods increase noise; larger periods increase lag.
-- Sudden gaps or bad ticks can distort rolling windows — consider pre-filtering.
-- Single-series indicators ignore volume unless otherwise documented.
-- Validated via proptests against gold-standard vectors where available.
-- No look-ahead bias; streaming and Polars batch paths are bit-identical.
+- Requires sufficient complete OHLC bars; early bars yield no signal.
+- False positives are common in sideways markets — gate with trend or structure filters.
+- Pattern semantics follow TA-Lib body/shadow rules; literature variants may differ.
+- Signed output (+/−/0) should be consumed as events, not continuous features without encoding.
+- Combine with volume expansion or higher-timeframe confirmation for production use.
+- No look-ahead bias; signal is known only after the pattern window closes.
 
 ## Boundary Behavior
 
 | Condition | Behavior |
 |-----------|----------|
-| Warm-up | Pattern functions emit 0 (no pattern) until enough bars exist. |
-| period > len | Short series returns all zeros (no pattern detected). |
-| NaN inputs | Bars with NaN OHLC are treated as no pattern (0). |
-| Invalid params | N/A for most candlestick patterns. |
-| Empty data | Empty input returns an empty integer series. |
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 
-- [Three Black Crows](three_black_crows.md), [Three Outside Up/Down](three_outside_up_down.md), [Piercing Pattern](piercing_pattern.md)
-- Market Structure, SR Monitor
-- Gallery, native index, PA notebook
+- [Indicator Gallery](../gallery.md)
+- [Native Indicators index](index.md)
+- [Engulfing](engulfing.md)
+- [Market Structure](../price_action/market_structure.md)
+- [PA Flag Breakout notebook](../../../examples/notebooks/pa_flag_breakout_strategy.md)
 
 ## Sources & References
 
-**Primary Source**: TA-Lib CDL3WHITESOLDIERS via core pattern.rs.
+**Primary Source**: https://www.investopedia.com/articles/active-trading/062315/using-bullish-candlestick-patterns-buy-stocks.asp
 
-**Visual**: gen script 2026-05-31 IST.
+**Implementation**: `quantwave-core/src/indicators/pattern.rs` (`CDL3WHITESOLDIERS` / `CDL3WHITESOLDIERS_METADATA`).
+**Pattern reference**: TA-Lib CDL family via `talib_cdl!` in `pattern.rs`. Nison (1991) cited for psychology only — no duplicated boilerplate.
+**Parity**: `quantwave-core/tests/gold_standard/cdl3whitesoldiers.json`
 
-**Context**: Nison (1991) staircase buying psychology only; MQL5 PA.
-
-**Provenance**: Next + Polars fidelity.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

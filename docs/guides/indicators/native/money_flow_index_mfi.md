@@ -8,22 +8,26 @@ A technical oscillator that uses price and volume data for identifying overbough
 
 ![Money Flow Index (MFI) — annotated preview mapping to core implementation](../../../assets/indicator-previews/money_flow_index_mfi.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Money Flow Index (MFI) indicator is a technical analysis tool that a technical oscillator that uses price and volume data for identifying overbought or oversold signals.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+A technical oscillator that uses price and volume data for identifying overbought or oversold signals.
 
 Use as a volume-weighted RSI. Divergences between MFI and price can signal potential reversals, especially when the MFI is in extreme territory (>80 or <20).
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 The Money Flow Index (MFI) is a momentum indicator that measures the inflow and outflow of money into an asset over a specific period of time. It is related to the RSI but incorporates volume, whereas the RSI only considers price. — Investopedia
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Fade extremes in ranges; trade with trend on recoveries from oversold/overbought
+- Use divergences as early warning — confirm with structure or volume
+- Parameter default `14` — shorten for sensitivity, lengthen for stability
+- Drop into `build_feature_matrix()` for ML research
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -123,4 +127,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/momentum.rs` (`MFI` / `MFI_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/mfi.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

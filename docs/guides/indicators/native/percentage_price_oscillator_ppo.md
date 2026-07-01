@@ -8,22 +8,26 @@ A momentum oscillator that measures the difference between two moving averages a
 
 ![Percentage Price Oscillator (PPO) — annotated preview mapping to core implementation](../../../assets/indicator-previews/percentage_price_oscillator_ppo.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Percentage Price Oscillator (PPO) indicator is a technical analysis tool that a momentum oscillator that measures the difference between two moving averages as a percentage of the larger moving average.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+A momentum oscillator that measures the difference between two moving averages as a percentage of the larger moving average.
 
 Use to compare trend momentum across different securities with varying price levels. PPO is the percentage version of MACD.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 The Percentage Price Oscillator (PPO) is identical to the MACD, except that it measures the difference between two moving averages as a percentage. This allows for comparison across different stocks regardless of their price, making it a superior tool for relative strength analysis. — StockCharts ChartSchool
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Fade extremes in ranges; trade with trend on recoveries from oversold/overbought
+- Use divergences as early warning — confirm with structure or volume
+- Parameter default `12` — shorten for sensitivity, lengthen for stability
+- Drop into `build_feature_matrix()` for ML research
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -124,4 +128,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/momentum.rs` (`PPO` / `PPO_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/ppo.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

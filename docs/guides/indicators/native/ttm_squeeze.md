@@ -8,22 +8,26 @@ TTM Squeeze measures the relationship between Bollinger Bands and Keltner Channe
 
 ![TTM Squeeze — annotated preview mapping to core implementation](../../../assets/indicator-previews/ttm_squeeze.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The TTM Squeeze indicator is a technical analysis tool that ttm squeeze measures the relationship between bollinger bands and keltner channels to identify volatility consolidations.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+TTM Squeeze measures the relationship between Bollinger Bands and Keltner Channels to identify volatility consolidations.
 
 Use to identify periods of compressed volatility (Bollinger Bands inside Keltner Channels) followed by high-energy breakouts. The momentum histogram direction at squeeze release indicates trade direction.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 The TTM Squeeze, developed by John Carter, identifies market consolidation by detecting when Bollinger Bands contract inside Keltner Channels — a squeeze condition indicating coiling energy. When the bands expand back outside the Keltner Channels, the squeeze releases and a momentum histogram shows the expected breakout direction. — Mastering the Trade, John Carter
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Size stops and position risk from band width or ATR expansion
+- Detect squeeze conditions (narrow bands) before breakout systems
+- Warm-up: first `20` bars build rolling volatility state
+- Combine with trend direction (SuperTrend, MACD) for breakout bias
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -126,4 +130,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/ttm_squeeze.rs` (`TTM_SQUEEZE` / `TTM_SQUEEZE_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/ttm_squeeze.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

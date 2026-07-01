@@ -8,22 +8,26 @@ A smooth, low-lag moving average that uses multiple exponential smoothing.
 
 ![Tilson T3 Moving Average — annotated preview mapping to core implementation](../../../assets/indicator-previews/tilson_t3_moving_average.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Tilson T3 Moving Average indicator is a technical analysis tool that a smooth, low-lag moving average that uses multiple exponential smoothing.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+A smooth, low-lag moving average that uses multiple exponential smoothing.
 
 Use for trend following in noisy markets. T3 offers a superior balance between lag reduction and smoothness compared to DEMA or TEMA.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 Developed by Tim Tilson in 1998, the T3 moving average uses a 'v-factor' (volume factor) to control how much the indicator reacts to price changes. It is essentially a sextuple EMA smoothing process that provides a very smooth curve with remarkably little lag. — Technical Analysis of Stocks & Commodities
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Trend filter or signal line for systematic entries
+- Default lookback `5` — tune per asset volatility
+- Cross with faster oscillator for entry timing
+- Streaming and Polars paths are bit-identical for production parity
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -124,4 +128,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/overlap.rs` (`T3` / `T3_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/t3.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

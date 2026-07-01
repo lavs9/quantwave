@@ -8,22 +8,26 @@ A momentum indicator that uses volume flow to predict changes in stock price.
 
 ![On-Balance Volume (OBV) — annotated preview mapping to core implementation](../../../assets/indicator-previews/on_balance_volume_obv.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The On-Balance Volume (OBV) indicator is a technical analysis tool that a momentum indicator that uses volume flow to predict changes in stock price.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+A momentum indicator that uses volume flow to predict changes in stock price.
 
 Use to identify accumulation by institutions. When price is flat but OBV is rising, a breakout to the upside is likely. Conversely, when price is flat but OBV is falling, a breakdown is likely.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 Introduced by Joe Granville in his 1963 book 'Granville's New Key to Stock Market Profits', OBV is one of the oldest and most respected volume indicators. It operates on the principle that volume precedes price, and that institutional money flow leaves a detectable trail in the volume data before the price move occurs. — StockCharts ChartSchool
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Fade extremes in ranges; trade with trend on recoveries from oversold/overbought
+- Use divergences as early warning — confirm with structure or volume
+- Parameter default `N` — shorten for sensitivity, lengthen for stability
+- Drop into `build_feature_matrix()` for ML research
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -101,10 +105,10 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 
 | Condition | Behavior |
 |-----------|----------|
-| Warm-up | Output starts from bar 1; warmup_bars marks period-stability, not NaN. |
-| period > len | Cumulative sum continues; period only affects smoothed variants. |
-| NaN inputs | NaN inputs may produce NaN or skip depending on indicator. |
-| Invalid params | Invalid params raise ValueError. |
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
 | Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
@@ -122,4 +126,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/volume.rs` (`OBV` / `OBV_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/obv.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

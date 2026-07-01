@@ -8,22 +8,25 @@ An average of the High, Low, and Close prices.
 
 ![Typical Price (TYPPRICE) — annotated preview mapping to core implementation](../../../assets/indicator-previews/typical_price_typprice.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Typical Price (TYPPRICE) indicator is a technical analysis tool that an average of the high, low, and close prices.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+An average of the High, Low, and Close prices.
 
 Use as the primary price input for the Money Flow Index (MFI) and Commodity Channel Index (CCI). It provides a representative price level for the entire bar.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 Typical Price is a simple average of the High, Low, and Close. It is widely used in indicators that measure the relationship between price and volume, as it offers a more comprehensive view of the day's activity than the Close price alone. — StockCharts ChartSchool
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- See Parameters — default period/length `N`
+- Validated via proptests and gold-standard vectors where available
+- Use Polars `.ta` plugins for batch; `streaming_class()` for live
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -122,4 +125,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/price_transform.rs` (`TYPPRICE` / `TYPPRICE_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/typprice.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

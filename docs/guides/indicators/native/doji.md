@@ -1,38 +1,47 @@
 # Doji
 
-<div class="indicator-meta"><span class="category-badge">Patterns</span> <span class="kw-badge">candlestick</span> <span class="kw-badge">indecision</span> <span class="kw-badge">reversal</span></div>
+<div class="indicator-meta"><span class="category-badge">Patterns</span> <span class="kw-badge">pattern</span> <span class="kw-badge">candlestick</span> <span class="kw-badge">classic</span></div>
 
-A single-candle pattern in which the open and close are virtually equal, producing a very small body with upper and lower wicks. It signals momentary equilibrium between buyers and sellers and potential exhaustion of the prior directional move.
+A candlestick pattern where the open and close are virtually equal.
 
 ## Visual Example
 
-![Doji candlestick showing a very small body (open nearly identical to close) with wicks extending in both directions. Annotation highlights the near-zero body size relative to the full range.](../../../assets/candlestick-previews/doji.png)
+![Doji — annotated preview mapping to core implementation](../../../assets/candlestick-previews/doji.png)
 
-*Synthetic ideal engineered so |open − close| ≪ (high − low). Matches the exact condition used by TA-Lib CDLDOJI / QuantWave `CDLDOJI` (and `.ta.cdl_doji()`). Generated 2026-05-31 IST via `docs/gen_candle_previews.py`.*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Doji forms when buying and selling pressure are in near-perfect balance at a given price level. In the context of a strong uptrend or downtrend it frequently marks a point of indecision and the first sign that momentum may be fading. It does not, by itself, constitute a buy or sell signal; it is best interpreted as a warning that the prevailing control (bulls or bears) has temporarily loosened.
+A candlestick pattern where the open and close are virtually equal.
 
-Practitioners incorporate Doji into confluence setups: after a confirmed Market Structure bias flip, alongside volume contraction/expansion, or as a sparse but high-information binary feature in ML pipelines for regime classification. Variants (Gravestone, Dragonfly, Long-Legged) add directional flavor to the indecision message.
+Indicates indecision between buyers and sellers.
+
+QuantWave evaluates this pattern on completed OHLC windows using TA-Lib-aligned geometry rules. Output is an event signal (+100 bullish, −100 bearish, 0 none) — ideal for rule-based strategies and encoded ML features.
+
+**Typical applications:**
+
+- Scan for completed pattern windows — never act on partial formations
+- Combine with [Market Structure](market_structure/) or trend filters in production
+- Encode signed output (+/−/0) before ML training
+- Expect false positives in choppy ranges; require volume or HTF confirmation
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
-**Recognition Rules (exact implementation in QuantWave / TA-Lib CDLDOJI)**:
+**Recognition Rules (TA-Lib-compatible, `CDLDOJI` in `quantwave-core/src/indicators/pattern.rs`)**:
 
-1. For the current bar compute body length = |close − open|.
-2. Compute full range = high − low.
-3. The bar qualifies as a Doji when body length is negligible relative to range (TA-Lib reference implementation uses a small fractional tolerance derived from the series; the wrapper returns a non-zero signal when the condition holds).
-4. Output: typically +100 / −100 / 0 following TA-Lib candle pattern convention (context-dependent sign in some higher-level consumers).
-5. The streaming implementation (`Next<(f64,f64,f64,f64)>`) buffers the four price series and delegates the final test to the underlying talib_rs function. No additional state or smoothing is maintained across calls.
+1. Stateless candlestick pattern evaluated on OHLC windows.
+2. Returns a signed signal (+100 bullish, −100 bearish, 0 none) on the completion bar.
+3. Exact threshold geometry (body ratios, gap requirements, shadow lengths) matches the TA-Lib reference implementation wrapped via `talib_cdl!` in `quantwave-core/src/indicators/pattern.rs`.
+4. Validate against `quantwave-core/tests/gold_standard/` vectors where present.
 
-The pattern is stateless beyond the single bar under test.
 
 ## Parameters
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| (none) | — | Pattern recognition only; no tunable parameters. The `CDLDOJI` struct maintains internal OHLC history solely to satisfy the talib_rs API contract. |
+| (none) | — | No tunable parameters for this detector. |
 
 ## Usage Examples
 
@@ -42,12 +51,9 @@ The pattern is stateless beyond the single bar under test.
 use quantwave_core::indicators::CDLDOJI;
 use quantwave_core::traits::Next;
 
-let mut doji = CDLDOJI::new();
-for (open, high, low, close) in &ohlcv_bars {
-    let signal = doji.next((*open, *high, *low, *close));
-    if signal != 0.0 {
-        // Doji detected — combine with bias, volume, or structure
-    }
+let mut det = CDLDOJI::new();
+for (o, h, l, c) in &ohlcv {
+    let sig = det.next((o, h, l, c));
 }
 ```
 
@@ -56,67 +62,62 @@ for (open, high, low, close) in &ohlcv_bars {
 ```python
 from quantwave import CDLDOJI
 
-doji = CDLDOJI()
-for o, h, l, c in ohlcv_bars:
-    signal = doji.next((o, h, l, c))
-    if signal != 0:
-        ...
+det = CDLDOJI()
+for o, h, l, c in ohlcv:
+    sig = det.next((o, h, l, c))
 ```
 
-**Polars Batch (Python — primary research / feature surface)**
+**Polars Batch (Python)**
 
 ```python
 import polars as pl
-import quantwave as qw
+import quantwave  # registers pl.col().ta
 
 df = (
-    pl.read_csv("ohlcv.csv")
+    pl.read_csv('ohlcv.csv')
     .lazy()
-    .with_columns([
-        pl.col("open").ta.cdl_doji("open", "high", "low", "close").alias("doji_signal"),
-    ])
+    .with_columns(
+        pl.col("open").ta.cdl_doji("open", "high", "low", "close").alias("doji")
+    )
     .collect()
 )
-# Column contains +100 (bullish context), -100 (bearish), or 0
 ```
 
-All surfaces are bit-identical (enforced by the universal `Next<T>` trait and proptests).
+All surfaces are bit-identical via the single `Next<T>` implementation and proptests.
 
 ## Edge Cases & Limitations
 
-- First bar of any series always returns 0 (insufficient history for the pattern test).
-- In a powerful trend a Doji is frequently a continuation warning rather than reversal; always require trend or structure context.
-- Near-zero volatility bars can trigger spurious Doji classifications — filter with ATR or range thresholds.
-- Literature tolerance for "virtually equal" varies (5–15 % of range); QuantWave follows the TA-Lib reference exactly.
-- High false-positive rate in choppy, low-volume markets without additional confirmation (volume spike, next-bar close direction, higher-timeframe bias).
-- Best paired with Market Structure or Ehlers regime tools rather than used in isolation.
-- No look-ahead bias.
+- Requires sufficient complete OHLC bars; early bars yield no signal.
+- False positives are common in sideways markets — gate with trend or structure filters.
+- Pattern semantics follow TA-Lib body/shadow rules; literature variants may differ.
+- Signed output (+/−/0) should be consumed as events, not continuous features without encoding.
+- Combine with volume expansion or higher-timeframe confirmation for production use.
+- No look-ahead bias; signal is known only after the pattern window closes.
 
 ## Boundary Behavior
 
 | Condition | Behavior |
 |-----------|----------|
-| Warm-up | Pattern functions emit 0 (no pattern) until enough bars exist. |
-| period > len | Short series returns all zeros (no pattern detected). |
-| NaN inputs | Bars with NaN OHLC are treated as no pattern (0). |
-| Invalid params | N/A for most candlestick patterns. |
-| Empty data | Empty input returns an empty integer series. |
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 
-- [Gravestone Doji](gravestone_doji.md), [Dragonfly Doji](dragonfly_doji.md), [Long-Legged Doji](long_legged_doji.md), [Spinning Top](spinning_top.md)
-- [Harami](harami.md) family (often appears with Doji)
-- [Market Structure (Swings + BOS)](market_structure.md) — establish bias before acting on any single-candle signal
-- [Geometric Patterns (Flags + H&S)](geometric_patterns.md)
-- [Indicator Gallery](../gallery.md) • [Native Patterns](native/index.md)
-- Full examples: `docs/examples/notebooks/pa_flag_breakout_strategy.md`
+- [Indicator Gallery](../gallery.md)
+- [Native Indicators index](index.md)
+- [Engulfing](engulfing.md)
+- [Market Structure](../price_action/market_structure.md)
+- [PA Flag Breakout notebook](../../../examples/notebooks/pa_flag_breakout_strategy.md)
 
 ## Sources & References
 
-**Primary Source**: TA-Lib CDLDOJI specification and reference implementation (ta-lib.org), wrapped via `talib_rs` and `quantwave-core/src/indicators/pattern.rs` (the `talib_cdl!` macro). 
+**Primary Source**: https://www.investopedia.com/articles/active-trading/062315/using-bullish-candlestick-patterns-buy-stocks.asp
 
-**Visual**: Generated 2026-05-31 IST via `docs/gen_candle_previews.py` using synthetic data that satisfies the exact recognition rules used by the library.
+**Implementation**: `quantwave-core/src/indicators/pattern.rs` (`CDLDOJI` / `CDLDOJI_METADATA`).
+**Pattern reference**: TA-Lib CDL family via `talib_cdl!` in `pattern.rs`. Nison (1991) cited for psychology only — no duplicated boilerplate.
+**Parity**: `quantwave-core/tests/gold_standard/cdldoji.json`
 
-**Additional Context**: Nison, *Japanese Candlestick Charting Techniques* (1991) for market-psychology interpretation (used only for descriptive depth; no duplicated boilerplate). MQL5 Price Action articles for practical confluence with structure detectors.
-
-**Implementation Provenance**: Universal `Next<T>` contract and batch/streaming parity documented in `quantwave-core/src/traits.rs` and Agents.md.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

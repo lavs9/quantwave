@@ -8,22 +8,26 @@ A momentum oscillator that shows the percent rate of change of a triple exponent
 
 ![TRIX — annotated preview mapping to core implementation](../../../assets/indicator-previews/trix.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The TRIX indicator is a technical analysis tool that a momentum oscillator that shows the percent rate of change of a triple exponentially smoothed moving average.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+A momentum oscillator that shows the percent rate of change of a triple exponentially smoothed moving average.
 
 Use to filter out market noise and identify trend reversals. TRIX crossings of the zero line or a signal line can provide trade entries.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 Developed by Jack Hutson in the early 1980s, TRIX is a powerful momentum oscillator that effectively filters out minor price fluctuations. By triple-smoothing an EMA, it emphasizes the underlying trend and provides a clear signal when the trend changes direction. — StockCharts ChartSchool
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Fade extremes in ranges; trade with trend on recoveries from oversold/overbought
+- Use divergences as early warning — confirm with structure or volume
+- Parameter default `15` — shorten for sensitivity, lengthen for stability
+- Drop into `build_feature_matrix()` for ML research
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -71,6 +75,7 @@ for price in prices:
 
 ```python
 import polars as pl
+import quantwave  # registers pl.col().ta
 
 df = (
     pl.read_csv('ohlcv.csv')
@@ -118,4 +123,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/momentum.rs` (`TRIX` / `TRIX_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/trix.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

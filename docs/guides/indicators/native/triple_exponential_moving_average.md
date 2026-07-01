@@ -8,22 +8,26 @@ TEMA reduces the lag of traditional EMAs.
 
 ![Triple Exponential Moving Average — annotated preview mapping to core implementation](../../../assets/indicator-previews/triple_exponential_moving_average.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Triple Exponential Moving Average indicator is a technical analysis tool that tema reduces the lag of traditional emas.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+TEMA reduces the lag of traditional EMAs.
 
 Use to reduce the lag of a standard EMA by approximately two thirds. Drop-in replacement for EMA in trend-following systems where responsiveness is more important than smoothness.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 Patrick Mulloy introduced Triple EMA in Technical Analysis of Stocks and Commodities (1994) as a practical lag-reduction technique. TEMA = 3*EMA - 3*EMA(EMA) + EMA(EMA(EMA)), subtracting out two orders of the EMA lag while preserving most of the noise reduction.
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Trend filter or signal line for systematic entries
+- Default lookback `14` — tune per asset volatility
+- Cross with faster oscillator for entry timing
+- Streaming and Polars paths are bit-identical for production parity
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -123,4 +127,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/tema.rs` (`TEMA` / `TEMA_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/tema.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

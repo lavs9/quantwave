@@ -8,22 +8,25 @@ The simple average of the Open, High, Low, and Close prices for a given period.
 
 ![Average Price (AVGPRICE) — annotated preview mapping to core implementation](../../../assets/indicator-previews/average_price_avgprice.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Average Price (AVGPRICE) indicator is a technical analysis tool that the simple average of the open, high, low, and close prices for a given period.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+The simple average of the Open, High, Low, and Close prices for a given period.
 
 Use as a smoothed price input for other indicators. It provides a more balanced view of the period's price action than the Close price alone.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 Average Price is the arithmetic mean of the four key price points in a bar. In technical analysis, using Average Price instead of Close can help filter out erratic price spikes and provide a more stable foundation for trend-following algorithms. — TA-Lib Documentation
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- See Parameters — default period/length `N`
+- Validated via proptests and gold-standard vectors where available
+- Use Polars `.ta` plugins for batch; `streaming_class()` for live
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -70,6 +73,7 @@ for price in prices:
 
 ```python
 import polars as pl
+import quantwave  # registers pl.col().ta
 
 df = (
     pl.read_csv('ohlcv.csv')
@@ -117,4 +121,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/price_transform.rs` (`AVGPRICE` / `AVGPRICE_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/avgprice.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

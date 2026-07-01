@@ -4,7 +4,16 @@ import sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from docs.upgrade_to_standards import IndicatorRecord, render_page, parse_polars_api, SKIP_FILES, is_compliant
+from docs.upgrade_to_standards import (
+    IndicatorRecord,
+    render_page,
+    parse_polars_api,
+    SKIP_FILES,
+    is_protected_page,
+    needs_enrichment,
+    parse_metadata_files,
+    resolve_rec,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 NATIVE_DOCS = ROOT / "docs" / "guides" / "indicators" / "native"
@@ -51,13 +60,18 @@ def main():
             skipped += 1
             continue
             
+        if is_protected_page(md_path.stem) and not args.force:
+            skipped += 1
+            continue
+
         is_existing_compliant = False
         if md_path.exists():
             content = md_path.read_text(encoding="utf-8")
-            # If a visual example was added, it's considered hand-enriched.
-            if is_compliant(content):
+            rust_meta = parse_metadata_files()
+            rec_lookup = resolve_rec(rust_meta, md_path.stem)
+            if rec_lookup and not needs_enrichment(content, rec_lookup, api):
                 is_existing_compliant = True
-                
+
         if is_existing_compliant and not args.force:
             skipped += 1
             continue

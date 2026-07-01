@@ -8,22 +8,26 @@ Trend identification using the difference between two high-pass filters.
 
 ![Precision Trend Analysis — annotated preview mapping to core implementation](../../../assets/indicator-previews/precision_trend_analysis.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Precision Trend Analysis indicator is a technical analysis tool that trend identification using the difference between two high-pass filters.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+Trend identification using the difference between two high-pass filters.
 
 Use as a high-precision trend indicator that applies DSP filtering to remove cycle noise before measuring trend direction, giving fewer but more reliable trend signals.
 
+Part of QuantWave's Ehlers digital signal processing suite. Designed for low-lag cycle and trend work — pair with Roofing Filter or SuperSmoother on noisy inputs.
+
 Ehlers Precision Trend analysis applies a roofing-filter style preprocessing to price before computing the trend indicator, removing the cyclical component that causes premature trend reversals in standard indicators. The result is a trend signal that changes state only when the genuine trend direction changes.
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Use for cycle timing in mean-reverting regimes
+- Gate with Hurst exponent or ADX before taking cycle signals
+- Allow `250`+ bars warm-up for filter state to stabilise
+- Chain with Roofing Filter when input is noisy
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -133,4 +137,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/precision_trend.rs` (`PRECISION_TREND_ANALYSIS` / `PRECISION_TREND_ANALYSIS_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/precision_trend.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

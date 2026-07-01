@@ -8,22 +8,26 @@ EMA of a 5-bar median filter for smooth tracking with minimal jitter.
 
 ![RecursiveMedian — annotated preview mapping to core implementation](../../../assets/indicator-previews/recursivemedian.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The RecursiveMedian indicator is a technical analysis tool that ema of a 5-bar median filter for smooth tracking with minimal jitter.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+EMA of a 5-bar median filter for smooth tracking with minimal jitter.
 
 Use to filter out extreme outliers and noise while maintaining trend sensitivity. Excellent as a baseline for other oscillators.
 
+Part of QuantWave's Ehlers digital signal processing suite. Designed for low-lag cycle and trend work — pair with Roofing Filter or SuperSmoother on noisy inputs.
+
 Standard filters like SMA or EMA are distorted by price spikes. The recursive median filter uses the median to reject outliers and an EMA to provide smoothness, offering a cleaner trend representation than standard moving averages.
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Use for cycle timing in mean-reverting regimes
+- Gate with Hurst exponent or ADX before taking cycle signals
+- Allow `12`+ bars warm-up for filter state to stabilise
+- Chain with Roofing Filter when input is noisy
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -126,4 +130,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/recursive_median.rs` (`RECURSIVE_MEDIAN` / `RECURSIVE_MEDIAN_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/recursive_median.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

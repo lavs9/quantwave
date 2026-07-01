@@ -8,22 +8,26 @@ A trailing stop based on Average True Range to keep trades in a trend.
 
 ![ATR Trailing Stop — annotated preview mapping to core implementation](../../../assets/indicator-previews/atr_trailing_stop.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The ATR Trailing Stop indicator is a technical analysis tool that a trailing stop based on average true range to keep trades in a trend.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+A trailing stop based on Average True Range to keep trades in a trend.
 
 Use as a dynamic trailing stop that widens in volatile markets and tightens in calm ones, automatically adjusting stop distance to current market conditions.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 ATR Trailing Stop uses Average True Range to set a stop distance that scales with market volatility. During high-volatility regimes the stop moves further from price to avoid premature exit; during low-volatility regimes it tightens to lock in more profit. It is one of the most robust mechanical stop methods in systematic trading.
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Size stops and position risk from band width or ATR expansion
+- Detect squeeze conditions (narrow bands) before breakout systems
+- Warm-up: first `10` bars build rolling volatility state
+- Combine with trend direction (SuperTrend, MACD) for breakout bias
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -124,4 +128,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/atr_ts.rs` (`ATR_TS` / `ATR_TS_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/atr_ts.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

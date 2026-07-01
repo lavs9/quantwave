@@ -8,22 +8,26 @@ Heikin-Ashi candles filter market noise to reveal the underlying trend.
 
 ![Heikin-Ashi — annotated preview mapping to core implementation](../../../assets/indicator-previews/heikin_ashi.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Heikin-Ashi indicator is a technical analysis tool that heikin-ashi candles filter market noise to reveal the underlying trend.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+Heikin-Ashi candles filter market noise to reveal the underlying trend.
 
 Use to smooth candlestick charts and reduce noise for trend identification. Two or more consecutive same-colored HA candles with no lower/upper wicks confirm a strong trend.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 Heikin-Ashi candles, developed by Munehisa Homma in the 18th century, use averaged OHLC values to produce smoother candles that better represent the prevailing trend. Each HA bar open equals the midpoint of the previous HA bar, while close equals the OHLC average, creating continuity that raw candles lack. — StockCharts ChartSchool
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Trend filter or signal line for systematic entries
+- Default lookback `N` — tune per asset volatility
+- Cross with faster oscillator for entry timing
+- Streaming and Polars paths are bit-identical for production parity
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -122,4 +126,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/heikin_ashi.rs` (`HEIKIN_ASHI` / `HEIKIN_ASHI_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/heikin_ashi.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

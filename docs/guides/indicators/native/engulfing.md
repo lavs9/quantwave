@@ -1,37 +1,47 @@
 # Engulfing
 
-<div class="indicator-meta"><span class="category-badge">Patterns</span> <span class="kw-badge">candlestick</span> <span class="kw-badge">reversal</span> <span class="kw-badge">momentum</span></div>
+<div class="indicator-meta"><span class="category-badge">Patterns</span> <span class="kw-badge">pattern</span> <span class="kw-badge">candlestick</span> <span class="kw-badge">classic</span></div>
 
-A two-candle reversal pattern in which a large candle body completely engulfs the entire range (or at minimum the body) of the preceding candle. It represents a decisive shift in control from one side to the other.
+A pattern where a larger candle completely covers the previous smaller candle.
 
 ## Visual Example
 
-![Bullish Engulfing: small red candle followed by a large green candle whose body fully engulfs the prior candle's range. Shaded region and annotation highlight the complete coverage of the prior high-low.](../../../assets/candlestick-previews/engulfing.png)
+![Engulfing — annotated preview mapping to core implementation](../../../assets/candlestick-previews/engulfing.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Engulfing pattern is one of the most visually compelling and statistically frequent reversal signals. The second candle opens at or beyond the prior close and then closes decisively beyond the prior open, "swallowing" the previous period's action.
+A pattern where a larger candle completely covers the previous smaller candle.
 
-It is especially potent when it occurs at a Market Structure support/resistance level or after a prolonged trend. Quant developers use it both as a direct signal generator and as a high-signal binary feature in ML pipelines (often gated by volume expansion or regime filters).
+Signals a strong shift in momentum.
+
+QuantWave evaluates this pattern on completed OHLC windows using TA-Lib-aligned geometry rules. Output is an event signal (+100 bullish, −100 bearish, 0 none) — ideal for rule-based strategies and encoded ML features.
+
+**Typical applications:**
+
+- Scan for completed pattern windows — never act on partial formations
+- Combine with [Market Structure](market_structure/) or trend filters in production
+- Encode signed output (+/−/0) before ML training
+- Expect false positives in choppy ranges; require volume or HTF confirmation
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
-**Recognition Rules (exact implementation in QuantWave / TA-Lib CDLENGULFING)**:
+**Recognition Rules (TA-Lib-compatible, `CDLENGULFING` in `quantwave-core/src/indicators/pattern.rs`)**:
 
-1. Prior bar: close < open (red body) for bullish engulfing (symmetric for bearish).
-2. Current bar: close > open (green body).
-3. Current open \le prior close.
-4. Current close \ge prior open.
-5. The engulfing body covers the prior body (TA-Lib reference focuses on body containment; full range variants exist in literature).
-6. Pattern completes on the second bar; stateless beyond the two-bar window in the wrapper.
+1. Stateless candlestick pattern evaluated on OHLC windows.
+2. Returns a signed signal (+100 bullish, −100 bearish, 0 none) on the completion bar.
+3. Exact threshold geometry (body ratios, gap requirements, shadow lengths) matches the TA-Lib reference implementation wrapped via `talib_cdl!` in `quantwave-core/src/indicators/pattern.rs`.
+4. Validate against `quantwave-core/tests/gold_standard/` vectors where present.
+
 
 ## Parameters
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| (none) | — | Pattern recognition only; no tunable parameters. Some higher-level consumers accept an optional volume-confirmation flag. |
+| (none) | — | No tunable parameters for this detector. |
 
 ## Usage Examples
 
@@ -41,10 +51,9 @@ It is especially potent when it occurs at a Market Structure support/resistance 
 use quantwave_core::indicators::CDLENGULFING;
 use quantwave_core::traits::Next;
 
-let mut eng = CDLENGULFING::new();
+let mut det = CDLENGULFING::new();
 for (o, h, l, c) in &ohlcv {
-    let sig = eng.next((o, h, l, c));
-    if sig != 0.0 { /* engulfing reversal event */ }
+    let sig = det.next((o, h, l, c));
 }
 ```
 
@@ -52,52 +61,63 @@ for (o, h, l, c) in &ohlcv {
 
 ```python
 from quantwave import CDLENGULFING
-eng = CDLENGULFING()
+
+det = CDLENGULFING()
 for o, h, l, c in ohlcv:
-    sig = eng.next((o, h, l, c))
+    sig = det.next((o, h, l, c))
 ```
 
 **Polars Batch (Python)**
 
 ```python
 import polars as pl
-df.lazy().with_columns(
-    pl.col("open").ta.cdl_engulfing("open", "high", "low", "close").alias("engulfing")
-).collect()
+import quantwave  # registers pl.col().ta
+
+df = (
+    pl.read_csv('ohlcv.csv')
+    .lazy()
+    .with_columns(
+        pl.col("open").ta.cdl_engulfing("open", "high", "low", "close").alias("engulfing")
+    )
+    .collect()
+)
 ```
 
-All surfaces bit-identical (Next<T> contract + proptests).
+All surfaces are bit-identical via the single `Next<T>` implementation and proptests.
 
 ## Edge Cases & Limitations
 
-- Requires two complete bars.
-- False positives common in chop; always require trend context or structure confirmation.
-- Body-only vs. full-range engulfment definitions exist — QuantWave follows the TA-Lib body rule.
-- Volume expansion on the engulfing bar materially improves reliability.
-- Can be overridden by major news; combine with regime or liquidity filters.
+- Requires sufficient complete OHLC bars; early bars yield no signal.
+- False positives are common in sideways markets — gate with trend or structure filters.
+- Pattern semantics follow TA-Lib body/shadow rules; literature variants may differ.
+- Signed output (+/−/0) should be consumed as events, not continuous features without encoding.
+- Combine with volume expansion or higher-timeframe confirmation for production use.
+- No look-ahead bias; signal is known only after the pattern window closes.
 
 ## Boundary Behavior
 
 | Condition | Behavior |
 |-----------|----------|
-| Warm-up | Pattern functions emit 0 (no pattern) until enough bars exist. |
-| period > len | Short series returns all zeros (no pattern detected). |
-| NaN inputs | Bars with NaN OHLC are treated as no pattern (0). |
-| Invalid params | N/A for most candlestick patterns. |
-| Empty data | Empty input returns an empty integer series. |
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 
-- [Harami](harami.md) (opposite psychology), [Three Outside Up/Down](three_outside_up_down.md)
-- [Market Structure](market_structure.md), [S/R Interactions](sr_monitor.md)
-- [Gallery](../gallery.md), native patterns index, PA notebook
+- [Indicator Gallery](../gallery.md)
+- [Native Indicators index](index.md)
+- [Engulfing](engulfing.md)
+- [Market Structure](../price_action/market_structure.md)
+- [PA Flag Breakout notebook](../../../examples/notebooks/pa_flag_breakout_strategy.md)
 
 ## Sources & References
 
-**Primary Source**: TA-Lib CDLENGULFING via `quantwave-core/src/indicators/pattern.rs` (talib_cdl! macro).
+**Primary Source**: https://www.investopedia.com/articles/active-trading/062315/using-bullish-candlestick-patterns-buy-stocks.asp
 
-**Visual**: `docs/gen_candle_previews.py` (enhanced/regenerated 2026-05-31 IST under p1k6).
+**Implementation**: `quantwave-core/src/indicators/pattern.rs` (`CDLENGULFING` / `CDLENGULFING_METADATA`).
+**Pattern reference**: TA-Lib CDL family via `talib_cdl!` in `pattern.rs`. Nison (1991) cited for psychology only — no duplicated boilerplate.
+**Parity**: `quantwave-core/tests/gold_standard/cdlengulfing.json`
 
-**Context**: Nison (1991) for shift-of-control psychology (no duplicated boilerplate text). MQL5 PA articles for structure confluence.
-
-**Provenance**: Universal `Next<T>` trait guarantees identical results between streaming and Polars `.ta.cdl_engulfing(...)`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

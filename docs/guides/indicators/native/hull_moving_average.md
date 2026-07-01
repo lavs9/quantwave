@@ -8,22 +8,26 @@ The Hull Moving Average (HMA) aims to reduce lag while maintaining smoothness.
 
 ![Hull Moving Average — annotated preview mapping to core implementation](../../../assets/indicator-previews/hull_moving_average.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Hull Moving Average indicator is a technical analysis tool that the hull moving average (hma) aims to reduce lag while maintaining smoothness.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+The Hull Moving Average (HMA) aims to reduce lag while maintaining smoothness.
 
 Use as a near-zero-lag moving average for trend-following systems where entry timing is critical. The HMA substantially reduces the lag of a same-period WMA.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 Alan Hull designed the Hull Moving Average to nearly eliminate lag while maintaining smoothness. It achieves this by computing a WMA of doubled period, subtracting a WMA of full period, then applying a final WMA to the difference over the square-root period, combining speed with noise reduction. — AlanHull.com
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Trend filter or signal line for systematic entries
+- Default lookback `14` — tune per asset volatility
+- Cross with faster oscillator for entry timing
+- Streaming and Polars paths are bit-identical for production parity
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -123,4 +127,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/hma.rs` (`HMA` / `HMA_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/hma.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

@@ -8,26 +8,29 @@ Real-time horizontal S/R monitoring with Approach/Touch/Breakout/Reversal/Retest
 
 ![S/R Interaction Monitor (Part 67) — annotated preview mapping to core implementation](../../../assets/indicator-previews/s_r_interaction_monitor_part_67.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-28 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The S/R Interaction Monitor (Part 67) indicator is a technical analysis tool that real-time horizontal s/r monitoring with approach/touch/breakout/reversal/retest detection. auto levels from marketstructure swings + dynamic user-provided levels. rich event output designed for backtester and confluence (mql5 part 67 port).
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+Real-time horizontal S/R monitoring with Approach/Touch/Breakout/Reversal/Retest detection. Auto levels from MarketStructure swings + dynamic user-provided levels. Rich event output designed for backtester and confluence (MQL5 Part 67 port).
 
 Use the Rust struct directly for streaming (add_user_level + next). Emits SRMonitorOutput with Vec<SRInteraction>. Ideal for event-driven backtesting and PA + regime filters. See also MarketStructure for the swing foundation.
 
+Price-action tooling with streaming and Polars batch parity. Rich outputs feed backtest signals, regime filters, and ML feature pipelines.
+
 Classical price action (not DSP). Horizontal level state machine on top of adaptive swings.
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- See Parameters — default period/length `3`
+- Validated via proptests and gold-standard vectors where available
+- Use Polars `.ta` plugins for batch; `streaming_class()` for live
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
-**Implementation** (`sr_monitor`):
+**Implementation** (`quantwave-core/src/indicators/sr_monitor.rs`):
 
 \text{side} = \text{sign}(price - level)\\
 \text{touch if } |level - [L,H]| \le tol\\
@@ -51,10 +54,10 @@ QuantWave implements this indicator via the universal `Next<T>` trait, guarantee
 **Streaming (Rust)**
 
 ```rust
-use quantwave_core::indicators::SrInteractionMonitor;
+use quantwave_core::indicators::SR_INTERACTION_MONITOR;
 use quantwave_core::traits::Next;
 
-let mut ind = SrInteractionMonitor::new(3);
+let mut ind = SR_INTERACTION_MONITOR::new(3);
 for price in &prices {
     let value = ind.next(price);
 }
@@ -63,9 +66,9 @@ for price in &prices {
 **Streaming (Python)**
 
 ```python
-from quantwave import SrInteractionMonitor
+from quantwave import SR_INTERACTION_MONITOR
 
-ind = SrInteractionMonitor(3)
+ind = SR_INTERACTION_MONITOR(3)
 for price in prices:
     value = ind.next(price)
 ```
@@ -77,7 +80,7 @@ import polars as pl
 import quantwave as qw
 
 def apply_s_r_interaction_monitor_part_67(series: pl.Series) -> pl.Series:
-    ind = qw.SrInteractionMonitor(3)
+    ind = qw.SR_INTERACTION_MONITOR(3)
     return pl.Series([ind.next(float(v)) for v in series.to_list()])
 
 df = (
@@ -105,11 +108,11 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 
 | Condition | Behavior |
 |-----------|----------|
-| Warm-up | Early bars return empty event lists or default structs (no scalar NaN). |
-| period > len | Insufficient history yields no events rather than NaN scalars. |
-| NaN inputs | NaN OHLC typically suppresses event detection for that bar. |
-| Invalid params | Invalid swing_strength or tolerance raises ValueError. |
-| Empty data | Empty input returns empty event collections. |
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 
@@ -123,6 +126,6 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 
 **Primary Source**: https://www.mql5.com/en/articles/21961 (SupportResistanceMonitor.mq5) + Part 21 market_structure foundation
 
-**Implementation**: `quantwave-core/src/indicators/sr_monitor` (`SrInteractionMonitor` / `_METADATA`).
+**Implementation**: `quantwave-core/src/indicators/sr_monitor.rs` (`SR_INTERACTION_MONITOR` / `SR_INTERACTION_MONITOR_METADATA`).
 
-**Provenance**: Standards bulk upgrade 2026-06-28 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

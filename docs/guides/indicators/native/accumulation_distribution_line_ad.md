@@ -8,22 +8,26 @@ A volume-based indicator designed to measure the cumulative flow of money into a
 
 ![Accumulation/Distribution Line (AD) — annotated preview mapping to core implementation](../../../assets/indicator-previews/accumulation_distribution_line_ad.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Accumulation/Distribution Line (AD) indicator is a technical analysis tool that a volume-based indicator designed to measure the cumulative flow of money into and out of a security.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+A volume-based indicator designed to measure the cumulative flow of money into and out of a security.
 
 Use to confirm price trends or identify potential reversals through divergences. Rising AD confirms an uptrend; falling AD confirms a downtrend.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 Developed by Marc Chaikin, the AD line uses the relationship between price and volume to determine whether a security is being accumulated or distributed. It is calculated by multiplying the Money Flow Multiplier by the period's volume and adding it to a cumulative total. — StockCharts ChartSchool
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Fade extremes in ranges; trade with trend on recoveries from oversold/overbought
+- Use divergences as early warning — confirm with structure or volume
+- Parameter default `N` — shorten for sensitivity, lengthen for stability
+- Drop into `build_feature_matrix()` for ML research
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -70,6 +74,7 @@ for price in prices:
 
 ```python
 import polars as pl
+import quantwave  # registers pl.col().ta
 
 df = (
     pl.read_csv('ohlcv.csv')
@@ -96,10 +101,10 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 
 | Condition | Behavior |
 |-----------|----------|
-| Warm-up | Output starts from bar 1; warmup_bars marks period-stability, not NaN. |
-| period > len | Cumulative sum continues; period only affects smoothed variants. |
-| NaN inputs | NaN inputs may produce NaN or skip depending on indicator. |
-| Invalid params | Invalid params raise ValueError. |
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
 | Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
@@ -117,4 +122,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/volume.rs` (`AD` / `AD_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/ad.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

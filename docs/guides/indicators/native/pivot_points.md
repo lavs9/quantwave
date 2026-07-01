@@ -8,22 +8,25 @@ Pivot Points are used to determine overall trend over different time frames.
 
 ![Pivot Points — annotated preview mapping to core implementation](../../../assets/indicator-previews/pivot_points.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Pivot Points indicator is a technical analysis tool that pivot points are used to determine overall trend over different time frames.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+Pivot Points are used to determine overall trend over different time frames.
 
 Use to identify key daily, weekly, or monthly support and resistance levels calculated from the prior session OHLC. Pivot levels are widely watched by floor traders and algorithms alike.
 
+Native Rust implementation with gold-standard or TA-Lib parity tests where applicable.
+
 Traditional Pivot Points, widely used by floor traders, calculate a central pivot (P = (H+L+C)/3) plus support and resistance levels at fixed multiples of the prior session range. Because they are derived from universal OHLC data and widely published, they become self-fulfilling levels of institutional interest. — StockCharts ChartSchool
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- See Parameters — default period/length `N`
+- Validated via proptests and gold-standard vectors where available
+- Use Polars `.ta` plugins for batch; `streaming_class()` for live
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -122,4 +125,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/pivot_points.rs` (`PIVOT_POINTS` / `PIVOT_POINTS_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/pivot_points.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

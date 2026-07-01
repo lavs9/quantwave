@@ -8,22 +8,26 @@ Calculates robust statistical performance metrics for a trading system based on 
 
 ![System Evaluator — annotated preview mapping to core implementation](../../../assets/indicator-previews/system_evaluator.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The System Evaluator indicator is a technical analysis tool that calculates robust statistical performance metrics for a trading system based on a stream of trade profits.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+Calculates robust statistical performance metrics for a trading system based on a stream of trade profits.
 
 Use to assess the performance quality of a trading system output using signal processing metrics. Helps distinguish systems with genuine edge from those that merely overfit.
 
+Part of QuantWave's Ehlers digital signal processing suite. Designed for low-lag cycle and trend work — pair with Roofing Filter or SuperSmoother on noisy inputs.
+
 Ehlers applies signal processing metrics to evaluate trading system quality in Cybernetic Analysis. Metrics such as the Signal-to-Noise Ratio of the equity curve quantify whether a system is generating genuine signal above the noise floor of random entry and exit.
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Use for cycle timing in mean-reverting regimes
+- Gate with Hurst exponent or ADX before taking cycle signals
+- Allow `N`+ bars warm-up for filter state to stabilise
+- Chain with Roofing Filter when input is noisy
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -128,4 +132,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/system_evaluator.rs` (`SYSTEM_EVALUATOR` / `SYSTEM_EVALUATOR_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/system_evaluation.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

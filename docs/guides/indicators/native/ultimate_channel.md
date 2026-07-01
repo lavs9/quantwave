@@ -8,22 +8,26 @@ A Keltner-style channel using UltimateSmoothers for both the center line and the
 
 ![Ultimate Channel — annotated preview mapping to core implementation](../../../assets/indicator-previews/ultimate_channel.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The Ultimate Channel indicator is a technical analysis tool that a keltner-style channel using ultimatesmoothers for both the center line and the volatility range to minimize lag.
-
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
-
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+A Keltner-style channel using UltimateSmoothers for both the center line and the volatility range to minimize lag.
 
 Use as a dynamic price channel whose width scales with the current dominant cycle amplitude, providing adaptive support and resistance levels for breakout trading.
 
+Part of QuantWave's Ehlers digital signal processing suite. Designed for low-lag cycle and trend work — pair with Roofing Filter or SuperSmoother on noisy inputs.
+
 The Ultimate Channel uses the measured dominant cycle amplitude to set channel width, analogous to Keltner Channels but cycle-aware rather than ATR-based. When price breaks beyond the channel boundary, it signals that cycle amplitude has expanded enough to suggest a genuine directional move.
 
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
+**Typical applications:**
 
+- Use for cycle timing in mean-reverting regimes
+- Gate with Hurst exponent or ADX before taking cycle signals
+- Allow `20`+ bars warm-up for filter state to stabilise
+- Chain with Roofing Filter when input is noisy
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
@@ -140,4 +144,4 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 **Implementation**: `quantwave-core/src/indicators/ultimate_channel.rs` (`ULTIMATE_CHANNEL` / `ULTIMATE_CHANNEL_METADATA`).
 **Parity**: `quantwave-core/tests/gold_standard/ultimate_channel.json`
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.

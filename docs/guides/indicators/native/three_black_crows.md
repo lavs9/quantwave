@@ -1,36 +1,47 @@
 # Three Black Crows
 
-<div class="indicator-meta"><span class="category-badge">Patterns</span> <span class="kw-badge">candlestick</span> <span class="kw-badge">reversal</span> <span class="kw-badge">bearish</span></div>
+<div class="indicator-meta"><span class="category-badge">Patterns</span> <span class="kw-badge">pattern</span> <span class="kw-badge">candlestick</span> <span class="kw-badge">classic</span></div>
 
-A three-candle bearish reversal pattern consisting of three consecutive long red (bearish) bodies. Each candle opens inside the prior body and closes near its own low, producing a steady downward staircase that often marks the end of an uptrend.
+A bearish reversal pattern with three long red candles.
 
 ## Visual Example
 
-![Three Black Crows: three successive long red candles, each opening within the previous body and closing near its low. Annotations mark the progressive lower closes.](../../../assets/candlestick-previews/three_black_crows.png)
+![Three Black Crows — annotated preview mapping to core implementation](../../../assets/candlestick-previews/three_black_crows.png)
 
-*Synthetic ideal satisfying TA-Lib CDL3BLACKCROWS stepping logic. Generated 2026-05-31 IST via `docs/gen_candle_previews.py`.*
+*Synthetic ideal per library logic. Generated 2026-07-01 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
 
 ## Description
 
-The pattern embodies sustained selling pressure over three periods with no meaningful relief. It is one of the more reliable multi-candle reversal formations when it appears after a clear advance and at a resistance or structure level.
+A bearish reversal pattern with three long red candles.
 
-Quant developers treat it as a high-conviction binary event feature for short entries or for regime-shift labels in supervised ML. Confirmation on the fourth bar (further weakness) or confluence with a Market Structure BOS flip dramatically improves edge.
+Signals a major trend reversal to the downside.
+
+QuantWave evaluates this pattern on completed OHLC windows using TA-Lib-aligned geometry rules. Output is an event signal (+100 bullish, −100 bearish, 0 none) — ideal for rule-based strategies and encoded ML features.
+
+**Typical applications:**
+
+- Scan for completed pattern windows — never act on partial formations
+- Combine with [Market Structure](market_structure/) or trend filters in production
+- Encode signed output (+/−/0) before ML training
+- Expect false positives in choppy ranges; require volume or HTF confirmation
+
+QuantWave implements this via the universal `Next<T>` trait — bit-identical across Rust streaming, Python streaming, and Polars `.ta()` batch plugins.
 
 ## Formula / Specification
 
-**Recognition Rules (exact implementation in QuantWave / TA-Lib CDL3BLACKCROWS)**:
+**Recognition Rules (TA-Lib-compatible, `CDL3BLACKCROWS` in `quantwave-core/src/indicators/pattern.rs`)**:
 
-1. Three consecutive bars, each with close < open (red body).
-2. Each bar's open lies inside the body of the prior bar.
-3. Each bar closes near its own low (strong bearish conviction).
-4. The pattern completes on the third bar.
-5. Three-bar window maintained by the streaming wrapper.
+1. Stateless candlestick pattern evaluated on OHLC windows.
+2. Returns a signed signal (+100 bullish, −100 bearish, 0 none) on the completion bar.
+3. Exact threshold geometry (body ratios, gap requirements, shadow lengths) matches the TA-Lib reference implementation wrapped via `talib_cdl!` in `quantwave-core/src/indicators/pattern.rs`.
+4. Validate against `quantwave-core/tests/gold_standard/` vectors where present.
+
 
 ## Parameters
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| (none) | — | Pattern recognition only; no tunable parameters. |
+| (none) | — | No tunable parameters for this detector. |
 
 ## Usage Examples
 
@@ -40,44 +51,73 @@ Quant developers treat it as a high-conviction binary event feature for short en
 use quantwave_core::indicators::CDL3BLACKCROWS;
 use quantwave_core::traits::Next;
 
-let mut crows = CDL3BLACKCROWS::new();
+let mut det = CDL3BLACKCROWS::new();
 for (o, h, l, c) in &ohlcv {
-    let sig = crows.next((o, h, l, c));
-    if sig < 0.0 { /* strong bearish reversal event */ }
+    let sig = det.next((o, h, l, c));
 }
 ```
 
-**Streaming (Python) and Polars** use the corresponding `CDL3BLACKCROWS` / `.ta.cdl_3blackcrows(...)` surface. Full bit-identical parity.
+**Streaming (Python)**
+
+```python
+from quantwave import CDL3BLACKCROWS
+
+det = CDL3BLACKCROWS()
+for o, h, l, c in ohlcv:
+    sig = det.next((o, h, l, c))
+```
+
+**Polars Batch (Python)**
+
+```python
+import polars as pl
+import quantwave  # registers pl.col().ta
+
+df = (
+    pl.read_csv('ohlcv.csv')
+    .lazy()
+    .with_columns(
+        pl.col("open").ta.cdl_3blackcrows("open", "high", "low", "close").alias("three_black_crows")
+    )
+    .collect()
+)
+```
+
+All surfaces are bit-identical via the single `Next<T>` implementation and proptests.
 
 ## Edge Cases & Limitations
 
-- Requires three complete bars.
-- Can be overridden by news or very strong trend; always seek structure/volume confirmation.
-- In low-liquidity names the "long body + inside open" geometry can appear without real conviction.
-- Best after an established uptrend or at a higher-timeframe resistance.
+- Requires sufficient complete OHLC bars; early bars yield no signal.
+- False positives are common in sideways markets — gate with trend or structure filters.
+- Pattern semantics follow TA-Lib body/shadow rules; literature variants may differ.
+- Signed output (+/−/0) should be consumed as events, not continuous features without encoding.
+- Combine with volume expansion or higher-timeframe confirmation for production use.
+- No look-ahead bias; signal is known only after the pattern window closes.
 
 ## Boundary Behavior
 
 | Condition | Behavior |
 |-----------|----------|
-| Warm-up | Pattern functions emit 0 (no pattern) until enough bars exist. |
-| period > len | Short series returns all zeros (no pattern detected). |
-| NaN inputs | Bars with NaN OHLC are treated as no pattern (0). |
-| Invalid params | N/A for most candlestick patterns. |
-| Empty data | Empty input returns an empty integer series. |
+| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
+| period > len | When period exceeds series length, output is all NaN. |
+| NaN inputs | NaN in input propagates to output (NaN out). |
+| Invalid params | Non-positive period or missing required params raise ValueError. |
+| Empty data | Empty input returns an empty result series. |
 
 ## Related Indicators & See Also
 
-- [Three White Soldiers](three_white_soldiers.md), [Three Inside Up/Down](three_inside_up_down.md), [Dark Cloud Cover](dark_cloud_cover.md)
-- [Market Structure](market_structure.md) (bias + BOS confirmation)
-- Gallery, native index, PA notebook
+- [Indicator Gallery](../gallery.md)
+- [Native Indicators index](index.md)
+- [Engulfing](engulfing.md)
+- [Market Structure](../price_action/market_structure.md)
+- [PA Flag Breakout notebook](../../../examples/notebooks/pa_flag_breakout_strategy.md)
 
 ## Sources & References
 
-**Primary Source**: TA-Lib CDL3BLACKCROWS via `quantwave-core/src/indicators/pattern.rs`.
+**Primary Source**: https://www.investopedia.com/articles/active-trading/062315/using-bullish-candlestick-patterns-buy-stocks.asp
 
-**Visual**: `docs/gen_candle_previews.py`, 2026-05-31 IST.
+**Implementation**: `quantwave-core/src/indicators/pattern.rs` (`CDL3BLACKCROWS` / `CDL3BLACKCROWS_METADATA`).
+**Pattern reference**: TA-Lib CDL family via `talib_cdl!` in `pattern.rs`. Nison (1991) cited for psychology only — no duplicated boilerplate.
+**Parity**: `quantwave-core/tests/gold_standard/cdl3blackcrows.json`
 
-**Context**: Nison (1991) for staircase selling psychology only. MQL5 PA for confluence.
-
-**Provenance**: Next<T> + Polars parity.
+**Provenance**: Standards bulk upgrade 2026-07-01 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
