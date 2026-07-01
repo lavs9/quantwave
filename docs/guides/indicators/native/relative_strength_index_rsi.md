@@ -2,48 +2,89 @@
 
 <div class="indicator-meta"><span class="category-badge">Classic</span> <span class="kw-badge">momentum</span> <span class="kw-badge">oscillator</span> <span class="kw-badge">overbought</span> <span class="kw-badge">oversold</span> <span class="kw-badge">classic</span></div>
 
-A momentum oscillator that measures the speed and change of price movements.
+Wilder's momentum oscillator — the most widely deployed mean-reversion and divergence tool in systematic trading.
 
 ## Visual Example
 
 ![Relative Strength Index (RSI) — annotated preview mapping to core implementation](../../../assets/indicator-previews/relative_strength_index_rsi.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic price with RSI(14) panel. Generated via `docs/generate_all_previews.py`; maps to core `Next<f64>` implementation.*
 
 ## Description
 
-The Relative Strength Index (RSI) indicator is a technical analysis tool that a momentum oscillator that measures the speed and change of price movements.
+RSI measures the **ratio of average gains to average losses** over a lookback window, scaled to 0–100. Values above 70 are traditionally overbought; below 30 oversold — though production systems often calibrate thresholds per asset and regime.
 
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+Common uses:
 
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+- **Mean-reversion entries** — fade extremes when higher-timeframe trend agrees
+- **Divergence detection** — price makes new high while RSI does not (bearish divergence)
+- **ML features** — stationary bounded oscillator; pairs well with [Hurst](hurst_exponent/) and regime labels
+- **Signal gating** — only take longs when RSI recovers from oversold in an uptrend ([SuperTrend](supertrend/) direction > 0)
 
-Use to identify overbought (>70) and oversold (<30) conditions. RSI divergences against price often signal impending trend reversals.
-
-Developed by J. Welles Wilder in New Concepts in Technical Trading Systems (1978), the RSI compares the magnitude of recent gains to recent losses to determine overbought and oversold conditions of an asset. It remains the most widely used momentum oscillator in modern technical analysis.
-
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
-
+QuantWave implements Wilder-smoothed RSI via `Next<f64>`, bit-identical across Rust streaming, Python streaming, and the Polars `.ta.rsi()` plugin. Validated against TA-Lib parity proptests and `rsi.json` gold-standard vectors.
 
 ## Formula / Specification
 
-**Implementation** (`quantwave-core/src/indicators/momentum.rs`):
+**Source:** J. Welles Wilder, *New Concepts in Technical Trading Systems* (1978)
+
+For each bar, compute price change \(\Delta_t = C_t - C_{t-1}\). Separate gains and losses:
 
 \[
-RS = \frac{Average Gain}{Average Loss} \\ RSI = 100 - \frac{100}{1 + RS}
+\text{Gain}_t = \max(\Delta_t, 0), \quad \text{Loss}_t = \max(-\Delta_t, 0)
 \]
 
-Gold-standard parity vectors: `quantwave-core/tests/gold_standard/rsi.json`.
+Wilder smoothing (same recurrence as ATR):
 
+\[
+\overline{\text{Gain}}_t = \frac{\overline{\text{Gain}}_{t-1} \cdot (n-1) + \text{Gain}_t}{n}, \quad
+\overline{\text{Loss}}_t = \frac{\overline{\text{Loss}}_{t-1} \cdot (n-1) + \text{Loss}_t}{n}
+\]
+
+\[
+RS_t = \frac{\overline{\text{Gain}}_t}{\overline{\text{Loss}}_t}, \quad
+RSI_t = 100 - \frac{100}{1 + RS_t}
+\]
+
+**Implementation:** `quantwave-core/src/indicators/incremental/rsi.rs` (re-exported from `momentum.rs`).
+
+**Gold-standard vectors:** `quantwave-core/tests/gold_standard/rsi.json`.
 
 ## Parameters
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `timeperiod` | 14 | Lookback period |
+| `timeperiod` | 14 | Wilder lookback length |
 
+Shorter periods (7–9) react faster but whipsaw in ranges; longer (21–25) smooth noise at the cost of lag.
 
 ## Usage Examples
+
+**Polars batch (recommended)**
+
+```python
+import polars as pl
+import quantwave  # registers pl.col().ta
+
+df = (
+    pl.read_csv("ohlcv.csv")
+    .lazy()
+    .with_columns(
+        pl.col("close").ta.rsi(14).alias("rsi"),
+        (pl.col("close").ta.rsi(14) < 30).alias("oversold"),
+    )
+    .collect()
+)
+```
+
+**Streaming (Python)**
+
+```python
+import quantwave as qw
+
+rsi = qw.streaming_class("rsi")(timeperiod=14)
+for price in closes:
+    value = rsi.next(price)  # 0–100
+```
 
 **Streaming (Rust)**
 
@@ -51,71 +92,52 @@ Gold-standard parity vectors: `quantwave-core/tests/gold_standard/rsi.json`.
 use quantwave_core::indicators::RSI;
 use quantwave_core::traits::Next;
 
-let mut ind = RSI::new(14);
-for price in &prices {
-    let value = ind.next(price);
+let mut rsi = RSI::new(14);
+for price in &closes {
+    let value = rsi.next(*price);
 }
 ```
 
-**Streaming (Python)**
+**Backtest wiring (mean-reversion sketch)**
 
 ```python
-from quantwave import RSI
-
-ind = RSI(14)
-for price in prices:
-    value = ind.next(price)
-```
-
-**Polars Batch (Python)**
-
-```python
-import polars as pl
-
-df = (
-    pl.read_csv('ohlcv.csv')
-    .lazy()
-    .with_columns(
-        pl.col("close").ta.rsi(14).alias("relative_strength_index_rsi")
-    )
-    .collect()
+signal_df = df.with_columns(
+    pl.when(pl.col("rsi") < 30).then(1.0)
+    .when(pl.col("rsi") > 70).then(0.0)
+    .otherwise(None)
+    .forward_fill()
+    .alias("signal")
 )
 ```
 
-All surfaces are bit-identical via the single `Next<T>` implementation and proptests.
-
 ## Edge Cases & Limitations
 
-- Warm-up: first `14` bars may return NaN or partial state per implementation.
-- Parameter sensitivity: smaller periods increase noise; larger periods increase lag.
-- Sudden gaps or bad ticks can distort rolling windows — consider pre-filtering.
-- Single-series indicators ignore volume unless otherwise documented.
-- Validated via proptests against gold-standard vectors where available.
-- No look-ahead bias; streaming and Polars batch paths are bit-identical.
+- **Trending markets:** RSI can remain overbought/oversold for extended runs — use trend filters, not raw levels alone.
+- **Warm-up:** First `timeperiod` bars build Wilder state; early values follow core warmup semantics.
+- **Flat markets:** Zero average loss → RSI defined as 100 in Wilder convention.
+- **Divergence is visual:** Automating divergence requires swing detection — consider [Market Structure](market_structure/) for structure-aware logic.
 
 ## Boundary Behavior
 
 | Condition | Behavior |
 |-----------|----------|
-| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
-| period > len | When period exceeds series length, output is all NaN. |
-| NaN inputs | NaN in input propagates to output (NaN out). |
-| Invalid params | Non-positive period or missing required params raise ValueError. |
-| Empty data | Empty input returns an empty result series. |
+| Warm-up | Leading bars return NaN until `timeperiod` samples accumulated. |
+| `timeperiod` > series length | Insufficient data → NaN outputs. |
+| NaN in close | NaN propagates through the rolling window. |
+| Invalid params | Non-positive `timeperiod` raises `ValueError`. |
 
 ## Related Indicators & See Also
 
+- [Laguerre RSI](laguerre_rsi/) — Ehlers low-lag alternative
+- [Stochastic Oscillator](stochastic_oscillator/) — range-based momentum cousin
+- [Chande Momentum Oscillator](chande_momentum_oscillator_cmo/) — unsmoothed sensitivity variant
+- [ML Feature Stability notebook](../../../examples/notebooks/ml_feature_stability.md)
 - [Indicator Gallery](../gallery.md)
-- [Native Indicators index](index.md)
-- [Batch vs Streaming guide](../../../examples/batch-streaming.md)
-- [RSI](relative_strength_index_rsi.md)
-- [SuperTrend](supertrend/)
 
 ## Sources & References
 
-**Primary Source**: https://www.investopedia.com/terms/r/rsi.asp
+**Primary source:** Wilder (1978); [Investopedia RSI](https://www.investopedia.com/terms/r/rsi.asp)
 
-**Implementation**: `quantwave-core/src/indicators/momentum.rs` (`RSI` / `RSI_METADATA`).
-**Parity**: `quantwave-core/tests/gold_standard/rsi.json`
+**Implementation:** `quantwave-core/src/indicators/incremental/rsi.rs` (`RSI` / `RSI_METADATA`)
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Parity:** TA-Lib proptest in `momentum.rs`; gold-standard `rsi.json`

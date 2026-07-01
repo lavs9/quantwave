@@ -43,44 +43,36 @@ extra:
 
 nav:
   - Home: index.md
-  - Purpose: purpose.md
-  - Benchmarks: benchmarks.md
   - Getting Started:
       - Python: getting-started/python.md
       - Rust: getting-started/rust.md
   - Indicators:
-      - Indicator Gallery: guides/indicators/gallery.md
-      - Catalog: guides/indicators/
+      - Overview: guides/indicators/index.md
+      - Gallery: guides/indicators/gallery.md
+      - Full Catalog: guides/indicators/native/index.md
+      - Ehlers DSP: guides/indicators/ehlers/index.md
+      - Regime Detection: guides/indicators/regimes/index.md
       - ML Features: guides/ml_features.md
       - Plugin vs .ta: guides/plugin_vs_ta.md
       - Options India: guides/options_india.md
-  - Backtest Engine:
+  - Backtest:
       - Overview: guides/backtest/index.md
       - Quickstart: guides/backtest/quickstart.md
       - Capability Matrix: guides/backtest/capability_matrix.md
       - Tear Sheets: guides/backtest/tear_sheets.md
-      - Notebooks:
-          - Backtest Showcase: examples/notebooks/backtest_showcase.md
-          - Backtest Benchmarks: examples/notebooks/backtest_benchmark.md
-          - Portfolio Shared Capital: examples/notebooks/portfolio_shared_capital_backtest.md
-          - Strategy Backtest: examples/notebooks/strategy_backtest.md
-          - PA Flag Breakout (E2E): examples/notebooks/pa_flag_breakout_strategy.md
-          - ML Features → Backtest (E2E): examples/notebooks/ml_feature_backtest_parity.md
   - Examples:
       - Batch & Streaming: examples/batch-streaming.md
-      - Notebooks:
-          - Overview: examples/notebooks/index.md
-          - Multi-Indicator Analysis: examples/notebooks/multi_indicator_analysis.md
-          - ML Feature Stability: examples/notebooks/ml_feature_stability.md
-  - API Reference:
-      - Python (package surface): api/
-  - Community:
-      - Roadmap: roadmap.md
+      - Notebooks: examples/notebooks/index.md
+  - Reference:
+      - Python API: api/
+      - Benchmarks: benchmarks.md
       - Comparison: comparison.md
-      - Release 0.6.0: releases/0.6.0.md
-      - Release 0.5.2: releases/0.5.2.md
-      - Contributing: contributing.md
+      - Roadmap: roadmap.md
+      - Releases:
+          - 0.6.0: releases/0.6.0.md
+          - 0.5.2: releases/0.5.2.md
       - Changelog: changelog.md
+      - Contributing: contributing.md
 
 extra_css:
   - assets/indicator-badges.css
@@ -96,19 +88,17 @@ plugins:
       exclude:
         - api/*
         - examples/notebooks/*.py
-        - examples/notebooks/*.md # marimo generated ones might match this
+        - examples/notebooks/*.md
   - mkdocstrings:
       handlers:
         python:
-          paths: ["quantwave-python/python"] # Adjusted to where python code is
+          paths: ["quantwave-python/python"]
           options:
             docstring_style: google
             show_source: false
   - gen-files:
       scripts:
         - docs/gen_python_api.py
-  - literate-nav:
-      nav_file: SUMMARY.md # Use SUMMARY.md for nav if present
 
 markdown_extensions:
   - pymdownx.highlight:

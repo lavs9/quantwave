@@ -118,11 +118,50 @@ On 1M rows of realistic OHLCV:
 
 [Full benchmarks →](benchmarks.md)
 
+## Our mission
+
+QuantWave exists because most quant stacks force a tradeoff: **Python convenience** or **Rust speed** — rarely both inside Polars with guaranteed batch ↔ streaming parity.
+
+We built the **fastest, most complete Polars-native toolkit** in open source: 217 indicators, full Ehlers DSP, regime detection, options India helpers, and a research-grade backtest engine — one `Next<T>` implementation everywhere.
+
+## Start here
+
+<div class="qw-grid" markdown="1">
+
+<div class="qw-card" markdown="1">
+
+### 1 — Install & first indicator
+[Python getting started](getting-started/python.md) → try SuperTrend in the quickstart above.
+
+</div>
+
+<div class="qw-card" markdown="1">
+
+### 2 — Pick your path
+[Indicators overview](guides/indicators/index.md) — learning paths for trend, PA, Ehlers, ML.
+
+</div>
+
+<div class="qw-card" markdown="1">
+
+### 3 — Backtest a signal
+[Backtest quickstart](guides/backtest/quickstart.md) → [Strategy notebook](examples/notebooks/strategy_backtest.md).
+
+</div>
+
+<div class="qw-card" markdown="1">
+
+### 4 — Go deep
+[Full catalog](guides/indicators/native/) · [Gallery](guides/indicators/gallery.md) · [API](api/)
+
+</div>
+
+</div>
+
 ## Explore
 
-- [Complete indicator catalog](guides/indicators/native/) — all 217 indicators by category
-- [Indicator gallery](guides/indicators/gallery.md) — curated starting points
+- [Indicator gallery](guides/indicators/gallery.md) — curated high-value starting points
 - [Ehlers DSP suite](guides/indicators/ehlers/index.md)
+- [Backtest engine](guides/backtest/index.md)
 - [ML features](guides/ml_features.md)
-- [Options India](guides/options_india.md)
-- [Examples & notebooks](examples/notebooks/index.md)
+- [Notebooks](examples/notebooks/index.md)

@@ -2,131 +2,141 @@
 
 <div class="indicator-meta"><span class="category-badge">Ehlers DSP</span> <span class="kw-badge">cycle</span> <span class="kw-badge">oscillator</span> <span class="kw-badge">ehlers</span> <span class="kw-badge">dsp</span></div>
 
-An oscillator introduced by John Ehlers that models the cyclical component of a time series using FIR smoothing.
+John Ehlers' bandpass-style cycle oscillator — isolates short-term cyclic component with dramatically less lag than classic momentum tools.
 
 ## Visual Example
 
 ![Cyber Cycle — annotated preview mapping to core implementation](../../../assets/indicator-previews/cyber_cycle.png)
 
-*Synthetic ideal per library logic. Generated 2026-06-25 IST via `docs/generate_all_previews.py` (reproducible; maps to core `Next<T>` implementation).*
+*Synthetic cycle with Cyber Cycle and trigger line. Generated via `docs/generate_all_previews.py`; maps to core `Next<f64>` → `(cycle, trigger)`.*
 
 ## Description
 
-The Cyber Cycle indicator is a technical analysis tool that an oscillator introduced by john ehlers that models the cyclical component of a time series using fir smoothing.
+Cyber Cycle applies a **symmetrical 4-bar FIR smoother** and a second-order IIR bandpass to extract the cyclic component of price. The **trigger** line is the cycle delayed one bar — crossovers produce timing signals with less derivative noise than MACD-style constructions.
 
-This indicator is primarily used for identifying key market conditions. It provides a robust signal that can be easily integrated into both simple strategies and more complex machine learning feature pipelines. Compared to its alternatives, it offers a distinct balance of responsiveness and stability.
+Use Cyber Cycle when you need:
 
-Traders often combine this with other metrics to confirm signals and avoid false positives during sideways market regimes. It remains a standard tool for systematic trading models.
+- **Cycle timing** — entries/exits around cycle turns in mean-reverting regimes
+- **Regime gating** — suppress cycle trades when [Hurst](hurst_exponent/) or trend tools show persistence
+- **ML features** — rich struct output via `.ta.features.cyber_cycle()` (cycle, trigger, momentum, signal)
+- **Ehlers stacks** — chain with [Roofing Filter](roofing_filter/), [SuperSmoother](super_smoother/), [Instantaneous Trendline](instantaneous_trendline/)
 
-Use as a high-resolution short-term cycle oscillator to time entries and exits around cycle turns. Pair with a trend classifier to suppress signals in trending conditions.
-
-Ehlers introduces the Cyber Cycle in Cybernetic Analysis (2004) as a bandpass-like filter isolating the short-term cyclical component. The trigger line is the Cyber Cycle delayed by one bar, creating a clean crossover signal without derivative noise.
-
-QuantWave implements this indicator via the universal `Next<T>` trait, guaranteeing bit-identical results between Rust streaming, Python streaming, and Polars batch (`.ta()` / `map_batches`) surfaces.
-
+QuantWave sources the math from Ehlers' *Cybernetic Analysis for Stocks and Futures* (2004), Chapter 4. The streaming indicator returns `(cycle, trigger)`; the feature extractor adds momentum and signal fields for ML pipelines.
 
 ## Formula / Specification
 
-**Implementation** (`quantwave-core/src/indicators/cyber_cycle.rs`):
+**Source:** John Ehlers, *Cybernetic Analysis for Stocks and Futures* (2004), Ch. 4
+
+Let `length` control \(\alpha = 2 / (length + 1)\). Four-bar smooth:
 
 \[
-\alpha = \frac{2}{\text{Length} + 1}
-\]
-\[
-\text{Smooth} = \frac{X_t + 2X_{t-1} + 2X_{t-2} + X_{t-3}}{6}
-\]
-\[
-CC_t = \left(1 - \frac{\alpha}{2}\right)^2 (\text{Smooth}_t - 2\text{Smooth}_{t-1} + \text{Smooth}_{t-2}) + 2(1 - \alpha)CC_{t-1} - (1 - \alpha)^2 CC_{t-2}
+\text{Smooth}_t = \frac{X_t + 2X_{t-1} + 2X_{t-2} + X_{t-3}}{6}
 \]
 
-Gold-standard parity vectors: `quantwave-core/tests/gold_standard/cyber_cycle.json`.
+Cyber Cycle recurrence (bandpass isolation):
 
+\[
+CC_t = \left(1 - \frac{\alpha}{2}\right)^2 (\text{Smooth}_t - 2\text{Smooth}_{t-1} + \text{Smooth}_{t-2})
++ 2(1-\alpha) CC_{t-1} - (1-\alpha)^2 CC_{t-2}
+\]
+
+\[
+\text{Trigger}_t = CC_{t-1}
+\]
+
+**Implementation:** `quantwave-core/src/indicators/cyber_cycle.rs`  
+**Feature struct:** `quantwave-core/src/features/cyber_cycle.rs` (momentum, signal fields)
 
 ## Parameters
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `length` | 14 | Alpha smoothing length parameter |
+| `length` | 14 | Controls \(\alpha\); higher = smoother, more lag |
 
+Ehlers examples often use 10–20 on daily data; intraday may need shorter lengths with Roofing pre-filtering.
 
 ## Usage Examples
+
+**Polars features (ML / multi-output)**
+
+```python
+import polars as pl
+import quantwave  # registers LazyFrame.ta.features
+
+df = (
+    pl.read_csv("ohlcv.csv")
+    .lazy()
+    .ta.features()
+    .cyber_cycle(14)
+    .collect()
+)
+# Struct column "cyber_cycle" — unnest for cycle, trigger, momentum, signal
+```
+
+**Streaming indicator (cycle + trigger)**
+
+```python
+import quantwave as qw
+
+cc = qw.streaming_class("cyber_cycle")(length=14)
+for price in closes:
+    out = cc.next(price)
+    # out.cycle, out.trigger (or tuple depending on binding)
+```
 
 **Streaming (Rust)**
 
 ```rust
-use quantwave_core::indicators::CYBER_CYCLE;
+use quantwave_core::indicators::cyber_cycle::CyberCycle;
 use quantwave_core::traits::Next;
 
-let mut ind = CYBER_CYCLE::new(14);
-for price in &prices {
-    let value = ind.next(price);
+let mut cc = CyberCycle::new(14);
+for price in &closes {
+    let (cycle, trigger) = cc.next(*price);
 }
 ```
 
-**Streaming (Python)**
+**Feature matrix (batch research)**
 
 ```python
-from quantwave import CYBER_CYCLE
-
-ind = CYBER_CYCLE(14)
-for price in prices:
-    value = ind.next(price)
-```
-
-**Polars Batch (Python)**
-
-```python
-import polars as pl
 import quantwave as qw
 
-def apply_cyber_cycle(series: pl.Series) -> pl.Series:
-    ind = qw.CYBER_CYCLE(14)
-    return pl.Series([ind.next(float(v)) for v in series.to_list()])
-
-df = (
-    pl.read_csv('ohlcv.csv')
-    .lazy()
-    .with_columns(
-        pl.col("close").map_batches(apply_cyber_cycle, return_dtype=pl.Float64).alias("cyber_cycle")
-    )
-    .collect()
-)
+matrix = qw.build_feature_matrix(df, specs=[
+    qw.FeatureSpec("cyber_cycle", {"length": 30}),
+    qw.FeatureSpec("hurst", {"window": 100}),
+])
 ```
 
-All surfaces are bit-identical via the single `Next<T>` implementation and proptests.
+See [ML Features → Backtest E2E](../../../examples/notebooks/ml_feature_backtest_parity.md) for parity-proof pipeline.
 
 ## Edge Cases & Limitations
 
-- Recursive DSP filters require a warm-up period; first N bars may be unstable or raw-pass-through.
-- Designed for cyclic/mean-reverting regimes; trending markets can produce lag or drift.
-- Parameter `period` (or equivalent) controls cutoff — too small adds noise, too large adds lag.
-- Prefer chaining with other Ehlers tools (Roofing Filter, SuperSmoother) on noisy inputs.
-- Validated via proptests against gold-standard vectors where available.
-- No look-ahead bias; suitable for live streaming and batch feature pipelines.
+- **Trending markets:** Bandpass assumes cyclic component exists — trending data produces drift; gate with trend/regime filters.
+- **Warm-up:** FIR + IIR state needs several bars; early outputs are unstable.
+- **Noisy inputs:** Pre-filter with Roofing or SuperSmoother on very choppy series.
+- **Not a standalone system:** Pair with structure ([Market Structure](market_structure/)) or regime tools.
 
 ## Boundary Behavior
 
 | Condition | Behavior |
 |-----------|----------|
-| Warm-up | Leading bars return NaN until warmup_bars is satisfied. |
-| period > len | When period exceeds series length, output is all NaN. |
-| NaN inputs | NaN in input propagates to output (NaN out). |
-| Invalid params | Non-positive period or missing required params raise ValueError. |
-| Empty data | Empty input returns an empty result series. |
+| Warm-up | Leading bars reflect partial filter state. |
+| `length` > series length | Insufficient data for stable cycle extraction. |
+| NaN in close | NaN propagates through filter chain. |
+| Invalid params | Non-positive `length` raises `ValueError`. |
 
 ## Related Indicators & See Also
 
-- [Indicator Gallery](../gallery.md)
-- [Native Indicators index](index.md)
 - [Ehlers DSP guide](../ehlers/index.md)
-- [Cyber Cycle](cyber_cycle.md)
-- [SuperSmoother](supersmoother.md)
+- [Instantaneous Trendline](instantaneous_trendline/) — complementary trend/cycle separator
+- [Trendflex](trendflex/) — adaptive trend/cycle decomposition
+- [Roofing Filter](roofing_filter/) — recommended pre-filter
+- [ML Feature Stability notebook](../../../examples/notebooks/ml_feature_stability.md)
 
 ## Sources & References
 
-**Primary Source**: Cybernetic Analysis for Stocks and Futures, John Ehlers, 2004, Chapter 4
+**Primary source:** Ehlers (2004) *Cybernetic Analysis for Stocks and Futures*, Chapter 4
 
-**Implementation**: `quantwave-core/src/indicators/cyber_cycle.rs` (`CYBER_CYCLE` / `CYBER_CYCLE_METADATA`).
-**Parity**: `quantwave-core/tests/gold_standard/cyber_cycle.json`
+**Implementation:** `quantwave-core/src/indicators/cyber_cycle.rs` (`CyberCycle` / `CYBER_CYCLE_METADATA`)
 
-**Provenance**: Standards bulk upgrade 2026-06-25 IST — see `docs/DOCUMENTATION_STANDARDS.md`.
+**Parity:** `quantwave-core/tests/test_ml_feature_validation.rs` — batch vs streaming, no look-ahead

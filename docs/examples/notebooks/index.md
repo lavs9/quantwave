@@ -1,8 +1,13 @@
-# Marimo Notebooks
+# Notebooks
 
-Explore interactive examples of QuantWave in action using [Marimo](https://marimo.io/).
+Runnable [Marimo](https://marimo.io/) notebooks demonstrating QuantWave end-to-end. Each page below is a landing summary; run locally for full interactivity and native Rust performance.
 
-These pages are landing pages for the notebooks. For the best experience (full interactivity + native Rust performance), run them locally with `marimo edit`.
+!!! tip "Recommended order"
+    1. [Strategy Backtest](strategy_backtest.md) — indicator → signal → `.bt`
+    2. [Backtest Showcase](backtest_showcase.md) — sweeps, WFO, Monte Carlo
+    3. [ML Features → Backtest E2E](ml_feature_backtest_parity.md) — feature parity into trades
+
+## Backtest & portfolio
 
 ### Available Notebooks
 
@@ -15,7 +20,12 @@ These pages are landing pages for the notebooks. For the best experience (full i
 - **[Backtest Engine Benchmarks](backtest_benchmark.md)**  
   Criterion harness comparing `quantwave-backtest` vs naive row-loop baselines (10K–1M rows, multi-symbol).
 
-- **[Multi-Indicator Analysis](multi_indicator_analysis.md)**  
+- **[Portfolio Shared Capital](portfolio_shared_capital_backtest.md)**  
+  Multi-symbol book simulation with one cash pool via `.bt.portfolio_backtest()`.
+
+## Indicators & ML
+
+- **[Multi-Indicator Analysis](multi_indicator_analysis.md)**
   Clean chaining of multiple indicators (SMA, EMA, Momentum, SuperTrend, etc.) in one lazy Polars expression.
 
 - **[ML Feature Stability & Tiny Model](ml_feature_stability.md)** — *Canonical example*  
