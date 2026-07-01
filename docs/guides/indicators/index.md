@@ -63,6 +63,7 @@ These pages are written to **gold standard** depth (formula, correct Polars API,
 | [SuperTrend](native/supertrend/) | ATR trend + trailing stop; steel-thread parity reference |
 | [Market Structure](native/market_structure/) | MQL5 Part 21 — bias + confirmed BOS; gates all PA signals |
 | [Relative Strength Index](native/relative_strength_index_rsi/) | Wilder momentum oscillator; ML and mean-reversion staple |
+| [MACD](native/moving_average_convergence_divergence_macd/) | Trend-momentum struct (line, signal, histogram) |
 | [Cyber Cycle](native/cyber_cycle/) | Ehlers low-lag cycle; regime-aware timing |
 | [Geometric Patterns](native/geometric_patterns/) | Flags + H&S with rich struct metadata for sizing |
 

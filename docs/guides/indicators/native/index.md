@@ -1,20 +1,70 @@
-# Native Indicators
+# Native Indicators — Full Catalog
 
 QuantWave ships **217 production-grade native indicators** in Rust with bit-identical batch (Polars `.ta()`) and streaming (`Next<T>`) parity.
 
+!!! tip "Fastest way to find an indicator"
+    Press **`/`** or click **Search** (top right) and type a name or slug — e.g. `rsi`, `macd`, `cyber_cycle`, `cdl_engulfing`.  
+    For curated picks, start at the [Gallery](../gallery.md) or [Indicators overview](../index.md).
+
+## Jump to category
+
+<div class="qw-grid" markdown="1">
+
+<div class="qw-card" markdown="1">
+
+### [Classic (53)](#classic-53)
+RSI, MACD, Bollinger, SuperTrend, ATR, …
+
+</div>
+
+<div class="qw-card" markdown="1">
+
+### [Ehlers DSP (82)](#ehlers-dsp-82)
+Cyber Cycle, Trendflex, Roofing, Hilbert suite, …
+
+</div>
+
+<div class="qw-card" markdown="1">
+
+### [Patterns (61)](#patterns-61)
+TA-Lib candlestick family (`cdl_*`)
+
+</div>
+
+<div class="qw-card" markdown="1">
+
+### [Price Action (3)](#price-action-2)
+[Market Structure](market_structure/), geometric patterns, S/R monitor
+
+</div>
+
+<div class="qw-card" markdown="1">
+
+### [ML Features (4)](#ml-features-4)
+Hurst, frac-diff, feature-matrix primitives
+
+</div>
+
+<div class="qw-card" markdown="1">
+
+### [More categories](#complete-tables)
+Volume, Momentum, Statistics, Wilder — full tables below
+
+</div>
+
+</div>
+
+## Gold-standard pages
+
+Hand-written to full depth (formula, correct APIs, strategy context):
+
+[SuperTrend](supertrend/) · [Market Structure](market_structure/) · [RSI](relative_strength_index_rsi/) · [MACD](moving_average_convergence_divergence_macd/) · [Cyber Cycle](cyber_cycle/) · [Geometric Patterns](geometric_patterns/)
+
+## Complete tables
+
+**217 indicators** across 13 categories — slug lookup tables for every registered indicator.
+
 Every page follows [Documentation Standards](../../DOCUMENTATION_STANDARDS.md).
-
-## Quick links
-
-- [Indicator Gallery](../gallery.md) — curated starting points
-- [Ehlers DSP Suite](../ehlers/index.md)
-- [Regime Detection](../regimes/index.md)
-- [ML Features](../../ml_features.md)
-- [Price Action notebook](../../examples/notebooks/pa_flag_breakout_strategy.md)
-
-## Complete indicator catalog
-
-**217 indicators** across 13 categories. Click any name for formulas, parameters, usage examples, edge cases, and sources.
 
 ### Price Action (2)
 
