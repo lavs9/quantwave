@@ -2,6 +2,10 @@
 
 QuantWave is built in Rust and provides high-performance crates for both core logic and Polars integration.
 
+!!! tip "New here?"
+    Start with the [Getting Started funnel](../index.md) if you have not installed yet.
+    Python/Polars is the primary DX path — this page is for Rust-native or embedded use.
+
 ## Installation
 
 Add the crates you need to your `Cargo.toml`:
@@ -43,3 +47,13 @@ fn main() {
     }
 }
 ```
+
+## Where to go next
+
+| Goal | Next step |
+|------|-----------|
+| Polars from Python | [Python getting started](../python.md) |
+| Indicator catalog | [Full catalog](../../guides/indicators/native/) |
+| Architecture | `quantwave-core` traits (`Next<T>`) power both streaming structs and Polars plugins |
+| Benchmarks | [Performance numbers](../../benchmarks.md) |
+| Full funnel | [Getting Started hub](../index.md) |

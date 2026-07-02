@@ -44,6 +44,7 @@ extra:
 nav:
   - Home: index.md
   - Getting Started:
+      - Overview: getting-started/index.md
       - Python: getting-started/python.md
       - Rust: getting-started/rust.md
   - Indicators:

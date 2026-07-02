@@ -6,9 +6,9 @@
 High-performance, Polars-native quantitative finance — <strong>217 native indicators</strong>, full Ehlers DSP suite, regime detection, backtest engine, and bit-identical streaming parity.
 </div>
 
-[Get Started (Python)](getting-started/python.md){ .md-button .md-button--primary }
+[Get Started](getting-started/index.md){ .md-button .md-button--primary }
+[Compare vs TA-Lib](comparison.md){ .md-button }
 [Explore Indicators](guides/indicators/native/){ .md-button }
-[Run Benchmarks](benchmarks.md){ .md-button }
 
 </div>
 
@@ -126,12 +126,16 @@ We built the **fastest, most complete Polars-native toolkit** in open source: 21
 
 ## Start here
 
+**New users:** follow the [Getting Started funnel](getting-started/index.md) — install → first indicator → pick batch, streaming, or backtest.
+
+**Evaluating stacks?** [QuantWave vs TA-Lib & pandas-ta](comparison.md)
+
 <div class="qw-grid" markdown="1">
 
 <div class="qw-card" markdown="1">
 
 ### 1 — Install & first indicator
-[Python getting started](getting-started/python.md) → try SuperTrend in the quickstart above.
+[Getting Started hub](getting-started/index.md) → [Python](getting-started/python.md) or [Rust](getting-started/rust.md).
 
 </div>
 
@@ -160,6 +164,8 @@ We built the **fastest, most complete Polars-native toolkit** in open source: 21
 
 ## Explore
 
+- [Getting Started funnel](getting-started/index.md) — install to first backtest in ~10 minutes
+- [Comparison vs TA-Lib & pandas-ta](comparison.md) — migration and decision guide
 - [Indicator gallery](guides/indicators/gallery.md) — curated high-value starting points
 - [Ehlers DSP suite](guides/indicators/ehlers/index.md)
 - [Backtest engine](guides/backtest/index.md)

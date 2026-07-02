@@ -19,6 +19,9 @@ DOCS_ROOT = ROOT / "docs"
 # Hub pages whose internal links must resolve (no broken featured paths).
 HUB_PAGES = [
     DOCS_ROOT / "index.md",
+    DOCS_ROOT / "comparison.md",
+    DOCS_ROOT / "getting-started" / "index.md",
+    DOCS_ROOT / "getting-started" / "python.md",
     DOCS_ROOT / "guides" / "indicators" / "gallery.md",
     DOCS_ROOT / "guides" / "indicators" / "index.md",
     DOCS_ROOT / "guides" / "backtest" / "index.md",
