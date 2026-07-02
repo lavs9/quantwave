@@ -20,6 +20,7 @@ DOCS_ROOT = ROOT / "docs"
 HUB_PAGES = [
     DOCS_ROOT / "index.md",
     DOCS_ROOT / "comparison.md",
+    DOCS_ROOT / "faq.md",
     DOCS_ROOT / "getting-started" / "index.md",
     DOCS_ROOT / "getting-started" / "python.md",
     DOCS_ROOT / "guides" / "indicators" / "gallery.md",

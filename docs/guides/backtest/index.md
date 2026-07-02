@@ -1,5 +1,8 @@
 # Backtest Engine
 
+!!! tip "Short answer"
+    Backtest is **built into the Python wheel** — use `df.lazy().bt.backtest_with_report()` after `import quantwave`. Rust core (`quantwave-backtest`); same parity story as indicators.
+
 QuantWave ships a **Polars-native, clean-room backtest engine** (`quantwave-backtest`) with Python `.bt` namespace ergonomics. It is vectorbt-*inspired* research UX built on QuantWave's unique **batch ↔ streaming parity** — not a fork of vectorbt or polars-backtest.
 
 ## Why this engine

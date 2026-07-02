@@ -1,5 +1,8 @@
 # Plugin vs `.ta` — When to Use Which
 
+!!! tip "Short answer"
+    **Same math** (`Next<T>`). Use **`pl.col().ta.*`** for expression-plugin throughput; use **`lf.ta().*`** for LazyFrame research chains; use **streaming** for live bars.
+
 QuantWave exposes the same indicator math through two Polars integration paths. Both delegate to `quantwave-core` (`Next<T>`); results are bit-identical when inputs and parameters match.
 
 ---

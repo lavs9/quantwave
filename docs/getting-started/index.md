@@ -1,5 +1,8 @@
 # Getting Started
 
+!!! tip "Short answer"
+    Install `pip install "quantwave[polars]"`, run one `.ta` indicator on a Polars `LazyFrame`, then follow a path card below (batch, streaming, or backtest).
+
 Your first **10 minutes** with QuantWave — install, run one indicator, then pick where to go next.
 
 !!! tip "Evaluating vs TA-Lib or pandas-ta?"

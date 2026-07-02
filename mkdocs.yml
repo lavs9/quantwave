@@ -69,6 +69,7 @@ nav:
       - Batch & Streaming: examples/batch-streaming.md
       - Notebooks: examples/notebooks/index.md
   - Reference:
+      - FAQ: faq.md
       - Python API: api/
       - Benchmarks: benchmarks.md
       - Comparison: comparison.md
