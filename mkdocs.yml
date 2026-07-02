@@ -103,7 +103,13 @@ plugins:
           paths: ["quantwave-python/python"]
           options:
             docstring_style: google
-            show_source: false
+            show_source: true
+            show_signature_annotations: true
+            separate_signature: true
+            show_symbol_type_heading: true
+            members_order: source
+            show_root_heading: true
+            show_root_full_path: false
   - gen-files:
       scripts:
         - docs/gen_python_api.py

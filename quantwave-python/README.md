@@ -1,104 +1,149 @@
-# QuantWave
+# QuantWave (Python)
 
-**High-performance quantitative finance library**  
-Built in Rust · Native Polars support · 218 indicators · Full Ehlers DSP suite · Backtest `.bt`
-
-**Python** `pip install quantwave` (or `pip install "quantwave[polars]"` for Polars layer)  
-**Rust** `cargo add quantwave`
-
-[📖 Full Documentation](https://lavs9.github.io/quantwave/)  
-[⭐ GitHub](https://github.com/lavs9/quantwave)
-
----
-
-## Purpose of Our Work
-
-Most quant libraries force you to choose between **speed** and **ease of use**.  
-We built QuantWave to give you both.
-
-- **218 native indicators** with gold-standard validation
-- **Complete Ehlers Digital Signal Processing suite** (the most advanced open-source cycle tools)  
-- **Zero-copy Polars expressions** that run at Rust speed  
-- **Seamless batch + streaming modes**  
-- **Future-proof architecture** (Options Greeks, risk metrics, etc. coming soon)
-
-**One library. Research to production. No compromises.**
-
----
-
-## Quickstart (Python)
+**Polars-native quantitative finance** — 218 Rust indicators, Ehlers DSP, price action, regimes, and a **built-in backtest engine** with batch ↔ streaming parity.
 
 ```bash
 pip install "quantwave[polars]"
 quantwave doctor
 ```
 
+[Documentation](https://lavs9.github.io/quantwave/) · [vs TA-Lib & pandas-ta](https://lavs9.github.io/quantwave/comparison/) · [FAQ](https://lavs9.github.io/quantwave/faq/) · [llms.txt](https://lavs9.github.io/quantwave/llms.txt)
+
+---
+
+## Install
+
+```bash
+pip install "quantwave[polars]"
+```
+
+The wheel bundles `quantwave._quantwave` (indicators), `quantwave_plugins` (expression `.ta`), and `quantwave._backtest`. The `[polars]` extra adds Polars for `.ta` / `.bt` namespaces.
+
+---
+
+## Example 1 — Polars batch (`.ta`)
+
 ```python
 import polars as pl
 import quantwave  # registers pl.col().ta and LazyFrame.bt
 
-df = pl.read_parquet("ohlcv.parquet")
+df = pl.DataFrame({
+    "high":  [101.0, 102.0, 103.0, 102.0, 104.0],
+    "low":   [99.0, 100.0, 101.0, 100.0, 102.0],
+    "close": [100.0, 101.0, 102.0, 101.0, 103.0],
+})
 
-df = df.lazy().with_columns(
-    pl.col("close").ta.rsi(timeperiod=14).alias("rsi"),
-    pl.col("close").ta.ema(period=20).alias("ema"),
-).collect()
+out = (
+    df.lazy()
+    .with_columns(
+        pl.col("close").ta.rsi(timeperiod=14).alias("rsi"),
+        pl.col("close").ta.supertrend("high", "low", period=10, multiplier=3.0).alias("st"),
+    )
+    .collect()
+)
+print(out.tail())
 ```
 
-[Full examples → Documentation](https://lavs9.github.io/quantwave/examples/batch-streaming/)
+---
 
-## Features
+## Example 2 — Live streaming (parity with batch)
 
-- **Lightning fast** – Rust core with Polars native expressions.
-- **Battle-tested** – Every indicator validated against reference implementations.
-- **Modern** – Works perfectly in Jupyter, scripts, and live trading systems.
-- **MIT licensed** – Free for commercial and personal use.
+```python
+import quantwave as qw
 
-## Next Steps
+cls = qw.streaming_class("rsi")
+rsi = qw.wrap_streaming(cls(period=14), name="rsi")
 
-- [Python Guide](https://lavs9.github.io/quantwave/getting-started/python/)
-- [Rust Guide](https://lavs9.github.io/quantwave/getting-started/rust/)
-- [Options Greeks & Pricing (roadmap)](https://lavs9.github.io/quantwave/purpose/)
+for price in closes:
+    val = rsi.next(price)
+    if rsi.is_ready:
+        print(price, val)
 
-## CLI
+# Optional: qw.assert_parity("rsi", {"period": 14}, closes)
+```
+
+---
+
+## Example 3 — Backtest (`.bt` in the same package)
+
+```python
+import polars as pl
+import quantwave
+
+bars = pl.DataFrame({
+    "timestamp": range(20),
+    "close": [100 + i * 0.5 for i in range(20)],
+    "signal": [0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, -1.0, -1.0, 0.0] * 2,
+})
+
+report = (
+    bars.lazy()
+    .bt.backtest_with_report(signal="signal", close_col="close", timestamp_col="timestamp")
+)
+print(report.metrics())
+```
+
+See `examples/03_backtest_quick.py` in this directory.
+
+---
+
+## Architecture
+
+```text
+pip install quantwave[polars]
+        │
+        ├── quantwave._quantwave   # Rust indicators (Next<T> core)
+        ├── quantwave_plugins    # pl.col("close").ta.* expression plugins
+        ├── quantwave._backtest  # Rust simulation engine
+        │
+        ├── import quantwave
+        │     ├── pl.col().ta.*        batch indicators (plugins)
+        │     ├── df.lazy().bt.*       backtest namespace (bt_polars)
+        │     ├── qw.streaming_class   live bar-by-bar
+        │     ├── qw.metadata / assert_parity / CLI
+        │     └── quantwave.backtest   BacktestEngine direct API
+        │
+        └── Docs: lavs9.github.io/quantwave/api/ (mkdocstrings)
+```
+
+One Rust math path powers batch, streaming, and backtest signal evaluation — validated by gold-standard tests.
+
+---
+
+## Discovery & CLI
+
+```python
+import quantwave as qw
+
+print(len(qw.indicators()), "names")
+meta = qw.metadata("rsi")
+print(meta.warmup_bars, meta.category)
+```
 
 ```bash
-quantwave list                  # all indicators by category
-quantwave info rsi              # metadata for one indicator
-quantwave doctor                # verify core, polars, plugins, backtest
-quantwave version
+quantwave list --category "Classic"
+quantwave info supertrend
+quantwave doctor
 ```
 
-## Python 0.6.0 packaging
+---
 
-- **Unified PyPI wheel** — core + `quantwave_plugins` + `quantwave._backtest` in one install
-- **`quantwave doctor`** — environment diagnostics for production pipelines
-- **`pip install "quantwave[polars]"`** — adds Polars for batch `.ta` and `.bt` namespaces
+## Examples in this repo
 
-## Python 0.5.2 DX Improvements (quantwave-p3z9)
+| Script | What it shows |
+|--------|----------------|
+| `examples/01_rsi_polars.py` | Polars `.ta` batch |
+| `examples/02_supertrend_streaming.py` | RSI streaming + readiness |
+| `examples/03_backtest_quick.py` | `.bt.backtest_with_report` |
 
-We have made major improvements to the Python developer experience:
+---
 
-**New recommended APIs:**
-- `quantwave.indicators()` – discover available indicators
-- `quantwave.metadata("rsi")` – rich per-indicator metadata (params, data inputs, warmup, category, etc.)
-- `quantwave.assert_parity(...)` – verify batch vs streaming bit-identical behavior
-- `quantwave.streaming_class("rsi")` + `wrap_streaming(...)` – better streaming ergonomics with readiness tracking
+## Learn more
 
-**Reduced namespace pollution:**
-- Result dataclasses and Options India helpers are now available under `quantwave.results` and `quantwave.options`.
-- Old top-level access still works but emits `DeprecationWarning`.
+- [Getting Started funnel](https://lavs9.github.io/quantwave/getting-started/)
+- [Python guide](https://lavs9.github.io/quantwave/getting-started/python/)
+- [Backtest quickstart](https://lavs9.github.io/quantwave/guides/backtest/quickstart/)
+- [Indicator catalog](https://lavs9.github.io/quantwave/guides/indicators/native/)
+- [Changelog](https://github.com/lavs9/quantwave/blob/main/docs/changelog.md)
 
-**Other:**
-- `quantwave.__version__` is now properly exposed.
-- `quantwave.categories()` / `category(name)` for programmatic discovery.
-- `quantwave.boundary_info(name)` for warmup and error semantics.
-- `quantwave.talib` submodule with `list_functions()` for TA-Lib migration.
-- Structured errors: `QuantwaveError`, `ParityError`, `IndicatorNotFoundError`, etc.
-- Linux arm64 wheels are available.
-
-**Documentation:** [https://lavs9.github.io/quantwave/](https://lavs9.github.io/quantwave/) — ML Features guide, Backtest quickstart, and API reference.
-
-See the full list of changes in the main [changelog](https://github.com/lavs9/quantwave/blob/main/docs/changelog.md).
-
-Made with ❤️ for the quant community.
+MIT licensed.

@@ -61,7 +61,8 @@ QuantWave's Python package provides three primary surfaces:
 
 - **Polars batch** — the `.ta` namespace (`df.lazy().with_columns(pl.col("close").ta.rsi(14), ...)`)
 - **Streaming** — lightweight Python wrappers around the same `Next<T>` Rust implementations (`from quantwave import RSI; rsi = RSI(14)`)
-- **Low-level / advanced** — direct access to result structs, options helpers, TA-Lib compatible functions (`quantwave.talib`), discovery (`categories`, `boundary_info`), and India-specific analytics
+- **Backtest** — `df.lazy().bt.backtest_with_report(...)` (Rust `quantwave._backtest`, ships in the wheel)
+- **Low-level / advanced** — result structs, options helpers, TA-Lib shim (`quantwave.talib`), discovery (`metadata`, `boundary_info`)
 
 All three surfaces are backed by the same high-performance Rust core and are guaranteed to be bit-identical (validated by property tests against gold-standard vectors).
 
@@ -112,7 +113,7 @@ See the full patterns in [Batch & Streaming Examples](../examples/batch-streamin
 
 - The auto-generated pages below document the **thin Python glue** (result dataclasses, convenience helpers, the polars layer, etc.). They are intentionally lightweight.
 
-- The heavy mathematical implementations (150+ indicators, Ehlers DSP, geometric patterns, regimes, etc.) are written in Rust. Python merely exposes them.
+- The heavy mathematical implementations (218 indicators, Ehlers DSP, geometric patterns, regimes, etc.) are written in Rust. Python merely exposes them.
 
 - New high-level discovery / introspection helpers (`qw.indicators()`, `qw.metadata(name)`, streaming class wrappers, parity assertions, etc.) are under active development. When they stabilize they will appear in this section with examples.
 

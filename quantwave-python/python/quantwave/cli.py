@@ -1,4 +1,14 @@
-"""QuantWave command-line interface for discovery and environment checks."""
+"""QuantWave CLI — indicator discovery and install diagnostics.
+
+Installed as the ``quantwave`` console script (``pip install quantwave``).
+
+Commands:
+
+* ``quantwave list`` — indicators by category
+* ``quantwave info <slug>`` — metadata, warmup, doc URL
+* ``quantwave doctor`` — verify core, Polars, plugins, and backtest extensions
+* ``quantwave version`` — package version
+"""
 
 from __future__ import annotations
 
@@ -131,6 +141,14 @@ def _cmd_version(_args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """CLI entry point used by the ``quantwave`` console script.
+
+    Args:
+        argv: Optional argument list (defaults to ``sys.argv[1:]``).
+
+    Returns:
+        Process exit code (0 success, non-zero on user or environment errors).
+    """
     parser = argparse.ArgumentParser(
         prog="quantwave",
         description="QuantWave — indicator discovery and environment diagnostics",

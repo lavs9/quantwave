@@ -1,7 +1,16 @@
-"""Polars LazyFrame `.bt` namespace (quantwave-cr6v.5).
+"""Polars ``.bt`` namespace for the QuantWave backtest engine.
 
-Registers `df.lazy().bt.backtest(...)` on import. Delegates to the native
-`quantwave._backtest` engine (same semantics as `quantwave-polars` Rust `.bt()`).
+Importing ``quantwave`` (when Polars and ``quantwave._backtest`` are available)
+registers ``LazyFrame.bt`` so you can run simulations without leaving Polars::
+
+    import quantwave
+    report = signal_df.lazy().bt.backtest_with_report(
+        signal="signal", close_col="close", timestamp_col="bar"
+    )
+
+All methods delegate to :class:`quantwave.backtest.BacktestEngine` with a
+:class:`quantwave._backtest.BacktestConfig` built from keyword arguments.
+The Rust core matches ``quantwave-backtest`` used in native Polars Rust pipelines.
 """
 
 from __future__ import annotations
@@ -50,9 +59,22 @@ def _config_from_kwargs(
 
 @pl.api.register_lazyframe_namespace("bt")
 class BtLazyNamespace:
-    """`df.lazy().bt.backtest(signal=...)` namespace."""
+    """Backtest methods on ``LazyFrame`` via ``df.lazy().bt.*``.
+
+    Typical columns: ``timestamp``, ``close``, ``signal`` (long/short/flat encoding).
+    See https://lavs9.github.io/quantwave/guides/backtest/quickstart/ for signal
+    conventions and portfolio modes.
+
+    Primary entry points:
+
+    * :meth:`backtest_with_report` — metrics + trades + equity (recommended)
+    * :meth:`backtest` — raw :class:`~quantwave._backtest.BacktestResult`
+    * :meth:`portfolio_backtest` — shared-capital multi-symbol book
+    * :meth:`sweep` / :meth:`walk_forward_optimize` — research workflows
+    """
 
     def __init__(self, ldf: pl.LazyFrame) -> None:
+        """Attach the namespace to a lazy frame (called by Polars)."""
         self._ldf = ldf
 
     def backtest(
@@ -104,6 +126,40 @@ class BtLazyNamespace:
         take_profit_pct: float | None = None,
         trailing_stop_pct: float | None = None,
     ):
+        """Run a backtest and return a full report (metrics, trades, equity).
+
+        This is the recommended high-level API for strategy evaluation.
+
+        Args:
+            signal: Column name with position signal (-1, 0, 1 or strategy-specific).
+            timestamp_col: Monotonic bar index or datetime column.
+            close_col: Price column for mark-to-market and fills.
+            symbol_col: Optional symbol column for per-symbol books.
+            entry_filter_col: Optional boolean column to gate entries.
+            size_multiplier_col: Optional sizing multiplier per bar.
+            initial_cash: Starting capital.
+            commission_bps: Commission in basis points per trade leg.
+            slippage_bps: Slippage in basis points.
+            execution_delay: ``"same_bar"`` or ``"next_bar"`` fill timing.
+            stop_loss_pct: Optional stop-loss fraction (e.g. ``0.02`` for 2%).
+            take_profit_pct: Optional take-profit fraction.
+            trailing_stop_pct: Optional trailing stop fraction.
+
+        Returns:
+            BacktestReport with ``metrics``, ``trades``, and equity series accessors.
+
+        Example:
+            >>> import polars as pl
+            >>> import quantwave  # registers .bt
+            >>> df = pl.DataFrame({
+            ...     "timestamp": [0, 1, 2],
+            ...     "close": [100.0, 101.0, 102.0],
+            ...     "signal": [0, 1, 0],
+            ... })
+            >>> report = df.lazy().bt.backtest_with_report(
+            ...     signal="signal", close_col="close", timestamp_col="timestamp"
+            ... )
+        """
         config = _config_from_kwargs(
             signal=signal,
             timestamp_col=timestamp_col,
