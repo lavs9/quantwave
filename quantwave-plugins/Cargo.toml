@@ -8,6 +8,7 @@ description = "Polars expression plugins for quantwave"
 repository.workspace = true
 homepage.workspace = true
 readme = "../README.md"
+documentation = "https://docs.rs/quantwave-plugins"
 categories.workspace = true
 keywords.workspace = true
 

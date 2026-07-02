@@ -34,6 +34,9 @@ if [[ "$SKIP_METADATA" -eq 0 ]]; then
 
   echo "-- documentation drift check"
   python3 scripts/check_doc_drift.py
+
+  echo "-- public metadata + AEO (llms.txt, indicator count)"
+  python3 scripts/check_public_metadata.py
   
   echo "-- documentation standards lint"
   python3 docs/upgrade_to_standards.py --lint

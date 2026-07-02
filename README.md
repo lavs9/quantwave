@@ -2,13 +2,13 @@
 
 **High-performance, Polars-native technical analysis — in Python and Rust**
 
-150+ indicators · Full Ehlers DSP suite · Regime Detection · Complete Options India stack · Bit-identical streaming & batch
+218 native indicators · Full Ehlers DSP suite · Regime Detection · Backtest engine · Bit-identical streaming & batch
 
 **Python** `pip install quantwave` (or `pip install "quantwave[polars]"` for the Polars integration layer) **Rust** `cargo add quantwave`
 
 [📖 Documentation](https://lavs9.github.io/quantwave/) • [⭐ GitHub](https://github.com/lavs9/quantwave) • [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/lavs9/quantwave)
 
-**150+ indicators • Polars-native • Streaming & batch parity • MIT licensed**
+**218 indicators • Polars-native • Streaming & batch parity • MIT licensed**
 
 ---
 
@@ -36,7 +36,7 @@ It delivers **institutional-grade Rust performance** through zero-copy Polars ex
 
 QuantWave is no longer early-stage. It ships with production-ready depth across several domains:
 
-- **150+ Technical Indicators** with TA-Lib parity and extensive Ehlers DSP coverage
+- **218 Native Indicators** with gold-standard validation and extensive Ehlers DSP coverage
 - **Full Regime Detection Suite** (HMM, GMM, PELT, clustering, conditioned risk metrics)
 - **Complete Options India Stack** — Black-Scholes Greeks, IV solvers, chain analytics (Max Pain, PCR, GEX, OI Zones), and NSE utilities, all exposed as native Polars expressions
 - **Streaming & Batch Parity** — The same mathematical logic powers both high-speed Polars pipelines and low-latency streaming via the universal `Next<T>` trait
@@ -87,12 +87,14 @@ df = df.lazy().with_columns(
 ## Get Started
 
 **Primary paths**
+- [Getting Started funnel](https://lavs9.github.io/quantwave/getting-started/)
 - [Get Started with Python](https://lavs9.github.io/quantwave/getting-started/python/)
-- [Get Started with Rust](https://lavs9.github.io/quantwave/getting-started/rust/)
+- [vs TA-Lib & pandas-ta](https://lavs9.github.io/quantwave/comparison/)
 
 **Explore further**
 - [Browse All Indicators](https://lavs9.github.io/quantwave/guides/indicators/)
 - [See Real Benchmarks](https://lavs9.github.io/quantwave/benchmarks/)
+- [llms.txt](https://lavs9.github.io/quantwave/llms.txt) (AI crawler index)
 - [v0.4.0 Release Notes](https://github.com/lavs9/quantwave/releases/tag/v0.4.0)
 - [Ask DeepWiki](https://deepwiki.com/lavs9/quantwave)
 

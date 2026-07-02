@@ -1,7 +1,7 @@
 # QuantWave
 
 **High-performance quantitative finance library**  
-Built in Rust · Native Polars support · 150+ indicators · Full Ehlers DSP suite
+Built in Rust · Native Polars support · 218 indicators · Full Ehlers DSP suite · Backtest `.bt`
 
 **Python** `pip install quantwave` (or `pip install "quantwave[polars]"` for Polars layer)  
 **Rust** `cargo add quantwave`
@@ -16,7 +16,7 @@ Built in Rust · Native Polars support · 150+ indicators · Full Ehlers DSP sui
 Most quant libraries force you to choose between **speed** and **ease of use**.  
 We built QuantWave to give you both.
 
-- **150+ technical indicators** with perfect TA-Lib parity  
+- **218 native indicators** with gold-standard validation
 - **Complete Ehlers Digital Signal Processing suite** (the most advanced open-source cycle tools)  
 - **Zero-copy Polars expressions** that run at Rust speed  
 - **Seamless batch + streaming modes**  

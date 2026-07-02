@@ -8,6 +8,7 @@ description.workspace = true
 repository.workspace = true
 homepage.workspace = true
 readme = "../README.md"
+documentation = "https://docs.rs/quantwave"
 categories.workspace = true
 keywords.workspace = true
 

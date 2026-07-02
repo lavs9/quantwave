@@ -166,6 +166,7 @@ We built the **fastest, most complete Polars-native toolkit** in open source: 21
 
 - [Getting Started funnel](getting-started/index.md) — install to first backtest in ~10 minutes
 - [Comparison vs TA-Lib & pandas-ta](comparison.md) — migration and decision guide
+- [llms.txt](llms.txt) — AI crawler index (canonical pages for LLMs)
 - [Indicator gallery](guides/indicators/gallery.md) — curated high-value starting points
 - [Ehlers DSP suite](guides/indicators/ehlers/index.md)
 - [Backtest engine](guides/backtest/index.md)

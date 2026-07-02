@@ -8,6 +8,7 @@ description = "Vectorized portfolio simulation engine for QuantWave (Polars long
 repository.workspace = true
 homepage.workspace = true
 readme = "../README.md"
+documentation = "https://docs.rs/quantwave-backtest"
 categories.workspace = true
 keywords.workspace = true
 

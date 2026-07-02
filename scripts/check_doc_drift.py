@@ -130,6 +130,8 @@ def is_mkdocs_generated_path(rel: Path) -> bool:
 
 
 def link_target_exists(path: Path) -> bool:
+    if path.exists() and path.is_file():
+        return True
     if path.suffix == ".md":
         return path.exists()
     # MkDocs directory URLs: foo/ → foo.md or foo/index.md

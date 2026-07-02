@@ -1,8 +1,9 @@
 site_name: QuantWave
 site_url: https://lavs9.github.io/quantwave/
-site_description: High-performance Rust + Polars quantitative finance library with 217 native indicators, full Ehlers DSP suite, backtest engine, and options pricing tools.
+site_description: High-performance Rust + Polars quantitative finance library with 218 native indicators, full Ehlers DSP suite, backtest engine, and options pricing tools.
 repo_name: lavs9/quantwave
 repo_url: https://github.com/lavs9/quantwave
+edit_uri: edit/main/docs/
 
 theme:
   name: material
@@ -22,6 +23,9 @@ theme:
   features:
     - content.tabs.link
     - content.code.copy
+    - content.action.edit
+    - navigation.instant
+    - navigation.tracking
     - navigation.tabs
     - navigation.tabs.sticky
     - navigation.sections
@@ -81,6 +85,8 @@ extra_css:
 
 plugins:
   - search
+  - sitemap:
+      changefreq: weekly
   - marimo
   - git-revision-date-localized:
       enable_creation_date: true

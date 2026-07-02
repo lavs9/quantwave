@@ -5,11 +5,11 @@ build-backend = "maturin"
 [project]
 name = "quantwave"
 dynamic = ["version"]
-description = "High-performance Rust + Polars quantitative finance library with 150+ indicators and full Ehlers DSP suite"
+description = "218-indicator Polars-native quant library: Rust core, .ta/.bt namespaces, streaming parity, Ehlers DSP, backtest engine"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "Mayank Lavania" }]
-keywords = ["technical-analysis", "ta-lib", "trading", "quant", "rust", "polars"]
+keywords = ["technical-analysis", "ta-lib", "trading", "quant", "rust", "polars", "backtest", "ehlers", "indicators"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -36,6 +36,8 @@ all = ["polars>=1.20.0,<2.0.0"]
 [project.urls]
 Homepage = "https://github.com/lavs9/quantwave"
 Documentation = "https://lavs9.github.io/quantwave/"
+Comparison = "https://lavs9.github.io/quantwave/comparison/"
+"AI index (llms.txt)" = "https://lavs9.github.io/quantwave/llms.txt"
 Repository = "https://github.com/lavs9/quantwave"
 "Bug Tracker" = "https://github.com/lavs9/quantwave/issues"
 
