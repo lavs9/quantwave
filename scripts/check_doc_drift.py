@@ -123,9 +123,9 @@ def resolve_doc_link(source: Path, href: str) -> Path | None:
     return (source.parent / href).resolve()
 
 
-def is_mkdocs_generated_href(href: str) -> bool:
+def is_mkdocs_generated_path(rel: Path) -> bool:
     """Paths materialized only at `mkdocs build` (gen-files), not on disk in CI."""
-    normalized = href.strip().rstrip("/")
+    normalized = rel.as_posix().strip("/")
     return normalized == "api" or normalized.startswith("api/")
 
 
@@ -152,10 +152,12 @@ def check_hub_links() -> list[str]:
             if target is None:
                 continue
             try:
-                target.relative_to(DOCS_ROOT)
+                rel = target.relative_to(DOCS_ROOT)
             except ValueError:
                 continue
-            if not is_mkdocs_generated_href(href) and not link_target_exists(target):
+            if is_mkdocs_generated_path(rel):
+                continue
+            if not link_target_exists(target):
                 failures.append(
                     f"{hub.relative_to(ROOT)}: broken MkDocs link `{href}` "
                     f"(resolves to {target.relative_to(DOCS_ROOT)})"
