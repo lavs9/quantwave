@@ -27,8 +27,8 @@ QuantWave ships a **Polars-native, clean-room backtest engine** (`quantwave-back
 | Artifact | Location |
 |----------|----------|
 | Parity integration test | `quantwave-backtest/src/lib.rs` — `test_batch_vs_streaming_parity_*` |
-| Batch/streaming guide | [examples/batch-streaming.md](../../examples/batch-streaming.md) |
-| ML features E2E parity notebook | [ml_feature_backtest_parity.md](../../examples/notebooks/ml_feature_backtest_parity.md) |
+| Batch/streaming guide | [examples/batch-streaming.md](../../../examples/batch-streaming.md) |
+| ML features E2E parity notebook | [ml_feature_backtest_parity.md](../../../examples/notebooks/ml_feature_backtest_parity.md) |
 
 ---
 
@@ -45,8 +45,8 @@ Legend: ✅ Shipped · ⏸ Deferred · ❌ Out of scope
 | 3 | `PerformanceMetrics` (Sharpe, Sortino, max DD, CAGR, win rate, PF) | ✅ | `quantwave-backtest/src/metrics.rs` | `test_backtest_metrics_dict_keys` |
 | 4 | Multi-symbol long-format grouping | ✅ | `BacktestEngine::run` | `test_backtest_multi_symbol_*` |
 | 5 | `entry_filter_col` + `size_multiplier_col` | ✅ | `BacktestConfig` | `test_backtest_entry_filter_*` |
-| 6 | ML feature → backtest E2E notebook | ✅ | notebook | [ml_feature_backtest_parity.md](../../examples/notebooks/ml_feature_backtest_parity.md) |
-| 7 | Strategy backtest notebook | ✅ | notebook | [strategy_backtest.md](../../examples/notebooks/strategy_backtest.md) |
+| 6 | ML feature → backtest E2E notebook | ✅ | notebook | [ml_feature_backtest_parity.md](../../../examples/notebooks/ml_feature_backtest_parity.md) |
+| 7 | Strategy backtest notebook | ✅ | notebook | [strategy_backtest.md](../../../examples/notebooks/strategy_backtest.md) |
 
 ### Execution depth
 
@@ -57,7 +57,7 @@ Legend: ✅ Shipped · ⏸ Deferred · ❌ Out of scope
 | 10 | Short positions (signed exposure) | ✅ | signal f64 negative | nextest `short_*` |
 | 11 | Struct signal column auto-parse + pole sizing | ✅ | `signal_col` Struct | nextest struct signal tests |
 | 12 | Param sweep helper | ✅ | `.bt.sweep()` | `test_bt_sweep_*` |
-| 13 | Criterion benches vs naive loop | ✅ | `benches/backtest_vs_naive.rs` | [backtest_benchmark.md](../../examples/notebooks/backtest_benchmark.md) |
+| 13 | Criterion benches vs naive loop | ✅ | `benches/backtest_vs_naive.rs` | [backtest_benchmark.md](../../../examples/notebooks/backtest_benchmark.md) |
 
 ### Research robustness
 
@@ -71,13 +71,13 @@ Legend: ✅ Shipped · ⏸ Deferred · ❌ Out of scope
 | 16b | Factor transforms (neutralize, zscore, winsorize) | ✅ | `transform=` kwarg | `test_bt_cross_sectional_*` |
 | 17 | Nautilus live bridge | ⏸ | `LiveBridge` trait stub | planning ADR |
 | 18 | HTML tear sheets | ✅ | `tearsheet.render_html` | `test_tearsheet.py` |
-| 19 | Shared-capital portfolio backtest | ✅ | `.bt.portfolio_backtest()` | `test_portfolio_backtest.py`, [portfolio notebook](../../examples/notebooks/portfolio_shared_capital_backtest.md) |
+| 19 | Shared-capital portfolio backtest | ✅ | `.bt.portfolio_backtest()` | `test_portfolio_backtest.py`, [portfolio notebook](../../../examples/notebooks/portfolio_shared_capital_backtest.md) |
 
 ### Additional shipped features
 
 | Feature | Status | API | Proof |
 |---------|--------|-----|-------|
-| PA flag → `.bt` E2E | ✅ | PA notebook + tests | `test_pa_flag_backtest_*`, [pa_flag_breakout_strategy.md](../../examples/notebooks/pa_flag_breakout_strategy.md) |
+| PA flag → `.bt` E2E | ✅ | PA notebook + tests | `test_pa_flag_backtest_*`, [pa_flag_breakout_strategy.md](../../../examples/notebooks/pa_flag_breakout_strategy.md) |
 | Fast metrics-only path | ✅ | `.bt.backtest_metrics()` | `test_metrics_only_*` |
 | Sweep with signal rebuild callback | ✅ | `.bt.sweep_callback()` | `test_sweep_callback.py` |
 
@@ -105,14 +105,14 @@ Rust-only helpers (no thin Python wrapper): `monte_carlo_return_paths`, factor t
 
 | Artifact | Path | Audience |
 |----------|------|----------|
-| Overview | [index.md](index.md) | Landing page |
-| Quickstart (5 min) | [quickstart.md](quickstart.md) | New evaluators |
-| Full `.bt` tour | [backtest_showcase.md](../../examples/notebooks/backtest_showcase.md) | Demo / sales |
-| Tear Sheets | [tear_sheets.md](tear_sheets.md) | HTML reports |
-| Portfolio shared capital | [portfolio_shared_capital_backtest.md](../../examples/notebooks/portfolio_shared_capital_backtest.md) | Multi-symbol books |
-| PA canonical strategy | [pa_flag_breakout_strategy.md](../../examples/notebooks/pa_flag_breakout_strategy.md) | PA moat |
-| Benchmarks | [backtest_benchmark.md](../../examples/notebooks/backtest_benchmark.md) | Performance story |
-| ML → backtest E2E | [ml_feature_backtest_parity.md](../../examples/notebooks/ml_feature_backtest_parity.md) | ML pipeline |
+| Overview | [index.md](../index.md) | Landing page |
+| Quickstart (5 min) | [quickstart.md](../quickstart.md) | New evaluators |
+| Full `.bt` tour | [backtest_showcase.md](../../../examples/notebooks/backtest_showcase.md) | Demo / sales |
+| Tear Sheets | [tear_sheets.md](../tear_sheets.md) | HTML reports |
+| Portfolio shared capital | [portfolio_shared_capital_backtest.md](../../../examples/notebooks/portfolio_shared_capital_backtest.md) | Multi-symbol books |
+| PA canonical strategy | [pa_flag_breakout_strategy.md](../../../examples/notebooks/pa_flag_breakout_strategy.md) | PA moat |
+| Benchmarks | [backtest_benchmark.md](../../../examples/notebooks/backtest_benchmark.md) | Performance story |
+| ML → backtest E2E | [ml_feature_backtest_parity.md](../../../examples/notebooks/ml_feature_backtest_parity.md) | ML pipeline |
 
 ---
 

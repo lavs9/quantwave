@@ -83,5 +83,3 @@ These pages are written to **gold standard** depth (formula, correct Polars API,
 - **One math path** — `Next<T>` powers Rust streaming, Python streaming, and Polars plugins
 - **Gold-standard tests** — industry reference vectors in `quantwave-core/tests/gold_standard/`
 - **Documented boundaries** — warmup, NaN, and parameter rules on every page
-
-All pages follow [Documentation Standards](../../DOCUMENTATION_STANDARDS.md).

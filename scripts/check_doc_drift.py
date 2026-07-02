@@ -78,8 +78,40 @@ def check_backtest_docs_exist() -> bool:
     return not failed
 
 
+def mkdocs_page_dir(md_path: Path) -> Path:
+    """Docs-root-relative directory URL for an MkDocs page (use_directory_urls)."""
+    rel = md_path.relative_to(DOCS_ROOT)
+    if rel.name == "index.md":
+        return rel.parent
+    return rel.with_suffix("")
+
+
+def normalize_rel_path(base: Path, href: str) -> Path:
+    """Resolve *href* relative to *base* (both docs-root-relative path segments)."""
+    stack = list(base.parts) if str(base) != "." else []
+    for part in Path(href).parts:
+        if part == "..":
+            if stack:
+                stack.pop()
+        elif part != ".":
+            stack.append(part)
+    return Path(*stack) if stack else Path(".")
+
+
+def resolve_mkdocs_link(source: Path, href: str) -> Path | None:
+    """Resolve href the way MkDocs serves it (from the page URL, not the .md file path)."""
+    href = href.strip()
+    if not href or href.startswith(("http://", "https://", "mailto:", "#")):
+        return None
+    if href.startswith("/"):
+        rel = normalize_rel_path(Path("."), href.lstrip("/"))
+    else:
+        rel = normalize_rel_path(mkdocs_page_dir(source), href)
+    return DOCS_ROOT / rel
+
+
 def resolve_doc_link(source: Path, href: str) -> Path | None:
-    """Resolve a markdown href from *source* to a docs-root-relative path."""
+    """Resolve a markdown href from *source* file path (legacy filesystem resolution)."""
     href = href.strip()
     if not href or href.startswith(("http://", "https://", "mailto:", "#")):
         return None
@@ -113,7 +145,7 @@ def check_hub_links() -> list[str]:
             continue
         text = hub.read_text(encoding="utf-8")
         for href in LINK_RE.findall(text):
-            target = resolve_doc_link(hub, href)
+            target = resolve_mkdocs_link(hub, href)
             if target is None:
                 continue
             try:
@@ -122,7 +154,8 @@ def check_hub_links() -> list[str]:
                 continue
             if not is_mkdocs_generated_href(href) and not link_target_exists(target):
                 failures.append(
-                    f"{hub.relative_to(ROOT)}: broken link `{href}`"
+                    f"{hub.relative_to(ROOT)}: broken MkDocs link `{href}` "
+                    f"(resolves to {target.relative_to(DOCS_ROOT)})"
                 )
             # Featured native paths should not use .md suffix (MkDocs directory URLs).
             if "native/" in href and href.endswith(".md"):

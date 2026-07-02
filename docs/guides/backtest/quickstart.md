@@ -71,7 +71,7 @@ metrics = report.metrics()
 | `report.result.equity_curve` | ts, equity, cash, position |
 | `report.metrics()` | sharpe_ratio, max_drawdown_pct, win_rate, … |
 
-Full key list: see [Capability Matrix](capability_matrix.md#python-bt-api-surface-complete).
+Full key list: see [Capability Matrix](../capability_matrix.md#python-bt-api-surface-complete).
 
 ---
 
@@ -79,9 +79,9 @@ Full key list: see [Capability Matrix](capability_matrix.md#python-bt-api-surfac
 
 | Goal | Go to |
 |------|-------|
-| Full feature tour | [Backtest Showcase](../../examples/notebooks/backtest_showcase.md) |
-| Shared-capital portfolio | [Portfolio Shared Capital](../../examples/notebooks/portfolio_shared_capital_backtest.md) |
-| PA strategy E2E | [PA Flag Breakout](../../examples/notebooks/pa_flag_breakout_strategy.md) |
-| Param sweeps / WFO | [Capability Matrix](capability_matrix.md) |
-| Benchmarks | [Backtest Benchmarks](../../examples/notebooks/backtest_benchmark.md) |
-| Batch ↔ streaming parity | [Batch & Streaming](../../examples/batch-streaming.md) |
+| Full feature tour | [Backtest Showcase](../../../examples/notebooks/backtest_showcase.md) |
+| Shared-capital portfolio | [Portfolio Shared Capital](../../../examples/notebooks/portfolio_shared_capital_backtest.md) |
+| PA strategy E2E | [PA Flag Breakout](../../../examples/notebooks/pa_flag_breakout_strategy.md) |
+| Param sweeps / WFO | [Capability Matrix](../capability_matrix.md) |
+| Benchmarks | [Backtest Benchmarks](../../../examples/notebooks/backtest_benchmark.md) |
+| Batch ↔ streaming parity | [Batch & Streaming](../../../examples/batch-streaming.md) |

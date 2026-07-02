@@ -64,8 +64,6 @@ Hand-written to full depth (formula, correct APIs, strategy context):
 
 **217 indicators** across 13 categories — slug lookup tables for every registered indicator.
 
-Every page follows [Documentation Standards](../../DOCUMENTATION_STANDARDS.md).
-
 ### Price Action (2)
 
 | Indicator | Slug |
