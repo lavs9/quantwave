@@ -25,6 +25,9 @@ Cargo.lock
 /scratch/
 docs/examples/notebooks/rendered/
 
+# Local verify / pre-push cache (scripts/verify_cache.py)
+.cache/
+
 # Python
 __pycache__/
 *.py[cod]

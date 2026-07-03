@@ -2,6 +2,7 @@
 # Pre-push quality gate — runs before git push (install via scripts/install-git-hooks.sh).
 #
 # Bypass (emergency only): SKIP_PRE_PUSH_VERIFY=1 git push
+# Force full rebuild:        VERIFY_NO_CACHE=1 git push
 set -euo pipefail
 
 if [[ "${SKIP_PRE_PUSH_VERIFY:-}" == "1" ]]; then
@@ -29,13 +30,17 @@ fi
 # shellcheck source=/dev/null
 source .venv/bin/activate
 
-echo "pre-push: ensuring Python build deps"
-python3 -m pip install -q pytest polars maturin "uniffi-bindgen==0.31.0" wheel
+python3 scripts/verify_cache.py ensure pip-deps -- \
+  python3 -m pip install -q pytest polars maturin "uniffi-bindgen==0.31.0" wheel
 
-echo "pre-push: building Python extensions (maturin develop)"
-maturin develop --manifest-path quantwave-python/Cargo.toml --release -q
-maturin develop --manifest-path quantwave-backtest-py/Cargo.toml --release -q
-maturin develop --manifest-path quantwave-plugins/Cargo.toml --release -q
+python3 scripts/verify_cache.py ensure maturin-python -- \
+  maturin develop --manifest-path quantwave-python/Cargo.toml --release -q
+
+python3 scripts/verify_cache.py ensure maturin-backtest -- \
+  maturin develop --manifest-path quantwave-backtest-py/Cargo.toml --release -q
+
+python3 scripts/verify_cache.py ensure maturin-plugins -- \
+  maturin develop --manifest-path quantwave-plugins/Cargo.toml --release -q
 
 echo "pre-push: running quantwave verify"
 chmod +x scripts/quantwave_verify.sh

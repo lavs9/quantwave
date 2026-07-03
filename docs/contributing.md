@@ -29,7 +29,9 @@ First off, thank you for considering contributing to QuantWave! It's people like
    ```bash
    ./scripts/install-git-hooks.sh
    ```
-   Emergency bypass: `SKIP_PRE_PUSH_VERIFY=1 git push`
+   Emergency bypass: `SKIP_PRE_PUSH_VERIFY=1 git push`  
+   Force full rebuild: `VERIFY_NO_CACHE=1 git push`  
+   Cache status: `python3 scripts/verify_cache.py status`
 
 ### Running Tests
 We use `nextest` for Rust tests:
