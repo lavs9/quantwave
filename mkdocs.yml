@@ -86,8 +86,6 @@ extra_css:
 
 plugins:
   - search
-  - sitemap:
-      changefreq: weekly
   - marimo
   - git-revision-date-localized:
       enable_creation_date: true
