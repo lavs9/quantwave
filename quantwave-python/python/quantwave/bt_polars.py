@@ -17,7 +17,8 @@ from __future__ import annotations
 
 import polars as pl
 
-from quantwave._backtest import BacktestConfig, BacktestEngine
+from quantwave._backtest import BacktestConfig
+from quantwave.backtest import BacktestEngine
 
 
 def _config_from_kwargs(
@@ -607,7 +608,7 @@ class BtLazyNamespace:
         result = BacktestEngine(config).run(self._ldf.collect())
         if mode == "return_paths":
             return monte_carlo_return_paths_py(
-                result,
+                result._inner,
                 n_simulations=n_simulations,
                 seed=seed,
                 n_bars_forward=n_bars_forward,
@@ -615,7 +616,7 @@ class BtLazyNamespace:
         if mode != "trade_bootstrap":
             raise ValueError("mode must be 'trade_bootstrap' or 'return_paths'")
         return monte_carlo_trade_bootstrap_py(
-            result,
+            result._inner,
             initial_cash=initial_cash,
             n_simulations=n_simulations,
             seed=seed,

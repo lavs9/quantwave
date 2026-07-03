@@ -80,14 +80,10 @@ def test_backtest_contract_trades_schema():
     
     trades = result.trades
     
-    assert "trade_id" in trades.columns
-    assert "side" in trades.columns
-    assert "entry_ts" in trades.columns
-    assert "exit_ts" in trades.columns
-    assert "entry_price" in trades.columns
-    assert "exit_price" in trades.columns
-    assert "quantity" in trades.columns
-    assert "pnl_net" in trades.columns
+    assert list(trades.columns) == [
+        "trade_id", "side", "entry_ts", "entry_price", "entry_fill_price",
+        "exit_ts", "exit_price", "exit_fill_price", "quantity", "pnl_net"
+    ]
     
     # Dtypes
     assert trades.schema["side"] in [pl.Int64, pl.Float64, pl.Int32, pl.Float32, pl.Int8]
@@ -104,8 +100,22 @@ def test_backtest_contract_equity_curve_schema():
     result = df.lazy().bt.backtest(commission_bps=0.0, slippage_bps=0.0)
     
     ec = result.equity_curve
-    assert "ts" in ec.columns
-    assert "equity" in ec.columns
-    assert "cash" in ec.columns
-    assert "position" in ec.columns
-    assert "close" in ec.columns
+    assert list(ec.columns) == ["ts", "equity", "cash", "position", "close"]
+
+def test_backtest_contract_trades_schema_empty():
+    # Force empty trades by returning flat signals
+    df = pl.DataFrame({
+        "timestamp": [1_700_000_000, 1_700_003_600],
+        "close": [100.0, 101.0],
+        "signal": [0.0, 0.0]
+    })
+    result = df.lazy().bt.backtest(commission_bps=0.0, slippage_bps=0.0)
+    
+    trades = result.trades
+    assert list(trades.columns) == [
+        "trade_id", "side", "entry_ts", "entry_price", "entry_fill_price",
+        "exit_ts", "exit_price", "exit_fill_price", "quantity", "pnl_net"
+    ]
+    assert len(trades) == 0
+
+

@@ -68,6 +68,7 @@ nav:
   - Backtest:
       - Overview: guides/backtest/index.md
       - Quickstart: guides/backtest/quickstart.md
+      - Output Contract: guides/backtest/output-contract.md
       - Capability Matrix: guides/backtest/capability_matrix.md
       - Tear Sheets: guides/backtest/tear_sheets.md
   - Examples:

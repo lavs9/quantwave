@@ -36,7 +36,7 @@ report = signal_df.lazy().bt.backtest_with_report(
 
 You can also import `BacktestEngine` directly from `quantwave.backtest`. No separate backtest package is required.
 
-→ [Backtest quickstart](../guides/backtest/quickstart.md)
+→ [Backtest quickstart](../guides/backtest/quickstart.md) | [Backtest output contract](../guides/backtest/output-contract.md)
 
 ## What is batch vs streaming parity?
 

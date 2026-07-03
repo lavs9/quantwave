@@ -18,7 +18,9 @@ PyPI: https://pypi.org/project/quantwave/
 - Full indicator catalog (218): https://lavs9.github.io/quantwave/guides/indicators/native/
 - Indicator gallery (curated): https://lavs9.github.io/quantwave/guides/indicators/gallery/
 - SuperTrend (steel-thread reference): https://lavs9.github.io/quantwave/guides/indicators/native/supertrend/
+- Parity verification: https://lavs9.github.io/quantwave/guides/parity/
 - Backtest quickstart: https://lavs9.github.io/quantwave/guides/backtest/quickstart/
+- Backtest output contract: https://lavs9.github.io/quantwave/guides/backtest/output-contract/
 - Plugin vs `.ta` decision guide: https://lavs9.github.io/quantwave/guides/plugin_vs_ta/
 - Python API reference: https://lavs9.github.io/quantwave/api/
 - Benchmarks: https://lavs9.github.io/quantwave/benchmarks/

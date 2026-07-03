@@ -150,6 +150,8 @@ from ._metadata import (
 # DX helpers (defined later in this file for now to avoid circularity during cleanup)
 # We will gradually move more of these out.
 
+from .backtest_types import PerformanceMetrics, BacktestStats
+
 # Options India helpers — namespaced under quantwave.options (quantwave-05q7).
 # Must NOT pollute top-level indicator discovery or qw.ta.
 _OPTIONS_SYMBOLS = frozenset({
@@ -581,4 +583,6 @@ __all__ = [
     "options",
     "talib",
     "options_india",  # legacy compat (will warn in future)
+    "PerformanceMetrics",
+    "BacktestStats",
 ]
