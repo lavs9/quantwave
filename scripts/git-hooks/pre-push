@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Pre-push quality gate — runs before git push (install via scripts/install-git-hooks.sh).
+#
+# Bypass (emergency only): SKIP_PRE_PUSH_VERIFY=1 git push
+set -euo pipefail
+
+if [[ "${SKIP_PRE_PUSH_VERIFY:-}" == "1" ]]; then
+  echo "pre-push: SKIP_PRE_PUSH_VERIFY=1 — skipping quality gate"
+  exit 0
+fi
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+if ! command -v cargo-nextest >/dev/null 2>&1; then
+  echo "pre-push: cargo-nextest not found. Install: cargo install cargo-nextest"
+  exit 1
+fi
+
+# rust-lld SIGBUS on some Linux linkers when linking large Polars test binaries.
+if [[ "$(uname -s)" == "Linux" ]]; then
+  export RUSTFLAGS="${RUSTFLAGS:--C link-arg=-fuse-ld=bfd}"
+fi
+
+if [[ ! -d .venv ]]; then
+  echo "pre-push: creating .venv"
+  python3 -m venv .venv
+fi
+# shellcheck source=/dev/null
+source .venv/bin/activate
+
+echo "pre-push: ensuring Python build deps"
+python3 -m pip install -q pytest polars maturin "uniffi-bindgen==0.31.0" wheel
+
+echo "pre-push: building Python extensions (maturin develop)"
+maturin develop --manifest-path quantwave-python/Cargo.toml --release -q
+maturin develop --manifest-path quantwave-backtest-py/Cargo.toml --release -q
+maturin develop --manifest-path quantwave-plugins/Cargo.toml --release -q
+
+echo "pre-push: running quantwave verify"
+chmod +x scripts/quantwave_verify.sh
+./scripts/quantwave_verify.sh
+
+echo "pre-push: quality gate passed"

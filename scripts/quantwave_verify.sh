@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # quantwave verify — one-shot quality gate (quantwave-072m)
+# Installed as pre-push hook via ./scripts/install-git-hooks.sh
 # Usage: ./scripts/quantwave_verify.sh [--skip-rust] [--skip-python] [--skip-metadata]
 set -euo pipefail
 

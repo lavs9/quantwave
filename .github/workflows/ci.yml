@@ -1,9 +1,12 @@
 # CI — every push/PR to main
 #
+# Full quality gate (nextest, wheel smoke, pytest) runs locally via pre-push hook:
+#   ./scripts/install-git-hooks.sh
+#
 # Pipeline:
-#   1. verify   — ./scripts/quantwave_verify.sh (metadata, docs, nextest, pytest)
+#   1. sanity   — fast metadata + doc drift checks (~1 min)
 #   2. plugins  — plugin wheel smoke test (only when quantwave-plugins/ changes)
-#   3. docs     — mkdocs gh-pages deploy (main branch only, after verify passes)
+#   3. docs     — mkdocs gh-pages deploy (main branch only)
 #
 # Release (crates.io + PyPI) is a separate workflow: release.yml on v* tags.
 
@@ -21,58 +24,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify:
-    name: Quality gate
+  sanity:
+    name: Doc & metadata sanity
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: taiki-e/install-action@nextest
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Build Python extensions
+      - name: Metadata and documentation drift
         run: |
-          python -m venv .venv
-          source .venv/bin/activate
-          pip install pytest polars maturin "uniffi-bindgen==0.31.0" wheel
-          maturin develop --manifest-path quantwave-python/Cargo.toml --release
-          maturin develop --manifest-path quantwave-backtest-py/Cargo.toml --release
-          maturin develop --manifest-path quantwave-plugins/Cargo.toml --release
-
-      - name: Build unified PyPI wheel
-        run: |
-          source .venv/bin/activate
-          python scripts/build_unified_wheel.py --out dist
-
-      - name: PyPI wheel smoke test
-        run: |
-          source .venv/bin/activate
-          python scripts/pypi_smoke_test.py dist/quantwave-*.whl
-
-      - name: quantwave verify
-        env:
-          # GHA: rust-lld can SIGBUS linking huge debug Polars test binaries (signal 7).
-          RUSTFLAGS: "-C link-arg=-fuse-ld=bfd"
-        run: |
-          source .venv/bin/activate
-          chmod +x scripts/quantwave_verify.sh
-          ./scripts/quantwave_verify.sh
+          python3 scripts/check_metadata_drift.py
+          python3 scripts/check_doc_drift.py
+          python3 scripts/check_public_metadata.py
 
   plugins:
     name: Plugin wheels
-    needs: [verify]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -114,7 +83,7 @@ jobs:
 
   deploy-docs:
     name: Deploy docs
-    needs: [verify]
+    needs: [sanity]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:

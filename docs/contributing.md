@@ -25,6 +25,11 @@ First off, thank you for considering contributing to QuantWave! It's people like
    ```bash
    cargo build
    ```
+4. Install the pre-push quality gate (runs `./scripts/quantwave_verify.sh` before each push):
+   ```bash
+   ./scripts/install-git-hooks.sh
+   ```
+   Emergency bypass: `SKIP_PRE_PUSH_VERIFY=1 git push`
 
 ### Running Tests
 We use `nextest` for Rust tests:

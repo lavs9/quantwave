@@ -7,17 +7,18 @@ Two workflows. Everything else was merged here for clarity.
 **Triggers:** push or PR to `main`, or manual `workflow_dispatch`.
 
 ```
-verify ──┬──► plugins (only if quantwave-plugins/ changed)
+sanity ──┬──► plugins (only if quantwave-plugins/ changed)
          └──► deploy-docs (main push only)
 ```
 
 | Job | What it runs | When |
 |-----|----------------|------|
-| **Quality gate** | `./scripts/quantwave_verify.sh` — metadata drift, doc lint/depth, unified wheel smoke, nextest, pytest | Always |
+| **Doc & metadata sanity** | `check_metadata_drift`, `check_doc_drift`, `check_public_metadata` | Always (~1 min) |
 | **Plugin wheels** | Build `quantwave-plugins` wheel + pytest | `quantwave-plugins/**` changed, or manual dispatch |
-| **Deploy docs** | mkdocs → GitHub Pages | `main` push only, after quality gate |
+| **Deploy docs** | mkdocs → GitHub Pages | `main` push only, after sanity |
 
-**Local parity:** `./scripts/quantwave_verify.sh`
+**Full quality gate (local, pre-push):** `./scripts/install-git-hooks.sh` then push as usual.  
+**Manual run:** `./scripts/quantwave_verify.sh`
 
 ## Release (`release.yml`)
 
