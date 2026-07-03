@@ -1,5 +1,9 @@
 //! Integration tests for `PerformanceMetrics` (quantwave-cr6v.1).
 //!
+//! Formula sources:
+//! - Drawdown follows StockCharts (positive fraction representing peak-to-trough decline).
+//! - Sharpe ratio follows QuantConnect (annualized, risk-free = 0).
+//!
 //! One vertical TDD slice per test; run with:
 //! `cargo nextest run -p quantwave-backtest metrics`
 
@@ -150,6 +154,8 @@ fn test_metrics_max_drawdown_known_curve() {
 
     let metrics = PerformanceMetrics::from_result(&result);
 
+    // Assert it is a positive fraction
+    assert!(metrics.max_drawdown_pct >= 0.0);
     assert_relative_eq!(metrics.max_drawdown_pct, expected_dd, epsilon = 1e-9);
 }
 
@@ -334,6 +340,12 @@ fn test_metrics_gold_standard_basic() {
     let spec: serde_json::Value = serde_json::from_str(&raw).expect("valid json");
 
     let expected = &spec["expected"];
+
+    // Explicit boundary assertions matching the output contract
+    assert!(metrics.max_drawdown_pct >= 0.0, "drawdown must be a positive fraction");
+    assert!(metrics.win_rate >= 0.0 && metrics.win_rate <= 1.0, "win_rate must be in [0, 1]");
+    let expected_total_return = (metrics.final_equity / 100_000.0) - 1.0;
+    assert_relative_eq!(metrics.total_return, expected_total_return, epsilon=1e-9);
 
     assert_relative_eq!(
         metrics.num_trades,
