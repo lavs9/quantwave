@@ -172,3 +172,117 @@ fn test_shared_capital_five_symbols_stress() {
     );
     assert_eq!(result.trades.height(), 25);
 }
+
+fn make_three_symbol_df() -> DataFrame {
+    let mut timestamps = Vec::new();
+    let mut symbols = Vec::new();
+    let mut closes = Vec::new();
+    let mut signals = Vec::new();
+
+    let syms = ["X", "Y", "Z"];
+    for i in 0..8 {
+        for (s_idx, s) in syms.iter().enumerate() {
+            timestamps.push(1_700_020_000 + i as i64);
+            symbols.push(*s);
+            closes.push(100.0 + s_idx as f64 + i as f64 * 0.5);
+            signals.push(match (i + s_idx) % 3 {
+                0 => 0.0,
+                1 => 1.0,
+                _ => 0.5,
+            });
+        }
+    }
+
+    DataFrame::new(vec![
+        Column::new("timestamp".into(), timestamps),
+        Column::new("symbol".into(), symbols),
+        Column::new("close".into(), closes),
+        Column::new("signal".into(), signals),
+    ])
+    .unwrap()
+}
+
+#[test]
+fn test_shared_capital_three_symbols_stress() {
+    let df = make_three_symbol_df();
+    let result = BacktestEngine::new(shared_capital_config("signal"))
+        .run(df.lazy())
+        .expect("three symbol run");
+
+    assert_relative_eq!(
+        *result.stats.get("initial_cash").unwrap(),
+        100_000.0,
+        epsilon = 1e-6
+    );
+    assert_relative_eq!(
+        *result.stats.get("num_symbols").unwrap(),
+        3.0,
+        epsilon = 1e-9
+    );
+    assert!(result.trades.height() > 0);
+    let pooled = portfolio_equity_series(&result);
+    assert_eq!(pooled.len(), 8);
+}
+
+fn trade_quantity(result: &quantwave_backtest::BacktestResult, symbol: &str) -> f64 {
+    let trades = &result.trades;
+    let sym_col = trades.column("symbol").unwrap().str().unwrap();
+    let qty_col = trades.column("quantity").unwrap().f64().unwrap();
+    for (sym, qty) in sym_col.into_iter().zip(qty_col.into_iter()) {
+        if sym == Some(symbol) {
+            return qty.unwrap();
+        }
+    }
+    0.0
+}
+
+#[test]
+fn test_signal_weighted_allocator_splits_by_signal_strength() {
+    // Small pool: budget binds before unit cap. Signals 1.0 vs 3.0 → 1:3 budget split.
+    let df = DataFrame::new(vec![
+        Column::new("timestamp".into(), vec![1i64, 1, 2, 2]),
+        Column::new("symbol".into(), vec!["AAA", "BBB", "AAA", "BBB"]),
+        Column::new("close".into(), vec![100.0, 100.0, 100.0, 100.0]),
+        Column::new("signal".into(), vec![1.0, 3.0, 0.0, 0.0]),
+    ])
+    .unwrap();
+
+    let base = BacktestConfig {
+        execution_model: ExecutionModel::Simple(CostModel {
+            commission_bps: 0.0,
+            slippage_bps: 0.0,
+            initial_cash: 100.0,
+        }),
+        signal_col: "signal".to_string(),
+        symbol_col: Some("symbol".to_string()),
+        portfolio_mode: PortfolioMode::SharedCapital,
+        ..Default::default()
+    };
+    let equal_cfg = BacktestConfig {
+        portfolio_allocator: PortfolioAllocator::EqualWeight,
+        ..base.clone()
+    };
+    let weighted_cfg = BacktestConfig {
+        portfolio_allocator: PortfolioAllocator::SignalWeighted,
+        ..base
+    };
+
+    let equal = BacktestEngine::new(equal_cfg)
+        .run(df.clone().lazy())
+        .expect("equal weight");
+    let weighted = BacktestEngine::new(weighted_cfg)
+        .run(df.lazy())
+        .expect("signal weighted");
+
+    let eq_a = trade_quantity(&equal, "AAA");
+    let eq_b = trade_quantity(&equal, "BBB");
+    let wt_a = trade_quantity(&weighted, "AAA");
+    let wt_b = trade_quantity(&weighted, "BBB");
+
+    assert_relative_eq!(eq_a, 0.5, epsilon = 1e-6);
+    assert_relative_eq!(eq_b, 0.5, epsilon = 1e-6);
+
+    assert_relative_eq!(wt_a, 0.25, epsilon = 1e-6);
+    assert_relative_eq!(wt_b, 0.75, epsilon = 1e-6);
+    assert!(wt_b > eq_b);
+}
