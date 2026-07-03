@@ -51,6 +51,11 @@ nav:
       - Overview: getting-started/index.md
       - Python: getting-started/python.md
       - Rust: getting-started/rust.md
+  - Rust:
+      - Overview: guides/rust/index.md
+      - Crate Map: guides/rust/crate-map.md
+      - Next<T> Pattern: guides/rust/next-trait.md
+      - Backtest Engine: guides/rust/backtest.md
   - Indicators:
       - Overview: guides/indicators/index.md
       - Gallery: guides/indicators/gallery.md

@@ -1,3 +1,28 @@
+//! # quantwave-core
+//!
+//! Core technical-analysis engine for [QuantWave](https://lavs9.github.io/quantwave/):
+//! **218** native indicators, Ehlers DSP, price-action detectors, regime features,
+//! and the [`Next<Input>`](traits::Next) streaming trait that powers batch/streaming parity.
+//!
+//! ## Quick start (streaming)
+//!
+//! ```rust
+//! use quantwave_core::indicators::RSI;
+//! use quantwave_core::traits::Next;
+//!
+//! let mut rsi = RSI::new(14);
+//! let value = rsi.next(44.5);
+//! ```
+//!
+//! ## Architecture
+//!
+//! - **Indicators** — `indicators` module; each implements `Next` for scalar streaming
+//! - **Batch** — consumed by `quantwave-polars` / `quantwave-plugins` expression plugins
+//! - **Features / regimes** — ML-oriented transforms in `features` and `regimes`
+//!
+//! User guides: <https://lavs9.github.io/quantwave/guides/rust/>
+//! Full API: <https://docs.rs/quantwave-core>
+
 pub mod utils;
 pub mod features;
 pub mod indicators;

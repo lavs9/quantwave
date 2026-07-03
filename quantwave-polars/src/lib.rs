@@ -1,3 +1,26 @@
+//! # quantwave-polars
+//!
+//! Polars integration for [QuantWave](https://lavs9.github.io/quantwave/): the
+//! [`QuantWaveExt::ta()`](QuantWaveExt::ta) namespace on [`LazyFrame`] for **218**
+//! vectorized indicators, plus [`bt`](bt) for backtest helpers.
+//!
+//! ## Quick start
+//!
+//! ```rust,no_run
+//! use polars::prelude::*;
+//! use quantwave_polars::QuantWaveExt;
+//!
+//! # fn demo(df: LazyFrame) -> PolarsResult<LazyFrame> {
+//! df.ta().rsi("close", 14)
+//! # }
+//! ```
+//!
+//! Under the hood, expression plugins call the same `quantwave-core` math as
+//! streaming `Next<T>` structs — see [parity guide](https://lavs9.github.io/quantwave/guides/rust/next-trait/).
+//!
+//! User guides: <https://lavs9.github.io/quantwave/guides/rust/crate-map/>
+//! Full API: <https://docs.rs/quantwave-polars>
+
 use polars::prelude::*;
 use quantwave_core::traits::Next;
 use quantwave_core::*;
