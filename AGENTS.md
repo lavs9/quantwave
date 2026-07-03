@@ -20,7 +20,7 @@ The project is structured as a Rust workspace to maximize modularity and perform
 - **Build All**: `cargo build`
 - **Test All**: `cargo nextest run` (MANDATORY: Use nextest only)
 - **Install pre-push gate**: `./scripts/install-git-hooks.sh` — runs verify before each push (CI runs fast doc/metadata sanity only)
-- **Verify (full gate)**: `./scripts/quantwave_verify.sh` — metadata drift + nextest + pytest smoke
+- **Verify (full gate)**: `./scripts/quantwave_verify.sh` — metadata drift + nextest + pytest smoke (cached via `scripts/verify_cache.py`; `VERIFY_NO_CACHE=1` to force) (cached via `scripts/verify_cache.py`; `VERIFY_NO_CACHE=1` to force)
 - **Run Benchmarks**: `cargo bench`
 - **Check Linting**: `cargo clippy`
 
