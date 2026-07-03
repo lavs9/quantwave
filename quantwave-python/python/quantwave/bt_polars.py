@@ -25,6 +25,8 @@ def _config_from_kwargs(
     signal: str = "signal",
     timestamp_col: str = "timestamp",
     close_col: str = "close",
+    high_col: str | None = None,
+    low_col: str | None = None,
     symbol_col: str | None = None,
     entry_filter_col: str | None = None,
     size_multiplier_col: str | None = None,
@@ -35,6 +37,7 @@ def _config_from_kwargs(
     stop_loss_pct: float | None = None,
     take_profit_pct: float | None = None,
     trailing_stop_pct: float | None = None,
+    touched_exit: bool = False,
     portfolio_mode: str = "independent_books",
     portfolio_allocator: str = "equal_weight",
 ) -> BacktestConfig:
@@ -42,6 +45,8 @@ def _config_from_kwargs(
         signal_col=signal,
         timestamp_col=timestamp_col,
         close_col=close_col,
+        high_col=high_col,
+        low_col=low_col,
         symbol_col=symbol_col,
         entry_filter_col=entry_filter_col,
         size_multiplier_col=size_multiplier_col,
@@ -52,6 +57,7 @@ def _config_from_kwargs(
         stop_loss_pct=stop_loss_pct,
         take_profit_pct=take_profit_pct,
         trailing_stop_pct=trailing_stop_pct,
+        touched_exit=touched_exit,
         portfolio_mode=portfolio_mode,
         portfolio_allocator=portfolio_allocator,
     )
@@ -64,6 +70,7 @@ class BtLazyNamespace:
     Typical columns: ``timestamp``, ``close``, ``signal`` (long/short/flat encoding).
     See https://lavs9.github.io/quantwave/guides/backtest/quickstart/ for signal
     conventions and portfolio modes.
+    See https://lavs9.github.io/quantwave/guides/backtest/output-contract/ for output schema.
 
     Primary entry points:
 
@@ -82,6 +89,8 @@ class BtLazyNamespace:
         signal: str = "signal",
         timestamp_col: str = "timestamp",
         close_col: str = "close",
+        high_col: str | None = None,
+        low_col: str | None = None,
         symbol_col: str | None = None,
         entry_filter_col: str | None = None,
         size_multiplier_col: str | None = None,
@@ -92,11 +101,14 @@ class BtLazyNamespace:
         stop_loss_pct: float | None = None,
         take_profit_pct: float | None = None,
         trailing_stop_pct: float | None = None,
+        touched_exit: bool = False,
     ):
         config = _config_from_kwargs(
             signal=signal,
             timestamp_col=timestamp_col,
             close_col=close_col,
+            high_col=high_col,
+            low_col=low_col,
             symbol_col=symbol_col,
             entry_filter_col=entry_filter_col,
             size_multiplier_col=size_multiplier_col,
@@ -107,6 +119,7 @@ class BtLazyNamespace:
             stop_loss_pct=stop_loss_pct,
             take_profit_pct=take_profit_pct,
             trailing_stop_pct=trailing_stop_pct,
+            touched_exit=touched_exit,
         )
         return BacktestEngine(config).run(self._ldf.collect())
 
@@ -115,6 +128,8 @@ class BtLazyNamespace:
         signal: str = "signal",
         timestamp_col: str = "timestamp",
         close_col: str = "close",
+        high_col: str | None = None,
+        low_col: str | None = None,
         symbol_col: str | None = None,
         entry_filter_col: str | None = None,
         size_multiplier_col: str | None = None,
@@ -125,6 +140,7 @@ class BtLazyNamespace:
         stop_loss_pct: float | None = None,
         take_profit_pct: float | None = None,
         trailing_stop_pct: float | None = None,
+        touched_exit: bool = False,
     ):
         """Run a backtest and return a full report (metrics, trades, equity).
 
@@ -144,6 +160,9 @@ class BtLazyNamespace:
             stop_loss_pct: Optional stop-loss fraction (e.g. ``0.02`` for 2%).
             take_profit_pct: Optional take-profit fraction.
             trailing_stop_pct: Optional trailing stop fraction.
+            high_col: Bar high column (required when ``touched_exit=True``).
+            low_col: Bar low column (required when ``touched_exit=True``).
+            touched_exit: Use OHLC intrabar stop/target detection (polars-backtest style).
 
         Returns:
             BacktestReport with ``metrics``, ``trades``, and equity series accessors.
@@ -164,6 +183,8 @@ class BtLazyNamespace:
             signal=signal,
             timestamp_col=timestamp_col,
             close_col=close_col,
+            high_col=high_col,
+            low_col=low_col,
             symbol_col=symbol_col,
             entry_filter_col=entry_filter_col,
             size_multiplier_col=size_multiplier_col,
@@ -174,6 +195,7 @@ class BtLazyNamespace:
             stop_loss_pct=stop_loss_pct,
             take_profit_pct=take_profit_pct,
             trailing_stop_pct=trailing_stop_pct,
+            touched_exit=touched_exit,
         )
         return BacktestEngine(config).backtest_with_report(self._ldf.collect())
 

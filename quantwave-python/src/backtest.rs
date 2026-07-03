@@ -15,8 +15,17 @@ use quantwave_backtest::{
     run_walk_forward, run_walk_forward_optimize, BacktestConfig, BacktestEngine, BacktestError,
     BacktestReport, BacktestResult, CostModel, ExecutionDelay, ExecutionModel, MonteCarloConfig,
     MonteCarloPathSummary, MonteCarloReturnConfig, MonteCarloSummary, PerformanceMetrics,
-    PortfolioAllocator, PortfolioMode, StopConfig, SweepVariant, TearsheetOptions, WalkForwardConfig,
+    PortfolioAllocator, PortfolioMode, StopConfig, StopEvaluationMode, SweepVariant,
+    TearsheetOptions, WalkForwardConfig,
 };
+
+fn parse_stop_evaluation(touched_exit: bool) -> StopEvaluationMode {
+    if touched_exit {
+        StopEvaluationMode::OhlcTouched
+    } else {
+        StopEvaluationMode::CloseOnly
+    }
+}
 
 fn parse_portfolio_mode(s: &str) -> PyResult<PortfolioMode> {
     match s.to_ascii_lowercase().as_str() {
@@ -101,11 +110,18 @@ pub struct PyBacktestConfig {
 
 #[pymethods]
 impl PyBacktestConfig {
+    /// Configuration for a backtest run.
+    ///
+    /// Parameters with `pct` suffixes (like stop_loss_pct) expect fractions (e.g., 0.05 for 5%).
+    /// Default position sizing is 1 unit unless size_multiplier_col is provided.
+    /// Execution delay can be 'same_bar' (fill on signal bar) or 'next_bar' (fill on next bar).
     #[new]
     #[pyo3(signature = (
         signal_col = "signal",
         timestamp_col = "timestamp",
         close_col = "close",
+        high_col = None,
+        low_col = None,
         symbol_col = None,
         entry_filter_col = None,
         size_multiplier_col = None,
@@ -116,6 +132,7 @@ impl PyBacktestConfig {
         stop_loss_pct = None,
         take_profit_pct = None,
         trailing_stop_pct = None,
+        touched_exit = false,
         portfolio_mode = "independent_books",
         portfolio_allocator = "equal_weight",
     ))]
@@ -124,6 +141,8 @@ impl PyBacktestConfig {
         signal_col: &str,
         timestamp_col: &str,
         close_col: &str,
+        high_col: Option<String>,
+        low_col: Option<String>,
         symbol_col: Option<String>,
         entry_filter_col: Option<String>,
         size_multiplier_col: Option<String>,
@@ -134,6 +153,7 @@ impl PyBacktestConfig {
         stop_loss_pct: Option<f64>,
         take_profit_pct: Option<f64>,
         trailing_stop_pct: Option<f64>,
+        touched_exit: bool,
         portfolio_mode: &str,
         portfolio_allocator: &str,
     ) -> PyResult<Self> {
@@ -149,6 +169,8 @@ impl PyBacktestConfig {
                 timestamp_col: timestamp_col.to_string(),
                 symbol_col,
                 close_col: close_col.to_string(),
+                high_col,
+                low_col,
                 signal_col: signal_col.to_string(),
                 entry_filter_col,
                 size_multiplier_col,
@@ -157,6 +179,7 @@ impl PyBacktestConfig {
                     stop_loss_pct,
                     take_profit_pct,
                     trailing_stop_pct,
+                    stop_evaluation: parse_stop_evaluation(touched_exit),
                 },
                 portfolio_mode: parse_portfolio_mode(portfolio_mode)?,
                 portfolio_allocator: parse_portfolio_allocator(portfolio_allocator)?,

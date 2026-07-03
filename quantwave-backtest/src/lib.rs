@@ -78,6 +78,7 @@ mod live_bridge;
 mod metrics;
 mod monte_carlo;
 mod portfolio;
+mod stops;
 mod sweep;
 mod tearsheet;
 mod walk_forward;
@@ -101,6 +102,7 @@ pub use sweep::{run_param_sweep, single_param_variants, SweepVariant};
 pub use portfolio::{
     PortfolioAllocator, PortfolioBar, PortfolioMode, run_shared_capital_streaming_simulation,
 };
+pub use stops::{StopConfig, StopEvaluationMode};
 pub use walk_forward::{run_walk_forward, run_walk_forward_optimize, WalkForwardConfig};
 #[allow(unused_imports)]
 use quantwave_core::traits::Next; // Re-exported for future streaming parity work (used in hybrid mode later per quantwave-ug9t)
@@ -199,28 +201,6 @@ impl SlippageModel for SquareRootMarketImpactSlippage {
         let part = (quantity.abs() / adv).min(self.max_participation);
         let impact = self.impact_coef * part.sqrt();
         if is_buy { price * (1.0 + impact) } else { price * (1.0 - impact) }
-    }
-}
-
-/// Fixed / trailing stop and take-profit knobs (RaptorBT-inspired, clean-room).
-///
-/// Percentages are fractions of entry price for long positions (e.g. `0.02` = 2%).
-/// Trailing stop ratchets with bar highs (close used when OHLC unavailable).
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
-pub struct StopConfig {
-    /// Fixed stop-loss below entry (long): exit when close <= entry * (1 - pct).
-    pub stop_loss_pct: Option<f64>,
-    /// Fixed take-profit above entry: exit when close >= entry * (1 + pct).
-    pub take_profit_pct: Option<f64>,
-    /// Trailing stop from peak high: stop = max(prev, high * (1 - pct)); exit on breach.
-    pub trailing_stop_pct: Option<f64>,
-}
-
-impl StopConfig {
-    pub fn has_stops(&self) -> bool {
-        self.stop_loss_pct.is_some()
-            || self.take_profit_pct.is_some()
-            || self.trailing_stop_pct.is_some()
     }
 }
 
@@ -330,6 +310,10 @@ pub struct BacktestConfig {
     pub timestamp_col: String,
     pub symbol_col: Option<String>,
     pub close_col: String,
+    /// Optional high column for OHLC touched-exit stop evaluation.
+    pub high_col: Option<String>,
+    /// Optional low column for OHLC touched-exit stop evaluation.
+    pub low_col: Option<String>,
     /// Signal column: f64 or bool/int. >0 long, <0 short, 0 flat (units for sizing).
     /// For rich PA + features/regime in batch DF path: pre-compute an 'exposure' col
     /// (e.g. via Polars exprs on ta.features + PA struct fields) and/or use the
@@ -367,6 +351,8 @@ impl Default for BacktestConfig {
             timestamp_col: "timestamp".to_string(),
             symbol_col: None,
             close_col: "close".to_string(),
+            high_col: None,
+            low_col: None,
             signal_col: "signal".to_string(),
             entry_filter_col: None,
             size_multiplier_col: None,
@@ -440,12 +426,15 @@ impl BacktestResult {
     }
 }
 
-/// A minimal bar struct for driving streaming simulation (timestamp + close sufficient
-/// for price-action + feature driven strategies in MVP).
+/// A minimal bar struct for driving streaming simulation.
 #[derive(Debug, Clone)]
 pub struct Bar {
     pub ts: DateTime<Utc>,
     pub close: f64,
+    /// Bar high (required for `StopEvaluationMode::OhlcTouched` in streaming path).
+    pub high: Option<f64>,
+    /// Bar low (required for `StopEvaluationMode::OhlcTouched` in streaming path).
+    pub low: Option<f64>,
 }
 
 /// Rich signal output produced by a `Next<&Bar, Output = StrategySignal>` generator.
@@ -849,6 +838,7 @@ impl BacktestEngine {
 
         let close_ca = df.column(&self.config.close_col)?.f64()?.clone();
         let closes: Vec<f64> = close_ca.into_iter().map(|v| v.unwrap_or(0.0)).collect();
+        let (highs, lows) = self.load_ohlc_columns(&df)?;
         let (signal_vals, signal_metas) = self.load_signals(&df, &self.config.signal_col)?;
         let entry_filters = self.load_entry_filters(&df)?;
         let size_multipliers = self.load_size_multipliers(&df)?;
@@ -900,6 +890,8 @@ impl BacktestEngine {
             &symbols,
             &timestamps,
             &closes,
+            highs.as_deref(),
+            lows.as_deref(),
         );
 
         let (trades, per_symbol_equity, portfolio_eq) = portfolio::simulate_shared_capital(
@@ -1039,11 +1031,14 @@ impl BacktestEngine {
                 effective_metas.push(signal_metas.get(i).cloned().flatten());
             }
         }
+        let (highs, lows) = self.load_ohlc_columns(df)?;
         let delay = self.config.execution_delay;
         let stops = &self.config.stop_config;
         let (mut trades, mut equity_points) = run_simulation(
             &timestamps,
             &closes,
+            highs.as_deref(),
+            lows.as_deref(),
             |i| (effective_signals[i], effective_metas[i].clone()),
             exec,
             sizer,
@@ -1132,6 +1127,41 @@ impl BacktestEngine {
             .map(Some)
     }
 
+    /// Load optional high/low columns when OHLC touched-exit is enabled.
+    fn load_ohlc_columns(
+        &self,
+        df: &DataFrame,
+    ) -> Result<(Option<Vec<f64>>, Option<Vec<f64>>), BacktestError> {
+        if self.config.stop_config.stop_evaluation != StopEvaluationMode::OhlcTouched {
+            return Ok((None, None));
+        }
+        let high_col = self.config.high_col.as_ref().ok_or_else(|| {
+            BacktestError::InvalidInput(
+                "OhlcTouched stop evaluation requires high_col".into(),
+            )
+        })?;
+        let low_col = self.config.low_col.as_ref().ok_or_else(|| {
+            BacktestError::InvalidInput(
+                "OhlcTouched stop evaluation requires low_col".into(),
+            )
+        })?;
+        if df.column(high_col).is_err() {
+            return Err(BacktestError::InvalidInput(format!(
+                "missing column: {}",
+                high_col
+            )));
+        }
+        if df.column(low_col).is_err() {
+            return Err(BacktestError::InvalidInput(format!(
+                "missing column: {}",
+                low_col
+            )));
+        }
+        let highs = extract_f64_column(df.column(high_col)?.clone())?;
+        let lows = extract_f64_column(df.column(low_col)?.clone())?;
+        Ok((Some(highs), Some(lows)))
+    }
+
     fn extract_timestamps(&self, col: &Column) -> Result<Vec<DateTime<Utc>>, BacktestError> {
         // Support Datetime, Int64 (as unix micros or simple increasing), or fallback.
         // In Polars 0.46+, df.column() yields Column; convert for ChunkedArray access.
@@ -1180,6 +1210,11 @@ impl BacktestEngine {
                 Column::new("side".into(), Vec::<i8>::new()),
                 Column::new("entry_ts".into(), Vec::<i64>::new()),
                 Column::new("entry_price".into(), Vec::<f64>::new()),
+                Column::new("entry_fill_price".into(), Vec::<f64>::new()),
+                Column::new("exit_ts".into(), Vec::<Option<i64>>::new()),
+                Column::new("exit_price".into(), Vec::<Option<f64>>::new()),
+                Column::new("exit_fill_price".into(), Vec::<Option<f64>>::new()),
+                Column::new("quantity".into(), Vec::<f64>::new()),
                 Column::new("pnl_net".into(), Vec::<f64>::new()),
             ];
             if include_symbol {
@@ -1192,11 +1227,13 @@ impl BacktestEngine {
         let sides: Vec<i8> = trades.iter().map(|t| t.side).collect();
         let entry_ts: Vec<i64> = trades.iter().map(|t| t.entry_ts.timestamp()).collect();
         let entry_px: Vec<f64> = trades.iter().map(|t| t.entry_price).collect();
+        let entry_fill_px: Vec<f64> = trades.iter().map(|t| t.entry_fill_price).collect();
         let exit_ts: Vec<Option<i64>> = trades
             .iter()
             .map(|t| t.exit_ts.map(|d| d.timestamp()))
             .collect();
         let exit_px: Vec<Option<f64>> = trades.iter().map(|t| t.exit_price).collect();
+        let exit_fill_px: Vec<Option<f64>> = trades.iter().map(|t| t.exit_fill_price).collect();
         let qty: Vec<f64> = trades.iter().map(|t| t.quantity).collect();
         let pnl: Vec<f64> = trades.iter().map(|t| t.pnl_net).collect();
 
@@ -1205,8 +1242,10 @@ impl BacktestEngine {
             Column::new("side".into(), sides),
             Column::new("entry_ts".into(), entry_ts),
             Column::new("entry_price".into(), entry_px),
+            Column::new("entry_fill_price".into(), entry_fill_px),
             Column::new("exit_ts".into(), exit_ts),
             Column::new("exit_price".into(), exit_px),
+            Column::new("exit_fill_price".into(), exit_fill_px),
             Column::new("quantity".into(), qty),
             Column::new("pnl_net".into(), pnl),
         ];
@@ -1223,7 +1262,9 @@ impl BacktestEngine {
             let mut cols = vec![
                 Column::new("ts".into(), Vec::<i64>::new()),
                 Column::new("equity".into(), Vec::<f64>::new()),
+                Column::new("cash".into(), Vec::<f64>::new()),
                 Column::new("position".into(), Vec::<f64>::new()),
+                Column::new("close".into(), Vec::<f64>::new()),
             ];
             if include_symbol {
                 cols.push(Column::new("symbol".into(), Vec::<Option<String>>::new()));
@@ -1392,12 +1433,15 @@ pub fn backtest_simple_bool_signal(
 fn run_simulation(
     timestamps: &[DateTime<Utc>],
     closes: &[f64],
+    highs: Option<&[f64]>,
+    lows: Option<&[f64]>,
     mut next_signal: impl FnMut(usize) -> (f64, Option<HashMap<String, f64>>),
     exec: &ExecutionModel,
     sizer: &Option<InitialRiskPositionSizer>,
     execution_delay: ExecutionDelay,
     stop_config: &StopConfig,
 ) -> (Vec<Trade>, Vec<EquityPoint>) {
+    use stops::{evaluate_stops, trailing_level_at_entry, OhlcBar, StopPositionState};
     let mut cash = match exec {
         ExecutionModel::Simple(cm) => cm.initial_cash,
         ExecutionModel::HighFidelity { .. } => 100_000.0,
@@ -1406,7 +1450,7 @@ fn run_simulation(
     let mut entry_price: f64 = 0.0;
     let mut entry_ts: Option<DateTime<Utc>> = None;
     let mut entry_metadata: Option<HashMap<String, f64>> = None;
-    let mut trailing_stop_level: Option<f64> = None;
+    let mut stop_state = StopPositionState::default();
     let mut need_signal_reset = false;
     let mut trade_id: u32 = 0;
     let mut trades: Vec<Trade> = Vec::new();
@@ -1420,11 +1464,11 @@ fn run_simulation(
          entry_px: f64,
          ets: DateTime<Utc>,
          exit_bar: usize,
+         exit_raw_price: f64,
          meta: Option<HashMap<String, f64>>| {
-            let close = closes[exit_bar];
             // Long exit = sell (is_buy false); short cover = buy (is_buy true).
             let is_buy = side == -1;
-            let fill_price = exec.slippage_price(close, qty, is_buy, None);
+            let fill_price = exec.slippage_price(exit_raw_price, qty, is_buy, None);
             let notional = fill_price * qty;
             let cost = exec.commission_for(qty, fill_price);
             let gross_pnl = if side == 1 {
@@ -1446,7 +1490,7 @@ fn run_simulation(
                 entry_price: entry_px,
                 entry_fill_price: entry_px,
                 exit_ts: Some(timestamps[exit_bar]),
-                exit_price: Some(close),
+                exit_price: Some(exit_raw_price),
                 exit_fill_price: Some(fill_price),
                 pnl_gross: gross_pnl,
                 costs: cost,
@@ -1477,11 +1521,7 @@ fn run_simulation(
         let new_tid = tid + 1;
         let exposure = if is_long { qty } else { -qty };
         let trail = stop_config.trailing_stop_pct.map(|pct| {
-            if is_long {
-                fill_price * (1.0 - pct)
-            } else {
-                fill_price * (1.0 + pct)
-            }
+            trailing_level_at_entry(fill_price, is_long, pct)
         });
         (
             new_tid,
@@ -1495,6 +1535,11 @@ fn run_simulation(
 
     for i in 0..closes.len() {
         let close = closes[i];
+        let ohlc = OhlcBar {
+            close,
+            high: highs.and_then(|h| h.get(i).copied()),
+            low: lows.and_then(|l| l.get(i).copied()),
+        };
         if !close.is_finite() {
             let equity = cash + current_exposure * close;
             equity_points.push(EquityPoint {
@@ -1512,63 +1557,9 @@ fn run_simulation(
         if current_exposure != 0.0 && stop_config.has_stops() {
             let is_long = current_exposure > 0.0;
             let qty = current_exposure.abs();
-
-            if let Some(trail_pct) = stop_config.trailing_stop_pct {
-                if is_long {
-                    let new_level = close * (1.0 - trail_pct);
-                    trailing_stop_level = Some(match trailing_stop_level {
-                        Some(prev) => prev.max(new_level),
-                        None => new_level,
-                    });
-                } else {
-                    let new_level = close * (1.0 + trail_pct);
-                    trailing_stop_level = Some(match trailing_stop_level {
-                        Some(prev) => prev.min(new_level),
-                        None => new_level,
-                    });
-                }
-            }
-
-            let mut stop_out = false;
-            if is_long {
-                if let Some(tp) = stop_config.take_profit_pct {
-                    if close >= entry_price * (1.0 + tp) {
-                        stop_out = true;
-                    }
-                }
-                if !stop_out {
-                    let mut effective_stop = f64::NEG_INFINITY;
-                    if let Some(sl) = stop_config.stop_loss_pct {
-                        effective_stop = entry_price * (1.0 - sl);
-                    }
-                    if let Some(level) = trailing_stop_level {
-                        effective_stop = effective_stop.max(level);
-                    }
-                    if effective_stop > f64::NEG_INFINITY && close <= effective_stop {
-                        stop_out = true;
-                    }
-                }
-            } else {
-                if let Some(tp) = stop_config.take_profit_pct {
-                    if close <= entry_price * (1.0 - tp) {
-                        stop_out = true;
-                    }
-                }
-                if !stop_out {
-                    let mut effective_stop = f64::INFINITY;
-                    if let Some(sl) = stop_config.stop_loss_pct {
-                        effective_stop = entry_price * (1.0 + sl);
-                    }
-                    if let Some(level) = trailing_stop_level {
-                        effective_stop = effective_stop.min(level);
-                    }
-                    if effective_stop < f64::INFINITY && close >= effective_stop {
-                        stop_out = true;
-                    }
-                }
-            }
-
-            if stop_out {
+            if let Some(stop_exit) =
+                evaluate_stops(stop_config, ohlc, is_long, entry_price, &mut stop_state)
+            {
                 if let Some(ets) = entry_ts.take() {
                     let side = if is_long { 1 } else { -1 };
                     record_position_exit(
@@ -1579,11 +1570,12 @@ fn run_simulation(
                         entry_price,
                         ets,
                         i,
+                        stop_exit.exit_price,
                         entry_metadata.clone(),
                     );
                     current_exposure = 0.0;
                     entry_price = 0.0;
-                    trailing_stop_level = None;
+                    stop_state = StopPositionState::default();
                     entry_metadata = None;
                     need_signal_reset = true;
                 }
@@ -1624,11 +1616,12 @@ fn run_simulation(
                     entry_price,
                     ets,
                     i,
+                    close,
                     meta.clone(),
                 );
                 current_exposure = 0.0;
                 entry_price = 0.0;
-                trailing_stop_level = None;
+                stop_state = StopPositionState::default();
                 entry_metadata = None;
             }
         } else if desired != 0.0 && !need_signal_reset {
@@ -1648,11 +1641,12 @@ fn run_simulation(
                         entry_price,
                         ets,
                         i,
+                        close,
                         entry_metadata.clone(),
                     );
                     current_exposure = 0.0;
                     entry_price = 0.0;
-                    trailing_stop_level = None;
+                    stop_state = StopPositionState::default();
                     entry_metadata = None;
                 }
             }
@@ -1665,7 +1659,7 @@ fn run_simulation(
                 entry_price = ep;
                 entry_ts = ets;
                 entry_metadata = em;
-                trailing_stop_level = trail;
+                stop_state.trailing_stop_level = trail;
             }
         }
 
@@ -1733,6 +1727,9 @@ where
 
     let timestamps: Vec<DateTime<Utc>> = bars.iter().map(|b| b.ts).collect();
     let closes: Vec<f64> = bars.iter().map(|b| b.close).collect();
+    let highs: Vec<f64> = bars.iter().map(|b| b.high.unwrap_or(b.close)).collect();
+    let lows: Vec<f64> = bars.iter().map(|b| b.low.unwrap_or(b.close)).collect();
+    let use_ohlc = config.stop_config.stop_evaluation == StopEvaluationMode::OhlcTouched;
 
     let exec = &config.execution_model;
     let sizer = &config.position_sizer;
@@ -1742,6 +1739,16 @@ where
     let (trades, equity_points) = run_simulation(
         &timestamps,
         &closes,
+        if use_ohlc {
+            Some(highs.as_slice())
+        } else {
+            None
+        },
+        if use_ohlc {
+            Some(lows.as_slice())
+        } else {
+            None
+        },
         |i| {
             let sig = generator.next(&bars[i]);
             (sig.exposure, sig.metadata.clone())
@@ -2108,7 +2115,12 @@ mod tests {
         let bars: Vec<Bar> = timestamps
             .iter()
             .zip(closes.iter())
-            .map(|(&ts, &close)| Bar { ts, close })
+            .map(|(&ts, &close)| Bar {
+                ts,
+                close,
+                high: None,
+                low: None,
+            })
             .collect();
 
         // --- "Pure vectorized batch" path: precompute exposures via generator pass

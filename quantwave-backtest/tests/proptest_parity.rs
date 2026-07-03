@@ -69,6 +69,8 @@ proptest! {
             .map(|i| Bar {
                 ts: chrono::DateTime::<chrono::Utc>::from_timestamp(1_700_000_000 + i as i64 * 60, 0).unwrap(),
                 close: closes[i],
+                high: None,
+                low: None,
             })
             .collect();
 

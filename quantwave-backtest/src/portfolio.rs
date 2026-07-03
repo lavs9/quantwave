@@ -4,9 +4,8 @@
 //! See `planning/SHARED_CAPITAL_PORTFOLIO_ADR.md`.
 
 use crate::{
-    apply_signal_modifiers, BacktestConfig, BacktestError, BacktestResult,
-    EquityPoint, ExecutionDelay, ExecutionModel, InitialRiskPositionSizer, StopConfig, StrategySignal,
-    Trade,
+    apply_signal_modifiers, stops, BacktestConfig, BacktestError, BacktestResult, EquityPoint,
+    ExecutionDelay, ExecutionModel, InitialRiskPositionSizer, StopConfig, StrategySignal, Trade,
 };
 use chrono::{DateTime, Utc};
 use quantwave_core::traits::Next;
@@ -39,11 +38,15 @@ pub struct PortfolioBar {
     pub ts: DateTime<Utc>,
     pub symbol: String,
     pub close: f64,
+    pub high: Option<f64>,
+    pub low: Option<f64>,
 }
 
 struct SymbolBar {
     symbol: String,
     close: f64,
+    high: Option<f64>,
+    low: Option<f64>,
     raw_signal: f64,
     meta: Option<HashMap<String, f64>>,
 }
@@ -59,7 +62,7 @@ struct SymbolBook {
     entry_price: f64,
     entry_ts: Option<DateTime<Utc>>,
     entry_metadata: Option<HashMap<String, f64>>,
-    trailing_stop_level: Option<f64>,
+    stop_state: stops::StopPositionState,
     trade_id: u32,
 }
 
@@ -185,19 +188,17 @@ pub(crate) fn simulate_shared_capital(
             *cash += notional - cost;
         }
         let exposure = if is_long { qty } else { -qty };
-        let trail = stops.trailing_stop_pct.map(|pct| {
-            if is_long {
-                fill_price * (1.0 - pct)
-            } else {
-                fill_price * (1.0 + pct)
-            }
-        });
+        let mut stop_state = stops::StopPositionState::default();
+        if let Some(pct) = stops.trailing_stop_pct {
+            stop_state.trailing_stop_level =
+                Some(stops::trailing_level_at_entry(fill_price, is_long, pct));
+        }
         SymbolBook {
             exposure,
             entry_price: fill_price,
             entry_ts: Some(fill_ts),
             entry_metadata: meta,
-            trailing_stop_level: trail,
+            stop_state,
             trade_id: tid,
         }
     };
@@ -223,70 +224,28 @@ pub(crate) fn simulate_shared_capital(
                 continue;
             }
             let is_long = book.exposure > 0.0;
-            if let Some(trail_pct) = stops.trailing_stop_pct {
-                if is_long {
-                    let new_level = close * (1.0 - trail_pct);
-                    book.trailing_stop_level = Some(match book.trailing_stop_level {
-                        Some(prev) => prev.max(new_level),
-                        None => new_level,
-                    });
-                } else {
-                    let new_level = close * (1.0 + trail_pct);
-                    book.trailing_stop_level = Some(match book.trailing_stop_level {
-                        Some(prev) => prev.min(new_level),
-                        None => new_level,
-                    });
-                }
-            }
-
-            let mut stop_out = false;
-            if is_long {
-                if let Some(tp) = stops.take_profit_pct {
-                    if close >= book.entry_price * (1.0 + tp) {
-                        stop_out = true;
-                    }
-                }
-                if !stop_out {
-                    let mut effective = f64::NEG_INFINITY;
-                    if let Some(sl) = stops.stop_loss_pct {
-                        effective = book.entry_price * (1.0 - sl);
-                    }
-                    if let Some(level) = book.trailing_stop_level {
-                        effective = effective.max(level);
-                    }
-                    if effective > f64::NEG_INFINITY && close <= effective {
-                        stop_out = true;
-                    }
-                }
-            } else {
-                if let Some(tp) = stops.take_profit_pct {
-                    if close <= book.entry_price * (1.0 - tp) {
-                        stop_out = true;
-                    }
-                }
-                if !stop_out {
-                    let mut effective = f64::INFINITY;
-                    if let Some(sl) = stops.stop_loss_pct {
-                        effective = book.entry_price * (1.0 + sl);
-                    }
-                    if let Some(level) = book.trailing_stop_level {
-                        effective = effective.min(level);
-                    }
-                    if effective < f64::INFINITY && close >= effective {
-                        stop_out = true;
-                    }
-                }
-            }
-
-            if stop_out {
+            let ohlc = stops::OhlcBar {
+                close,
+                high: bar.high,
+                low: bar.low,
+            };
+            if let Some(stop_exit) =
+                stops::evaluate_stops(stops, ohlc, is_long, book.entry_price, &mut book.stop_state)
+            {
                 let snapshot = book.clone();
-                record_exit(&mut cash, sym, &snapshot, ts, close);
+                record_exit(
+                    &mut cash,
+                    sym,
+                    &snapshot,
+                    ts,
+                    stop_exit.exit_price,
+                );
                 *book = SymbolBook {
                     exposure: 0.0,
                     entry_price: 0.0,
                     entry_ts: None,
                     entry_metadata: None,
-                    trailing_stop_level: None,
+                    stop_state: stops::StopPositionState::default(),
                     trade_id: snapshot.trade_id,
                 };
             }
@@ -336,7 +295,7 @@ pub(crate) fn simulate_shared_capital(
                 entry_price: 0.0,
                 entry_ts: None,
                 entry_metadata: None,
-                trailing_stop_level: None,
+                stop_state: stops::StopPositionState::default(),
                 trade_id: 0,
             });
 
@@ -348,7 +307,7 @@ pub(crate) fn simulate_shared_capital(
                     entry_price: 0.0,
                     entry_ts: None,
                     entry_metadata: None,
-                    trailing_stop_level: None,
+                    stop_state: stops::StopPositionState::default(),
                     trade_id: snapshot.trade_id,
                 };
                 continue;
@@ -371,7 +330,7 @@ pub(crate) fn simulate_shared_capital(
                     entry_price: 0.0,
                     entry_ts: None,
                     entry_metadata: None,
-                    trailing_stop_level: None,
+                    stop_state: stops::StopPositionState::default(),
                     trade_id: snapshot.trade_id,
                 };
             }
@@ -488,6 +447,8 @@ pub(crate) fn build_timestamp_groups(
     symbols: &[String],
     timestamps: &[DateTime<Utc>],
     closes: &[f64],
+    highs: Option<&[f64]>,
+    lows: Option<&[f64]>,
 ) -> Vec<TimestampGroup> {
     let mut groups: Vec<TimestampGroup> = Vec::new();
     let mut i = 0usize;
@@ -498,6 +459,8 @@ pub(crate) fn build_timestamp_groups(
             bars.push(SymbolBar {
                 symbol: symbols[i].clone(),
                 close: closes[i],
+                high: highs.and_then(|h| h.get(i).copied()),
+                low: lows.and_then(|l| l.get(i).copied()),
                 raw_signal: signal_vals[i],
                 meta: signal_metas[i].clone(),
             });
@@ -536,6 +499,8 @@ where
             .push(SymbolBar {
                 symbol: bar.symbol.clone(),
                 close: bar.close,
+                high: bar.high,
+                low: bar.low,
                 raw_signal: sig.exposure,
                 meta: sig.metadata.clone(),
             });

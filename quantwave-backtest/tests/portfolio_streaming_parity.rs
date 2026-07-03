@@ -99,6 +99,8 @@ fn test_shared_capital_batch_streaming_parity() {
             ts: chrono::Utc.timestamp_opt(t, 0).single().unwrap(),
             symbol: sym.clone(),
             close,
+            high: None,
+            low: None,
         })
         .collect();
 

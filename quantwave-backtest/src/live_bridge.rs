@@ -89,6 +89,8 @@ mod tests {
         let bar = Bar {
             ts: Utc::now(),
             close: 101.5,
+            high: None,
+            low: None,
         };
         let signal = StrategySignal {
             exposure: 1.0,

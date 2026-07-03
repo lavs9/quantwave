@@ -101,6 +101,8 @@ fn test_live_bridge_stub_integration() {
         &Bar {
             ts: chrono::Utc::now(),
             close: 50.0,
+            high: None,
+            low: None,
         },
         Some("QQQ".into()),
         &StrategySignal {

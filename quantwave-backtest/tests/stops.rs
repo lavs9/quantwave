@@ -7,7 +7,7 @@ use chrono::{TimeZone, Utc};
 use polars::prelude::*;
 use quantwave_backtest::{
     run_streaming_simulation, BacktestConfig, BacktestEngine, Bar, CostModel, ExecutionModel,
-    StopConfig, StrategySignal,
+    StopConfig, StopEvaluationMode, StrategySignal,
 };
 
 fn zero_cost_config(stops: StopConfig) -> BacktestConfig {
@@ -19,6 +19,14 @@ fn zero_cost_config(stops: StopConfig) -> BacktestConfig {
         }),
         stop_config: stops,
         ..Default::default()
+    }
+}
+
+fn ohlc_config(stops: StopConfig) -> BacktestConfig {
+    BacktestConfig {
+        high_col: Some("high".to_string()),
+        low_col: Some("low".to_string()),
+        ..zero_cost_config(stops)
     }
 }
 
@@ -146,6 +154,130 @@ impl quantwave_core::traits::Next<&Bar> for SignalReplay {
 }
 
 #[test]
+fn test_ohlc_stop_loss_wick_exits_before_close_breach() {
+    // Enter bar 1 @100; 2% SL = 98. Bar 3: close=99 but low=96 wicks through stop.
+    let df = DataFrame::new(vec![
+        Column::new(
+            "timestamp".into(),
+            (0..5)
+                .map(|i| 1_700_500_000i64 + (i as i64) * 3600)
+                .collect::<Vec<_>>(),
+        ),
+        Column::new("close".into(), vec![100.0, 100.0, 99.0, 99.0, 98.0]),
+        Column::new("high".into(), vec![100.0, 100.0, 99.0, 100.0, 98.0]),
+        Column::new("low".into(), vec![100.0, 100.0, 99.0, 96.0, 98.0]),
+        Column::new("signal".into(), vec![0.0, 1.0, 1.0, 1.0, 0.0]),
+    ])
+    .unwrap();
+
+    let close_only = BacktestEngine::new(ohlc_config(StopConfig {
+        stop_loss_pct: Some(0.02),
+        stop_evaluation: StopEvaluationMode::CloseOnly,
+        ..Default::default()
+    }))
+    .run(df.clone().lazy())
+    .expect("close-only");
+
+    let ohlc = BacktestEngine::new(ohlc_config(StopConfig {
+        stop_loss_pct: Some(0.02),
+        stop_evaluation: StopEvaluationMode::OhlcTouched,
+        ..Default::default()
+    }))
+    .run(df.lazy())
+    .expect("ohlc");
+
+    assert_relative_eq!(exit_price(&close_only), 98.0, epsilon = 1e-9);
+    assert_eq!(exit_ts_unix(&close_only), 1_700_500_000 + 4 * 3600);
+
+    assert_relative_eq!(exit_price(&ohlc), 98.0, epsilon = 1e-9);
+    assert_eq!(exit_ts_unix(&ohlc), 1_700_500_000 + 3 * 3600);
+}
+
+#[test]
+fn test_ohlc_trailing_ratchets_on_high() {
+    // Enter bar1 @100; bar2 high=115 ratchets trail to 109.25; bar3 low=103 breaches trail.
+    let df = DataFrame::new(vec![
+        Column::new(
+            "timestamp".into(),
+            (0..4)
+                .map(|i| 1_700_600_000i64 + (i as i64) * 3600)
+                .collect::<Vec<_>>(),
+        ),
+        Column::new("close".into(), vec![100.0, 100.0, 110.0, 104.0]),
+        Column::new("high".into(), vec![100.0, 100.0, 115.0, 104.0]),
+        Column::new("low".into(), vec![100.0, 100.0, 110.0, 103.0]),
+        Column::new("signal".into(), vec![0.0, 1.0, 1.0, 0.0]),
+    ])
+    .unwrap();
+
+    let result = BacktestEngine::new(ohlc_config(StopConfig {
+        trailing_stop_pct: Some(0.05),
+        stop_evaluation: StopEvaluationMode::OhlcTouched,
+        ..Default::default()
+    }))
+    .run(df.lazy())
+    .expect("ohlc trailing");
+
+    assert_eq!(result.trades.height(), 1);
+    assert_relative_eq!(exit_price(&result), 109.25, epsilon = 1e-9);
+    assert_eq!(exit_ts_unix(&result), 1_700_600_000 + 3 * 3600);
+}
+
+#[test]
+fn test_ohlc_stops_batch_streaming_parity() {
+    let ts: Vec<i64> = (0..4).map(|i| 1_700_700_000 + i * 3600).collect();
+    let closes = vec![100.0, 100.0, 99.0, 98.0];
+    let highs = vec![100.0, 100.0, 99.0, 100.0];
+    let lows = vec![100.0, 100.0, 99.0, 96.0];
+    let signals = vec![0.0, 1.0, 1.0, 0.0];
+    let stops = StopConfig {
+        stop_loss_pct: Some(0.02),
+        stop_evaluation: StopEvaluationMode::OhlcTouched,
+        ..Default::default()
+    };
+
+    let df = DataFrame::new(vec![
+        Column::new("timestamp".into(), ts.clone()),
+        Column::new("close".into(), closes.clone()),
+        Column::new("high".into(), highs.clone()),
+        Column::new("low".into(), lows.clone()),
+        Column::new("signal".into(), signals.clone()),
+    ])
+    .unwrap();
+
+    let batch = BacktestEngine::new(ohlc_config(stops.clone()))
+        .run(df.lazy())
+        .expect("batch ohlc stops");
+
+    let bars: Vec<Bar> = ts
+        .iter()
+        .zip(closes.iter())
+        .zip(highs.iter())
+        .zip(lows.iter())
+        .map(|(((&t, &close), &high), &low)| Bar {
+            ts: Utc.timestamp_opt(t, 0).unwrap(),
+            close,
+            high: Some(high),
+            low: Some(low),
+        })
+        .collect();
+
+    let stream = run_streaming_simulation(
+        &bars,
+        SignalReplay {
+            signals,
+            idx: 0,
+        },
+        ohlc_config(stops),
+    )
+    .expect("streaming ohlc stops");
+
+    assert_eq!(batch.trades.height(), stream.trades.height());
+    assert_relative_eq!(exit_price(&batch), exit_price(&stream), epsilon = 1e-9);
+    assert_eq!(exit_ts_unix(&batch), exit_ts_unix(&stream));
+}
+
+#[test]
 fn test_stops_batch_streaming_parity() {
     let ts: Vec<i64> = (0..4).map(|i| 1_700_400_000 + i).collect();
     let closes = vec![100.0, 110.0, 104.0, 100.0];
@@ -172,6 +304,8 @@ fn test_stops_batch_streaming_parity() {
         .map(|(&t, &close)| Bar {
             ts: Utc.timestamp_opt(t, 0).unwrap(),
             close,
+            high: None,
+            low: None,
         })
         .collect();
 

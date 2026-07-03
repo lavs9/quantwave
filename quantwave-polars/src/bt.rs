@@ -85,6 +85,7 @@ impl BtOptions {
                 stop_loss_pct: self.stop_loss_pct,
                 take_profit_pct: self.take_profit_pct,
                 trailing_stop_pct: self.trailing_stop_pct,
+                ..Default::default()
             },
             ..Default::default()
         }

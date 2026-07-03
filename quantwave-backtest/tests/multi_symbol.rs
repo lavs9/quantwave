@@ -246,6 +246,8 @@ fn test_multi_symbol_batch_streaming_parity() {
             .map(|(&t, &close)| Bar {
                 ts: chrono::DateTime::<chrono::Utc>::from_timestamp(t, 0).unwrap(),
                 close,
+                high: None,
+                low: None,
             })
             .collect();
 

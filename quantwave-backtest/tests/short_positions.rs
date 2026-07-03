@@ -178,6 +178,8 @@ fn test_short_batch_streaming_parity() {
         .map(|(&t, &close)| Bar {
             ts: Utc.timestamp_opt(t, 0).unwrap(),
             close,
+            high: None,
+            low: None,
         })
         .collect();
 
