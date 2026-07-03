@@ -20,5 +20,12 @@ serde = { workspace = true }
 
 thiserror = { workspace = true }
 
+[[bin]]
+name = "benchmark_polars"
+path = "src/bin/benchmark_polars.rs"
+test = false
+bench = false
+doc = false
+
 [dev-dependencies]
 approx = { workspace = true }

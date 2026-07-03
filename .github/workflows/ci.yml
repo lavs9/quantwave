@@ -62,6 +62,9 @@ jobs:
           python scripts/pypi_smoke_test.py dist/quantwave-*.whl
 
       - name: quantwave verify
+        env:
+          # GHA: rust-lld can SIGBUS linking huge debug Polars test binaries (signal 7).
+          RUSTFLAGS: "-C link-arg=-fuse-ld=bfd"
         run: |
           source .venv/bin/activate
           chmod +x scripts/quantwave_verify.sh
