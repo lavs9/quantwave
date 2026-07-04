@@ -222,6 +222,7 @@ use crate::indicators::vwap::VWAP_METADATA;
 use crate::indicators::wavetrend::WAVETREND_METADATA;
 use crate::indicators::zero_lag::ZERO_LAG_METADATA;
 use crate::regimes::gaussian_hmm::GAUSSIAN_HMM_METADATA;
+use crate::regimes::gaussian_hmm::LAMBDA_HMM_METADATA;
 
 /// Slug + metadata pair for codegen and discovery.
 #[derive(Debug, Clone, Copy)]
@@ -376,6 +377,7 @@ pub static ALL_REGISTERED: &[RegisteredMetadata] = &[
     RegisteredMetadata { slug: "laguerre_filter", meta: &LAGUERRE_FILTER_METADATA, struct_name: "LaguerreFilter", source_file: "laguerre_filter" },
     RegisteredMetadata { slug: "laguerre_oscillator", meta: &LAGUERRE_OSCILLATOR_METADATA, struct_name: "LaguerreOscillator", source_file: "laguerre_oscillator" },
     RegisteredMetadata { slug: "laguerre_rsi", meta: &LAGUERRE_RSI_METADATA, struct_name: "LaguerreRsi", source_file: "laguerre_rsi" },
+    RegisteredMetadata { slug: "lambda_hmm", meta: &LAMBDA_HMM_METADATA, struct_name: "GaussianHmmParams", source_file: "gaussian_hmm" },
     RegisteredMetadata { slug: "linreg", meta: &LINREG_METADATA, struct_name: "StandardDeviation", source_file: "statistics" },
     RegisteredMetadata { slug: "macd", meta: &MACD_METADATA, struct_name: "", source_file: "momentum" },
     RegisteredMetadata { slug: "madh", meta: &MADH_METADATA, struct_name: "Madh", source_file: "madh" },
@@ -599,6 +601,7 @@ pub static ALL_INDICATOR_METADATA: &[&IndicatorMetadata] = &[
     &LAGUERRE_FILTER_METADATA,
     &LAGUERRE_OSCILLATOR_METADATA,
     &LAGUERRE_RSI_METADATA,
+    &LAMBDA_HMM_METADATA,
     &LINREG_METADATA,
     &MACD_METADATA,
     &MADH_METADATA,
@@ -678,4 +681,4 @@ pub static ALL_INDICATOR_METADATA: &[&IndicatorMetadata] = &[
     &ZLEMA_METADATA,
 ];
 
-pub const METADATA_COUNT: usize = 219;
+pub const METADATA_COUNT: usize = 220;

@@ -5,11 +5,13 @@
 
 pub mod volatility_clustering;
 pub mod hmm;
+pub mod ecld;
 pub mod gaussian_hmm;
 
+pub use ecld::{ecld_log_pdf, ecld_pdf, natural_to_work, work_to_natural};
 pub use gaussian_hmm::{
-    fit_em, GaussianHmmDecode, GaussianHmmError, GaussianHmmFilter, GaussianHmmFitConfig,
-    GaussianHmmFitResult, GaussianHmmParams,
+    fit_em, EmissionFamily, GaussianHmmDecode, GaussianHmmError, GaussianHmmFilter,
+    GaussianHmmFitConfig, GaussianHmmFitResult, GaussianHmmParams,
 };
 pub mod gmm;
 pub mod pelt;

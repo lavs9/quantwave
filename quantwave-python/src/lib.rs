@@ -108,7 +108,8 @@ use quantwave_core::features::trendflex::TrendflexFeatureExtractor as CoreTrendf
 use quantwave_core::features::regime::regime_to_features as core_regime_to_features;
 use quantwave_core::features::griffiths_dominant_cycle::GriffithsDominantCycleFeatureExtractor as CoreGriffithsDCFE;
 use quantwave_core::regimes::gaussian_hmm::{
-    fit_em as core_fit_em, GaussianHmmFilter as CoreGaussianHmmFilter,
+    fit_em as core_fit_em, EmissionFamily as CoreEmissionFamily,
+    GaussianHmmFilter as CoreGaussianHmmFilter,
     GaussianHmmFitConfig as CoreGaussianHmmFitConfig, GaussianHmmParams as CoreGaussianHmmParams,
 };
 use quantwave_core::regimes::hmm::HMM as CoreHMM;
@@ -1063,6 +1064,8 @@ pub struct GaussianHmmParamsPy {
     pub gamma_flat: Vec<f64>,
     pub means: Vec<f64>,
     pub stds: Vec<f64>,
+    /// Per-state λ (empty → 1.0 per state, Gaussian mode).
+    pub lambdas: Vec<f64>,
 }
 
 #[derive(uniffi::Record)]
@@ -1089,7 +1092,35 @@ fn gaussian_hmm_params_to_py(p: &CoreGaussianHmmParams) -> GaussianHmmParamsPy {
         gamma_flat,
         means: p.means.clone(),
         stds: p.stds.clone(),
+        lambdas: if p.lambdas.is_empty() {
+            vec![1.0; m]
+        } else {
+            p.lambdas.clone()
+        },
     }
+}
+
+fn core_params_from_py(params: &GaussianHmmParamsPy) -> CoreGaussianHmmParams {
+    let m = params.n_states as usize;
+    let mut gamma = vec![vec![0.0; m]; m];
+    for i in 0..m {
+        for j in 0..m {
+            gamma[i][j] = params.gamma_flat[i * m + j];
+        }
+    }
+    let lambdas = if params.lambdas.is_empty() {
+        vec![1.0; m]
+    } else {
+        params.lambdas.clone()
+    };
+    CoreGaussianHmmParams::new_with_lambdas(
+        params.delta.clone(),
+        gamma,
+        params.means.clone(),
+        params.stds.clone(),
+        lambdas,
+    )
+    .expect("invalid HMM params")
 }
 
 #[uniffi::export]
@@ -1097,12 +1128,19 @@ pub fn fit_gaussian_hmm(
     observations: Vec<f64>,
     n_states: u32,
     max_iter: u32,
+    fit_lambdas: bool,
 ) -> GaussianHmmFitResultPy {
     let obs: Vec<f64> = observations.into_iter().filter(|v| v.is_finite()).collect();
     let m = n_states.max(2) as usize;
     let config = CoreGaussianHmmFitConfig {
         n_states: m,
         max_iter: max_iter.max(1) as usize,
+        emission_family: if fit_lambdas {
+            CoreEmissionFamily::Lambda
+        } else {
+            CoreEmissionFamily::Gaussian
+        },
+        fit_lambdas,
         ..Default::default()
     };
     let fit = core_fit_em(&obs, &config).expect("gaussian HMM EM fit failed");
@@ -1134,20 +1172,7 @@ pub struct GaussianHmmFilterPy {
 impl GaussianHmmFilterPy {
     #[uniffi::constructor]
     pub fn from_params(params: GaussianHmmParamsPy) -> Self {
-        let m = params.n_states as usize;
-        let mut gamma = vec![vec![0.0; m]; m];
-        for i in 0..m {
-            for j in 0..m {
-                gamma[i][j] = params.gamma_flat[i * m + j];
-            }
-        }
-        let core_params = CoreGaussianHmmParams::new(
-            params.delta,
-            gamma,
-            params.means,
-            params.stds,
-        )
-        .expect("invalid gaussian HMM params");
+        let core_params = core_params_from_py(&params);
         Self {
             inner: Mutex::new(core_params.filter()),
         }

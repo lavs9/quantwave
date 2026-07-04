@@ -3,7 +3,7 @@
 use approx::assert_relative_eq;
 use proptest::prelude::*;
 use quantwave_core::regimes::gaussian_hmm::{
-    fit_em, GaussianHmmFitConfig, GaussianHmmParams,
+    fit_em, EmissionFamily, GaussianHmmFitConfig, GaussianHmmParams,
 };
 use quantwave_core::regimes::hmm::HMM;
 use quantwave_core::traits::Next;
@@ -54,6 +54,7 @@ fn em_fit_improves_mllk_on_generic_series() {
             n_states: 2,
             max_iter: 80,
             tol: 1e-7,
+            ..Default::default()
         },
     )
     .expect("fit");
@@ -85,6 +86,87 @@ fn bull_bear_preset_streaming_unchanged() {
     assert_eq!(labels, vec![1, 1, 1, 1, 1]);
 }
 
+/// Synthetic leptokurtic log-return path: mostly small moves with occasional fat-tail spikes.
+fn leptokurtic_return_series() -> Vec<f64> {
+    vec![
+        0.002, -0.003, 0.001, -0.002, 0.003, -0.001, 0.002, -0.004, 0.001, -0.002, 0.035,
+        -0.041, 0.002, -0.003, 0.001, 0.038, -0.002, 0.001, -0.036, 0.003, -0.001, 0.002,
+        -0.039, 0.004, -0.002, 0.001, -0.003, 0.042, -0.001, 0.002, -0.004, 0.001, -0.037,
+        0.003, -0.002, 0.001, 0.040, -0.003, 0.002, -0.001,
+    ]
+}
+
+#[test]
+fn lambda_em_fit_runs_on_leptokurtic_series_without_regression() {
+    let x = leptokurtic_return_series();
+
+    let gaussian_fit = fit_em(
+        &x,
+        &GaussianHmmFitConfig {
+            n_states: 2,
+            max_iter: 80,
+            tol: 1e-7,
+            emission_family: EmissionFamily::Gaussian,
+            fit_lambdas: false,
+        },
+    )
+    .expect("gaussian fit");
+
+    let lambda_fit = fit_em(
+        &x,
+        &GaussianHmmFitConfig {
+            n_states: 2,
+            max_iter: 80,
+            tol: 1e-7,
+            emission_family: EmissionFamily::Lambda,
+            fit_lambdas: true,
+        },
+    )
+    .expect("lambda fit");
+
+    // λ-constrained EM should match or beat Gaussian on the same series (ldhmm λ≥1 nest Gaussian).
+    assert!(
+        lambda_fit.log_likelihood >= gaussian_fit.log_likelihood - 0.05,
+        "lambda HMM should not materially worsen log-likelihood: gaussian={}, lambda={}",
+        gaussian_fit.log_likelihood,
+        lambda_fit.log_likelihood
+    );
+    assert!(
+        lambda_fit.params.lambdas.iter().all(|&l| l >= 1.0 && l <= 5.0),
+        "fitted λ must stay in ldhmm leptokurtic range [1, 5]: {:?}",
+        lambda_fit.params.lambdas
+    );
+    assert!(lambda_fit.params.validate().is_ok());
+}
+
+#[test]
+fn fixed_lambda_params_improve_mllk_vs_gaussian_on_gold_fixture() {
+    let gaussian = GaussianHmmParams::new(
+        vec![0.6, 0.4],
+        vec![vec![0.92, 0.08], vec![0.15, 0.85]],
+        vec![0.008, -0.012],
+        vec![0.018, 0.028],
+    )
+    .expect("gaussian params");
+    let lambda = GaussianHmmParams::new_with_lambdas(
+        vec![0.6, 0.4],
+        vec![vec![0.92, 0.08], vec![0.15, 0.85]],
+        vec![0.008, -0.012],
+        vec![0.018, 0.028],
+        vec![1.0, 1.3],
+    )
+    .expect("lambda params");
+    let obs = vec![
+        0.005, -0.003, 0.011, -0.021, 0.007, -0.015, 0.002, -0.009, 0.004, -0.018,
+    ];
+    let gaussian_mllk = gaussian.mllk(&obs).expect("gaussian mllk");
+    let lambda_mllk = lambda.mllk(&obs).expect("lambda mllk");
+    assert!(
+        lambda_mllk <= gaussian_mllk,
+        "fixed λ=[1.0,1.3] should improve mllk: gaussian={gaussian_mllk}, lambda={lambda_mllk}"
+    );
+}
+
 #[test]
 fn em_fit_supports_three_state_generic_series() {
     let x: Vec<f64> = (0..30)
@@ -100,6 +182,7 @@ fn em_fit_supports_three_state_generic_series() {
             n_states: 3,
             max_iter: 60,
             tol: 1e-6,
+            ..Default::default()
         },
     )
     .expect("3-state fit");

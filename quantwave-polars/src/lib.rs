@@ -3614,21 +3614,23 @@ impl<'a> QuantWaveNamespace<'a> {
             .alias("hmm_regime")])
     }
 
-    /// Fit a generic Gaussian HMM (EM) on a full observation column and decode regimes.
+    /// Fit a generic HMM (EM) on a full observation column and decode regimes.
     ///
     /// Returns struct column `hmm_fit_data` with:
     /// - `hmm_fit_state` (UInt32): global Viterbi state index (0-based)
     /// - `hmm_fit_smooth_probs` (List[Float64]): smoothed state probabilities per bar
     ///
+    /// Set `fit_lambdas` to enable lambda (ecld) emissions with per-state λ MLE (ldhmm parity).
+    ///
     /// Non-finite observations are skipped for fitting/decoding; output rows at those
     /// indices receive state `0` and uniform probabilities.
-    pub fn hmm_fit(self, name: &str, n_states: usize, max_iter: usize) -> LazyFrame {
+    pub fn hmm_fit(self, name: &str, n_states: usize, max_iter: usize, fit_lambdas: bool) -> LazyFrame {
         let name_str = name.to_string();
         self.0.clone().with_columns([col(&name_str)
             .map(
                 move |s| {
                     use quantwave_core::regimes::gaussian_hmm::{
-                        fit_em, GaussianHmmFitConfig,
+                        fit_em, EmissionFamily, GaussianHmmFitConfig,
                     };
 
                     let ca = s.f64()?;
@@ -3653,6 +3655,12 @@ impl<'a> QuantWaveNamespace<'a> {
                         let config = GaussianHmmFitConfig {
                             n_states: m,
                             max_iter: max_iter.max(1),
+                            emission_family: if fit_lambdas {
+                                EmissionFamily::Lambda
+                            } else {
+                                EmissionFamily::Gaussian
+                            },
+                            fit_lambdas,
                             ..Default::default()
                         };
                         if let Ok(fit) = fit_em(&obs, &config) {
@@ -4659,7 +4667,7 @@ mod tests {
             -0.014, 0.006, -0.01, 0.013, -0.012, 0.005, -0.007, 0.01, -0.016,
         ];
         let df = df!["returns" => obs.as_slice()]?;
-        let out = df.lazy().ta().hmm_fit("returns", 2, 40).collect()?;
+        let out = df.lazy().ta().hmm_fit("returns", 2, 40, false).collect()?;
         let data = out.column("hmm_fit_data")?.struct_()?;
         let state_col = data.field_by_name("hmm_fit_state".into())?;
         let prob_col = data.field_by_name("hmm_fit_smooth_probs".into())?;

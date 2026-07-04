@@ -1,14 +1,17 @@
-//! Gaussian-emission Hidden Markov Model — batch fit, decode, and streaming filter.
+//! Gaussian / lambda-emission Hidden Markov Model — batch fit, decode, and streaming filter.
 //!
-//! Generic HMM for univariate observation sequences (e.g. log-returns). Aligned with
-//! ldhmm at λ=1 (normal emissions) and Zucchini, MacDonald, Langrock (2016).
+//! Generic HMM for univariate observation sequences (e.g. log-returns). Gaussian mode
+//! aligns with ldhmm at λ=1; lambda (ecld) emissions match ldhmm for leptokurtic returns.
 //!
 //! Sources:
 //! - Hamilton (1989) — regime switching
 //! - Zucchini et al. (2016) — forward-backward, EM, Viterbi
 //! - references/ldhmm/ldhmm-cran-reference.pdf — mllk, log_forward, viterbi
-//! - quantwave-core/tests/gold_standard/hmm_gaussian_2state.json — generic fixture
+//! - references/ldhmm/ssrn-2979516.pdf — lambda emissions
+//! - quantwave-core/tests/gold_standard/hmm_gaussian_2state.json — generic Gaussian fixture
+//! - quantwave-core/tests/gold_standard/hmm_lambda_2state.json — generic lambda fixture
 
+use super::ecld::ecld_pdf;
 use crate::traits::Next;
 use serde::{Deserialize, Serialize};
 
@@ -26,6 +29,22 @@ pub struct GaussianHmmParams {
     pub means: Vec<f64>,
     /// Emission standard deviation σ per state (must be > 0).
     pub stds: Vec<f64>,
+    /// Tail parameter λ per state (λ=1 → Gaussian; λ>1 → heavier tails).
+    #[serde(default = "default_lambdas_for_states")]
+    pub lambdas: Vec<f64>,
+}
+
+fn default_lambdas_for_states() -> Vec<f64> {
+    Vec::new()
+}
+
+/// Emission density family for HMM fitting and decoding.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum EmissionFamily {
+    #[default]
+    Gaussian,
+    /// Symmetric lambda (ecld / generalized normal) per state.
+    Lambda,
 }
 
 /// Configuration for EM fitting.
@@ -34,6 +53,9 @@ pub struct GaussianHmmFitConfig {
     pub n_states: usize,
     pub max_iter: usize,
     pub tol: f64,
+    pub emission_family: EmissionFamily,
+    /// When true and `emission_family == Lambda`, per-state λ is updated in the M-step.
+    pub fit_lambdas: bool,
 }
 
 impl Default for GaussianHmmFitConfig {
@@ -42,6 +64,8 @@ impl Default for GaussianHmmFitConfig {
             n_states: 2,
             max_iter: 100,
             tol: 1e-6,
+            emission_family: EmissionFamily::Gaussian,
+            fit_lambdas: false,
         }
     }
 }
@@ -95,12 +119,25 @@ impl GaussianHmmParams {
         stds: Vec<f64>,
     ) -> Result<Self, GaussianHmmError> {
         let n_states = delta.len();
+        let lambdas = vec![1.0; n_states];
+        Self::new_with_lambdas(delta, gamma, means, stds, lambdas)
+    }
+
+    pub fn new_with_lambdas(
+        delta: Vec<f64>,
+        gamma: Vec<Vec<f64>>,
+        means: Vec<f64>,
+        stds: Vec<f64>,
+        lambdas: Vec<f64>,
+    ) -> Result<Self, GaussianHmmError> {
+        let n_states = delta.len();
         let params = Self {
             n_states,
             delta,
             gamma,
             means,
             stds,
+            lambdas,
         };
         params.validate()?;
         Ok(params)
@@ -115,10 +152,22 @@ impl GaussianHmmParams {
             || self.means.len() != m
             || self.stds.len() != m
             || self.delta.len() != m
+            || (self.lambdas.len() != m && !self.lambdas.is_empty())
         {
             return Err(GaussianHmmError::InvalidParams(
                 "parameter vector lengths must match n_states".into(),
             ));
+        }
+        if self.lambdas.is_empty() {
+            // Backward-compatible deserialization: default λ=1 per state.
+        } else {
+            for (i, &lam) in self.lambdas.iter().enumerate() {
+                if !lam.is_finite() || lam <= 0.0 {
+                    return Err(GaussianHmmError::InvalidParams(format!(
+                        "lambdas[{i}] must be positive and finite"
+                    )));
+                }
+            }
         }
         let delta_sum: f64 = self.delta.iter().sum();
         if (delta_sum - 1.0).abs() > 1e-8 {
@@ -149,8 +198,12 @@ impl GaussianHmmParams {
         Ok(())
     }
 
+    fn lambda_at(&self, state: usize) -> f64 {
+        self.lambdas.get(state).copied().unwrap_or(1.0)
+    }
+
     pub fn emission_pdf(&self, state: usize, x: f64) -> f64 {
-        gaussian_pdf(x, self.means[state], self.stds[state])
+        ecld_pdf(x, self.means[state], self.stds[state], self.lambda_at(state))
     }
 
     pub fn emission_log_pdf(&self, state: usize, x: f64) -> f64 {
@@ -182,21 +235,41 @@ impl GaussianHmmParams {
     }
 
     pub fn aic(&self, observations: &[f64]) -> Result<f64, GaussianHmmError> {
-        let k = self.free_parameter_count() as f64;
+        self.aic_with_options(observations, false)
+    }
+
+    pub fn bic(&self, observations: &[f64]) -> Result<f64, GaussianHmmError> {
+        self.bic_with_options(observations, false)
+    }
+
+    pub fn aic_with_options(
+        &self,
+        observations: &[f64],
+        fit_lambdas: bool,
+    ) -> Result<f64, GaussianHmmError> {
+        let k = self.free_parameter_count(fit_lambdas) as f64;
         let ll = -self.mllk(observations)?;
         Ok(2.0 * k - 2.0 * ll)
     }
 
-    pub fn bic(&self, observations: &[f64]) -> Result<f64, GaussianHmmError> {
+    pub fn bic_with_options(
+        &self,
+        observations: &[f64],
+        fit_lambdas: bool,
+    ) -> Result<f64, GaussianHmmError> {
         let n = observations.len() as f64;
-        let k = self.free_parameter_count() as f64;
+        let k = self.free_parameter_count(fit_lambdas) as f64;
         let ll = -self.mllk(observations)?;
         Ok(k * n.ln() - 2.0 * ll)
     }
 
-    fn free_parameter_count(&self) -> usize {
+    fn free_parameter_count(&self, fit_lambdas: bool) -> usize {
         let m = self.n_states;
-        (m * m - 1) + (m - 1) + 2 * m
+        let mut k = (m * m - 1) + (m - 1) + 2 * m;
+        if fit_lambdas {
+            k += m;
+        }
+        k
     }
 
     pub fn filter(&self) -> GaussianHmmFilter {
@@ -279,20 +352,21 @@ pub fn fit_em(
         });
     }
     let m = config.n_states;
-    let mut params = init_params_em(observations, m)?;
+    let mut params = init_params_em(observations, m, config)?;
     let mut prev_mllk = f64::INFINITY;
     let mut iterations = 0usize;
+    let fit_lambdas = config.emission_family == EmissionFamily::Lambda && config.fit_lambdas;
 
     for iter in 0..config.max_iter {
         iterations = iter + 1;
         let (gamma_t, xi_t) = e_step(&params, observations)?;
-        params = m_step(&params, observations, &gamma_t, &xi_t)?;
+        params = m_step(&params, observations, &gamma_t, &xi_t, config)?;
         let mllk = params.mllk(observations)?;
         if (prev_mllk - mllk).abs() < config.tol {
             let ll = -mllk;
             return Ok(GaussianHmmFitResult {
-                aic: params.aic(observations)?,
-                bic: params.bic(observations)?,
+                aic: params.aic_with_options(observations, fit_lambdas)?,
+                bic: params.bic_with_options(observations, fit_lambdas)?,
                 iterations,
                 log_likelihood: ll,
                 params,
@@ -304,18 +378,11 @@ pub fn fit_em(
     let mllk = params.mllk(observations)?;
     Ok(GaussianHmmFitResult {
         log_likelihood: -mllk,
-        aic: params.aic(observations)?,
-        bic: params.bic(observations)?,
+        aic: params.aic_with_options(observations, fit_lambdas)?,
+        bic: params.bic_with_options(observations, fit_lambdas)?,
         iterations,
         params,
     })
-}
-
-fn gaussian_pdf(x: f64, mu: f64, sigma: f64) -> f64 {
-    let variance = sigma * sigma;
-    let denom = (2.0 * std::f64::consts::PI * variance).sqrt();
-    let exponent = -((x - mu).powi(2)) / (2.0 * variance);
-    exponent.exp() / denom
 }
 
 struct ScaledForward {
@@ -442,7 +509,11 @@ fn viterbi_decode(params: &GaussianHmmParams, x: &[f64]) -> Vec<usize> {
     path
 }
 
-fn init_params_em(x: &[f64], m: usize) -> Result<GaussianHmmParams, GaussianHmmError> {
+fn init_params_em(
+    x: &[f64],
+    m: usize,
+    config: &GaussianHmmFitConfig,
+) -> Result<GaussianHmmParams, GaussianHmmError> {
     let mean_all: f64 = x.iter().sum::<f64>() / x.len() as f64;
     let var_all: f64 = x.iter().map(|v| (v - mean_all).powi(2)).sum::<f64>() / x.len() as f64;
     let base_std = var_all.sqrt().max(1e-4);
@@ -465,7 +536,11 @@ fn init_params_em(x: &[f64], m: usize) -> Result<GaussianHmmParams, GaussianHmmE
     }
 
     let delta = vec![1.0 / m as f64; m];
-    GaussianHmmParams::new(delta, gamma, means, stds)
+    let lambdas = match config.emission_family {
+        EmissionFamily::Gaussian => vec![1.0; m],
+        EmissionFamily::Lambda => vec![1.0; m],
+    };
+    GaussianHmmParams::new_with_lambdas(delta, gamma, means, stds, lambdas)
 }
 
 fn e_step(
@@ -500,10 +575,11 @@ fn e_step(
 }
 
 fn m_step(
-    _prev: &GaussianHmmParams,
+    prev: &GaussianHmmParams,
     x: &[f64],
     gamma_t: &[Vec<f64>],
     xi: &[Vec<Vec<f64>>],
+    config: &GaussianHmmFitConfig,
 ) -> Result<GaussianHmmParams, GaussianHmmError> {
     let m = gamma_t.len();
     let n = x.len();
@@ -543,6 +619,11 @@ fn m_step(
 
     let mut means = vec![0.0; m];
     let mut stds = vec![0.0; m];
+    let mut lambdas = prev.lambdas.clone();
+    if lambdas.len() != m {
+        lambdas = vec![1.0; m];
+    }
+
     for j in 0..m {
         let mut w_sum = 0.0;
         let mut mean_acc = 0.0;
@@ -563,9 +644,108 @@ fn m_step(
         } else {
             1e-3
         };
+
+        if config.emission_family == EmissionFamily::Lambda && config.fit_lambdas {
+            // Alternate λ / σ profile updates (ldhmm-style numerical MLE for ecld scale).
+            let mut sigma = stds[j];
+            let mut lambda = lambdas[j];
+            for _ in 0..3 {
+                lambda = profile_lambda_for_state(x, &gamma_t[j], means[j], sigma, lambda);
+                sigma = profile_sigma_for_state(x, &gamma_t[j], means[j], lambda, sigma);
+            }
+            lambdas[j] = lambda;
+            stds[j] = sigma;
+        }
     }
 
-    GaussianHmmParams::new(delta, gamma, means, stds)
+    GaussianHmmParams::new_with_lambdas(delta, gamma, means, stds, lambdas)
+}
+
+fn weighted_neg_log_likelihood(
+    x: &[f64],
+    weights: &[f64],
+    mu: f64,
+    sigma: f64,
+    lambda: f64,
+) -> f64 {
+    if sigma <= 1e-8 || lambda < 1.0 || lambda > 8.0 {
+        return f64::INFINITY;
+    }
+    let mut nll = 0.0;
+    for (&obs, &w) in x.iter().zip(weights.iter()) {
+        if w > 0.0 {
+            let p = ecld_pdf(obs, mu, sigma, lambda);
+            if p > 0.0 {
+                nll -= w * p.ln();
+            } else {
+                return f64::INFINITY;
+            }
+        }
+    }
+    nll
+}
+
+/// Weighted 1-D profile likelihood for λ (golden-section search on log λ).
+fn profile_lambda_for_state(
+    x: &[f64],
+    weights: &[f64],
+    mu: f64,
+    sigma: f64,
+    _initial: f64,
+) -> f64 {
+    let objective = |log_lam: f64| weighted_neg_log_likelihood(x, weights, mu, sigma, log_lam.exp());
+    golden_section_minimize_log(objective, 1.0f64.ln(), 5.0f64.ln())
+        .exp()
+        .clamp(1.0, 5.0)
+}
+
+fn profile_sigma_for_state(
+    x: &[f64],
+    weights: &[f64],
+    mu: f64,
+    lambda: f64,
+    initial: f64,
+) -> f64 {
+    let lo = 1e-5f64.ln();
+    let hi = (initial.max(1e-4) * 4.0).max(0.05).ln();
+    let objective =
+        |log_sigma: f64| weighted_neg_log_likelihood(x, weights, mu, log_sigma.exp(), lambda);
+    golden_section_minimize_log(objective, lo, hi).exp().max(1e-6)
+}
+
+fn golden_section_minimize_log<F>(f: F, mut a: f64, mut b: f64) -> f64
+where
+    F: Fn(f64) -> f64,
+{
+    const PHI: f64 = 1.618_033_988_749_895;
+    let tol = 1e-4;
+    let mut c = b - (b - a) / PHI;
+    let mut d = a + (b - a) / PHI;
+    let mut fc = f(c);
+    let mut fd = f(d);
+    for _ in 0..80 {
+        if (b - a).abs() < tol {
+            break;
+        }
+        if fc < fd {
+            b = d;
+            d = c;
+            fd = fc;
+            c = b - (b - a) / PHI;
+            fc = f(c);
+        } else {
+            a = c;
+            c = d;
+            fc = fd;
+            d = a + (b - a) / PHI;
+            fd = f(d);
+        }
+    }
+    if fc < fd {
+        c
+    } else {
+        d
+    }
 }
 
 // --- IndicatorMetadata (quantwave-i9dn) ---
@@ -575,12 +755,23 @@ use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 pub const GAUSSIAN_HMM_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "gaussian_hmm",
     description:
-        "Fittable Gaussian-emission Hidden Markov Model for generic univariate series (e.g. log-returns).",
-    usage: "Fit with EM on an observation vector, decode smoothed state probabilities and a Viterbi path, \
-             or stream causal forward-filter probabilities for live regime labeling.",
-    keywords: &["regime", "hmm", "gaussian", "em", "mle", "viterbi", "ldhmm"],
-    ehlers_summary: "Homogeneous first-order HMM with Gaussian state emissions and Baum–Welch EM fitting. \
-                     Aligned with ldhmm at λ=1 and Zucchini, MacDonald, Langrock (2016) forward-backward decoding.",
+        "Fittable HMM with Gaussian or lambda (ecld) emissions for generic univariate series (e.g. log-returns).",
+    usage: "Fit with EM on an observation vector (Gaussian or lambda emission family), decode smoothed state \
+             probabilities and a Viterbi path, or stream causal forward-filter probabilities for live regime labeling.",
+    keywords: &[
+        "regime",
+        "hmm",
+        "gaussian",
+        "lambda",
+        "ecld",
+        "em",
+        "mle",
+        "viterbi",
+        "ldhmm",
+    ],
+    ehlers_summary: "Homogeneous first-order HMM with Gaussian or symmetric lambda (ecld) state emissions and \
+                     Baum–Welch EM fitting. Gaussian mode aligns with ldhmm at λ=1; lambda mode matches ldhmm \
+                     leptokurtic daily-return modeling (SSRN 2979516).",
     params: &[
         ParamDef {
             name: "n_states",
@@ -597,9 +788,49 @@ pub const GAUSSIAN_HMM_METADATA: IndicatorMetadata = IndicatorMetadata {
             default: "1e-6",
             description: "EM convergence tolerance on MLLK improvement.",
         },
+        ParamDef {
+            name: "emission_family",
+            default: "Gaussian",
+            description: "Emission density: Gaussian (λ=1) or Lambda (ecld per-state λ).",
+        },
+        ParamDef {
+            name: "fit_lambdas",
+            default: "false",
+            description: "When emission_family=Lambda, estimate per-state λ in the M-step.",
+        },
     ],
     formula_source: "references/ldhmm/ldhmm-cran-reference.pdf; references/ldhmm/ssrn-2979516.pdf; Hamilton (1989); Zucchini et al. (2016)",
     formula_latex: "",
     gold_standard_file: "hmm_gaussian_2state.json",
+    category: "Regime",
+};
+
+pub const LAMBDA_HMM_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "lambda_hmm",
+    description:
+        "Lambda-distribution (ecld) emission HMM for leptokurtic returns — ldhmm parity mode.",
+    usage: "Same API as gaussian_hmm with emission_family=Lambda; per-state (μ, σ, λ) and optional λ MLE.",
+    keywords: &["regime", "hmm", "lambda", "ecld", "ldhmm", "leptokurtic"],
+    ehlers_summary: "Symmetric exponential-power emissions (β=2/λ) per ldhmm ecld.*; λ=1 reduces to Gaussian.",
+    params: &[
+        ParamDef {
+            name: "n_states",
+            default: "2",
+            description: "Number of latent states.",
+        },
+        ParamDef {
+            name: "max_iter",
+            default: "100",
+            description: "Maximum EM iterations.",
+        },
+        ParamDef {
+            name: "fit_lambdas",
+            default: "true",
+            description: "Estimate per-state λ in the M-step.",
+        },
+    ],
+    formula_source: "references/ldhmm/ssrn-2979516.pdf; references/ldhmm/ldhmm-cran-reference.pdf",
+    formula_latex: "",
+    gold_standard_file: "hmm_lambda_2state.json",
     category: "Regime",
 };
