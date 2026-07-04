@@ -239,4 +239,5 @@
         - [hmm_forecast](native/hmm_forecast.md)
         - [lambda_hmm](native/lambda_hmm.md)
 - [Regime Detection](regimes/index.md)
+    - [ldhmm-Style HMM Workflow](regimes/ldhmm_workflow.md)
 - [Ehlers DSP Guide](ehlers/index.md)

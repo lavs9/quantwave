@@ -9,6 +9,7 @@ Every page follows [Documentation Standards](../../DOCUMENTATION_STANDARDS.md).
 - [Indicator Gallery](../gallery.md) — curated starting points
 - [Ehlers DSP Suite](../ehlers/index.md)
 - [Regime Detection](../regimes/index.md)
+- [ldhmm-Style HMM Workflow](../regimes/ldhmm_workflow.md)
 - [ML Features](../../ml_features.md)
 - [Price Action notebook](../../examples/notebooks/pa_flag_breakout_strategy.md)
 

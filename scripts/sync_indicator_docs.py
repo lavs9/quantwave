@@ -125,6 +125,7 @@ def build_summary(by_category: dict[str, list[tuple[str, str, str]]]) -> str:
         for name, stem, _slug in sorted(items, key=lambda x: x[0].lower()):
             lines.append(f"        - [{name}](native/{stem}.md)")
     lines.append("- [Regime Detection](regimes/index.md)")
+    lines.append("    - [ldhmm-Style HMM Workflow](regimes/ldhmm_workflow.md)")
     lines.append("- [Ehlers DSP Guide](ehlers/index.md)")
     return "\n".join(lines) + "\n"
 
@@ -143,6 +144,7 @@ def build_catalog(by_category: dict[str, list[tuple[str, str, str]]], total: int
         "- [Indicator Gallery](../gallery.md) — curated starting points",
         "- [Ehlers DSP Suite](../ehlers/index.md)",
         "- [Regime Detection](../regimes/index.md)",
+        "- [ldhmm-Style HMM Workflow](../regimes/ldhmm_workflow.md)",
         "- [ML Features](../../ml_features.md)",
         "- [Price Action notebook](../../examples/notebooks/pa_flag_breakout_strategy.md)",
         "",

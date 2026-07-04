@@ -4,6 +4,8 @@ Regime detection identifies **market states** (bull/bear, volatility clusters, s
 
 All algorithms live in `quantwave-core/src/regimes/` and expose batch (Polars) and streaming (`Next<T>`) paths with identical semantics.
 
+**Fittable HMM (ldhmm parity):** see the dedicated [ldhmm-Style HMM Workflow](ldhmm_workflow.md) for fit → decode → forecast → strategy integration.
+
 ---
 
 ## Algorithm overview
@@ -121,9 +123,11 @@ Used in [ML Features → Backtest E2E](../../../examples/notebooks/ml_feature_ba
 
 ## 2b. Fittable HMM (ldhmm parity)
 
-Research-grade HMM with Baum–Welch EM, lambda (ecld) emissions for leptokurtic returns, and forecasting/diagnostics aligned with the [ldhmm](https://cran.r-project.org/package=ldhmm) R package (SSRN 2979516).
+Baum–Welch EM, lambda (ecld) emissions, forward–backward decode, mixture vol forecasts, and pseudo-residual diagnostics — aligned with [ldhmm](https://cran.r-project.org/package=ldhmm) (SSRN 2979516).
 
-### Polars (batch fit + decode)
+**Full workflow:** [ldhmm-Style HMM Workflow](ldhmm_workflow.md) (fit → decode → live filter → diagnostics → strategy).
+
+Quick batch example:
 
 ```python
 df = (
@@ -131,25 +135,11 @@ df = (
     .with_columns(pl.col("close").pct_change().alias("returns"))
     .ta()
     .hmm_fit("returns", n_states=2, max_iter=100, fit_lambdas=True)
-    .hmm_forecast_vol("returns", n_states=2, max_iter=100, fit_lambdas=True, horizon=1)
-    .hmm_pseudo_residuals("returns", n_states=2, max_iter=100, fit_lambdas=True)
     .collect()
 )
-# hmm_fit_data: Viterbi state + smoothed probs
-# hmm_forecast_vol: mixture vol h steps ahead from each bar's filter
 ```
 
-### Python (fit + diagnostics)
-
-```python
-import quantwave as qw
-
-fit = qw.fit_gaussian_hmm(returns, n_states=2, max_iter=100, fit_lambdas=True)
-diag = qw.gaussian_hmm_diagnostics(fit.params, returns)
-print(diag.forecast_vol_h1, diag.forecast_state_h1)
-```
-
-See also: [gaussian_hmm](../native/gaussian_hmm/), [lambda_hmm](../native/lambda_hmm/), [hmm_forecast](../native/hmm_forecast/).
+API reference: [gaussian_hmm](../native/gaussian_hmm.md), [lambda_hmm](../native/lambda_hmm.md), [hmm_forecast](../native/hmm_forecast.md).
 
 ---
 
@@ -236,6 +226,7 @@ Core tests: `cargo nextest run -p quantwave-core -- regimes`
 
 ## Related docs
 
+- [ldhmm-Style HMM Workflow](ldhmm_workflow.md)
 - [ML Features guide](../../ml_features.md)
 - [Indicator Gallery](../gallery.md) — Regime section
 - [PA confluence notebook](../../../examples/notebooks/pa_foundation_strategy.py)
