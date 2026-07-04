@@ -3614,6 +3614,89 @@ impl<'a> QuantWaveNamespace<'a> {
             .alias("hmm_regime")])
     }
 
+    /// Fit a generic Gaussian HMM (EM) on a full observation column and decode regimes.
+    ///
+    /// Returns struct column `hmm_fit_data` with:
+    /// - `hmm_fit_state` (UInt32): global Viterbi state index (0-based)
+    /// - `hmm_fit_smooth_probs` (List[Float64]): smoothed state probabilities per bar
+    ///
+    /// Non-finite observations are skipped for fitting/decoding; output rows at those
+    /// indices receive state `0` and uniform probabilities.
+    pub fn hmm_fit(self, name: &str, n_states: usize, max_iter: usize) -> LazyFrame {
+        let name_str = name.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    use quantwave_core::regimes::gaussian_hmm::{
+                        fit_em, GaussianHmmFitConfig,
+                    };
+
+                    let ca = s.f64()?;
+                    let n = s.len();
+                    let mut obs = Vec::new();
+                    let mut index_map = Vec::new();
+                    for i in 0..n {
+                        if let Some(v) = ca.get(i) {
+                            if v.is_finite() {
+                                obs.push(v);
+                                index_map.push(i);
+                            }
+                        }
+                    }
+
+                    let m = n_states.max(2);
+                    let uniform = 1.0 / m as f64;
+                    let mut states = vec![0u32; n];
+                    let mut probs_rows = vec![vec![uniform; m]; n];
+
+                    if obs.len() > m {
+                        let config = GaussianHmmFitConfig {
+                            n_states: m,
+                            max_iter: max_iter.max(1),
+                            ..Default::default()
+                        };
+                        if let Ok(fit) = fit_em(&obs, &config) {
+                            if let Ok(decode) = fit.params.decode(&obs) {
+                                for (j, &row_idx) in index_map.iter().enumerate() {
+                                    states[row_idx] = decode.viterbi_path[j] as u32;
+                                    for st in 0..m {
+                                        probs_rows[row_idx][st] = decode.smooth_probs[st][j];
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    let mut prob_builder = ListPrimitiveChunkedBuilder::<Float64Type>::new(
+                        "hmm_fit_smooth_probs".into(),
+                        n,
+                        n * m,
+                        DataType::Float64,
+                    );
+                    for row in &probs_rows {
+                        prob_builder.append_slice(row);
+                    }
+
+                    let state_series = Series::new("hmm_fit_state".into(), states);
+                    let prob_series = prob_builder.finish().into_series();
+                    let out = StructChunked::from_series(
+                        "hmm_fit_data".into(),
+                        n,
+                        [state_series, prob_series].iter(),
+                    )?;
+                    Ok(Some(Column::from(out.into_series())))
+                },
+                GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("hmm_fit_state".into(), DataType::UInt32),
+                    Field::new(
+                        "hmm_fit_smooth_probs".into(),
+                        DataType::List(Box::new(DataType::Float64)),
+                    ),
+                ])),
+            )
+            .alias("hmm_fit_data")])
+    }
+
     pub fn pelt(self, name: &str, penalty: f64, min_dist: usize) -> LazyFrame {
         let name_str = name.to_string();
         self.0.clone().with_columns([col(&name_str)
@@ -4566,6 +4649,25 @@ mod tests {
         let out = df.lazy().ta().exp_dev_bands("p", 10, 2.0, true).collect()?;
         let data = out.column("exp_dev_bands_data")?.struct_()?;
         assert!(data.field_by_name("upper".into())?.f64()?.get(4).is_some());
+        Ok(())
+    }
+
+    #[test]
+    fn test_polars_hmm_fit() -> PolarsResult<()> {
+        let obs: Vec<f64> = vec![
+            0.01, -0.008, 0.012, -0.015, 0.009, -0.011, 0.007, -0.013, 0.011, -0.009, 0.008,
+            -0.014, 0.006, -0.01, 0.013, -0.012, 0.005, -0.007, 0.01, -0.016,
+        ];
+        let df = df!["returns" => obs.as_slice()]?;
+        let out = df.lazy().ta().hmm_fit("returns", 2, 40).collect()?;
+        let data = out.column("hmm_fit_data")?.struct_()?;
+        let state_col = data.field_by_name("hmm_fit_state".into())?;
+        let prob_col = data.field_by_name("hmm_fit_smooth_probs".into())?;
+        let states = state_col.u32()?;
+        let probs = prob_col.list()?;
+        assert_eq!(states.len(), obs.len());
+        assert_eq!(probs.len(), obs.len());
+        assert!(states.get(0).is_some());
         Ok(())
     }
 

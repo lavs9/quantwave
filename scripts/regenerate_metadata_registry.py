@@ -8,41 +8,49 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 INDICATORS_DIR = ROOT / "quantwave-core" / "src" / "indicators"
+REGIMES_DIR = ROOT / "quantwave-core" / "src" / "regimes"
 OUT = INDICATORS_DIR / "metadata_registry.rs"
+SCAN_DIRS = (INDICATORS_DIR, REGIMES_DIR)
 
 CONST_RE = re.compile(r"pub const (\w+_METADATA): IndicatorMetadata")
 
 
 def module_path(rust_file: Path) -> str:
-    rel = rust_file.relative_to(INDICATORS_DIR)
+    if rust_file.is_relative_to(INDICATORS_DIR):
+        base = "crate::indicators::"
+        rel = rust_file.relative_to(INDICATORS_DIR)
+    else:
+        base = "crate::regimes::"
+        rel = rust_file.relative_to(REGIMES_DIR)
     parts = list(rel.parts)
     if parts[-1] == "mod.rs":
         parts = parts[:-1]
     else:
         parts[-1] = parts[-1].removesuffix(".rs")
-    return "crate::indicators::" + "::".join(parts)
+    return base + "::".join(parts)
 
 
 def collect_entries() -> list[tuple[str, str, str, str]]:
     entries: list[tuple[str, str, str, str]] = []
-    for path in sorted(INDICATORS_DIR.rglob("*.rs")):
-        if path.name == "metadata_registry.rs":
-            continue
-        text = path.read_text(encoding="utf-8")
-        source_stem = path.stem
-        # Extract default struct for the file
-        file_struct_m = re.search(r"pub struct (\w+)", text)
-        file_struct = file_struct_m.group(1) if file_struct_m else ""
-        
-        for const_name in CONST_RE.findall(text):
-            struct_name = const_name.removesuffix("_METADATA")
-            potential_struct = "".join(x.capitalize() for x in struct_name.lower().split('_'))
-            if re.search(rf"pub struct {potential_struct}", text, re.IGNORECASE):
-                struct_name = potential_struct
-            else:
-                struct_name = file_struct
-            
-            entries.append((module_path(path), const_name, struct_name, source_stem))
+    for scan_dir in SCAN_DIRS:
+        for path in sorted(scan_dir.rglob("*.rs")):
+            if path.name == "metadata_registry.rs":
+                continue
+            text = path.read_text(encoding="utf-8")
+            source_stem = path.stem
+            # Extract default struct for the file
+            file_struct_m = re.search(r"pub struct (\w+)", text)
+            file_struct = file_struct_m.group(1) if file_struct_m else ""
+
+            for const_name in CONST_RE.findall(text):
+                struct_name = const_name.removesuffix("_METADATA")
+                potential_struct = "".join(x.capitalize() for x in struct_name.lower().split('_'))
+                if re.search(rf"pub struct {potential_struct}", text, re.IGNORECASE):
+                    struct_name = potential_struct
+                else:
+                    struct_name = file_struct
+
+                entries.append((module_path(path), const_name, struct_name, source_stem))
 
     # stable dedupe by const name
     seen: set[str] = set()

@@ -107,6 +107,10 @@ use quantwave_core::features::instantaneous_trendline::InstantaneousTrendlineFea
 use quantwave_core::features::trendflex::TrendflexFeatureExtractor as CoreTrendflexFE;
 use quantwave_core::features::regime::regime_to_features as core_regime_to_features;
 use quantwave_core::features::griffiths_dominant_cycle::GriffithsDominantCycleFeatureExtractor as CoreGriffithsDCFE;
+use quantwave_core::regimes::gaussian_hmm::{
+    fit_em as core_fit_em, GaussianHmmFilter as CoreGaussianHmmFilter,
+    GaussianHmmFitConfig as CoreGaussianHmmFitConfig, GaussianHmmParams as CoreGaussianHmmParams,
+};
 use quantwave_core::regimes::hmm::HMM as CoreHMM;
 use quantwave_core::regimes::MarketRegime;
 use quantwave_core::options_india;
@@ -1049,6 +1053,115 @@ impl BullBearHMM {
             MarketRegime::Steady => 0,
             MarketRegime::Cluster(c) => 4 + (c as i32),
         }
+    }
+}
+
+#[derive(uniffi::Record)]
+pub struct GaussianHmmParamsPy {
+    pub n_states: u32,
+    pub delta: Vec<f64>,
+    pub gamma_flat: Vec<f64>,
+    pub means: Vec<f64>,
+    pub stds: Vec<f64>,
+}
+
+#[derive(uniffi::Record)]
+pub struct GaussianHmmFitResultPy {
+    pub params: GaussianHmmParamsPy,
+    pub log_likelihood: f64,
+    pub aic: f64,
+    pub bic: f64,
+    pub iterations: u32,
+    pub viterbi_path: Vec<u32>,
+    pub smooth_probs_flat: Vec<f64>,
+    pub n_observations: u32,
+}
+
+fn gaussian_hmm_params_to_py(p: &CoreGaussianHmmParams) -> GaussianHmmParamsPy {
+    let m = p.n_states;
+    let mut gamma_flat = Vec::with_capacity(m * m);
+    for row in &p.gamma {
+        gamma_flat.extend_from_slice(row);
+    }
+    GaussianHmmParamsPy {
+        n_states: m as u32,
+        delta: p.delta.clone(),
+        gamma_flat,
+        means: p.means.clone(),
+        stds: p.stds.clone(),
+    }
+}
+
+#[uniffi::export]
+pub fn fit_gaussian_hmm(
+    observations: Vec<f64>,
+    n_states: u32,
+    max_iter: u32,
+) -> GaussianHmmFitResultPy {
+    let obs: Vec<f64> = observations.into_iter().filter(|v| v.is_finite()).collect();
+    let m = n_states.max(2) as usize;
+    let config = CoreGaussianHmmFitConfig {
+        n_states: m,
+        max_iter: max_iter.max(1) as usize,
+        ..Default::default()
+    };
+    let fit = core_fit_em(&obs, &config).expect("gaussian HMM EM fit failed");
+    let decode = fit.params.decode(&obs).expect("gaussian HMM decode failed");
+    let t_len = obs.len();
+    let mut smooth_flat = Vec::with_capacity(m * t_len);
+    for t in 0..t_len {
+        for st in 0..m {
+            smooth_flat.push(decode.smooth_probs[st][t]);
+        }
+    }
+    GaussianHmmFitResultPy {
+        params: gaussian_hmm_params_to_py(&fit.params),
+        log_likelihood: fit.log_likelihood,
+        aic: fit.aic,
+        bic: fit.bic,
+        iterations: fit.iterations as u32,
+        viterbi_path: decode.viterbi_path.iter().map(|&s| s as u32).collect(),
+        smooth_probs_flat: smooth_flat,
+        n_observations: t_len as u32,
+    }
+}
+
+#[derive(uniffi::Object)]
+pub struct GaussianHmmFilterPy {
+    inner: Mutex<CoreGaussianHmmFilter>,
+}
+#[uniffi::export]
+impl GaussianHmmFilterPy {
+    #[uniffi::constructor]
+    pub fn from_params(params: GaussianHmmParamsPy) -> Self {
+        let m = params.n_states as usize;
+        let mut gamma = vec![vec![0.0; m]; m];
+        for i in 0..m {
+            for j in 0..m {
+                gamma[i][j] = params.gamma_flat[i * m + j];
+            }
+        }
+        let core_params = CoreGaussianHmmParams::new(
+            params.delta,
+            gamma,
+            params.means,
+            params.stds,
+        )
+        .expect("invalid gaussian HMM params");
+        Self {
+            inner: Mutex::new(core_params.filter()),
+        }
+    }
+
+    pub fn next(&self, observation: f64) -> Vec<f64> {
+        if !observation.is_finite() {
+            return self.state_probabilities();
+        }
+        self.inner.lock().unwrap().next(observation)
+    }
+
+    pub fn state_probabilities(&self) -> Vec<f64> {
+        self.inner.lock().unwrap().state_probabilities()
     }
 }
 

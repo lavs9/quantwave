@@ -221,6 +221,7 @@ use crate::indicators::vpn::VPN_METADATA;
 use crate::indicators::vwap::VWAP_METADATA;
 use crate::indicators::wavetrend::WAVETREND_METADATA;
 use crate::indicators::zero_lag::ZERO_LAG_METADATA;
+use crate::regimes::gaussian_hmm::GAUSSIAN_HMM_METADATA;
 
 /// Slug + metadata pair for codegen and discovery.
 #[derive(Debug, Clone, Copy)]
@@ -346,6 +347,7 @@ pub static ALL_REGISTERED: &[RegisteredMetadata] = &[
     RegisteredMetadata { slug: "frama", meta: &FRAMA_METADATA, struct_name: "Frama", source_file: "frama" },
     RegisteredMetadata { slug: "gap_momentum", meta: &GAP_MOMENTUM_METADATA, struct_name: "GapMomentum", source_file: "gap_momentum" },
     RegisteredMetadata { slug: "gaussian_filter", meta: &GAUSSIAN_FILTER_METADATA, struct_name: "GaussianFilter", source_file: "gaussian" },
+    RegisteredMetadata { slug: "gaussian_hmm", meta: &GAUSSIAN_HMM_METADATA, struct_name: "GaussianHmm", source_file: "gaussian_hmm" },
     RegisteredMetadata { slug: "generalized_laguerre", meta: &GENERALIZED_LAGUERRE_METADATA, struct_name: "GeneralizedLaguerre", source_file: "generalized_laguerre" },
     RegisteredMetadata { slug: "geometric_patterns", meta: &GEOMETRIC_PATTERNS_METADATA, struct_name: "GeometricPatterns", source_file: "geometric_patterns" },
     RegisteredMetadata { slug: "griffiths_dominant_cycle", meta: &GRIFFITHS_DOMINANT_CYCLE_METADATA, struct_name: "GriffithsDominantCycle", source_file: "griffiths_dominant_cycle" },
@@ -568,6 +570,7 @@ pub static ALL_INDICATOR_METADATA: &[&IndicatorMetadata] = &[
     &FRAMA_METADATA,
     &GAP_MOMENTUM_METADATA,
     &GAUSSIAN_FILTER_METADATA,
+    &GAUSSIAN_HMM_METADATA,
     &GENERALIZED_LAGUERRE_METADATA,
     &GEOMETRIC_PATTERNS_METADATA,
     &GRIFFITHS_DOMINANT_CYCLE_METADATA,
@@ -675,4 +678,4 @@ pub static ALL_INDICATOR_METADATA: &[&IndicatorMetadata] = &[
     &ZLEMA_METADATA,
 ];
 
-pub const METADATA_COUNT: usize = 218;
+pub const METADATA_COUNT: usize = 219;

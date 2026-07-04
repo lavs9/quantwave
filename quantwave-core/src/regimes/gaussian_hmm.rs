@@ -567,3 +567,39 @@ fn m_step(
 
     GaussianHmmParams::new(delta, gamma, means, stds)
 }
+
+// --- IndicatorMetadata (quantwave-i9dn) ---
+
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
+
+pub const GAUSSIAN_HMM_METADATA: IndicatorMetadata = IndicatorMetadata {
+    name: "gaussian_hmm",
+    description:
+        "Fittable Gaussian-emission Hidden Markov Model for generic univariate series (e.g. log-returns).",
+    usage: "Fit with EM on an observation vector, decode smoothed state probabilities and a Viterbi path, \
+             or stream causal forward-filter probabilities for live regime labeling.",
+    keywords: &["regime", "hmm", "gaussian", "em", "mle", "viterbi", "ldhmm"],
+    ehlers_summary: "Homogeneous first-order HMM with Gaussian state emissions and Baum–Welch EM fitting. \
+                     Aligned with ldhmm at λ=1 and Zucchini, MacDonald, Langrock (2016) forward-backward decoding.",
+    params: &[
+        ParamDef {
+            name: "n_states",
+            default: "2",
+            description: "Number of latent states (m ≥ 2).",
+        },
+        ParamDef {
+            name: "max_iter",
+            default: "100",
+            description: "Maximum EM iterations.",
+        },
+        ParamDef {
+            name: "tol",
+            default: "1e-6",
+            description: "EM convergence tolerance on MLLK improvement.",
+        },
+    ],
+    formula_source: "references/ldhmm/ldhmm-cran-reference.pdf; references/ldhmm/ssrn-2979516.pdf; Hamilton (1989); Zucchini et al. (2016)",
+    formula_latex: "",
+    gold_standard_file: "hmm_gaussian_2state.json",
+    category: "Regime",
+};

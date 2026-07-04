@@ -214,6 +214,7 @@ for _special in [
     "CyberCycleFeatureExtractor", "HurstFeatureExtractor",
     "InstantaneousTrendlineFeatureExtractor", "TrendflexFeatureExtractor",
     "GriffithsDominantCycleFeatureExtractor", "BullBearHMM",
+    "GaussianHmmFilterPy", "fit_gaussian_hmm",
     "regime_to_features", "griffiths_dominant_cycle_features",
     "MarketStructure", "GeometricPatternScanner", "market_structure_batch",
 ]:
