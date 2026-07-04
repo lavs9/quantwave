@@ -2754,6 +2754,58 @@
     "boundary_kind": "scalar"
   },
   {
+    "slug": "gaussian_hmm",
+    "name": "gaussian_hmm",
+    "description": "Fittable HMM with Gaussian or lambda (ecld) emissions for generic univariate series (e.g. log-returns).",
+    "usage": "Fit with EM on an observation vector (Gaussian or lambda emission family), decode smoothed state probabilities and a Viterbi path, or stream causal forward-filter probabilities for live regime labeling.",
+    "category": "Regime",
+    "keywords": [
+      "regime",
+      "hmm",
+      "gaussian",
+      "lambda",
+      "ecld",
+      "em",
+      "mle",
+      "viterbi",
+      "ldhmm"
+    ],
+    "params": [
+      {
+        "name": "n_states",
+        "default": "2",
+        "description": "Number of latent states (m ≥ 2)."
+      },
+      {
+        "name": "max_iter",
+        "default": "100",
+        "description": "Maximum EM iterations."
+      },
+      {
+        "name": "tol",
+        "default": "1e-6",
+        "description": "EM convergence tolerance on MLLK improvement."
+      },
+      {
+        "name": "emission_family",
+        "default": "Gaussian",
+        "description": "Emission density: Gaussian (λ=1) or Lambda (ecld per-state λ)."
+      },
+      {
+        "name": "fit_lambdas",
+        "default": "false",
+        "description": "When emission_family=Lambda, estimate per-state λ in the M-step."
+      }
+    ],
+    "formula_source": "references/ldhmm/ldhmm-cran-reference.pdf; references/ldhmm/ssrn-2979516.pdf; Hamilton (1989); Zucchini et al. (2016)",
+    "formula_latex": "",
+    "gold_standard_file": "hmm_gaussian_2state.json",
+    "ehlers_summary": "Homogeneous first-order HMM with Gaussian or symmetric lambda (ecld) state emissions and Baum–Welch EM fitting. Gaussian mode aligns with ldhmm at λ=1; lambda mode matches ldhmm leptokurtic daily-return modeling (SSRN 2979516).",
+    "struct_name": "GaussianHmm",
+    "source_file": "gaussian_hmm",
+    "boundary_kind": "scalar"
+  },
+  {
     "slug": "generalized_laguerre",
     "name": "Generalized Laguerre",
     "description": "A generalized Laguerre filter of arbitrary order using an UltimateSmoother as the primary component.",
@@ -3117,6 +3169,36 @@
     "ehlers_summary": "Alan Hull designed the Hull Moving Average to nearly eliminate lag while maintaining smoothness. It achieves this by computing a WMA of doubled period, subtracting a WMA of full period, then applying a final WMA to the difference over the square-root period, combining speed with noise reduction. — AlanHull.com",
     "struct_name": "Hma",
     "source_file": "hma",
+    "boundary_kind": "scalar"
+  },
+  {
+    "slug": "hmm_forecast",
+    "name": "hmm_forecast",
+    "description": "HMM forecasting and diagnostics: state/vol/probability forecasts, pseudo-residuals, decode stats.",
+    "usage": "After fitting/decoding a Gaussian or lambda HMM, forecast regimes and volatility h steps ahead, evaluate mixture predictive densities, and extract pseudo-residuals for model checking.",
+    "category": "Regime",
+    "keywords": [
+      "regime",
+      "hmm",
+      "forecast",
+      "volatility",
+      "pseudo_residuals",
+      "ldhmm",
+      "diagnostics"
+    ],
+    "params": [
+      {
+        "name": "horizon",
+        "default": "1",
+        "description": "Forecast horizon h (bars ahead)."
+      }
+    ],
+    "formula_source": "references/ldhmm/ldhmm-cran-reference.pdf; references/ldhmm/ssrn-2979516.pdf",
+    "formula_latex": "",
+    "gold_standard_file": "hmm_lambda_2state.json",
+    "ehlers_summary": "ldhmm-style post-fit analytics on homogeneous HMMs: π_{t+h|t}=π_t·Γ^h state forecasts, mixture volatility per SSRN 2979516, filtered pseudo-residuals, and decode_stats_history.",
+    "struct_name": "HmmDecodeStatsRow",
+    "source_file": "hmm_forecast",
     "boundary_kind": "scalar"
   },
   {
@@ -3596,6 +3678,45 @@
     "ehlers_summary": "Ehlers constructs the Laguerre RSI in Cybernetic Analysis by computing RSI on the four outputs of a Laguerre filter bank. The result has RSI-like scaling (0 to 1) but dramatically less lag and smoother behaviour than conventional RSI.",
     "struct_name": "LaguerreRsi",
     "source_file": "laguerre_rsi",
+    "boundary_kind": "scalar"
+  },
+  {
+    "slug": "lambda_hmm",
+    "name": "lambda_hmm",
+    "description": "Lambda-distribution (ecld) emission HMM for leptokurtic returns — ldhmm parity mode.",
+    "usage": "Same API as gaussian_hmm with emission_family=Lambda; per-state (μ, σ, λ) and optional λ MLE.",
+    "category": "Regime",
+    "keywords": [
+      "regime",
+      "hmm",
+      "lambda",
+      "ecld",
+      "ldhmm",
+      "leptokurtic"
+    ],
+    "params": [
+      {
+        "name": "n_states",
+        "default": "2",
+        "description": "Number of latent states."
+      },
+      {
+        "name": "max_iter",
+        "default": "100",
+        "description": "Maximum EM iterations."
+      },
+      {
+        "name": "fit_lambdas",
+        "default": "true",
+        "description": "Estimate per-state λ in the M-step."
+      }
+    ],
+    "formula_source": "references/ldhmm/ssrn-2979516.pdf; references/ldhmm/ldhmm-cran-reference.pdf",
+    "formula_latex": "",
+    "gold_standard_file": "hmm_lambda_2state.json",
+    "ehlers_summary": "Symmetric exponential-power emissions (β=2/λ) per ldhmm ecld.*; λ=1 reduces to Gaussian.",
+    "struct_name": "GaussianHmmParams",
+    "source_file": "gaussian_hmm",
     "boundary_kind": "scalar"
   },
   {

@@ -234,5 +234,9 @@
         - [System Evaluator](native/system_evaluator.md)
     - Wilder
         - [Harrington ADX Oscillator](native/harrington_adx_oscillator.md)
+    - Regime
+        - [gaussian_hmm](native/gaussian_hmm.md)
+        - [hmm_forecast](native/hmm_forecast.md)
+        - [lambda_hmm](native/lambda_hmm.md)
 - [Regime Detection](regimes/index.md)
 - [Ehlers DSP Guide](ehlers/index.md)

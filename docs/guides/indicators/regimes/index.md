@@ -12,6 +12,7 @@ All algorithms live in `quantwave-core/src/regimes/` and expose batch (Polars) a
 |-----------|-----------|----------|---------------|
 | **Volatility clustering** | Online K-means on ATR | Crisis vs stable vol regimes | `.ta().volatility_clusterer(...)` |
 | **HMM (Hamilton)** | Gaussian emissions + Viterbi | Bull/bear switching | `.ta().hmm_bull_bear(col)` |
+| **Gaussian / lambda HMM (ldhmm)** | EM fit + forward-backward | Fittable regimes, vol forecast | `.ta().hmm_fit(...)`, `.ta().hmm_forecast_vol(...)` |
 | **GMM** | Multi-variate clustering | Latent factor states | `.ta().gmm(cols, k)` |
 | **PELT** | Exact changepoint segmentation | Historical break dating | `.ta().pelt(col, penalty, min_dist)` |
 
@@ -115,6 +116,40 @@ df = df.with_columns(
 ```
 
 Used in [ML Features → Backtest E2E](../../../examples/notebooks/ml_feature_backtest_parity.md).
+
+---
+
+## 2b. Fittable HMM (ldhmm parity)
+
+Research-grade HMM with Baum–Welch EM, lambda (ecld) emissions for leptokurtic returns, and forecasting/diagnostics aligned with the [ldhmm](https://cran.r-project.org/package=ldhmm) R package (SSRN 2979516).
+
+### Polars (batch fit + decode)
+
+```python
+df = (
+    df.lazy()
+    .with_columns(pl.col("close").pct_change().alias("returns"))
+    .ta()
+    .hmm_fit("returns", n_states=2, max_iter=100, fit_lambdas=True)
+    .hmm_forecast_vol("returns", n_states=2, max_iter=100, fit_lambdas=True, horizon=1)
+    .hmm_pseudo_residuals("returns", n_states=2, max_iter=100, fit_lambdas=True)
+    .collect()
+)
+# hmm_fit_data: Viterbi state + smoothed probs
+# hmm_forecast_vol: mixture vol h steps ahead from each bar's filter
+```
+
+### Python (fit + diagnostics)
+
+```python
+import quantwave as qw
+
+fit = qw.fit_gaussian_hmm(returns, n_states=2, max_iter=100, fit_lambdas=True)
+diag = qw.gaussian_hmm_diagnostics(fit.params, returns)
+print(diag.forecast_vol_h1, diag.forecast_state_h1)
+```
+
+See also: [gaussian_hmm](../native/gaussian_hmm/), [lambda_hmm](../native/lambda_hmm/), [hmm_forecast](../native/hmm_forecast/).
 
 ---
 

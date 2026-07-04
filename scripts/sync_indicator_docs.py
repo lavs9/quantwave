@@ -34,6 +34,7 @@ CATEGORY_ORDER = [
     "Rocket Science",
     "Statistics",
     "Wilder",
+    "Regime",
 ]
 
 

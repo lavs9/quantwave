@@ -1,6 +1,6 @@
 # Native Indicators
 
-QuantWave ships **218 production-grade native indicators** in Rust with bit-identical batch (Polars `.ta()`) and streaming (`Next<T>`) parity.
+QuantWave ships **221 production-grade native indicators** in Rust with bit-identical batch (Polars `.ta()`) and streaming (`Next<T>`) parity.
 
 Every page follows [Documentation Standards](../../DOCUMENTATION_STANDARDS.md).
 
@@ -14,7 +14,7 @@ Every page follows [Documentation Standards](../../DOCUMENTATION_STANDARDS.md).
 
 ## Complete indicator catalog
 
-**218 indicators** across 13 categories. Click any name for formulas, parameters, usage examples, edge cases, and sources.
+**221 indicators** across 14 categories. Click any name for formulas, parameters, usage examples, edge cases, and sources.
 
 ### Price Action (2)
 
@@ -298,3 +298,11 @@ Every page follows [Documentation Standards](../../DOCUMENTATION_STANDARDS.md).
 | Indicator | Slug |
 |-----------|------|
 | [Harrington ADX Oscillator](harrington_adx_oscillator.md) | `harrington_adx` |
+
+### Regime (3)
+
+| Indicator | Slug |
+|-----------|------|
+| [gaussian_hmm](gaussian_hmm.md) | `gaussian_hmm` |
+| [hmm_forecast](hmm_forecast.md) | `hmm_forecast` |
+| [lambda_hmm](lambda_hmm.md) | `lambda_hmm` |

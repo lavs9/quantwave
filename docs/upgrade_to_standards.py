@@ -22,6 +22,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 INDICATORS_DIR = ROOT / "quantwave-core" / "src" / "indicators"
+REGIMES_DIR = ROOT / "quantwave-core" / "src" / "regimes"
+METADATA_SCAN_DIRS = (INDICATORS_DIR, REGIMES_DIR)
 POLARS_LIB = ROOT / "quantwave-polars" / "src" / "lib.rs"
 NATIVE_DOCS = ROOT / "docs" / "guides" / "indicators" / "native"
 CANDLE_ASSETS = ROOT / "docs" / "assets" / "candlestick-previews"
@@ -181,7 +183,12 @@ def extract_struct_name(text: str) -> str:
 
 def parse_metadata_files() -> dict[str, IndicatorRecord]:
     records: dict[str, IndicatorRecord] = {}
-    for path in sorted(INDICATORS_DIR.glob("*.rs")):
+    paths: list[Path] = []
+    for scan_dir in METADATA_SCAN_DIRS:
+        paths.extend(sorted(scan_dir.rglob("*.rs")))
+    for path in paths:
+        if path.name == "metadata_registry.rs":
+            continue
         text = path.read_text(encoding="utf-8")
         file_struct = extract_struct_name(text)
         for m in re.finditer(

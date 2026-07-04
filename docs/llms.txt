@@ -15,7 +15,7 @@ PyPI: https://pypi.org/project/quantwave/
 - Python install & `.ta` / `.bt`: https://lavs9.github.io/quantwave/getting-started/python/
 - QuantWave vs TA-Lib & pandas-ta: https://lavs9.github.io/quantwave/comparison/
 - Indicator overview & learning paths: https://lavs9.github.io/quantwave/guides/indicators/
-- Full indicator catalog (218): https://lavs9.github.io/quantwave/guides/indicators/native/
+- Full indicator catalog (221): https://lavs9.github.io/quantwave/guides/indicators/native/
 - Indicator gallery (curated): https://lavs9.github.io/quantwave/guides/indicators/gallery/
 - SuperTrend (steel-thread reference): https://lavs9.github.io/quantwave/guides/indicators/native/supertrend/
 - Parity verification: https://lavs9.github.io/quantwave/guides/parity/
@@ -52,7 +52,7 @@ MkDocs Rust guides (concepts, not full rustdoc mirror):
 
 ## Key facts
 
-- **218** registered native indicators (metadata-driven catalog)
+- **221** registered native indicators (metadata-driven catalog)
 - Backtest ships **inside** the Python wheel (`quantwave._backtest`, `LazyFrame.bt`); install `pip install "quantwave[polars]"`
 - One mathematical path: Rust `Next<T>` powers streaming, Polars plugins, and batch columns
 - Verify locally: `./scripts/quantwave_verify.sh`

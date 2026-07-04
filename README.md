@@ -2,13 +2,13 @@
 
 **High-performance, Polars-native technical analysis — in Python and Rust**
 
-218 native indicators · Full Ehlers DSP suite · Regime Detection · Backtest engine · Bit-identical streaming & batch
+221 native indicators · Full Ehlers DSP suite · Regime Detection · Backtest engine · Bit-identical streaming & batch
 
 **Python** `pip install quantwave` (or `pip install "quantwave[polars]"` for the Polars integration layer) **Rust** `cargo add quantwave`
 
 [📖 Documentation](https://lavs9.github.io/quantwave/) • [⭐ GitHub](https://github.com/lavs9/quantwave) • [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/lavs9/quantwave)
 
-**218 indicators • Polars-native • Streaming & batch parity • MIT licensed**
+**221 indicators • Polars-native • Streaming & batch parity • MIT licensed**
 
 ---
 

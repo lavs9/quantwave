@@ -1,6 +1,6 @@
 # QuantWave (Python)
 
-**Polars-native quantitative finance** — 218 Rust indicators, Ehlers DSP, price action, regimes, and a **built-in backtest engine** with batch ↔ streaming parity.
+**Polars-native quantitative finance** — 221 Rust indicators, Ehlers DSP, price action, regimes, and a **built-in backtest engine** with batch ↔ streaming parity.
 
 ```bash
 pip install "quantwave[polars]"
