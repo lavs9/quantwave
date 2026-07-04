@@ -223,6 +223,7 @@ use crate::indicators::wavetrend::WAVETREND_METADATA;
 use crate::indicators::zero_lag::ZERO_LAG_METADATA;
 use crate::regimes::gaussian_hmm::GAUSSIAN_HMM_METADATA;
 use crate::regimes::gaussian_hmm::LAMBDA_HMM_METADATA;
+use crate::regimes::hmm_forecast::HMM_FORECAST_METADATA;
 
 /// Slug + metadata pair for codegen and discovery.
 #[derive(Debug, Clone, Copy)]
@@ -360,6 +361,7 @@ pub static ALL_REGISTERED: &[RegisteredMetadata] = &[
     RegisteredMetadata { slug: "heikin_ashi", meta: &HEIKIN_ASHI_METADATA, struct_name: "HeikinAshi", source_file: "heikin_ashi" },
     RegisteredMetadata { slug: "high_pass", meta: &HIGH_PASS_METADATA, struct_name: "HighPass", source_file: "high_pass" },
     RegisteredMetadata { slug: "hma", meta: &HMA_METADATA, struct_name: "Hma", source_file: "hma" },
+    RegisteredMetadata { slug: "hmm_forecast", meta: &HMM_FORECAST_METADATA, struct_name: "HmmDecodeStatsRow", source_file: "hmm_forecast" },
     RegisteredMetadata { slug: "homodyne_discriminator", meta: &HOMODYNE_DISCRIMINATOR_METADATA, struct_name: "HomodyneDiscriminator", source_file: "homodyne_discriminator" },
     RegisteredMetadata { slug: "ht_dcperiod", meta: &HT_DCPERIOD_METADATA, struct_name: "", source_file: "cycle" },
     RegisteredMetadata { slug: "ht_dcphase", meta: &HT_DCPHASE_METADATA, struct_name: "", source_file: "cycle" },
@@ -584,6 +586,7 @@ pub static ALL_INDICATOR_METADATA: &[&IndicatorMetadata] = &[
     &HEIKIN_ASHI_METADATA,
     &HIGH_PASS_METADATA,
     &HMA_METADATA,
+    &HMM_FORECAST_METADATA,
     &HOMODYNE_DISCRIMINATOR_METADATA,
     &HT_DCPERIOD_METADATA,
     &HT_DCPHASE_METADATA,
@@ -681,4 +684,4 @@ pub static ALL_INDICATOR_METADATA: &[&IndicatorMetadata] = &[
     &ZLEMA_METADATA,
 ];
 
-pub const METADATA_COUNT: usize = 220;
+pub const METADATA_COUNT: usize = 221;

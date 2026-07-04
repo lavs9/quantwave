@@ -3705,6 +3705,215 @@ impl<'a> QuantWaveNamespace<'a> {
             .alias("hmm_fit_data")])
     }
 
+    /// Pseudo-residuals from a fitted HMM (ldhmm `pseudo_residuals`).
+    pub fn hmm_pseudo_residuals(
+        self,
+        name: &str,
+        n_states: usize,
+        max_iter: usize,
+        fit_lambdas: bool,
+    ) -> LazyFrame {
+        let name_str = name.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    use quantwave_core::regimes::gaussian_hmm::{
+                        fit_em, EmissionFamily, GaussianHmmFitConfig,
+                    };
+                    use quantwave_core::regimes::hmm_forecast::pseudo_residuals;
+
+                    let ca = s.f64()?;
+                    let n = s.len();
+                    let mut values = vec![f64::NAN; n];
+                    let mut obs = Vec::new();
+                    let mut index_map = Vec::new();
+                    for i in 0..n {
+                        if let Some(v) = ca.get(i) {
+                            if v.is_finite() {
+                                obs.push(v);
+                                index_map.push(i);
+                            }
+                        }
+                    }
+                    let m = n_states.max(2);
+                    if obs.len() > m {
+                        let config = GaussianHmmFitConfig {
+                            n_states: m,
+                            max_iter: max_iter.max(1),
+                            emission_family: if fit_lambdas {
+                                EmissionFamily::Lambda
+                            } else {
+                                EmissionFamily::Gaussian
+                            },
+                            fit_lambdas,
+                            ..Default::default()
+                        };
+                        if let Ok(fit) = fit_em(&obs, &config) {
+                            if let Ok(decode) = fit.params.decode(&obs) {
+                                if let Ok(residuals) =
+                                    pseudo_residuals(&fit.params, &decode.forward_filter, &obs)
+                                {
+                                    for (j, &row_idx) in index_map.iter().enumerate() {
+                                        values[row_idx] = residuals[j];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Ok(Some(Column::from(Series::new("hmm_pseudo_residual".into(), values))))
+                },
+                GetOutput::from_type(DataType::Float64),
+            )
+            .alias("hmm_pseudo_residual")])
+    }
+
+    /// Per-bar weighted decode statistics from a fitted HMM (ldhmm `decode_stats_history`).
+    pub fn hmm_decode_stats(
+        self,
+        name: &str,
+        n_states: usize,
+        max_iter: usize,
+        fit_lambdas: bool,
+    ) -> LazyFrame {
+        let name_str = name.to_string();
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    use quantwave_core::regimes::gaussian_hmm::{
+                        fit_em, EmissionFamily, GaussianHmmFitConfig,
+                    };
+                    use quantwave_core::regimes::hmm_forecast::decode_stats_history;
+
+                    let ca = s.f64()?;
+                    let n = s.len();
+                    let mut means = vec![f64::NAN; n];
+                    let mut vols = vec![f64::NAN; n];
+                    let mut lambdas = vec![f64::NAN; n];
+                    let mut obs = Vec::new();
+                    let mut index_map = Vec::new();
+                    for i in 0..n {
+                        if let Some(v) = ca.get(i) {
+                            if v.is_finite() {
+                                obs.push(v);
+                                index_map.push(i);
+                            }
+                        }
+                    }
+                    let m = n_states.max(2);
+                    if obs.len() > m {
+                        let config = GaussianHmmFitConfig {
+                            n_states: m,
+                            max_iter: max_iter.max(1),
+                            emission_family: if fit_lambdas {
+                                EmissionFamily::Lambda
+                            } else {
+                                EmissionFamily::Gaussian
+                            },
+                            fit_lambdas,
+                            ..Default::default()
+                        };
+                        if let Ok(fit) = fit_em(&obs, &config) {
+                            if let Ok(decode) = fit.params.decode(&obs) {
+                                if let Ok(stats) =
+                                    decode_stats_history(&fit.params, &decode.smooth_probs)
+                                {
+                                    for (j, row) in stats.iter().enumerate() {
+                                        let idx = index_map[j];
+                                        means[idx] = row.weighted_mean;
+                                        vols[idx] = row.weighted_vol;
+                                        lambdas[idx] = row.weighted_lambda;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    let out = StructChunked::from_series(
+                        "hmm_decode_stats_data".into(),
+                        n,
+                        [
+                            Series::new("hmm_decode_weighted_mean".into(), means),
+                            Series::new("hmm_decode_weighted_vol".into(), vols),
+                            Series::new("hmm_decode_weighted_lambda".into(), lambdas),
+                        ]
+                        .iter(),
+                    )?;
+                    Ok(Some(Column::from(out.into_series())))
+                },
+                GetOutput::from_type(DataType::Struct(vec![
+                    Field::new("hmm_decode_weighted_mean".into(), DataType::Float64),
+                    Field::new("hmm_decode_weighted_vol".into(), DataType::Float64),
+                    Field::new("hmm_decode_weighted_lambda".into(), DataType::Float64),
+                ])),
+            )
+            .alias("hmm_decode_stats_data")])
+    }
+
+    /// h-step mixture volatility forecast from each bar's forward filter (ldhmm `forecast_volatility`).
+    pub fn hmm_forecast_vol(
+        self,
+        name: &str,
+        n_states: usize,
+        max_iter: usize,
+        fit_lambdas: bool,
+        horizon: usize,
+    ) -> LazyFrame {
+        let name_str = name.to_string();
+        let h = horizon.max(1);
+        self.0.clone().with_columns([col(&name_str)
+            .map(
+                move |s| {
+                    use quantwave_core::regimes::gaussian_hmm::{
+                        fit_em, EmissionFamily, GaussianHmmFitConfig,
+                    };
+                    use quantwave_core::regimes::hmm_forecast::forecast_volatility;
+
+                    let ca = s.f64()?;
+                    let n = s.len();
+                    let mut values = vec![f64::NAN; n];
+                    let mut obs = Vec::new();
+                    let mut index_map = Vec::new();
+                    for i in 0..n {
+                        if let Some(v) = ca.get(i) {
+                            if v.is_finite() {
+                                obs.push(v);
+                                index_map.push(i);
+                            }
+                        }
+                    }
+                    let m = n_states.max(2);
+                    if obs.len() > m {
+                        let config = GaussianHmmFitConfig {
+                            n_states: m,
+                            max_iter: max_iter.max(1),
+                            emission_family: if fit_lambdas {
+                                EmissionFamily::Lambda
+                            } else {
+                                EmissionFamily::Gaussian
+                            },
+                            fit_lambdas,
+                            ..Default::default()
+                        };
+                        if let Ok(fit) = fit_em(&obs, &config) {
+                            if let Ok(decode) = fit.params.decode(&obs) {
+                                for (j, &row_idx) in index_map.iter().enumerate() {
+                                    let probs: Vec<f64> =
+                                        (0..m).map(|st| decode.forward_filter[st][j]).collect();
+                                    if let Ok(vol) =
+                                        forecast_volatility(&fit.params, &probs, h)
+                                    {
+                                        values[row_idx] = vol;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Ok(Some(Column::from(Series::new("hmm_forecast_vol".into(), values))))
+                },
+                GetOutput::from_type(DataType::Float64),
+            )
+            .alias("hmm_forecast_vol")])
+    }
+
     pub fn pelt(self, name: &str, penalty: f64, min_dist: usize) -> LazyFrame {
         let name_str = name.to_string();
         self.0.clone().with_columns([col(&name_str)

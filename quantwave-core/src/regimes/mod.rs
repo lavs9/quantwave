@@ -7,11 +7,17 @@ pub mod volatility_clustering;
 pub mod hmm;
 pub mod ecld;
 pub mod gaussian_hmm;
+pub mod hmm_forecast;
 
-pub use ecld::{ecld_log_pdf, ecld_pdf, natural_to_work, work_to_natural};
+pub use ecld::{ecld_cdf, ecld_log_pdf, ecld_pdf, ecld_variance, natural_to_work, work_to_natural};
 pub use gaussian_hmm::{
     fit_em, EmissionFamily, GaussianHmmDecode, GaussianHmmError, GaussianHmmFilter,
     GaussianHmmFitConfig, GaussianHmmFitResult, GaussianHmmParams,
+};
+pub use hmm_forecast::{
+    calc_stats_from_obs, decode_stats_history, forecast_observation_mean, forecast_observation_pdf,
+    forecast_state, forecast_volatility, pseudo_residuals, HmmDecodeStatsRow, HmmDiagnostics,
+    HmmStateObsStats,
 };
 pub mod gmm;
 pub mod pelt;

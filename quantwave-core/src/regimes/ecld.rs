@@ -4,7 +4,8 @@
 //!
 //! Source: references/ldhmm/ssrn-2979516.pdf §2; ldhmm ecld.* functions.
 
-use statrs::function::gamma::gamma;
+use statrs::distribution::{ContinuousCDF, Normal};
+use statrs::function::gamma::{gamma, gamma_lr};
 
 /// PDF of the symmetric lambda distribution (ecld / generalized normal).
 ///
@@ -24,6 +25,35 @@ pub fn ecld_pdf(x: f64, mu: f64, sigma: f64, lambda: f64) -> f64 {
 #[inline]
 pub fn ecld_log_pdf(x: f64, mu: f64, sigma: f64, lambda: f64) -> f64 {
     ecld_pdf(x, mu, sigma, lambda).ln()
+}
+
+/// CDF of the symmetric lambda distribution (ldhmm `ecld.cdf` / gnorm).
+#[inline]
+pub fn ecld_cdf(x: f64, mu: f64, sigma: f64, lambda: f64) -> f64 {
+    if (lambda - 1.0).abs() < 1e-12 {
+        return Normal::new(mu, sigma)
+            .expect("valid gaussian cdf params")
+            .cdf(x);
+    }
+    let beta = 2.0 / lambda;
+    let u = (x - mu) / sigma;
+    let p = gamma_lr(1.0 / beta, u.abs().powf(beta));
+    if u >= 0.0 {
+        0.5 + 0.5 * p
+    } else {
+        0.5 - 0.5 * p
+    }
+}
+
+/// Emission variance of the symmetric lambda distribution: `σ² Γ(3/β) / Γ(1/β)`, β=2/λ.
+#[inline]
+pub fn ecld_variance(sigma: f64, lambda: f64) -> f64 {
+    if (lambda - 1.0).abs() < 1e-12 {
+        return sigma * sigma;
+    }
+    let beta = 2.0 / lambda;
+    let s2 = sigma * sigma;
+    s2 * gamma(3.0 / beta) / gamma(1.0 / beta)
 }
 
 #[inline]

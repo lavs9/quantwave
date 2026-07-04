@@ -112,6 +112,10 @@ use quantwave_core::regimes::gaussian_hmm::{
     GaussianHmmFilter as CoreGaussianHmmFilter,
     GaussianHmmFitConfig as CoreGaussianHmmFitConfig, GaussianHmmParams as CoreGaussianHmmParams,
 };
+use quantwave_core::regimes::hmm_forecast::{
+    forecast_state as core_forecast_state, forecast_volatility as core_forecast_volatility,
+    pseudo_residuals as core_pseudo_residuals,
+};
 use quantwave_core::regimes::hmm::HMM as CoreHMM;
 use quantwave_core::regimes::MarketRegime;
 use quantwave_core::options_india;
@@ -1162,6 +1166,61 @@ pub fn fit_gaussian_hmm(
         smooth_probs_flat: smooth_flat,
         n_observations: t_len as u32,
     }
+}
+
+#[derive(uniffi::Record)]
+pub struct GaussianHmmDiagnosticsPy {
+    pub pseudo_residuals: Vec<f64>,
+    pub decode_weighted_means: Vec<f64>,
+    pub decode_weighted_vols: Vec<f64>,
+    pub decode_weighted_lambdas: Vec<f64>,
+    pub forecast_state_h1: Vec<f64>,
+    pub forecast_vol_h1: f64,
+    pub forecast_mean_h1: f64,
+}
+
+#[uniffi::export]
+pub fn gaussian_hmm_diagnostics(
+    params: GaussianHmmParamsPy,
+    observations: Vec<f64>,
+) -> GaussianHmmDiagnosticsPy {
+    let obs: Vec<f64> = observations.into_iter().filter(|v| v.is_finite()).collect();
+    let core_params = core_params_from_py(&params);
+    let decode = core_params.decode(&obs).expect("hmm decode failed");
+    let diag = core_params
+        .diagnostics(&decode, &obs)
+        .expect("hmm diagnostics failed");
+    GaussianHmmDiagnosticsPy {
+        pseudo_residuals: diag.pseudo_residuals,
+        decode_weighted_means: diag.decode_stats.iter().map(|r| r.weighted_mean).collect(),
+        decode_weighted_vols: diag.decode_stats.iter().map(|r| r.weighted_vol).collect(),
+        decode_weighted_lambdas: diag.decode_stats.iter().map(|r| r.weighted_lambda).collect(),
+        forecast_state_h1: diag.forecast_state_h1,
+        forecast_vol_h1: diag.forecast_vol_h1,
+        forecast_mean_h1: diag.forecast_mean_h1,
+    }
+}
+
+#[uniffi::export]
+pub fn gaussian_hmm_forecast_vol(
+    params: GaussianHmmParamsPy,
+    current_state_probs: Vec<f64>,
+    horizon: u32,
+) -> f64 {
+    let core_params = core_params_from_py(&params);
+    core_forecast_volatility(&core_params, &current_state_probs, horizon.max(1) as usize)
+        .expect("forecast vol failed")
+}
+
+#[uniffi::export]
+pub fn gaussian_hmm_forecast_state(
+    params: GaussianHmmParamsPy,
+    current_state_probs: Vec<f64>,
+    horizon: u32,
+) -> Vec<f64> {
+    let core_params = core_params_from_py(&params);
+    core_forecast_state(&core_params, &current_state_probs, horizon.max(1) as usize)
+        .expect("forecast state failed")
 }
 
 #[derive(uniffi::Object)]
