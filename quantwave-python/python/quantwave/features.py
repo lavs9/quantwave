@@ -8,9 +8,17 @@ batch extractors that power Rust proptests and ``lf.ta().features.*``.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union
 
-import polars as pl
+if TYPE_CHECKING:
+    import polars as pl
+
+
+def _pl():
+    """Late-bind polars so ``import quantwave`` works without the optional extra."""
+    import polars as pl
+
+    return pl
 
 
 def _ta():
@@ -40,9 +48,10 @@ RECOMMENDED_PRESET: List[FeatureSpec] = [
 
 
 def _closes_from_input(
-    data: Union[pl.DataFrame, pl.LazyFrame, Sequence[float]],
+    data: Union["pl.DataFrame", "pl.LazyFrame", Sequence[float]],
     close_col: str,
-) -> tuple[List[float], pl.DataFrame | None]:
+) -> tuple[List[float], "pl.DataFrame | None"]:
+    pl = _pl()
     if isinstance(data, pl.LazyFrame):
         data = data.collect()
     if isinstance(data, pl.DataFrame):
@@ -126,13 +135,13 @@ def _apply_feature(
 
 
 def build_feature_matrix(
-    data: Union[pl.DataFrame, pl.LazyFrame, Sequence[float]],
+    data: Union["pl.DataFrame", "pl.LazyFrame", Sequence[float]],
     *,
     close_col: str = "close",
     features: Union[str, Sequence[Union[str, FeatureSpec, Dict[str, Any]]]] = "recommended",
     drop_warmup: bool = False,
     warmup_bars: int | None = None,
-) -> pl.DataFrame:
+) -> "pl.DataFrame":
     """Build a wide feature DataFrame from close prices (batch / zero-lookahead).
 
     Args:
@@ -176,7 +185,7 @@ def build_feature_matrix(
     for spec in specs:
         columns.update(_apply_feature(closes, spec))
 
-    df = pl.DataFrame(columns)
+    df = _pl().DataFrame(columns)
 
     if drop_warmup:
         n_drop = warmup_bars

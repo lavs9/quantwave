@@ -12,13 +12,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-SMOKE = r'''
-import sys
-
-errors = []
-
-# 1. Core import without polars
+SMOKE_CORE = r'''
 import quantwave as qw
+
 assert qw.__version__, "missing __version__"
 names = qw.indicators()
 assert len(names) >= 200, f"expected 200+ indicators, got {len(names)}"
@@ -30,11 +26,14 @@ inst = cls(14)
 vals = [inst.next(float(x)) for x in range(1, 30)]
 assert len(vals) == 29, "streaming length"
 
-# 2. Batch list API
 batch = qw.ta.rsi(14, [float(x) for x in range(1, 30)])
 assert len(batch) == 29, "batch rsi length"
 
-# 3. Polars + plugins + backtest (import quantwave auto-registers plugins when bundled)
+print("PYPI_SMOKE_CORE_OK")
+'''
+
+SMOKE_POLARS = r'''
+import quantwave as qw
 import polars as pl
 
 df = pl.DataFrame({
@@ -63,7 +62,7 @@ from quantwave import build_feature_matrix
 fm = build_feature_matrix(df.lazy(), close_col="close")
 assert fm.width >= 2, "feature matrix empty"
 
-print("PYPI_SMOKE_OK")
+print("PYPI_SMOKE_POLARS_OK")
 '''
 
 
@@ -85,11 +84,30 @@ def main() -> int:
 
         subprocess.check_call([str(py), "-m", "pip", "install", "-q", "--upgrade", "pip"])
         subprocess.check_call([str(py), "-m", "pip", "install", "-q", str(args.wheel)])
+
+        proc_core = subprocess.run(
+            [str(py), "-c", SMOKE_CORE],
+            capture_output=True,
+            text=True,
+        )
+        if proc_core.returncode != 0:
+            print(proc_core.stdout, file=sys.stderr)
+            print(proc_core.stderr, file=sys.stderr)
+            return proc_core.returncode
+        if "PYPI_SMOKE_CORE_OK" not in proc_core.stdout:
+            print(
+                "Core smoke (no polars) did not complete:",
+                proc_core.stdout,
+                proc_core.stderr,
+                file=sys.stderr,
+            )
+            return 1
+
         subprocess.check_call(
             [str(py), "-m", "pip", "install", "-q", "polars>=1.20.0,<2.0.0"]
         )
         proc = subprocess.run(
-            [str(py), "-c", SMOKE],
+            [str(py), "-c", SMOKE_POLARS],
             capture_output=True,
             text=True,
         )
@@ -97,8 +115,8 @@ def main() -> int:
             print(proc.stdout, file=sys.stderr)
             print(proc.stderr, file=sys.stderr)
             return proc.returncode
-        if "PYPI_SMOKE_OK" not in proc.stdout:
-            print("Smoke script did not complete:", proc.stdout, proc.stderr, file=sys.stderr)
+        if "PYPI_SMOKE_POLARS_OK" not in proc.stdout:
+            print("Polars smoke did not complete:", proc.stdout, proc.stderr, file=sys.stderr)
             return 1
 
     print("PyPI smoke test passed")
