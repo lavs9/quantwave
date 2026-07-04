@@ -1,0 +1,129 @@
+//! Streaming vs batch parity and EM fitting behavior for generic Gaussian HMM.
+
+use approx::assert_relative_eq;
+use proptest::prelude::*;
+use quantwave_core::regimes::gaussian_hmm::{
+    fit_em, GaussianHmmFitConfig, GaussianHmmParams,
+};
+use quantwave_core::regimes::hmm::HMM;
+use quantwave_core::traits::Next;
+
+fn synthetic_two_state_series() -> Vec<f64> {
+    vec![
+        0.01, -0.008, 0.012, -0.015, 0.009, -0.011, 0.007, -0.013, 0.011, -0.009, 0.008,
+        -0.014, 0.006, -0.01, 0.013, -0.012, 0.005, -0.007, 0.01, -0.016,
+    ]
+}
+
+#[test]
+fn streaming_forward_filter_matches_batch_forward_filter() {
+    let params = GaussianHmmParams::new(
+        vec![0.6, 0.4],
+        vec![vec![0.92, 0.08], vec![0.15, 0.85]],
+        vec![0.008, -0.012],
+        vec![0.018, 0.028],
+    )
+    .expect("params");
+
+    let x = synthetic_two_state_series();
+    let batch = params.decode(&x).expect("decode");
+    let mut stream = params.filter();
+    for (t, &obs) in x.iter().enumerate() {
+        let probs = stream.next(obs);
+        for s in 0..params.n_states {
+            assert_relative_eq!(probs[s], batch.forward_filter[s][t], epsilon = 1e-12);
+        }
+    }
+}
+
+#[test]
+fn em_fit_improves_mllk_on_generic_series() {
+    let x = synthetic_two_state_series();
+    let init = GaussianHmmParams::new(
+        vec![0.5, 0.5],
+        vec![vec![0.8, 0.2], vec![0.2, 0.8]],
+        vec![0.0, 0.0],
+        vec![0.02, 0.02],
+    )
+    .expect("init");
+    let init_mllk = init.mllk(&x).expect("init mllk");
+
+    let fit = fit_em(
+        &x,
+        &GaussianHmmFitConfig {
+            n_states: 2,
+            max_iter: 80,
+            tol: 1e-7,
+        },
+    )
+    .expect("fit");
+
+    let fit_mllk = fit.params.mllk(&x).expect("fit mllk");
+    assert!(fit_mllk <= init_mllk + 1e-6, "EM should not increase MLLK");
+    assert!(fit.log_likelihood.is_finite());
+    assert!(fit.aic.is_finite());
+    assert!(fit.bic.is_finite());
+    assert!(fit.bic >= fit.aic);
+}
+
+#[test]
+fn bull_bear_preset_streaming_unchanged() {
+    let mut hmm = HMM::bull_bear();
+    let returns = [0.001, -0.002, 0.003, -0.004, 0.001];
+    let labels: Vec<_> = returns
+        .iter()
+        .map(|&r| {
+            use quantwave_core::regimes::MarketRegime;
+            match hmm.next(r) {
+                MarketRegime::Bull => 1u32,
+                MarketRegime::Bear => 2,
+                other => panic!("unexpected regime {other:?}"),
+            }
+        })
+        .collect();
+    // Regression lock: preset bull/bear labels for this fixed return path.
+    assert_eq!(labels, vec![1, 1, 1, 1, 1]);
+}
+
+#[test]
+fn em_fit_supports_three_state_generic_series() {
+    let x: Vec<f64> = (0..30)
+        .map(|i| {
+            let phase = (i % 3) as f64;
+            0.01 * (phase - 1.0) + 0.002 * ((i as f64) * 0.3).sin()
+        })
+        .collect();
+
+    let fit = fit_em(
+        &x,
+        &GaussianHmmFitConfig {
+            n_states: 3,
+            max_iter: 60,
+            tol: 1e-6,
+        },
+    )
+    .expect("3-state fit");
+
+    assert_eq!(fit.params.n_states, 3);
+    assert!(fit.params.validate().is_ok());
+    assert!(fit.log_likelihood.is_finite());
+}
+
+proptest! {
+    #[test]
+    fn forward_filter_rows_sum_to_one(obs in proptest::collection::vec(-0.05f64..0.05, 8..40)) {
+        let params = GaussianHmmParams::new(
+            vec![0.55, 0.45],
+            vec![vec![0.9, 0.1], vec![0.12, 0.88]],
+            vec![0.005, -0.005],
+            vec![0.015, 0.025],
+        ).unwrap();
+        let batch = params.decode(&obs).unwrap();
+        for t in 0..obs.len() {
+            let sum: f64 = (0..params.n_states)
+                .map(|s| batch.forward_filter[s][t])
+                .sum();
+            prop_assert!((sum - 1.0).abs() < 1e-10);
+        }
+    }
+}

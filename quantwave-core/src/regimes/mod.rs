@@ -5,6 +5,12 @@
 
 pub mod volatility_clustering;
 pub mod hmm;
+pub mod gaussian_hmm;
+
+pub use gaussian_hmm::{
+    fit_em, GaussianHmmDecode, GaussianHmmError, GaussianHmmFilter, GaussianHmmFitConfig,
+    GaussianHmmFitResult, GaussianHmmParams,
+};
 pub mod gmm;
 pub mod pelt;
 pub mod analytics;
