@@ -73,6 +73,15 @@ Sweep, walk-forward, Monte Carlo, cross-sectional runs, and HTML tear sheets —
 
 </div>
 
+<div class="qw-card" markdown="1">
+
+### Correctness
+Gold-standard vectors, proptests, TA-Lib parity, and Python FFI parity — machine-counted on the validation page.
+
+[Validation methodology →](validation.md)
+
+</div>
+
 </div>
 
 ## Quickstart

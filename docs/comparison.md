@@ -16,7 +16,7 @@ One-page guide for teams choosing a technical-analysis stack on Polars (or migra
 | **Ehlers DSP** | 30+ dedicated tools | Minimal | A few community ports |
 | **Price action** | Market Structure, flags/H&S, S/R monitor | Candlestick patterns only | Limited |
 | **Regime detection** | HMM, GMM, PELT, vol clustering | No | No |
-| **Batch ↔ streaming parity** | **Guaranteed** (`Next<T>` + proptests) | N/A (batch only) | No |
+| **Batch ↔ streaming parity** | **[Guaranteed](validation.md)** (`Next<T>` + proptests) | N/A (batch only) | No |
 | **Backtest engine** | Built-in (sweep, WFO, Monte Carlo) | No | No |
 | **Large-data speed** | See [benchmarks](../benchmarks.md) | Fast C for classics | Slow on 1M+ rows |
 | **License** | MIT | BSD-like | MIT |

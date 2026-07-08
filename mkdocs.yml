@@ -76,6 +76,7 @@ nav:
       - Notebooks: examples/notebooks/index.md
   - Reference:
       - FAQ: faq.md
+      - Validation: validation.md
       - Python API: api/
       - Benchmarks: benchmarks.md
       - Comparison: comparison.md
