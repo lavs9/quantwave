@@ -2,8 +2,13 @@
 #
 # Pipeline:
 #   1. publish-rust      — crates.io (core → backtest/plugins → polars → quantwave)
-#   2. build-python-*    — wheels (linux x64/arm, macOS, windows) + sdist
-#   3. publish-python    — PyPI via twine
+#   2. build-python-*    — wheels (linux x64/arm, macOS, windows)
+#   3. verify-python-wheel — import + RSI smoke on 3.9/3.11/3.12/3.13
+#   4. publish-python    — PyPI via OIDC trusted publisher (no API token)
+#
+# PyPI trusted publisher must match THIS filename exactly: release.yml
+#   Repository: lavs9/quantwave
+#   Environment: (Any) — or set `environment: pypi` on the job + PyPI env name
 #
 # Day-to-day CI is .github/workflows/ci.yml (no publish).
 
@@ -102,6 +107,9 @@ jobs:
     name: Publish Python (PyPI)
     needs: [build-python-wheels, verify-python-wheel]
     runs-on: ubuntu-latest
+    permissions:
+      # Required for PyPI OIDC trusted publishing (no PYPI_API_TOKEN).
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -125,16 +133,12 @@ jobs:
           name: wheels-windows-latest
           path: dist
 
-      - uses: actions/setup-python@v5
+      - name: List wheels to publish
+        run: ls -la dist/
+
+      - name: Publish to PyPI (trusted publisher / OIDC)
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          python-version: "3.12"
-
-      - run: pip install twine
-
-      - name: Publish to PyPI
-        run: |
-          ls -la dist/
-          twine upload --skip-existing dist/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+          packages-dir: dist/
+          skip-existing: true
+          verbose: true
