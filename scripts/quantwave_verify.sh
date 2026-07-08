@@ -47,6 +47,8 @@ if [[ "$SKIP_METADATA" -eq 0 ]]; then
 
   echo "-- AEO governance (llms URLs, rust guides nav)"
   python3 scripts/check_aeo.py
+  echo "-- benchmark claim drift (no unmeasured perf numbers)"
+  python3 scripts/check_benchmark_claims.py
     echo "-- documentation standards lint"
     python3 docs/upgrade_to_standards.py --lint
     echo "-- documentation depth lint"

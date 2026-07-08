@@ -9,9 +9,41 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
+from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+@dataclass(frozen=True)
+class WheelTag:
+    python: str
+    abi: str
+    platform: str
+
+    @classmethod
+    def parse(cls, tag: str) -> WheelTag:
+        parts = tag.split("-", 2)
+        if len(parts) != 3:
+            raise ValueError(f"invalid wheel tag: {tag!r}")
+        return cls(python=parts[0], abi=parts[1], platform=parts[2])
+
+    def serialize(self) -> str:
+        return f"{self.python}-{self.abi}-{self.platform}"
+
+    @property
+    def is_py3_none(self) -> bool:
+        return self.python == "py3" and self.abi == "none"
+
+    @property
+    def is_abi3(self) -> bool:
+        return self.abi == "abi3"
+
+    @property
+    def cp_version(self) -> int | None:
+        m = re.fullmatch(r"cp(\d+)", self.python)
+        return int(m.group(1)) if m else None
 
 
 def workspace_version() -> str:
@@ -25,6 +57,72 @@ def workspace_version() -> str:
 def run(cmd: list[str], **kwargs) -> None:
     print("+", " ".join(cmd), flush=True)
     subprocess.check_call(cmd, cwd=ROOT, **kwargs)
+
+
+def read_wheel_tag(path: Path) -> WheelTag:
+    with zipfile.ZipFile(path) as zf:
+        wheel_entries = [n for n in zf.namelist() if n.endswith(".dist-info/WHEEL")]
+        if not wheel_entries:
+            raise ValueError(f"{path.name}: missing WHEEL metadata")
+        raw = zf.read(wheel_entries[0]).decode("utf-8")
+        for line in raw.splitlines():
+            if line.startswith("Tag: "):
+                return WheelTag.parse(line.removeprefix("Tag: ").strip())
+    raise ValueError(f"{path.name}: Tag line missing")
+
+
+def restrictive_tag(tags: list[WheelTag]) -> WheelTag:
+    """Intersection of compatibility: never inherit the least restrictive tag."""
+    if not tags:
+        raise ValueError("no wheel tags to merge")
+
+    platforms = {t.platform for t in tags}
+    if len(platforms) != 1:
+        raise ValueError(f"cannot merge wheels with different platforms: {platforms}")
+
+    specific_cp: int | None = None
+    abi3_min: int | None = None
+    any_py3_none = False
+
+    for tag in tags:
+        if tag.is_py3_none:
+            any_py3_none = True
+            continue
+        if tag.is_abi3:
+            cp = tag.cp_version
+            if cp is None:
+                raise ValueError(f"abi3 tag without cp prefix: {tag.serialize()}")
+            abi3_min = cp if abi3_min is None else max(abi3_min, cp)
+            continue
+        cp = tag.cp_version
+        if cp is not None and tag.abi == f"cp{cp}":
+            specific_cp = cp if specific_cp is None else max(specific_cp, cp)
+            continue
+        raise ValueError(f"unsupported wheel tag: {tag.serialize()}")
+
+    if specific_cp is not None:
+        return WheelTag(f"cp{specific_cp}", f"cp{specific_cp}", tags[0].platform)
+    if abi3_min is not None:
+        return WheelTag(f"cp{abi3_min}", "abi3", tags[0].platform)
+    if any_py3_none:
+        return WheelTag("py3", "none", tags[0].platform)
+    raise ValueError("could not derive merged wheel tag")
+
+
+def write_wheel_tag(dist_info: Path, tag: WheelTag) -> None:
+    wheel_file = dist_info / "WHEEL"
+    lines = wheel_file.read_text(encoding="utf-8").splitlines()
+    out: list[str] = []
+    replaced = False
+    for line in lines:
+        if line.startswith("Tag: "):
+            out.append(f"Tag: {tag.serialize()}")
+            replaced = True
+        else:
+            out.append(line)
+    if not replaced:
+        out.append(f"Tag: {tag.serialize()}")
+    wheel_file.write_text("\n".join(out) + "\n", encoding="utf-8")
 
 
 def maturin_build(manifest: Path, out: Path, release: bool) -> None:
@@ -60,6 +158,11 @@ def merge_wheels(base: Path, extras: list[Path], out_dir: Path) -> Path:
         import wheel  # noqa: F401
     except ImportError:
         subprocess.check_call([sys.executable, "-m", "pip", "install", "wheel"])
+
+    input_tags = [read_wheel_tag(base)] + [read_wheel_tag(extra) for extra in extras]
+    merged_tag = restrictive_tag(input_tags)
+    print(f"Merged wheel tag: {merged_tag.serialize()} (from {[t.serialize() for t in input_tags]})")
+
     with tempfile.TemporaryDirectory(prefix="quantwave-wheel-") as td:
         work = Path(td)
         unpack_root = work / "unpack"
@@ -85,13 +188,20 @@ def merge_wheels(base: Path, extras: list[Path], out_dir: Path) -> Path:
                 shutil.copy2(src, dst)
             shutil.rmtree(extra_unpack)
 
+        dist_info_dirs = list(merged.glob("*.dist-info"))
+        if not dist_info_dirs:
+            raise SystemExit("merged wheel missing .dist-info")
+        write_wheel_tag(dist_info_dirs[0], merged_tag)
+
         out_dir.mkdir(parents=True, exist_ok=True)
         run([sys.executable, "-m", "wheel", "pack", str(merged), "-d", str(out_dir)])
         packed = sorted(out_dir.glob("quantwave-*.whl"))
         if not packed:
             raise SystemExit(f"wheel pack did not produce quantwave-*.whl in {out_dir}")
-        final = out_dir / f"quantwave-{workspace_version()}-{packed[-1].name.split('-', 2)[-1]}"
+        final = out_dir / f"quantwave-{workspace_version()}-{merged_tag.serialize()}.whl"
         if packed[-1] != final:
+            if final.exists():
+                final.unlink()
             packed[-1].rename(final)
         return final
 

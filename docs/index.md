@@ -110,11 +110,8 @@ Install: `pip install "quantwave[polars]"` or `cargo add quantwave`.
 
 ## Performance snapshot
 
-On 1M rows of realistic OHLCV:
-
-- **SuperTrend**: ~27× faster than common Python implementations
-- **CyberCycle** (Ehlers): ~100× faster than pandas loops
-- **Memory**: 2–5× lower than pandas on multi-ticker workloads
+- **Memory**: 2–5× lower than pandas on multi-ticker workloads (measured — see [benchmarks](benchmarks.md))
+- **Speed & latency**: reproducible harness in progress; we publish measured numbers only ([benchmarks](benchmarks.md))
 
 [Full benchmarks →](benchmarks.md)
 

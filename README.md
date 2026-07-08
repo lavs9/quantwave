@@ -52,14 +52,8 @@ QuantWave is no longer early-stage. It ships with production-ready depth across 
 
 ## Real-World Performance
 
-We don’t just claim to be fast — here’s what the numbers show on 1 million rows of realistic OHLCV data:
-
-- **SuperTrend**: 7.4 ms (QuantWave) vs >200 ms (Pandas) → **~27× faster**
-- **CyberCycle** (Ehlers): 5.0 ms vs >500 ms (Pandas) → **~100× faster**
-- **Instantaneous Trendline**: 74 ms vs >2,000 ms (Pandas) → **~27× faster**
-- **Memory footprint** on realistic multi-ticker data: **2–5× lower** than Pandas
-
-Complex recursive indicators (the ones that matter most for real strategies) are where the gap becomes dramatic.
+- **Memory footprint** on realistic multi-ticker data: **2–5× lower** than Pandas (measured — see benchmarks)
+- **Speed & latency**: published only from the reproducible harness in `benchmarks/`; earlier unmeasured throughput figures have been removed
 
 → [Full benchmarks & methodology](https://lavs9.github.io/quantwave/benchmarks/)
 

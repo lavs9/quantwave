@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-07-08T06:26:43.211287+00:00",
+  "harness_version": 1,
+  "dataset": {
+    "rows": 100000,
+    "seed": 1364656129,
+    "frame_hash": "58ddad025502de0e5c0db7a4375f9bb854f3d3e20679f29c310d4769a31069c3"
+  },
+  "hardware": {
+    "cpu": "arm",
+    "ram": "24.0 GB",
+    "os": "Darwin 25.5.0",
+    "python": "3.12.8"
+  },
+  "memory": {
+    "quantwave_polars_mb": 4.48,
+    "pandas_mb": 9.16,
+    "footprint_ratio": 2.04
+  },
+  "throughput": {},
+  "latency": {},
+  "comparisons": {},
+  "notes": [
+    "Throughput and latency sections populate when Rust criterion and Python competitor benches are wired (quantwave-9gek.2 Phase 2)."
+  ],
+  "harness_runtime_s": 0.289
+}

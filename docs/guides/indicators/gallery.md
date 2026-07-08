@@ -8,9 +8,9 @@ Each indicator page includes formulas, parameters, Rust/Python/Polars examples, 
 
 These tools deliver outsized practical value for strategies, risk management, and ML feature engineering:
 
-- **[SuperTrend](../native/supertrend/)**: ATR-based trend-following with dynamic stops. One of the most widely used signals in production. Exceptional performance (~27× faster than common Python implementations on large datasets).
+- **[SuperTrend](../native/supertrend/)**: ATR-based trend-following with dynamic stops. One of the most widely used signals in production. Rust-native batch and streaming paths; see [benchmarks](../../../benchmarks.md) for measured performance (harness in progress).
 
-- **[Cyber Cycle](../native/cyber_cycle/)** (Ehlers DSP): Low-lag cycle extractor that cleanly separates trend from cycle. A foundational tool for regime-aware systems (~100× speedup vs pandas on 1M rows).
+- **[Cyber Cycle](../native/cyber_cycle/)** (Ehlers DSP): Low-lag cycle extractor that cleanly separates trend from cycle. A foundational tool for regime-aware systems. Throughput benchmarks publish via [benchmarks](../../../benchmarks.md) once the harness lands.
 
 - **[Market Structure](../native/market_structure/)** (MQL5 Part 21): Adaptive swing detection with Bullish/Bearish/Neutral bias and confirmed Break-of-Structure (BOS) flips (only after structure established). Rich `MarketStructureState` + `PAEvent` for gating strategies and ML. See dedicated guide + [notebook](../../../examples/notebooks/pa_flag_breakout_strategy.md).
 

@@ -40,6 +40,7 @@ jobs:
           python3 scripts/check_doc_drift.py
           python3 scripts/check_public_metadata.py
           python3 scripts/check_aeo.py
+          python3 scripts/check_benchmark_claims.py
 
   plugins:
     name: Plugin wheels

@@ -1,51 +1,36 @@
 # Benchmarks
 
-QuantWave is built for speed. We measure performance across several dimensions to ensure our "high-performance" claim is backed by real-world data.
+QuantWave is built for speed. We publish only measurements from a reproducible harness — not hand-written marketing numbers.
 
-## Methodology
+## Status
 
-Benchmarks are executed on 1,000,000+ rows of synthetic OHLCV data. We compare QuantWave (Rust + Polars) against popular Python alternatives:
-- `pandas-ta`
-- `TA-Lib` (Python wrappers)
-- `tulipy`
+**Performance benchmarks are being rebuilt.** Earlier versions of this page contained unmeasured throughput figures and a fabricated streaming-latency table (batch milliseconds relabeled as nanoseconds). Those have been removed.
 
-### Hardware Specifications
-- **CPU**: [Placeholder: e.g., Apple M2 Pro]
-- **RAM**: [Placeholder: e.g., 32GB]
-- **OS**: [Placeholder: e.g., macOS 14.x]
+We are building a committed harness under `benchmarks/` that will:
 
-## Speed Comparison
+- Run Rust criterion benches and Python comparisons on deterministic synthetic OHLCV data (1M+ rows, fixed seed).
+- Record hardware metadata, library versions, and machine-readable JSON results.
+- Render this page from that JSON only (CI drift gate — no orphan performance claims).
 
-The following table shows the execution time (in milliseconds) for calculating common indicators on 1M rows.
+Track progress: [quantwave-9gek.2](https://github.com/lavs9/quantwave/issues) (benchmark teardown/rebuild).
 
-| Indicator | QuantWave (Rust) | Pandas (Python) | TA-Lib (C/Proxy) |
-|-----------|------------------|-----------------|------------------|
-| SMA (20)  | 3.74 ms          | 7.43 ms         | ~6.00 ms         |
-| EMA (20)  | 2.69 ms          | 4.12 ms         | ~4.00 ms         |
-| SuperTrend| 7.40 ms          | >200 ms*        | ~15.00 ms        |
-| CyberCycle| 5.02 ms          | >500 ms*        | N/A              |
-| InstTrend | 73.71 ms         | >2000 ms*       | N/A              |
+## Memory Usage (measured)
 
-> **Note**: QuantWave benchmarks are run as native Rust binaries to eliminate interpreter overhead. 
-> 
-> \*For complex indicators like **SuperTrend**, **CyberCycle**, and **Instantaneous Trendline**, Pandas performance drops exponentially because these calculations are recursive and cannot be fully vectorized with NumPy, forcing Python-level loops or expensive `.apply()` calls. QuantWave handles these at near-memory-bandwidth speeds.
+QuantWave leverages Arrow's zero-copy memory model via Polars. While raw numeric columns have similar footprints across frameworks, QuantWave's advantage becomes substantial when dealing with **realistic quantitative datasets** (multi-column OHLCV + high-cardinality String symbols).
 
-
-> **Note**: Data is generated dynamically using `docs/gen_benchmarks.py` to ensure transparency.
-
-## Memory Usage
-
-QuantWave leverages Arrow's zero-copy memory model via Polars. While raw numeric columns have similar footprints across frameworks, QuantWave's advantage becomes massive when dealing with **realistic quantitative datasets** (multi-column OHLCV + high-cardinality String symbols).
+These figures come from real `estimated_size()` / `memory_usage(deep=True)` measurements on synthetic data.
 
 ### Benchmark: 1M Rows (OHLCV + Symbol)
+
 We compare a dataset containing 5 numeric columns (`float64`) and 1 `Symbol` column with 1,000 unique tickers.
 
 | Framework | Memory Usage | Footprint |
-|-----------|-------------------------|-----------|
+|-----------|----------------|---------|
 | **QuantWave (Polars)** | **41.96 MB** | **1.0x** |
 | Pandas    | 88.69 MB | 2.1x |
 
 ### Benchmark: High-Cardinality Strings
+
 When isolating just the `Symbol` column (1M rows of ticker strings), the Arrow memory layout used by QuantWave is significantly more optimized than Pandas' Python-object based strings.
 
 | Framework | Memory (Strings) | Footprint |
@@ -53,21 +38,11 @@ When isolating just the `Symbol` column (1M rows of ticker strings), the Arrow m
 | **QuantWave (Polars)** | **11.44 MB** | **1.0x** |
 | Pandas    | 58.17 MB | **~5.1x** |
 
-> **Conclusion**: For production-grade data pipelines with thousands of tickers and multiple indicators, QuantWave maintains a **2x to 5x lower memory footprint**, allowing you to process larger-than-RAM datasets with ease.
+> **Takeaway**: For production-grade pipelines with thousands of tickers and multiple indicators, QuantWave maintains a **2x to 5x lower memory footprint** on realistic string-heavy workloads.
 
+## Speed & Latency
 
-
-## Streaming Latency
-
-We measure the latency of the streaming `Next<T>` implementations in nanoseconds.
-
-
-| Indicator | Mean Latency (ns) | P99 Latency (ns) |
-|-----------|-------------------|------------------|
-| SMA (20)  | 3.74 ns           | ~12 ns           |
-| SuperTrend| 7.40 ns           | ~25 ns           |
-| CyberCycle| 5.02 ns           | ~18 ns           |
-
+Speed and per-tick latency tables will appear here once the harness publishes its first JSON results. Until then, see the honest preliminary measurement in [`benchmark_results.md`](https://github.com/lavs9/quantwave/blob/main/benchmark_results.md) at the repo root (SMA streaming vs talib-rs batch on 1M rows).
 
 ---
 

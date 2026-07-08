@@ -25,6 +25,8 @@ STEP_PATHS: dict[str, list[str]] = {
         "scripts/check_doc_drift.py",
         "scripts/check_public_metadata.py",
         "scripts/check_aeo.py",
+        "scripts/check_benchmark_claims.py",
+        "benchmarks",
         "docs/guides/rust",
         "scripts/sync_indicator_docs.py",
         "scripts/regenerate_metadata_registry.py",

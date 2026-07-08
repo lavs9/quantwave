@@ -67,10 +67,7 @@ df.ta.rsi(length=14, append=True)  # adds RSI column
 
 SuperTrend is stateful bar-by-bar math. pandas-ta and naive pandas loops pay Python interpreter cost on every row; QuantWave compiles the same `Next<T>` path for batch plugins and streaming.
 
-| 1M OHLCV rows (see [benchmarks](../benchmarks.md)) | QuantWave | pandas-ta / pandas loop |
-|--------------------------------------------------|-----------|-------------------------|
-| SuperTrend | ~7 ms | >200 ms |
-| Cyber Cycle (Ehlers) | ~5 ms | >500 ms (often N/A in TA-Lib) |
+Measured throughput comparisons are being rebuilt on a reproducible harness. Until those results publish, see [benchmarks](../benchmarks.md) for methodology and the memory measurements that are already verified.
 
 ---
 
