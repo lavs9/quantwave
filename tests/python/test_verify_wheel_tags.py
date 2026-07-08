@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "verify_wheel_tags.py"
 BROKEN = ROOT / "dist" / "quantwave-0.6.0-py3-none-macosx_11_0_arm64.whl"
 FIXED = ROOT / "dist" / ".abi3-test" / "quantwave-0.6.0-cp39-abi3-macosx_11_0_arm64.whl"
+BUILT_061 = ROOT / "dist" / "quantwave-0.6.1-cp39-abi3-macosx_11_0_arm64.whl"
 
 
 def _run(*args: str) -> int:
@@ -31,3 +32,10 @@ def test_accepts_abi3_wheel_when_built() -> None:
     if not FIXED.exists():
         return
     assert _run(str(FIXED)) == 0
+
+
+def test_accepts_abi3_wheel_with_uniffi_core_lib() -> None:
+    """UniFFI core uses libquantwave_python.{so,dylib}, not *.abi3.so."""
+    if not BUILT_061.exists():
+        return
+    assert _run(str(BUILT_061)) == 0

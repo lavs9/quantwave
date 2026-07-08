@@ -18,7 +18,12 @@ from pathlib import Path
 
 CPYTHON_EXT_RE = re.compile(r"\.cpython-(\d+)(?:-|\.)", re.IGNORECASE)
 ABI3_EXT_RE = re.compile(r"\.abi3\.(?:so|pyd)$", re.IGNORECASE)
-NATIVE_EXT_RE = re.compile(r"\.(?:so|pyd)$", re.IGNORECASE)
+NATIVE_EXT_RE = re.compile(r"\.(?:so|pyd|dylib)$", re.IGNORECASE)
+# UniFFI/maturin core cdylib (py3-none tag) — not PyO3 abi3-suffixed, but stable across 3.9+.
+UNIFFI_CORE_LIB_RE = re.compile(
+    r"^libquantwave_python\.(?:so|dylib)$",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -99,7 +104,12 @@ def verify_wheel(path: Path) -> list[str]:
             elif not abi3 and NATIVE_EXT_RE.search(base):
                 # Windows abi3 wheels may use .pyd without abi3 in the name when
                 # built correctly; allow .pyd only when no cpython marker present.
-                if not base.lower().endswith(".pyd"):
+                # UniFFI core (libquantwave_python.{so,dylib}) uses maturin py3-none
+                # cdylib naming, not PyO3's *.abi3.so suffix.
+                if not (
+                    base.lower().endswith(".pyd")
+                    or UNIFFI_CORE_LIB_RE.fullmatch(base)
+                ):
                     errors.append(
                         f"{path.name}: abi3 tag but extension {base!r} is not "
                         "marked abi3"
