@@ -1006,6 +1006,7 @@ impl BacktestEngine {
         let sig_col = &self.config.signal_col;
 
         let ts_series = df.column(ts_col)?.clone();
+        let timestamps = self.extract_timestamps(&ts_series, ts_col)?;
         let close_ca = df.column(close_col)?.f64()?.clone();
         let (signal_vals, signal_metas) = self.load_signals(df, sig_col)?;
 
@@ -1040,7 +1041,6 @@ impl BacktestEngine {
             })
             .collect();
 
-        let timestamps = self.extract_timestamps(&ts_series, ts_col)?;
         let closes: Vec<f64> = close_ca
             .into_iter()
             .map(|v| v.unwrap_or(f64::NAN))
@@ -1095,11 +1095,15 @@ impl BacktestEngine {
         sig_col: &str,
     ) -> Result<(Vec<f64>, Vec<Option<HashMap<String, f64>>>), BacktestError> {
         let signal_series = df.column(sig_col)?;
-        let s = signal_series
-            .as_series()
-            .ok_or_else(|| BacktestError::InvalidInput("column has no series backing".into()))?;
 
-        if s.dtype().is_struct() {
+        if signal_series.dtype().is_struct() {
+            let s = signal_series
+                .as_series()
+                .ok_or_else(|| BacktestError::InvalidDtype {
+                    col: sig_col.to_string(),
+                    expected: "Struct signal column".into(),
+                    got: format!("{:?}", signal_series.dtype()),
+                })?;
             let ca = s.struct_().map_err(BacktestError::Polars)?;
             let n = ca.len();
             let mut exposures = Vec::with_capacity(n);
@@ -1204,13 +1208,7 @@ impl BacktestEngine {
         col_name: &str,
     ) -> Result<Vec<DateTime<Utc>>, BacktestError> {
         // Support Datetime, Int64 (as unix micros or simple increasing), or fallback.
-        // In Polars 0.46+, df.column() yields Column; convert for ChunkedArray access.
-        let s = col
-            .as_series()
-            .ok_or_else(|| BacktestError::InvalidInput("column has no series backing".into()))?;
-
-        // Support Datetime, Int64 (as unix micros or simple increasing), or fallback
-        if let Ok(ca) = s.datetime() {
+        if let Ok(ca) = col.datetime() {
             return Ok(ca
                 .into_iter()
                 .map(|opt| {
@@ -1225,7 +1223,7 @@ impl BacktestEngine {
                 .collect());
         }
 
-        if let Ok(ca) = s.i64() {
+        if let Ok(ca) = col.i64() {
             // Treat as increasing bar index or unix seconds for synth tests
             return Ok(ca
                 .into_iter()
@@ -1240,7 +1238,7 @@ impl BacktestEngine {
         Err(BacktestError::InvalidDtype {
             col: col_name.to_string(),
             expected: "Datetime or Int64".into(),
-            got: format!("{:?}", s.dtype()),
+            got: format!("{:?}", col.dtype()),
         })
     }
 
@@ -1365,38 +1363,29 @@ pub fn apply_signal_modifiers(
 }
 
 fn extract_bool_column(col: Column, col_name: &str) -> Result<Vec<bool>, BacktestError> {
-    let s = col
-        .as_series()
-        .ok_or_else(|| BacktestError::InvalidInput("column has no series backing".into()))?;
-    if let Ok(ca) = s.bool() {
+    if let Ok(ca) = col.bool() {
         return Ok(ca.into_iter().map(|opt| opt.unwrap_or(false)).collect());
     }
     Err(BacktestError::InvalidDtype {
         col: col_name.to_string(),
         expected: "Boolean".into(),
-        got: format!("{:?}", s.dtype()),
+        got: format!("{:?}", col.dtype()),
     })
 }
 
 fn extract_f64_column(col: Column, col_name: &str) -> Result<Vec<f64>, BacktestError> {
-    let s = col
-        .as_series()
-        .ok_or_else(|| BacktestError::InvalidInput("column has no series backing".into()))?;
-    if let Ok(ca) = s.f64() {
+    if let Ok(ca) = col.f64() {
         return Ok(ca.into_iter().map(|opt| opt.unwrap_or(0.0)).collect());
     }
     Err(BacktestError::InvalidDtype {
         col: col_name.to_string(),
         expected: "Float64".into(),
-        got: format!("{:?}", s.dtype()),
+        got: format!("{:?}", col.dtype()),
     })
 }
 
 fn extract_string_column(col: Column, col_name: &str) -> Result<Vec<String>, BacktestError> {
-    let s = col
-        .as_series()
-        .ok_or_else(|| BacktestError::InvalidInput("column has no series backing".into()))?;
-    if let Ok(ca) = s.str() {
+    if let Ok(ca) = col.str() {
         return Ok(ca
             .into_iter()
             .map(|opt| opt.unwrap_or_default().to_string())
@@ -1405,7 +1394,7 @@ fn extract_string_column(col: Column, col_name: &str) -> Result<Vec<String>, Bac
     Err(BacktestError::InvalidDtype {
         col: col_name.to_string(),
         expected: "Utf8/String".into(),
-        got: format!("{:?}", s.dtype()),
+        got: format!("{:?}", col.dtype()),
     })
 }
 
