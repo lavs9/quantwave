@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Vectorized backtest engine exposed to Python.
 
 The simulation core is implemented in Rust (``quantwave._backtest``) and
