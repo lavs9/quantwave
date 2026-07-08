@@ -72,8 +72,8 @@ pub fn oi_zones(strikes: &[f64], ce_oi: &[u64], pe_oi: &[u64], n: usize) -> OIZo
     let mut pe_pairs: Vec<(f64, u64)> =
         strikes.iter().cloned().zip(pe_oi.iter().cloned()).collect();
 
-    ce_pairs.sort_by(|a, b| b.1.cmp(&a.1));
-    pe_pairs.sort_by(|a, b| b.1.cmp(&a.1));
+    ce_pairs.sort_by_key(|a| std::cmp::Reverse(a.1));
+    pe_pairs.sort_by_key(|a| std::cmp::Reverse(a.1));
 
     OIZones {
         resistance_strikes: ce_pairs.iter().take(n).map(|p| p.0).collect(),

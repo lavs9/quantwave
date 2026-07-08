@@ -71,7 +71,7 @@ impl SmmaOffset {
         if self.history.len() <= self.offset {
             f64::NAN
         } else {
-            *self.history.back().unwrap()
+            self.history.back().copied().unwrap_or(f64::NAN)
         }
     }
 }

@@ -83,7 +83,7 @@ impl<'a> TaFeaturesNamespace<'a> {
                 },
                 GetOutput::from_type(DataType::Float64),
             )
-            .alias(&format!("hurst_{}", period))])
+            .alias(format!("hurst_{}", period))])
     }
 
     /// Cyber Cycle rich features (cycle + trigger + derived momentum + signal).
@@ -142,15 +142,19 @@ impl<'a> TaFeaturesNamespace<'a> {
         self.0.clone().with_columns([col("close")
             .map(
                 move |s| {
-                    let mut extractor =
-                        rust_features::GriffithsDominantCycleFeatureExtractor::new(lower, upper, length);
+                    let mut extractor = rust_features::GriffithsDominantCycleFeatureExtractor::new(
+                        lower, upper, length,
+                    );
                     let ca: &Float64Chunked = s.f64()?;
                     let mut values = Vec::with_capacity(s.len());
                     for i in 0..s.len() {
                         let val = ca.get(i).unwrap_or(f64::NAN);
                         values.push(extractor.next(val).dominant_cycle);
                     }
-                    Ok(Some(Column::from(Series::new("griffiths_dc".into(), values))))
+                    Ok(Some(Column::from(Series::new(
+                        "griffiths_dc".into(),
+                        values,
+                    ))))
                 },
                 GetOutput::from_type(DataType::Float64),
             )
@@ -188,7 +192,10 @@ impl<'a> TaFeaturesNamespace<'a> {
                         };
                         labels.push(label);
                     }
-                    Ok(Some(Column::from(Series::new("regime_label".into(), labels))))
+                    Ok(Some(Column::from(Series::new(
+                        "regime_label".into(),
+                        labels,
+                    ))))
                 },
                 GetOutput::from_type(DataType::UInt32),
             )
@@ -201,7 +208,8 @@ impl<'a> TaFeaturesNamespace<'a> {
         self.0.clone().with_columns([col("close")
             .map(
                 move |s| {
-                    let mut extractor = rust_features::InstantaneousTrendlineFeatureExtractor::new();
+                    let mut extractor =
+                        rust_features::InstantaneousTrendlineFeatureExtractor::new();
                     let ca: &Float64Chunked = s.f64()?;
                     let mut trends = Vec::with_capacity(s.len());
                     let mut strengths = Vec::with_capacity(s.len());
@@ -297,7 +305,7 @@ impl<'a> TaFeaturesNamespace<'a> {
                 },
                 GetOutput::from_type(DataType::Float64),
             )
-            .alias(&format!("trendflex_{}", length))])
+            .alias(format!("trendflex_{}", length))])
     }
 
     /// Ehlers Autocorrelation summary features (dominant lag + max correlation).
@@ -391,31 +399,24 @@ mod tests {
         let lf = df.lazy();
 
         // 1. hurst
-        let out = lf
-            .clone()
-            .ta()
-            .features()
-            .hurst(8)
-            .collect()?;
+        let out = lf.clone().ta().features().hurst(8).collect()?;
         assert!(out.column("hurst_8").is_ok());
         assert_eq!(out.column("hurst_8")?.dtype(), &DataType::Float64);
 
         // 2. cyber_cycle -> struct
-        let out = out
-            .lazy()
-            .ta()
-            .features()
-            .cyber_cycle(12)
-            .collect()?;
+        let out = out.lazy().ta().features().cyber_cycle(12).collect()?;
         let cc = out.column("cyber_cycle")?;
-        assert_eq!(cc.dtype().clone(), DataType::Struct(vec![
-            Field::new("cycle".into(), DataType::Float64),
-            Field::new("trigger".into(), DataType::Float64),
-            Field::new("momentum".into(), DataType::Float64),
-            Field::new("signal".into(), DataType::Float64),
-        ]));
+        assert_eq!(
+            cc.dtype().clone(),
+            DataType::Struct(vec![
+                Field::new("cycle".into(), DataType::Float64),
+                Field::new("trigger".into(), DataType::Float64),
+                Field::new("momentum".into(), DataType::Float64),
+                Field::new("signal".into(), DataType::Float64),
+            ])
+        );
         let ca = cc.struct_()?;
-        assert!(ca.field_by_name("cycle".into())?.f64()?.get(39).is_some());
+        assert!(ca.field_by_name("cycle")?.f64()?.get(39).is_some());
 
         // 3. griffiths_dominant_cycle -> "griffiths_dc"
         let out = out
@@ -428,16 +429,16 @@ mod tests {
         assert_eq!(out.column("griffiths_dc")?.dtype(), &DataType::Float64);
 
         // 4. regime_features -> "regime_label"
+        let out = out.lazy().ta().features().regime_features().collect()?;
+        assert!(out.column("regime_label").is_ok());
+        assert_eq!(out.column("regime_label")?.dtype(), &DataType::UInt32);
+
         let out = out
             .lazy()
             .ta()
             .features()
-            .regime_features()
+            .instantaneous_trendline()
             .collect()?;
-        assert!(out.column("regime_label").is_ok());
-        assert_eq!(out.column("regime_label")?.dtype(), &DataType::UInt32);
-
-        let out = out.lazy().ta().features().instantaneous_trendline().collect()?;
         assert!(out.column("itl").is_ok());
 
         let out = out.lazy().ta().features().regime_probs().collect()?;

@@ -84,31 +84,29 @@ mod tearsheet;
 mod walk_forward;
 
 use chrono::{DateTime, Utc};
-use polars::prelude::*;
 pub use cross_sectional::{
-    assign_long_short_exposure, neutralize_factor, run_cross_sectional_backtest, winsorize_factor,
-    zscore_factor, CrossSectionalConfig,
+    CrossSectionalConfig, assign_long_short_exposure, neutralize_factor,
+    run_cross_sectional_backtest, winsorize_factor, zscore_factor,
 };
-pub use live_bridge::{
-    LiveBridge, LiveBridgeError, LiveSignalEvent, RecordingLiveBridge,
-};
+pub use live_bridge::{LiveBridge, LiveBridgeError, LiveSignalEvent, RecordingLiveBridge};
 pub use metrics::{BacktestReport, PerformanceMetrics};
-pub use tearsheet::{render_tearsheet_html, TearsheetOptions};
 pub use monte_carlo::{
-    monte_carlo_trade_bootstrap, MonteCarloConfig, MonteCarloSummary,
-    monte_carlo_return_paths, MonteCarloReturnConfig, MonteCarloPathSummary,
+    MonteCarloConfig, MonteCarloPathSummary, MonteCarloReturnConfig, MonteCarloSummary,
+    monte_carlo_return_paths, monte_carlo_trade_bootstrap,
 };
-pub use sweep::{run_param_sweep, single_param_variants, SweepVariant};
+use polars::prelude::*;
 pub use portfolio::{
     PortfolioAllocator, PortfolioBar, PortfolioMode, run_shared_capital_streaming_simulation,
 };
-pub use stops::{StopConfig, StopEvaluationMode};
-pub use walk_forward::{run_walk_forward, run_walk_forward_optimize, WalkForwardConfig};
 #[allow(unused_imports)]
 use quantwave_core::traits::Next; // Re-exported for future streaming parity work (used in hybrid mode later per quantwave-ug9t)
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+pub use stops::{StopConfig, StopEvaluationMode};
+pub use sweep::{SweepVariant, run_param_sweep, single_param_variants};
+pub use tearsheet::{TearsheetOptions, render_tearsheet_html};
 use thiserror::Error;
+pub use walk_forward::{WalkForwardConfig, run_walk_forward, run_walk_forward_optimize};
 
 /// Errors from the simulation engine.
 #[derive(Error, Debug)]
@@ -119,8 +117,33 @@ pub enum BacktestError {
     #[error("Invalid input: {0}")]
     InvalidInput(String),
 
+    #[error("missing column: {name}")]
+    MissingColumn { name: String },
+
+    #[error("invalid dtype for column '{col}': expected {expected}, got {got}")]
+    InvalidDtype {
+        col: String,
+        expected: String,
+        got: String,
+    },
+
+    #[error("internal invariant violated: {context}")]
+    InternalInvariant { context: String },
+
     #[error("Data must be sorted by timestamp (and symbol for multi-symbol runs)")]
     UnsortedData,
+}
+
+fn require_symbol_col(symbol_col: &Option<String>) -> Result<&str, BacktestError> {
+    symbol_col.as_deref().ok_or_else(|| {
+        BacktestError::InvalidInput("symbol_col required for multi-symbol backtest".into())
+    })
+}
+
+pub(crate) fn internal_invariant(context: impl Into<String>) -> BacktestError {
+    BacktestError::InternalInvariant {
+        context: context.into(),
+    }
 }
 
 /// Basic execution cost model.
@@ -185,7 +208,11 @@ pub struct BpsSlippageModel {
 impl SlippageModel for BpsSlippageModel {
     fn apply(&self, price: f64, _quantity: f64, is_buy: bool, _adv: Option<f64>) -> f64 {
         let s = self.bps / 10_000.0;
-        if is_buy { price * (1.0 + s) } else { price * (1.0 - s) }
+        if is_buy {
+            price * (1.0 + s)
+        } else {
+            price * (1.0 - s)
+        }
     }
 }
 
@@ -200,7 +227,11 @@ impl SlippageModel for SquareRootMarketImpactSlippage {
         let adv = adv.unwrap_or(1_000_000.0);
         let part = (quantity.abs() / adv).min(self.max_participation);
         let impact = self.impact_coef * part.sqrt();
-        if is_buy { price * (1.0 + impact) } else { price * (1.0 - impact) }
+        if is_buy {
+            price * (1.0 + impact)
+        } else {
+            price * (1.0 - impact)
+        }
     }
 }
 
@@ -234,16 +265,24 @@ impl ExecutionModel {
     pub fn commission_for(&self, qty: f64, px: f64) -> f64 {
         match self {
             ExecutionModel::Simple(cm) => (qty.abs() * px) * (cm.commission_bps / 10_000.0),
-            ExecutionModel::HighFidelity { commission, .. } => commission.calculate_commission(qty, px),
+            ExecutionModel::HighFidelity { commission, .. } => {
+                commission.calculate_commission(qty, px)
+            }
         }
     }
     pub fn slippage_price(&self, price: f64, qty: f64, is_buy: bool, adv: Option<f64>) -> f64 {
         match self {
             ExecutionModel::Simple(cm) => {
                 let s = cm.slippage_bps / 10_000.0;
-                if is_buy { price * (1.0 + s) } else { price * (1.0 - s) }
+                if is_buy {
+                    price * (1.0 + s)
+                } else {
+                    price * (1.0 - s)
+                }
             }
-            ExecutionModel::HighFidelity { slippage, .. } => slippage.apply(price, qty, is_buy, adv),
+            ExecutionModel::HighFidelity { slippage, .. } => {
+                slippage.apply(price, qty, is_buy, adv)
+            }
         }
     }
 }
@@ -262,7 +301,10 @@ pub struct InitialRiskPositionSizer {
 
 impl Default for InitialRiskPositionSizer {
     fn default() -> Self {
-        Self { initial_risk: 0.01, max_target_pct: 0.25 }
+        Self {
+            initial_risk: 0.01,
+            max_target_pct: 0.25,
+        }
     }
 }
 
@@ -277,25 +319,31 @@ impl InitialRiskPositionSizer {
         price: f64,
         equity: f64,
     ) -> f64 {
-        let sign = if raw_exposure > 0.0 { 1.0 } else if raw_exposure < 0.0 { -1.0 } else { 0.0 };
+        let sign = if raw_exposure > 0.0 {
+            1.0
+        } else if raw_exposure < 0.0 {
+            -1.0
+        } else {
+            0.0
+        };
         if let Some(m) = meta {
             // Prefer explicit fraction_at_risk from rich PA signal
-            if let Some(frac) = m.get("fraction_at_risk").copied() {
-                if frac > 0.0 {
-                    let target_pct = (self.initial_risk / frac).min(self.max_target_pct);
-                    let target_units = target_pct * equity / price * sign;
-                    return target_units;
-                }
+            if let Some(frac) = m.get("fraction_at_risk").copied()
+                && frac > 0.0
+            {
+                let target_pct = (self.initial_risk / frac).min(self.max_target_pct);
+                let target_units = target_pct * equity / price * sign;
+                return target_units;
             }
             // Fallback: PA pole_height_atr (common from Flag/H&S/MarketStructure)
-            if let Some(pole) = m.get("pole_height_atr").copied() {
-                if pole > 0.0 {
-                    // Treat pole_atr as risk unit proxy (adjust k per your PA convention; here illustrative 1% / pole)
-                    let frac = 0.01 / pole;
-                    let target_pct = (self.initial_risk / frac).min(self.max_target_pct);
-                    let target_units = target_pct * equity / price * sign;
-                    return target_units;
-                }
+            if let Some(pole) = m.get("pole_height_atr").copied()
+                && pole > 0.0
+            {
+                // Treat pole_atr as risk unit proxy (adjust k per your PA convention; here illustrative 1% / pole)
+                let frac = 0.01 / pole;
+                let target_pct = (self.initial_risk / frac).min(self.max_target_pct);
+                let target_units = target_pct * equity / price * sign;
+                return target_units;
             }
         }
         raw_exposure
@@ -482,9 +530,7 @@ impl PAEvent {
             meta.insert("strength".to_string(), s);
         }
         let exposure = if self.long {
-            self.pole_height
-                .map(pole_height_to_exposure)
-                .unwrap_or(1.0)
+            self.pole_height.map(pole_height_to_exposure).unwrap_or(1.0)
         } else {
             0.0
         };
@@ -523,10 +569,10 @@ pub fn parse_struct_signal_row(
             if matches!(key, "exposure" | "long" | "short") {
                 continue;
             }
-            if let Some(v) = struct_field_f64(ca, key, i) {
-                if v.is_finite() {
-                    meta.insert(key.to_string(), v);
-                }
+            if let Some(v) = struct_field_f64(ca, key, i)
+                && v.is_finite()
+            {
+                meta.insert(key.to_string(), v);
             }
         }
     }
@@ -616,10 +662,9 @@ impl BacktestEngine {
 
         for c in [ts_col, close_col, sig_col] {
             if df.column(c).is_err() {
-                return Err(BacktestError::InvalidInput(format!(
-                    "missing column: {}",
-                    c
-                )));
+                return Err(BacktestError::MissingColumn {
+                    name: (*c).to_string(),
+                });
             }
         }
 
@@ -646,10 +691,9 @@ impl BacktestEngine {
 
         for c in [ts_col, close_col, sig_col] {
             if df.column(c).is_err() {
-                return Err(BacktestError::InvalidInput(format!(
-                    "missing column: {}",
-                    c
-                )));
+                return Err(BacktestError::MissingColumn {
+                    name: (*c).to_string(),
+                });
             }
         }
 
@@ -663,28 +707,30 @@ impl BacktestEngine {
         self.run_metrics_single_symbol(df)
     }
 
-    fn run_metrics_single_symbol(&self, df: DataFrame) -> Result<PerformanceMetrics, BacktestError> {
+    fn run_metrics_single_symbol(
+        &self,
+        df: DataFrame,
+    ) -> Result<PerformanceMetrics, BacktestError> {
         let (trades, equity_points) = self.simulate_dataframe(&df, None)?;
-        Ok(PerformanceMetrics::from_raw(&trades, &equity_points, self.per_symbol_initial_cash()))
+        Ok(PerformanceMetrics::from_raw(
+            &trades,
+            &equity_points,
+            self.per_symbol_initial_cash(),
+        ))
     }
 
     fn run_metrics_multi_symbol(&self, df: DataFrame) -> Result<PerformanceMetrics, BacktestError> {
-        let sym_col = self
-            .config
-            .symbol_col
-            .as_ref()
-            .expect("symbol_col set");
+        let sym_col = require_symbol_col(&self.config.symbol_col)?;
 
         if df.column(sym_col).is_err() {
-            return Err(BacktestError::InvalidInput(format!(
-                "missing column: {}",
-                sym_col
-            )));
+            return Err(BacktestError::MissingColumn {
+                name: sym_col.to_string(),
+            });
         }
 
         let ts_series = df.column(&self.config.timestamp_col)?.clone();
-        let timestamps = self.extract_timestamps(&ts_series)?;
-        let symbols = extract_string_column(df.column(sym_col)?.clone())?;
+        let timestamps = self.extract_timestamps(&ts_series, &self.config.timestamp_col)?;
+        let symbols = extract_string_column(df.column(sym_col)?.clone(), sym_col)?;
         validate_sorted_timestamp_symbol(&timestamps, &symbols)?;
 
         let mut unique_symbols: Vec<String> = Vec::new();
@@ -703,10 +749,7 @@ impl BacktestEngine {
                 .clone()
                 .lazy()
                 .filter(col(sym_col).eq(lit(symbol.as_str())))
-                .sort(
-                    [&self.config.timestamp_col],
-                    SortMultipleOptions::default(),
-                )
+                .sort([&self.config.timestamp_col], SortMultipleOptions::default())
                 .collect()?;
 
             let (mut trades, equity_points) = self.simulate_dataframe(&sub, Some(symbol))?;
@@ -717,7 +760,11 @@ impl BacktestEngine {
         let portfolio_equity = aggregate_portfolio_equity(&per_symbol_equity);
         let n_symbols = unique_symbols.len() as f64;
         let portfolio_initial = self.per_symbol_initial_cash() * n_symbols;
-        Ok(PerformanceMetrics::from_raw(&all_trades, &portfolio_equity, portfolio_initial))
+        Ok(PerformanceMetrics::from_raw(
+            &all_trades,
+            &portfolio_equity,
+            portfolio_initial,
+        ))
     }
 
     fn run_single_symbol(&self, df: DataFrame) -> Result<BacktestResult, BacktestError> {
@@ -746,22 +793,17 @@ impl BacktestEngine {
     }
 
     fn run_multi_symbol(&self, df: DataFrame) -> Result<BacktestResult, BacktestError> {
-        let sym_col = self
-            .config
-            .symbol_col
-            .as_ref()
-            .expect("symbol_col set");
+        let sym_col = require_symbol_col(&self.config.symbol_col)?;
 
         if df.column(sym_col).is_err() {
-            return Err(BacktestError::InvalidInput(format!(
-                "missing column: {}",
-                sym_col
-            )));
+            return Err(BacktestError::MissingColumn {
+                name: sym_col.to_string(),
+            });
         }
 
         let ts_series = df.column(&self.config.timestamp_col)?.clone();
-        let timestamps = self.extract_timestamps(&ts_series)?;
-        let symbols = extract_string_column(df.column(sym_col)?.clone())?;
+        let timestamps = self.extract_timestamps(&ts_series, &self.config.timestamp_col)?;
+        let symbols = extract_string_column(df.column(sym_col)?.clone(), sym_col)?;
         validate_sorted_timestamp_symbol(&timestamps, &symbols)?;
 
         let mut unique_symbols: Vec<String> = Vec::new();
@@ -781,10 +823,7 @@ impl BacktestEngine {
                 .clone()
                 .lazy()
                 .filter(col(sym_col).eq(lit(symbol.as_str())))
-                .sort(
-                    [&self.config.timestamp_col],
-                    SortMultipleOptions::default(),
-                )
+                .sort([&self.config.timestamp_col], SortMultipleOptions::default())
                 .collect()?;
 
             let (mut trades, equity_points) = self.simulate_dataframe(&sub, Some(symbol))?;
@@ -793,11 +832,8 @@ impl BacktestEngine {
         }
 
         let portfolio_equity = aggregate_portfolio_equity(&per_symbol_equity);
-        let mut combined_equity: Vec<EquityPoint> = per_symbol_equity
-            .values()
-            .flatten()
-            .cloned()
-            .collect();
+        let mut combined_equity: Vec<EquityPoint> =
+            per_symbol_equity.values().flatten().cloned().collect();
         combined_equity.extend(portfolio_equity.clone());
 
         let n_symbols = unique_symbols.len() as f64;
@@ -824,16 +860,15 @@ impl BacktestEngine {
         })
     }
 
-    fn run_shared_capital_multi_symbol(&self, df: DataFrame) -> Result<BacktestResult, BacktestError> {
-        let sym_col = self
-            .config
-            .symbol_col
-            .as_ref()
-            .expect("symbol_col set");
+    fn run_shared_capital_multi_symbol(
+        &self,
+        df: DataFrame,
+    ) -> Result<BacktestResult, BacktestError> {
+        let sym_col = require_symbol_col(&self.config.symbol_col)?;
 
         let ts_series = df.column(&self.config.timestamp_col)?.clone();
-        let timestamps = self.extract_timestamps(&ts_series)?;
-        let symbols = extract_string_column(df.column(sym_col)?.clone())?;
+        let timestamps = self.extract_timestamps(&ts_series, &self.config.timestamp_col)?;
+        let symbols = extract_string_column(df.column(sym_col)?.clone(), sym_col)?;
         validate_sorted_timestamp_symbol(&timestamps, &symbols)?;
 
         let close_ca = df.column(&self.config.close_col)?.f64()?.clone();
@@ -903,15 +938,13 @@ impl BacktestEngine {
             self.config.portfolio_allocator,
         );
 
-        Self::assemble_shared_capital_result(
-            &self.config,
-            trades,
-            per_symbol_equity,
-            portfolio_eq,
-        )
+        Self::assemble_shared_capital_result(&self.config, trades, per_symbol_equity, portfolio_eq)
     }
 
-    fn run_metrics_shared_capital(&self, df: DataFrame) -> Result<PerformanceMetrics, BacktestError> {
+    fn run_metrics_shared_capital(
+        &self,
+        df: DataFrame,
+    ) -> Result<PerformanceMetrics, BacktestError> {
         let result = self.run_shared_capital_multi_symbol(df)?;
         Ok(PerformanceMetrics::from_result(&result))
     }
@@ -924,11 +957,8 @@ impl BacktestEngine {
         portfolio_equity: Vec<EquityPoint>,
     ) -> Result<BacktestResult, BacktestError> {
         let engine = BacktestEngine::new(config.clone());
-        let mut combined_equity: Vec<EquityPoint> = per_symbol_equity
-            .values()
-            .flatten()
-            .cloned()
-            .collect();
+        let mut combined_equity: Vec<EquityPoint> =
+            per_symbol_equity.values().flatten().cloned().collect();
         combined_equity.extend(portfolio_equity.clone());
 
         let initial_cash = match &config.execution_model {
@@ -983,19 +1013,19 @@ impl BacktestEngine {
         let size_multipliers = self.load_size_multipliers(df)?;
 
         let n = signal_vals.len();
-        if let Some(ref f) = entry_filters {
-            if f.len() != n {
-                return Err(BacktestError::InvalidInput(
-                    "entry_filter column length mismatch".into(),
-                ));
-            }
+        if let Some(ref f) = entry_filters
+            && f.len() != n
+        {
+            return Err(BacktestError::InvalidInput(
+                "entry_filter column length mismatch".into(),
+            ));
         }
-        if let Some(ref m) = size_multipliers {
-            if m.len() != n {
-                return Err(BacktestError::InvalidInput(
-                    "size_multiplier column length mismatch".into(),
-                ));
-            }
+        if let Some(ref m) = size_multipliers
+            && m.len() != n
+        {
+            return Err(BacktestError::InvalidInput(
+                "size_multiplier column length mismatch".into(),
+            ));
         }
 
         let effective_signals: Vec<f64> = signal_vals
@@ -1010,7 +1040,7 @@ impl BacktestEngine {
             })
             .collect();
 
-        let timestamps = self.extract_timestamps(&ts_series)?;
+        let timestamps = self.extract_timestamps(&ts_series, ts_col)?;
         let closes: Vec<f64> = close_ca
             .into_iter()
             .map(|v| v.unwrap_or(f64::NAN))
@@ -1070,7 +1100,7 @@ impl BacktestEngine {
             .ok_or_else(|| BacktestError::InvalidInput("column has no series backing".into()))?;
 
         if s.dtype().is_struct() {
-            let ca = s.struct_().map_err(|e| BacktestError::Polars(e))?;
+            let ca = s.struct_().map_err(BacktestError::Polars)?;
             let n = ca.len();
             let mut exposures = Vec::with_capacity(n);
             let mut metas = Vec::with_capacity(n);
@@ -1084,16 +1114,32 @@ impl BacktestEngine {
 
         let signal_vals: Vec<f64> = if signal_series.dtype().is_bool() {
             signal_series
-                .bool()?
+                .bool()
+                .map_err(|_| BacktestError::InvalidDtype {
+                    col: sig_col.to_string(),
+                    expected: "Boolean or Float64".into(),
+                    got: format!("{:?}", signal_series.dtype()),
+                })?
                 .into_iter()
                 .map(|b| if b.unwrap_or(false) { 1.0 } else { 0.0 })
                 .collect()
-        } else {
+        } else if signal_series.dtype().is_float() {
             signal_series
-                .f64()?
+                .f64()
+                .map_err(|_| BacktestError::InvalidDtype {
+                    col: sig_col.to_string(),
+                    expected: "Boolean or Float64".into(),
+                    got: format!("{:?}", signal_series.dtype()),
+                })?
                 .into_iter()
                 .map(|v| v.unwrap_or(0.0))
                 .collect()
+        } else {
+            return Err(BacktestError::InvalidDtype {
+                col: sig_col.to_string(),
+                expected: "Boolean or Float64".into(),
+                got: format!("{:?}", signal_series.dtype()),
+            });
         };
         let metas = vec![None; signal_vals.len()];
         Ok((signal_vals, metas))
@@ -1104,13 +1150,11 @@ impl BacktestEngine {
             return Ok(None);
         };
         if df.column(col_name).is_err() {
-            return Err(BacktestError::InvalidInput(format!(
-                "missing column: {}",
-                col_name
-            )));
+            return Err(BacktestError::MissingColumn {
+                name: col_name.clone(),
+            });
         }
-        extract_bool_column(df.column(col_name)?.clone())
-            .map(Some)
+        extract_bool_column(df.column(col_name)?.clone(), col_name).map(Some)
     }
 
     fn load_size_multipliers(&self, df: &DataFrame) -> Result<Option<Vec<f64>>, BacktestError> {
@@ -1118,13 +1162,11 @@ impl BacktestEngine {
             return Ok(None);
         };
         if df.column(col_name).is_err() {
-            return Err(BacktestError::InvalidInput(format!(
-                "missing column: {}",
-                col_name
-            )));
+            return Err(BacktestError::MissingColumn {
+                name: col_name.clone(),
+            });
         }
-        extract_f64_column(df.column(col_name)?.clone())
-            .map(Some)
+        extract_f64_column(df.column(col_name)?.clone(), col_name).map(Some)
     }
 
     /// Load optional high/low columns when OHLC touched-exit is enabled.
@@ -1136,33 +1178,31 @@ impl BacktestEngine {
             return Ok((None, None));
         }
         let high_col = self.config.high_col.as_ref().ok_or_else(|| {
-            BacktestError::InvalidInput(
-                "OhlcTouched stop evaluation requires high_col".into(),
-            )
+            BacktestError::InvalidInput("OhlcTouched stop evaluation requires high_col".into())
         })?;
         let low_col = self.config.low_col.as_ref().ok_or_else(|| {
-            BacktestError::InvalidInput(
-                "OhlcTouched stop evaluation requires low_col".into(),
-            )
+            BacktestError::InvalidInput("OhlcTouched stop evaluation requires low_col".into())
         })?;
         if df.column(high_col).is_err() {
-            return Err(BacktestError::InvalidInput(format!(
-                "missing column: {}",
-                high_col
-            )));
+            return Err(BacktestError::MissingColumn {
+                name: high_col.clone(),
+            });
         }
         if df.column(low_col).is_err() {
-            return Err(BacktestError::InvalidInput(format!(
-                "missing column: {}",
-                low_col
-            )));
+            return Err(BacktestError::MissingColumn {
+                name: low_col.clone(),
+            });
         }
-        let highs = extract_f64_column(df.column(high_col)?.clone())?;
-        let lows = extract_f64_column(df.column(low_col)?.clone())?;
+        let highs = extract_f64_column(df.column(high_col)?.clone(), high_col)?;
+        let lows = extract_f64_column(df.column(low_col)?.clone(), low_col)?;
         Ok((Some(highs), Some(lows)))
     }
 
-    fn extract_timestamps(&self, col: &Column) -> Result<Vec<DateTime<Utc>>, BacktestError> {
+    fn extract_timestamps(
+        &self,
+        col: &Column,
+        col_name: &str,
+    ) -> Result<Vec<DateTime<Utc>>, BacktestError> {
         // Support Datetime, Int64 (as unix micros or simple increasing), or fallback.
         // In Polars 0.46+, df.column() yields Column; convert for ChunkedArray access.
         let s = col
@@ -1197,13 +1237,18 @@ impl BacktestEngine {
                 .collect());
         }
 
-        // Fallback: treat as strings or error for MVP
-        Err(BacktestError::InvalidInput(
-            "timestamp column must be Datetime or Int64 for this MVP".into(),
-        ))
+        Err(BacktestError::InvalidDtype {
+            col: col_name.to_string(),
+            expected: "Datetime or Int64".into(),
+            got: format!("{:?}", s.dtype()),
+        })
     }
 
-    fn trades_to_df(&self, trades: &[Trade], include_symbol: bool) -> Result<DataFrame, PolarsError> {
+    fn trades_to_df(
+        &self,
+        trades: &[Trade],
+        include_symbol: bool,
+    ) -> Result<DataFrame, PolarsError> {
         if trades.is_empty() {
             let mut cols = vec![
                 Column::new("trade_id".into(), Vec::<u32>::new()),
@@ -1220,7 +1265,7 @@ impl BacktestEngine {
             if include_symbol {
                 cols.push(Column::new("symbol".into(), Vec::<Option<String>>::new()));
             }
-            return Ok(DataFrame::new(cols)?);
+            return DataFrame::new(cols);
         }
 
         let ids: Vec<u32> = trades.iter().map(|t| t.trade_id).collect();
@@ -1257,7 +1302,11 @@ impl BacktestEngine {
         DataFrame::new(cols)
     }
 
-    fn equity_to_df(&self, points: &[EquityPoint], include_symbol: bool) -> Result<DataFrame, PolarsError> {
+    fn equity_to_df(
+        &self,
+        points: &[EquityPoint],
+        include_symbol: bool,
+    ) -> Result<DataFrame, PolarsError> {
         if points.is_empty() {
             let mut cols = vec![
                 Column::new("ts".into(), Vec::<i64>::new()),
@@ -1269,7 +1318,7 @@ impl BacktestEngine {
             if include_symbol {
                 cols.push(Column::new("symbol".into(), Vec::<Option<String>>::new()));
             }
-            return Ok(DataFrame::new(cols)?);
+            return DataFrame::new(cols);
         }
 
         let ts: Vec<i64> = points.iter().map(|p| p.ts.timestamp()).collect();
@@ -1315,34 +1364,35 @@ pub fn apply_signal_modifiers(
     }
 }
 
-fn extract_bool_column(col: Column) -> Result<Vec<bool>, BacktestError> {
+fn extract_bool_column(col: Column, col_name: &str) -> Result<Vec<bool>, BacktestError> {
     let s = col
         .as_series()
         .ok_or_else(|| BacktestError::InvalidInput("column has no series backing".into()))?;
     if let Ok(ca) = s.bool() {
-        return Ok(ca
-            .into_iter()
-            .map(|opt| opt.unwrap_or(false))
-            .collect());
+        return Ok(ca.into_iter().map(|opt| opt.unwrap_or(false)).collect());
     }
-    Err(BacktestError::InvalidInput(
-        "entry_filter column must be boolean".into(),
-    ))
+    Err(BacktestError::InvalidDtype {
+        col: col_name.to_string(),
+        expected: "Boolean".into(),
+        got: format!("{:?}", s.dtype()),
+    })
 }
 
-fn extract_f64_column(col: Column) -> Result<Vec<f64>, BacktestError> {
+fn extract_f64_column(col: Column, col_name: &str) -> Result<Vec<f64>, BacktestError> {
     let s = col
         .as_series()
         .ok_or_else(|| BacktestError::InvalidInput("column has no series backing".into()))?;
     if let Ok(ca) = s.f64() {
         return Ok(ca.into_iter().map(|opt| opt.unwrap_or(0.0)).collect());
     }
-    Err(BacktestError::InvalidInput(
-        "size_multiplier column must be f64".into(),
-    ))
+    Err(BacktestError::InvalidDtype {
+        col: col_name.to_string(),
+        expected: "Float64".into(),
+        got: format!("{:?}", s.dtype()),
+    })
 }
 
-fn extract_string_column(col: Column) -> Result<Vec<String>, BacktestError> {
+fn extract_string_column(col: Column, col_name: &str) -> Result<Vec<String>, BacktestError> {
     let s = col
         .as_series()
         .ok_or_else(|| BacktestError::InvalidInput("column has no series backing".into()))?;
@@ -1352,9 +1402,11 @@ fn extract_string_column(col: Column) -> Result<Vec<String>, BacktestError> {
             .map(|opt| opt.unwrap_or_default().to_string())
             .collect());
     }
-    Err(BacktestError::InvalidInput(
-        "symbol column must be Utf8/String".into(),
-    ))
+    Err(BacktestError::InvalidDtype {
+        col: col_name.to_string(),
+        expected: "Utf8/String".into(),
+        got: format!("{:?}", s.dtype()),
+    })
 }
 
 fn validate_sorted_timestamp_symbol(
@@ -1441,7 +1493,7 @@ fn run_simulation(
     execution_delay: ExecutionDelay,
     stop_config: &StopConfig,
 ) -> (Vec<Trade>, Vec<EquityPoint>) {
-    use stops::{evaluate_stops, trailing_level_at_entry, OhlcBar, StopPositionState};
+    use stops::{OhlcBar, StopPositionState, evaluate_stops, trailing_level_at_entry};
     let mut cash = match exec {
         ExecutionModel::Simple(cm) => cm.initial_cash,
         ExecutionModel::HighFidelity { .. } => 100_000.0,
@@ -1501,11 +1553,18 @@ fn run_simulation(
         };
 
     let open_position = |cash: &mut f64,
-                             tid: u32,
-                             desired: f64,
-                             fill_bar: usize,
-                             meta: Option<HashMap<String, f64>>|
-     -> (u32, f64, f64, Option<DateTime<Utc>>, Option<HashMap<String, f64>>, Option<f64>) {
+                         tid: u32,
+                         desired: f64,
+                         fill_bar: usize,
+                         meta: Option<HashMap<String, f64>>|
+     -> (
+        u32,
+        f64,
+        f64,
+        Option<DateTime<Utc>>,
+        Option<HashMap<String, f64>>,
+        Option<f64>,
+    ) {
         let qty = desired.abs();
         let is_long = desired > 0.0;
         let is_buy = is_long;
@@ -1520,9 +1579,9 @@ fn run_simulation(
         }
         let new_tid = tid + 1;
         let exposure = if is_long { qty } else { -qty };
-        let trail = stop_config.trailing_stop_pct.map(|pct| {
-            trailing_level_at_entry(fill_price, is_long, pct)
-        });
+        let trail = stop_config
+            .trailing_stop_pct
+            .map(|pct| trailing_level_at_entry(fill_price, is_long, pct));
         (
             new_tid,
             exposure,
@@ -1559,26 +1618,25 @@ fn run_simulation(
             let qty = current_exposure.abs();
             if let Some(stop_exit) =
                 evaluate_stops(stop_config, ohlc, is_long, entry_price, &mut stop_state)
+                && let Some(ets) = entry_ts.take()
             {
-                if let Some(ets) = entry_ts.take() {
-                    let side = if is_long { 1 } else { -1 };
-                    record_position_exit(
-                        &mut cash,
-                        trade_id,
-                        side,
-                        qty,
-                        entry_price,
-                        ets,
-                        i,
-                        stop_exit.exit_price,
-                        entry_metadata.clone(),
-                    );
-                    current_exposure = 0.0;
-                    entry_price = 0.0;
-                    stop_state = StopPositionState::default();
-                    entry_metadata = None;
-                    need_signal_reset = true;
-                }
+                let side = if is_long { 1 } else { -1 };
+                record_position_exit(
+                    &mut cash,
+                    trade_id,
+                    side,
+                    qty,
+                    entry_price,
+                    ets,
+                    i,
+                    stop_exit.exit_price,
+                    entry_metadata.clone(),
+                );
+                current_exposure = 0.0;
+                entry_price = 0.0;
+                stop_state = StopPositionState::default();
+                entry_metadata = None;
+                need_signal_reset = true;
             }
         }
 
@@ -1630,25 +1688,23 @@ fn run_simulation(
             let in_short = current_exposure < 0.0;
             let flip = (want_long && in_short) || (!want_long && in_long);
 
-            if flip {
-                if let Some(ets) = entry_ts.take() {
-                    let side = if in_long { 1 } else { -1 };
-                    record_position_exit(
-                        &mut cash,
-                        trade_id,
-                        side,
-                        current_exposure.abs(),
-                        entry_price,
-                        ets,
-                        i,
-                        close,
-                        entry_metadata.clone(),
-                    );
-                    current_exposure = 0.0;
-                    entry_price = 0.0;
-                    stop_state = StopPositionState::default();
-                    entry_metadata = None;
-                }
+            if flip && let Some(ets) = entry_ts.take() {
+                let side = if in_long { 1 } else { -1 };
+                record_position_exit(
+                    &mut cash,
+                    trade_id,
+                    side,
+                    current_exposure.abs(),
+                    entry_price,
+                    ets,
+                    i,
+                    close,
+                    entry_metadata.clone(),
+                );
+                current_exposure = 0.0;
+                entry_price = 0.0;
+                stop_state = StopPositionState::default();
+                entry_metadata = None;
             }
 
             if current_exposure == 0.0 {
@@ -1676,7 +1732,7 @@ fn run_simulation(
 
     // Close any open position at last bar (terminal MTM, no extra cost)
     if current_exposure != 0.0 {
-        let last_close = *closes.last().unwrap();
+        let last_close = closes[closes.len() - 1];
         let qty = current_exposure.abs();
         let side = if current_exposure > 0.0 { 1 } else { -1 };
         let gross = if side == 1 {
@@ -1842,6 +1898,7 @@ where
 }
 
 #[cfg(test)]
+#[allow(clippy::panic)]
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
@@ -2218,6 +2275,7 @@ mod tests {
 // + metadata-in-Trade + exact parity is the living notebook:
 // docs/examples/notebooks/ml_feature_backtest_parity.py (primary closure artifact for 4ps + gwx).
 #[cfg(test)]
+#[allow(clippy::panic)]
 mod integration_example_between_epics {
     use super::*;
     // use polars::prelude::*;
@@ -2272,10 +2330,16 @@ mod integration_example_between_epics {
     #[test]
     fn test_initial_risk_position_sizer_with_pole_height_and_fraction() {
         // n1yc.1: verify rich sizer produces risk-budgeted sizes from PA metadata.
-        let sizer = InitialRiskPositionSizer { initial_risk: 0.01, max_target_pct: 0.5 };
+        let sizer = InitialRiskPositionSizer {
+            initial_risk: 0.01,
+            max_target_pct: 0.5,
+        };
         let mut meta = HashMap::new();
         meta.insert("pole_height_atr".to_string(), 2.0); // e.g. 2 ATR pole -> frac ~0.005
-        let sig = StrategySignal { exposure: 1.0, metadata: Some(meta) };
+        let sig = StrategySignal {
+            exposure: 1.0,
+            metadata: Some(meta),
+        };
         let sized = sizer.compute_sized_exposure(1.0, &sig.metadata, 100.0, 1_000_000.0);
         // target_pct ~ 0.01 / (0.01/2) = 2.0 but capped at 0.5 -> 0.5 * equity / price = 5000 units? Wait calc:
         // frac = 0.01 / 2.0 = 0.005; target_pct = 0.01 / 0.005 = 2.0 -> min(0.5) = 0.5; target_units = 0.5 * 1e6 / 100 = 5000
@@ -2284,13 +2348,19 @@ mod integration_example_between_epics {
         // explicit fraction_at_risk
         let mut meta2 = HashMap::new();
         meta2.insert("fraction_at_risk".to_string(), 0.02);
-        let sig2 = StrategySignal { exposure: 1.0, metadata: Some(meta2) };
+        let sig2 = StrategySignal {
+            exposure: 1.0,
+            metadata: Some(meta2),
+        };
         let sized2 = sizer.compute_sized_exposure(1.0, &sig2.metadata, 100.0, 1_000_000.0);
         // 0.01 / 0.02 = 0.5; 0.5 * 1e6 /100 = 5000
         assert!((sized2 - 5000.0).abs() < 1.0);
 
         // no meta -> passthrough
-        let sig3 = StrategySignal { exposure: 123.0, metadata: None };
+        let sig3 = StrategySignal {
+            exposure: 123.0,
+            metadata: None,
+        };
         let sized3 = sizer.compute_sized_exposure(123.0, &sig3.metadata, 100.0, 1_000_000.0);
         assert!((sized3 - 123.0).abs() < 1e-9);
     }

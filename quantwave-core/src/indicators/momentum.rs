@@ -1,6 +1,6 @@
-use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 pub use crate::indicators::incremental::macd::MACD;
 pub use crate::indicators::incremental::rsi::RSI;
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 impl From<usize> for RSI {
     fn from(p: usize) -> Self {
         Self::new(p)
@@ -8,8 +8,8 @@ impl From<usize> for RSI {
 }
 pub use crate::indicators::incremental::macd_ext::{MACDEXT, MACDFIX};
 
-pub use crate::indicators::incremental::stoch::{STOCH, STOCHF, STOCHRSI};
 pub use crate::indicators::incremental::dmi::{ADX, ADXR, DX, MINUS_DI, PLUS_DI};
+pub use crate::indicators::incremental::stoch::{STOCH, STOCHF, STOCHRSI};
 impl From<usize> for ADX {
     fn from(p: usize) -> Self {
         Self::new(p)
@@ -59,8 +59,8 @@ impl From<usize> for WILLR {
     }
 }
 pub use crate::indicators::incremental::apo::{APO, PPO};
-pub use crate::indicators::incremental::simple::BOP;
 pub use crate::indicators::incremental::cmo::CMO;
+pub use crate::indicators::incremental::simple::BOP;
 impl From<usize> for CMO {
     fn from(p: usize) -> Self {
         Self::new(p)

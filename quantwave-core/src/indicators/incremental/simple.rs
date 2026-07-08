@@ -19,11 +19,7 @@ impl Next<(f64, f64, f64, f64)> for BOP {
 
     fn next(&mut self, (open, high, low, close): (f64, f64, f64, f64)) -> Self::Output {
         let hl = high - low;
-        if hl > 0.0 {
-            (close - open) / hl
-        } else {
-            0.0
-        }
+        if hl > 0.0 { (close - open) / hl } else { 0.0 }
     }
 }
 
@@ -56,7 +52,7 @@ impl Next<(f64, f64)> for OBV {
             self.started = true;
             return self.acc;
         }
-        let pc = self.prev_close.unwrap();
+        let pc = self.prev_close.unwrap_or(close);
         if close > pc {
             self.acc += volume;
         } else if close < pc {
@@ -127,11 +123,11 @@ impl Next<(f64, f64, f64, f64)> for MFI {
         self.prev_tp = Some(tp);
         self.comparisons += 1;
 
-        if self.flow_window.len() >= period {
-            if let Some((op, on)) = self.flow_window.pop_front() {
-                self.pos_sum -= op;
-                self.neg_sum -= on;
-            }
+        if self.flow_window.len() >= period
+            && let Some((op, on)) = self.flow_window.pop_front()
+        {
+            self.pos_sum -= op;
+            self.neg_sum -= on;
         }
         self.flow_window.push_back((pos_add, neg_add));
         self.pos_sum += pos_add;

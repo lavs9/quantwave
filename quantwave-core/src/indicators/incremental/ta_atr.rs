@@ -52,7 +52,7 @@ impl Next<(f64, f64, f64)> for TaATR {
             return f64::NAN;
         }
 
-        let pc = self.prev_close.unwrap();
+        let pc = self.prev_close.unwrap_or(close);
         let tr = self.true_range(high, low, pc);
         self.prev_close = Some(close);
         self.bars_seen += 1;

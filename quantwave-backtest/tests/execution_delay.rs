@@ -1,3 +1,10 @@
+#![allow(
+    clippy::panic,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::borrow_deref_ref,
+    clippy::field_reassign_with_default
+)]
 //! T+1 execution delay (quantwave-cr6v.8).
 //!
 //! `cargo nextest run -p quantwave-backtest execution_delay`
@@ -6,8 +13,8 @@ use approx::assert_relative_eq;
 use chrono::{TimeZone, Utc};
 use polars::prelude::*;
 use quantwave_backtest::{
-    run_streaming_simulation, BacktestConfig, BacktestEngine, Bar, CostModel, ExecutionDelay,
-    ExecutionModel, StrategySignal,
+    BacktestConfig, BacktestEngine, Bar, CostModel, ExecutionDelay, ExecutionModel, StrategySignal,
+    run_streaming_simulation,
 };
 
 fn single_trade_df() -> DataFrame {
@@ -18,7 +25,10 @@ fn single_trade_df() -> DataFrame {
                 .map(|i| 1_700_000_000i64 + (i as i64) * 3600)
                 .collect::<Vec<_>>(),
         ),
-        Column::new("close".into(), vec![100.0, 101.0, 102.5, 103.0, 102.0, 101.0]),
+        Column::new(
+            "close".into(),
+            vec![100.0, 101.0, 102.5, 103.0, 102.0, 101.0],
+        ),
         Column::new("signal".into(), vec![0.0, 1.0, 1.0, 1.0, 0.0, 0.0]),
     ])
     .unwrap()
@@ -75,7 +85,11 @@ fn test_t1_signal_delays_fill_one_bar() {
     let bar2_ts = 1_700_000_000 + 2 * 3600;
 
     assert_eq!(entry_ts_unix(&t0), bar1_ts, "T+0 enters on signal bar");
-    assert_eq!(entry_ts_unix(&t1), bar2_ts, "T+1 enters one bar after signal");
+    assert_eq!(
+        entry_ts_unix(&t1),
+        bar2_ts,
+        "T+1 enters one bar after signal"
+    );
 }
 
 #[test]
@@ -110,7 +124,10 @@ fn test_t0_regression_default() {
         let b = *default_delay_t0.stats.get(k).unwrap();
         assert_relative_eq!(a, b, epsilon = 1e-9, max_relative = 1e-9);
     }
-    assert_eq!(entry_ts_unix(&explicit_t0), entry_ts_unix(&default_delay_t0));
+    assert_eq!(
+        entry_ts_unix(&explicit_t0),
+        entry_ts_unix(&default_delay_t0)
+    );
     assert_relative_eq!(
         entry_price(&explicit_t0),
         entry_price(&default_delay_t0),
@@ -167,10 +184,7 @@ fn test_t1_batch_streaming_parity() {
 
     let stream = run_streaming_simulation(
         &bars,
-        SignalReplay {
-            signals,
-            idx: 0,
-        },
+        SignalReplay { signals, idx: 0 },
         zero_cost_config(ExecutionDelay::NextBar),
     )
     .expect("streaming t1");

@@ -65,3 +65,13 @@ unsafe_code = "forbid"
 panic = "deny"
 unwrap_used = "warn"
 expect_used = "warn"
+# Chebyshev / Ehlers coefficient tables need full literals (options_india, DSP filters).
+excessive_precision = "allow"
+approx_constant = "allow"
+# Public indicator names (SMA, EMA, …) are intentional API surface.
+upper_case_acronyms = "allow"
+# HMM / incremental TA hot loops use index-based iteration by design.
+needless_range_loop = "allow"
+type_complexity = "allow"
+# Indicator files place #[cfg(test)] mod tests before late impl blocks.
+items_after_test_module = "allow"

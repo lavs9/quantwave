@@ -1,3 +1,10 @@
+#![allow(
+    clippy::panic,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::borrow_deref_ref,
+    clippy::field_reassign_with_default
+)]
 //! entry_filter_col + size_multiplier_col batch wiring (quantwave-cr6v.3).
 //!
 //! `cargo nextest run -p quantwave-backtest entry_filter`
@@ -5,8 +12,8 @@
 use approx::assert_relative_eq;
 use polars::prelude::*;
 use quantwave_backtest::{
-    apply_signal_modifiers, backtest_simple_bool_signal, run_streaming_simulation, BacktestConfig,
-    BacktestEngine, Bar, CostModel, ExecutionModel,
+    BacktestConfig, BacktestEngine, Bar, CostModel, ExecutionModel, apply_signal_modifiers,
+    backtest_simple_bool_signal, run_streaming_simulation,
 };
 
 fn zero_cost_config() -> BacktestConfig {
@@ -91,18 +98,19 @@ fn test_entry_filter_size_multiplier_scales_quantity() {
         None,
         Some(vec![1.0, 1.0, 1.0, 1.0]),
     );
-    let scaled = run_with_optional_cols(
-        ts,
-        closes,
-        signals,
-        None,
-        Some(vec![1.0, 2.0, 2.0, 1.0]),
-    );
+    let scaled = run_with_optional_cols(ts, closes, signals, None, Some(vec![1.0, 2.0, 2.0, 1.0]));
 
     assert_eq!(base.trades.height(), 1);
     assert_eq!(scaled.trades.height(), 1);
 
-    let base_pnl = base.trades.column("pnl_net").unwrap().f64().unwrap().get(0).unwrap();
+    let base_pnl = base
+        .trades
+        .column("pnl_net")
+        .unwrap()
+        .f64()
+        .unwrap()
+        .get(0)
+        .unwrap();
     let scaled_pnl = scaled
         .trades
         .column("pnl_net")
@@ -186,7 +194,7 @@ fn test_entry_filter_optional_cols_none_regression() {
 
     let result = backtest_simple_bool_signal(df, "signal").expect("regression run");
     assert_eq!(result.trades.height(), 1);
-    assert!(result.stats.get("num_trades").is_some());
+    assert!(result.stats.contains_key("num_trades"));
 }
 
 struct FilterMultReplay {

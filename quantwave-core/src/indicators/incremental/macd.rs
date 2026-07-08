@@ -73,8 +73,7 @@ impl Next<f64> for MACD {
 
         if i == self.sp - 1 {
             self.seed_closes.push(input);
-            let slow_seed: f64 =
-                self.seed_closes.iter().sum::<f64>() / self.sp as f64;
+            let slow_seed: f64 = self.seed_closes.iter().sum::<f64>() / self.sp as f64;
             let fast_seed: f64 = self.seed_closes[self.sp - self.fp..self.sp]
                 .iter()
                 .sum::<f64>()
@@ -100,9 +99,7 @@ impl Next<f64> for MACD {
             if i >= self.sp {
                 self.update_emas(input);
             }
-            let signal_seed: f64 = self.macd_values[..self.signalperiod]
-                .iter()
-                .sum::<f64>()
+            let signal_seed: f64 = self.macd_values[..self.signalperiod].iter().sum::<f64>()
                 / self.signalperiod as f64;
             self.signal_ema = signal_seed;
             let macd = self.macd_values[self.signalperiod - 1];

@@ -1,4 +1,5 @@
 //! Gold-standard tests for HMM forecasting and diagnostics (slice 3).
+#![allow(clippy::expect_used, clippy::unwrap_used)]
 
 use approx::assert_relative_eq;
 use quantwave_core::regimes::gaussian_hmm::GaussianHmmParams;

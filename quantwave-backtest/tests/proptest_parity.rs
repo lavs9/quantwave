@@ -1,3 +1,10 @@
+#![allow(
+    clippy::panic,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::borrow_deref_ref,
+    clippy::field_reassign_with_default
+)]
 //! Proptest batch↔streaming parity for core engine (quantwave-qzpi.13).
 //!
 //! `cargo nextest run -p quantwave-backtest proptest_parity`
@@ -6,8 +13,8 @@ use approx::assert_relative_eq;
 use polars::prelude::IntoLazy;
 use proptest::prelude::*;
 use quantwave_backtest::{
-    run_streaming_simulation, BacktestConfig, BacktestEngine, Bar, CostModel, ExecutionModel,
-    StrategySignal,
+    BacktestConfig, BacktestEngine, Bar, CostModel, ExecutionModel, StrategySignal,
+    run_streaming_simulation,
 };
 use quantwave_core::traits::Next;
 

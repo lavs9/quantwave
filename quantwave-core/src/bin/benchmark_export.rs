@@ -2,10 +2,10 @@
 //!
 //! Run: `cargo run -p quantwave-core --release --bin benchmark_export`
 
+use quantwave_core::Next;
 use quantwave_core::indicators::momentum::RSI;
 use quantwave_core::indicators::smoothing::SMA;
 use quantwave_core::indicators::supertrend::SuperTrend;
-use quantwave_core::Next;
 use std::env;
 use std::time::Instant;
 
@@ -57,7 +57,7 @@ where
         f();
         samples.push(t0.elapsed().as_secs_f64() * 1e9);
     }
-    samples.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    samples.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     let mean = samples.iter().sum::<f64>() / n as f64;
     let p99_idx = ((n as f64) * 0.99).floor() as usize;
     let p99 = samples[p99_idx.min(n - 1)];

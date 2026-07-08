@@ -1,3 +1,10 @@
+#![allow(
+    clippy::panic,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::borrow_deref_ref,
+    clippy::field_reassign_with_default
+)]
 //! Proptest batch↔streaming parity for shared-capital portfolio (quantwave-z3k1 / qzpi.11).
 //!
 //! `cargo nextest run -p quantwave-backtest portfolio_proptest_parity`
@@ -7,8 +14,8 @@ use chrono::TimeZone;
 use polars::prelude::*;
 use proptest::prelude::*;
 use quantwave_backtest::{
-    run_shared_capital_streaming_simulation, BacktestConfig, BacktestEngine, CostModel,
-    ExecutionModel, PortfolioAllocator, PortfolioBar, PortfolioMode, StrategySignal,
+    BacktestConfig, BacktestEngine, CostModel, ExecutionModel, PortfolioAllocator, PortfolioBar,
+    PortfolioMode, StrategySignal, run_shared_capital_streaming_simulation,
 };
 use quantwave_core::traits::Next;
 
@@ -47,7 +54,12 @@ fn portfolio_config(allocator: PortfolioAllocator) -> BacktestConfig {
     }
 }
 
-fn make_long_format_df(symbols: &[&str], n_ts: usize, closes: &[f64], signals: &[f64]) -> DataFrame {
+fn make_long_format_df(
+    symbols: &[&str],
+    n_ts: usize,
+    closes: &[f64],
+    signals: &[f64],
+) -> DataFrame {
     let n = symbols.len();
     assert_eq!(closes.len(), n_ts * n);
     assert_eq!(signals.len(), n_ts * n);
@@ -81,7 +93,7 @@ fn portfolio_equity(result: &quantwave_backtest::BacktestResult) -> Vec<f64> {
     let eq = result.equity_curve.column("equity").unwrap().f64().unwrap();
     let sym = result.equity_curve.column("symbol").unwrap().str().unwrap();
     eq.into_iter()
-        .zip(sym.into_iter())
+        .zip(&*sym)
         .filter_map(|(e, s)| if s.is_none() { Some(e.unwrap()) } else { None })
         .collect()
 }
@@ -111,7 +123,10 @@ fn assert_batch_streaming_parity(
 fn run_streaming_pair(
     df: &DataFrame,
     config: BacktestConfig,
-) -> (quantwave_backtest::BacktestResult, quantwave_backtest::BacktestResult) {
+) -> (
+    quantwave_backtest::BacktestResult,
+    quantwave_backtest::BacktestResult,
+) {
     let batch = BacktestEngine::new(config.clone())
         .run(df.clone().lazy())
         .expect("batch");
@@ -164,10 +179,7 @@ fn run_streaming_pair(
 
     let stream = run_shared_capital_streaming_simulation(
         &bars,
-        ExposureReplay {
-            exposures,
-            idx: 0,
-        },
+        ExposureReplay { exposures, idx: 0 },
         config,
     )
     .expect("streaming");

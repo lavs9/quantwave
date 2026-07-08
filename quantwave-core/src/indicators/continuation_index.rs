@@ -106,7 +106,7 @@ mod tests {
         for input in inputs {
             let res = ci.next(input);
             assert!(!res.is_nan());
-            assert!(res >= -1.0 && res <= 1.0);
+            assert!((-1.0..=1.0).contains(&res));
         }
     }
 

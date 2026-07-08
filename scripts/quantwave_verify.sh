@@ -69,6 +69,10 @@ fi
 
 if [[ "$SKIP_RUST" -eq 0 ]]; then
   run_cached rust bash -c '
+    echo "-- cargo fmt --check"
+    cargo fmt --all -- --check
+    echo "-- cargo clippy (-D warnings)"
+    cargo clippy -p quantwave-core -p quantwave-polars -p quantwave-backtest --all-targets -- -D warnings
     echo "-- cargo nextest (core)"
     cargo nextest run -p quantwave-core
     echo "-- cargo nextest (polars)"

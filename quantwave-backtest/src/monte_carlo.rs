@@ -4,9 +4,9 @@
 //! v1 uses trade bootstrap rather than GBM forward paths).
 
 use crate::{BacktestError, BacktestResult};
+use rand::SeedableRng;
 use rand::prelude::*;
 use rand::rngs::StdRng;
-use rand::SeedableRng;
 use serde::{Deserialize, Serialize};
 
 /// Bootstrap simulation settings.
@@ -126,12 +126,14 @@ pub fn monte_carlo_return_paths(
     config: &MonteCarloReturnConfig,
 ) -> Result<MonteCarloPathSummary, BacktestError> {
     if config.n_simulations == 0 || config.n_bars_forward == 0 {
-        return Err(BacktestError::InvalidInput("n_simulations and n_bars_forward must be > 0".into()));
+        return Err(BacktestError::InvalidInput(
+            "n_simulations and n_bars_forward must be > 0".into(),
+        ));
     }
-    
+
     let returns = extract_bar_returns(result);
     let initial_cash = *result.stats.get("initial_cash").unwrap_or(&100_000.0);
-    
+
     if returns.is_empty() {
         return Ok(MonteCarloPathSummary {
             var_95: 0.0,
@@ -145,7 +147,7 @@ pub fn monte_carlo_return_paths(
 
     let mut rng = StdRng::seed_from_u64(config.seed);
     let mut finals = Vec::with_capacity(config.n_simulations);
-    
+
     for _ in 0..config.n_simulations {
         let mut equity = initial_cash;
         for _ in 0..config.n_bars_forward {
@@ -155,20 +157,20 @@ pub fn monte_carlo_return_paths(
         }
         finals.push(equity);
     }
-    
+
     finals.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     let n = finals.len();
-    
+
     let p5 = percentile(&finals, 0.05);
     let p50 = percentile(&finals, 0.50);
     let p95 = percentile(&finals, 0.95);
     let prob_loss = finals.iter().filter(|&&e| e < initial_cash).count() as f64 / n as f64;
-    
+
     let mut pnls: Vec<f64> = finals.iter().map(|&e| e - initial_cash).collect();
     pnls.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-    
+
     let var_95 = percentile(&pnls, 0.05);
-    
+
     let tail: Vec<f64> = pnls.into_iter().filter(|&pnl| pnl <= var_95).collect();
     let cvar_95 = if tail.is_empty() {
         var_95
@@ -187,8 +189,12 @@ pub fn monte_carlo_return_paths(
 }
 
 fn extract_bar_returns(result: &BacktestResult) -> Vec<f64> {
-    let Ok(col) = result.equity_curve.column("equity") else { return Vec::new(); };
-    let Ok(ca) = col.f64() else { return Vec::new(); };
+    let Ok(col) = result.equity_curve.column("equity") else {
+        return Vec::new();
+    };
+    let Ok(ca) = col.f64() else {
+        return Vec::new();
+    };
     let eq: Vec<f64> = ca.into_iter().map(|v| v.unwrap_or(0.0)).collect();
     if eq.len() < 2 {
         return Vec::new();
@@ -232,7 +238,10 @@ mod tests {
         let trades = DataFrame::new(vec![Column::new("pnl_net".into(), pnls.to_vec())]).unwrap();
         let equity = DataFrame::new(vec![
             Column::new("ts".into(), vec![1i64, 2]),
-            Column::new("equity".into(), vec![initial, initial + pnls.iter().sum::<f64>()]),
+            Column::new(
+                "equity".into(),
+                vec![initial, initial + pnls.iter().sum::<f64>()],
+            ),
             Column::new("cash".into(), vec![initial, initial]),
             Column::new("position".into(), vec![0.0, 0.0]),
             Column::new("close".into(), vec![100.0, 100.0]),
@@ -243,7 +252,10 @@ mod tests {
             equity_curve: equity,
             stats: std::collections::HashMap::from([
                 ("initial_cash".to_string(), initial),
-                ("final_equity".to_string(), initial + pnls.iter().sum::<f64>()),
+                (
+                    "final_equity".to_string(),
+                    initial + pnls.iter().sum::<f64>(),
+                ),
             ]),
         }
     }
@@ -287,15 +299,14 @@ mod tests {
     }
 
     fn result_with_equity(eqs: &[f64]) -> BacktestResult {
-        let equity = DataFrame::new(vec![
-            Column::new("equity".into(), eqs.to_vec()),
-        ]).unwrap();
+        let equity = DataFrame::new(vec![Column::new("equity".into(), eqs.to_vec())]).unwrap();
         BacktestResult {
             trades: DataFrame::empty(),
             equity_curve: equity,
-            stats: std::collections::HashMap::from([
-                ("initial_cash".to_string(), eqs.first().copied().unwrap_or(100_000.0)),
-            ]),
+            stats: std::collections::HashMap::from([(
+                "initial_cash".to_string(),
+                eqs.first().copied().unwrap_or(100_000.0),
+            )]),
         }
     }
 
@@ -345,17 +356,18 @@ mod tests {
 
     #[test]
     fn test_mc_integration_after_backtest_with_report() {
-        use crate::{BacktestEngine, BacktestConfig};
+        use crate::{BacktestConfig, BacktestEngine};
         let mut cfg = BacktestConfig::default();
         cfg.cost_model.initial_cash = 100_000.0;
         let engine = BacktestEngine::new(cfg);
-        
+
         let df = DataFrame::new(vec![
             Column::new("timestamp".into(), vec![1i64, 2, 3]),
             Column::new("close".into(), vec![100.0, 105.0, 110.0]),
             Column::new("signal".into(), vec![1.0, 1.0, 0.0]),
-        ]).unwrap();
-        
+        ])
+        .unwrap();
+
         let report = engine.backtest_with_report(df.lazy()).unwrap();
         let mc_cfg = MonteCarloReturnConfig {
             n_simulations: 10,

@@ -17,7 +17,7 @@ changes ──┬──► sanity (always)
 | Job | What it runs | When |
 |-----|----------------|------|
 | **Doc & metadata sanity** | metadata/doc/benchmark/hygiene drift checks | Always (~1 min) |
-| **Rust quality gate** | `cargo nextest` (core/polars/backtest) | `**/*.rs`, `Cargo.*` changed, or manual dispatch |
+| **Rust quality gate** | `cargo fmt --check`, `cargo clippy -D warnings`, `cargo nextest` (core/polars/backtest) | `**/*.rs`, `Cargo.*` changed, or manual dispatch |
 | **Python gold parity** | 25+ streaming indicators vs `gold_standard/*.json` | `tests/python`, `quantwave-python`, gold fixtures changed |
 | **Plugin wheels** | Build `quantwave-plugins` wheel + pytest | `quantwave-plugins/**` changed, or manual dispatch |
 | **Deploy docs** | mkdocs → GitHub Pages | `main` push only, after sanity |

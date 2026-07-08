@@ -1,13 +1,14 @@
 //! Criterion benchmarks: `quantwave-backtest` vs naive row-loop baseline (cr6v.13).
 //!
 //! Run: `cargo bench -p quantwave-backtest`
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
 use polars::prelude::*;
 use quantwave_backtest::{BacktestConfig, BacktestEngine, CostModel};
+use rand::SeedableRng;
 use rand::prelude::*;
 use rand::rngs::StdRng;
-use rand::SeedableRng;
 
 const BENCH_SEED: u64 = 0xC26E_0013;
 
@@ -26,7 +27,7 @@ fn zero_cost_config() -> BacktestConfig {
 fn alternating_signals(n: usize, block: usize) -> Vec<f64> {
     (0..n)
         .map(|i| {
-            if (i / block) % 2 == 0 {
+            if (i / block).is_multiple_of(2) {
                 1.0
             } else {
                 0.0
@@ -44,7 +45,9 @@ fn synthetic_single_symbol(n_rows: usize) -> DataFrame {
             price
         })
         .collect();
-    let timestamps: Vec<i64> = (0..n_rows as i64).map(|i| 1_700_000_000 + i * 3600).collect();
+    let timestamps: Vec<i64> = (0..n_rows as i64)
+        .map(|i| 1_700_000_000 + i * 3600)
+        .collect();
     let signals = alternating_signals(n_rows, 50);
 
     DataFrame::new(vec![
@@ -128,9 +131,7 @@ fn extract_f64_col(df: &DataFrame, name: &str) -> Vec<f64> {
 
 fn bench_quantwave(df: &DataFrame) {
     let engine = BacktestEngine::new(zero_cost_config());
-    let _ = engine
-        .run(df.clone().lazy())
-        .expect("quantwave backtest");
+    let _ = engine.run(df.clone().lazy()).expect("quantwave backtest");
 }
 
 fn bench_quantwave_metrics_only(df: &DataFrame) {

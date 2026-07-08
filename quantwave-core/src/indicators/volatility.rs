@@ -16,7 +16,6 @@ impl From<usize> for TaNATR {
     }
 }
 
-
 /// True Range (TR)
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TrueRange {

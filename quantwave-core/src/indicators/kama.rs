@@ -54,7 +54,8 @@ impl Next<f64> for Kama {
 
         // Efficiency Ratio (ER)
         // Signal = abs(Price - Price[N])
-        let signal = (input - self.window.back().unwrap()).abs();
+        let oldest = self.window.back().copied().unwrap_or(input);
+        let signal = (input - oldest).abs();
 
         // Noise = sum(abs(Price - Price[1]), N)
         let mut noise = 0.0;

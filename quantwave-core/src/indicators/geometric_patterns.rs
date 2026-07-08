@@ -214,19 +214,17 @@ impl GeometricPatternScanner {
         let duplicate = self
             .recent_swings
             .last()
-            .map_or(false, |last| last.bar == sp.bar && last.is_high == sp.is_high);
+            .is_some_and(|last| last.bar == sp.bar && last.is_high == sp.is_high);
         if duplicate {
             return;
         }
-        if let Some(last) = self.recent_swings.last() {
-            if last.is_high == sp.is_high {
-                if sp.is_high && sp.price >= last.price {
-                    let _ = self.recent_swings.pop();
-                } else if !sp.is_high && sp.price <= last.price {
-                    let _ = self.recent_swings.pop();
-                } else {
-                    return;
-                }
+        if let Some(last) = self.recent_swings.last()
+            && last.is_high == sp.is_high
+        {
+            if (sp.is_high && sp.price >= last.price) || (!sp.is_high && sp.price <= last.price) {
+                let _ = self.recent_swings.pop();
+            } else {
+                return;
             }
         }
         self.recent_swings.push(sp.clone());
@@ -322,7 +320,8 @@ impl GeometricPatternScanner {
             return false;
         }
 
-        let (pullbacks, pushes) = count_pullbacks_pushes(&self.highs, &self.lows, flag_start, last_bar, is_bull);
+        let (pullbacks, pushes) =
+            count_pullbacks_pushes(&self.highs, &self.lows, flag_start, last_bar, is_bull);
         if pullbacks < pushes {
             return false;
         }
@@ -445,6 +444,7 @@ impl GeometricPatternScanner {
         breakout
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn compute_hs_score(
         &self,
         _is_bearish: bool,
@@ -504,16 +504,10 @@ impl GeometricPatternScanner {
     }
 
     fn try_hs_window(&mut self, w: &[SwingPoint]) -> Option<HsPattern> {
-        let bearish = w[0].is_high
-            && !w[1].is_high
-            && w[2].is_high
-            && !w[3].is_high
-            && w[4].is_high;
-        let bullish_inv = !w[0].is_high
-            && w[1].is_high
-            && !w[2].is_high
-            && w[3].is_high
-            && !w[4].is_high;
+        let bearish =
+            w[0].is_high && !w[1].is_high && w[2].is_high && !w[3].is_high && w[4].is_high;
+        let bullish_inv =
+            !w[0].is_high && w[1].is_high && !w[2].is_high && w[3].is_high && !w[4].is_high;
 
         if !bearish && !bullish_inv {
             return None;
@@ -552,15 +546,7 @@ impl GeometricPatternScanner {
                 return None;
             }
             let (score, price_sym, time_sym) = self.compute_hs_score(
-                true,
-                ls.price,
-                rs.price,
-                head.price,
-                ls.bar,
-                head.bar,
-                rs.bar,
-                slope,
-                height,
+                true, ls.price, rs.price, head.price, ls.bar, head.bar, rs.bar, slope, height,
             );
             if score < self.config.min_score_threshold {
                 return None;
@@ -618,15 +604,7 @@ impl GeometricPatternScanner {
             return None;
         }
         let (score, price_sym, time_sym) = self.compute_hs_score(
-            false,
-            ls.price,
-            rs.price,
-            head.price,
-            ls.bar,
-            head.bar,
-            rs.bar,
-            slope,
-            height,
+            false, ls.price, rs.price, head.price, ls.bar, head.bar, rs.bar, slope, height,
         );
         if score < self.config.min_score_threshold {
             return None;
@@ -707,10 +685,10 @@ impl GeometricPatternScanner {
         let start = self.bar_index.saturating_sub(12);
         let mut best: Option<(usize, usize, bool, f64)> = None;
         for j in start..=self.bar_index.saturating_sub(3) {
-            if let Some(cand) = self.evaluate_three_bar_move(j) {
-                if best.map_or(true, |(_, _, _, imp)| cand.3 > imp) {
-                    best = Some(cand);
-                }
+            if let Some(cand) = self.evaluate_three_bar_move(j)
+                && best.is_none_or(|(_, _, _, imp)| cand.3 > imp)
+            {
+                best = Some(cand);
             }
         }
         if let Some((pole_start, pole_end, is_bull, _)) = best {
@@ -732,6 +710,7 @@ impl GeometricPatternScanner {
     }
 
     #[cfg(test)]
+    #[allow(dead_code)]
     fn pending_snapshot(&self) -> Vec<(usize, usize, bool)> {
         self.pending_poles.clone()
     }
@@ -787,12 +766,8 @@ impl GeometricPatternScanner {
     fn promote_pending_poles(&mut self) {
         let mut pending: Vec<_> = self.pending_poles.drain(..).collect();
         pending.sort_by(|a, b| {
-            let ia = self
-                .evaluate_three_bar_move(a.0)
-                .map_or(0.0, |x| x.3);
-            let ib = self
-                .evaluate_three_bar_move(b.0)
-                .map_or(0.0, |x| x.3);
+            let ia = self.evaluate_three_bar_move(a.0).map_or(0.0, |x| x.3);
+            let ib = self.evaluate_three_bar_move(b.0).map_or(0.0, |x| x.3);
             ib.partial_cmp(&ia).unwrap_or(std::cmp::Ordering::Equal)
         });
         let mut still_pending = Vec::new();
@@ -904,7 +879,8 @@ impl Next<(f64, f64)> for GeometricPatternScanner {
 mod tests {
     use super::*;
     use crate::test_utils::{
-        generate_clean_bull_flag, generate_flag_violation_retrace_too_deep, generate_perfect_bear_hs,
+        generate_clean_bull_flag, generate_flag_violation_retrace_too_deep,
+        generate_perfect_bear_hs,
     };
     use proptest::prelude::*;
 
@@ -944,7 +920,10 @@ mod tests {
         }
         assert_eq!(s.try_add_reason(5, 7, true), "ok");
         s.promote_pending_poles();
-        assert!(s.test_state().1 > 0, "active flag must be armed before breakout");
+        assert!(
+            s.test_state().1 > 0,
+            "active flag must be armed before breakout"
+        );
 
         // Breakout bar (index 15 in synthetic generator).
         let (bh, bl) = case.data[15];
@@ -960,7 +939,11 @@ mod tests {
     fn test_deep_retrace_flag_rejected() {
         let case = generate_flag_violation_retrace_too_deep();
         let (flags, _) = run_scanner(&case.data);
-        let confirmed: Vec<_> = flags.into_iter().flatten().filter(|f| f.breakout_confirmed).collect();
+        let confirmed: Vec<_> = flags
+            .into_iter()
+            .flatten()
+            .filter(|f| f.breakout_confirmed)
+            .collect();
         assert!(
             confirmed.is_empty(),
             "deep retrace violation must not produce confirmed flag: {}",

@@ -29,8 +29,7 @@ impl CrossSectionalConfig {
 /// Demean a factor within groups (e.g. sectors or timestamps).
 pub fn neutralize_factor(lf: LazyFrame, factor_col: &str, group_col: &str) -> LazyFrame {
     lf.with_column(
-        (col(factor_col) - col(factor_col).mean().over([col(group_col)]))
-        .alias(factor_col)
+        (col(factor_col) - col(factor_col).mean().over([col(group_col)])).alias(factor_col),
     )
 }
 
@@ -38,9 +37,7 @@ pub fn neutralize_factor(lf: LazyFrame, factor_col: &str, group_col: &str) -> La
 pub fn zscore_factor(lf: LazyFrame, factor_col: &str, timestamp_col: &str) -> LazyFrame {
     let mean = col(factor_col).mean().over([col(timestamp_col)]);
     let std = col(factor_col).std(1).over([col(timestamp_col)]);
-    lf.with_column(
-        ((col(factor_col) - mean) / std).alias(factor_col)
-    )
+    lf.with_column(((col(factor_col) - mean) / std).alias(factor_col))
 }
 
 /// Clip outliers in a factor per timestamp beyond the given percentiles (0.0 to 1.0).
@@ -57,14 +54,14 @@ pub fn winsorize_factor(
     let upper = col(factor_col)
         .quantile(lit(upper_pct), QuantileMethod::Nearest)
         .over([col(timestamp_col)]);
-    
+
     lf.with_column(
         when(col(factor_col).lt(lower.clone()))
             .then(lower)
             .when(col(factor_col).gt(upper.clone()))
             .then(upper)
             .otherwise(col(factor_col))
-            .alias(factor_col)
+            .alias(factor_col),
     )
 }
 
@@ -148,24 +145,19 @@ pub fn run_cross_sectional_backtest(
     cs: &CrossSectionalConfig,
     mut base_config: BacktestConfig,
 ) -> Result<BacktestReport, BacktestError> {
-    let symbol_col = base_config
-        .symbol_col
-        .clone()
-        .ok_or_else(|| BacktestError::InvalidInput("symbol_col required for cross-sectional".into()))?;
+    let symbol_col = base_config.symbol_col.clone().ok_or_else(|| {
+        BacktestError::InvalidInput("symbol_col required for cross-sectional".into())
+    })?;
 
     const EXPOSURE: &str = "cs_exposure";
-    let with_exp = assign_long_short_exposure(
-        lf,
-        &base_config.timestamp_col,
-        &symbol_col,
-        cs,
-        EXPOSURE,
-    )?;
+    let with_exp =
+        assign_long_short_exposure(lf, &base_config.timestamp_col, &symbol_col, cs, EXPOSURE)?;
     base_config.signal_col = EXPOSURE.to_string();
     BacktestEngine::new(base_config).backtest_with_report(with_exp)
 }
 
 #[cfg(test)]
+#[allow(clippy::panic)]
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
@@ -190,11 +182,14 @@ mod tests {
         let df = DataFrame::new(vec![
             Column::new("sector".into(), vec!["Tech", "Tech", "Fin", "Fin"]),
             Column::new("score".into(), vec![10.0, 20.0, 100.0, 200.0]),
-        ]).unwrap();
+        ])
+        .unwrap();
 
-        let out = neutralize_factor(df.lazy(), "score", "sector").collect().unwrap();
+        let out = neutralize_factor(df.lazy(), "score", "sector")
+            .collect()
+            .unwrap();
         let scores = out.column("score").unwrap().f64().unwrap();
-        
+
         let ts: Vec<f64> = scores.into_iter().map(|v| v.unwrap()).collect();
         assert_relative_eq!(ts[0], -5.0, epsilon = 1e-9);
         assert_relative_eq!(ts[1], 5.0, epsilon = 1e-9);
@@ -205,10 +200,12 @@ mod tests {
     #[test]
     fn test_factor_zscore_zero_mean_smoke() {
         let df = panel_df();
-        let out = zscore_factor(df.lazy(), "score", "timestamp").collect().unwrap();
+        let out = zscore_factor(df.lazy(), "score", "timestamp")
+            .collect()
+            .unwrap();
         let scores = out.column("score").unwrap().f64().unwrap();
         let ts: Vec<f64> = scores.into_iter().map(|v| v.unwrap()).collect();
-        
+
         // timestamp 1 (idx 0..4): values were 4, 3, 2, 1
         // mean = 2.5. std ≈ 1.2909944
         let mean_1 = (ts[0] + ts[1] + ts[2] + ts[3]) / 4.0;
@@ -220,13 +217,16 @@ mod tests {
         let df = DataFrame::new(vec![
             Column::new("timestamp".into(), vec![1i64, 1, 1, 1, 1]),
             Column::new("score".into(), vec![0.0, 10.0, 20.0, 30.0, 100.0]),
-        ]).unwrap();
+        ])
+        .unwrap();
 
-        let out = winsorize_factor(df.lazy(), "score", "timestamp", 0.2, 0.8).collect().unwrap();
+        let out = winsorize_factor(df.lazy(), "score", "timestamp", 0.2, 0.8)
+            .collect()
+            .unwrap();
         let scores = out.column("score").unwrap().f64().unwrap();
         let ts: Vec<f64> = scores.into_iter().map(|v| v.unwrap()).collect();
-        
-        // 5 elements. 0.2 quantile is rank 1 (idx 1 if sorted, but nearest). 
+
+        // 5 elements. 0.2 quantile is rank 1 (idx 1 if sorted, but nearest).
         // 0.2 quantile of [0, 10, 20, 30, 100] ≈ 10.0
         // 0.8 quantile of [0, 10, 20, 30, 100] ≈ 30.0
         assert_relative_eq!(ts[0], 10.0, epsilon = 1e-9); // clipped
@@ -237,23 +237,22 @@ mod tests {
     #[test]
     fn test_assign_long_short_exposure_top_bottom() {
         let cs = CrossSectionalConfig::long_short("score", 0.25, 0.25);
-        let out = assign_long_short_exposure(
-            panel_df().lazy(),
-            "timestamp",
-            "symbol",
-            &cs,
-            "exposure",
-        )
-        .unwrap()
-        .collect()
-        .unwrap();
+        let out =
+            assign_long_short_exposure(panel_df().lazy(), "timestamp", "symbol", &cs, "exposure")
+                .unwrap()
+                .collect()
+                .unwrap();
 
         let exposure = out.column("exposure").unwrap().f64().unwrap();
         // Top 25% of 4 = 1 name long (+1.0), bottom 25% = 1 short (-1.0)
         let ts1: Vec<f64> = exposure.into_iter().take(4).map(|v| v.unwrap()).collect();
         assert_eq!(ts1.iter().filter(|&&x| x > 0.0).count(), 1);
         assert_eq!(ts1.iter().filter(|&&x| x < 0.0).count(), 1);
-        assert_relative_eq!(ts1.iter().map(|x| x.abs()).sum::<f64>(), 2.0, epsilon = 1e-9);
+        assert_relative_eq!(
+            ts1.iter().map(|x| x.abs()).sum::<f64>(),
+            2.0,
+            epsilon = 1e-9
+        );
     }
 
     #[test]
@@ -283,15 +282,14 @@ mod tests {
     #[test]
     fn test_cross_sectional_invalid_fracs_error() {
         let cs = CrossSectionalConfig::long_short("score", 0.6, 0.6);
-        match assign_long_short_exposure(
-            panel_df().lazy(),
-            "timestamp",
-            "symbol",
-            &cs,
-            "exposure",
-        ) {
-            Err(e) => assert!(e.to_string().contains("top_frac")),
-            Ok(_) => panic!("expected invalid frac error"),
-        }
+        let result =
+            assign_long_short_exposure(panel_df().lazy(), "timestamp", "symbol", &cs, "exposure");
+        let Err(err) = result else {
+            panic!("expected invalid frac error");
+        };
+        assert!(
+            err.to_string().contains("top_frac"),
+            "unexpected error message"
+        );
     }
 }

@@ -74,10 +74,7 @@ impl PerformanceMetrics {
 
     /// Iterate (column name, value) pairs for sweep row assembly.
     pub fn row_iter(&self) -> impl Iterator<Item = (&'static str, f64)> {
-        Self::column_names()
-            .iter()
-            .copied()
-            .zip(self.values())
+        Self::column_names().iter().copied().zip(self.values())
     }
 
     /// Compute metrics from a [`BacktestResult`].
@@ -134,7 +131,11 @@ impl PerformanceMetrics {
         }
     }
 
-    pub fn from_raw(trades: &[crate::Trade], equity: &[crate::EquityPoint], initial_cash: f64) -> Self {
+    pub fn from_raw(
+        trades: &[crate::Trade],
+        equity: &[crate::EquityPoint],
+        initial_cash: f64,
+    ) -> Self {
         let final_equity = equity.last().map(|e| e.equity).unwrap_or(initial_cash);
         let total_return = if initial_cash.abs() > f64::EPSILON {
             (final_equity - initial_cash) / initial_cash
@@ -194,13 +195,16 @@ impl PerformanceMetrics {
         let n_bars = equity.len();
         let cagr = compute_cagr(initial_cash, final_equity, n_bars);
 
-        let returns: Vec<f64> = equity.windows(2).filter_map(|w| {
-            if w[0].equity.abs() > f64::EPSILON {
-                Some((w[1].equity - w[0].equity) / w[0].equity)
-            } else {
-                None
-            }
-        }).collect();
+        let returns: Vec<f64> = equity
+            .windows(2)
+            .filter_map(|w| {
+                if w[0].equity.abs() > f64::EPSILON {
+                    Some((w[1].equity - w[0].equity) / w[0].equity)
+                } else {
+                    None
+                }
+            })
+            .collect();
 
         let sharpe_ratio = compute_sharpe(&returns);
         let sortino_ratio = compute_sortino(&returns);
@@ -256,11 +260,7 @@ fn aggregate_trade_stats(pnls: &[f64]) -> (f64, f64, f64) {
     let win_rate = wins / n;
 
     let gross_profit: f64 = pnls.iter().filter(|&&p| p > 0.0).copied().sum();
-    let gross_loss: f64 = pnls
-        .iter()
-        .filter(|&&p| p < 0.0)
-        .map(|p| p.abs())
-        .sum();
+    let gross_loss: f64 = pnls.iter().filter(|&&p| p < 0.0).map(|p| p.abs()).sum();
 
     let profit_factor = if gross_loss > f64::EPSILON {
         gross_profit / gross_loss
@@ -385,20 +385,14 @@ fn portfolio_equity_values(result: &BacktestResult) -> Vec<f64> {
         return Vec::new();
     };
 
-    if let Ok(sym_col) = result.equity_curve.column("symbol") {
-        if let Ok(sym_ca) = sym_col.str() {
-            return eq_ca
-                .into_iter()
-                .zip(sym_ca.into_iter())
-                .filter_map(|(eq, sym)| {
-                    if sym.is_none() {
-                        eq
-                    } else {
-                        None
-                    }
-                })
-                .collect();
-        }
+    if let Ok(sym_col) = result.equity_curve.column("symbol")
+        && let Ok(sym_ca) = sym_col.str()
+    {
+        return eq_ca
+            .into_iter()
+            .zip(sym_ca)
+            .filter_map(|(eq, sym)| if sym.is_none() { eq } else { None })
+            .collect();
     }
 
     eq_ca.into_iter().flatten().collect()

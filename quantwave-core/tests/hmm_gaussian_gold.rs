@@ -1,4 +1,5 @@
 //! Gold-standard tests for generic Gaussian HMM (not instrument-specific).
+#![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 
 use approx::assert_relative_eq;
 use quantwave_core::regimes::gaussian_hmm::GaussianHmmParams;

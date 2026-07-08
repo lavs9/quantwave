@@ -1,3 +1,10 @@
+#![allow(
+    clippy::panic,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::borrow_deref_ref,
+    clippy::field_reassign_with_default
+)]
 //! Batch↔streaming parity for shared-capital portfolio (quantwave-qzpi.10).
 //!
 //! `cargo nextest run -p quantwave-backtest portfolio_streaming_parity`
@@ -6,8 +13,8 @@ use approx::assert_relative_eq;
 use chrono::TimeZone;
 use polars::prelude::*;
 use quantwave_backtest::{
-    run_shared_capital_streaming_simulation, BacktestConfig, BacktestEngine, CostModel,
-    ExecutionModel, PortfolioAllocator, PortfolioBar, PortfolioMode, StrategySignal,
+    BacktestConfig, BacktestEngine, CostModel, ExecutionModel, PortfolioAllocator, PortfolioBar,
+    PortfolioMode, StrategySignal, run_shared_capital_streaming_simulation,
 };
 use quantwave_core::traits::Next;
 
@@ -28,7 +35,11 @@ fn shared_config() -> BacktestConfig {
 
 fn make_two_symbol_df() -> DataFrame {
     let timestamps = vec![
-        1_700_010_000i64, 1_700_010_000, 1_700_010_001, 1_700_010_001, 1_700_010_002,
+        1_700_010_000i64,
+        1_700_010_000,
+        1_700_010_001,
+        1_700_010_001,
+        1_700_010_002,
         1_700_010_002,
     ];
     let symbols = vec!["AAA", "BBB", "AAA", "BBB", "AAA", "BBB"];
@@ -48,7 +59,7 @@ fn portfolio_equity(result: &quantwave_backtest::BacktestResult) -> Vec<f64> {
     let eq = result.equity_curve.column("equity").unwrap().f64().unwrap();
     let sym = result.equity_curve.column("symbol").unwrap().str().unwrap();
     eq.into_iter()
-        .zip(sym.into_iter())
+        .zip(&*sym)
         .filter_map(|(e, s)| if s.is_none() { Some(e.unwrap()) } else { None })
         .collect()
 }
@@ -79,7 +90,14 @@ fn test_shared_capital_batch_streaming_parity() {
         .run(df.clone().lazy())
         .expect("batch");
 
-    let ts: Vec<i64> = df.column("timestamp").unwrap().i64().unwrap().into_iter().map(|v| v.unwrap()).collect();
+    let ts: Vec<i64> = df
+        .column("timestamp")
+        .unwrap()
+        .i64()
+        .unwrap()
+        .into_iter()
+        .map(|v| v.unwrap())
+        .collect();
     let symbols: Vec<String> = df
         .column("symbol")
         .unwrap()
@@ -88,8 +106,22 @@ fn test_shared_capital_batch_streaming_parity() {
         .into_iter()
         .map(|s| s.unwrap().to_string())
         .collect();
-    let closes: Vec<f64> = df.column("close").unwrap().f64().unwrap().into_iter().map(|v| v.unwrap()).collect();
-    let exposures: Vec<f64> = df.column("signal").unwrap().f64().unwrap().into_iter().map(|v| v.unwrap()).collect();
+    let closes: Vec<f64> = df
+        .column("close")
+        .unwrap()
+        .f64()
+        .unwrap()
+        .into_iter()
+        .map(|v| v.unwrap())
+        .collect();
+    let exposures: Vec<f64> = df
+        .column("signal")
+        .unwrap()
+        .f64()
+        .unwrap()
+        .into_iter()
+        .map(|v| v.unwrap())
+        .collect();
 
     let bars: Vec<PortfolioBar> = ts
         .iter()

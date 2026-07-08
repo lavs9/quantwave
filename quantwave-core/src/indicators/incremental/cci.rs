@@ -63,14 +63,24 @@ impl Next<(f64, f64, f64)> for CCI {
             }
             let last_value = self.circ_buf[lookback];
             let the_average = self.running_sum / timeperiod as f64;
-            return cci_value(last_value, the_average, &self.circ_buf[..timeperiod], timeperiod);
+            return cci_value(
+                last_value,
+                the_average,
+                &self.circ_buf[..timeperiod],
+                timeperiod,
+            );
         }
 
         let new_tp = tp;
         self.running_sum += new_tp - self.circ_buf[self.circ_idx];
         self.circ_buf[self.circ_idx] = new_tp;
         let the_average = self.running_sum / timeperiod as f64;
-        let out = cci_value(new_tp, the_average, &self.circ_buf[..timeperiod], timeperiod);
+        let out = cci_value(
+            new_tp,
+            the_average,
+            &self.circ_buf[..timeperiod],
+            timeperiod,
+        );
         self.circ_idx += 1;
         if self.circ_idx >= timeperiod {
             self.circ_idx = 0;
@@ -84,11 +94,7 @@ mod tests {
     use super::*;
     use proptest::prelude::*;
 
-    fn ordered_hlc(
-        h: &[f64],
-        l: &[f64],
-        c: &[f64],
-    ) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
+    fn ordered_hlc(h: &[f64], l: &[f64], c: &[f64]) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
         let len = h.len().min(l.len()).min(c.len());
         let mut high = Vec::with_capacity(len);
         let mut low = Vec::with_capacity(len);

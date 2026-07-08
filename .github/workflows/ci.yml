@@ -5,7 +5,7 @@
 #
 # Pipeline:
 #   1. sanity        — fast metadata + doc drift checks (~1 min)
-#   2. rust-gate     — nextest (core/polars/backtest) when Rust sources change
+#   2. rust-gate     — fmt + clippy + nextest (core/polars/backtest) when Rust sources change
 #   3. python-gold   — gold-vector streaming parity (Linux + macOS)
 #   4. plugins       — plugin wheel smoke test (only when quantwave-plugins/ changes)
 #   5. docs          — mkdocs gh-pages deploy (main branch only)
@@ -88,8 +88,10 @@ jobs:
         with:
           tool: nextest
 
-      - name: cargo nextest (core crates)
+      - name: cargo fmt + clippy + nextest (core crates)
         run: |
+          cargo fmt --all -- --check
+          cargo clippy -p quantwave-core -p quantwave-polars -p quantwave-backtest --all-targets -- -D warnings
           cargo nextest run -p quantwave-core
           cargo nextest run -p quantwave-polars
           cargo nextest run -p quantwave-backtest

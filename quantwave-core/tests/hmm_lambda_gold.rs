@@ -1,4 +1,5 @@
 //! Gold-standard tests for generic lambda (ecld) HMM.
+#![allow(clippy::expect_used, clippy::unwrap_used, dead_code)]
 
 use approx::assert_relative_eq;
 use quantwave_core::regimes::gaussian_hmm::GaussianHmmParams;

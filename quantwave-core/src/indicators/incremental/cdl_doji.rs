@@ -47,7 +47,7 @@ impl Next<(f64, f64, f64, f64)> for CDLDOJI {
 
         let body = (close - open).abs();
         let thresh = self.hl_sum * FACTOR_DIV;
-        let out = 100.0_f64.copysign(thresh - body).max(0.0) as f64;
+        let out = 100.0_f64.copysign(thresh - body).max(0.0);
 
         if let Some(old) = self.hl_window.pop_front() {
             self.hl_sum += hl - old;

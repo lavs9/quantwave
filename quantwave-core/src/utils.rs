@@ -9,6 +9,12 @@ pub struct RingBuffer<T> {
     pub count: usize,
 }
 
+impl<T: Default + Clone> Default for RingBuffer<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: Default + Clone> RingBuffer<T> {
     pub fn new() -> Self {
         Self::with_capacity(16)

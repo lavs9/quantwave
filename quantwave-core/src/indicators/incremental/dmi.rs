@@ -35,9 +35,10 @@ impl DmiCore {
 
     #[inline]
     fn dm_components(&self, high: f64, low: f64) -> (f64, f64, f64) {
-        let ph = self.prev_high.unwrap();
-        let pl = self.prev_low.unwrap();
-        let pc = self.prev_close.unwrap();
+        let (ph, pl, pc) = match (self.prev_high, self.prev_low, self.prev_close) {
+            (Some(ph), Some(pl), Some(pc)) => (ph, pl, pc),
+            _ => return (0.0, 0.0, 0.0),
+        };
         let hl = high - low;
         let hc = (high - pc).abs();
         let lc = (low - pc).abs();

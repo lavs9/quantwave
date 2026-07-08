@@ -30,10 +30,10 @@ impl Next<f64> for TalibSma {
             return f64::NAN;
         }
 
-        if self.window.len() >= p {
-            if let Some(old) = self.window.pop_front() {
-                self.sum -= old;
-            }
+        if self.window.len() >= p
+            && let Some(old) = self.window.pop_front()
+        {
+            self.sum -= old;
         }
         self.window.push_back(input);
         self.sum += input;

@@ -135,18 +135,14 @@ impl HilbertPeriodState {
         if self.period < temp_real2 {
             self.period = temp_real2;
         }
-        if self.period < 6.0 {
-            self.period = 6.0;
-        } else if self.period > 50.0 {
-            self.period = 50.0;
-        }
+        self.period = self.period.clamp(6.0, 50.0);
         self.period = 0.2 * self.period + 0.8 * temp_real;
         self.smooth_period = 0.33 * self.period + 0.67 * self.smooth_period;
     }
 
     fn step_hilbert(&mut self, today: usize, smoothed: f64, adj: f64) -> (f64, f64, f64, f64) {
         let (detrender, q1, i2, q2);
-        if today % 2 == 0 {
+        if today.is_multiple_of(2) {
             detrender = do_hilbert_even(&mut self.detrender_vars, smoothed, self.hilbert_idx, adj);
             q1 = do_hilbert_even(&mut self.q1_vars, detrender, self.hilbert_idx, adj);
             let ji = do_hilbert_even(
@@ -229,7 +225,7 @@ impl HtEngine32 {
             ));
             return None;
         }
-        let wma = self.wma.as_mut().unwrap();
+        let wma = self.wma.as_mut()?;
         let price = *self.prices.last().unwrap_or(&0.0);
         if self.warmup_left > 0 {
             self.warmup_left -= 1;
@@ -312,7 +308,7 @@ impl Next<f64> for HT_PHASOR {
         };
         let today = self.eng.today();
         let adj = 0.075 * self.eng.hs.period + 0.54;
-        let inphase = if today % 2 == 0 {
+        let inphase = if today.is_multiple_of(2) {
             self.eng.hs.i1_for_even_prev3
         } else {
             self.eng.hs.i1_for_odd_prev3
@@ -399,7 +395,7 @@ impl HtEngine63 {
             ));
             return None;
         }
-        let wma = self.wma.as_mut().unwrap();
+        let wma = self.wma.as_mut()?;
         let price = *self.prices.last().unwrap_or(&0.0);
         if self.warmup_left > 0 {
             self.warmup_left -= 1;
@@ -457,11 +453,7 @@ impl HtEngine63 {
             }
             price_idx -= 1;
         }
-        if count > 0 {
-            temp / count as f64
-        } else {
-            temp
-        }
+        if count > 0 { temp / count as f64 } else { temp }
     }
 
     fn step_core(&mut self) -> bool {
@@ -490,7 +482,8 @@ impl HtEngine63 {
     fn trendline(&mut self) -> f64 {
         let dc_period_int = (self.hs.smooth_period + 0.5) as i32;
         let temp = self.sum_prices_back(dc_period_int);
-        let trendline = (4.0 * temp + 3.0 * self.i_trend1 + 2.0 * self.i_trend2 + self.i_trend3) / 10.0;
+        let trendline =
+            (4.0 * temp + 3.0 * self.i_trend1 + 2.0 * self.i_trend2 + self.i_trend3) / 10.0;
         self.i_trend3 = self.i_trend2;
         self.i_trend2 = self.i_trend1;
         self.i_trend1 = temp;

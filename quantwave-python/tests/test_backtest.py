@@ -16,6 +16,24 @@ def test_backtest_module_import():
     assert hasattr(backtest, "BacktestReport")
 
 
+def test_backtest_missing_column_raises_key_error():
+    df = pl.DataFrame({"timestamp": [1], "close": [100.0]})
+    with pytest.raises(KeyError, match="signal"):
+        BacktestEngine.with_default_costs().run(df)
+
+
+def test_backtest_wrong_timestamp_dtype_raises_type_error():
+    df = pl.DataFrame(
+        {
+            "timestamp": ["not_a_ts"],
+            "close": [100.0],
+            "signal": [1.0],
+        }
+    )
+    with pytest.raises(TypeError, match="timestamp"):
+        BacktestEngine.with_default_costs().run(df)
+
+
 def _single_trade_df():
     """6 bars: enter bar 1, exit bar 4 (matches Rust steel-thread test)."""
     return pl.DataFrame(

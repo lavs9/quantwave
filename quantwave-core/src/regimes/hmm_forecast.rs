@@ -107,7 +107,7 @@ pub fn pseudo_residuals(
             "forward_filter length must match observations".into(),
         ));
     }
-    let normal = Normal::new(0.0, 1.0).expect("standard normal");
+    let normal = Normal::new(0.0, 1.0).map_err(|e| GaussianHmmError::InvalidParams(e.to_string()))?;
     let mut out = Vec::with_capacity(n);
     for t in 0..n {
         let probs: Vec<f64> = (0..m).map(|s| forward_filter[s][t]).collect();

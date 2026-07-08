@@ -26,7 +26,7 @@ impl Next<(f64, f64, f64)> for TaTRANGE {
             self.bars_seen = 1;
             return f64::NAN;
         }
-        let pc = self.prev_close.unwrap();
+        let pc = self.prev_close.unwrap_or(close);
         let hl = high - low;
         let hc = (high - pc).abs();
         let lc = (low - pc).abs();

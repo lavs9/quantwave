@@ -2,11 +2,11 @@
 //!
 //! Run: `cargo bench -p quantwave-core --bench indicator_throughput`
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
+use quantwave_core::Next;
 use quantwave_core::indicators::momentum::RSI;
 use quantwave_core::indicators::smoothing::SMA;
 use quantwave_core::indicators::supertrend::SuperTrend;
-use quantwave_core::Next;
 
 const BENCH_ROWS: usize = 100_000;
 

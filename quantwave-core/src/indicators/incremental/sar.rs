@@ -325,8 +325,8 @@ impl SAREXT {
                 let out = self.sar_val;
                 if new_high > self.ep {
                     self.ep = new_high;
-                    self.af_long = (self.af_long + self.accelerationlong)
-                        .min(self.accelerationmaxlong);
+                    self.af_long =
+                        (self.af_long + self.accelerationlong).min(self.accelerationmaxlong);
                 }
                 self.sar_val += self.af_long * (self.ep - self.sar_val);
                 self.sar_val = self.sar_val.min(p_low).min(new_low);
@@ -349,8 +349,8 @@ impl SAREXT {
             let out = -self.sar_val;
             if new_low < self.ep {
                 self.ep = new_low;
-                self.af_short = (self.af_short + self.accelerationshort)
-                    .min(self.accelerationmaxshort);
+                self.af_short =
+                    (self.af_short + self.accelerationshort).min(self.accelerationmaxshort);
             }
             self.sar_val += self.af_short * (self.ep - self.sar_val);
             self.sar_val = self.sar_val.max(p_high).max(new_high);
@@ -377,8 +377,8 @@ impl SAREXT {
                 let out = self.sar_val;
                 if new_high > self.ep {
                     self.ep = new_high;
-                    self.af_long = (self.af_long + self.accelerationlong)
-                        .min(self.accelerationmaxlong);
+                    self.af_long =
+                        (self.af_long + self.accelerationlong).min(self.accelerationmaxlong);
                 }
                 self.sar_val += self.af_long * (self.ep - self.sar_val);
                 self.sar_val = self.sar_val.min(p_low).min(new_low);
@@ -401,8 +401,8 @@ impl SAREXT {
             let out = -self.sar_val;
             if new_low < self.ep {
                 self.ep = new_low;
-                self.af_short = (self.af_short + self.accelerationshort)
-                    .min(self.accelerationmaxshort);
+                self.af_short =
+                    (self.af_short + self.accelerationshort).min(self.accelerationmaxshort);
             }
             self.sar_val += self.af_short * (self.ep - self.sar_val);
             self.sar_val = self.sar_val.max(p_high).max(new_high);

@@ -51,7 +51,7 @@ impl VolatilityClusterer {
             // Initialization: spread centroids across current range
             if self.window.len() >= self.k {
                 let mut sorted: Vec<f64> = self.window.iter().copied().collect();
-                sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+                sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
                 for i in 0..self.k {
                     let idx = (i * (sorted.len() - 1)) / (self.k - 1);
                     self.centroids[i] = sorted[idx];
@@ -101,7 +101,11 @@ impl Next<(f64, f64, f64)> for VolatilityClusterer {
         // Map cluster index to MarketRegime
         // We sort centroids to ensure 0 is Low, k-1 is High
         let mut sorted_indices: Vec<usize> = (0..self.k).collect();
-        sorted_indices.sort_by(|&a, &b| self.centroids[a].partial_cmp(&self.centroids[b]).unwrap());
+        sorted_indices.sort_by(|&a, &b| {
+            self.centroids[a]
+                .partial_cmp(&self.centroids[b])
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         let rank = sorted_indices.iter().position(|&i| i == cluster_idx).unwrap_or(0);
 

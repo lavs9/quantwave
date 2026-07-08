@@ -144,9 +144,7 @@ mod tests {
             let mut batch_results = Vec::with_capacity(inputs.len());
 
             for (t, &input) in inputs.iter().enumerate() {
-                for i in 1..=order {
-                    lg_prev[i] = lg_curr[i];
-                }
+                lg_prev[1..=order].copy_from_slice(&lg_curr[1..=order]);
 
                 lg_curr[1] = us.next(input);
 

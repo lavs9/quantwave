@@ -131,7 +131,7 @@ mod tests {
         let prices = vec![10.0, 10.5, 11.0, 11.5, 12.0, 11.0, 10.0];
         for p in prices {
             let res = uo.next(p);
-            assert!(res >= -1.0 && res <= 1.0);
+            assert!((-1.0..=1.0).contains(&res));
         }
     }
 

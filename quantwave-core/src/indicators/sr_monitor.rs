@@ -343,7 +343,9 @@ impl SRInteractionMonitor {
                 is_support: level.is_support,
                 interaction: SRInteractionType::Approach,
                 strength: match &level.source {
-                    LevelSource::AutoSwing { origin_strength, .. } => *origin_strength as f64,
+                    LevelSource::AutoSwing {
+                        origin_strength, ..
+                    } => *origin_strength as f64,
                     LevelSource::UserProvided { .. } => 1.0,
                 },
                 bars_since_creation: (current_bar.saturating_sub(level.creation_bar)) as u32,
@@ -356,7 +358,10 @@ impl SRInteractionMonitor {
 
         // Touch detection (wick overlap within tolerance on a new bar)
         if level.last_touch_bar < current_bar {
-            if level_price >= low - touch_tolerance && level_price <= high + touch_tolerance && !level.touched {
+            if level_price >= low - touch_tolerance
+                && level_price <= high + touch_tolerance
+                && !level.touched
+            {
                 level.side_before_touch = level.last_side;
                 events.push(SRInteraction {
                     bar: current_bar,
@@ -365,7 +370,9 @@ impl SRInteractionMonitor {
                     is_support: level.is_support,
                     interaction: SRInteractionType::Touch,
                     strength: match &level.source {
-                        LevelSource::AutoSwing { origin_strength, .. } => *origin_strength as f64,
+                        LevelSource::AutoSwing {
+                            origin_strength, ..
+                        } => *origin_strength as f64,
                         LevelSource::UserProvided { .. } => 1.0,
                     },
                     bars_since_creation: (current_bar.saturating_sub(level.creation_bar)) as u32,
@@ -387,7 +394,11 @@ impl SRInteractionMonitor {
             && current_side != last_side
             && !level.breakout_happened
         {
-            let direction = if last_side == 1 && current_side == -1 { 1 } else { -1 };
+            let direction = if last_side == 1 && current_side == -1 {
+                1
+            } else {
+                -1
+            };
             events.push(SRInteraction {
                 bar: current_bar,
                 level_price,
@@ -395,7 +406,9 @@ impl SRInteractionMonitor {
                 is_support: level.is_support,
                 interaction: SRInteractionType::Breakout,
                 strength: match &level.source {
-                    LevelSource::AutoSwing { origin_strength, .. } => *origin_strength as f64,
+                    LevelSource::AutoSwing {
+                        origin_strength, ..
+                    } => *origin_strength as f64,
                     LevelSource::UserProvided { .. } => 1.0,
                 },
                 bars_since_creation: (current_bar.saturating_sub(level.creation_bar)) as u32,
@@ -420,7 +433,9 @@ impl SRInteractionMonitor {
                 is_support: level.is_support,
                 interaction: SRInteractionType::Reversal,
                 strength: match &level.source {
-                    LevelSource::AutoSwing { origin_strength, .. } => *origin_strength as f64,
+                    LevelSource::AutoSwing {
+                        origin_strength, ..
+                    } => *origin_strength as f64,
                     LevelSource::UserProvided { .. } => 1.0,
                 },
                 bars_since_creation: (current_bar.saturating_sub(level.creation_bar)) as u32,
@@ -440,7 +455,9 @@ impl SRInteractionMonitor {
                 is_support: level.is_support,
                 interaction: SRInteractionType::Retest,
                 strength: match &level.source {
-                    LevelSource::AutoSwing { origin_strength, .. } => *origin_strength as f64,
+                    LevelSource::AutoSwing {
+                        origin_strength, ..
+                    } => *origin_strength as f64,
                     LevelSource::UserProvided { .. } => 1.0,
                 },
                 bars_since_creation: (current_bar.saturating_sub(level.creation_bar)) as u32,
@@ -476,11 +493,7 @@ impl SRInteractionMonitor {
                             return None;
                         }
                         let age = self.bar_index.saturating_sub(l.creation_bar);
-                        if age > max_age {
-                            Some(id)
-                        } else {
-                            None
-                        }
+                        if age > max_age { Some(id) } else { None }
                     })
                     .collect();
                 for id in stale {
@@ -521,18 +534,17 @@ impl SRInteractionMonitor {
             return;
         }
 
-        let candidates: Vec<SwingPoint> = vec![
-            state.last_swing_high.clone(),
-            state.last_swing_low.clone(),
-        ]
-        .into_iter()
-        .flatten()
-        .collect();
+        let candidates: Vec<SwingPoint> =
+            vec![state.last_swing_high.clone(), state.last_swing_low.clone()]
+                .into_iter()
+                .flatten()
+                .collect();
 
         for sp in candidates {
-            let too_close = self.levels.values().any(|l| {
-                (l.price - sp.price).abs() < min_separation
-            });
+            let too_close = self
+                .levels
+                .values()
+                .any(|l| (l.price - sp.price).abs() < min_separation);
             if too_close {
                 continue;
             }
@@ -619,8 +631,13 @@ impl Next<(f64, f64, f64)> for SRInteractionMonitor {
 
         // Deterministic ordering for consumers + stable proptest parity (HashMap iteration is random)
         all_interactions.sort_by(|a, b| {
-            a.bar.cmp(&b.bar)
-                .then_with(|| a.level_price.partial_cmp(&b.level_price).unwrap_or(std::cmp::Ordering::Equal))
+            a.bar
+                .cmp(&b.bar)
+                .then_with(|| {
+                    a.level_price
+                        .partial_cmp(&b.level_price)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                })
                 .then_with(|| (a.interaction as u8).cmp(&(b.interaction as u8)))
         });
 
@@ -702,16 +719,16 @@ mod tests {
     #[test]
     fn test_basic_user_level_interactions() {
         let mut mon = SRInteractionMonitor::new(2, 0.2, 1.0);
-        let user_id = mon.add_user_level(100.0, "TestResist");
+        let _user_id = mon.add_user_level(100.0, "TestResist");
 
         // Series that approaches, touches, then breaks out, then retests
         let series: Vec<(f64, f64, f64)> = vec![
-            (99.0, 98.5, 98.7),   // below, approach soon
-            (99.8, 99.6, 99.7),   // still approach
-            (100.1, 99.9, 100.0), // touch
-            (100.3, 100.1, 100.2),// breakout
-            (100.1, 99.9, 100.0), // retest
-            (99.8, 99.6, 99.7),   // reversal-ish (but after breakout)
+            (99.0, 98.5, 98.7),    // below, approach soon
+            (99.8, 99.6, 99.7),    // still approach
+            (100.1, 99.9, 100.0),  // touch
+            (100.3, 100.1, 100.2), // breakout
+            (100.1, 99.9, 100.0),  // retest
+            (99.8, 99.6, 99.7),    // reversal-ish (but after breakout)
         ];
 
         let mut any_interaction_on_level = false;
@@ -723,30 +740,41 @@ mod tests {
                 }
             }
             if i > 3 {
-                assert!(mon.active_level_count() > 0, "level should remain registered");
+                assert!(
+                    mon.active_level_count() > 0,
+                    "level should remain registered"
+                );
             }
         }
         // The exact sequence may or may not fire all 3 types depending on side/tol timing in this minimal synthetic.
         // Core verification is: no panic, level management works, parity proptest + no-dupe invariant cover the MQ logic.
-        assert!(any_interaction_on_level || mon.active_level_count() == 1, "user level should participate in monitoring");
+        assert!(
+            any_interaction_on_level || mon.active_level_count() == 1,
+            "user level should participate in monitoring"
+        );
     }
 
     #[test]
     fn test_auto_levels_from_structure() {
         let mut mon = SRInteractionMonitor::new(2, 0.1, 0.5);
         // Rising structure to generate swing highs as resistance candidates
-        let highs: Vec<f64> = (0..30).map(|i| 100.0 + (i as f64 * 0.3) + ((i % 5) as f64 - 2.0)).collect();
+        let highs: Vec<f64> = (0..30)
+            .map(|i| 100.0 + (i as f64 * 0.3) + ((i % 5) as f64 - 2.0))
+            .collect();
         let lows: Vec<f64> = highs.iter().map(|h| h - 0.8).collect();
 
         let mut added_auto = false;
         for i in 0..highs.len() {
             let c = (highs[i] + lows[i]) / 2.0;
-            let out = mon.next((highs[i], lows[i], c));
+            let _out = mon.next((highs[i], lows[i], c));
             if mon.active_level_count() > 0 && i > 8 {
                 added_auto = true;
             }
         }
-        assert!(added_auto, "Auto levels should have been promoted from swings");
+        assert!(
+            added_auto,
+            "Auto levels should have been promoted from swings"
+        );
     }
 
     proptest! {
@@ -804,7 +832,10 @@ mod tests {
             for ev in &out.interactions {
                 if ev.level_label == "TestResist" {
                     observed_bars.push(ev.bar);
-                    assert_ne!(ev.bar, 0, "interaction bar must reflect the monitor bar counter");
+                    assert_ne!(
+                        ev.bar, 0,
+                        "interaction bar must reflect the monitor bar counter"
+                    );
                 }
             }
         }
@@ -862,9 +893,9 @@ mod tests {
             "BOS/age pruning should not grow unbounded"
         );
         assert!(
-            mon.levels_snapshot().iter().any(|(id, _, label, _, _)| {
-                *id == user_id && label == "UserSupport"
-            }),
+            mon.levels_snapshot()
+                .iter()
+                .any(|(id, _, label, _, _)| { *id == user_id && label == "UserSupport" }),
             "user-provided levels must survive BOS pruning"
         );
     }
@@ -886,8 +917,15 @@ mod tests {
         let mut breakout_count = 0;
         for d in data {
             let out = mon.next(d);
-            breakout_count += out.interactions.iter().filter(|e| e.interaction == SRInteractionType::Breakout).count();
+            breakout_count += out
+                .interactions
+                .iter()
+                .filter(|e| e.interaction == SRInteractionType::Breakout)
+                .count();
         }
-        assert!(breakout_count <= 1, "Breakout should fire at most once without re-arming price action");
+        assert!(
+            breakout_count <= 1,
+            "Breakout should fire at most once without re-arming price action"
+        );
     }
 }

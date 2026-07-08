@@ -1,3 +1,10 @@
+#![allow(
+    clippy::panic,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::borrow_deref_ref,
+    clippy::field_reassign_with_default
+)]
 //! Integration tests for `PerformanceMetrics` (quantwave-cr6v.1).
 //!
 //! Formula sources:
@@ -10,8 +17,8 @@
 use approx::assert_relative_eq;
 use polars::prelude::*;
 use quantwave_backtest::{
-    backtest_simple_bool_signal, BacktestConfig, BacktestEngine, BacktestResult, CostModel,
-    ExecutionModel, PerformanceMetrics,
+    BacktestConfig, BacktestEngine, BacktestResult, CostModel, ExecutionModel, PerformanceMetrics,
+    backtest_simple_bool_signal,
 };
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -86,7 +93,11 @@ fn make_two_trade_win_loss_result() -> quantwave_backtest::BacktestResult {
 fn test_metrics_win_rate_and_profit_factor() {
     let result = make_two_trade_win_loss_result();
 
-    assert_eq!(result.trades.height(), 2, "precondition: exactly two trades");
+    assert_eq!(
+        result.trades.height(),
+        2,
+        "precondition: exactly two trades"
+    );
 
     let pnls: Vec<f64> = result
         .trades
@@ -112,7 +123,9 @@ fn test_metrics_win_rate_and_profit_factor() {
 fn make_known_drawdown_result() -> BacktestResult {
     let n = 6;
     let ts: Vec<i64> = (0..n).map(|i| 1_700_000_300 + i as i64).collect();
-    let equity = vec![100_000.0, 105_000.0, 110_000.0, 105_000.0, 99_000.0, 102_000.0];
+    let equity = vec![
+        100_000.0, 105_000.0, 110_000.0, 105_000.0, 99_000.0, 102_000.0,
+    ];
 
     let equity_curve = DataFrame::new(vec![
         Column::new("ts".into(), ts),
@@ -219,7 +232,11 @@ fn test_metrics_sharpe_positive_drift() {
     let result = make_result_from_equity(&equity, 1_700_002_000);
     let metrics = PerformanceMetrics::from_result(&result);
 
-    assert!(metrics.sharpe_ratio > 0.0, "sharpe={}", metrics.sharpe_ratio);
+    assert!(
+        metrics.sharpe_ratio > 0.0,
+        "sharpe={}",
+        metrics.sharpe_ratio
+    );
 }
 
 #[test]
@@ -250,15 +267,15 @@ fn test_backtest_result_metrics_method() {
 #[test]
 fn test_backtest_with_report_returns_report() {
     let df = DataFrame::new(vec![
-        Column::new("timestamp".into(), (0..7i64).map(|i| 1_700_000_200 + i).collect::<Vec<_>>()),
+        Column::new(
+            "timestamp".into(),
+            (0..7i64).map(|i| 1_700_000_200 + i).collect::<Vec<_>>(),
+        ),
         Column::new(
             "close".into(),
             vec![100.0, 100.0, 105.0, 110.0, 100.0, 95.0, 90.0],
         ),
-        Column::new(
-            "signal".into(),
-            vec![0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0],
-        ),
+        Column::new("signal".into(), vec![0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0]),
     ])
     .unwrap();
 
@@ -291,12 +308,12 @@ fn make_gold_standard_flip_result() -> BacktestResult {
     let n = 20;
     let ts: Vec<i64> = (0..n).map(|i| 1_700_004_000 + i as i64).collect();
     let closes = vec![
-        100.0, 100.0, 100.0, 102.0, 104.0, 106.0, 106.0, 106.0, 106.0, 106.0, 100.0,
-        98.0, 96.0, 94.0, 92.0, 92.0, 92.0, 92.0, 92.0, 92.0,
+        100.0, 100.0, 100.0, 102.0, 104.0, 106.0, 106.0, 106.0, 106.0, 106.0, 100.0, 98.0, 96.0,
+        94.0, 92.0, 92.0, 92.0, 92.0, 92.0, 92.0,
     ];
     let signals = vec![
-        0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0,
     ];
 
     let df = DataFrame::new(vec![
@@ -334,18 +351,24 @@ fn test_metrics_gold_standard_basic() {
     let result = make_gold_standard_flip_result();
     let metrics = PerformanceMetrics::from_result(&result);
 
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/gold_standard/metrics_basic.json");
+    let path =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/gold_standard/metrics_basic.json");
     let raw = std::fs::read_to_string(&path).expect("gold standard file");
     let spec: serde_json::Value = serde_json::from_str(&raw).expect("valid json");
 
     let expected = &spec["expected"];
 
     // Explicit boundary assertions matching the output contract
-    assert!(metrics.max_drawdown_pct >= 0.0, "drawdown must be a positive fraction");
-    assert!(metrics.win_rate >= 0.0 && metrics.win_rate <= 1.0, "win_rate must be in [0, 1]");
+    assert!(
+        metrics.max_drawdown_pct >= 0.0,
+        "drawdown must be a positive fraction"
+    );
+    assert!(
+        metrics.win_rate >= 0.0 && metrics.win_rate <= 1.0,
+        "win_rate must be in [0, 1]"
+    );
     let expected_total_return = (metrics.final_equity / 100_000.0) - 1.0;
-    assert_relative_eq!(metrics.total_return, expected_total_return, epsilon=1e-9);
+    assert_relative_eq!(metrics.total_return, expected_total_return, epsilon = 1e-9);
 
     assert_relative_eq!(
         metrics.num_trades,

@@ -124,7 +124,7 @@ mod tests {
         let mut chop = ChoppinessIndex::new(14);
         for i in 0..30 {
             let val = chop.next((100.0 + i as f64, 90.0 + i as f64, 95.0 + i as f64));
-            assert!(val >= 0.0 && val <= 100.0);
+            assert!((0.0..=100.0).contains(&val));
         }
     }
 

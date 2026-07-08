@@ -1,3 +1,10 @@
+#![allow(
+    clippy::panic,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::borrow_deref_ref,
+    clippy::field_reassign_with_default
+)]
 //! Short positions (quantwave-cr6v.10).
 //!
 //! `cargo nextest run -p quantwave-backtest --test short_positions`
@@ -6,8 +13,8 @@ use approx::assert_relative_eq;
 use chrono::{TimeZone, Utc};
 use polars::prelude::*;
 use quantwave_backtest::{
-    run_streaming_simulation, BacktestConfig, BacktestEngine, Bar, CostModel, ExecutionModel,
-    StrategySignal,
+    BacktestConfig, BacktestEngine, Bar, CostModel, ExecutionModel, StrategySignal,
+    run_streaming_simulation,
 };
 
 fn zero_cost_config() -> BacktestConfig {
@@ -183,15 +190,9 @@ fn test_short_batch_streaming_parity() {
         })
         .collect();
 
-    let stream = run_streaming_simulation(
-        &bars,
-        SignalReplay {
-            signals,
-            idx: 0,
-        },
-        zero_cost_config(),
-    )
-    .expect("streaming short");
+    let stream =
+        run_streaming_simulation(&bars, SignalReplay { signals, idx: 0 }, zero_cost_config())
+            .expect("streaming short");
 
     let b_eq: Vec<f64> = batch
         .equity_curve

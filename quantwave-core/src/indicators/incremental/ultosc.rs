@@ -129,11 +129,7 @@ mod tests {
     use super::*;
     use proptest::prelude::*;
 
-    fn ordered_hlc(
-        h: &[f64],
-        l: &[f64],
-        c: &[f64],
-    ) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
+    fn ordered_hlc(h: &[f64], l: &[f64], c: &[f64]) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
         let len = h.len().min(l.len()).min(c.len());
         let mut high = Vec::with_capacity(len);
         let mut low = Vec::with_capacity(len);

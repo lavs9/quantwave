@@ -170,9 +170,7 @@ impl Next<f64> for MACDFIX {
             if i >= self.sp {
                 self.update_emas(input);
             }
-            let signal_seed: f64 = self.macd_values[..self.signalperiod]
-                .iter()
-                .sum::<f64>()
+            let signal_seed: f64 = self.macd_values[..self.signalperiod].iter().sum::<f64>()
                 / self.signalperiod as f64;
             self.signal_ema = signal_seed;
             let macd = self.macd_values[self.signalperiod - 1];

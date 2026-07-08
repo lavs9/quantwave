@@ -130,7 +130,7 @@ mod tests {
         }
         // Some volume at 110
         let res = vp.next((110.0, 5.0));
-        assert!(res >= 100.0 && res <= 105.0); // POC should still be in the 100 bin
+        assert!((100.0..=105.0).contains(&res)); // POC should still be in the 100 bin
 
         // More volume at 110
         vp.next((110.0, 20.0));

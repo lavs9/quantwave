@@ -27,8 +27,7 @@ impl RollingMax {
             return f64::NAN;
         }
         let mut m = f64::NEG_INFINITY;
-        for i in 0..self.window.len() {
-            let x = *self.window.get(i).unwrap();
+        for &x in self.window.iter() {
             if x > m {
                 m = x;
             }
@@ -84,8 +83,7 @@ impl RollingMin {
             return f64::NAN;
         }
         let mut m = f64::INFINITY;
-        for i in 0..self.window.len() {
-            let x = *self.window.get(i).unwrap();
+        for &x in self.window.iter() {
             if x < m {
                 m = x;
             }
@@ -135,10 +133,10 @@ impl RollingSum {
 
     fn push(&mut self, v: f64) -> f64 {
         let p = self.timeperiod;
-        if self.window.len() >= p {
-            if let Some(old) = self.window.pop_front() {
-                self.sum -= old;
-            }
+        if self.window.len() >= p
+            && let Some(old) = self.window.pop_front()
+        {
+            self.sum -= old;
         }
         self.window.push_back(v);
         self.sum += v;
@@ -200,8 +198,7 @@ impl RollingMaxIndex {
         }
         let mut best_idx = 0usize;
         let mut best_val = f64::NEG_INFINITY;
-        for i in 0..self.window.len() {
-            let x = *self.window.get(i).unwrap();
+        for (i, &x) in self.window.iter().enumerate() {
             if x > best_val {
                 best_val = x;
                 best_idx = i;
@@ -262,8 +259,7 @@ impl RollingMinIndex {
         }
         let mut best_idx = 0usize;
         let mut best_val = f64::INFINITY;
-        for i in 0..self.window.len() {
-            let x = *self.window.get(i).unwrap();
+        for (i, &x) in self.window.iter().enumerate() {
             if x < best_val {
                 best_val = x;
                 best_idx = i;

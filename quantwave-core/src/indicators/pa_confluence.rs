@@ -72,29 +72,29 @@ pub fn passes_confluence_filter(
     ctx: &ConfluenceContext,
     structure: Option<&MarketStructureState>,
 ) -> bool {
-    if let Some(req_bias) = ctx.required_bias {
-        if let Some(st) = structure {
-            let bias = match st.bias {
-                Bias::Bullish => 1u32,
-                Bias::Bearish => 2,
-                Bias::Neutral => 0,
-            };
-            if bias != req_bias && req_bias != 0 {
-                return false;
-            }
-        }
-    }
-
-    if let Some(req) = ctx.required_regime {
-        if ctx.regime_label != Some(req) {
+    if let Some(req_bias) = ctx.required_bias
+        && let Some(st) = structure
+    {
+        let bias = match st.bias {
+            Bias::Bullish => 1u32,
+            Bias::Bearish => 2,
+            Bias::Neutral => 0,
+        };
+        if bias != req_bias && req_bias != 0 {
             return false;
         }
     }
 
-    if let Some(h) = ctx.hurst_persistence {
-        if h < ctx.min_hurst {
-            return false;
-        }
+    if let Some(req) = ctx.required_regime
+        && ctx.regime_label != Some(req)
+    {
+        return false;
+    }
+
+    if let Some(h) = ctx.hurst_persistence
+        && h < ctx.min_hurst
+    {
+        return false;
     }
 
     match &event.kind {
@@ -225,6 +225,11 @@ mod tests {
         };
         enrich_pa_event(&mut event, &ctx);
         assert_eq!(event.regime_at_event, Some("Bull".into()));
-        assert!(event.feature_values.iter().any(|(k, _)| k == "confluence_score"));
+        assert!(
+            event
+                .feature_values
+                .iter()
+                .any(|(k, _)| k == "confluence_score")
+        );
     }
 }

@@ -5,7 +5,7 @@
 
 use polars::io::ipc::IpcReader;
 use polars::prelude::*;
-use pyo3::exceptions::PyValueError;
+use pyo3::exceptions::{PyKeyError, PyRuntimeError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList, PyType};
 use pyo3_polars::PyDataFrame;
@@ -60,7 +60,17 @@ fn parse_execution_delay(s: &str) -> PyResult<ExecutionDelay> {
 }
 
 fn map_err(e: BacktestError) -> PyErr {
-    PyValueError::new_err(e.to_string())
+    match e {
+        BacktestError::MissingColumn { name } => PyKeyError::new_err(name),
+        BacktestError::InvalidDtype { col, expected, got } => PyTypeError::new_err(format!(
+            "invalid dtype for column '{col}': expected {expected}, got {got}"
+        )),
+        BacktestError::InternalInvariant { context } => PyRuntimeError::new_err(context),
+        BacktestError::UnsortedData | BacktestError::InvalidInput(_) => {
+            PyValueError::new_err(e.to_string())
+        }
+        BacktestError::Polars(pe) => PyValueError::new_err(pe.to_string()),
+    }
 }
 
 /// Convert a Python Polars DataFrame via IPC bytes (no pyarrow / compat_level coupling).

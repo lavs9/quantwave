@@ -668,7 +668,7 @@ fn weighted_neg_log_likelihood(
     sigma: f64,
     lambda: f64,
 ) -> f64 {
-    if sigma <= 1e-8 || lambda < 1.0 || lambda > 8.0 {
+    if sigma <= 1e-8 || !(1.0..=8.0).contains(&lambda) {
         return f64::INFINITY;
     }
     let mut nll = 0.0;

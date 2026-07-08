@@ -130,10 +130,10 @@ impl Next<(f64, f64, f64, f64)> for Vfi {
         // Rolling sum of DirectionalVolume
         self.dir_vol_window.push_back(dir_vol);
         self.dir_vol_sum += dir_vol;
-        if self.dir_vol_window.len() > self.period {
-            if let Some(oldest) = self.dir_vol_window.pop_front() {
-                self.dir_vol_sum -= oldest;
-            }
+        if self.dir_vol_window.len() > self.period
+            && let Some(oldest) = self.dir_vol_window.pop_front()
+        {
+            self.dir_vol_sum -= oldest;
         }
 
         let vfi_raw = if v_ave != 0.0 {

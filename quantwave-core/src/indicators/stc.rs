@@ -162,7 +162,7 @@ mod tests {
         ];
         for input in inputs {
             let res = stc.next(input);
-            assert!(res >= 0.0 && res <= 100.0);
+            assert!((0.0..=100.0).contains(&res));
         }
     }
 

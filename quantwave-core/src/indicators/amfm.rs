@@ -217,11 +217,10 @@ mod tests {
 
                 envelope_hist.push_back(max_deriv);
                 sum_env += max_deriv;
-                if envelope_hist.len() > a_len {
-                    if let Some(old) = envelope_hist.pop_front() {
+                if envelope_hist.len() > a_len
+                    && let Some(old) = envelope_hist.pop_front() {
                         sum_env -= old;
                     }
-                }
                 batch_results.push(sum_env / envelope_hist.len() as f64);
             }
 
@@ -252,9 +251,7 @@ mod tests {
 
             for (i, &input) in inputs.iter().enumerate() {
                 let deriv = input.0 - input.1;
-                let mut hl = 10.0 * deriv;
-                if hl > 1.0 { hl = 1.0; }
-                if hl < -1.0 { hl = -1.0; }
+                let hl = (10.0 * deriv).clamp(-1.0, 1.0);
 
                 let res = if i + 1 < 3 {
                     deriv

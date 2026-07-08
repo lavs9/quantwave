@@ -37,8 +37,15 @@ impl PlusDmCore {
             self.bar_index = 1;
             return None;
         }
-        let ph = self.prev_high.unwrap();
-        let pl = self.prev_low.unwrap();
+        let (ph, pl) = match (self.prev_high, self.prev_low) {
+            (Some(ph), Some(pl)) => (ph, pl),
+            _ => {
+                self.prev_high = Some(high);
+                self.prev_low = Some(low);
+                self.bar_index = 1;
+                return None;
+            }
+        };
         self.prev_high = Some(high);
         self.prev_low = Some(low);
         let i = self.bar_index;
@@ -99,8 +106,15 @@ impl MinusDmCore {
             self.bar_index = 1;
             return None;
         }
-        let ph = self.prev_high.unwrap();
-        let pl = self.prev_low.unwrap();
+        let (ph, pl) = match (self.prev_high, self.prev_low) {
+            (Some(ph), Some(pl)) => (ph, pl),
+            _ => {
+                self.prev_high = Some(high);
+                self.prev_low = Some(low);
+                self.bar_index = 1;
+                return None;
+            }
+        };
         self.prev_high = Some(high);
         self.prev_low = Some(low);
         let i = self.bar_index;

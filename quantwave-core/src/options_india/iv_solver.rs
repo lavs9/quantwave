@@ -303,6 +303,7 @@ fn is_zero(x: f64) -> bool {
     x.abs() < f64::MIN_POSITIVE
 }
 
+#[allow(clippy::too_many_arguments)]
 fn rational_cubic_interpolation(
     x: f64,
     x_l: f64,
@@ -318,7 +319,7 @@ fn rational_cubic_interpolation(
         return 0.5 * (y_l + y_r);
     }
     let t = (x - x_l) / h;
-    if !(r >= MAXIMUM_RATIONAL_CUBIC_CONTROL_PARAMETER_VALUE) {
+    if r < MAXIMUM_RATIONAL_CUBIC_CONTROL_PARAMETER_VALUE {
         let omt = 1.0 - t;
         let t2 = t * t;
         let omt2 = omt * omt;
@@ -411,6 +412,7 @@ fn minimum_rational_cubic_control_parameter(
     MINIMUM_RATIONAL_CUBIC_CONTROL_PARAMETER_VALUE.max(r1.max(r2))
 }
 
+#[allow(clippy::too_many_arguments)]
 fn convex_rational_cubic_control_parameter_to_fit_second_derivative_at_left_side(
     x_l: f64,
     x_r: f64,
@@ -439,6 +441,7 @@ fn convex_rational_cubic_control_parameter_to_fit_second_derivative_at_left_side
     r.max(r_min)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn convex_rational_cubic_control_parameter_to_fit_second_derivative_at_right_side(
     x_l: f64,
     x_r: f64,
@@ -637,7 +640,7 @@ fn asymptotic_expansion_of_scaled_normalised_black(h: f64, t: f64) -> f64 {
     let val_to_check = -h - t + TAU + 0.5;
     let idx = thresholds.iter().position(|&thr| thr > val_to_check).unwrap_or(thresholds.len());
 
-    if idx <= 0 { omega = q * (a16 + omega); }
+    if idx == 0 { omega = q * (a16 + omega); }
     if idx <= 1 { omega = q * (a15 + omega); }
     if idx <= 2 { omega = q * (a14 + omega); }
     if idx <= 3 { omega = q * (a13 + omega); }
@@ -824,7 +827,7 @@ fn inverse_f_upper_map(f: f64) -> f64 {
 }
 
 fn one_minus_erfcx(x: f64) -> f64 {
-    if x < -1.0 / 5.0 || x > 1.0 / 3.0 {
+    if !(-1.0 / 5.0..=1.0 / 3.0).contains(&x) {
         return 1.0 - erfcx_cody(x);
     }
     x * (1.128379167095512573896
@@ -931,7 +934,7 @@ pub fn lets_be_rational(beta: f64, theta_x: f64, n_iterations: i32) -> f64 {
                 true,
             );
             f = rational_cubic_interpolation(beta, 0.0, b_l, 0.0, f_lower_map_l, 1.0, d_f_lower_map_l_d_beta, r_ll);
-            if !(f > 0.0) {
+            if f <= 0.0 {
                 let t = beta / b_l;
                 f = (f_lower_map_l * t + b_l * (1.0 - t)) * t;
             }

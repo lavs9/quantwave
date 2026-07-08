@@ -62,7 +62,7 @@ fn generate_synthetic_with_regime_shifts(n: usize) -> (Vec<f64>, Vec<&'static st
         price = 0.7 * price + 0.3 * local_mean + noise;
         prices.push(price);
         labels.push("mean_reverting");
-        if (prices.len() - n1) % 8 == 0 {
+        if (prices.len() - n1).is_multiple_of(8) {
             local_mean = price; // slow mean shift
         }
     }

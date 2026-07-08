@@ -25,7 +25,7 @@ impl TAR {
     /// Creates a multi-threshold TAR model (SETAR).
     pub fn multi(thresholds: Vec<f64>) -> Self {
         let mut t = thresholds;
-        t.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        t.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
         Self { thresholds: t }
     }
 }
@@ -35,7 +35,10 @@ impl Next<f64> for TAR {
 
     fn next(&mut self, signal: f64) -> Self::Output {
         // Find which threshold bin the signal falls into
-        match self.thresholds.binary_search_by(|t| t.partial_cmp(&signal).unwrap()) {
+        match self
+            .thresholds
+            .binary_search_by(|t| t.partial_cmp(&signal).unwrap_or(std::cmp::Ordering::Equal))
+        {
             Ok(idx) => MarketRegime::Cluster(idx as u8 + 1), // Exact match
             Err(idx) => {
                 if idx == 0 {

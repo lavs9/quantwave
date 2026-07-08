@@ -226,7 +226,7 @@ mod tests {
                 let mut dm_sum = 0.0;
                 let mut cur_sum_coeffs = 0.0;
 
-                let start = if i + 1 > length { i + 1 - length } else { 0 };
+                let start = (i + 1).saturating_sub(length);
                 let window = &ema_hist[start..i+1];
 
                 for (j, &val) in window.iter().rev().enumerate() {

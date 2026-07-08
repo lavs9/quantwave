@@ -1,10 +1,17 @@
+#![allow(
+    clippy::panic,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::borrow_deref_ref,
+    clippy::field_reassign_with_default
+)]
 //! Integration tests for P2 backtest features (cr6v.14–16).
 
 use polars::prelude::*;
 use quantwave_backtest::{
-    monte_carlo_trade_bootstrap, run_walk_forward, CrossSectionalConfig,
-    MonteCarloConfig, RecordingLiveBridge, WalkForwardConfig, BacktestConfig, BacktestEngine,
-    CostModel, LiveBridge, LiveSignalEvent, StrategySignal, Bar,
+    BacktestConfig, BacktestEngine, Bar, CostModel, CrossSectionalConfig, LiveBridge,
+    LiveSignalEvent, MonteCarloConfig, RecordingLiveBridge, StrategySignal, WalkForwardConfig,
+    monte_carlo_trade_bootstrap, run_walk_forward,
 };
 
 fn zero_cost_config() -> BacktestConfig {
@@ -24,9 +31,14 @@ fn test_walk_forward_integration_fold_metrics() {
     let df = DataFrame::new(vec![
         Column::new(
             "timestamp".into(),
-            (0..n as i64).map(|i| 1_700_000_000 + i * 3600).collect::<Vec<_>>(),
+            (0..n as i64)
+                .map(|i| 1_700_000_000 + i * 3600)
+                .collect::<Vec<_>>(),
         ),
-        Column::new("close".into(), (0..n).map(|i| 100.0 + i as f64).collect::<Vec<_>>()),
+        Column::new(
+            "close".into(),
+            (0..n).map(|i| 100.0 + i as f64).collect::<Vec<_>>(),
+        ),
         Column::new(
             "signal".into(),
             (0..n)
@@ -49,8 +61,14 @@ fn test_walk_forward_integration_fold_metrics() {
 #[test]
 fn test_monte_carlo_integration_after_backtest() {
     let df = DataFrame::new(vec![
-        Column::new("timestamp".into(), (0..6i64).map(|i| i + 1).collect::<Vec<_>>()),
-        Column::new("close".into(), vec![100.0, 101.0, 102.5, 103.0, 102.0, 101.0]),
+        Column::new(
+            "timestamp".into(),
+            (0..6i64).map(|i| i + 1).collect::<Vec<_>>(),
+        ),
+        Column::new(
+            "close".into(),
+            vec![100.0, 101.0, 102.5, 103.0, 102.0, 101.0],
+        ),
         Column::new("signal".into(), vec![0.0, 1.0, 1.0, 1.0, 0.0, 0.0]),
     ])
     .unwrap();

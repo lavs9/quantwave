@@ -31,7 +31,13 @@ pub fn render_tearsheet_html(report: &BacktestReport, options: &TearsheetOptions
     let metrics = &report.metrics;
 
     let equity_svg = line_chart_svg(&equity, options.width, options.height, "#2563eb", "Equity");
-    let dd_svg = line_chart_svg(&drawdown, options.width, options.height, "#dc2626", "Drawdown %");
+    let dd_svg = line_chart_svg(
+        &drawdown,
+        options.width,
+        options.height,
+        "#dc2626",
+        "Drawdown %",
+    );
 
     let metrics_table = metrics_table_html(metrics);
     let trade_table = trade_stats_html(&report.result.trades);
@@ -202,7 +208,13 @@ fn trade_stats_html(trades: &DataFrame) -> String {
 fn table_from_pairs(rows: &[(&str, String)]) -> String {
     let body: String = rows
         .iter()
-        .map(|(k, v)| format!("<tr><th>{}</th><td>{}</td></tr>", html_escape(k), html_escape(v)))
+        .map(|(k, v)| {
+            format!(
+                "<tr><th>{}</th><td>{}</td></tr>",
+                html_escape(k),
+                html_escape(v)
+            )
+        })
         .collect();
     format!("<table><tbody>{body}</tbody></table>")
 }
@@ -232,12 +244,14 @@ fn html_escape(s: &str) -> String {
 mod tests {
     use super::*;
     use crate::{BacktestConfig, BacktestEngine};
-    use polars::prelude::*;
 
     fn mini_report() -> BacktestReport {
         let df = DataFrame::new(vec![
             Column::new("timestamp".into(), (0i64..6).collect::<Vec<_>>()),
-            Column::new("close".into(), vec![100.0, 101.0, 102.5, 103.0, 102.0, 101.0]),
+            Column::new(
+                "close".into(),
+                vec![100.0, 101.0, 102.5, 103.0, 102.0, 101.0],
+            ),
             Column::new("signal".into(), vec![0.0, 1.0, 1.0, 1.0, 0.0, 0.0]),
         ])
         .unwrap();

@@ -75,11 +75,7 @@ fn rocp_compute(cur: f64, prev: f64) -> f64 {
 
 #[inline]
 fn rocr_compute(cur: f64, prev: f64) -> f64 {
-    if prev != 0.0 {
-        cur / prev
-    } else {
-        0.0
-    }
+    if prev != 0.0 { cur / prev } else { 0.0 }
 }
 
 #[inline]

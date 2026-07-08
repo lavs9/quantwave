@@ -23,13 +23,13 @@
 //! User guides: <https://lavs9.github.io/quantwave/guides/rust/>
 //! Full API: <https://docs.rs/quantwave-core>
 
-pub mod utils;
 pub mod features;
 pub mod indicators;
 pub mod options_india;
 pub mod regimes;
 pub mod streaming;
 pub mod traits;
+pub mod utils;
 
 pub use regimes::analytics::*;
 
@@ -56,18 +56,14 @@ pub use indicators::market_structure::{
     Bias, FlipEvent, MarketStructure, MarketStructureState, PAEvent, PAEventKind, SwingPoint,
     extract_all_pa_events, extract_pa_events,
 };
-pub use indicators::pa_confluence::{
-    ConfluenceContext, enrich_pa_event, filter_confluent_events, passes_confluence_filter,
-    regime_to_label, score_pa_event,
-};
-pub use indicators::sr_monitor::{
-    LevelSource, SRInteraction, SRInteractionMonitor, SRInteractionType, SRMonitorOutput,
-    SR_INTERACTION_MONITOR_METADATA,
-};
 pub use indicators::math::*;
 pub use indicators::momentum::*;
 pub use indicators::obvm::Obvm;
 pub use indicators::overlap::*;
+pub use indicators::pa_confluence::{
+    ConfluenceContext, enrich_pa_event, filter_confluent_events, passes_confluence_filter,
+    regime_to_label, score_pa_event,
+};
 pub use indicators::pattern::*;
 pub use indicators::pivot_points::PivotPoints;
 pub use indicators::price_transform::*;
@@ -76,6 +72,10 @@ pub use indicators::rodc::RODC;
 pub use indicators::rsmk::RSMK;
 pub use indicators::sdo::SDO;
 pub use indicators::smoothing::{EMA, SMA, WMA};
+pub use indicators::sr_monitor::{
+    LevelSource, SR_INTERACTION_MONITOR_METADATA, SRInteraction, SRInteractionMonitor,
+    SRInteractionType, SRMonitorOutput,
+};
 pub use indicators::statistics::{
     LinearRegression, StandardDeviation, TaBETA, TaCORREL, TaLINEARREG, TaLINEARREG_ANGLE,
     TaLINEARREG_INTERCEPT, TaLINEARREG_SLOPE, TaSTDDEV, TaTSF, TaVAR,

@@ -72,7 +72,7 @@ impl Next<(f64, f64)> for RSMK {
             return 0.0;
         }
 
-        let old_log_val = self.log_val_window.pop_front().unwrap();
+        let old_log_val = self.log_val_window.pop_front().unwrap_or(log_val);
         let momentum = log_val - old_log_val;
 
         self.ema.next(momentum) * 100.0

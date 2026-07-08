@@ -93,7 +93,7 @@ mod proptest_parity {
         #[test]
         fn cybercycle_streaming_deterministic_and_momentum_sane(data in prop::collection::vec(-50f64..50.0, 10..80)) {
             let mut ext = CyberCycleFeatureExtractor::new(14);
-            let mut prev_mom = 0.0;
+            let _prev_mom = 0.0;
             for &val in &data {
                 let f = ext.next(val);
                 // Momentum should be cycle delta (sanity, not strict property)

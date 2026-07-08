@@ -45,11 +45,11 @@ impl RollingWindow {
     }
 
     fn push(&mut self, v: f64) -> bool {
-        if self.buf.len() >= self.period {
-            if let Some(old) = self.buf.pop_front() {
-                self.sum -= old;
-                self.sum_sq -= old * old;
-            }
+        if self.buf.len() >= self.period
+            && let Some(old) = self.buf.pop_front()
+        {
+            self.sum -= old;
+            self.sum_sq -= old * old;
         }
         self.buf.push_back(v);
         self.sum += v;
@@ -127,14 +127,14 @@ impl Next<f64> for TaVAR {
 
 #[derive(Debug, Clone)]
 struct LinRegCore {
-    period: usize,
+    _period: usize,
     inner: RollingWindow,
 }
 
 impl LinRegCore {
     fn new(period: usize) -> Self {
         Self {
-            period,
+            _period: period,
             inner: RollingWindow::new(period),
         }
     }
@@ -406,13 +406,13 @@ impl TaBETA {
 
     fn push_return(&mut self, x: f64, y: f64) -> Option<f64> {
         let p = self.timeperiod;
-        if self.rx.len() >= p {
-            if let (Some(ox), Some(oy)) = (self.rx.pop_front(), self.ry.pop_front()) {
-                self.sx -= ox;
-                self.sy -= oy;
-                self.sxx -= ox * ox;
-                self.sxy -= ox * oy;
-            }
+        if self.rx.len() >= p
+            && let (Some(ox), Some(oy)) = (self.rx.pop_front(), self.ry.pop_front())
+        {
+            self.sx -= ox;
+            self.sy -= oy;
+            self.sxx -= ox * ox;
+            self.sxy -= ox * oy;
         }
         self.rx.push_back(x);
         self.ry.push_back(y);

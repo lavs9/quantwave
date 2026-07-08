@@ -20,6 +20,12 @@ pub struct InstantaneousTrendlineFeatureExtractor {
     inner: InstantaneousTrendline,
 }
 
+impl Default for InstantaneousTrendlineFeatureExtractor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl InstantaneousTrendlineFeatureExtractor {
     pub fn new() -> Self {
         Self {

@@ -217,11 +217,10 @@ mod tests {
                 };
                 if imag > 0.0 { angle -= 180.0; }
 
-                if i > period {
-                    if prev_a - angle < 270.0 && angle < prev_a {
+                if i > period
+                    && prev_a - angle < 270.0 && angle < prev_a {
                         angle = prev_a;
                     }
-                }
 
                 prev_a = angle;
                 batch_results.push((real, imag, angle));

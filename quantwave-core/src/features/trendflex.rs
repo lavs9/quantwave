@@ -44,7 +44,7 @@ mod tests {
         let mut ext = TrendflexFeatureExtractor::new(20);
         for i in 0..50 {
             let val = 100.0 + (i as f64) * 0.1;
-            let f = ext.next(val);
+            let _f = ext.next(val);
             // After warmup it should be non-zero in trending data
         }
     }

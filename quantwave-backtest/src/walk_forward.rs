@@ -3,7 +3,9 @@
 //! Clean-room rolling OOS folds on pre-computed signals (RaptorBT / Zorro WFO pattern).
 //! v1: no in-fold parameter optimization — each fold backtests the OOS window only.
 
-use crate::{BacktestConfig, BacktestEngine, BacktestError, PerformanceMetrics};
+use crate::{
+    BacktestConfig, BacktestEngine, BacktestError, PerformanceMetrics, internal_invariant,
+};
 use polars::prelude::*;
 use std::collections::HashMap;
 
@@ -72,10 +74,11 @@ pub fn run_walk_forward(
         let ts_min = timestamps[test_start_idx];
         let ts_max = timestamps[test_end_idx - 1];
 
-        let oos_lf = df
-            .clone()
-            .lazy()
-            .filter(col(ts_col).gt_eq(lit(ts_min)).and(col(ts_col).lt_eq(lit(ts_max))));
+        let oos_lf = df.clone().lazy().filter(
+            col(ts_col)
+                .gt_eq(lit(ts_min))
+                .and(col(ts_col).lt_eq(lit(ts_max))),
+        );
 
         let report = BacktestEngine::new(base_config.clone()).backtest_with_report(oos_lf)?;
 
@@ -85,7 +88,14 @@ pub fn run_walk_forward(
         train_lens.push(wf.train_bars as f64);
         test_lens.push(wf.test_bars as f64);
         for (name, value) in report.metrics.row_iter() {
-            metric_cols.get_mut(name).unwrap().push(value);
+            metric_cols
+                .get_mut(name)
+                .ok_or_else(|| {
+                    internal_invariant(format!(
+                        "metric column '{name}' missing from walk-forward accumulator"
+                    ))
+                })?
+                .push(value);
         }
 
         fold_id += 1;
@@ -110,7 +120,11 @@ pub fn run_walk_forward(
     for name in PerformanceMetrics::column_names() {
         columns.push(Column::new(
             PlSmallStr::from_str(name),
-            metric_cols.remove(name).unwrap(),
+            metric_cols.remove(name).ok_or_else(|| {
+                internal_invariant(format!(
+                    "metric column '{name}' missing when building walk-forward df"
+                ))
+            })?,
         ));
     }
 
@@ -120,20 +134,37 @@ pub fn run_walk_forward(
 fn unique_sorted_timestamps(df: &DataFrame, ts_col: &str) -> Result<Vec<i64>, BacktestError> {
     let ts = df
         .column(ts_col)
-        .map_err(|e| BacktestError::InvalidInput(e.to_string()))?;
+        .map_err(|_| BacktestError::MissingColumn {
+            name: ts_col.to_string(),
+        })?;
     let mut values: Vec<i64> = match ts.dtype() {
-        DataType::Int64 => ts.i64().unwrap().into_iter().flatten().collect(),
+        DataType::Int64 => ts
+            .i64()
+            .map_err(|_| BacktestError::InvalidDtype {
+                col: ts_col.to_string(),
+                expected: "Int64".into(),
+                got: format!("{:?}", ts.dtype()),
+            })?
+            .into_iter()
+            .flatten()
+            .collect(),
         DataType::Int32 => ts
             .i32()
-            .unwrap()
+            .map_err(|_| BacktestError::InvalidDtype {
+                col: ts_col.to_string(),
+                expected: "Int32".into(),
+                got: format!("{:?}", ts.dtype()),
+            })?
             .into_iter()
             .flatten()
             .map(|v| v as i64)
             .collect(),
         other => {
-            return Err(BacktestError::InvalidInput(format!(
-                "timestamp column must be Int64/Int32, got {other:?}"
-            )));
+            return Err(BacktestError::InvalidDtype {
+                col: ts_col.to_string(),
+                expected: "Int64 or Int32".into(),
+                got: format!("{other:?}"),
+            });
         }
     };
     values.sort_unstable();
@@ -150,10 +181,14 @@ pub fn run_walk_forward_optimize(
     objective_metric: &str,
 ) -> Result<DataFrame, BacktestError> {
     if wf.train_bars == 0 || wf.test_bars == 0 {
-        return Err(BacktestError::InvalidInput("train/test_bars must be > 0".into()));
+        return Err(BacktestError::InvalidInput(
+            "train/test_bars must be > 0".into(),
+        ));
     }
     if variants.is_empty() {
-        return Err(BacktestError::InvalidInput("at least one variant required".into()));
+        return Err(BacktestError::InvalidInput(
+            "at least one variant required".into(),
+        ));
     }
 
     let df = lf.collect()?;
@@ -165,17 +200,20 @@ pub fn run_walk_forward_optimize(
     let timestamps = unique_sorted_timestamps(&df, ts_col)?;
     let step = wf.step();
     let param_keys = crate::sweep::sorted_param_keys(variants);
-    
+
     let mut fold_ids = Vec::new();
     let mut oos_starts = Vec::new();
     let mut oos_ends = Vec::new();
     let mut train_metrics = Vec::new();
     let mut oos_metrics = Vec::new();
     let mut overfit_flags = Vec::new();
-    let mut best_params: HashMap<String, Vec<f64>> = param_keys.iter().map(|k| (k.clone(), Vec::new())).collect();
-    
+    let mut best_params: HashMap<String, Vec<f64>> =
+        param_keys.iter().map(|k| (k.clone(), Vec::new())).collect();
+
     let mut metric_cols: HashMap<&'static str, Vec<f64>> = PerformanceMetrics::column_names()
-        .iter().map(|&n| (n, Vec::new())).collect();
+        .iter()
+        .map(|&n| (n, Vec::new()))
+        .collect();
 
     let mut start = 0usize;
     let mut fold_id = 0usize;
@@ -188,57 +226,92 @@ pub fn run_walk_forward_optimize(
         let ts_oos_end = timestamps[test_end_idx - 1];
 
         // 1. Train Sweep
-        let train_lf = df.clone().lazy()
-            .filter(col(ts_col).gt_eq(lit(ts_train_start)).and(col(ts_col).lt_eq(lit(ts_train_end))));
+        let train_lf = df.clone().lazy().filter(
+            col(ts_col)
+                .gt_eq(lit(ts_train_start))
+                .and(col(ts_col).lt_eq(lit(ts_train_end))),
+        );
         let sweep_df = crate::sweep::run_param_sweep(train_lf, variants, base_config)?;
-        
+
         // Pick best variant
-        let obj_col = sweep_df.column(objective_metric).map_err(|e| BacktestError::InvalidInput(format!("objective_metric not found: {e}")))?;
-        let obj_series = obj_col.f64().map_err(|e| BacktestError::InvalidInput(e.to_string()))?;
-        
+        let obj_col = sweep_df
+            .column(objective_metric)
+            .map_err(|e| BacktestError::InvalidInput(format!("objective_metric not found: {e}")))?;
+        let obj_series = obj_col
+            .f64()
+            .map_err(|e| BacktestError::InvalidInput(e.to_string()))?;
+
         let mut best_idx = 0;
         let mut best_val = f64::NEG_INFINITY;
         for (i, val) in obj_series.into_iter().enumerate() {
-            if let Some(v) = val {
-                if v > best_val || (best_val == f64::NEG_INFINITY && v.is_finite()) {
-                    best_val = v;
-                    best_idx = i;
-                }
+            if let Some(v) = val
+                && (v > best_val || (best_val == f64::NEG_INFINITY && v.is_finite()))
+            {
+                best_val = v;
+                best_idx = i;
             }
         }
-        
+
         let winning_variant = &variants[best_idx];
         for k in &param_keys {
-            best_params.get_mut(k).unwrap().push(winning_variant.params[k]);
+            best_params
+                .get_mut(k)
+                .ok_or_else(|| {
+                    internal_invariant(format!(
+                        "best param column '{k}' missing from walk-forward optimize accumulator"
+                    ))
+                })?
+                .push(winning_variant.params[k]);
         }
         train_metrics.push(best_val);
-        
+
         // 2. OOS Backtest
-        let oos_lf = df.clone().lazy()
-            .filter(col(ts_col).gt_eq(lit(ts_oos_start)).and(col(ts_col).lt_eq(lit(ts_oos_end))));
-            
+        let oos_lf = df.clone().lazy().filter(
+            col(ts_col)
+                .gt_eq(lit(ts_oos_start))
+                .and(col(ts_col).lt_eq(lit(ts_oos_end))),
+        );
+
         let mut oos_config = base_config.clone();
         oos_config.signal_col = winning_variant.signal_col.clone();
         let report = BacktestEngine::new(oos_config).backtest_with_report(oos_lf)?;
-        
-        let oos_val = report.metrics.row_iter().find(|(n, _)| *n == objective_metric).unwrap().1;
+
+        let oos_val = report
+            .metrics
+            .row_iter()
+            .find(|(n, _)| *n == objective_metric)
+            .map(|(_, v)| v)
+            .ok_or_else(|| {
+                BacktestError::InvalidInput(format!(
+                    "objective_metric '{objective_metric}' not found in OOS metrics"
+                ))
+            })?;
         oos_metrics.push(oos_val);
         overfit_flags.push(best_val - oos_val > wf.overfit_threshold);
-        
+
         for (name, value) in report.metrics.row_iter() {
-            metric_cols.get_mut(name).unwrap().push(value);
+            metric_cols
+                .get_mut(name)
+                .ok_or_else(|| {
+                    internal_invariant(format!(
+                        "metric column '{name}' missing from walk-forward optimize accumulator"
+                    ))
+                })?
+                .push(value);
         }
-        
+
         fold_ids.push(fold_id as f64);
         oos_starts.push(ts_oos_start as f64);
         oos_ends.push(ts_oos_end as f64);
-        
+
         fold_id += 1;
         start += step;
     }
 
     if fold_ids.is_empty() {
-        return Err(BacktestError::InvalidInput("insufficient bars for wfo".into()));
+        return Err(BacktestError::InvalidInput(
+            "insufficient bars for wfo".into(),
+        ));
     }
 
     let mut columns = vec![
@@ -250,10 +323,24 @@ pub fn run_walk_forward_optimize(
         Column::new("overfit_flag".into(), overfit_flags),
     ];
     for k in &param_keys {
-        columns.push(Column::new(format!("best_{k}").into(), best_params.remove(k).unwrap()));
+        columns.push(Column::new(
+            format!("best_{k}").into(),
+            best_params.remove(k).ok_or_else(|| {
+                internal_invariant(format!(
+                    "best param column '{k}' missing when building walk-forward optimize df"
+                ))
+            })?,
+        ));
     }
     for name in PerformanceMetrics::column_names() {
-        columns.push(Column::new(PlSmallStr::from_str(name), metric_cols.remove(name).unwrap()));
+        columns.push(Column::new(
+            PlSmallStr::from_str(name),
+            metric_cols.remove(name).ok_or_else(|| {
+                internal_invariant(format!(
+                    "metric column '{name}' missing when building walk-forward optimize df"
+                ))
+            })?,
+        ));
     }
 
     DataFrame::new(columns).map_err(BacktestError::from)
@@ -268,7 +355,9 @@ mod tests {
         DataFrame::new(vec![
             Column::new(
                 "timestamp".into(),
-                (0..n as i64).map(|i| 1_700_000_000 + i * 3600).collect::<Vec<_>>(),
+                (0..n as i64)
+                    .map(|i| 1_700_000_000 + i * 3600)
+                    .collect::<Vec<_>>(),
             ),
             Column::new(
                 "close".into(),
@@ -298,12 +387,7 @@ mod tests {
     #[test]
     fn test_walk_forward_produces_two_folds() {
         let wf = WalkForwardConfig::new(30, 20);
-        let df = run_walk_forward(
-            wf_base_df(100).lazy(),
-            &zero_cost_config(),
-            &wf,
-        )
-        .unwrap();
+        let df = run_walk_forward(wf_base_df(100).lazy(), &zero_cost_config(), &wf).unwrap();
 
         // 100 unique bars, train=30, test=20, step=20 → folds at 0, 20, 40
         assert_eq!(df.height(), 3);
@@ -342,7 +426,7 @@ mod tests {
         let mut close = vec![100.0; n];
         let mut signal_a = vec![0.0; n];
         let mut signal_b = vec![0.0; n];
-        
+
         for i in 1..n {
             if i < n / 2 {
                 // First half: A makes money, B loses
@@ -356,13 +440,14 @@ mod tests {
                 close[i] = close[i - 1] - 1.0;
             }
         }
-        
+
         DataFrame::new(vec![
             Column::new("timestamp".into(), (0..n as i64).collect::<Vec<_>>()),
             Column::new("close".into(), close),
             Column::new("signal_A".into(), signal_a),
             Column::new("signal_B".into(), signal_b),
-        ]).unwrap()
+        ])
+        .unwrap()
     }
 
     #[test]
@@ -370,14 +455,33 @@ mod tests {
         let wf = WalkForwardConfig::new(20, 20); // 20 train, 20 oos (total 40 bars)
         let df = wfo_base_df(40);
         let variants = vec![
-            crate::SweepVariant { params: std::collections::HashMap::from([("param".into(), 1.0)]), signal_col: "signal_A".into() },
-            crate::SweepVariant { params: std::collections::HashMap::from([("param".into(), 2.0)]), signal_col: "signal_B".into() },
+            crate::SweepVariant {
+                params: std::collections::HashMap::from([("param".into(), 1.0)]),
+                signal_col: "signal_A".into(),
+            },
+            crate::SweepVariant {
+                params: std::collections::HashMap::from([("param".into(), 2.0)]),
+                signal_col: "signal_B".into(),
+            },
         ];
-        
-        let out = run_walk_forward_optimize(df.lazy(), &zero_cost_config(), &wf, &variants, "total_return").unwrap();
-        
+
+        let out = run_walk_forward_optimize(
+            df.lazy(),
+            &zero_cost_config(),
+            &wf,
+            &variants,
+            "total_return",
+        )
+        .unwrap();
+
         assert_eq!(out.height(), 1);
-        let best_param = out.column("best_param").unwrap().f64().unwrap().get(0).unwrap();
+        let best_param = out
+            .column("best_param")
+            .unwrap()
+            .f64()
+            .unwrap()
+            .get(0)
+            .unwrap();
         // In train (0..20), A is profitable, so param 1.0 should be chosen
         assert_eq!(best_param, 1.0);
     }
@@ -387,12 +491,31 @@ mod tests {
         let wf = WalkForwardConfig::new(20, 20);
         let df = wfo_base_df(40);
         let variants = vec![
-            crate::SweepVariant { params: std::collections::HashMap::from([("param".into(), 1.0)]), signal_col: "signal_A".into() },
-            crate::SweepVariant { params: std::collections::HashMap::from([("param".into(), 2.0)]), signal_col: "signal_B".into() },
+            crate::SweepVariant {
+                params: std::collections::HashMap::from([("param".into(), 1.0)]),
+                signal_col: "signal_A".into(),
+            },
+            crate::SweepVariant {
+                params: std::collections::HashMap::from([("param".into(), 2.0)]),
+                signal_col: "signal_B".into(),
+            },
         ];
-        let out = run_walk_forward_optimize(df.lazy(), &zero_cost_config(), &wf, &variants, "total_return").unwrap();
-        
-        let oos_metric = out.column("oos_metric").unwrap().f64().unwrap().get(0).unwrap();
+        let out = run_walk_forward_optimize(
+            df.lazy(),
+            &zero_cost_config(),
+            &wf,
+            &variants,
+            "total_return",
+        )
+        .unwrap();
+
+        let oos_metric = out
+            .column("oos_metric")
+            .unwrap()
+            .f64()
+            .unwrap()
+            .get(0)
+            .unwrap();
         // In OOS (20..40), A loses money, so total_return should be negative
         assert!(oos_metric < 0.0);
     }
@@ -402,12 +525,26 @@ mod tests {
         let mut wf = WalkForwardConfig::new(20, 20);
         wf.overfit_threshold = 0.0; // PnL is very small due to 1 unit position
         let df = wfo_base_df(40);
-        let variants = vec![
-            crate::SweepVariant { params: std::collections::HashMap::from([("p".into(), 1.0)]), signal_col: "signal_A".into() },
-        ];
-        let out = run_walk_forward_optimize(df.lazy(), &zero_cost_config(), &wf, &variants, "total_return").unwrap();
-        
-        let overfit = out.column("overfit_flag").unwrap().bool().unwrap().get(0).unwrap();
+        let variants = vec![crate::SweepVariant {
+            params: std::collections::HashMap::from([("p".into(), 1.0)]),
+            signal_col: "signal_A".into(),
+        }];
+        let out = run_walk_forward_optimize(
+            df.lazy(),
+            &zero_cost_config(),
+            &wf,
+            &variants,
+            "total_return",
+        )
+        .unwrap();
+
+        let overfit = out
+            .column("overfit_flag")
+            .unwrap()
+            .bool()
+            .unwrap()
+            .get(0)
+            .unwrap();
         // Train return > 0, OOS return < 0, difference is large
         assert!(overfit);
     }
@@ -416,14 +553,22 @@ mod tests {
     fn test_wfo_opt_fold_count_matches_walk_forward() {
         let wf = WalkForwardConfig::new(20, 10);
         let df = wfo_base_df(60);
-        let variants = vec![
-            crate::SweepVariant { params: std::collections::HashMap::from([("p".into(), 1.0)]), signal_col: "signal_A".into() },
-        ];
+        let variants = vec![crate::SweepVariant {
+            params: std::collections::HashMap::from([("p".into(), 1.0)]),
+            signal_col: "signal_A".into(),
+        }];
         let mut cfg = zero_cost_config();
         cfg.signal_col = "signal_A".into();
         let out1 = run_walk_forward(df.clone().lazy(), &cfg, &wf).unwrap();
-        let out2 = run_walk_forward_optimize(df.lazy(), &zero_cost_config(), &wf, &variants, "total_return").unwrap();
-        
+        let out2 = run_walk_forward_optimize(
+            df.lazy(),
+            &zero_cost_config(),
+            &wf,
+            &variants,
+            "total_return",
+        )
+        .unwrap();
+
         assert_eq!(out1.height(), out2.height());
     }
 }

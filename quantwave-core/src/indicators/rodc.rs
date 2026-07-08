@@ -88,7 +88,7 @@ impl Next<f64> for RODC {
         let mut mode_up = true;
 
         // Start from the oldest price in the window
-        let mut x_ext = *self.price_window.front().unwrap();
+        let mut x_ext = self.price_window.front().copied().unwrap_or(0.0);
 
         // Iterate forward through the window (excluding the very first point which is x_ext)
         for i in 1..self.price_window.len() {

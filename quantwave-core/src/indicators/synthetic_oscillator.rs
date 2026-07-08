@@ -283,9 +283,9 @@ mod tests {
 
                 let mut synth = phase.sin();
                 let norm_phase = phase % (2.0 * PI);
-                if norm_phase > 0.0 && norm_phase < PI / 2.0 && synth < synth_prev {
-                    synth = synth_prev;
-                } else if norm_phase > PI && norm_phase < 1.5 * PI && synth > synth_prev {
+                if (norm_phase > 0.0 && norm_phase < PI / 2.0 && synth < synth_prev)
+                    || (norm_phase > PI && norm_phase < 1.5 * PI && synth > synth_prev)
+                {
                     synth = synth_prev;
                 }
 

@@ -7,10 +7,10 @@ use crate::traits::Next;
 
 #[inline]
 fn trima_periods(period: usize) -> (usize, usize) {
-    if period % 2 == 0 {
+    if period.is_multiple_of(2) {
         (period / 2, period / 2 + 1)
     } else {
-        let n = (period + 1) / 2;
+        let n = period.div_ceil(2);
         (n, n)
     }
 }

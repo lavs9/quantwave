@@ -35,9 +35,7 @@ impl HlWindow {
         }
         let mut hh = f64::NEG_INFINITY;
         let mut ll = f64::INFINITY;
-        for i in 0..self.highs.len() {
-            let h = *self.highs.get(i).unwrap();
-            let l = *self.lows.get(i).unwrap();
+        for (&h, &l) in self.highs.iter().zip(self.lows.iter()) {
             if h > hh {
                 hh = h;
             }
@@ -128,7 +126,11 @@ impl Next<(f64, f64, f64)> for STOCH {
         let j = i - self.out_start;
         let idx = k_skip + j;
         let slowk_out = self.slowk_valid.get(idx).copied().unwrap_or(f64::NAN);
-        let slowd_out = if slowd_raw.is_nan() { f64::NAN } else { slowd_raw };
+        let slowd_out = if slowd_raw.is_nan() {
+            f64::NAN
+        } else {
+            slowd_raw
+        };
 
         (slowk_out, slowd_out)
     }
@@ -186,7 +188,11 @@ impl Next<(f64, f64, f64)> for STOCHF {
         let j = i - self.out_start;
         let idx = k_skip + j;
         let fastk_out = self.fastk_values.get(idx).copied().unwrap_or(f64::NAN);
-        let fastd_out = if fastd_raw.is_nan() { f64::NAN } else { fastd_raw };
+        let fastd_out = if fastd_raw.is_nan() {
+            f64::NAN
+        } else {
+            fastd_raw
+        };
 
         (fastk_out, fastd_out)
     }
@@ -278,7 +284,11 @@ impl Next<f64> for STOCHRSI {
         let j = i - self.d_start;
         let idx = k_skip + j;
         let fastk_out = self.fastk_values.get(idx).copied().unwrap_or(f64::NAN);
-        let fastd_out = if fastd_raw.is_nan() { f64::NAN } else { fastd_raw };
+        let fastd_out = if fastd_raw.is_nan() {
+            f64::NAN
+        } else {
+            fastd_raw
+        };
 
         (fastk_out, fastd_out)
     }

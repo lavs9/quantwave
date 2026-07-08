@@ -30,9 +30,9 @@ pub mod features; // implements .ta.features.hurst / cyber_cycle / griffiths_dom
 
 pub mod prelude {
     pub use crate::bt::{BtNamespace, BtOptions, QuantWaveBtExt};
-    pub use quantwave_backtest::{run_param_sweep, single_param_variants, SweepVariant};
+    pub use crate::features::TaFeaturesNamespace;
     pub use crate::{QuantWaveExt, QuantWaveNamespace};
-    pub use crate::features::TaFeaturesNamespace; // .ta().features() sub-namespace (locked minimal surface for 4ps cross-epic deliverable)
+    pub use quantwave_backtest::{SweepVariant, run_param_sweep, single_param_variants}; // .ta().features() sub-namespace (locked minimal surface for 4ps cross-epic deliverable)
 }
 
 pub trait QuantWaveExt {
@@ -842,7 +842,7 @@ impl<'a> QuantWaveNamespace<'a> {
             .alias("bbands")])
     }
 
-
+    #[allow(clippy::too_many_arguments)]
     pub fn macdext(
         self,
         name: &str,
@@ -979,11 +979,8 @@ impl<'a> QuantWaveNamespace<'a> {
 
                 let s_k = Series::new("fastk".into(), k_vals);
                 let s_d = Series::new("fastd".into(), d_vals);
-                let struct_series = StructChunked::from_series(
-                    "stochf_result".into(),
-                    s.len(),
-                    [s_k, s_d].iter(),
-                )?;
+                let struct_series =
+                    StructChunked::from_series("stochf_result".into(), s.len(), [s_k, s_d].iter())?;
                 Ok(Some(Column::from(struct_series.into_series())))
             },
             GetOutput::from_type(DataType::Struct(vec![
@@ -1007,7 +1004,8 @@ impl<'a> QuantWaveNamespace<'a> {
             .map(
                 move |s| {
                     let ca = s.f64()?;
-                    let mut indicator = STOCHRSI::new(timeperiod, fastk_period, fastd_period, fastd_matype);
+                    let mut indicator =
+                        STOCHRSI::new(timeperiod, fastk_period, fastd_period, fastd_matype);
                     let mut k_vals = Vec::with_capacity(s.len());
                     let mut d_vals = Vec::with_capacity(s.len());
 
@@ -1094,14 +1092,7 @@ impl<'a> QuantWaveNamespace<'a> {
         self.math_operator_2_in_1_out_period::<AROONOSC>(high, low, period, "aroonosc")
     }
 
-    pub fn mfi(
-        self,
-        high: &str,
-        low: &str,
-        close: &str,
-        volume: &str,
-        period: usize,
-    ) -> LazyFrame {
+    pub fn mfi(self, high: &str, low: &str, close: &str, volume: &str, period: usize) -> LazyFrame {
         let high_str = high.to_string();
         let low_str = low.to_string();
         let close_str = close.to_string();
@@ -1195,12 +1186,7 @@ impl<'a> QuantWaveNamespace<'a> {
         self.math_operator_2_in_1_out_period::<MINUS_DM>(high, low, period, "minus_dm")
     }
 
-    pub fn t3(
-        self,
-        name: &str,
-        period: usize,
-        v_factor: f64,
-    ) -> LazyFrame {
+    pub fn t3(self, name: &str, period: usize, v_factor: f64) -> LazyFrame {
         let name_str = name.to_string();
         self.0.clone().with_columns([col(&name_str)
             .map(
@@ -1219,12 +1205,7 @@ impl<'a> QuantWaveNamespace<'a> {
             .alias("t3")])
     }
 
-    pub fn mama(
-        self,
-        name: &str,
-        fastlimit: f64,
-        slowlimit: f64,
-    ) -> LazyFrame {
+    pub fn mama(self, name: &str, fastlimit: f64, slowlimit: f64) -> LazyFrame {
         let name_str = name.to_string();
         self.0.clone().with_columns([col(&name_str)
             .map(
@@ -1259,41 +1240,34 @@ impl<'a> QuantWaveNamespace<'a> {
             .alias("mama")])
     }
 
-    pub fn sar(
-        self,
-        high: &str,
-        low: &str,
-        acceleration: f64,
-        maximum: f64,
-    ) -> LazyFrame {
+    pub fn sar(self, high: &str, low: &str, acceleration: f64, maximum: f64) -> LazyFrame {
         let high_str = high.to_string();
         let low_str = low.to_string();
-        self.0.clone().with_columns([as_struct(vec![
-            col(&high_str),
-            col(&low_str),
-        ])
-        .map(
-            move |s| {
-                let ca = s.struct_()?;
-                let s_h = ca.field_by_name(&high_str)?;
-                let s_l = ca.field_by_name(&low_str)?;
-                let high = s_h.f64()?;
-                let low = s_l.f64()?;
+        self.0
+            .clone()
+            .with_columns([as_struct(vec![col(&high_str), col(&low_str)])
+                .map(
+                    move |s| {
+                        let ca = s.struct_()?;
+                        let s_h = ca.field_by_name(&high_str)?;
+                        let s_l = ca.field_by_name(&low_str)?;
+                        let high = s_h.f64()?;
+                        let low = s_l.f64()?;
 
-                let mut indicator = SAR::new(acceleration, maximum);
-                let mut values = Vec::with_capacity(s.len());
+                        let mut indicator = SAR::new(acceleration, maximum);
+                        let mut values = Vec::with_capacity(s.len());
 
-                for i in 0..s.len() {
-                    let h = high.get(i).unwrap_or(f64::NAN);
-                    let l = low.get(i).unwrap_or(f64::NAN);
-                    values.push(indicator.next((h, l)));
-                }
+                        for i in 0..s.len() {
+                            let h = high.get(i).unwrap_or(f64::NAN);
+                            let l = low.get(i).unwrap_or(f64::NAN);
+                            values.push(indicator.next((h, l)));
+                        }
 
-                Ok(Some(Column::from(Series::new("sar".into(), values))))
-            },
-            GetOutput::from_type(DataType::Float64),
-        )
-        .alias("sar")])
+                        Ok(Some(Column::from(Series::new("sar".into(), values))))
+                    },
+                    GetOutput::from_type(DataType::Float64),
+                )
+                .alias("sar")])
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -1312,41 +1286,40 @@ impl<'a> QuantWaveNamespace<'a> {
     ) -> LazyFrame {
         let high_str = high.to_string();
         let low_str = low.to_string();
-        self.0.clone().with_columns([as_struct(vec![
-            col(&high_str),
-            col(&low_str),
-        ])
-        .map(
-            move |s| {
-                let ca = s.struct_()?;
-                let s_h = ca.field_by_name(&high_str)?;
-                let s_l = ca.field_by_name(&low_str)?;
-                let high = s_h.f64()?;
-                let low = s_l.f64()?;
+        self.0
+            .clone()
+            .with_columns([as_struct(vec![col(&high_str), col(&low_str)])
+                .map(
+                    move |s| {
+                        let ca = s.struct_()?;
+                        let s_h = ca.field_by_name(&high_str)?;
+                        let s_l = ca.field_by_name(&low_str)?;
+                        let high = s_h.f64()?;
+                        let low = s_l.f64()?;
 
-                let mut indicator = SAREXT::new(
-                    startvalue,
-                    offsetonreverse,
-                    accelerationinitlong,
-                    accelerationlong,
-                    accelerationmaxlong,
-                    accelerationinitshort,
-                    accelerationshort,
-                    accelerationmaxshort,
-                );
-                let mut values = Vec::with_capacity(s.len());
+                        let mut indicator = SAREXT::new(
+                            startvalue,
+                            offsetonreverse,
+                            accelerationinitlong,
+                            accelerationlong,
+                            accelerationmaxlong,
+                            accelerationinitshort,
+                            accelerationshort,
+                            accelerationmaxshort,
+                        );
+                        let mut values = Vec::with_capacity(s.len());
 
-                for i in 0..s.len() {
-                    let h = high.get(i).unwrap_or(f64::NAN);
-                    let l = low.get(i).unwrap_or(f64::NAN);
-                    values.push(indicator.next((h, l)));
-                }
+                        for i in 0..s.len() {
+                            let h = high.get(i).unwrap_or(f64::NAN);
+                            let l = low.get(i).unwrap_or(f64::NAN);
+                            values.push(indicator.next((h, l)));
+                        }
 
-                Ok(Some(Column::from(Series::new("sarext".into(), values))))
-            },
-            GetOutput::from_type(DataType::Float64),
-        )
-        .alias("sarext")])
+                        Ok(Some(Column::from(Series::new("sarext".into(), values))))
+                    },
+                    GetOutput::from_type(DataType::Float64),
+                )
+                .alias("sarext")])
     }
 
     pub fn mavp(
@@ -1359,32 +1332,31 @@ impl<'a> QuantWaveNamespace<'a> {
     ) -> LazyFrame {
         let in1_str = in1.to_string();
         let in2_str = in2.to_string();
-        self.0.clone().with_columns([as_struct(vec![
-            col(&in1_str),
-            col(&in2_str),
-        ])
-        .map(
-            move |s| {
-                let ca = s.struct_()?;
-                let s_1 = ca.field_by_name(&in1_str)?;
-                let s_2 = ca.field_by_name(&in2_str)?;
-                let in1_ca = s_1.f64()?;
-                let in2_ca = s_2.f64()?;
+        self.0
+            .clone()
+            .with_columns([as_struct(vec![col(&in1_str), col(&in2_str)])
+                .map(
+                    move |s| {
+                        let ca = s.struct_()?;
+                        let s_1 = ca.field_by_name(&in1_str)?;
+                        let s_2 = ca.field_by_name(&in2_str)?;
+                        let in1_ca = s_1.f64()?;
+                        let in2_ca = s_2.f64()?;
 
-                let mut indicator = MAVP::new(minperiod, maxperiod, matype);
-                let mut values = Vec::with_capacity(s.len());
+                        let mut indicator = MAVP::new(minperiod, maxperiod, matype);
+                        let mut values = Vec::with_capacity(s.len());
 
-                for i in 0..s.len() {
-                    let i1 = in1_ca.get(i).unwrap_or(f64::NAN);
-                    let i2 = in2_ca.get(i).unwrap_or(f64::NAN);
-                    values.push(indicator.next((i1, i2)));
-                }
+                        for i in 0..s.len() {
+                            let i1 = in1_ca.get(i).unwrap_or(f64::NAN);
+                            let i2 = in2_ca.get(i).unwrap_or(f64::NAN);
+                            values.push(indicator.next((i1, i2)));
+                        }
 
-                Ok(Some(Column::from(Series::new("mavp".into(), values))))
-            },
-            GetOutput::from_type(DataType::Float64),
-        )
-        .alias("mavp")])
+                        Ok(Some(Column::from(Series::new("mavp".into(), values))))
+                    },
+                    GetOutput::from_type(DataType::Float64),
+                )
+                .alias("mavp")])
     }
 
     pub fn ht_phasor(self, name: &str) -> LazyFrame {
@@ -1887,8 +1859,7 @@ impl<'a> QuantWaveNamespace<'a> {
             .map(
                 move |s| {
                     let ca = s.f64()?;
-                    let mut indicator =
-                        quantwave_core::indicators::kalman::KalmanFilter::new(q, r);
+                    let mut indicator = quantwave_core::indicators::kalman::KalmanFilter::new(q, r);
                     let mut values = Vec::with_capacity(s.len());
 
                     for i in 0..s.len() {
@@ -1991,46 +1962,45 @@ impl<'a> QuantWaveNamespace<'a> {
         let open_str = open.to_string();
         let close_str = close.to_string();
 
-        self.0.clone().with_columns([as_struct(vec![
-            col(&open_str),
-            col(&close_str),
-        ])
-        .map(
-            move |s| {
-                let ca = s.struct_()?;
-                let s_o = ca.field_by_name(&open_str)?;
-                let s_c = ca.field_by_name(&close_str)?;
+        self.0
+            .clone()
+            .with_columns([as_struct(vec![col(&open_str), col(&close_str)])
+                .map(
+                    move |s| {
+                        let ca = s.struct_()?;
+                        let s_o = ca.field_by_name(&open_str)?;
+                        let s_c = ca.field_by_name(&close_str)?;
 
-                let open = s_o.f64()?;
-                let close = s_c.f64()?;
+                        let open = s_o.f64()?;
+                        let close = s_c.f64()?;
 
-                let mut indicator = quantwave_core::GapMomentum::new(period, signal_period);
-                let mut ratio_vals = Vec::with_capacity(s.len());
-                let mut signal_vals = Vec::with_capacity(s.len());
+                        let mut indicator = quantwave_core::GapMomentum::new(period, signal_period);
+                        let mut ratio_vals = Vec::with_capacity(s.len());
+                        let mut signal_vals = Vec::with_capacity(s.len());
 
-                for i in 0..s.len() {
-                    let o = open.get(i).unwrap_or(f64::NAN);
-                    let c = close.get(i).unwrap_or(f64::NAN);
-                    let (ratio, signal) = indicator.next((o, c));
-                    ratio_vals.push(ratio);
-                    signal_vals.push(signal);
-                }
+                        for i in 0..s.len() {
+                            let o = open.get(i).unwrap_or(f64::NAN);
+                            let c = close.get(i).unwrap_or(f64::NAN);
+                            let (ratio, signal) = indicator.next((o, c));
+                            ratio_vals.push(ratio);
+                            signal_vals.push(signal);
+                        }
 
-                let s_ratio = Series::new("gap_ratio".into(), ratio_vals);
-                let s_signal = Series::new("gap_signal".into(), signal_vals);
-                let struct_series = StructChunked::from_series(
-                    "gap_momentum_result".into(),
-                    s.len(),
-                    [s_ratio, s_signal].iter(),
-                )?;
-                Ok(Some(Column::from(struct_series.into_series())))
-            },
-            GetOutput::from_type(DataType::Struct(vec![
-                Field::new("gap_ratio".into(), DataType::Float64),
-                Field::new("gap_signal".into(), DataType::Float64),
-            ])),
-        )
-        .alias("gap_momentum")])
+                        let s_ratio = Series::new("gap_ratio".into(), ratio_vals);
+                        let s_signal = Series::new("gap_signal".into(), signal_vals);
+                        let struct_series = StructChunked::from_series(
+                            "gap_momentum_result".into(),
+                            s.len(),
+                            [s_ratio, s_signal].iter(),
+                        )?;
+                        Ok(Some(Column::from(struct_series.into_series())))
+                    },
+                    GetOutput::from_type(DataType::Struct(vec![
+                        Field::new("gap_ratio".into(), DataType::Float64),
+                        Field::new("gap_signal".into(), DataType::Float64),
+                    ])),
+                )
+                .alias("gap_momentum")])
     }
 
     pub fn autotune_filter(self, name: &str, window: usize, bandwidth: f64) -> LazyFrame {
@@ -2066,32 +2036,37 @@ impl<'a> QuantWaveNamespace<'a> {
         let l_str = low.to_string();
         let c_str = close.to_string();
 
-        self.0.clone().with_columns([as_struct(vec![col(&h_str), col(&l_str), col(&c_str)])
-            .map(
-                move |s| {
-                    let ca = s.struct_()?;
-                    let f_h = ca.field_by_name(&h_str)?;
-                    let high = f_h.f64()?;
-                    let f_l = ca.field_by_name(&l_str)?;
-                    let low = f_l.f64()?;
-                    let f_c = ca.field_by_name(&c_str)?;
-                    let close = f_c.f64()?;
+        self.0
+            .clone()
+            .with_columns([as_struct(vec![col(&h_str), col(&l_str), col(&c_str)])
+                .map(
+                    move |s| {
+                        let ca = s.struct_()?;
+                        let f_h = ca.field_by_name(&h_str)?;
+                        let high = f_h.f64()?;
+                        let f_l = ca.field_by_name(&l_str)?;
+                        let low = f_l.f64()?;
+                        let f_c = ca.field_by_name(&c_str)?;
+                        let close = f_c.f64()?;
 
-                    let mut indicator = quantwave_core::AdaptiveEMA::new(period, pds);
-                    let mut values = Vec::with_capacity(s.len());
+                        let mut indicator = quantwave_core::AdaptiveEMA::new(period, pds);
+                        let mut values = Vec::with_capacity(s.len());
 
-                    for i in 0..s.len() {
-                        let h = high.get(i).unwrap_or(f64::NAN);
-                        let l = low.get(i).unwrap_or(f64::NAN);
-                        let c = close.get(i).unwrap_or(f64::NAN);
-                        values.push(indicator.next((h, l, c)));
-                    }
+                        for i in 0..s.len() {
+                            let h = high.get(i).unwrap_or(f64::NAN);
+                            let l = low.get(i).unwrap_or(f64::NAN);
+                            let c = close.get(i).unwrap_or(f64::NAN);
+                            values.push(indicator.next((h, l, c)));
+                        }
 
-                    Ok(Some(Column::from(Series::new("adaptive_ema".into(), values))))
-                },
-                GetOutput::from_type(DataType::Float64),
-            )
-            .alias("adaptive_ema")])
+                        Ok(Some(Column::from(Series::new(
+                            "adaptive_ema".into(),
+                            values,
+                        ))))
+                    },
+                    GetOutput::from_type(DataType::Float64),
+                )
+                .alias("adaptive_ema")])
     }
 
     pub fn tradj_ema(
@@ -2107,32 +2082,34 @@ impl<'a> QuantWaveNamespace<'a> {
         let l_str = low.to_string();
         let c_str = close.to_string();
 
-        self.0.clone().with_columns([as_struct(vec![col(&h_str), col(&l_str), col(&c_str)])
-            .map(
-                move |s| {
-                    let ca = s.struct_()?;
-                    let f_h = ca.field_by_name(&h_str)?;
-                    let high = f_h.f64()?;
-                    let f_l = ca.field_by_name(&l_str)?;
-                    let low = f_l.f64()?;
-                    let f_c = ca.field_by_name(&c_str)?;
-                    let close = f_c.f64()?;
+        self.0
+            .clone()
+            .with_columns([as_struct(vec![col(&h_str), col(&l_str), col(&c_str)])
+                .map(
+                    move |s| {
+                        let ca = s.struct_()?;
+                        let f_h = ca.field_by_name(&h_str)?;
+                        let high = f_h.f64()?;
+                        let f_l = ca.field_by_name(&l_str)?;
+                        let low = f_l.f64()?;
+                        let f_c = ca.field_by_name(&c_str)?;
+                        let close = f_c.f64()?;
 
-                    let mut indicator = quantwave_core::TRAdjEMA::new(period, pds, mltp);
-                    let mut values = Vec::with_capacity(s.len());
+                        let mut indicator = quantwave_core::TRAdjEMA::new(period, pds, mltp);
+                        let mut values = Vec::with_capacity(s.len());
 
-                    for i in 0..s.len() {
-                        let h = high.get(i).unwrap_or(f64::NAN);
-                        let l = low.get(i).unwrap_or(f64::NAN);
-                        let c = close.get(i).unwrap_or(f64::NAN);
-                        values.push(indicator.next((h, l, c)));
-                    }
+                        for i in 0..s.len() {
+                            let h = high.get(i).unwrap_or(f64::NAN);
+                            let l = low.get(i).unwrap_or(f64::NAN);
+                            let c = close.get(i).unwrap_or(f64::NAN);
+                            values.push(indicator.next((h, l, c)));
+                        }
 
-                    Ok(Some(Column::from(Series::new("tradj_ema".into(), values))))
-                },
-                GetOutput::from_type(DataType::Float64),
-            )
-            .alias("tradj_ema")])
+                        Ok(Some(Column::from(Series::new("tradj_ema".into(), values))))
+                    },
+                    GetOutput::from_type(DataType::Float64),
+                )
+                .alias("tradj_ema")])
     }
 
     pub fn obvm(
@@ -2198,6 +2175,7 @@ impl<'a> QuantWaveNamespace<'a> {
         .alias("obvm_data")])
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn vfi(
         self,
         high: &str,
@@ -2250,6 +2228,7 @@ impl<'a> QuantWaveNamespace<'a> {
         .alias("vfi")])
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn sve_volatility_bands(
         self,
         high: &str,
@@ -2264,54 +2243,56 @@ impl<'a> QuantWaveNamespace<'a> {
         let l_str = low.to_string();
         let c_str = close.to_string();
 
-        self.0.clone().with_columns([as_struct(vec![col(&h_str), col(&l_str), col(&c_str)])
-            .map(
-                move |s| {
-                    let ca = s.struct_()?;
-                    let f_h = ca.field_by_name(&h_str)?;
-                    let high = f_h.f64()?;
-                    let f_l = ca.field_by_name(&l_str)?;
-                    let low = f_l.f64()?;
-                    let f_c = ca.field_by_name(&c_str)?;
-                    let close = f_c.f64()?;
+        self.0
+            .clone()
+            .with_columns([as_struct(vec![col(&h_str), col(&l_str), col(&c_str)])
+                .map(
+                    move |s| {
+                        let ca = s.struct_()?;
+                        let f_h = ca.field_by_name(&h_str)?;
+                        let high = f_h.f64()?;
+                        let f_l = ca.field_by_name(&l_str)?;
+                        let low = f_l.f64()?;
+                        let f_c = ca.field_by_name(&c_str)?;
+                        let close = f_c.f64()?;
 
-                    let mut indicator = quantwave_core::SVEVolatilityBands::new(
-                        bands_period,
-                        bands_deviation,
-                        low_band_adjust,
-                        mid_line_length,
-                    );
-                    let mut upper_vals = Vec::with_capacity(s.len());
-                    let mut mid_vals = Vec::with_capacity(s.len());
-                    let mut lower_vals = Vec::with_capacity(s.len());
+                        let mut indicator = quantwave_core::SVEVolatilityBands::new(
+                            bands_period,
+                            bands_deviation,
+                            low_band_adjust,
+                            mid_line_length,
+                        );
+                        let mut upper_vals = Vec::with_capacity(s.len());
+                        let mut mid_vals = Vec::with_capacity(s.len());
+                        let mut lower_vals = Vec::with_capacity(s.len());
 
-                    for i in 0..s.len() {
-                        let h = high.get(i).unwrap_or(f64::NAN);
-                        let l = low.get(i).unwrap_or(f64::NAN);
-                        let c = close.get(i).unwrap_or(f64::NAN);
-                        let (upper, mid, lower) = indicator.next((h, l, c));
-                        upper_vals.push(upper);
-                        mid_vals.push(mid);
-                        lower_vals.push(lower);
-                    }
+                        for i in 0..s.len() {
+                            let h = high.get(i).unwrap_or(f64::NAN);
+                            let l = low.get(i).unwrap_or(f64::NAN);
+                            let c = close.get(i).unwrap_or(f64::NAN);
+                            let (upper, mid, lower) = indicator.next((h, l, c));
+                            upper_vals.push(upper);
+                            mid_vals.push(mid);
+                            lower_vals.push(lower);
+                        }
 
-                    let s_upper = Series::new("upper".into(), upper_vals);
-                    let s_mid = Series::new("middle".into(), mid_vals);
-                    let s_lower = Series::new("lower".into(), lower_vals);
-                    let struct_series = StructChunked::from_series(
-                        "sve_bands_data".into(),
-                        s.len(),
-                        [s_upper, s_mid, s_lower].iter(),
-                    )?;
-                    Ok(Some(Column::from(struct_series.into_series())))
-                },
-                GetOutput::from_type(DataType::Struct(vec![
-                    Field::new("upper".into(), DataType::Float64),
-                    Field::new("middle".into(), DataType::Float64),
-                    Field::new("lower".into(), DataType::Float64),
-                ])),
-            )
-            .alias("sve_bands_data")])
+                        let s_upper = Series::new("upper".into(), upper_vals);
+                        let s_mid = Series::new("middle".into(), mid_vals);
+                        let s_lower = Series::new("lower".into(), lower_vals);
+                        let struct_series = StructChunked::from_series(
+                            "sve_bands_data".into(),
+                            s.len(),
+                            [s_upper, s_mid, s_lower].iter(),
+                        )?;
+                        Ok(Some(Column::from(struct_series.into_series())))
+                    },
+                    GetOutput::from_type(DataType::Struct(vec![
+                        Field::new("upper".into(), DataType::Float64),
+                        Field::new("middle".into(), DataType::Float64),
+                        Field::new("lower".into(), DataType::Float64),
+                    ])),
+                )
+                .alias("sve_bands_data")])
     }
 
     pub fn exp_dev_bands(
@@ -2326,7 +2307,8 @@ impl<'a> QuantWaveNamespace<'a> {
             .map(
                 move |s| {
                     let ca = s.f64()?;
-                    let mut indicator = quantwave_core::ExpDevBands::new(period, multiplier, use_sma);
+                    let mut indicator =
+                        quantwave_core::ExpDevBands::new(period, multiplier, use_sma);
                     let mut upper_vals = Vec::with_capacity(s.len());
                     let mut mid_vals = Vec::with_capacity(s.len());
                     let mut lower_vals = Vec::with_capacity(s.len());
@@ -2389,29 +2371,31 @@ impl<'a> QuantWaveNamespace<'a> {
         let p_str = price.to_string();
         let b_str = benchmark.to_string();
 
-        self.0.clone().with_columns([as_struct(vec![col(&p_str), col(&b_str)])
-            .map(
-                move |s| {
-                    let ca = s.struct_()?;
-                    let f_p = ca.field_by_name(&p_str)?;
-                    let price = f_p.f64()?;
-                    let f_b = ca.field_by_name(&b_str)?;
-                    let benchmark = f_b.f64()?;
+        self.0
+            .clone()
+            .with_columns([as_struct(vec![col(&p_str), col(&b_str)])
+                .map(
+                    move |s| {
+                        let ca = s.struct_()?;
+                        let f_p = ca.field_by_name(&p_str)?;
+                        let price = f_p.f64()?;
+                        let f_b = ca.field_by_name(&b_str)?;
+                        let benchmark = f_b.f64()?;
 
-                    let mut indicator = quantwave_core::RSMK::new(length, ema_length);
-                    let mut values = Vec::with_capacity(s.len());
+                        let mut indicator = quantwave_core::RSMK::new(length, ema_length);
+                        let mut values = Vec::with_capacity(s.len());
 
-                    for i in 0..s.len() {
-                        let p = price.get(i).unwrap_or(f64::NAN);
-                        let b = benchmark.get(i).unwrap_or(f64::NAN);
-                        values.push(indicator.next((p, b)));
-                    }
+                        for i in 0..s.len() {
+                            let p = price.get(i).unwrap_or(f64::NAN);
+                            let b = benchmark.get(i).unwrap_or(f64::NAN);
+                            values.push(indicator.next((p, b)));
+                        }
 
-                    Ok(Some(Column::from(Series::new("rsmk".into(), values))))
-                },
-                GetOutput::from_type(DataType::Float64),
-            )
-            .alias("rsmk")])
+                        Ok(Some(Column::from(Series::new("rsmk".into(), values))))
+                    },
+                    GetOutput::from_type(DataType::Float64),
+                )
+                .alias("rsmk")])
     }
 
     pub fn rodc(
@@ -2426,7 +2410,8 @@ impl<'a> QuantWaveNamespace<'a> {
             .map(
                 move |s| {
                     let ca = s.f64()?;
-                    let mut indicator = quantwave_core::RODC::new(window_size, threshold, smooth_period);
+                    let mut indicator =
+                        quantwave_core::RODC::new(window_size, threshold, smooth_period);
                     let mut values = Vec::with_capacity(s.len());
 
                     for i in 0..s.len() {
@@ -2455,7 +2440,10 @@ impl<'a> QuantWaveNamespace<'a> {
                         values.push(indicator.next(val));
                     }
 
-                    Ok(Some(Column::from(Series::new("reverse_ema".into(), values))))
+                    Ok(Some(Column::from(Series::new(
+                        "reverse_ema".into(),
+                        values,
+                    ))))
                 },
                 GetOutput::from_type(DataType::Float64),
             )
@@ -2474,32 +2462,40 @@ impl<'a> QuantWaveNamespace<'a> {
         let l_str = low.to_string();
         let c_str = close.to_string();
 
-        self.0.clone().with_columns([as_struct(vec![col(&h_str), col(&l_str), col(&c_str)])
-            .map(
-                move |s| {
-                    let ca = s.struct_()?;
-                    let f_h = ca.field_by_name(&h_str)?;
-                    let high = f_h.f64()?;
-                    let f_l = ca.field_by_name(&l_str)?;
-                    let low = f_l.f64()?;
-                    let f_c = ca.field_by_name(&c_str)?;
-                    let close = f_c.f64()?;
+        self.0
+            .clone()
+            .with_columns([as_struct(vec![col(&h_str), col(&l_str), col(&c_str)])
+                .map(
+                    move |s| {
+                        let ca = s.struct_()?;
+                        let f_h = ca.field_by_name(&h_str)?;
+                        let high = f_h.f64()?;
+                        let f_l = ca.field_by_name(&l_str)?;
+                        let low = f_l.f64()?;
+                        let f_c = ca.field_by_name(&c_str)?;
+                        let close = f_c.f64()?;
 
-                    let mut indicator = quantwave_core::HarringtonADXOscillator::new(adx_length, adx_smooth_length);
-                    let mut values = Vec::with_capacity(s.len());
+                        let mut indicator = quantwave_core::HarringtonADXOscillator::new(
+                            adx_length,
+                            adx_smooth_length,
+                        );
+                        let mut values = Vec::with_capacity(s.len());
 
-                    for i in 0..s.len() {
-                        let h = high.get(i).unwrap_or(f64::NAN);
-                        let l = low.get(i).unwrap_or(f64::NAN);
-                        let c = close.get(i).unwrap_or(f64::NAN);
-                        values.push(indicator.next((h, l, c)));
-                    }
+                        for i in 0..s.len() {
+                            let h = high.get(i).unwrap_or(f64::NAN);
+                            let l = low.get(i).unwrap_or(f64::NAN);
+                            let c = close.get(i).unwrap_or(f64::NAN);
+                            values.push(indicator.next((h, l, c)));
+                        }
 
-                    Ok(Some(Column::from(Series::new("harrington_adx".into(), values))))
-                },
-                GetOutput::from_type(DataType::Float64),
-            )
-            .alias("harrington_adx")])
+                        Ok(Some(Column::from(Series::new(
+                            "harrington_adx".into(),
+                            values,
+                        ))))
+                    },
+                    GetOutput::from_type(DataType::Float64),
+                )
+                .alias("harrington_adx")])
     }
 
     pub fn keltner_channels(
@@ -3095,124 +3091,140 @@ impl<'a> QuantWaveNamespace<'a> {
     /// Matches project patterns (see fractals, supertrend, features.rs cyber_cycle).
     ///
     /// Sources: market_structure.rs (MQL5 Part 21 https://www.mql5.com/en/articles/17891 + 66/69 lessons).
-    pub fn market_structure(
-        self,
-        high: &str,
-        low: &str,
-        swing_strength: usize,
-    ) -> LazyFrame {
+    pub fn market_structure(self, high: &str, low: &str, swing_strength: usize) -> LazyFrame {
         let high_str = high.to_string();
         let low_str = low.to_string();
         let strength = swing_strength;
 
-        self.0.clone().with_columns([as_struct(vec![col(&high_str), col(&low_str)])
-            .map(
-                move |s| {
-                    let ca = s.struct_()?;
-                    let s_h = ca.field_by_name(&high_str)?;
-                    let s_l = ca.field_by_name(&low_str)?;
-                    let highs = s_h.f64()?;
-                    let lows = s_l.f64()?;
+        self.0
+            .clone()
+            .with_columns([as_struct(vec![col(&high_str), col(&low_str)])
+                .map(
+                    move |s| {
+                        let ca = s.struct_()?;
+                        let s_h = ca.field_by_name(&high_str)?;
+                        let s_l = ca.field_by_name(&low_str)?;
+                        let highs = s_h.f64()?;
+                        let lows = s_l.f64()?;
 
-                    let mut ms = quantwave_core::MarketStructure::new(strength);
-                    let n = s.len();
+                        let mut ms = quantwave_core::MarketStructure::new(strength);
+                        let n = s.len();
 
-                    let mut bias_vals: Vec<u32> = Vec::with_capacity(n);
-                    let mut lh_p: Vec<f64> = Vec::with_capacity(n);
-                    let mut lh_b: Vec<u64> = Vec::with_capacity(n);
-                    let mut ll_p: Vec<f64> = Vec::with_capacity(n);
-                    let mut ll_b: Vec<u64> = Vec::with_capacity(n);
-                    let mut has_f: Vec<bool> = Vec::with_capacity(n);
-                    let mut f_bear: Vec<bool> = Vec::with_capacity(n);
-                    let mut f_p: Vec<f64> = Vec::with_capacity(n);
-                    let mut f_ba: Vec<u64> = Vec::with_capacity(n);
-                    let mut f_str: Vec<u32> = Vec::with_capacity(n);
-                    let mut depths: Vec<u32> = Vec::with_capacity(n);
-                    let mut bars: Vec<u64> = Vec::with_capacity(n);
+                        let mut bias_vals: Vec<u32> = Vec::with_capacity(n);
+                        let mut lh_p: Vec<f64> = Vec::with_capacity(n);
+                        let mut lh_b: Vec<u64> = Vec::with_capacity(n);
+                        let mut ll_p: Vec<f64> = Vec::with_capacity(n);
+                        let mut ll_b: Vec<u64> = Vec::with_capacity(n);
+                        let mut has_f: Vec<bool> = Vec::with_capacity(n);
+                        let mut f_bear: Vec<bool> = Vec::with_capacity(n);
+                        let mut f_p: Vec<f64> = Vec::with_capacity(n);
+                        let mut f_ba: Vec<u64> = Vec::with_capacity(n);
+                        let mut f_str: Vec<u32> = Vec::with_capacity(n);
+                        let mut depths: Vec<u32> = Vec::with_capacity(n);
+                        let mut bars: Vec<u64> = Vec::with_capacity(n);
 
-                    for i in 0..n {
-                        let h = highs.get(i).unwrap_or(f64::NAN);
-                        let l = lows.get(i).unwrap_or(f64::NAN);
-                        // Guard ordering
-                        let hh = if h.is_nan() || l.is_nan() { f64::NAN } else { h.max(l) };
-                        let ll = if h.is_nan() || l.is_nan() { f64::NAN } else { l.min(h) };
-                        let state = ms.next((hh, ll));
+                        for i in 0..n {
+                            let h = highs.get(i).unwrap_or(f64::NAN);
+                            let l = lows.get(i).unwrap_or(f64::NAN);
+                            // Guard ordering
+                            let hh = if h.is_nan() || l.is_nan() {
+                                f64::NAN
+                            } else {
+                                h.max(l)
+                            };
+                            let ll = if h.is_nan() || l.is_nan() {
+                                f64::NAN
+                            } else {
+                                l.min(h)
+                            };
+                            let state = ms.next((hh, ll));
 
-                        let b = match state.bias {
-                            quantwave_core::Bias::Neutral => 0u32,
-                            quantwave_core::Bias::Bullish => 1,
-                            quantwave_core::Bias::Bearish => 2,
-                        };
-                        bias_vals.push(b);
+                            let b = match state.bias {
+                                quantwave_core::Bias::Neutral => 0u32,
+                                quantwave_core::Bias::Bullish => 1,
+                                quantwave_core::Bias::Bearish => 2,
+                            };
+                            bias_vals.push(b);
 
-                        match &state.last_swing_high {
-                            Some(sh) => { lh_p.push(sh.price); lh_b.push(sh.bar as u64); }
-                            None => { lh_p.push(f64::NAN); lh_b.push(0); }
+                            match &state.last_swing_high {
+                                Some(sh) => {
+                                    lh_p.push(sh.price);
+                                    lh_b.push(sh.bar as u64);
+                                }
+                                None => {
+                                    lh_p.push(f64::NAN);
+                                    lh_b.push(0);
+                                }
+                            }
+                            match &state.last_swing_low {
+                                Some(sl) => {
+                                    ll_p.push(sl.price);
+                                    ll_b.push(sl.bar as u64);
+                                }
+                                None => {
+                                    ll_p.push(f64::NAN);
+                                    ll_b.push(0);
+                                }
+                            }
+
+                            if let Some(f) = &state.current_flip {
+                                has_f.push(true);
+                                f_bear.push(f.is_bearish);
+                                f_p.push(f.price);
+                                f_ba.push(f.bar as u64);
+                                f_str.push(f.structure_strength);
+                            } else {
+                                has_f.push(false);
+                                f_bear.push(false);
+                                f_p.push(f64::NAN);
+                                f_ba.push(0);
+                                f_str.push(0);
+                            }
+
+                            depths.push(state.swing_depth_used as u32);
+                            bars.push(state.bar_index as u64);
                         }
-                        match &state.last_swing_low {
-                            Some(sl) => { ll_p.push(sl.price); ll_b.push(sl.bar as u64); }
-                            None => { ll_p.push(f64::NAN); ll_b.push(0); }
-                        }
 
-                        if let Some(f) = &state.current_flip {
-                            has_f.push(true);
-                            f_bear.push(f.is_bearish);
-                            f_p.push(f.price);
-                            f_ba.push(f.bar as u64);
-                            f_str.push(f.structure_strength);
-                        } else {
-                            has_f.push(false);
-                            f_bear.push(false);
-                            f_p.push(f64::NAN);
-                            f_ba.push(0);
-                            f_str.push(0);
-                        }
+                        let s_bias = Series::new("bias".into(), bias_vals);
+                        let s_lhp = Series::new("last_high_price".into(), lh_p);
+                        let s_lhb = Series::new("last_high_bar".into(), lh_b);
+                        let s_llp = Series::new("last_low_price".into(), ll_p);
+                        let s_llb = Series::new("last_low_bar".into(), ll_b);
+                        let s_hasf = Series::new("has_flip".into(), has_f);
+                        let s_fb = Series::new("flip_bearish".into(), f_bear);
+                        let s_fp = Series::new("flip_price".into(), f_p);
+                        let s_fba = Series::new("flip_bar".into(), f_ba);
+                        let s_fstr = Series::new("flip_strength".into(), f_str);
+                        let s_dep = Series::new("swing_depth".into(), depths);
+                        let s_bar = Series::new("bar_index".into(), bars);
 
-                        depths.push(state.swing_depth_used as u32);
-                        bars.push(state.bar_index as u64);
-                    }
-
-                    let s_bias = Series::new("bias".into(), bias_vals);
-                    let s_lhp = Series::new("last_high_price".into(), lh_p);
-                    let s_lhb = Series::new("last_high_bar".into(), lh_b);
-                    let s_llp = Series::new("last_low_price".into(), ll_p);
-                    let s_llb = Series::new("last_low_bar".into(), ll_b);
-                    let s_hasf = Series::new("has_flip".into(), has_f);
-                    let s_fb = Series::new("flip_bearish".into(), f_bear);
-                    let s_fp = Series::new("flip_price".into(), f_p);
-                    let s_fba = Series::new("flip_bar".into(), f_ba);
-                    let s_fstr = Series::new("flip_strength".into(), f_str);
-                    let s_dep = Series::new("swing_depth".into(), depths);
-                    let s_bar = Series::new("bar_index".into(), bars);
-
-                    let struct_series = StructChunked::from_series(
-                        "market_structure_result".into(),
-                        s.len(),
-                        [
-                            s_bias, s_lhp, s_lhb, s_llp, s_llb, s_hasf, s_fb, s_fp, s_fba, s_fstr,
-                            s_dep, s_bar,
-                        ]
-                        .iter(),
-                    )?;
-                    Ok(Some(Column::from(struct_series.into_series())))
-                },
-                GetOutput::from_type(DataType::Struct(vec![
-                    Field::new("bias".into(), DataType::UInt32),
-                    Field::new("last_high_price".into(), DataType::Float64),
-                    Field::new("last_high_bar".into(), DataType::UInt64),
-                    Field::new("last_low_price".into(), DataType::Float64),
-                    Field::new("last_low_bar".into(), DataType::UInt64),
-                    Field::new("has_flip".into(), DataType::Boolean),
-                    Field::new("flip_bearish".into(), DataType::Boolean),
-                    Field::new("flip_price".into(), DataType::Float64),
-                    Field::new("flip_bar".into(), DataType::UInt64),
-                    Field::new("flip_strength".into(), DataType::UInt32),
-                    Field::new("swing_depth".into(), DataType::UInt32),
-                    Field::new("bar_index".into(), DataType::UInt64),
-                ])),
-            )
-            .alias("market_structure")])
-
+                        let struct_series = StructChunked::from_series(
+                            "market_structure_result".into(),
+                            s.len(),
+                            [
+                                s_bias, s_lhp, s_lhb, s_llp, s_llb, s_hasf, s_fb, s_fp, s_fba,
+                                s_fstr, s_dep, s_bar,
+                            ]
+                            .iter(),
+                        )?;
+                        Ok(Some(Column::from(struct_series.into_series())))
+                    },
+                    GetOutput::from_type(DataType::Struct(vec![
+                        Field::new("bias".into(), DataType::UInt32),
+                        Field::new("last_high_price".into(), DataType::Float64),
+                        Field::new("last_high_bar".into(), DataType::UInt64),
+                        Field::new("last_low_price".into(), DataType::Float64),
+                        Field::new("last_low_bar".into(), DataType::UInt64),
+                        Field::new("has_flip".into(), DataType::Boolean),
+                        Field::new("flip_bearish".into(), DataType::Boolean),
+                        Field::new("flip_price".into(), DataType::Float64),
+                        Field::new("flip_bar".into(), DataType::UInt64),
+                        Field::new("flip_strength".into(), DataType::UInt32),
+                        Field::new("swing_depth".into(), DataType::UInt32),
+                        Field::new("bar_index".into(), DataType::UInt64),
+                    ])),
+                )
+                .alias("market_structure")])
     }
 
     /// Geometric Pattern Scanner (Flags + H&S) Polars accessor, built on the MarketStructure foundation.
@@ -3223,135 +3235,146 @@ impl<'a> QuantWaveNamespace<'a> {
     ///
     /// Delegates to quantwave_core::GeometricPatternScanner (Part 69 flag + Part 66 H&S rules).
     /// Emits rich metadata (`pole_length_atr`, `score`, `breakout_confirmed`) for sizing and filters.
-    pub fn geometric_patterns(
-        self,
-        high: &str,
-        low: &str,
-        swing_strength: usize,
-    ) -> LazyFrame {
+    pub fn geometric_patterns(self, high: &str, low: &str, swing_strength: usize) -> LazyFrame {
         let high_str = high.to_string();
         let low_str = low.to_string();
         let strength = swing_strength;
 
-        self.0.clone().with_columns([as_struct(vec![col(&high_str), col(&low_str)])
-            .map(
-                move |s| {
-                    let ca = s.struct_()?;
-                    let s_h = ca.field_by_name(&high_str)?;
-                    let s_l = ca.field_by_name(&low_str)?;
-                    let highs = s_h.f64()?;
-                    let lows = s_l.f64()?;
+        self.0
+            .clone()
+            .with_columns([as_struct(vec![col(&high_str), col(&low_str)])
+                .map(
+                    move |s| {
+                        let ca = s.struct_()?;
+                        let s_h = ca.field_by_name(&high_str)?;
+                        let s_l = ca.field_by_name(&low_str)?;
+                        let highs = s_h.f64()?;
+                        let lows = s_l.f64()?;
 
-                    let mut scanner = quantwave_core::GeometricPatternScanner::new(strength);
-                    let n = s.len();
+                        let mut scanner = quantwave_core::GeometricPatternScanner::new(strength);
+                        let n = s.len();
 
-                    let mut flag_ids: Vec<u32> = Vec::with_capacity(n);
-                    let mut flag_is_bull: Vec<bool> = Vec::with_capacity(n);
-                    let mut flag_pole_len: Vec<f64> = Vec::with_capacity(n);
-                    let mut flag_pole_atr: Vec<f64> = Vec::with_capacity(n);
-                    let mut flag_breakout: Vec<bool> = Vec::with_capacity(n);
-                    let mut flag_bp: Vec<f64> = Vec::with_capacity(n);
+                        let mut flag_ids: Vec<u32> = Vec::with_capacity(n);
+                        let mut flag_is_bull: Vec<bool> = Vec::with_capacity(n);
+                        let mut flag_pole_len: Vec<f64> = Vec::with_capacity(n);
+                        let mut flag_pole_atr: Vec<f64> = Vec::with_capacity(n);
+                        let mut flag_breakout: Vec<bool> = Vec::with_capacity(n);
+                        let mut flag_bp: Vec<f64> = Vec::with_capacity(n);
 
-                    let mut hs_ids: Vec<u32> = Vec::with_capacity(n);
-                    let mut hs_bear: Vec<bool> = Vec::with_capacity(n);
-                    let mut hs_height: Vec<f64> = Vec::with_capacity(n);
-                    let mut hs_height_atr: Vec<f64> = Vec::with_capacity(n);
-                    let mut hs_score: Vec<f64> = Vec::with_capacity(n);
-                    let mut hs_breakout: Vec<bool> = Vec::with_capacity(n);
+                        let mut hs_ids: Vec<u32> = Vec::with_capacity(n);
+                        let mut hs_bear: Vec<bool> = Vec::with_capacity(n);
+                        let mut hs_height: Vec<f64> = Vec::with_capacity(n);
+                        let mut hs_height_atr: Vec<f64> = Vec::with_capacity(n);
+                        let mut hs_score: Vec<f64> = Vec::with_capacity(n);
+                        let mut hs_breakout: Vec<bool> = Vec::with_capacity(n);
 
-                    for i in 0..n {
-                        let h = highs.get(i).unwrap_or(f64::NAN);
-                        let l = lows.get(i).unwrap_or(f64::NAN);
-                        let hh = if h.is_nan() || l.is_nan() { f64::NAN } else { h.max(l) };
-                        let ll = if h.is_nan() || l.is_nan() { f64::NAN } else { l.min(h) };
-                        let (_state, flag, hs) = scanner.next((hh, ll));
+                        for i in 0..n {
+                            let h = highs.get(i).unwrap_or(f64::NAN);
+                            let l = lows.get(i).unwrap_or(f64::NAN);
+                            let hh = if h.is_nan() || l.is_nan() {
+                                f64::NAN
+                            } else {
+                                h.max(l)
+                            };
+                            let ll = if h.is_nan() || l.is_nan() {
+                                f64::NAN
+                            } else {
+                                l.min(h)
+                            };
+                            let (_state, flag, hs) = scanner.next((hh, ll));
 
-                        if let Some(f) = flag {
-                            flag_ids.push(f.id);
-                            flag_is_bull.push(f.is_bull);
-                            flag_pole_len.push(f.pole_length);
-                            flag_pole_atr.push(f.pole_length_atr);
-                            flag_breakout.push(f.breakout_confirmed);
-                            flag_bp.push(f.breakout_price);
-                        } else {
-                            flag_ids.push(0);
-                            flag_is_bull.push(false);
-                            flag_pole_len.push(f64::NAN);
-                            flag_pole_atr.push(f64::NAN);
-                            flag_breakout.push(false);
-                            flag_bp.push(f64::NAN);
+                            if let Some(f) = flag {
+                                flag_ids.push(f.id);
+                                flag_is_bull.push(f.is_bull);
+                                flag_pole_len.push(f.pole_length);
+                                flag_pole_atr.push(f.pole_length_atr);
+                                flag_breakout.push(f.breakout_confirmed);
+                                flag_bp.push(f.breakout_price);
+                            } else {
+                                flag_ids.push(0);
+                                flag_is_bull.push(false);
+                                flag_pole_len.push(f64::NAN);
+                                flag_pole_atr.push(f64::NAN);
+                                flag_breakout.push(false);
+                                flag_bp.push(f64::NAN);
+                            }
+
+                            if let Some(hp) = hs {
+                                hs_ids.push(hp.id);
+                                hs_bear.push(hp.is_bearish);
+                                hs_height.push(hp.height);
+                                hs_height_atr.push(hp.height_atr);
+                                hs_score.push(hp.score);
+                                hs_breakout.push(hp.breakout_confirmed);
+                            } else {
+                                hs_ids.push(0);
+                                hs_bear.push(false);
+                                hs_height.push(f64::NAN);
+                                hs_height_atr.push(f64::NAN);
+                                hs_score.push(f64::NAN);
+                                hs_breakout.push(false);
+                            }
                         }
 
-                        if let Some(hp) = hs {
-                            hs_ids.push(hp.id);
-                            hs_bear.push(hp.is_bearish);
-                            hs_height.push(hp.height);
-                            hs_height_atr.push(hp.height_atr);
-                            hs_score.push(hp.score);
-                            hs_breakout.push(hp.breakout_confirmed);
-                        } else {
-                            hs_ids.push(0);
-                            hs_bear.push(false);
-                            hs_height.push(f64::NAN);
-                            hs_height_atr.push(f64::NAN);
-                            hs_score.push(f64::NAN);
-                            hs_breakout.push(false);
-                        }
-                    }
+                        let s_fid = Series::new("id".into(), flag_ids);
+                        let s_fbull = Series::new("is_bull".into(), flag_is_bull);
+                        let s_fplen = Series::new("pole_length".into(), flag_pole_len);
+                        let s_fpatr = Series::new("pole_length_atr".into(), flag_pole_atr);
+                        let s_fbo = Series::new("breakout_confirmed".into(), flag_breakout);
+                        let s_fbp = Series::new("breakout_price".into(), flag_bp);
 
-                    let s_fid = Series::new("id".into(), flag_ids);
-                    let s_fbull = Series::new("is_bull".into(), flag_is_bull);
-                    let s_fplen = Series::new("pole_length".into(), flag_pole_len);
-                    let s_fpatr = Series::new("pole_length_atr".into(), flag_pole_atr);
-                    let s_fbo = Series::new("breakout_confirmed".into(), flag_breakout);
-                    let s_fbp = Series::new("breakout_price".into(), flag_bp);
+                        let flag_struct = StructChunked::from_series(
+                            "flag".into(),
+                            n,
+                            [s_fid, s_fbull, s_fplen, s_fpatr, s_fbo, s_fbp].iter(),
+                        )?;
 
-                    let flag_struct = StructChunked::from_series(
-                        "flag".into(),
-                        n,
-                        [s_fid, s_fbull, s_fplen, s_fpatr, s_fbo, s_fbp].iter(),
-                    )?;
+                        let s_hid = Series::new("id".into(), hs_ids);
+                        let s_hbear = Series::new("is_bearish".into(), hs_bear);
+                        let s_hh = Series::new("height".into(), hs_height);
+                        let s_hhatr = Series::new("height_atr".into(), hs_height_atr);
+                        let s_hsc = Series::new("score".into(), hs_score);
+                        let s_hbo = Series::new("breakout_confirmed".into(), hs_breakout);
 
-                    let s_hid = Series::new("id".into(), hs_ids);
-                    let s_hbear = Series::new("is_bearish".into(), hs_bear);
-                    let s_hh = Series::new("height".into(), hs_height);
-                    let s_hhatr = Series::new("height_atr".into(), hs_height_atr);
-                    let s_hsc = Series::new("score".into(), hs_score);
-                    let s_hbo = Series::new("breakout_confirmed".into(), hs_breakout);
+                        let hs_struct = StructChunked::from_series(
+                            "hs".into(),
+                            n,
+                            [s_hid, s_hbear, s_hh, s_hhatr, s_hsc, s_hbo].iter(),
+                        )?;
 
-                    let hs_struct = StructChunked::from_series(
-                        "hs".into(),
-                        n,
-                        [s_hid, s_hbear, s_hh, s_hhatr, s_hsc, s_hbo].iter(),
-                    )?;
-
-                    let combined = StructChunked::from_series(
-                        "geo_patterns".into(),
-                        n,
-                        [flag_struct.into_series(), hs_struct.into_series()].iter(),
-                    )?;
-                    Ok(Some(Column::from(combined.into_series())))
-                },
-                GetOutput::from_type(DataType::Struct(vec![
-                    Field::new("flag".into(), DataType::Struct(vec![
-                        Field::new("id".into(), DataType::UInt32),
-                        Field::new("is_bull".into(), DataType::Boolean),
-                        Field::new("pole_length".into(), DataType::Float64),
-                        Field::new("pole_length_atr".into(), DataType::Float64),
-                        Field::new("breakout_confirmed".into(), DataType::Boolean),
-                        Field::new("breakout_price".into(), DataType::Float64),
+                        let combined = StructChunked::from_series(
+                            "geo_patterns".into(),
+                            n,
+                            [flag_struct.into_series(), hs_struct.into_series()].iter(),
+                        )?;
+                        Ok(Some(Column::from(combined.into_series())))
+                    },
+                    GetOutput::from_type(DataType::Struct(vec![
+                        Field::new(
+                            "flag".into(),
+                            DataType::Struct(vec![
+                                Field::new("id".into(), DataType::UInt32),
+                                Field::new("is_bull".into(), DataType::Boolean),
+                                Field::new("pole_length".into(), DataType::Float64),
+                                Field::new("pole_length_atr".into(), DataType::Float64),
+                                Field::new("breakout_confirmed".into(), DataType::Boolean),
+                                Field::new("breakout_price".into(), DataType::Float64),
+                            ]),
+                        ),
+                        Field::new(
+                            "hs".into(),
+                            DataType::Struct(vec![
+                                Field::new("id".into(), DataType::UInt32),
+                                Field::new("is_bearish".into(), DataType::Boolean),
+                                Field::new("height".into(), DataType::Float64),
+                                Field::new("height_atr".into(), DataType::Float64),
+                                Field::new("score".into(), DataType::Float64),
+                                Field::new("breakout_confirmed".into(), DataType::Boolean),
+                            ]),
+                        ),
                     ])),
-                    Field::new("hs".into(), DataType::Struct(vec![
-                        Field::new("id".into(), DataType::UInt32),
-                        Field::new("is_bearish".into(), DataType::Boolean),
-                        Field::new("height".into(), DataType::Float64),
-                        Field::new("height_atr".into(), DataType::Float64),
-                        Field::new("score".into(), DataType::Float64),
-                        Field::new("breakout_confirmed".into(), DataType::Boolean),
-                    ])),
-                ])),
-            )
-            .alias("geometric_patterns")])
+                )
+                .alias("geometric_patterns")])
     }
 
     /// S/R Interaction Monitor (MQL5 Part 67) Polars accessor.
@@ -3386,7 +3409,11 @@ impl<'a> QuantWaveNamespace<'a> {
                 let lows = s_l.f64()?;
                 let closes = s_c.f64()?;
 
-                let mut mon = quantwave_core::SRInteractionMonitor::new(strength, touch_tolerance, approach_zone);
+                let mut mon = quantwave_core::SRInteractionMonitor::new(
+                    strength,
+                    touch_tolerance,
+                    approach_zone,
+                );
                 let n = s.len();
 
                 let mut bias_vals: Vec<u32> = Vec::with_capacity(n);
@@ -3404,9 +3431,21 @@ impl<'a> QuantWaveNamespace<'a> {
                     let h = highs.get(i).unwrap_or(f64::NAN);
                     let l = lows.get(i).unwrap_or(f64::NAN);
                     let c = closes.get(i).unwrap_or(f64::NAN);
-                    let hh = if h.is_nan() || l.is_nan() { f64::NAN } else { h.max(l) };
-                    let ll = if h.is_nan() || l.is_nan() { f64::NAN } else { l.min(h) };
-                    let cc = if c.is_nan() { (hh + ll) / 2.0 } else { c.clamp(ll, hh) };
+                    let hh = if h.is_nan() || l.is_nan() {
+                        f64::NAN
+                    } else {
+                        h.max(l)
+                    };
+                    let ll = if h.is_nan() || l.is_nan() {
+                        f64::NAN
+                    } else {
+                        l.min(h)
+                    };
+                    let cc = if c.is_nan() {
+                        (hh + ll) / 2.0
+                    } else {
+                        c.clamp(ll, hh)
+                    };
 
                     let out = mon.next((hh, ll, cc));
 
@@ -3546,45 +3585,50 @@ impl<'a> QuantWaveNamespace<'a> {
         let l_str = low.to_string();
         let c_str = close.to_string();
 
-        self.0.clone().with_columns([as_struct(vec![col(&h_str), col(&l_str), col(&c_str)])
-            .map(
-                move |s| {
-                    let ca = s.struct_()?;
-                    let f_h = ca.field_by_name(&h_str)?;
-                    let high = f_h.f64()?;
-                    let f_l = ca.field_by_name(&l_str)?;
-                    let low = f_l.f64()?;
-                    let f_c = ca.field_by_name(&c_str)?;
-                    let close = f_c.f64()?;
+        self.0
+            .clone()
+            .with_columns([as_struct(vec![col(&h_str), col(&l_str), col(&c_str)])
+                .map(
+                    move |s| {
+                        let ca = s.struct_()?;
+                        let f_h = ca.field_by_name(&h_str)?;
+                        let high = f_h.f64()?;
+                        let f_l = ca.field_by_name(&l_str)?;
+                        let low = f_l.f64()?;
+                        let f_c = ca.field_by_name(&c_str)?;
+                        let close = f_c.f64()?;
 
-                    let mut clusterer =
+                        let mut clusterer =
                         quantwave_core::regimes::volatility_clustering::VolatilityClusterer::new(
                             atr_period,
                             window_size,
                             k,
                         );
-                    let mut values = Vec::with_capacity(s.len());
+                        let mut values = Vec::with_capacity(s.len());
 
-                    for i in 0..s.len() {
-                        let h = high.get(i).unwrap_or(f64::NAN);
-                        let l = low.get(i).unwrap_or(f64::NAN);
-                        let c = close.get(i).unwrap_or(f64::NAN);
-                        let regime = clusterer.next((h, l, c));
-                        let val = match regime {
-                            quantwave_core::regimes::MarketRegime::Steady => 0u32,
-                            quantwave_core::regimes::MarketRegime::Bull => 1,
-                            quantwave_core::regimes::MarketRegime::Bear => 2,
-                            quantwave_core::regimes::MarketRegime::Crisis => 3,
-                            quantwave_core::regimes::MarketRegime::Cluster(c) => 4 + (c as u32),
-                        };
-                        values.push(val);
-                    }
+                        for i in 0..s.len() {
+                            let h = high.get(i).unwrap_or(f64::NAN);
+                            let l = low.get(i).unwrap_or(f64::NAN);
+                            let c = close.get(i).unwrap_or(f64::NAN);
+                            let regime = clusterer.next((h, l, c));
+                            let val = match regime {
+                                quantwave_core::regimes::MarketRegime::Steady => 0u32,
+                                quantwave_core::regimes::MarketRegime::Bull => 1,
+                                quantwave_core::regimes::MarketRegime::Bear => 2,
+                                quantwave_core::regimes::MarketRegime::Crisis => 3,
+                                quantwave_core::regimes::MarketRegime::Cluster(c) => 4 + (c as u32),
+                            };
+                            values.push(val);
+                        }
 
-                    Ok(Some(Column::from(Series::new("volatility_regime".into(), values))))
-                },
-                GetOutput::from_type(DataType::UInt32),
-            )
-            .alias("volatility_regime")])
+                        Ok(Some(Column::from(Series::new(
+                            "volatility_regime".into(),
+                            values,
+                        ))))
+                    },
+                    GetOutput::from_type(DataType::UInt32),
+                )
+                .alias("volatility_regime")])
     }
 
     pub fn hmm_bull_bear(self, name: &str) -> LazyFrame {
@@ -3624,13 +3668,19 @@ impl<'a> QuantWaveNamespace<'a> {
     ///
     /// Non-finite observations are skipped for fitting/decoding; output rows at those
     /// indices receive state `0` and uniform probabilities.
-    pub fn hmm_fit(self, name: &str, n_states: usize, max_iter: usize, fit_lambdas: bool) -> LazyFrame {
+    pub fn hmm_fit(
+        self,
+        name: &str,
+        n_states: usize,
+        max_iter: usize,
+        fit_lambdas: bool,
+    ) -> LazyFrame {
         let name_str = name.to_string();
         self.0.clone().with_columns([col(&name_str)
             .map(
                 move |s| {
                     use quantwave_core::regimes::gaussian_hmm::{
-                        fit_em, EmissionFamily, GaussianHmmFitConfig,
+                        EmissionFamily, GaussianHmmFitConfig, fit_em,
                     };
 
                     let ca = s.f64()?;
@@ -3638,11 +3688,11 @@ impl<'a> QuantWaveNamespace<'a> {
                     let mut obs = Vec::new();
                     let mut index_map = Vec::new();
                     for i in 0..n {
-                        if let Some(v) = ca.get(i) {
-                            if v.is_finite() {
-                                obs.push(v);
-                                index_map.push(i);
-                            }
+                        if let Some(v) = ca.get(i)
+                            && v.is_finite()
+                        {
+                            obs.push(v);
+                            index_map.push(i);
                         }
                     }
 
@@ -3663,13 +3713,13 @@ impl<'a> QuantWaveNamespace<'a> {
                             fit_lambdas,
                             ..Default::default()
                         };
-                        if let Ok(fit) = fit_em(&obs, &config) {
-                            if let Ok(decode) = fit.params.decode(&obs) {
-                                for (j, &row_idx) in index_map.iter().enumerate() {
-                                    states[row_idx] = decode.viterbi_path[j] as u32;
-                                    for st in 0..m {
-                                        probs_rows[row_idx][st] = decode.smooth_probs[st][j];
-                                    }
+                        if let Ok(fit) = fit_em(&obs, &config)
+                            && let Ok(decode) = fit.params.decode(&obs)
+                        {
+                            for (j, &row_idx) in index_map.iter().enumerate() {
+                                states[row_idx] = decode.viterbi_path[j] as u32;
+                                for st in 0..m {
+                                    probs_rows[row_idx][st] = decode.smooth_probs[st][j];
                                 }
                             }
                         }
@@ -3718,7 +3768,7 @@ impl<'a> QuantWaveNamespace<'a> {
             .map(
                 move |s| {
                     use quantwave_core::regimes::gaussian_hmm::{
-                        fit_em, EmissionFamily, GaussianHmmFitConfig,
+                        EmissionFamily, GaussianHmmFitConfig, fit_em,
                     };
                     use quantwave_core::regimes::hmm_forecast::pseudo_residuals;
 
@@ -3728,11 +3778,11 @@ impl<'a> QuantWaveNamespace<'a> {
                     let mut obs = Vec::new();
                     let mut index_map = Vec::new();
                     for i in 0..n {
-                        if let Some(v) = ca.get(i) {
-                            if v.is_finite() {
-                                obs.push(v);
-                                index_map.push(i);
-                            }
+                        if let Some(v) = ca.get(i)
+                            && v.is_finite()
+                        {
+                            obs.push(v);
+                            index_map.push(i);
                         }
                     }
                     let m = n_states.max(2);
@@ -3748,19 +3798,20 @@ impl<'a> QuantWaveNamespace<'a> {
                             fit_lambdas,
                             ..Default::default()
                         };
-                        if let Ok(fit) = fit_em(&obs, &config) {
-                            if let Ok(decode) = fit.params.decode(&obs) {
-                                if let Ok(residuals) =
-                                    pseudo_residuals(&fit.params, &decode.forward_filter, &obs)
-                                {
-                                    for (j, &row_idx) in index_map.iter().enumerate() {
-                                        values[row_idx] = residuals[j];
-                                    }
-                                }
+                        if let Ok(fit) = fit_em(&obs, &config)
+                            && let Ok(decode) = fit.params.decode(&obs)
+                            && let Ok(residuals) =
+                                pseudo_residuals(&fit.params, &decode.forward_filter, &obs)
+                        {
+                            for (j, &row_idx) in index_map.iter().enumerate() {
+                                values[row_idx] = residuals[j];
                             }
                         }
                     }
-                    Ok(Some(Column::from(Series::new("hmm_pseudo_residual".into(), values))))
+                    Ok(Some(Column::from(Series::new(
+                        "hmm_pseudo_residual".into(),
+                        values,
+                    ))))
                 },
                 GetOutput::from_type(DataType::Float64),
             )
@@ -3780,7 +3831,7 @@ impl<'a> QuantWaveNamespace<'a> {
             .map(
                 move |s| {
                     use quantwave_core::regimes::gaussian_hmm::{
-                        fit_em, EmissionFamily, GaussianHmmFitConfig,
+                        EmissionFamily, GaussianHmmFitConfig, fit_em,
                     };
                     use quantwave_core::regimes::hmm_forecast::decode_stats_history;
 
@@ -3792,11 +3843,11 @@ impl<'a> QuantWaveNamespace<'a> {
                     let mut obs = Vec::new();
                     let mut index_map = Vec::new();
                     for i in 0..n {
-                        if let Some(v) = ca.get(i) {
-                            if v.is_finite() {
-                                obs.push(v);
-                                index_map.push(i);
-                            }
+                        if let Some(v) = ca.get(i)
+                            && v.is_finite()
+                        {
+                            obs.push(v);
+                            index_map.push(i);
                         }
                     }
                     let m = n_states.max(2);
@@ -3812,18 +3863,16 @@ impl<'a> QuantWaveNamespace<'a> {
                             fit_lambdas,
                             ..Default::default()
                         };
-                        if let Ok(fit) = fit_em(&obs, &config) {
-                            if let Ok(decode) = fit.params.decode(&obs) {
-                                if let Ok(stats) =
-                                    decode_stats_history(&fit.params, &decode.smooth_probs)
-                                {
-                                    for (j, row) in stats.iter().enumerate() {
-                                        let idx = index_map[j];
-                                        means[idx] = row.weighted_mean;
-                                        vols[idx] = row.weighted_vol;
-                                        lambdas[idx] = row.weighted_lambda;
-                                    }
-                                }
+                        if let Ok(fit) = fit_em(&obs, &config)
+                            && let Ok(decode) = fit.params.decode(&obs)
+                            && let Ok(stats) =
+                                decode_stats_history(&fit.params, &decode.smooth_probs)
+                        {
+                            for (j, row) in stats.iter().enumerate() {
+                                let idx = index_map[j];
+                                means[idx] = row.weighted_mean;
+                                vols[idx] = row.weighted_vol;
+                                lambdas[idx] = row.weighted_lambda;
                             }
                         }
                     }
@@ -3863,7 +3912,7 @@ impl<'a> QuantWaveNamespace<'a> {
             .map(
                 move |s| {
                     use quantwave_core::regimes::gaussian_hmm::{
-                        fit_em, EmissionFamily, GaussianHmmFitConfig,
+                        EmissionFamily, GaussianHmmFitConfig, fit_em,
                     };
                     use quantwave_core::regimes::hmm_forecast::forecast_volatility;
 
@@ -3873,11 +3922,11 @@ impl<'a> QuantWaveNamespace<'a> {
                     let mut obs = Vec::new();
                     let mut index_map = Vec::new();
                     for i in 0..n {
-                        if let Some(v) = ca.get(i) {
-                            if v.is_finite() {
-                                obs.push(v);
-                                index_map.push(i);
-                            }
+                        if let Some(v) = ca.get(i)
+                            && v.is_finite()
+                        {
+                            obs.push(v);
+                            index_map.push(i);
                         }
                     }
                     let m = n_states.max(2);
@@ -3893,21 +3942,22 @@ impl<'a> QuantWaveNamespace<'a> {
                             fit_lambdas,
                             ..Default::default()
                         };
-                        if let Ok(fit) = fit_em(&obs, &config) {
-                            if let Ok(decode) = fit.params.decode(&obs) {
-                                for (j, &row_idx) in index_map.iter().enumerate() {
-                                    let probs: Vec<f64> =
-                                        (0..m).map(|st| decode.forward_filter[st][j]).collect();
-                                    if let Ok(vol) =
-                                        forecast_volatility(&fit.params, &probs, h)
-                                    {
-                                        values[row_idx] = vol;
-                                    }
+                        if let Ok(fit) = fit_em(&obs, &config)
+                            && let Ok(decode) = fit.params.decode(&obs)
+                        {
+                            for (j, &row_idx) in index_map.iter().enumerate() {
+                                let probs: Vec<f64> =
+                                    (0..m).map(|st| decode.forward_filter[st][j]).collect();
+                                if let Ok(vol) = forecast_volatility(&fit.params, &probs, h) {
+                                    values[row_idx] = vol;
                                 }
                             }
                         }
                     }
-                    Ok(Some(Column::from(Series::new("hmm_forecast_vol".into(), values))))
+                    Ok(Some(Column::from(Series::new(
+                        "hmm_forecast_vol".into(),
+                        values,
+                    ))))
                 },
                 GetOutput::from_type(DataType::Float64),
             )
@@ -3923,7 +3973,7 @@ impl<'a> QuantWaveNamespace<'a> {
                     let data: Vec<f64> = ca.into_iter().map(|v| v.unwrap_or(f64::NAN)).collect();
                     let pelt = quantwave_core::regimes::pelt::PELT::new(penalty, min_dist);
                     let cps = pelt.detect(&data);
-                    
+
                     let mut values = vec![0u32; s.len()];
                     for cp in cps {
                         if cp < values.len() {
@@ -3931,7 +3981,10 @@ impl<'a> QuantWaveNamespace<'a> {
                         }
                     }
 
-                    Ok(Some(Column::from(Series::new("changepoints".into(), values))))
+                    Ok(Some(Column::from(Series::new(
+                        "changepoints".into(),
+                        values,
+                    ))))
                 },
                 GetOutput::from_type(DataType::UInt32),
             )
@@ -3940,7 +3993,7 @@ impl<'a> QuantWaveNamespace<'a> {
 
     pub fn gmm(self, columns: &[&str], _k: usize) -> LazyFrame {
         let cols: Vec<String> = columns.iter().map(|s| s.to_string()).collect();
-        let col_exprs: Vec<Expr> = cols.iter().map(|c| col(c)).collect();
+        let col_exprs: Vec<Expr> = cols.iter().map(col).collect();
 
         self.0.clone().with_columns([as_struct(col_exprs)
             .map(
@@ -3962,10 +4015,7 @@ impl<'a> QuantWaveNamespace<'a> {
 
                     // Placeholder GMM: requires fitting or pre-trained params.
                     // For now, we'll use a simple default clusterer based on means.
-                    let mut values = Vec::with_capacity(n_rows);
-                    for _ in 0..n_rows {
-                        values.push(0u32);
-                    }
+                    let values = vec![0u32; n_rows];
 
                     Ok(Some(Column::from(Series::new("gmm_regime".into(), values))))
                 },
@@ -3981,8 +4031,9 @@ impl<'a> QuantWaveNamespace<'a> {
                 move |s| {
                     let ca = s.u32()?;
                     let states: Vec<u32> = ca.into_iter().map(|v| v.unwrap_or(0)).collect();
-                    let stats = quantwave_core::RegimeAnalytics::duration_stats(&states, num_states);
-                    
+                    let stats =
+                        quantwave_core::RegimeAnalytics::duration_stats(&states, num_states);
+
                     // Convert stats to a Struct
                     let mut regime_ids = Vec::new();
                     let mut means = Vec::new();
@@ -3990,7 +4041,7 @@ impl<'a> QuantWaveNamespace<'a> {
                     let mut stds = Vec::new();
                     let mut maxes = Vec::new();
                     let mut totals = Vec::new();
-                    
+
                     for stat in stats {
                         regime_ids.push(stat.regime_id);
                         means.push(stat.mean_duration);
@@ -3999,14 +4050,14 @@ impl<'a> QuantWaveNamespace<'a> {
                         maxes.push(stat.max_duration as u32);
                         totals.push(stat.total_observations as u32);
                     }
-                    
+
                     let s_id = Series::new("regime_id".into(), regime_ids);
                     let s_mean = Series::new("mean_duration".into(), means);
                     let s_median = Series::new("median_duration".into(), medians);
                     let s_std = Series::new("std_duration".into(), stds);
                     let s_max = Series::new("max_duration".into(), maxes);
                     let s_total = Series::new("total_observations".into(), totals);
-                    
+
                     let struct_series = StructChunked::from_series(
                         "duration_stats".into(),
                         s_id.len(),
@@ -4033,8 +4084,9 @@ impl<'a> QuantWaveNamespace<'a> {
                 move |s| {
                     let ca = s.u32()?;
                     let states: Vec<u32> = ca.into_iter().map(|v| v.unwrap_or(0)).collect();
-                    let matrix = quantwave_core::RegimeAnalytics::transition_matrix(&states, num_states);
-                    
+                    let matrix =
+                        quantwave_core::RegimeAnalytics::transition_matrix(&states, num_states);
+
                     // Return as a List of Lists (effectively a matrix)
                     let mut builders = ListPrimitiveChunkedBuilder::<Float64Type>::new(
                         "transition_matrix".into(),
@@ -4045,7 +4097,7 @@ impl<'a> QuantWaveNamespace<'a> {
                     for row in matrix {
                         builders.append_slice(&row);
                     }
-                    
+
                     let list_ca = builders.finish();
                     Ok(Some(Column::from(list_ca.into_series())))
                 },
@@ -4062,23 +4114,32 @@ impl<'a> QuantWaveNamespace<'a> {
                     let ca = s.u32()?;
                     let states: Vec<u32> = ca.into_iter().map(|v| v.unwrap_or(0)).collect();
                     let score = quantwave_core::RegimeAnalytics::stability_score(&states);
-                    
-                    Ok(Some(Column::from(Series::new("stability_score".into(), vec![score; s.len()]))))
+
+                    Ok(Some(Column::from(Series::new(
+                        "stability_score".into(),
+                        vec![score; s.len()],
+                    ))))
                 },
                 GetOutput::from_type(DataType::Float64),
             )
             .alias("regime_stability_score")])
     }
 
-    pub fn regimes_next_state_prob(self, regime_col: &str, num_states: usize, steps: usize) -> LazyFrame {
+    pub fn regimes_next_state_prob(
+        self,
+        regime_col: &str,
+        num_states: usize,
+        steps: usize,
+    ) -> LazyFrame {
         let name_str = regime_col.to_string();
         self.0.clone().with_columns([col(&name_str)
             .map(
                 move |s| {
                     let ca = s.u32()?;
                     let states: Vec<u32> = ca.into_iter().map(|v| v.unwrap_or(0)).collect();
-                    let matrix = quantwave_core::RegimeAnalytics::transition_matrix(&states, num_states);
-                    
+                    let matrix =
+                        quantwave_core::RegimeAnalytics::transition_matrix(&states, num_states);
+
                     let mut builders = ListPrimitiveChunkedBuilder::<Float64Type>::new(
                         "next_state_probs".into(),
                         s.len(),
@@ -4087,10 +4148,12 @@ impl<'a> QuantWaveNamespace<'a> {
                     );
 
                     for &current in &states {
-                        let probs = quantwave_core::RegimeAnalytics::forecast_state(&matrix, current, steps);
+                        let probs = quantwave_core::RegimeAnalytics::forecast_state(
+                            &matrix, current, steps,
+                        );
                         builders.append_slice(&probs);
                     }
-                    
+
                     let list_ca = builders.finish();
                     Ok(Some(Column::from(list_ca.into_series())))
                 },
@@ -4100,7 +4163,9 @@ impl<'a> QuantWaveNamespace<'a> {
     }
 
     pub fn filter_by_regime(self, regime_col: &str, target_regime: u32) -> LazyFrame {
-        self.0.clone().filter(col(regime_col).eq(lit(target_regime)))
+        self.0
+            .clone()
+            .filter(col(regime_col).eq(lit(target_regime)))
     }
 
     pub fn apply_regime_strategy(
@@ -4115,8 +4180,10 @@ impl<'a> QuantWaveNamespace<'a> {
                 .then(col(signal_col) * lit(weight))
                 .otherwise(case_expr);
         }
-        
-        self.0.clone().with_columns([case_expr.alias("regime_adjusted_signal")])
+
+        self.0
+            .clone()
+            .with_columns([case_expr.alias("regime_adjusted_signal")])
     }
 
     pub fn regimes_ms_garch(self, returns_col: &str) -> LazyFrame {
@@ -4132,7 +4199,7 @@ impl<'a> QuantWaveNamespace<'a> {
                     for i in 0..s.len() {
                         let ret = ca.get(i).unwrap_or(0.0);
                         let (regime, vol) = model.next(ret);
-                        
+
                         let r_val = match regime {
                             quantwave_core::regimes::MarketRegime::Steady => 0u32,
                             quantwave_core::regimes::MarketRegime::Crisis => 1,
@@ -4163,7 +4230,7 @@ impl<'a> QuantWaveNamespace<'a> {
 
     pub fn regimes_ensemble(self, columns: &[&str], weights: &[f64]) -> LazyFrame {
         let cols: Vec<String> = columns.iter().map(|s| s.to_string()).collect();
-        let col_exprs: Vec<Expr> = cols.iter().map(|c| col(c)).collect();
+        let col_exprs: Vec<Expr> = cols.iter().map(col).collect();
         let w_vec = weights.to_vec();
 
         self.0.clone().with_columns([as_struct(col_exprs)
@@ -4172,26 +4239,29 @@ impl<'a> QuantWaveNamespace<'a> {
                     let ca = s.struct_()?;
                     let n_rows = s.len();
                     let n_dims = cols.len();
-                    let ensemble = quantwave_core::regimes::ensemble::RegimeEnsemble::new(w_vec.clone());
-                    
+                    let ensemble =
+                        quantwave_core::regimes::ensemble::RegimeEnsemble::new(w_vec.clone());
+
                     let mut results = Vec::with_capacity(n_rows);
                     for i in 0..n_rows {
                         let mut row_regimes = Vec::with_capacity(n_dims);
                         for c_name in &cols {
                             let f = ca.field_by_name(c_name)?;
                             let val = f.u32()?.get(i).unwrap_or(0);
-                            
+
                             let regime = match val {
                                 0 => quantwave_core::regimes::MarketRegime::Steady,
                                 1 => quantwave_core::regimes::MarketRegime::Crisis,
                                 2 => quantwave_core::regimes::MarketRegime::Bull,
                                 3 => quantwave_core::regimes::MarketRegime::Bear,
-                                v if v >= 4 => quantwave_core::regimes::MarketRegime::Cluster((v - 4) as u8),
+                                v if v >= 4 => {
+                                    quantwave_core::regimes::MarketRegime::Cluster((v - 4) as u8)
+                                }
                                 _ => quantwave_core::regimes::MarketRegime::Steady,
                             };
                             row_regimes.push(regime);
                         }
-                        
+
                         let consensus = ensemble.vote(&row_regimes);
                         let out = match consensus {
                             quantwave_core::regimes::MarketRegime::Steady => 0u32,
@@ -4203,7 +4273,10 @@ impl<'a> QuantWaveNamespace<'a> {
                         results.push(out);
                     }
 
-                    Ok(Some(Column::from(Series::new("ensemble_regime".into(), results))))
+                    Ok(Some(Column::from(Series::new(
+                        "ensemble_regime".into(),
+                        results,
+                    ))))
                 },
                 GetOutput::from_type(DataType::UInt32),
             )
@@ -4232,7 +4305,10 @@ impl<'a> QuantWaveNamespace<'a> {
                         results.push(out);
                     }
 
-                    Ok(Some(Column::from(Series::new("tar_regime".into(), results))))
+                    Ok(Some(Column::from(Series::new(
+                        "tar_regime".into(),
+                        results,
+                    ))))
                 },
                 GetOutput::from_type(DataType::UInt32),
             )
@@ -4251,8 +4327,12 @@ impl<'a> QuantWaveNamespace<'a> {
                         vec![0.001, -0.002],
                         vec![0.01, 0.02],
                         vec![
-                            quantwave_core::regimes::hsmm::DurationDistribution::Poisson { lambda: 5.0 },
-                            quantwave_core::regimes::hsmm::DurationDistribution::Poisson { lambda: 2.0 },
+                            quantwave_core::regimes::hsmm::DurationDistribution::Poisson {
+                                lambda: 5.0,
+                            },
+                            quantwave_core::regimes::hsmm::DurationDistribution::Poisson {
+                                lambda: 2.0,
+                            },
                         ],
                     );
                     let mut values = Vec::with_capacity(s.len());
@@ -4268,7 +4348,10 @@ impl<'a> QuantWaveNamespace<'a> {
                         values.push(out);
                     }
 
-                    Ok(Some(Column::from(Series::new("hsmm_regime".into(), values))))
+                    Ok(Some(Column::from(Series::new(
+                        "hsmm_regime".into(),
+                        values,
+                    ))))
                 },
                 GetOutput::from_type(DataType::UInt32),
             )
@@ -4300,7 +4383,10 @@ impl<'a> QuantWaveNamespace<'a> {
                         values.push(out);
                     }
 
-                    Ok(Some(Column::from(Series::new("hmm_gas_regime".into(), values))))
+                    Ok(Some(Column::from(Series::new(
+                        "hmm_gas_regime".into(),
+                        values,
+                    ))))
                 },
                 GetOutput::from_type(DataType::UInt32),
             )
@@ -4316,31 +4402,23 @@ impl<'a> QuantWaveNamespace<'a> {
         let ret_str = returns_col.to_string();
         let reg_str = regime_col.to_string();
 
-        self.0
-            .clone()
-            .group_by([col(&reg_str)])
-            .agg([
-                col(&ret_str).mean().alias("mean_return"),
-                col(&ret_str).std(1).alias("volatility"),
-                (col(&ret_str).mean() / col(&ret_str).std(1) * lit(annualization_factor.sqrt()))
-                    .alias("sharpe_ratio"),
-                col(&ret_str).skew(true).alias("skewness"),
-                col(&ret_str).kurtosis(true, true).alias("kurtosis"),
-                // Sortino Ratio: Mean return / Downside Deviation
-                (col(&ret_str).mean() 
-                    / col(&ret_str).filter(col(&ret_str).lt(lit(0.0))).std(1) 
-                    * lit(annualization_factor.sqrt()))
-                .alias("sortino_ratio"),
-                // For Max Drawdown and Ulcer Index in an AGG context, we can use map_groups if needed,
-                // but for now let's stick to simpler metrics or use a robust multi-step approach.
-                // We'll calculate drawdown stats by first expanding the groups.
-            ])
+        self.0.clone().group_by([col(&reg_str)]).agg([
+            col(&ret_str).mean().alias("mean_return"),
+            col(&ret_str).std(1).alias("volatility"),
+            (col(&ret_str).mean() / col(&ret_str).std(1) * lit(annualization_factor.sqrt()))
+                .alias("sharpe_ratio"),
+            col(&ret_str).skew(true).alias("skewness"),
+            col(&ret_str).kurtosis(true, true).alias("kurtosis"),
+            // Sortino Ratio: Mean return / Downside Deviation
+            (col(&ret_str).mean() / col(&ret_str).filter(col(&ret_str).lt(lit(0.0))).std(1)
+                * lit(annualization_factor.sqrt()))
+            .alias("sortino_ratio"),
+            // For Max Drawdown and Ulcer Index in an AGG context, we can use map_groups if needed,
+            // but for now let's stick to simpler metrics or use a robust multi-step approach.
+            // We'll calculate drawdown stats by first expanding the groups.
+        ])
     }
 }
-
-
-
-
 
 #[cfg(test)]
 mod tests {
@@ -4362,14 +4440,8 @@ mod tests {
             .collect()?;
 
         let ha = out.column("heikin_ashi_data")?.struct_()?;
-        assert_eq!(
-            ha.field_by_name("ha_open".into())?.f64()?.get(0),
-            Some(10.5)
-        );
-        assert_eq!(
-            ha.field_by_name("ha_close".into())?.f64()?.get(0),
-            Some(10.25)
-        );
+        assert_eq!(ha.field_by_name("ha_open")?.f64()?.get(0), Some(10.5));
+        assert_eq!(ha.field_by_name("ha_close")?.f64()?.get(0), Some(10.25));
 
         Ok(())
     }
@@ -4408,14 +4480,8 @@ mod tests {
             .collect()?;
 
         let atr_ts = out.column("atr_ts_data")?.struct_()?;
-        assert!(atr_ts.field_by_name("stop".into())?.f64()?.get(0).is_some());
-        assert!(
-            atr_ts
-                .field_by_name("direction".into())?
-                .f64()?
-                .get(0)
-                .is_some()
-        );
+        assert!(atr_ts.field_by_name("stop")?.f64()?.get(0).is_some());
+        assert!(atr_ts.field_by_name("direction")?.f64()?.get(0).is_some());
 
         Ok(())
     }
@@ -4435,8 +4501,8 @@ mod tests {
             .collect()?;
 
         let pivot = out.column("pivot_points_data")?.struct_()?;
-        assert!(pivot.field_by_name("p".into())?.f64()?.get(0).is_some());
-        assert!(pivot.field_by_name("r1".into())?.f64()?.get(0).is_some());
+        assert!(pivot.field_by_name("p")?.f64()?.get(0).is_some());
+        assert!(pivot.field_by_name("r1")?.f64()?.get(0).is_some());
 
         Ok(())
     }
@@ -4455,20 +4521,8 @@ mod tests {
             .collect()?;
 
         let fractals = out.column("fractals_data")?.struct_()?;
-        assert!(
-            fractals
-                .field_by_name("bearish".into())?
-                .bool()?
-                .get(4)
-                .unwrap()
-        );
-        assert!(
-            fractals
-                .field_by_name("bullish".into())?
-                .bool()?
-                .get(4)
-                .unwrap()
-        );
+        assert!(fractals.field_by_name("bearish")?.bool()?.get(4).unwrap());
+        assert!(fractals.field_by_name("bullish")?.bool()?.get(4).unwrap());
 
         Ok(())
     }
@@ -4487,20 +4541,8 @@ mod tests {
             .collect()?;
 
         let ichimoku = out.column("ichimoku_data")?.struct_()?;
-        assert!(
-            ichimoku
-                .field_by_name("tenkan".into())?
-                .f64()?
-                .get(4)
-                .is_some()
-        );
-        assert!(
-            ichimoku
-                .field_by_name("kijun".into())?
-                .f64()?
-                .get(4)
-                .is_some()
-        );
+        assert!(ichimoku.field_by_name("tenkan")?.f64()?.get(4).is_some());
+        assert!(ichimoku.field_by_name("kijun")?.f64()?.get(4).is_some());
 
         Ok(())
     }
@@ -4520,8 +4562,8 @@ mod tests {
             .collect()?;
 
         let wt = out.column("wavetrend_data")?.struct_()?;
-        assert!(wt.field_by_name("wt1".into())?.f64()?.get(0).is_some());
-        assert!(wt.field_by_name("wt2".into())?.f64()?.get(0).is_some());
+        assert!(wt.field_by_name("wt1")?.f64()?.get(0).is_some());
+        assert!(wt.field_by_name("wt2")?.f64()?.get(0).is_some());
 
         Ok(())
     }
@@ -4541,20 +4583,8 @@ mod tests {
             .collect()?;
 
         let vortex = out.column("vortex_data")?.struct_()?;
-        assert!(
-            vortex
-                .field_by_name("vi_plus".into())?
-                .f64()?
-                .get(0)
-                .is_some()
-        );
-        assert!(
-            vortex
-                .field_by_name("vi_minus".into())?
-                .f64()?
-                .get(0)
-                .is_some()
-        );
+        assert!(vortex.field_by_name("vi_plus")?.f64()?.get(0).is_some());
+        assert!(vortex.field_by_name("vi_minus")?.f64()?.get(0).is_some());
 
         Ok(())
     }
@@ -4574,18 +4604,8 @@ mod tests {
             .collect()?;
 
         let ttm = out.column("ttm_squeeze_data")?.struct_()?;
-        assert!(
-            ttm.field_by_name("histogram".into())?
-                .f64()?
-                .get(0)
-                .is_some()
-        );
-        assert!(
-            ttm.field_by_name("is_squeezed".into())?
-                .bool()?
-                .get(0)
-                .is_some()
-        );
+        assert!(ttm.field_by_name("histogram")?.f64()?.get(0).is_some());
+        assert!(ttm.field_by_name("is_squeezed")?.bool()?.get(0).is_some());
 
         Ok(())
     }
@@ -4605,18 +4625,9 @@ mod tests {
 
         let donchian = out.column("donchian_data")?.struct_()?;
         // bar 4: H=13, L=10. Window (12,7), (11,9), (13,10). Upper=13, Lower=7, Middle=10
-        assert_eq!(
-            donchian.field_by_name("upper".into())?.f64()?.get(3),
-            Some(13.0)
-        );
-        assert_eq!(
-            donchian.field_by_name("middle".into())?.f64()?.get(3),
-            Some(10.0)
-        );
-        assert_eq!(
-            donchian.field_by_name("lower".into())?.f64()?.get(3),
-            Some(7.0)
-        );
+        assert_eq!(donchian.field_by_name("upper")?.f64()?.get(3), Some(13.0));
+        assert_eq!(donchian.field_by_name("middle")?.f64()?.get(3), Some(10.0));
+        assert_eq!(donchian.field_by_name("lower")?.f64()?.get(3), Some(7.0));
 
         Ok(())
     }
@@ -4650,18 +4661,9 @@ mod tests {
             .collect()?;
 
         let keltner = out.column("keltner_data")?.struct_()?;
-        assert_eq!(
-            keltner.field_by_name("middle".into())?.f64()?.get(0),
-            Some(10.0)
-        );
-        assert_eq!(
-            keltner.field_by_name("upper".into())?.f64()?.get(0),
-            Some(18.0)
-        );
-        assert_eq!(
-            keltner.field_by_name("lower".into())?.f64()?.get(0),
-            Some(2.0)
-        );
+        assert_eq!(keltner.field_by_name("middle")?.f64()?.get(0), Some(10.0));
+        assert_eq!(keltner.field_by_name("upper")?.f64()?.get(0), Some(18.0));
+        assert_eq!(keltner.field_by_name("lower")?.f64()?.get(0), Some(2.0));
 
         Ok(())
     }
@@ -4746,7 +4748,11 @@ mod tests {
             "volume" => [1000.0, 1100.0, 1200.0]
         ]?;
 
-        let out = df.lazy().ta().vpn("high", "low", "close", "volume", 30, 3).collect()?;
+        let out = df
+            .lazy()
+            .ta()
+            .vpn("high", "low", "close", "volume", 30, 3)
+            .collect()?;
         let vpn = out.column("vpn")?.f64()?;
         assert!(vpn.get(2).is_some());
         Ok(())
@@ -4759,10 +4765,14 @@ mod tests {
             "close" => [10.5, 10.5, 9.5]
         ]?;
 
-        let out = df.lazy().ta().gap_momentum("open", "close", 10, 5).collect()?;
+        let out = df
+            .lazy()
+            .ta()
+            .gap_momentum("open", "close", 10, 5)
+            .collect()?;
         let gm = out.column("gap_momentum")?.struct_()?;
-        assert!(gm.field_by_name("gap_ratio".into())?.f64()?.get(2).is_some());
-        assert!(gm.field_by_name("gap_signal".into())?.f64()?.get(2).is_some());
+        assert!(gm.field_by_name("gap_ratio")?.f64()?.get(2).is_some());
+        assert!(gm.field_by_name("gap_signal")?.f64()?.get(2).is_some());
         Ok(())
     }
 
@@ -4772,7 +4782,11 @@ mod tests {
             "price" => [100.0; 50]
         ]?;
 
-        let out = df.lazy().ta().autotune_filter("price", 20, 0.25).collect()?;
+        let out = df
+            .lazy()
+            .ta()
+            .autotune_filter("price", 20, 0.25)
+            .collect()?;
         let at = out.column("autotune")?.f64()?;
         assert!(at.get(49).is_some());
         Ok(())
@@ -4781,7 +4795,11 @@ mod tests {
     #[test]
     fn test_polars_adaptive_ema() -> PolarsResult<()> {
         let df = df!["h" => [10.0, 11.0, 10.5], "l" => [9.0, 10.0, 9.5], "c" => [9.5, 10.5, 10.0]]?;
-        let out = df.lazy().ta().adaptive_ema("h", "l", "c", 10, 2).collect()?;
+        let out = df
+            .lazy()
+            .ta()
+            .adaptive_ema("h", "l", "c", 10, 2)
+            .collect()?;
         assert!(out.column("adaptive_ema")?.f64()?.get(2).is_some());
         Ok(())
     }
@@ -4791,14 +4809,18 @@ mod tests {
         let df = df!["h" => [10.0, 11.0], "l" => [9.0, 10.0], "c" => [9.5, 10.5], "v" => [100.0, 200.0]]?;
         let out = df.lazy().ta().obvm("h", "l", "c", "v", 10, 3).collect()?;
         let data = out.column("obvm_data")?.struct_()?;
-        assert!(data.field_by_name("obvm".into())?.f64()?.get(1).is_some());
+        assert!(data.field_by_name("obvm")?.f64()?.get(1).is_some());
         Ok(())
     }
 
     #[test]
     fn test_polars_vfi() -> PolarsResult<()> {
         let df = df!["h" => [10.0, 11.0], "l" => [9.0, 10.0], "c" => [9.5, 10.5], "v" => [100.0, 200.0]]?;
-        let out = df.lazy().ta().vfi("h", "l", "c", "v", 10, 0.2, 2.5, 3).collect()?;
+        let out = df
+            .lazy()
+            .ta()
+            .vfi("h", "l", "c", "v", 10, 0.2, 2.5, 3)
+            .collect()?;
         assert!(out.column("vfi")?.f64()?.get(1).is_some());
         Ok(())
     }
@@ -4837,8 +4859,13 @@ mod tests {
 
     #[test]
     fn test_polars_harrington_adx() -> PolarsResult<()> {
-        let df = df!["h" => [10.0, 11.0, 12.0], "l" => [9.0, 10.0, 11.0], "c" => [9.5, 10.5, 11.5]]?;
-        let out = df.lazy().ta().harrington_adx("h", "l", "c", 10, 1).collect()?;
+        let df =
+            df!["h" => [10.0, 11.0, 12.0], "l" => [9.0, 10.0, 11.0], "c" => [9.5, 10.5, 11.5]]?;
+        let out = df
+            .lazy()
+            .ta()
+            .harrington_adx("h", "l", "c", 10, 1)
+            .collect()?;
         assert!(out.column("harrington_adx")?.f64()?.get(2).is_some());
         Ok(())
     }
@@ -4846,7 +4873,11 @@ mod tests {
     #[test]
     fn test_polars_tradj_ema() -> PolarsResult<()> {
         let df = df!["h" => [10.0, 11.0, 10.5], "l" => [9.0, 10.0, 9.5], "c" => [9.5, 10.5, 10.0]]?;
-        let out = df.lazy().ta().tradj_ema("h", "l", "c", 10, 2, 0.5).collect()?;
+        let out = df
+            .lazy()
+            .ta()
+            .tradj_ema("h", "l", "c", 10, 2, 0.5)
+            .collect()?;
         assert!(out.column("tradj_ema")?.f64()?.get(2).is_some());
         Ok(())
     }
@@ -4854,9 +4885,13 @@ mod tests {
     #[test]
     fn test_polars_sve_volatility_bands() -> PolarsResult<()> {
         let df = df!["h" => [10.0, 11.0, 10.5], "l" => [9.0, 10.0, 9.5], "c" => [9.5, 10.5, 10.0]]?;
-        let out = df.lazy().ta().sve_volatility_bands("h", "l", "c", 10, 1.5, 1.0, 3).collect()?;
+        let out = df
+            .lazy()
+            .ta()
+            .sve_volatility_bands("h", "l", "c", 10, 1.5, 1.0, 3)
+            .collect()?;
         let data = out.column("sve_bands_data")?.struct_()?;
-        assert!(data.field_by_name("upper".into())?.f64()?.get(2).is_some());
+        assert!(data.field_by_name("upper")?.f64()?.get(2).is_some());
         Ok(())
     }
 
@@ -4865,7 +4900,7 @@ mod tests {
         let df = df!["p" => [10.0, 11.0, 12.0, 11.0, 10.0]]?;
         let out = df.lazy().ta().exp_dev_bands("p", 10, 2.0, true).collect()?;
         let data = out.column("exp_dev_bands_data")?.struct_()?;
-        assert!(data.field_by_name("upper".into())?.f64()?.get(4).is_some());
+        assert!(data.field_by_name("upper")?.f64()?.get(4).is_some());
         Ok(())
     }
 
@@ -4878,8 +4913,8 @@ mod tests {
         let df = df!["returns" => obs.as_slice()]?;
         let out = df.lazy().ta().hmm_fit("returns", 2, 40, false).collect()?;
         let data = out.column("hmm_fit_data")?.struct_()?;
-        let state_col = data.field_by_name("hmm_fit_state".into())?;
-        let prob_col = data.field_by_name("hmm_fit_smooth_probs".into())?;
+        let state_col = data.field_by_name("hmm_fit_state")?;
+        let prob_col = data.field_by_name("hmm_fit_smooth_probs")?;
         let states = state_col.u32()?;
         let probs = prob_col.list()?;
         assert_eq!(states.len(), obs.len());
@@ -4945,7 +4980,9 @@ mod tests {
     /// Uses the exact field names from the prior market_structure impl.
     #[test]
     fn smoke_ta_pa_foundation() -> PolarsResult<()> {
-        let highs: Vec<f64> = (0..60).map(|i| 100.0 + (i as f64 * 0.8).sin() * 5.0 + (i as f64) * 0.3).collect();
+        let highs: Vec<f64> = (0..60)
+            .map(|i| 100.0 + (i as f64 * 0.8).sin() * 5.0 + (i as f64) * 0.3)
+            .collect();
         let lows: Vec<f64> = highs.iter().map(|&h| h - 1.5 - (h % 3.0) * 0.2).collect();
 
         let df = df!["high" => highs, "low" => lows]?;
@@ -4961,8 +4998,8 @@ mod tests {
         assert!(matches!(ms.dtype(), DataType::Struct(_)));
         let ca = ms.struct_()?;
         // bias is UInt32 per the new optimized impl
-        assert_eq!(ca.field_by_name("bias".into())?.dtype().clone(), DataType::UInt32);
-        assert!(ca.field_by_name("has_flip".into())?.bool()?.get(59).is_some());
+        assert_eq!(ca.field_by_name("bias")?.dtype().clone(), DataType::UInt32);
+        assert!(ca.field_by_name("has_flip")?.bool()?.get(59).is_some());
 
         // geometric_patterns -> Struct( flag: Struct(...), hs: Struct(...) )
         let out2 = out
@@ -4973,10 +5010,16 @@ mod tests {
         let gp = out2.column("geometric_patterns")?;
         assert!(matches!(gp.dtype(), DataType::Struct(_)));
         let gca = gp.struct_()?;
-        let flag = gca.field_by_name("flag".into())?;
+        let flag = gca.field_by_name("flag")?;
         assert!(matches!(flag.dtype(), DataType::Struct(_)));
         // pole_length_atr is the key rich field for sizing in the notebook strategy
-        assert!(flag.struct_()?.field_by_name("pole_length_atr".into())?.f64()?.get(59).is_some());
+        assert!(
+            flag.struct_()?
+                .field_by_name("pole_length_atr")?
+                .f64()?
+                .get(59)
+                .is_some()
+        );
 
         Ok(())
     }
@@ -4989,4 +5032,4 @@ impl QuantWaveExt for LazyFrame {
 }
 
 pub use bt::{BtNamespace, BtOptions, QuantWaveBtExt};
-pub use quantwave_backtest::{run_param_sweep, single_param_variants, SweepVariant};
+pub use quantwave_backtest::{SweepVariant, run_param_sweep, single_param_variants};

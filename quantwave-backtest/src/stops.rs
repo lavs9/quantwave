@@ -159,13 +159,13 @@ fn evaluate_stops_long(
 ) -> Option<StopExit> {
     match mode {
         StopEvaluationMode::CloseOnly => {
-            if let Some(tp) = stop_config.take_profit_pct {
-                if close >= entry_price * (1.0 + tp) {
-                    return Some(StopExit {
-                        kind: StopExitKind::TakeProfit,
-                        exit_price: close,
-                    });
-                }
+            if let Some(tp) = stop_config.take_profit_pct
+                && close >= entry_price * (1.0 + tp)
+            {
+                return Some(StopExit {
+                    kind: StopExitKind::TakeProfit,
+                    exit_price: close,
+                });
             }
             let mut effective_stop = f64::NEG_INFINITY;
             if let Some(sl) = stop_config.stop_loss_pct {
@@ -175,8 +175,9 @@ fn evaluate_stops_long(
                 effective_stop = effective_stop.max(level);
             }
             if effective_stop > f64::NEG_INFINITY && close <= effective_stop {
-                let kind = if stop_config.stop_loss_pct.is_some()
-                    && close <= entry_price * (1.0 - stop_config.stop_loss_pct.unwrap())
+                let kind = if stop_config
+                    .stop_loss_pct
+                    .is_some_and(|sl| close <= entry_price * (1.0 - sl))
                 {
                     StopExitKind::StopLoss
                 } else {
@@ -199,13 +200,13 @@ fn evaluate_stops_long(
                     });
                 }
             }
-            if let Some(level) = state.trailing_stop_level {
-                if low <= level {
-                    return Some(StopExit {
-                        kind: StopExitKind::TrailingStop,
-                        exit_price: level,
-                    });
-                }
+            if let Some(level) = state.trailing_stop_level
+                && low <= level
+            {
+                return Some(StopExit {
+                    kind: StopExitKind::TrailingStop,
+                    exit_price: level,
+                });
             }
             if let Some(tp) = stop_config.take_profit_pct {
                 let level = entry_price * (1.0 + tp);
@@ -232,13 +233,13 @@ fn evaluate_stops_short(
 ) -> Option<StopExit> {
     match mode {
         StopEvaluationMode::CloseOnly => {
-            if let Some(tp) = stop_config.take_profit_pct {
-                if close <= entry_price * (1.0 - tp) {
-                    return Some(StopExit {
-                        kind: StopExitKind::TakeProfit,
-                        exit_price: close,
-                    });
-                }
+            if let Some(tp) = stop_config.take_profit_pct
+                && close <= entry_price * (1.0 - tp)
+            {
+                return Some(StopExit {
+                    kind: StopExitKind::TakeProfit,
+                    exit_price: close,
+                });
             }
             let mut effective_stop = f64::INFINITY;
             if let Some(sl) = stop_config.stop_loss_pct {
@@ -248,8 +249,9 @@ fn evaluate_stops_short(
                 effective_stop = effective_stop.min(level);
             }
             if effective_stop < f64::INFINITY && close >= effective_stop {
-                let kind = if stop_config.stop_loss_pct.is_some()
-                    && close >= entry_price * (1.0 + stop_config.stop_loss_pct.unwrap())
+                let kind = if stop_config
+                    .stop_loss_pct
+                    .is_some_and(|sl| close >= entry_price * (1.0 + sl))
                 {
                     StopExitKind::StopLoss
                 } else {
@@ -271,13 +273,13 @@ fn evaluate_stops_short(
                     });
                 }
             }
-            if let Some(level) = state.trailing_stop_level {
-                if high >= level {
-                    return Some(StopExit {
-                        kind: StopExitKind::TrailingStop,
-                        exit_price: level,
-                    });
-                }
+            if let Some(level) = state.trailing_stop_level
+                && high >= level
+            {
+                return Some(StopExit {
+                    kind: StopExitKind::TrailingStop,
+                    exit_price: level,
+                });
             }
             if let Some(tp) = stop_config.take_profit_pct {
                 let level = entry_price * (1.0 - tp);

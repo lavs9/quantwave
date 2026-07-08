@@ -47,8 +47,9 @@ impl Next<f64> for CyberneticOscillator {
         self.rms_window.push_back(lp_val);
         self.sum_sq += val_sq;
 
-        if self.rms_window.len() > self.rms_len {
-            let oldest = self.rms_window.pop_front().unwrap();
+        if self.rms_window.len() > self.rms_len
+            && let Some(oldest) = self.rms_window.pop_front()
+        {
             self.sum_sq -= oldest * oldest;
         }
 

@@ -42,7 +42,7 @@ impl Next<f64> for ReverseEMA {
             self.prev_re[0] = val;
             let mut p = 2.0;
             for i in 1..8 {
-                val = (cc.powf(p) + 1.0) * val;
+                val *= cc.powf(p) + 1.0;
                 self.prev_re[i] = val;
                 p *= 2.0;
             }
@@ -124,8 +124,8 @@ mod tests {
             let streaming_results: Vec<f64> = inputs.iter().map(|&x| rema.next(x)).collect();
 
             // Reference implementation (TradeStation style, starting from 0)
-            let mut ema = 0.0;
-            let mut re = [0.0; 8];
+            let _ema = 0.0;
+            let _re = [0.0; 8];
             let mut prev_ema = 0.0;
             let mut prev_re = [0.0; 8];
             let cc = 1.0 - alpha;
@@ -141,7 +141,7 @@ mod tests {
                     prev_re[0] = val;
                     let mut p = 2.0;
                     for j in 1..8 {
-                        val = (cc.powf(p) + 1.0) * val;
+                        val *= cc.powf(p) + 1.0 ;
                         prev_re[j] = val;
                         p *= 2.0;
                     }

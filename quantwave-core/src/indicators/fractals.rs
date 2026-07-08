@@ -133,8 +133,8 @@ mod tests {
     #[test]
     fn test_fractals_basic() {
         let mut f = BillWilliamsFractals::new();
-        let h = vec![10.0, 11.0, 15.0, 12.0, 10.0];
-        let l = vec![5.0, 6.0, 2.0, 6.0, 7.0];
+        let h = [10.0, 11.0, 15.0, 12.0, 10.0];
+        let l = [5.0, 6.0, 2.0, 6.0, 7.0];
 
         for i in 0..4 {
             let (bear, bull) = f.next((h[i], l[i]));

@@ -4,8 +4,8 @@
 //! See `planning/SHARED_CAPITAL_PORTFOLIO_ADR.md`.
 
 use crate::{
-    apply_signal_modifiers, stops, BacktestConfig, BacktestError, BacktestResult, EquityPoint,
-    ExecutionDelay, ExecutionModel, InitialRiskPositionSizer, StopConfig, StrategySignal, Trade,
+    BacktestConfig, BacktestError, BacktestResult, EquityPoint, ExecutionDelay, ExecutionModel,
+    InitialRiskPositionSizer, StopConfig, StrategySignal, Trade, apply_signal_modifiers, stops,
 };
 use chrono::{DateTime, Utc};
 use quantwave_core::traits::Next;
@@ -98,13 +98,17 @@ fn allocate_entry_units(
     sign * units_from_budget.min(cap)
 }
 
-fn mark_to_market_equity(cash: f64, books: &HashMap<String, SymbolBook>, prices: &HashMap<String, f64>) -> f64 {
+fn mark_to_market_equity(
+    cash: f64,
+    books: &HashMap<String, SymbolBook>,
+    prices: &HashMap<String, f64>,
+) -> f64 {
     let mut eq = cash;
     for (sym, book) in books {
-        if book.exposure != 0.0 {
-            if let Some(&px) = prices.get(sym) {
-                eq += book.exposure * px;
-            }
+        if book.exposure != 0.0
+            && let Some(&px) = prices.get(sym)
+        {
+            eq += book.exposure * px;
         }
     }
     eq
@@ -118,7 +122,11 @@ pub(crate) fn simulate_shared_capital(
     _delay: ExecutionDelay,
     stops: &StopConfig,
     allocator: PortfolioAllocator,
-) -> (Vec<Trade>, HashMap<String, Vec<EquityPoint>>, Vec<EquityPoint>) {
+) -> (
+    Vec<Trade>,
+    HashMap<String, Vec<EquityPoint>>,
+    Vec<EquityPoint>,
+) {
     let initial_cash = match exec {
         ExecutionModel::Simple(cm) => cm.initial_cash,
         ExecutionModel::HighFidelity { .. } => 100_000.0,
@@ -233,13 +241,7 @@ pub(crate) fn simulate_shared_capital(
                 stops::evaluate_stops(stops, ohlc, is_long, book.entry_price, &mut book.stop_state)
             {
                 let snapshot = book.clone();
-                record_exit(
-                    &mut cash,
-                    sym,
-                    &snapshot,
-                    ts,
-                    stop_exit.exit_price,
-                );
+                record_exit(&mut cash, sym, &snapshot, ts, stop_exit.exit_price);
                 *book = SymbolBook {
                     exposure: 0.0,
                     entry_price: 0.0,
@@ -336,19 +338,10 @@ pub(crate) fn simulate_shared_capital(
             }
 
             if book.exposure == 0.0 {
-                let peers: Vec<(f64, f64)> = entry_peers
-                    .iter()
-                    .map(|(_, w, p)| (*w, *p))
-                    .collect();
+                let peers: Vec<(f64, f64)> = entry_peers.iter().map(|(_, w, p)| (*w, *p)).collect();
                 let my_weight = desired_raw.abs();
-                let allocated = allocate_entry_units(
-                    allocator,
-                    desired_raw,
-                    close,
-                    eq,
-                    &peers,
-                    my_weight,
-                );
+                let allocated =
+                    allocate_entry_units(allocator, desired_raw, close, eq, &peers, my_weight);
                 if allocated != 0.0 {
                     trade_id += 1;
                     *book = open_position(&mut cash, trade_id, allocated, ts, close, meta);
@@ -493,17 +486,14 @@ where
     let mut groups_map: BTreeMap<DateTime<Utc>, Vec<SymbolBar>> = BTreeMap::new();
     for bar in bars {
         let sig = generator.next(bar);
-        groups_map
-            .entry(bar.ts)
-            .or_default()
-            .push(SymbolBar {
-                symbol: bar.symbol.clone(),
-                close: bar.close,
-                high: bar.high,
-                low: bar.low,
-                raw_signal: sig.exposure,
-                meta: sig.metadata.clone(),
-            });
+        groups_map.entry(bar.ts).or_default().push(SymbolBar {
+            symbol: bar.symbol.clone(),
+            close: bar.close,
+            high: bar.high,
+            low: bar.low,
+            raw_signal: sig.exposure,
+            meta: sig.metadata.clone(),
+        });
     }
     let groups: Vec<TimestampGroup> = groups_map
         .into_iter()
@@ -519,14 +509,8 @@ where
     let stops = &config.stop_config;
     let allocator = config.portfolio_allocator;
 
-    let (trades, per_symbol_equity, portfolio_eq) = simulate_shared_capital(
-        &groups,
-        exec,
-        sizer,
-        delay,
-        stops,
-        allocator,
-    );
+    let (trades, per_symbol_equity, portfolio_eq) =
+        simulate_shared_capital(&groups, exec, sizer, delay, stops, allocator);
 
     crate::BacktestEngine::assemble_shared_capital_result(
         &config,

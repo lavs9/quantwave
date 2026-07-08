@@ -2,8 +2,7 @@
 //!
 //! Run: `cargo run -p quantwave-core --bin export_metadata > metadata_export.json`
 
-use quantwave_core::indicators::metadata::IndicatorMetadata;
-use quantwave_core::indicators::metadata_registry::{RegisteredMetadata, ALL_REGISTERED};
+use quantwave_core::indicators::metadata_registry::{ALL_REGISTERED, RegisteredMetadata};
 use serde::Serialize;
 use std::io::{self, Write};
 
@@ -35,14 +34,24 @@ struct ExportedMetadata {
 fn infer_boundary_kind(r: &RegisteredMetadata) -> &'static str {
     let cat = r.meta.category.to_lowercase();
     let name = r.slug;
-    
-    if cat.contains("price action") || name == "sr_monitor" || name == "geometric_patterns" || name == "market_structure" {
+
+    if cat.contains("price action")
+        || name == "sr_monitor"
+        || name == "geometric_patterns"
+        || name == "market_structure"
+    {
         return "event";
     }
     if cat.contains("pattern") || name.starts_with("cdl") {
         return "pattern";
     }
-    if name == "obv" || name == "ad" || name == "nvi" || name == "pvi" || name == "vwap" || name == "anchored_vwap" {
+    if name == "obv"
+        || name == "ad"
+        || name == "nvi"
+        || name == "pvi"
+        || name == "vwap"
+        || name == "anchored_vwap"
+    {
         return "cumulative";
     }
     "scalar"
@@ -77,14 +86,12 @@ fn export_one(r: &RegisteredMetadata) -> ExportedMetadata {
 }
 
 fn main() -> io::Result<()> {
-    let mut out: Vec<ExportedMetadata> = ALL_REGISTERED
-        .iter()
-        .map(|r| export_one(r))
-        .collect();
+    let mut out: Vec<ExportedMetadata> = ALL_REGISTERED.iter().map(export_one).collect();
 
     out.sort_by(|a, b| a.slug.cmp(&b.slug));
 
-    let json = serde_json::to_string_pretty(&out).expect("serialize metadata");
+    let json = serde_json::to_string_pretty(&out)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
     io::stdout().write_all(json.as_bytes())?;
     io::stdout().write_all(b"\n")?;
     Ok(())

@@ -76,10 +76,8 @@ impl Next<f64> for RSI {
             return rsi_from_avgs(self.avg_gain, self.avg_loss);
         }
 
-        self.avg_gain =
-            (self.avg_gain * (self.period_f - 1.0) + gain) / self.period_f;
-        self.avg_loss =
-            (self.avg_loss * (self.period_f - 1.0) + loss) / self.period_f;
+        self.avg_gain = (self.avg_gain * (self.period_f - 1.0) + gain) / self.period_f;
+        self.avg_loss = (self.avg_loss * (self.period_f - 1.0) + loss) / self.period_f;
         rsi_from_avgs(self.avg_gain, self.avg_loss)
     }
 }

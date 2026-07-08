@@ -117,8 +117,8 @@ mod tests {
             let (sm, tr) = ri.next(input);
             assert!(!sm.is_nan());
             assert!(!tr.is_nan());
-            assert!(sm >= -1.0 && sm <= 1.0);
-            assert!(tr >= -1.0 && tr <= 1.0);
+            assert!((-1.0..=1.0).contains(&sm));
+            assert!((-1.0..=1.0).contains(&tr));
         }
     }
 

@@ -1,3 +1,10 @@
+#![allow(
+    clippy::panic,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::borrow_deref_ref,
+    clippy::field_reassign_with_default
+)]
 //! Stop-loss / take-profit / trailing stops (quantwave-cr6v.9).
 //!
 //! `cargo nextest run -p quantwave-backtest stops`
@@ -6,8 +13,8 @@ use approx::assert_relative_eq;
 use chrono::{TimeZone, Utc};
 use polars::prelude::*;
 use quantwave_backtest::{
-    run_streaming_simulation, BacktestConfig, BacktestEngine, Bar, CostModel, ExecutionModel,
-    StopConfig, StopEvaluationMode, StrategySignal,
+    BacktestConfig, BacktestEngine, Bar, CostModel, ExecutionModel, StopConfig, StopEvaluationMode,
+    StrategySignal, run_streaming_simulation,
 };
 
 fn zero_cost_config(stops: StopConfig) -> BacktestConfig {
@@ -262,15 +269,9 @@ fn test_ohlc_stops_batch_streaming_parity() {
         })
         .collect();
 
-    let stream = run_streaming_simulation(
-        &bars,
-        SignalReplay {
-            signals,
-            idx: 0,
-        },
-        ohlc_config(stops),
-    )
-    .expect("streaming ohlc stops");
+    let stream =
+        run_streaming_simulation(&bars, SignalReplay { signals, idx: 0 }, ohlc_config(stops))
+            .expect("streaming ohlc stops");
 
     assert_eq!(batch.trades.height(), stream.trades.height());
     assert_relative_eq!(exit_price(&batch), exit_price(&stream), epsilon = 1e-9);
@@ -311,10 +312,7 @@ fn test_stops_batch_streaming_parity() {
 
     let stream = run_streaming_simulation(
         &bars,
-        SignalReplay {
-            signals,
-            idx: 0,
-        },
+        SignalReplay { signals, idx: 0 },
         zero_cost_config(stops),
     )
     .expect("streaming stops");

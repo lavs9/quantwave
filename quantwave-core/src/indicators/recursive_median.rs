@@ -51,7 +51,7 @@ impl Next<f64> for RecursiveMedian {
         }
 
         let mut sorted: Vec<f64> = self.window.iter().copied().collect();
-        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
         let median = sorted[2]; // Median of 5 elements
 
         let rm = self.alpha1 * median + (1.0 - self.alpha1) * self.prev_rm;
@@ -216,9 +216,7 @@ mod tests {
                     batch_results.push(inputs[i]);
                     continue;
                 }
-                let mut window = vec![
-                    inputs[i], inputs[i-1], inputs[i-2], inputs[i-3], inputs[i-4]
-                ];
+                let mut window = [inputs[i], inputs[i-1], inputs[i-2], inputs[i-3], inputs[i-4]];
                 window.sort_by(|a, b| a.partial_cmp(b).unwrap());
                 let median = window[2];
                 let val = alpha1 * median + (1.0 - alpha1) * prev_rm;

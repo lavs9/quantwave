@@ -1,6 +1,7 @@
 //! Polars `.bt` namespace integration tests (quantwave-cr6v.5).
 //!
 //! `cargo nextest run -p quantwave-polars bt`
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use approx::assert_relative_eq;
 use polars::prelude::*;
@@ -15,7 +16,10 @@ fn single_trade_df() -> DataFrame {
                 .map(|i| 1_700_000_000i64 + (i as i64) * 3600)
                 .collect::<Vec<_>>(),
         ),
-        Column::new("close".into(), vec![100.0, 101.0, 102.5, 103.0, 102.0, 101.0]),
+        Column::new(
+            "close".into(),
+            vec![100.0, 101.0, 102.5, 103.0, 102.0, 101.0],
+        ),
         Column::new("signal".into(), vec![0.0, 1.0, 1.0, 1.0, 0.0, 0.0]),
     ])
     .unwrap()
@@ -45,7 +49,11 @@ fn test_bt_backtest_lazyframe() {
         .expect("backtest should succeed");
 
     assert_eq!(result.trades.height(), 1);
-    assert_relative_eq!(*result.stats.get("num_trades").unwrap(), 1.0, epsilon = 1e-9);
+    assert_relative_eq!(
+        *result.stats.get("num_trades").unwrap(),
+        1.0,
+        epsilon = 1e-9
+    );
     assert_eq!(result.equity_curve.height(), 6);
 }
 
@@ -88,9 +96,15 @@ fn test_bt_backtest_with_report() {
 fn test_bt_backtest_filter_and_multiplier() {
     let df = DataFrame::new(vec![
         Column::new("timestamp".into(), vec![1i64, 2, 3, 4, 5, 6]),
-        Column::new("close".into(), vec![100.0, 100.0, 101.0, 102.0, 101.0, 100.0]),
+        Column::new(
+            "close".into(),
+            vec![100.0, 100.0, 101.0, 102.0, 101.0, 100.0],
+        ),
         Column::new("signal".into(), vec![0.0, 1.0, 1.0, 1.0, 0.0, 0.0]),
-        Column::new("regime_ok".into(), vec![true, false, true, true, true, true]),
+        Column::new(
+            "regime_ok".into(),
+            vec![true, false, true, true, true, true],
+        ),
         Column::new("size_mult".into(), vec![1.0, 1.0, 0.5, 0.5, 1.0, 1.0]),
     ])
     .unwrap();
@@ -121,7 +135,11 @@ fn test_bt_backtest_filter_and_multiplier() {
 #[test]
 fn test_bt_backtest_multi_symbol_smoke() {
     let timestamps = vec![
-        1_700_010_000i64, 1_700_010_000, 1_700_010_001, 1_700_010_001, 1_700_010_002,
+        1_700_010_000i64,
+        1_700_010_000,
+        1_700_010_001,
+        1_700_010_001,
+        1_700_010_002,
         1_700_010_002,
     ];
     let symbols = vec!["AAA", "BBB", "AAA", "BBB", "AAA", "BBB"];
@@ -158,9 +176,18 @@ fn test_bt_walk_forward_optimize_smoke() {
     let n = 60i64;
     let timestamps: Vec<i64> = (0..n).collect();
     let closes: Vec<f64> = (0..n)
-        .map(|i| 100.0 + if i < 30 { i as f64 } else { 30.0 - (i - 30) as f64 })
+        .map(|i| {
+            100.0
+                + if i < 30 {
+                    i as f64
+                } else {
+                    30.0 - (i - 30) as f64
+                }
+        })
         .collect();
-    let signals_a: Vec<f64> = (0..n).map(|i| if i % 2 == 0 { 1.0 } else { -1.0 }).collect();
+    let signals_a: Vec<f64> = (0..n)
+        .map(|i| if i % 2 == 0 { 1.0 } else { -1.0 })
+        .collect();
     let signals_b: Vec<f64> = vec![1.0; n as usize];
 
     let df = DataFrame::new(vec![

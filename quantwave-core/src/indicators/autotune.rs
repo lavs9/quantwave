@@ -217,7 +217,7 @@ mod tests {
             let mut bp_hist = [0.0; 2];
             let mut expected = Vec::with_capacity(inputs.len());
 
-            for (i, &input) in inputs.iter().enumerate() {
+            for &input in inputs.iter() {
                 let filt = hp.next(input);
                 filt_hist.push_front(filt);
                 if filt_hist.len() > 2 * window {

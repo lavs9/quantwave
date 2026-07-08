@@ -3,7 +3,9 @@
 //! Runs one backtest per variant and returns a Polars DataFrame with param columns
 //! plus [`PerformanceMetrics`] columns (vectorbt / RaptorBT `batch_spread` pattern).
 
-use crate::{BacktestConfig, BacktestEngine, BacktestError, PerformanceMetrics};
+use crate::{
+    BacktestConfig, BacktestEngine, BacktestError, PerformanceMetrics, internal_invariant,
+};
 use polars::prelude::*;
 use std::collections::HashMap;
 
@@ -71,14 +73,28 @@ pub fn run_param_sweep(
                     "variant missing param key '{key}' (expected keys: {param_keys:?})"
                 ))
             })?;
-            param_cols.get_mut(key).unwrap().push(value);
+            param_cols
+                .get_mut(key)
+                .ok_or_else(|| {
+                    internal_invariant(format!(
+                        "param column '{key}' missing from sweep accumulator"
+                    ))
+                })?
+                .push(value);
         }
 
         let mut config = base_config.clone();
         config.signal_col = variant.signal_col.clone();
         let report = BacktestEngine::new(config).backtest_with_report(lf.clone())?;
         for (name, value) in report.metrics.row_iter() {
-            metric_cols.get_mut(name).unwrap().push(value);
+            metric_cols
+                .get_mut(name)
+                .ok_or_else(|| {
+                    internal_invariant(format!(
+                        "metric column '{name}' missing from sweep accumulator"
+                    ))
+                })?
+                .push(value);
         }
     }
 
@@ -86,13 +102,21 @@ pub fn run_param_sweep(
     for key in &param_keys {
         columns.push(Column::new(
             PlSmallStr::from_str(key),
-            param_cols.remove(key).unwrap(),
+            param_cols.remove(key).ok_or_else(|| {
+                internal_invariant(format!(
+                    "param column '{key}' missing when building sweep df"
+                ))
+            })?,
         ));
     }
     for name in PerformanceMetrics::column_names() {
         columns.push(Column::new(
             PlSmallStr::from_str(name),
-            metric_cols.remove(name).unwrap(),
+            metric_cols.remove(name).ok_or_else(|| {
+                internal_invariant(format!(
+                    "metric column '{name}' missing when building sweep df"
+                ))
+            })?,
         ));
     }
 
@@ -170,12 +194,9 @@ mod tests {
 
     #[test]
     fn test_sweep_variants_produce_different_final_equity() {
-        let variants = single_param_variants(
-            "entry_bar",
-            &[1.0, 2.0],
-            &["signal_early", "signal_late"],
-        )
-        .unwrap();
+        let variants =
+            single_param_variants("entry_bar", &[1.0, 2.0], &["signal_early", "signal_late"])
+                .unwrap();
 
         let df = run_param_sweep(sweep_base_df().lazy(), &variants, &zero_cost_config()).unwrap();
         assert_eq!(df.height(), 2);
@@ -210,9 +231,6 @@ mod tests {
         assert_eq!(df.height(), 3);
         assert!(df.column("mode").is_ok());
         assert!(df.column("stop_pct").is_ok());
-        assert_eq!(
-            df.column("mode").unwrap().f64().unwrap().len(),
-            3
-        );
+        assert_eq!(df.column("mode").unwrap().f64().unwrap().len(), 3);
     }
 }

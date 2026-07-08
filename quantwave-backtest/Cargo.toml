@@ -12,8 +12,17 @@ documentation = "https://docs.rs/quantwave-backtest"
 categories.workspace = true
 keywords.workspace = true
 
-[lints]
-workspace = true
+# Stricter than workspace defaults: production paths must not panic (quantwave-5ipk.4).
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+panic = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+needless_range_loop = "allow"
+type_complexity = "allow"
+too_many_arguments = "allow"
 
 [dependencies]
 quantwave-core = { workspace = true }

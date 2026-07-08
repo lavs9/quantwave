@@ -23,8 +23,9 @@ impl DurationDistribution {
     pub fn p(&self, d: usize) -> f64 {
         match self {
             Self::Poisson { lambda } => {
-                let dist = Poisson::new(*lambda).unwrap();
-                dist.pmf(d as u64)
+                Poisson::new(*lambda)
+                    .map(|dist| dist.pmf(d as u64))
+                    .unwrap_or(0.0)
             }
             Self::Fixed { duration } => {
                 if d == *duration { 1.0 } else { 0.0 }

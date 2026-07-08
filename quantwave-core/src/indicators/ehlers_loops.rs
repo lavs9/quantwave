@@ -277,7 +277,7 @@ mod tests {
                 vol_results.push(res);
             }
 
-            for (_i, (s, bp, bv)) in streaming_results.iter().zip(price_results.iter().zip(vol_results.iter())).map(|(s, (bp, bv))| (s, bp, bv)).enumerate() {
+            for (s, bp, bv) in streaming_results.iter().zip(price_results.iter().zip(vol_results.iter())).map(|(s, (bp, bv))| (s, bp, bv)) {
                 approx::assert_relative_eq!(s.0, *bp, epsilon = 1e-10);
                 approx::assert_relative_eq!(s.1, *bv, epsilon = 1e-10);
             }

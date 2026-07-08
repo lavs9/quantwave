@@ -176,7 +176,7 @@ mod tests {
 
             let mut batch_results = Vec::with_capacity(input.len());
             for i in 0..input.len() {
-                let start = if i + 1 > period { i + 1 - period } else { 0 };
+                let start = (i + 1).saturating_sub(period);
                 let window = &input[start..i+1];
                 let sum_sq: f64 = window.iter().map(|&x| x*x).sum();
                 batch_results.push((sum_sq / window.len() as f64).sqrt());

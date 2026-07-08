@@ -1,6 +1,6 @@
-use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 pub use crate::indicators::incremental::bbands::BBANDS;
 pub use crate::indicators::incremental::dema::DEMA;
+use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 impl From<usize> for DEMA {
     fn from(p: usize) -> Self {
         Self::new(p)
@@ -27,10 +27,10 @@ impl From<usize> for MIDPRICE {
         Self::new(p)
     }
 }
-pub use crate::indicators::mama::MAMA;
-pub use crate::indicators::incremental::sar::{SAR, SAREXT};
-pub use crate::indicators::incremental::mavp::MAVP;
 pub use crate::indicators::incremental::hilbert_ta::HT_TRENDLINE;
+pub use crate::indicators::incremental::mavp::MAVP;
+pub use crate::indicators::incremental::sar::{SAR, SAREXT};
+pub use crate::indicators::mama::MAMA;
 
 #[cfg(test)]
 mod tests {

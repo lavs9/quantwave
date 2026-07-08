@@ -52,11 +52,11 @@ impl BBANDS {
             return NAN_TRIPLE;
         }
 
-        if self.window.len() == tp {
-            if let Some(old) = self.window.pop_front() {
-                self.sum -= old;
-                self.sum_sq -= old * old;
-            }
+        if self.window.len() == tp
+            && let Some(old) = self.window.pop_front()
+        {
+            self.sum -= old;
+            self.sum_sq -= old * old;
         }
 
         self.window.push_back(input);

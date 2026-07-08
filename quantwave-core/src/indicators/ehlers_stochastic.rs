@@ -110,7 +110,7 @@ mod tests {
         let inputs = vec![10.0, 11.0, 12.0, 13.0, 14.0, 15.0];
         for input in inputs {
             let res = es.next(input);
-            assert!(res >= 0.0 && res <= 100.0);
+            assert!((0.0..=100.0).contains(&res));
         }
     }
 

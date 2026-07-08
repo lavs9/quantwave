@@ -1,7 +1,7 @@
-use crate::indicators::metadata::IndicatorMetadata;
 pub use crate::indicators::incremental::hilbert_ta::{
     HT_DCPERIOD, HT_DCPHASE, HT_PHASOR, HT_SINE, HT_TRENDMODE,
 };
+use crate::indicators::metadata::IndicatorMetadata;
 
 pub const HT_DCPERIOD_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Hilbert Transform - Dominant Cycle Period (HT_DCPERIOD)",

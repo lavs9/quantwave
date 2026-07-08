@@ -1,3 +1,12 @@
+//! Gold-standard test helpers (cfg(test) only).
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::expect_fun_call,
+    clippy::unused_enumerate_index,
+    clippy::collapsible_if
+)]
+
 use crate::indicators::market_structure::Bias;
 use crate::traits::Next;
 use serde::Deserialize;

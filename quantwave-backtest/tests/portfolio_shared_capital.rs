@@ -1,3 +1,10 @@
+#![allow(
+    clippy::panic,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::borrow_deref_ref,
+    clippy::field_reassign_with_default
+)]
 //! Shared-capital portfolio simulation (quantwave-qzpi.7).
 //!
 //! `cargo nextest run -p quantwave-backtest portfolio_shared_capital`
@@ -25,8 +32,16 @@ fn shared_capital_config(signal_col: &str) -> BacktestConfig {
 
 fn make_two_symbol_df() -> DataFrame {
     let timestamps = vec![
-        1_700_010_000i64, 1_700_010_000, 1_700_010_001, 1_700_010_001, 1_700_010_002,
-        1_700_010_002, 1_700_010_003, 1_700_010_003, 1_700_010_004, 1_700_010_004,
+        1_700_010_000i64,
+        1_700_010_000,
+        1_700_010_001,
+        1_700_010_001,
+        1_700_010_002,
+        1_700_010_002,
+        1_700_010_003,
+        1_700_010_003,
+        1_700_010_004,
+        1_700_010_004,
     ];
     let symbols = vec![
         "AAA", "BBB", "AAA", "BBB", "AAA", "BBB", "AAA", "BBB", "AAA", "BBB",
@@ -34,9 +49,7 @@ fn make_two_symbol_df() -> DataFrame {
     let closes = vec![
         100.0, 50.0, 101.0, 51.0, 102.0, 52.0, 103.0, 53.0, 104.0, 54.0,
     ];
-    let signals = vec![
-        0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-    ];
+    let signals = vec![0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
 
     DataFrame::new(vec![
         Column::new("timestamp".into(), timestamps),
@@ -51,7 +64,7 @@ fn portfolio_equity_series(result: &quantwave_backtest::BacktestResult) -> Vec<f
     let eq = result.equity_curve.column("equity").unwrap().f64().unwrap();
     let sym = result.equity_curve.column("symbol").unwrap().str().unwrap();
     eq.into_iter()
-        .zip(sym.into_iter())
+        .zip(&*sym)
         .filter_map(|(e, s)| if s.is_none() { Some(e.unwrap()) } else { None })
         .collect()
 }
@@ -228,7 +241,7 @@ fn trade_quantity(result: &quantwave_backtest::BacktestResult, symbol: &str) -> 
     let trades = &result.trades;
     let sym_col = trades.column("symbol").unwrap().str().unwrap();
     let qty_col = trades.column("quantity").unwrap().f64().unwrap();
-    for (sym, qty) in sym_col.into_iter().zip(qty_col.into_iter()) {
+    for (sym, qty) in sym_col.into_iter().zip(&*qty_col) {
         if sym == Some(symbol) {
             return qty.unwrap();
         }

@@ -1,3 +1,10 @@
+#![allow(
+    clippy::panic,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::borrow_deref_ref,
+    clippy::field_reassign_with_default
+)]
 //! Struct signal_col auto-parse (quantwave-cr6v.11).
 //!
 //! `cargo nextest run -p quantwave-backtest --test struct_signal`
@@ -6,8 +13,8 @@ use approx::assert_relative_eq;
 use chrono::{TimeZone, Utc};
 use polars::prelude::*;
 use quantwave_backtest::{
-    parse_struct_signal_row, pole_height_to_exposure, run_streaming_simulation, BacktestConfig,
-    BacktestEngine, Bar, CostModel, ExecutionModel, InitialRiskPositionSizer, StrategySignal,
+    BacktestConfig, BacktestEngine, Bar, CostModel, ExecutionModel, InitialRiskPositionSizer,
+    StrategySignal, parse_struct_signal_row, pole_height_to_exposure, run_streaming_simulation,
 };
 
 fn zero_cost_config() -> BacktestConfig {
@@ -127,7 +134,7 @@ fn test_struct_signal_metadata_with_position_sizer() {
 
     let exposure = Series::new("exposure".into(), vec![0.0, 1.0, 1.0, 0.0]);
     let pole_atr = Series::new("pole_height_atr".into(), vec![0.0, 2.0, 2.0, 0.0]);
-    let series = vec![exposure, pole_atr];
+    let series = [exposure, pole_atr];
     let ca = StructChunked::from_series("signal".into(), 4, series.iter()).unwrap();
 
     let df = DataFrame::new(vec![
@@ -173,10 +180,7 @@ impl quantwave_core::traits::Next<&Bar> for SignalReplay {
         let exposure = self.exposures[i];
         let metadata = self.metas[i].clone();
         self.idx += 1;
-        StrategySignal {
-            exposure,
-            metadata,
-        }
+        StrategySignal { exposure, metadata }
     }
 }
 
@@ -187,7 +191,7 @@ fn test_struct_batch_streaming_parity() {
 
     let exposure = Series::new("exposure".into(), vec![0.0, 1.0, 1.0, 0.0]);
     let pole = Series::new("pole_height".into(), vec![0.0, 4.0, 4.0, 0.0]);
-    let series = vec![exposure, pole];
+    let series = [exposure, pole];
     let ca = StructChunked::from_series("signal".into(), 4, series.iter()).unwrap();
 
     let df = DataFrame::new(vec![

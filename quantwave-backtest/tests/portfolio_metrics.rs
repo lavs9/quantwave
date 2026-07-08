@@ -1,3 +1,10 @@
+#![allow(
+    clippy::panic,
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::borrow_deref_ref,
+    clippy::field_reassign_with_default
+)]
 //! Pooled-book metrics (quantwave-qzpi.8).
 //!
 //! `cargo nextest run -p quantwave-backtest portfolio_metrics`
@@ -29,10 +36,16 @@ fn test_shared_capital_metrics_use_single_initial_cash() {
         ..Default::default()
     };
 
-    let report = BacktestEngine::new(config).backtest_with_report(df.lazy()).unwrap();
+    let report = BacktestEngine::new(config)
+        .backtest_with_report(df.lazy())
+        .unwrap();
     let m = &report.metrics;
 
-    assert_relative_eq!(m.final_equity, report.result.stats["final_equity"], epsilon = 1e-6);
+    assert_relative_eq!(
+        m.final_equity,
+        report.result.stats["final_equity"],
+        epsilon = 1e-6
+    );
     assert_relative_eq!(
         m.total_return,
         (m.final_equity - 50_000.0) / 50_000.0,
@@ -45,12 +58,20 @@ fn test_shared_capital_metrics_use_single_initial_cash() {
 fn test_metrics_from_result_matches_report() {
     let df = DataFrame::new(vec![
         Column::new("timestamp".into(), (0..10i64).collect::<Vec<_>>()),
-        Column::new("close".into(), (0..10).map(|i| 100.0 + i as f64).collect::<Vec<_>>()),
-        Column::new("signal".into(), vec![0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0]),
+        Column::new(
+            "close".into(),
+            (0..10).map(|i| 100.0 + i as f64).collect::<Vec<_>>(),
+        ),
+        Column::new(
+            "signal".into(),
+            vec![0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0],
+        ),
     ])
     .unwrap();
 
-    let report = BacktestEngine::with_default_costs().backtest_with_report(df.lazy()).unwrap();
+    let report = BacktestEngine::with_default_costs()
+        .backtest_with_report(df.lazy())
+        .unwrap();
     let from_result = PerformanceMetrics::from_result(&report.result);
     assert_eq!(from_result, report.metrics);
 }

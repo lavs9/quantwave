@@ -251,7 +251,7 @@ mod tests {
                 x[1] = x[0];
                 x[0] = input;
 
-                let filt = if i + 1 <= period {
+                let filt = if i < period {
                     input
                 } else {
                     c0 * x[0] + a1 * f[0] + a2 * f[1]

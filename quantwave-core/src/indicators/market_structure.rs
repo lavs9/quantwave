@@ -1,7 +1,7 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
-use serde::{Deserialize, Serialize};
 use crate::utils::RingBuffer as VecDeque;
+use serde::{Deserialize, Serialize};
 
 /// Market Structure (Swings + Confirmed Break of Structure)
 ///
@@ -160,7 +160,11 @@ impl PAEvent {
             kind: PAEventKind::GeometricHs(hs.clone()),
             strength: (hs.score / 100.0).min(1.0),
             size_atr: Some(hs.height_atr),
-            confidence: if hs.breakout_confirmed { 1.0 } else { hs.score / 100.0 },
+            confidence: if hs.breakout_confirmed {
+                1.0
+            } else {
+                hs.score / 100.0
+            },
             regime_at_event: None,
             feature_values: vec![
                 ("score".into(), hs.score),
@@ -192,7 +196,10 @@ impl PAEvent {
 pub fn extract_pa_events(state: &MarketStructureState) -> Vec<PAEvent> {
     let mut events = Vec::new();
     if let Some(flip) = &state.current_flip {
-        events.push(PAEvent::from_market_structure_flip(flip.clone(), state.bar_index));
+        events.push(PAEvent::from_market_structure_flip(
+            flip.clone(),
+            state.bar_index,
+        ));
     }
     events
 }
@@ -205,15 +212,15 @@ pub fn extract_all_pa_events(
     sr_interactions: &[crate::indicators::sr_monitor::SRInteraction],
 ) -> Vec<PAEvent> {
     let mut events = extract_pa_events(state);
-    if let Some(f) = flag {
-        if f.breakout_confirmed {
-            events.push(PAEvent::from_flag(f.clone(), state.bar_index));
-        }
+    if let Some(f) = flag
+        && f.breakout_confirmed
+    {
+        events.push(PAEvent::from_flag(f.clone(), state.bar_index));
     }
-    if let Some(h) = hs {
-        if h.breakout_confirmed {
-            events.push(PAEvent::from_hs(h.clone(), state.bar_index));
-        }
+    if let Some(h) = hs
+        && h.breakout_confirmed
+    {
+        events.push(PAEvent::from_hs(h.clone(), state.bar_index));
     }
     for sr in sr_interactions {
         events.push(PAEvent::from_sr_interaction(sr.clone()));
@@ -591,8 +598,12 @@ mod tests {
         let mut ms = MarketStructure::new(2);
 
         // Run a realistic sequence (from basic bullish test) to exercise state machine + extract
-        let highs = vec![10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 14.5, 16.0, 15.0, 17.0, 16.0];
-        let lows = vec![9.0, 9.5, 10.0, 10.5, 11.0, 12.0, 11.5, 13.0, 12.5, 14.0, 13.5];
+        let highs = vec![
+            10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 14.5, 16.0, 15.0, 17.0, 16.0,
+        ];
+        let lows = vec![
+            9.0, 9.5, 10.0, 10.5, 11.0, 12.0, 11.5, 13.0, 12.5, 14.0, 13.5,
+        ];
 
         let mut captured_events: Vec<PAEvent> = vec![];
         for i in 0..highs.len() {
@@ -643,7 +654,8 @@ mod tests {
         // Stronger invariants (bias-established flips, pattern rules) asserted via existing no_invalid + proptests + future dedicated harness tests.
         use crate::test_utils::{
             generate_bearish_structure_confirmed_flip, generate_bullish_structure_confirmed_flip,
-            generate_clean_bull_flag, generate_perfect_bear_hs, generate_flag_violation_retrace_too_deep,
+            generate_clean_bull_flag, generate_flag_violation_retrace_too_deep,
+            generate_perfect_bear_hs,
         };
 
         let case1 = generate_bullish_structure_confirmed_flip(2, 0.1, 42);
@@ -651,9 +663,14 @@ mod tests {
         let mut any_flip = false;
         for &pt in &case1.data {
             let st = ms.next(pt);
-            if st.current_flip.is_some() { any_flip = true; }
+            if st.current_flip.is_some() {
+                any_flip = true;
+            }
         }
-        assert!(any_flip || !case1.data.is_empty(), "synthetic generator + MarketStructure Next exercised cleanly (Part 21)");
+        assert!(
+            any_flip || !case1.data.is_empty(),
+            "synthetic generator + MarketStructure Next exercised cleanly (Part 21)"
+        );
 
         let _case2 = generate_bearish_structure_confirmed_flip(2, 0.05, 99);
         let _flag = generate_clean_bull_flag(2, 1.0);

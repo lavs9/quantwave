@@ -1,7 +1,7 @@
+pub use crate::indicators::incremental::cdl_doji::CDLDOJI;
 use crate::indicators::metadata::IndicatorMetadata;
 #[allow(unused_imports)]
 use crate::traits::Next;
-pub use crate::indicators::incremental::cdl_doji::CDLDOJI;
 native_cdl!(CDLHAMMER, talib_rs::pattern::cdl_hammer);
 impl Default for CDLHAMMER {
     fn default() -> Self {

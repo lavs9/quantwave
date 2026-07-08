@@ -62,7 +62,6 @@ impl Next<f64> for CyberCycleFeatureExtractor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use approx::assert_relative_eq;
 
     #[test]
     fn test_cyber_cycle_features_basic() {

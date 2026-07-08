@@ -1,4 +1,10 @@
 //! Streaming vs batch parity and EM fitting behavior for generic Gaussian HMM.
+#![allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::panic,
+    clippy::manual_range_contains
+)]
 
 use approx::assert_relative_eq;
 use proptest::prelude::*;

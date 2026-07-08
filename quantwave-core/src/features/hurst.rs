@@ -79,7 +79,6 @@ impl Next<f64> for HurstFeatureExtractor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use approx::assert_relative_eq;
 
     #[test]
     fn test_hurst_feature_basic() {

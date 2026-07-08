@@ -1,6 +1,7 @@
 //! Polars `.bt.sweep` integration tests (quantwave-cr6v.12).
 //!
 //! `cargo nextest run -p quantwave-polars sweep`
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use approx::assert_relative_eq;
 use polars::prelude::*;
