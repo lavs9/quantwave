@@ -11,11 +11,20 @@ Reproducible performance measurements for docs and CI. Results land in `results/
 ## Running locally
 
 ```bash
-python benchmarks/harness.py --quick   # smoke / dev (subset)
-python benchmarks/harness.py           # full 1M-row suite
+# Full suite (1M rows) + render docs
+python benchmarks/harness.py
+python scripts/render_benchmarks.py
+
+# Dev smoke (100k rows)
+python benchmarks/harness.py --quick
+python scripts/render_benchmarks.py
+
+# Criterion HTML reports (100k rows per case)
+cargo bench -p quantwave-core --bench indicator_throughput
 ```
 
 ## CI
 
-- `scripts/check_benchmark_claims.py` fails if docs contain unmeasured performance numbers.
-- Nightly / manual workflow will run the harness and commit updated JSON (Phase 3).
+- **PR / sanity:** `scripts/check_benchmark_claims.py` — no orphan perf numbers in docs.
+- **Nightly:** `.github/workflows/benchmarks-nightly.yml` — full harness, render, commit JSON + `docs/benchmarks.md`.
+- **Criterion smoke:** same workflow runs `cargo bench` with reduced sample size.

@@ -51,6 +51,8 @@ if [[ "$SKIP_METADATA" -eq 0 ]]; then
   python3 scripts/sync_indicator_count.py
   echo "-- benchmark claim drift (no unmeasured perf numbers)"
   python3 scripts/check_benchmark_claims.py
+  echo "-- benchmark harness dry-run"
+  python3 benchmarks/harness.py --dry-run
   python3 scripts/check_repo_hygiene.py
     echo "-- documentation standards lint"
     python3 docs/upgrade_to_standards.py --lint

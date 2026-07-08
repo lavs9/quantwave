@@ -1,66 +1,91 @@
 # Benchmarks
 
-QuantWave is built for speed. We publish only measurements from a reproducible harness — not hand-written marketing numbers.
+QuantWave publishes **only measured numbers** from the reproducible harness in `benchmarks/`. No hand-written throughput claims.
 
-## Status
+<!-- bench:meta:start -->
+**Last harness run:** 2026-07-08T07:38:14.970046+00:00
+**Harness version:** 2
+**Dataset:** 100,000 rows, seed `1364656129`
+**Host CPU:** arm · **RAM:** 24.0 GB · **OS:** Darwin 25.5.0
 
-**Performance benchmarks are being rebuilt.** Earlier versions of this page contained unmeasured throughput figures and a fabricated streaming-latency table (batch milliseconds relabeled as nanoseconds). Those have been removed.
+Regenerate: `python benchmarks/harness.py && python scripts/render_benchmarks.py`
+<!-- bench:meta:end -->
 
-We are building a committed harness under `benchmarks/` that will:
+## Memory Usage
 
-- Run Rust criterion benches and Python comparisons on deterministic synthetic OHLCV data (1M+ rows, fixed seed).
-- Record hardware metadata, library versions, and machine-readable JSON results.
-- Render this page from that JSON only (CI drift gate — no orphan performance claims).
+<!-- bench:memory:start -->
+Measured on **100,000** synthetic OHLCV rows (+ symbol column where noted).
 
-Track progress: [quantwave-9gek.2](https://github.com/lavs9/quantwave/issues) (benchmark teardown/rebuild).
-
-## Memory Usage (measured)
-
-QuantWave leverages Arrow's zero-copy memory model via Polars. While raw numeric columns have similar footprints across frameworks, QuantWave's advantage becomes substantial when dealing with **realistic quantitative datasets** (multi-column OHLCV + high-cardinality String symbols).
-
-These figures come from real `estimated_size()` / `memory_usage(deep=True)` measurements on synthetic data.
-
-### Benchmark: 1M Rows (OHLCV + Symbol)
-
-We compare a dataset containing 5 numeric columns (`float64`) and 1 `Symbol` column with 1,000 unique tickers.
+### OHLCV + Symbol
 
 | Framework | Memory Usage | Footprint |
-|-----------|----------------|---------|
-| **QuantWave (Polars)** | **41.96 MB** | **1.0x** |
-| Pandas    | 88.69 MB | 2.1x |
+|-----------|----------------|-----------|
+| **QuantWave (Polars)** | **4.48 MB** | **1.0x** |
+| Pandas | 9.16 MB | 2.04x |
 
-### Benchmark: High-Cardinality Strings
+### High-cardinality strings (Symbol column only)
 
-When isolating just the `Symbol` column (1M rows of ticker strings), the Arrow memory layout used by QuantWave is significantly more optimized than Pandas' Python-object based strings.
+| Framework | Memory | Footprint |
+|-----------|--------|-----------|
+| **QuantWave (Polars)** | **0.67 MB** | **1.0x** |
+| Pandas | 5.34 MB | 8.0x |
+<!-- bench:memory:end -->
 
-| Framework | Memory (Strings) | Footprint |
-|-----------|------------------|-----------|
-| **QuantWave (Polars)** | **11.44 MB** | **1.0x** |
-| Pandas    | 58.17 MB | **~5.1x** |
-
-> **Takeaway**: For production-grade pipelines with thousands of tickers and multiple indicators, QuantWave maintains a **2x to 5x lower memory footprint** on realistic string-heavy workloads.
-
-## Speed & Latency
+## Speed & Throughput
 
 <!-- bench:throughput:start -->
-### Rust streaming throughput (measured)
+### Rust streaming throughput
 
-- **CPU**: arm
-- **RAM**: 24.0 GB
-- **OS**: Darwin 25.5.0
-- **Python**: 3.12.8 (harness host)
-- **Rows**: 100,000
+- **Rows:** 100,000
+- **Source:** `quantwave-core/benchmark_export`
 
 | Indicator | Mode | Time (ms) |
 |-----------|------|-----------|
-| SMA (20) | streaming | 0.50 |
-| RSI (14) | streaming | 0.00 |
-| SuperTrend (10,3) | streaming | 0.73 |
+| SMA (20) | streaming | 0.2305 |
+| RSI (14) | streaming | 0.0000 |
+| SuperTrend (10,3) | streaming | 0.3457 |
 
+> Criterion HTML reports: `cargo bench -p quantwave-core --bench indicator_throughput` (100,000 rows per case).
 <!-- bench:throughput:end -->
 
-Per-tick latency benchmarks will publish when a dedicated micro-bench runs (not batch ms relabeled as ns). See also [`benchmark_results.md`](https://github.com/lavs9/quantwave/blob/main/benchmark_results.md) for preliminary SMA comparisons.
+## Python Comparisons
+
+<!-- bench:comparisons:start -->
+### SMA batch throughput (SMA(20), 100000 rows)
+
+Correctness pre-check on 1k rows passed before timing.
+
+| Library | Time (ms) |
+|---------|-----------|
+| QuantWave (.ta) | 0.4340 |
+| Polars rolling_mean | 0.8796 |
+| Pandas rolling | 0.4815 |
+| TA-Lib | _not installed_ |
+
+**Library versions:** numpy 1.26.4, pandas 2.2.3, pandas_ta not_installed, polars 1.40.1, quantwave 0.6.0, talib not_installed
+<!-- bench:comparisons:end -->
+
+## Streaming Latency
+
+<!-- bench:latency:start -->
+### Per-tick streaming latency (10,000 samples)
+
+Source: `per_tick_instrumented` — real per-tick instrumentation, not batch ms relabeled.
+
+| Indicator | Mean (ns) | P99 (ns) |
+|-----------|-----------|----------|
+| SMA (20) | 16.0 | 42.0 |
+| RSI (14) | 15.0 | 42.0 |
+<!-- bench:latency:end -->
+
+## Methodology
+
+- **Data:** deterministic synthetic OHLCV from `benchmarks/data.py` (fixed seed, committed generator).
+- **Rust:** `cargo run -p quantwave-core --release --bin benchmark_export` + Criterion benches (`cargo bench -p quantwave-core --bench indicator_throughput`).
+- **Python:** `benchmarks/python_comparisons.py` — correctness pre-check on 1k rows, then `time.perf_counter` timings.
+- **Docs:** `scripts/render_benchmarks.py` renders this page from `benchmarks/results/latest.json` only.
+- **CI:** `scripts/check_benchmark_claims.py` fails on orphan performance numbers in README/docs.
 
 ---
 
-*Last Updated: {{ git_revision_date_localized }}*
+*Page rendered from JSON — edit `benchmarks/results/latest.json` via the harness, not tables here.*

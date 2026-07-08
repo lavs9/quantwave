@@ -85,7 +85,17 @@ def load_provenance_values() -> set[str]:
 def line_allowed(line: str, provenance: set[str]) -> bool:
     if any(sub in line for sub in ALLOW_SUBSTRINGS):
         return True
-    if "bench:throughput" in line or "streaming throughput" in line.lower():
+    if any(
+        m in line
+        for m in (
+            "bench:",
+            "_pending_",
+            "not installed",
+            "not available",
+            "Regenerate:",
+            "rendered from JSON",
+        )
+    ):
         return True
     return any(p in line for p in provenance)
 
