@@ -1,9 +1,12 @@
+//! Macro-generated TA-Lib-compatible streaming indicators.
+//! Struct names intentionally mirror TA-Lib identifiers (`CDLDOJI`, `HT_SINE`, …).
+#![allow(non_camel_case_types)]
+
 /// O(1) unary pointwise transform — no history buffer.
 #[macro_export]
 macro_rules! native_pointwise_1 {
     ($name:ident, $op:expr) => {
         #[derive(Debug, Clone, Default)]
-        #[allow(non_camel_case_types)]
         pub struct $name;
 
         impl $name {
@@ -34,7 +37,6 @@ macro_rules! native_pointwise_1 {
 macro_rules! native_binary_2 {
     ($name:ident, $op:expr) => {
         #[derive(Debug, Clone, Default)]
-        #[allow(non_camel_case_types)]
         pub struct $name;
 
         impl $name {
@@ -65,7 +67,7 @@ macro_rules! native_binary_2 {
 macro_rules! native_cdl {
     ($name:ident, $talib_func:path) => {
         #[derive(Debug, Clone)]
-        #[allow(non_camel_case_types)]
+
         pub struct $name {
             open: Vec<f64>,
             high: Vec<f64>,
@@ -151,7 +153,7 @@ macro_rules! native_cdl {
 macro_rules! talib_cdl {
     ($name:ident, $talib_func:path) => {
         #[derive(Debug, Clone)]
-        #[allow(non_camel_case_types)]
+
         pub struct $name {
             history_open: Vec<f64>,
             history_high: Vec<f64>,
@@ -223,7 +225,7 @@ macro_rules! talib_cdl {
 macro_rules! talib_1_in_1_out_i32 {
     ($name:ident, $talib_func:path $(, $param:ident: $ptype:ty)*) => {
         #[derive(Debug, Clone)]
-        #[allow(non_camel_case_types)]
+
         pub struct $name {
             $( pub $param: $ptype, )*
             history: Vec<f64>,
@@ -257,7 +259,7 @@ macro_rules! talib_1_in_1_out_i32 {
 macro_rules! talib_1_in_1_out_no_result {
     ($name:ident, $talib_func:path) => {
         #[derive(Debug, Clone)]
-        #[allow(non_camel_case_types)]
+
         pub struct $name {
             history: Vec<f64>,
         }
@@ -286,7 +288,7 @@ macro_rules! talib_1_in_1_out_no_result {
 macro_rules! talib_1_in_1_out {
     ($name:ident, $talib_func:path $(, $param:ident: $ptype:ty)*) => {
         #[derive(Debug, Clone)]
-        #[allow(non_camel_case_types)]
+
         pub struct $name {
             $( pub $param: $ptype, )*
             history: Vec<f64>,
@@ -326,7 +328,7 @@ macro_rules! talib_1_in_1_out {
 macro_rules! talib_2_in_1_out {
     ($name:ident, $talib_func:path $(, $param:ident: $ptype:ty)*) => {
         #[derive(Debug, Clone)]
-        #[allow(non_camel_case_types)]
+
         pub struct $name {
             $( pub $param: $ptype, )*
             history_high: Vec<f64>,
@@ -374,7 +376,7 @@ macro_rules! talib_2_in_1_out {
 macro_rules! talib_1_in_2_out {
     ($name:ident, $talib_func:path $(, $param:ident: $ptype:ty)*) => {
         #[derive(Debug, Clone)]
-        #[allow(non_camel_case_types)]
+
         pub struct $name {
             $( pub $param: $ptype, )*
             history: Vec<f64>,
@@ -421,7 +423,7 @@ macro_rules! talib_1_in_2_out {
 macro_rules! talib_1_in_3_out {
     ($name:ident, $talib_func:path $(, $param:ident: $ptype:ty)*) => {
         #[derive(Debug, Clone)]
-        #[allow(non_camel_case_types)]
+
         pub struct $name {
             $( pub $param: $ptype, )*
             history: Vec<f64>,
@@ -472,7 +474,7 @@ macro_rules! talib_1_in_3_out {
 macro_rules! talib_2_in_2_out {
     ($name:ident, $talib_func:path $(, $param:ident: $ptype:ty)*) => {
         #[derive(Debug, Clone)]
-        #[allow(non_camel_case_types)]
+
         pub struct $name {
             $( pub $param: $ptype, )*
             history_1: Vec<f64>,
@@ -526,7 +528,7 @@ macro_rules! talib_2_in_2_out {
 macro_rules! talib_3_in_1_out {
     ($name:ident, $talib_func:path $(, $param:ident: $ptype:ty)*) => {
         #[derive(Debug, Clone)]
-        #[allow(non_camel_case_types)]
+
         pub struct $name {
             $( pub $param: $ptype, )*
             history_high: Vec<f64>,
@@ -584,7 +586,7 @@ macro_rules! talib_3_in_1_out {
 macro_rules! talib_3_in_2_out {
     ($name:ident, $talib_func:path $(, $param:ident: $ptype:ty)*) => {
         #[derive(Debug, Clone)]
-        #[allow(non_camel_case_types)]
+
         pub struct $name {
             $( pub $param: $ptype, )*
             history_high: Vec<f64>,
@@ -648,7 +650,7 @@ macro_rules! talib_3_in_2_out {
 macro_rules! talib_4_in_1_out {
     ($name:ident, $talib_func:path $(, $param:ident: $ptype:ty)*) => {
         #[derive(Debug, Clone)]
-        #[allow(non_camel_case_types)]
+
         pub struct $name {
             $( pub $param: $ptype, )*
             history_1: Vec<f64>,

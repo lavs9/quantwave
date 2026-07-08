@@ -7,7 +7,10 @@ use std::process::Command;
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
     if args.len() > 1 && args[1] == "parity-check" {
-        return run_parity_check();
+        return run_python_script("scripts/check_indicator_parity_coverage.py");
+    }
+    if args.len() > 1 && args[1] == "safety-check" {
+        return run_python_script("scripts/check_core_safety.py");
     }
 
     println!("Generating documentation...");
@@ -43,13 +46,13 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn run_parity_check() -> Result<()> {
+fn run_python_script(script: &str) -> Result<()> {
     let workspace_root =
         PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string()))
             .parent()
             .context("xtask manifest has no parent directory")?
             .to_path_buf();
-    run_python(&workspace_root, "scripts/check_indicator_parity_coverage.py")
+    run_python(&workspace_root, script)
 }
 
 fn run_python(workspace_root: &PathBuf, script: &str) -> Result<()> {

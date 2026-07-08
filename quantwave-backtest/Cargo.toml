@@ -12,6 +12,9 @@ documentation = "https://docs.rs/quantwave-backtest"
 categories.workspace = true
 keywords.workspace = true
 
+[lints]
+workspace = true
+
 [dependencies]
 quantwave-core = { workspace = true }
 polars = { workspace = true }

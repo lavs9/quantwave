@@ -68,6 +68,7 @@ jobs:
           python3 scripts/check_benchmark_claims.py
           python3 scripts/check_repo_hygiene.py
           python3 scripts/check_indicator_parity_coverage.py
+          python3 scripts/check_core_safety.py
           python3 scripts/check_validation_docs.py
           python3 scripts/check_release_invariants.py
 

@@ -7,7 +7,7 @@ QuantWave's primary credibility claim is **correctness**: one mathematical imple
 ## Coverage snapshot
 
 <!-- VALIDATION:STATS:START -->
-**Last updated:** 2026-07-08T12:24:07Z (UTC)
+**Last updated:** 2026-07-08T15:39:39Z (UTC)
 
 | Metric | Count | Source |
 |--------|------:|--------|
@@ -81,6 +81,8 @@ and/or the Python gold parity registry.
 Every streaming indicator is encouraged to use `check_batch_streaming_parity` (see `quantwave-core/src/test_utils.rs`): for random input sequences, collecting `indicator.next(x)` must match the batch/plugin path within tolerance. This is the property that matters for **live trading** — your research DataFrame and your bar-by-bar feed must not diverge.
 
 `proptest!` blocks across `quantwave-core` exercise this property with randomized inputs and warmup-aware comparisons.
+
+**Core safety:** `scripts/check_core_safety.py` fails CI if `quantwave-core` production sources contain `unsafe` or `panic!`. Workspace `Cargo.toml` sets `forbid(unsafe_code)` and `deny(clippy::panic)`; `unwrap`/`expect` are `warn` until backtest de-panic (`quantwave-5ipk.4`).
 
 **CI meta-check:** `scripts/check_indicator_parity_coverage.py` walks every `RegisteredMetadata` entry and requires a slug-matched `proptest!` parity test (including TA-Lib integration tests and shared-module aliases) or a reviewed entry in `quantwave-core/tests/parity_exemptions.toml`. Coverage stats are written to `docs/generated/parity_coverage.json`.
 

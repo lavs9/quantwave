@@ -56,3 +56,12 @@ opt-level = 0
 debug = 1 # Use line tables only to speed up linking
 codegen-units = 256
 incremental = true
+
+# Inherited by member crates via `[lints] workspace = true` (quantwave-ruh0.3).
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+panic = "deny"
+unwrap_used = "warn"
+expect_used = "warn"

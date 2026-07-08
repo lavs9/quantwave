@@ -1,0 +1,4 @@
+# Workspace Clippy config (quantwave-ruh0.3).
+# Test modules may use unwrap/expect; production paths are linted via Cargo.toml.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
