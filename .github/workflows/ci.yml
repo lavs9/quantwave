@@ -110,14 +110,21 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install build + test deps
-        run: pip install maturin "uniffi-bindgen==0.31.0" pytest numpy
+      - name: Create venv and install build + test deps
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install maturin "uniffi-bindgen==0.31.0" pytest numpy
 
       - name: Build quantwave (editable)
-        run: maturin develop --release --manifest-path quantwave-python/Cargo.toml
+        run: |
+          source .venv/bin/activate
+          maturin develop --release --manifest-path quantwave-python/Cargo.toml
 
       - name: Gold-standard streaming parity
-        run: python -m pytest tests/python/test_gold_parity.py -q
+        run: |
+          source .venv/bin/activate
+          python -m pytest tests/python/test_gold_parity.py -q
 
   plugins:
     name: Plugin wheels
