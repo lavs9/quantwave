@@ -1,0 +1,1777 @@
+{
+  "indicator_count": 221,
+  "parity_proptest_count": 214,
+  "exemption_count": 8,
+  "gap_count": 0,
+  "gaps": [],
+  "indicators": [
+    {
+      "slug": "adaptive_ema",
+      "source_file": "adaptive_ema",
+      "parity_proptest": "quantwave-core/src/indicators/adaptive_ema.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "adosc",
+      "source_file": "volume",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "adx",
+      "source_file": "momentum",
+      "parity_proptest": "quantwave-core/src/indicators/momentum.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ad",
+      "source_file": "volume",
+      "parity_proptest": "quantwave-core/src/indicators/volume.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "alligator",
+      "source_file": "alligator",
+      "parity_proptest": "quantwave-core/src/indicators/alligator.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "alma",
+      "source_file": "alma",
+      "parity_proptest": "quantwave-core/src/indicators/alma.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "am_detector",
+      "source_file": "amfm",
+      "parity_proptest": "quantwave-core/src/indicators/amfm.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "apo",
+      "source_file": "momentum",
+      "parity_proptest": "quantwave-core/tests/test_all_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "aroon",
+      "source_file": "momentum",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "atr",
+      "source_file": "volatility",
+      "parity_proptest": "quantwave-core/src/indicators/volatility.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "atr_ts",
+      "source_file": "atr_ts",
+      "parity_proptest": "quantwave-core/src/indicators/atr_ts.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "autotune_filter",
+      "source_file": "autotune",
+      "parity_proptest": "quantwave-core/src/indicators/autotune.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "avgprice",
+      "source_file": "price_transform",
+      "parity_proptest": "quantwave-core/src/indicators/price_transform.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "bandpass",
+      "source_file": "bandpass",
+      "parity_proptest": "quantwave-core/src/indicators/bandpass.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "bbands",
+      "source_file": "overlap",
+      "parity_proptest": "quantwave-core/src/indicators/overlap.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "beta",
+      "source_file": "statistics",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "butterworth2",
+      "source_file": "butterworth",
+      "parity_proptest": "quantwave-core/src/indicators/butterworth.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "butterworth3",
+      "source_file": "butterworth",
+      "parity_proptest": "quantwave-core/src/indicators/butterworth.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cci",
+      "source_file": "momentum",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdl2crows",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdl3blackcrows",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdl3inside",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdl3linestrike",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdl3outside",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdl3starsinsouth",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdl3whitesoldiers",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlabandonedbaby",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdladvanceblock",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlbelthold",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlbreakaway",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlclosingmarubozu",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlconcealbabyswall",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlcounterattack",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdldarkcloudcover",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdldojistar",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdldoji",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdldragonflydoji",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlengulfing",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdleveningdojistar",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdleveningstar",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlgapsidesidewhite",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlgravestonedoji",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlhammer",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlhangingman",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlharamicross",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlharami",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlhighwave",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlhikkakemod",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlhikkake",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlhomingpigeon",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlidentical3crows",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlinneck",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlinvertedhammer",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlkickingbylength",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlkicking",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlladderbottom",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdllongleggeddoji",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdllongline",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlmarubozu",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlmatchinglow",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlmathold",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlmorningdojistar",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlmorningstar",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlonneck",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlpiercing",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlrickshawman",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlrisefall3methods",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlseparatinglines",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlshootingstar",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlshortline",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlspinningtop",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlstalledpattern",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlsticksandwich",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdltakuri",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdltasukigap",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlthrusting",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdltristar",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlunique3river",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlupsidegap2crows",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cdlxsidegap3methods",
+      "source_file": "pattern",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cg",
+      "source_file": "cg",
+      "parity_proptest": "quantwave-core/src/indicators/cg.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "channel_cycle",
+      "source_file": "channel_cycle",
+      "parity_proptest": "quantwave-core/src/indicators/channel_cycle.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "choppiness_index",
+      "source_file": "choppiness_index",
+      "parity_proptest": "quantwave-core/src/indicators/choppiness_index.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "classic_laguerre",
+      "source_file": "classic_laguerre",
+      "parity_proptest": "quantwave-core/src/indicators/classic_laguerre.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cmo",
+      "source_file": "momentum",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "continuation_index",
+      "source_file": "continuation_index",
+      "parity_proptest": "quantwave-core/src/indicators/continuation_index.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "correlation_cycle",
+      "source_file": "correlation_cycle",
+      "parity_proptest": "quantwave-core/src/indicators/correlation_cycle.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "correlation_trend",
+      "source_file": "correlation_trend",
+      "parity_proptest": "quantwave-core/src/indicators/correlation_trend.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "correl",
+      "source_file": "statistics",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cybernetic_oscillator",
+      "source_file": "cybernetic_oscillator",
+      "parity_proptest": "quantwave-core/src/indicators/cybernetic_oscillator.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cyber_cycle",
+      "source_file": "cyber_cycle",
+      "parity_proptest": "quantwave-core/src/indicators/cyber_cycle.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "cycle_trend_analytics",
+      "source_file": "cycle_trend_analytics",
+      "parity_proptest": "quantwave-core/src/indicators/cycle_trend_analytics.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "dema",
+      "source_file": "overlap",
+      "parity_proptest": "quantwave-core/src/indicators/overlap.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "dmh",
+      "source_file": "dmh",
+      "parity_proptest": "quantwave-core/src/indicators/dmh.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "donchian",
+      "source_file": "donchian",
+      "parity_proptest": "quantwave-core/src/indicators/donchian.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "dsma",
+      "source_file": "dsma",
+      "parity_proptest": "quantwave-core/src/indicators/dsma.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ehlers_autocorrelation",
+      "source_file": "ehlers_autocorrelation",
+      "parity_proptest": "quantwave-core/src/indicators/ehlers_autocorrelation.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ehlers_filter",
+      "source_file": "ehlers_filter",
+      "parity_proptest": "quantwave-core/src/indicators/ehlers_filter.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ehlers_loops",
+      "source_file": "ehlers_loops",
+      "parity_proptest": "quantwave-core/src/indicators/ehlers_loops.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ehlers_stochastic",
+      "source_file": "ehlers_stochastic",
+      "parity_proptest": "quantwave-core/src/indicators/ehlers_stochastic.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ehlers_ultimate_oscillator",
+      "source_file": "ehlers_ultimate_oscillator",
+      "parity_proptest": "quantwave-core/src/indicators/ehlers_ultimate_oscillator.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ema",
+      "source_file": "smoothing",
+      "parity_proptest": "quantwave-core/src/indicators/incremental/talib_ema.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "emd",
+      "source_file": "emd",
+      "parity_proptest": "quantwave-core/src/indicators/emd.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "fisher_high_pass",
+      "source_file": "fisher_high_pass",
+      "parity_proptest": "quantwave-core/src/indicators/fisher_high_pass.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "fisher",
+      "source_file": "fisher",
+      "parity_proptest": "quantwave-core/src/indicators/fisher.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "fm_demodulator",
+      "source_file": "amfm",
+      "parity_proptest": "quantwave-core/src/indicators/amfm.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "fourier_dominant_cycle",
+      "source_file": "fourier_transform",
+      "parity_proptest": "quantwave-core/src/indicators/fourier_transform.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "fourier_series_model",
+      "source_file": "fourier_series",
+      "parity_proptest": "quantwave-core/src/indicators/fourier_series.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "fractals",
+      "source_file": "fractals",
+      "parity_proptest": "quantwave-core/src/indicators/fractals.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "frac_diff",
+      "source_file": "frac_diff",
+      "parity_proptest": "quantwave-core/src/indicators/frac_diff.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "frama",
+      "source_file": "frama",
+      "parity_proptest": "quantwave-core/src/indicators/frama.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "gap_momentum",
+      "source_file": "gap_momentum",
+      "parity_proptest": "quantwave-core/src/indicators/gap_momentum.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "gaussian_filter",
+      "source_file": "gaussian",
+      "parity_proptest": "quantwave-core/src/indicators/gaussian.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "gaussian_hmm",
+      "source_file": "gaussian_hmm",
+      "parity_proptest": null,
+      "exempt": true,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "generalized_laguerre",
+      "source_file": "generalized_laguerre",
+      "parity_proptest": "quantwave-core/src/indicators/generalized_laguerre.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "geometric_patterns",
+      "source_file": "geometric_patterns",
+      "parity_proptest": "quantwave-core/src/indicators/geometric_patterns.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "griffiths_dominant_cycle",
+      "source_file": "griffiths_dominant_cycle",
+      "parity_proptest": "quantwave-core/src/indicators/griffiths_dominant_cycle.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "griffiths_predictor",
+      "source_file": "griffiths_predictor",
+      "parity_proptest": "quantwave-core/src/indicators/griffiths_predictor.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "griffiths_spectrum",
+      "source_file": "griffiths_spectrum",
+      "parity_proptest": "quantwave-core/src/indicators/griffiths_spectrum.rs",
+      "exempt": true,
+      "gold_gap": "missing on-disk gold fixture 'griffiths_spectrum.json' (test commented out)",
+      "status": "ok"
+    },
+    {
+      "slug": "hamming_filter",
+      "source_file": "hamming",
+      "parity_proptest": "quantwave-core/src/indicators/hamming.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "hann_filter",
+      "source_file": "hann",
+      "parity_proptest": "quantwave-core/src/indicators/hann.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "harrington_adx",
+      "source_file": "harrington_adx",
+      "parity_proptest": "quantwave-core/src/indicators/harrington_adx.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "heikin_ashi",
+      "source_file": "heikin_ashi",
+      "parity_proptest": "quantwave-core/src/indicators/heikin_ashi.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "high_pass",
+      "source_file": "high_pass",
+      "parity_proptest": "quantwave-core/src/indicators/high_pass.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "hma",
+      "source_file": "hma",
+      "parity_proptest": "quantwave-core/src/indicators/hma.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "hmm_forecast",
+      "source_file": "hmm_forecast",
+      "parity_proptest": null,
+      "exempt": true,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "homodyne_discriminator",
+      "source_file": "homodyne_discriminator",
+      "parity_proptest": "quantwave-core/src/indicators/homodyne_discriminator.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ht_dcperiod",
+      "source_file": "cycle",
+      "parity_proptest": "quantwave-core/src/indicators/incremental/hilbert_ta.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ht_dcphase",
+      "source_file": "cycle",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ht_phasor",
+      "source_file": "cycle",
+      "parity_proptest": "quantwave-core/tests/test_all_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ht_sine",
+      "source_file": "cycle",
+      "parity_proptest": "quantwave-core/tests/test_all_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ht_trendmode",
+      "source_file": "cycle",
+      "parity_proptest": "quantwave-core/src/indicators/incremental/hilbert_ta.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "hurst_exponent",
+      "source_file": "hurst",
+      "parity_proptest": "quantwave-core/src/indicators/hurst.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ichimoku",
+      "source_file": "ichimoku",
+      "parity_proptest": "quantwave-core/src/indicators/ichimoku.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "instantaneous_trendline",
+      "source_file": "instantaneous_trendline",
+      "parity_proptest": "quantwave-core/src/indicators/instantaneous_trendline.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "inverse_fisher",
+      "source_file": "inverse_fisher",
+      "parity_proptest": "quantwave-core/src/indicators/inverse_fisher.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "kalman_filter",
+      "source_file": "kalman",
+      "parity_proptest": "quantwave-core/src/indicators/kalman.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "kama",
+      "source_file": "kama",
+      "parity_proptest": "quantwave-core/src/indicators/kama.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "keltner",
+      "source_file": "keltner",
+      "parity_proptest": "quantwave-core/src/indicators/keltner.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "kinematic_kalman",
+      "source_file": "kinematic_kalman",
+      "parity_proptest": "quantwave-core/src/indicators/kinematic_kalman.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "laguerre_filter",
+      "source_file": "laguerre_filter",
+      "parity_proptest": "quantwave-core/src/indicators/laguerre_filter.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "laguerre_oscillator",
+      "source_file": "laguerre_oscillator",
+      "parity_proptest": "quantwave-core/src/indicators/laguerre_oscillator.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "laguerre_rsi",
+      "source_file": "laguerre_rsi",
+      "parity_proptest": "quantwave-core/src/indicators/laguerre_rsi.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "lambda_hmm",
+      "source_file": "gaussian_hmm",
+      "parity_proptest": null,
+      "exempt": true,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "linreg",
+      "source_file": "statistics",
+      "parity_proptest": "quantwave-core/src/indicators/statistics.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "macd",
+      "source_file": "momentum",
+      "parity_proptest": "quantwave-core/src/indicators/momentum.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "madh",
+      "source_file": "madh",
+      "parity_proptest": "quantwave-core/src/indicators/madh.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "mad",
+      "source_file": "mad",
+      "parity_proptest": "quantwave-core/src/indicators/mad.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "mama",
+      "source_file": "mama",
+      "parity_proptest": "quantwave-core/src/indicators/mama.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "market_state",
+      "source_file": "market_state",
+      "parity_proptest": "quantwave-core/src/indicators/market_state.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "market_structure",
+      "source_file": "market_structure",
+      "parity_proptest": "quantwave-core/src/indicators/market_structure.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "medprice",
+      "source_file": "price_transform",
+      "parity_proptest": "quantwave-core/src/indicators/price_transform.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "mesa_stochastic",
+      "source_file": "mesa_stochastic",
+      "parity_proptest": "quantwave-core/src/indicators/mesa_stochastic.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "mfi",
+      "source_file": "momentum",
+      "parity_proptest": "quantwave-core/tests/test_all_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "mom",
+      "source_file": "momentum",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "my_rsi",
+      "source_file": "my_rsi",
+      "parity_proptest": "quantwave-core/src/indicators/my_rsi.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "natr",
+      "source_file": "volatility",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "noise_elimination",
+      "source_file": "noise_elimination",
+      "parity_proptest": "quantwave-core/src/indicators/noise_elimination.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "obv",
+      "source_file": "volume",
+      "parity_proptest": "quantwave-core/src/indicators/volume.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "oc2",
+      "source_file": "price_transform",
+      "parity_proptest": "quantwave-core/src/indicators/price_transform.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "oc_price_rsi",
+      "source_file": "oc_price_rsi",
+      "parity_proptest": "quantwave-core/src/indicators/oc_price_rsi.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "one_euro_filter",
+      "source_file": "one_euro_filter",
+      "parity_proptest": "quantwave-core/src/indicators/one_euro_filter.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "pairs_rotation",
+      "source_file": "pairs_rotation",
+      "parity_proptest": "quantwave-core/src/indicators/pairs_rotation.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "phasor",
+      "source_file": "phasor",
+      "parity_proptest": "quantwave-core/src/indicators/phasor.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "pivot_points",
+      "source_file": "pivot_points",
+      "parity_proptest": "quantwave-core/src/indicators/pivot_points.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ppo",
+      "source_file": "momentum",
+      "parity_proptest": "quantwave-core/tests/test_all_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "precision_trend_analysis",
+      "source_file": "precision_trend",
+      "parity_proptest": "quantwave-core/src/indicators/precision_trend.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "projected_moving_average",
+      "source_file": "pma",
+      "parity_proptest": "quantwave-core/src/indicators/pma.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "recursive_median",
+      "source_file": "recursive_median",
+      "parity_proptest": "quantwave-core/src/indicators/recursive_median.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "recursive_median_oscillator",
+      "source_file": "recursive_median",
+      "parity_proptest": null,
+      "exempt": true,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "reflex",
+      "source_file": "reflex",
+      "parity_proptest": "quantwave-core/src/indicators/reflex.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "reverse_ema",
+      "source_file": "reverse_ema",
+      "parity_proptest": "quantwave-core/src/indicators/reverse_ema.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "reversion_index",
+      "source_file": "reversion_index",
+      "parity_proptest": "quantwave-core/src/indicators/reversion_index.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "rocket_rsi",
+      "source_file": "rocket_rsi",
+      "parity_proptest": "quantwave-core/src/indicators/rocket_rsi.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "roc",
+      "source_file": "momentum",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "roofing_filter",
+      "source_file": "roofing_filter",
+      "parity_proptest": "quantwave-core/src/indicators/roofing_filter.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "rsih",
+      "source_file": "rsih",
+      "parity_proptest": "quantwave-core/src/indicators/rsih.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "rsi",
+      "source_file": "momentum",
+      "parity_proptest": "quantwave-core/src/indicators/momentum.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "sar",
+      "source_file": "overlap",
+      "parity_proptest": "quantwave-core/src/indicators/overlap.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "sdo",
+      "source_file": "sdo",
+      "parity_proptest": "quantwave-core/src/indicators/sdo.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "simple_predictor",
+      "source_file": "simple_predictor",
+      "parity_proptest": "quantwave-core/src/indicators/simple_predictor.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "sine_wave",
+      "source_file": "sine_wave",
+      "parity_proptest": "quantwave-core/src/indicators/sine_wave.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "sma",
+      "source_file": "smoothing",
+      "parity_proptest": "quantwave-core/src/indicators/incremental/talib_sma.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "sr_interaction_monitor",
+      "source_file": "sr_monitor",
+      "parity_proptest": "quantwave-core/src/indicators/sr_monitor.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "stc",
+      "source_file": "stc",
+      "parity_proptest": "quantwave-core/src/indicators/stc.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "stddev",
+      "source_file": "statistics",
+      "parity_proptest": "quantwave-core/src/indicators/statistics.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "stoch",
+      "source_file": "momentum",
+      "parity_proptest": "quantwave-core/src/indicators/momentum.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "supertrend",
+      "source_file": "supertrend",
+      "parity_proptest": "quantwave-core/src/indicators/supertrend.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "super_smoother",
+      "source_file": "super_smoother",
+      "parity_proptest": "quantwave-core/src/indicators/super_smoother.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "swiss_army_knife",
+      "source_file": "swiss_army_knife",
+      "parity_proptest": "quantwave-core/src/indicators/swiss_army_knife.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "synthetic_oscillator",
+      "source_file": "synthetic_oscillator",
+      "parity_proptest": "quantwave-core/src/indicators/synthetic_oscillator.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "system_evaluator",
+      "source_file": "system_evaluator",
+      "parity_proptest": "quantwave-core/src/indicators/system_evaluator.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "t3",
+      "source_file": "overlap",
+      "parity_proptest": "quantwave-core/src/indicators/overlap.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "tema",
+      "source_file": "tema",
+      "parity_proptest": "quantwave-core/src/indicators/tema.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "tradj_ema",
+      "source_file": "tradj_ema",
+      "parity_proptest": "quantwave-core/src/indicators/tradj_ema.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "trendflex",
+      "source_file": "trendflex",
+      "parity_proptest": "quantwave-core/src/indicators/trendflex.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "triangle_filter",
+      "source_file": "triangle",
+      "parity_proptest": "quantwave-core/src/indicators/triangle.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "trima",
+      "source_file": "overlap",
+      "parity_proptest": "quantwave-core/src/indicators/overlap.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "trix",
+      "source_file": "momentum",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "true_range",
+      "source_file": "volatility",
+      "parity_proptest": "quantwave-core/src/indicators/volatility.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "truncated_bandpass",
+      "source_file": "truncated_bandpass",
+      "parity_proptest": "quantwave-core/src/indicators/truncated_bandpass.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ttm_squeeze",
+      "source_file": "ttm_squeeze",
+      "parity_proptest": "quantwave-core/src/indicators/ttm_squeeze.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "typprice",
+      "source_file": "price_transform",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ultimate_bands",
+      "source_file": "ultimate_bands",
+      "parity_proptest": "quantwave-core/src/indicators/ultimate_bands.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ultimate_channel",
+      "source_file": "ultimate_channel",
+      "parity_proptest": "quantwave-core/src/indicators/ultimate_channel.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ultimate_smoother",
+      "source_file": "ultimate_smoother",
+      "parity_proptest": "quantwave-core/src/indicators/ultimate_smoother.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "ultosc",
+      "source_file": "momentum",
+      "parity_proptest": "quantwave-core/tests/test_all_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "undersampled_double_ma",
+      "source_file": "just_ignore_them",
+      "parity_proptest": "quantwave-core/src/indicators/just_ignore_them.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "universal_oscillator",
+      "source_file": "universal_oscillator",
+      "parity_proptest": "quantwave-core/src/indicators/universal_oscillator.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "usi",
+      "source_file": "usi",
+      "parity_proptest": "quantwave-core/src/indicators/usi.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "volume_profile",
+      "source_file": "volume_profile",
+      "parity_proptest": null,
+      "exempt": true,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "vortex",
+      "source_file": "vortex",
+      "parity_proptest": "quantwave-core/src/indicators/vortex.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "voss_predictor",
+      "source_file": "voss_predictor",
+      "parity_proptest": "quantwave-core/src/indicators/voss_predictor.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "vpn",
+      "source_file": "vpn",
+      "parity_proptest": "quantwave-core/src/indicators/vpn.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "vwap",
+      "source_file": "vwap",
+      "parity_proptest": null,
+      "exempt": true,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "wavetrend",
+      "source_file": "wavetrend",
+      "parity_proptest": "quantwave-core/src/indicators/wavetrend.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "wclprice",
+      "source_file": "price_transform",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "willr",
+      "source_file": "momentum",
+      "parity_proptest": "quantwave-core/tests/test_missing_talib_parity.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "wma",
+      "source_file": "smoothing",
+      "parity_proptest": null,
+      "exempt": true,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "zero_lag",
+      "source_file": "zero_lag",
+      "parity_proptest": "quantwave-core/src/indicators/zero_lag.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "zlema",
+      "source_file": "tema",
+      "parity_proptest": "quantwave-core/src/indicators/tema.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    }
+  ]
+}

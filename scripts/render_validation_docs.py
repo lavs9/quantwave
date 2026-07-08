@@ -43,6 +43,8 @@ def render_stats(data: dict) -> str:
         f"| `proptest!` blocks (core) | **{data['proptest_blocks']}** | `rg 'proptest!\\{{' quantwave-core` |",
         f"| `check_batch_streaming_parity` call sites | {data['batch_streaming_parity_checks']} | indicator modules |",
         f"| TA-Lib parity test functions | {data['talib_parity_test_fns']} | `test_*_talib_parity.rs` |",
+        f"| Indicators with proptest parity (CI-enforced) | **{data['parity_proptest_indicators']}** | `check_indicator_parity_coverage.py` |",
+        f"| Reviewed parity exemptions | {data['parity_exemptions']} | `parity_exemptions.toml` |",
         "",
         "Regenerate: `python scripts/collect_validation_stats.py && python scripts/render_validation_docs.py`",
     ]

@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 GOLD_DIR = ROOT / "quantwave-core" / "tests" / "gold_standard"
 METADATA = ROOT / "metadata_export.json"
 OUT = ROOT / "docs" / "generated" / "validation_stats.json"
+PARITY_REPORT = ROOT / "docs" / "generated" / "parity_coverage.json"
 
 RUST_TEST_PACKAGES = (
     "quantwave-core",
@@ -68,6 +69,10 @@ def collect() -> dict:
         [core_tests / "test_all_talib_parity.rs", core_tests / "test_missing_talib_parity.rs"],
     )
 
+    parity: dict = {}
+    if PARITY_REPORT.exists():
+        parity = json.loads(PARITY_REPORT.read_text(encoding="utf-8"))
+
     return {
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "indicator_count": _indicator_count(),
@@ -81,6 +86,9 @@ def collect() -> dict:
         "proptest_blocks": proptest_blocks,
         "batch_streaming_parity_checks": batch_streaming_checks,
         "talib_parity_test_fns": talib_parity_fns,
+        "parity_proptest_indicators": parity.get("parity_proptest_count", 0),
+        "parity_exemptions": parity.get("exemption_count", 0),
+        "parity_gaps": parity.get("gap_count", 0),
     }
 
 

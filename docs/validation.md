@@ -7,7 +7,7 @@ QuantWave's primary credibility claim is **correctness**: one mathematical imple
 ## Coverage snapshot
 
 <!-- VALIDATION:STATS:START -->
-**Last updated:** 2026-07-08T12:05:48Z (UTC)
+**Last updated:** 2026-07-08T12:24:07Z (UTC)
 
 | Metric | Count | Source |
 |--------|------:|--------|
@@ -23,6 +23,8 @@ QuantWave's primary credibility claim is **correctness**: one mathematical imple
 | `proptest!` blocks (core) | **155** | `rg 'proptest!\{' quantwave-core` |
 | `check_batch_streaming_parity` call sites | 4 | indicator modules |
 | TA-Lib parity test functions | 134 | `test_*_talib_parity.rs` |
+| Indicators with proptest parity (CI-enforced) | **214** | `check_indicator_parity_coverage.py` |
+| Reviewed parity exemptions | 8 | `parity_exemptions.toml` |
 
 Regenerate: `python scripts/collect_validation_stats.py && python scripts/render_validation_docs.py`
 <!-- VALIDATION:STATS:END -->
@@ -79,6 +81,8 @@ and/or the Python gold parity registry.
 Every streaming indicator is encouraged to use `check_batch_streaming_parity` (see `quantwave-core/src/test_utils.rs`): for random input sequences, collecting `indicator.next(x)` must match the batch/plugin path within tolerance. This is the property that matters for **live trading** — your research DataFrame and your bar-by-bar feed must not diverge.
 
 `proptest!` blocks across `quantwave-core` exercise this property with randomized inputs and warmup-aware comparisons.
+
+**CI meta-check:** `scripts/check_indicator_parity_coverage.py` walks every `RegisteredMetadata` entry and requires a slug-matched `proptest!` parity test (including TA-Lib integration tests and shared-module aliases) or a reviewed entry in `quantwave-core/tests/parity_exemptions.toml`. Coverage stats are written to `docs/generated/parity_coverage.json`.
 
 ## TA-Lib cross-check
 

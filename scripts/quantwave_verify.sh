@@ -54,6 +54,7 @@ if [[ "$SKIP_METADATA" -eq 0 ]]; then
   echo "-- benchmark harness dry-run"
   python3 benchmarks/harness.py --dry-run
   python3 scripts/check_repo_hygiene.py
+  python3 scripts/check_indicator_parity_coverage.py
   python3 scripts/collect_validation_stats.py
   python3 scripts/render_validation_docs.py
   python3 scripts/check_validation_docs.py

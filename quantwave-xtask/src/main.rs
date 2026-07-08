@@ -1,14 +1,21 @@
 use anyhow::{Context, Result};
+use std::env;
 use std::fs;
 use std::path::PathBuf;
+use std::process::Command;
 
 fn main() -> Result<()> {
+    let args: Vec<String> = env::args().collect();
+    if args.len() > 1 && args[1] == "parity-check" {
+        return run_parity_check();
+    }
+
     println!("Generating documentation...");
 
     let workspace_root =
-        PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string()))
+        PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string()))
             .parent()
-            .unwrap()
+            .context("xtask manifest has no parent directory")?
             .to_path_buf();
     let indicators_base = workspace_root.join("docs/guides/indicators");
     let indicators_dir = workspace_root.join("quantwave-core/src/indicators");
@@ -36,9 +43,18 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+fn run_parity_check() -> Result<()> {
+    let workspace_root =
+        PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".to_string()))
+            .parent()
+            .context("xtask manifest has no parent directory")?
+            .to_path_buf();
+    run_python(&workspace_root, "scripts/check_indicator_parity_coverage.py")
+}
+
 fn run_python(workspace_root: &PathBuf, script: &str) -> Result<()> {
     println!("Running {script}...");
-    let status = std::process::Command::new("python3")
+    let status = Command::new("python3")
         .arg(workspace_root.join(script))
         .current_dir(workspace_root)
         .status()?;

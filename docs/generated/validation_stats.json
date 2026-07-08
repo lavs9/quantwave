@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-08T12:05:48Z",
+  "generated_at": "2026-07-08T12:24:07Z",
   "indicator_count": 221,
   "metadata_with_gold_file": 217,
   "gold_fixture_count": 27,
@@ -42,5 +42,8 @@
   "rust_test_total": 678,
   "proptest_blocks": 155,
   "batch_streaming_parity_checks": 4,
-  "talib_parity_test_fns": 134
+  "talib_parity_test_fns": 134,
+  "parity_proptest_indicators": 214,
+  "parity_exemptions": 8,
+  "parity_gaps": 0
 }

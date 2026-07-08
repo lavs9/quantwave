@@ -1,0 +1,34 @@
+# Reviewed gaps in per-indicator parity / gold coverage (quantwave-ruh0.1).
+# Every entry MUST have a non-empty reason (>=10 chars). CI rejects invalid schema.
+
+[[exemption]]
+slug = "griffiths_spectrum"
+reason = "Streaming proptest active; gold fixture griffiths_spectrum.json lost — restore fixture and uncomment gold test."
+
+[[exemption]]
+slug = "gaussian_hmm"
+reason = "Regime HMM parity covered by quantwave-core/tests/hmm_gaussian_parity.rs (batch decode vs streaming filter), not slug-named proptest."
+
+[[exemption]]
+slug = "lambda_hmm"
+reason = "Lambda-emission HMM validated in quantwave-core/tests/hmm_lambda_gold.rs; EM parity differs from classic indicator proptest pattern."
+
+[[exemption]]
+slug = "hmm_forecast"
+reason = "Forecast/decode stats validated in quantwave-core/tests/hmm_forecast_gold.rs; batch path is offline analytics, not bar-by-bar Next parity."
+
+[[exemption]]
+slug = "recursive_median_oscillator"
+reason = "Shares recursive_median.rs with RecursiveMedian; oscillator variant lacks dedicated proptest — add test_recursive_median_oscillator_parity."
+
+[[exemption]]
+slug = "wma"
+reason = "WMA smoothing has unit tests only; talib_rs overlap parity proptest not yet wired for streaming WMA struct."
+
+[[exemption]]
+slug = "volume_profile"
+reason = "VolumeProfile POC histogram uses windowed state; streaming/batch proptest pending (basic unit test only)."
+
+[[exemption]]
+slug = "vwap"
+reason = "AnchoredVWAP anchor-reset semantics need dedicated proptest; unit tests cover reset paths only."
