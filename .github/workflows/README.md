@@ -7,17 +7,22 @@ Two workflows. Everything else was merged here for clarity.
 **Triggers:** push or PR to `main`, or manual `workflow_dispatch`.
 
 ```
-sanity ──┬──► plugins (only if quantwave-plugins/ changed)
-         └──► deploy-docs (main push only)
+changes ──┬──► sanity (always)
+          ├──► rust-gate (Rust paths changed)
+          ├──► python-gold-parity (Linux + macOS, Python/gold paths changed)
+          ├──► plugins (quantwave-plugins/ changed)
+          └──► deploy-docs (main push only, after sanity)
 ```
 
 | Job | What it runs | When |
 |-----|----------------|------|
-| **Doc & metadata sanity** | `check_metadata_drift`, `check_doc_drift`, `check_public_metadata` | Always (~1 min) |
+| **Doc & metadata sanity** | metadata/doc/benchmark/hygiene drift checks | Always (~1 min) |
+| **Rust quality gate** | `cargo nextest` (core/polars/backtest) | `**/*.rs`, `Cargo.*` changed, or manual dispatch |
+| **Python gold parity** | 25+ streaming indicators vs `gold_standard/*.json` | `tests/python`, `quantwave-python`, gold fixtures changed |
 | **Plugin wheels** | Build `quantwave-plugins` wheel + pytest | `quantwave-plugins/**` changed, or manual dispatch |
 | **Deploy docs** | mkdocs → GitHub Pages | `main` push only, after sanity |
 
-**Full quality gate (local, pre-push):** `./scripts/install-git-hooks.sh` then push as usual.  
+**Full quality gate (local, pre-push):** `./scripts/install-git-hooks.sh` — superset of CI (unified wheel + full pytest).  
 **Manual run:** `./scripts/quantwave_verify.sh`
 
 ## Release (`release.yml`)

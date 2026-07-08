@@ -4,9 +4,11 @@
 #   ./scripts/install-git-hooks.sh
 #
 # Pipeline:
-#   1. sanity   — fast metadata + doc drift checks (~1 min)
-#   2. plugins  — plugin wheel smoke test (only when quantwave-plugins/ changes)
-#   3. docs     — mkdocs gh-pages deploy (main branch only)
+#   1. sanity        — fast metadata + doc drift checks (~1 min)
+#   2. rust-gate     — nextest (core/polars/backtest) when Rust sources change
+#   3. python-gold   — gold-vector streaming parity (Linux + macOS)
+#   4. plugins       — plugin wheel smoke test (only when quantwave-plugins/ changes)
+#   5. docs          — mkdocs gh-pages deploy (main branch only)
 #
 # Release (crates.io + PyPI) is a separate workflow: release.yml on v* tags.
 
@@ -24,6 +26,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Detect path changes
+    runs-on: ubuntu-latest
+    outputs:
+      rust: ${{ steps.filter.outputs.rust }}
+      python_gold: ${{ steps.filter.outputs.python_gold }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            rust:
+              - '**/*.rs'
+              - '**/Cargo.toml'
+              - 'Cargo.lock'
+              - '.github/workflows/ci.yml'
+            python_gold:
+              - 'tests/python/**'
+              - 'quantwave-python/**'
+              - 'quantwave-core/tests/gold_standard/**'
+              - '.github/workflows/ci.yml'
+
   sanity:
     name: Doc & metadata sanity
     runs-on: ubuntu-latest
@@ -42,6 +67,57 @@ jobs:
           python3 scripts/check_aeo.py
           python3 scripts/check_benchmark_claims.py
           python3 scripts/check_repo_hygiene.py
+
+  rust-gate:
+    name: Rust quality gate
+    needs: [changes]
+    if: needs.changes.outputs.rust == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
+
+      - name: cargo nextest (core crates)
+        run: |
+          cargo nextest run -p quantwave-core
+          cargo nextest run -p quantwave-polars
+          cargo nextest run -p quantwave-backtest
+
+  python-gold-parity:
+    name: Python gold parity (${{ matrix.os }})
+    needs: [changes]
+    if: needs.changes.outputs.python_gold == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install build + test deps
+        run: pip install maturin "uniffi-bindgen==0.31.0" pytest numpy
+
+      - name: Build quantwave (editable)
+        run: maturin develop --release --manifest-path quantwave-python/Cargo.toml
+
+      - name: Gold-standard streaming parity
+        run: python -m pytest tests/python/test_gold_parity.py -q
 
   plugins:
     name: Plugin wheels

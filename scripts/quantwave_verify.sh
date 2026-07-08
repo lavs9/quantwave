@@ -87,6 +87,7 @@ if [[ "$SKIP_PYTHON" -eq 0 ]]; then
   run_cached pytest bash -c '
     echo "-- pytest (Python DX + backtest smoke)"
     python3 -m pytest \
+      tests/python/test_gold_parity.py \
       quantwave-python/tests/test_python_dx.py \
       quantwave-python/tests/test_warmup_options.py \
       quantwave-python/tests/test_metadata_codegen.py \
