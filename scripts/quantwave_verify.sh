@@ -75,7 +75,9 @@ if [[ "$SKIP_WHEEL" -eq 0 ]]; then
     echo "-- unified PyPI wheel build + smoke test"
     python3 -m pip install -q wheel maturin "uniffi-bindgen==0.31.0" 2>/dev/null || true
     python3 scripts/build_unified_wheel.py --out dist
-    python3 scripts/pypi_smoke_test.py dist/quantwave-*.whl
+    WHEEL="$(ls -t dist/quantwave-*.whl 2>/dev/null | head -1)"
+    test -n "$WHEEL" || { echo "no quantwave wheel in dist/"; exit 1; }
+    python3 scripts/pypi_smoke_test.py "$WHEEL"
   '
 fi
 

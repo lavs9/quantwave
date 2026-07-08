@@ -17,7 +17,7 @@ import quantwave as qw
 
 assert qw.__version__, "missing __version__"
 names = qw.indicators()
-assert len(names) >= 200, f"expected 200+ indicators, got {len(names)}"
+assert len(names) == 221, f"expected 221 indicators, got {len(names)}"
 meta = qw.metadata("rsi")
 assert meta.name, "metadata failed"
 cls = qw.streaming_class("rsi")
