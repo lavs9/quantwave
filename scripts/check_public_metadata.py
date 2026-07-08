@@ -18,6 +18,21 @@ PUBLIC_FILES = [
     ROOT / "docs" / "llms.txt",
 ]
 
+COUNT_DRIFT_FILES = [
+    ROOT / "README.md",
+    ROOT / "mkdocs.yml",
+    ROOT / "docs" / "index.md",
+    ROOT / "docs" / "faq.md",
+    ROOT / "docs" / "comparison.md",
+    ROOT / "docs" / "guides" / "indicators" / "gallery.md",
+    ROOT / "docs" / "guides" / "indicators" / "index.md",
+    ROOT / "docs" / "getting-started" / "python.md",
+]
+
+INDICATOR_COUNT_RE = re.compile(
+    r"(?i)(?<![\w/])(?:~?\s*)?(1\d{2}|2\d{2}|500)\+?\s*(?:native\s+)?indicators?"
+)
+
 STALE_COUNT_RE = re.compile(r"150\+?\s*(native\s+)?indicators?", re.IGNORECASE)
 # Must match a line in llms.txt; validated against live metadata export count.
 EXPECTED_IN_LLMS = None  # set at runtime from export
@@ -87,6 +102,23 @@ def main() -> None:
             failures.append(
                 f"{cargo.relative_to(ROOT)}: missing documentation = https://docs.rs/..."
             )
+
+    for path in COUNT_DRIFT_FILES:
+        if not path.exists():
+            continue
+        text = path.read_text(encoding="utf-8")
+        for match in INDICATOR_COUNT_RE.finditer(text):
+            snippet = match.group(0)
+            if str(count) in snippet:
+                continue
+            if "500" in snippet and "names" in text[match.start() : match.end() + 20]:
+                failures.append(
+                    f"{path.relative_to(ROOT)}: stale indicator count {snippet!r} (want {count})"
+                )
+            elif "indicator" in snippet.lower():
+                failures.append(
+                    f"{path.relative_to(ROOT)}: stale indicator count {snippet!r} (want {count})"
+                )
 
     if failures:
         print("FAIL: public metadata / AEO checks:", file=sys.stderr)

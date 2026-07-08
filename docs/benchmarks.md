@@ -42,7 +42,24 @@ When isolating just the `Symbol` column (1M rows of ticker strings), the Arrow m
 
 ## Speed & Latency
 
-Speed and per-tick latency tables will appear here once the harness publishes its first JSON results. Until then, see the honest preliminary measurement in [`benchmark_results.md`](https://github.com/lavs9/quantwave/blob/main/benchmark_results.md) at the repo root (SMA streaming vs talib-rs batch on 1M rows).
+<!-- bench:throughput:start -->
+### Rust streaming throughput (measured)
+
+- **CPU**: arm
+- **RAM**: 24.0 GB
+- **OS**: Darwin 25.5.0
+- **Python**: 3.12.8 (harness host)
+- **Rows**: 100,000
+
+| Indicator | Mode | Time (ms) |
+|-----------|------|-----------|
+| SMA (20) | streaming | 0.50 |
+| RSI (14) | streaming | 0.00 |
+| SuperTrend (10,3) | streaming | 0.73 |
+
+<!-- bench:throughput:end -->
+
+Per-tick latency benchmarks will publish when a dedicated micro-bench runs (not batch ms relabeled as ns). See also [`benchmark_results.md`](https://github.com/lavs9/quantwave/blob/main/benchmark_results.md) for preliminary SMA comparisons.
 
 ---
 

@@ -232,27 +232,23 @@ for _special in [
 # Now backed primarily by metadata (reliable) + dir(ta) for anything extra the native exposes.
 # This closes the "first-pass" + "will be refined as metadata built" gap.
 
+def _is_internal_symbol(name: str) -> bool:
+    return (
+        name.endswith("Result")
+        or name.endswith("Protocol")
+        or name.endswith("Error")
+        or "Protocol" in name
+    )
+
+
 def _build_indicator_names() -> set[str]:
-    """Build the set of indicator names from metadata (primary) + ta namespace."""
-    names = set()
-    # Primary: our curated metadata (includes Ehlers, PA, ML core, classics)
-    for m in list_metadata():
-        names.add(m.name)
-        if m.name != m.name.lower():
-            names.add(m.name.lower())
-    # Secondary: anything callable exposed via the native/ ta namespace
-    for name in dir(ta):
-        if name.startswith("_"):
-            continue
-        if name in _OPTIONS_SYMBOLS:
-            continue
-        if name.endswith("Protocol") or "Protocol" in name:
-            continue  # uniffi internal, not user indicators
-        obj = getattr(ta, name, None)
-        if callable(obj) or isinstance(obj, type):
-            names.add(name)
-            names.add(name.lower())
-    return names
+    """Canonical indicator slugs from Rust metadata export (221); never dir(ta) pollution."""
+    try:
+        from quantwave._metadata_generated import GENERATED_ENTRIES
+
+        return set(GENERATED_ENTRIES.keys())
+    except ImportError:
+        return {m.name for m in list_metadata() if not _is_internal_symbol(m.name)}
 
 _INDICATOR_NAMES: set[str] = _build_indicator_names()
 

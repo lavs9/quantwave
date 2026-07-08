@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-08T06:26:43.211287+00:00",
+  "generated_at": "2026-07-08T07:05:11.238529+00:00",
   "harness_version": 1,
   "dataset": {
     "rows": 100000,
@@ -17,11 +17,17 @@
     "pandas_mb": 9.16,
     "footprint_ratio": 2.04
   },
-  "throughput": {},
+  "throughput": {
+    "mode": "rust_streaming",
+    "rows": 100000,
+    "rsi_14_streaming_ms": 0.0,
+    "sma_20_streaming_ms": 0.50125,
+    "supertrend_10_3_streaming_ms": 0.731584
+  },
   "latency": {},
   "comparisons": {},
   "notes": [
-    "Throughput and latency sections populate when Rust criterion and Python competitor benches are wired (quantwave-9gek.2 Phase 2)."
+    "Rust streaming throughput measured via benchmarks/rust_timing.py. Python competitor comparisons are Phase 2b."
   ],
-  "harness_runtime_s": 0.289
+  "harness_runtime_s": 16.753
 }

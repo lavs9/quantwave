@@ -1,6 +1,6 @@
 # Rust Guides
 
-QuantWave's Rust workspace powers **218** native indicators, Polars integration, and the backtest engine. These guides explain *when* and *how* to use Rust directly — without duplicating the full [docs.rs](https://docs.rs/quantwave-core) API reference.
+QuantWave's Rust workspace powers **221** native indicators, Polars integration, and the backtest engine. These guides explain *when* and *how* to use Rust directly — without duplicating the full [docs.rs](https://docs.rs/quantwave-core) API reference.
 
 !!! tip "Short answer"
     Use **Python + Polars** (`pip install "quantwave[polars]"`) for research and backtests.

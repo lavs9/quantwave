@@ -48,10 +48,13 @@ def memory_benchmark(df) -> dict[str, float]:
     }
 
 
-def throughput_placeholder(df, quick: bool) -> dict[str, dict[str, float]]:
-    """Reserved for criterion / pytest-benchmark integrations (Phase 2)."""
-    _ = (df, quick)
-    return {}
+def rust_throughput(quick: bool) -> dict[str, float | int | str]:
+    from benchmarks.rust_timing import run_rust_throughput
+
+    try:
+        return run_rust_throughput(quick=quick)
+    except Exception as exc:  # noqa: BLE001 — bench optional in partial envs
+        return {"error": str(exc), "mode": "rust_streaming"}
 
 
 def main() -> int:
@@ -76,12 +79,12 @@ def main() -> int:
         "dataset": {"rows": rows, "seed": cfg.seed, "frame_hash": digest},
         "hardware": hardware_info(),
         "memory": memory_benchmark(df),
-        "throughput": throughput_placeholder(df, args.quick),
+        "throughput": rust_throughput(args.quick),
         "latency": {},
         "comparisons": {},
         "notes": [
-            "Throughput and latency sections populate when Rust criterion and "
-            "Python competitor benches are wired (quantwave-9gek.2 Phase 2).",
+            "Rust streaming throughput measured via benchmarks/rust_timing.py. "
+            "Python competitor comparisons are Phase 2b.",
         ],
     }
     elapsed = time.perf_counter() - t0

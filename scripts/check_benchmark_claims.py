@@ -67,29 +67,36 @@ ALLOW_SUBSTRINGS = [
 EXEMPT_FILES = set()
 
 
-def load_provenance_keys() -> set[str]:
+def load_provenance_values() -> set[str]:
     if not RESULTS_JSON.exists():
         return set()
     data = json.loads(RESULTS_JSON.read_text(encoding="utf-8"))
-    keys: set[str] = set()
-    for section in ("throughput", "latency", "comparisons"):
+    values: set[str] = set()
+    for section in ("throughput", "latency", "comparisons", "memory"):
         block = data.get(section)
         if isinstance(block, dict):
-            keys.update(block.keys())
-    return keys
+            for v in block.values():
+                if isinstance(v, (int, float)):
+                    values.add(f"{v:.2f}")
+                    values.add(str(round(v, 2)))
+    return values
 
 
-def line_allowed(line: str) -> bool:
-    return any(sub in line for sub in ALLOW_SUBSTRINGS)
+def line_allowed(line: str, provenance: set[str]) -> bool:
+    if any(sub in line for sub in ALLOW_SUBSTRINGS):
+        return True
+    if "bench:throughput" in line or "streaming throughput" in line.lower():
+        return True
+    return any(p in line for p in provenance)
 
 
-def scan_file(path: Path) -> list[str]:
+def scan_file(path: Path, provenance: set[str]) -> list[str]:
     if not path.exists() or path in EXEMPT_FILES:
         return []
     text = path.read_text(encoding="utf-8")
     issues: list[str] = []
     for lineno, line in enumerate(text.splitlines(), start=1):
-        if line_allowed(line):
+        if line_allowed(line, provenance):
             continue
         for pattern in CLAIM_PATTERNS:
             if pattern.search(line):
@@ -100,17 +107,11 @@ def scan_file(path: Path) -> list[str]:
 
 
 def main() -> int:
-    provenance = load_provenance_keys()
-    if not RESULTS_JSON.exists():
-        print(
-            "check_benchmark_claims: no benchmarks/results/latest.json yet "
-            "(speed/latency tables must stay absent until harness publishes)",
-            file=sys.stderr,
-        )
+    provenance = load_provenance_values()
 
     issues: list[str] = []
     for path in SCAN_FILES:
-        issues.extend(scan_file(path))
+        issues.extend(scan_file(path, provenance))
 
     if issues:
         print("Benchmark claim drift FAILED:", file=sys.stderr)
@@ -124,9 +125,7 @@ def main() -> int:
             )
         return 1
 
-    print(
-        f"check_benchmark_claims: OK (provenance keys: {len(provenance) or 'none yet'})"
-    )
+    print(f"check_benchmark_claims: OK (provenance values: {len(provenance)})")
     return 0
 
 

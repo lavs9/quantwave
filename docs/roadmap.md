@@ -8,7 +8,7 @@ QuantWave is a high-performance, Polars-native technical analysis library. The e
 
 | Area | Status |
 |------|--------|
-| **Indicators** | 217 Rust `*_METADATA` entries; ~219 Polars `.ta()` methods; full expression-plugin parity |
+| **Indicators** | 221 Rust `*_METADATA` entries; Polars `.ta()` methods; full expression-plugin parity |
 | **Ehlers DSP** | 30+ indicators — deepest open-source cycle toolkit |
 | **Price Action** | Market Structure, S/R monitor (ATR-relative), geometric patterns (flags/H&S + neckline breakout), confluence |
 | **Regimes** | HMM, GMM, PELT changepoints, volatility clustering |

@@ -41,6 +41,7 @@ jobs:
           python3 scripts/check_public_metadata.py
           python3 scripts/check_aeo.py
           python3 scripts/check_benchmark_claims.py
+          python3 scripts/check_repo_hygiene.py
 
   plugins:
     name: Plugin wheels

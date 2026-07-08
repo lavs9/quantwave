@@ -23,6 +23,16 @@ Cargo.lock
 
 # Temporary scratch files used during development
 /scratch/
+/dist/
+clippy_errors*.txt
+nextest_output.txt
+*.traineddata
+/scratch_*.py
+/fix_*.py
+/update_code.py
+/patch_script.py
+/add_docs.py
+/add_plugin_docs.py
 docs/examples/notebooks/rendered/
 
 # Local verify / pre-push cache (scripts/verify_cache.py)

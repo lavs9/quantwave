@@ -1,9 +1,9 @@
 # Indicators
 
 !!! tip "Short answer"
-    **218 native Rust indicators** — search by name, browse the [catalog](native/), or start from the [gallery](gallery.md). Every indicator shares one `Next<T>` core for batch and streaming parity.
+    **221 native Rust indicators** — search by name, browse the [catalog](native/), or start from the [gallery](gallery.md). Every indicator shares one `Next<T>` core for batch and streaming parity.
 
-QuantWave ships **218 native Rust indicators** with bit-identical batch (Polars `.ta()`) and streaming (`Next<T>`) parity — validated by gold-standard vectors and proptests.
+QuantWave ships **221 native Rust indicators** with bit-identical batch (Polars `.ta()`) and streaming (`Next<T>`) parity — validated by gold-standard vectors and proptests.
 
 !!! tip "Find any indicator fast"
     Use the **search box** (top right) and type a name or slug — e.g. `rsi`, `cyber_cycle`, `market_structure`.  
@@ -51,7 +51,7 @@ Start with the [Gallery](gallery.md) — ten curated indicators with real strate
 <div class="qw-card" markdown="1">
 
 ### Full reference
-[Complete catalog](native/) — all 218 indicators by category with slug lookup tables.
+[Complete catalog](native/) — all 221 indicators by category with slug lookup tables.
 
 </div>
 

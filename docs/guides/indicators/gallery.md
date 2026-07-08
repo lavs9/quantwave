@@ -1,6 +1,6 @@
 # Indicator Gallery
 
-QuantWave delivers **217 production-grade native indicators** in high-performance Rust, with first-class exposure through Polars (`.ta()` namespace) and streaming `Next<T>` implementations. **Every indicator guarantees bit-identical results** between batch and streaming modes, validated via proptests against gold-standard vectors.
+QuantWave delivers **221 production-grade native indicators** in high-performance Rust, with first-class exposure through Polars (`.ta()` namespace) and streaming `Next<T>` implementations. **Every indicator guarantees bit-identical results** between batch and streaming modes, validated via proptests against gold-standard vectors.
 
 Each indicator page includes formulas, parameters, Rust/Python/Polars examples, edge cases, and visuals. Use the sidebar, search, or the categorized overview below to explore.
 

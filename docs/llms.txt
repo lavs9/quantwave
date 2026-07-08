@@ -1,6 +1,6 @@
 # QuantWave
 
-> High-performance, Polars-native quantitative finance library: 218 native Rust
+> High-performance, Polars-native quantitative finance library: 221 native Rust
 > indicators, full Ehlers DSP suite, price action (MQL5), regime detection,
 > and a built-in backtest engine. Bit-identical batch (Polars `.ta` / `.bt`)
 > and streaming (`Next<T>`) parity. MIT licensed.

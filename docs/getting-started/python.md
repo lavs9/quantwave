@@ -106,7 +106,7 @@ Use `qw.assert_parity()` for batch vs streaming checks — it compares warmup ba
 ```python
 import quantwave as qw
 
-qw.indicators()              # sorted list of ~500+ names
+qw.indicators()              # sorted list of 221 names
 qw.categories()              # e.g. "Classic", "Ehlers DSP", "Momentum", ...
 qw.category("Ehlers DSP")    # indicators in one category
 qw.indicators_by_category()  # full map for UIs / autocomplete

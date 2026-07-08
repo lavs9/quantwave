@@ -54,7 +54,7 @@ polars = { version = "1", features = ["lazy"] }
 | `.ta()` on LazyFrame | ✅ primary DX | `quantwave-polars` |
 | `.bt()` backtest | ✅ `quantwave._backtest` | `quantwave-backtest` |
 | Streaming `Next<T>` | via parity / future bindings | `quantwave-core` |
-| 218 indicator catalog | metadata + `.ta()` | `quantwave-core` + plugins |
+| 221 indicator catalog | metadata + `.ta()` | `quantwave-core` + plugins |
 
 For agent/LLM discovery, prefer MkDocs narrative pages + this map; use docs.rs for type-level API depth.
 

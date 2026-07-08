@@ -12,7 +12,7 @@ One-page guide for teams choosing a technical-analysis stack on Polars (or migra
 |-----------|---------------|------------|---------------|
 | **Core** | Rust (`quantwave-core`) | C library | Pure Python (pandas) |
 | **DataFrame API** | Polars-native (`.ta`, plugins, `.bt`) | NumPy arrays / pandas via wrappers | pandas `DataFrame` columns |
-| **Registered indicators** | **217** native + metadata | ~158 functions | ~130 strategies |
+| **Registered indicators** | **221** native + metadata | ~158 functions | ~130 strategies |
 | **Ehlers DSP** | 30+ dedicated tools | Minimal | A few community ports |
 | **Price action** | Market Structure, flags/H&S, S/R monitor | Candlestick patterns only | Limited |
 | **Regime detection** | HMM, GMM, PELT, vol clustering | No | No |

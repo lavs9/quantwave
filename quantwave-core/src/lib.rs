@@ -1,7 +1,7 @@
 //! # quantwave-core
 //!
 //! Core technical-analysis engine for [QuantWave](https://lavs9.github.io/quantwave/):
-//! **218** native indicators, Ehlers DSP, price-action detectors, regime features,
+//! **221** native indicators, Ehlers DSP, price-action detectors, regime features,
 //! and the [`Next<Input>`](traits::Next) streaming trait that powers batch/streaming parity.
 //!
 //! ## Quick start (streaming)

@@ -2,7 +2,7 @@
 
 **High-performance, Polars-native technical analysis — in Python and Rust**
 
-221 native indicators · Full Ehlers DSP suite · Regime Detection · Backtest engine · Bit-identical streaming & batch
+221 Native Indicators · Full Ehlers DSP suite · Regime Detection · Backtest engine · Bit-identical streaming & batch
 
 **Python** `pip install quantwave` (or `pip install "quantwave[polars]"` for the Polars integration layer) **Rust** `cargo add quantwave`
 
@@ -36,7 +36,7 @@ It delivers **institutional-grade Rust performance** through zero-copy Polars ex
 
 QuantWave is no longer early-stage. It ships with production-ready depth across several domains:
 
-- **218 Native Indicators** with gold-standard validation and extensive Ehlers DSP coverage
+- 221 Native Indicators** with gold-standard validation and extensive Ehlers DSP coverage
 - **Full Regime Detection Suite** (HMM, GMM, PELT, clustering, conditioned risk metrics)
 - **Complete Options India Stack** — Black-Scholes Greeks, IV solvers, chain analytics (Max Pain, PCR, GEX, OI Zones), and NSE utilities, all exposed as native Polars expressions
 - **Streaming & Batch Parity** — The same mathematical logic powers both high-speed Polars pipelines and low-latency streaming via the universal `Next<T>` trait
