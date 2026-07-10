@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-08T17:09:56Z",
+  "generated_at": "2026-07-10T04:38:26Z",
   "indicator_count": 221,
   "metadata_with_gold_file": 217,
-  "gold_fixture_count": 27,
+  "gold_fixture_count": 28,
   "gold_fixtures": [
     "alma_9_085_6.json",
     "atr_ts_14_25.json",
@@ -13,6 +13,7 @@
     "ehlers_stochastic.json",
     "frac_diff.json",
     "fractals.json",
+    "griffiths_spectrum.json",
     "heikin_ashi.json",
     "hma_14.json",
     "hmm_gaussian_2state.json",
@@ -44,6 +45,6 @@
   "batch_streaming_parity_checks": 4,
   "talib_parity_test_fns": 134,
   "parity_proptest_indicators": 214,
-  "parity_exemptions": 8,
+  "parity_exemptions": 7,
   "parity_gaps": 0
 }

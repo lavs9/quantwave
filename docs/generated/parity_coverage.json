@@ -1,7 +1,7 @@
 {
   "indicator_count": 221,
   "parity_proptest_count": 214,
-  "exemption_count": 8,
+  "exemption_count": 7,
   "gap_count": 0,
   "gaps": [],
   "indicators": [
@@ -953,8 +953,8 @@
       "slug": "griffiths_spectrum",
       "source_file": "griffiths_spectrum",
       "parity_proptest": "quantwave-core/src/indicators/griffiths_spectrum.rs",
-      "exempt": true,
-      "gold_gap": "missing on-disk gold fixture 'griffiths_spectrum.json' (test commented out)",
+      "exempt": false,
+      "gold_gap": null,
       "status": "ok"
     },
     {
