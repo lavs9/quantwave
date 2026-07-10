@@ -239,10 +239,14 @@ class ta:
     InstantaneousTrendlineFeatureExtractor: Any
     MarketStructure: Any
     TrendflexFeatureExtractor: Any
+    cyber_cycle_features: Any
     fit_gaussian_hmm: Any
     gaussian_hmm_diagnostics: Any
     gaussian_hmm_forecast_state: Any
     gaussian_hmm_forecast_vol: Any
     griffiths_dominant_cycle_features: Any
+    hurst_features: Any
+    instantaneous_trendline_features: Any
     market_structure_batch: Any
     regime_to_features: Any
+    trendflex_features: Any

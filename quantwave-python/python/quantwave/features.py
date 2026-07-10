@@ -104,7 +104,7 @@ def _apply_feature(
         out["itrend_strength"] = [r.strength for r in rows]
 
     elif spec.name == "regime_hmm":
-        hmm = _ta().BullBearHmm.bull_bear()
+        hmm = _ta().BullBearHMM.bull_bear()
         labels: List[float] = []
         prev = closes[0] if closes else 0.0
         for i, c in enumerate(closes):
