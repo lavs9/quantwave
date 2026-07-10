@@ -71,6 +71,8 @@ jobs:
           python3 scripts/check_core_safety.py
           python3 scripts/check_validation_docs.py
           python3 scripts/check_release_invariants.py
+          python3 scripts/check_bead_ids.py
+          python3 scripts/check_talib_map_drift.py
 
   rust-gate:
     name: Rust quality gate

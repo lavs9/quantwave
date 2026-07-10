@@ -1,7 +1,7 @@
 """
 quantwave - High-performance technical analysis library (Python bindings).
 
-Public surface for 0.5.2 (Python DX improvements from quantwave-p3z9).
+Public surface for 0.6.x Python DX.
 
 Recommended modern usage:
     import quantwave as qw
@@ -110,7 +110,7 @@ except Exception as _e:  # pragma: no cover
     options = _DummyNS()
     talib = _DummyNS()
 
-# Public exception types (quantwave-1x2z; must survive partial native load).
+# Public exception types (must survive partial native load).
 from ._errors import (
     QuantwaveError,
     IndicatorNotFoundError,
@@ -152,7 +152,7 @@ from ._metadata import (
 
 from .backtest_types import PerformanceMetrics, BacktestStats
 
-# Options India helpers — namespaced under quantwave.options (quantwave-05q7).
+# Options India helpers — namespaced under quantwave.options.
 # Must NOT pollute top-level indicator discovery or qw.ta.
 _OPTIONS_SYMBOLS = frozenset({
     "bs_call_price", "bs_put_price", "bs_delta", "bs_gamma", "bs_theta",
@@ -228,7 +228,7 @@ for _special in [
                 globals()[_special] = _v
                 break
 
-# --- Basic Discovery API (quantwave-p3z9 / p0s) ---
+# --- Basic Discovery API ---
 # Now backed primarily by metadata (reliable) + dir(ta) for anything extra the native exposes.
 # This closes the "first-pass" + "will be refined as metadata built" gap.
 
@@ -271,7 +271,7 @@ def is_indicator(name: str) -> bool:
 
 
 # =============================================================================
-# Streaming Class Lookup (quantwave-p3z9)
+# Streaming Class Lookup
 # =============================================================================
 
 def streaming_class(name: str):
@@ -309,7 +309,7 @@ def streaming_class(name: str):
 
 
 # =============================================================================
-# Parity Testing Helper (quantwave-p3z9 - Critical)
+# Parity Testing Helper
 # =============================================================================
 
 def assert_parity(
@@ -417,7 +417,7 @@ def assert_parity(
 
 
 # =============================================================================
-# Streaming Readiness Helpers (quantwave-p3z9 / 1l79)
+# Streaming Readiness Helpers
 # =============================================================================
 
 class StreamingWrapper:
@@ -520,7 +520,7 @@ for _name in _option_legacy_names:
 # available via the globals() population for backward compat.)
 
 # =============================================================================
-# Final clean public surface for 0.5.2 / P0 DX (quantwave-p3z9 children)
+# Final clean public surface
 # =============================================================================
 
 # ML feature matrix (rdpk) — imported after ``ta`` is populated to avoid circular import.
@@ -533,7 +533,7 @@ from .features import (
 
 
 def __getattr__(name: str):
-    """Deprecated top-level access for options helpers (quantwave-05q7)."""
+    """Deprecated top-level access for options helpers."""
     if name in _OPTIONS_SYMBOLS:
         warnings.warn(
             f"quantwave.{name} is deprecated; use quantwave.options.{name} instead",

@@ -1,4 +1,4 @@
-//! PyO3 bindings for `quantwave-backtest` (quantwave-cr6v.4).
+//! PyO3 bindings for `quantwave-backtest`.
 //!
 //! Exposes `BacktestConfig`, `BacktestEngine`, `BacktestResult`, `PerformanceMetrics`,
 //! and `BacktestReport` to Python with zero-copy Polars DataFrame interop via `pyo3-polars`.

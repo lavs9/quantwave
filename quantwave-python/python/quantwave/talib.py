@@ -1,5 +1,5 @@
 """
-TA-Lib compatible interface (quantwave-xwiw).
+TA-Lib compatible interface.
 
 Provides uppercase function names and parameter aliases familiar from the
 classic ``talib`` library. Functions are thin wrappers around the native
@@ -19,45 +19,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
-# slug in _quantwave -> TA-Lib uppercase export name
-_TALIB_MAP: Dict[str, str] = {
-    "rsi": "RSI",
-    "macd": "MACD",
-    "bbands": "BBANDS",
-    "atr": "ATR",
-    "adx": "ADX",
-    "stoch": "STOCH",
-    "willr": "WILLR",
-    "obv": "OBV",
-    "ad": "AD",
-    "adosc": "ADOSC",
-    "sma": "SMA",
-    "ema": "EMA",
-    "wma": "WMA",
-    "dema": "DEMA",
-    "tema": "TEMA",
-    "t3": "T3",
-    "kama": "KAMA",
-    "cci": "CCI",
-    "roc": "ROC",
-    "mom": "MOM",
-    "aroon": "AROON",
-    "mfi": "MFI",
-    "natr": "NATR",
-    "trange": "TRANGE",
-    "stddev": "STDDEV",
-    "var": "VAR",
-    "correl": "CORREL",
-    "beta": "BETA",
-    "linearreg": "LINEARREG",
-    "linearreg_slope": "LINEARREG_SLOPE",
-    "ht_trendline": "HT_TRENDLINE",
-    "ht_dcperiod": "HT_DCPERIOD",
-    "ht_dcphase": "HT_DCPHASE",
-    "ht_phasor": "HT_PHASOR",
-    "ht_sine": "HT_SINE",
-    "ht_trendmode": "HT_TRENDMODE",
-}
+from quantwave._talib_map_generated import TALIB_SLUG_TO_NAME as _TALIB_MAP
 
 # TA-Lib param name -> quantwave param name
 _PARAM_ALIASES = {

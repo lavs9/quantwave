@@ -1,4 +1,4 @@
-"""HTML tear sheets for backtest reports (quantwave-0gi1)."""
+"""HTML tear sheets for backtest reports."""
 
 from __future__ import annotations
 

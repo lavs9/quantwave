@@ -46,3 +46,7 @@ harness = false
 [[bin]]
 name = "benchmark_export"
 path = "src/bin/benchmark_export.rs"
+
+[[bin]]
+name = "gen_gold_griffiths"
+path = "src/bin/gen_gold_griffiths.rs"

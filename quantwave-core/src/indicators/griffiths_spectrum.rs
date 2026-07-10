@@ -159,20 +159,16 @@ Pwr_{norm}(P) = \frac{Pwr(P)}{\max(Pwr)}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{assert_indicator_parity_vec, load_gold_standard_vec};
     use crate::traits::Next;
-    // use crate::test_utils;
-    // use crate::test_utils::{load_gold_standard_vec, assert_indicator_parity_vec};
     use proptest::prelude::*;
 
-    /*
     #[test]
     fn test_griffiths_spectrum_gold_standard() {
         let case = load_gold_standard_vec("griffiths_spectrum");
         let gs = GriffithsSpectrum::new(18, 40, 40);
         assert_indicator_parity_vec(gs, &case.input, &case.expected);
     }
-    */
-    // TODO: Restore test once griffiths_spectrum.json is recovered.
 
     #[test]
     fn test_griffiths_spectrum_basic() {

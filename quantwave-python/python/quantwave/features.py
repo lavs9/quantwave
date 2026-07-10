@@ -1,5 +1,5 @@
 """
-ML feature matrix helpers (quantwave-rdpk).
+ML feature matrix helpers.
 
 Builds wide, zero-lookahead feature DataFrames from OHLCV using the same
 batch extractors that power Rust proptests and ``lf.ta().features.*``.

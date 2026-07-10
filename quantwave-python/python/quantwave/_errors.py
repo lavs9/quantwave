@@ -1,5 +1,5 @@
 """
-Public exception hierarchy for quantwave (quantwave-1x2z).
+Public exception hierarchy for quantwave.
 
 Exception contract
 ------------------

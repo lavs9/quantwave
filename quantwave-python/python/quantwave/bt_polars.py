@@ -252,7 +252,7 @@ class BtLazyNamespace:
         portfolio_mode: str = "shared_capital",
         portfolio_allocator: str = "equal_weight",
     ):
-        """Shared-capital multi-symbol backtest (quantwave-qzpi.9)."""
+        """Shared-capital multi-symbol backtest."""
         config = _config_from_kwargs(
             signal=signal,
             timestamp_col=timestamp_col,
@@ -579,7 +579,7 @@ class BtLazyNamespace:
         mode: str = "trade_bootstrap",
         n_bars_forward: int = 252,
     ) -> dict:
-        """Run backtest then Monte Carlo robustness (quantwave-fsg3).
+        """Run backtest then Monte Carlo robustness.
 
         Args:
             mode: ``trade_bootstrap`` (resample closed-trade PnLs) or

@@ -2,10 +2,6 @@
 # Every entry MUST have a non-empty reason (>=10 chars). CI rejects invalid schema.
 
 [[exemption]]
-slug = "griffiths_spectrum"
-reason = "Streaming proptest active; gold fixture griffiths_spectrum.json lost — restore fixture and uncomment gold test."
-
-[[exemption]]
 slug = "gaussian_hmm"
 reason = "Regime HMM parity covered by quantwave-core/tests/hmm_gaussian_parity.rs (batch decode vs streaming filter), not slug-named proptest."
 

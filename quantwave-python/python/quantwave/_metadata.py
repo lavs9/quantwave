@@ -5,7 +5,7 @@ Primary source of truth: Rust `*_METADATA` constants in quantwave-core, exported
 `scripts/generate_indicator_metadata.py` into `_metadata_generated.py`.
 
 Hand-curated entries in `_HAND_METADATA` override generated slugs for Python DX
-(TA-Lib names, data_inputs, warmup). See quantwave-iqq7.
+(TA-Lib names, data_inputs, warmup).
 
 Warmup / NaN semantics (quantwave-976r)
 ---------------------------------------
@@ -36,7 +36,7 @@ from typing import Optional, List, Dict, Any, Mapping
 
 @dataclass(frozen=True)
 class BoundaryInfo:
-    """Boundary conditions and error behavior for an indicator (quantwave-p49i)."""
+    """Boundary conditions and error behavior for an indicator."""
 
     warmup_behavior: str
     period_gt_len: str
@@ -274,7 +274,7 @@ def get_indicator_signature(name: str):
     }
 
 
-# --- Boundary conditions (quantwave-p49i) ---
+# --- Boundary conditions ---
 
 _BOUNDARY_BY_KIND: Dict[str, BoundaryInfo] = {
     "scalar": BoundaryInfo(
@@ -337,7 +337,7 @@ def boundary_info(name: str) -> Optional[BoundaryInfo]:
     return _BOUNDARY_BY_KIND[_boundary_kind(meta)]
 
 
-# --- Categories API (quantwave-l99s) ---
+# --- Categories API ---
 
 _UNCATEGORIZED = "Uncategorized"
 
