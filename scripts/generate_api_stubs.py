@@ -103,7 +103,7 @@ def parse_native_symbols() -> tuple[set[str], set[str]]:
         streaming.add(m.group(1))
     for m in re.finditer(r"^pub struct (\w+) \{ inner:", text, re.M):
         streaming.add(m.group(1))
-    for type_name in re.findall(r"export_[a-z0-9_]+!\((\w+)", text):
+    for type_name in re.findall(r"export_[a-z0-9_]+!\s*\(\s*(\w+)", text):
         batch.add(pascal_to_snake(type_name))
         streaming.add(type_name)
     return batch, streaming
