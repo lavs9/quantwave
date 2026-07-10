@@ -21,7 +21,11 @@ impl<T: Default + Clone> RingBuffer<T> {
     }
 
     pub fn with_capacity(capacity: usize) -> Self {
-        let pow2 = if capacity == 0 { 16 } else { (capacity + 1).next_power_of_two() };
+        let pow2 = if capacity == 0 {
+            16
+        } else {
+            (capacity + 1).next_power_of_two()
+        };
         Self {
             buffer: vec![T::default(); pow2],
             mask: pow2 - 1,
@@ -104,10 +108,7 @@ impl<T: Default + Clone> RingBuffer<T> {
     }
 
     pub fn iter(&self) -> RingBufferIter<'_, T> {
-        RingBufferIter {
-            rb: self,
-            index: 0,
-        }
+        RingBufferIter { rb: self, index: 0 }
     }
 
     pub fn retain<F>(&mut self, mut f: F)
@@ -130,7 +131,7 @@ impl<T: Default + Clone> RingBuffer<T> {
         self.count = new_count;
         self.head = self.tail.wrapping_add(new_count);
     }
-    
+
     pub fn get(&self, index: usize) -> Option<&T> {
         if index < self.count {
             Some(&self.buffer[self.tail.wrapping_add(index) & self.mask])
@@ -167,7 +168,7 @@ impl<'a, T> ExactSizeIterator for RingBufferIter<'a, T> {
 
 impl<T> Index<usize> for RingBuffer<T> {
     type Output = T;
-    
+
     #[inline]
     fn index(&self, index: usize) -> &Self::Output {
         assert!(index < self.count, "index out of bounds");

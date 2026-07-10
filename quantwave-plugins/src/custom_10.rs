@@ -1,8 +1,8 @@
 use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
-use serde::Deserialize;
-use quantwave_core::*;
 use quantwave_core::traits::Next;
+use quantwave_core::*;
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct HarringtonAdxKwargs {
@@ -16,7 +16,8 @@ fn harrington_adx(inputs: &[Series], kwargs: HarringtonAdxKwargs) -> PolarsResul
     let low = inputs[1].f64()?;
     let close = inputs[2].f64()?;
 
-    let mut indicator = quantwave_core::HarringtonADXOscillator::new(kwargs.adx_length, kwargs.adx_smooth_length);
+    let mut indicator =
+        quantwave_core::HarringtonADXOscillator::new(kwargs.adx_length, kwargs.adx_smooth_length);
     let mut values = Vec::with_capacity(close.len());
 
     for i in 0..close.len() {

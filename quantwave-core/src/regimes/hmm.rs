@@ -1,14 +1,14 @@
 //! Hidden Markov Models (Hamilton 1989)
 //!
-//! Source: Hamilton, J. D. (1989). 
-//! "A New Approach to the Economic Analysis of Nonstationary Time Series and the Business Cycle." 
+//! Source: Hamilton, J. D. (1989).
+//! "A New Approach to the Economic Analysis of Nonstationary Time Series and the Business Cycle."
 //! Econometrica, 57(2), 357-384.
 //!
 //! Implementation of a regime-switching Hidden Markov Model with Gaussian emissions.
 //! Includes the Viterbi algorithm for online state decoding and placeholder for Baum-Welch training.
 
-use crate::traits::Next;
 use crate::regimes::MarketRegime;
+use crate::traits::Next;
 use serde::{Deserialize, Serialize};
 
 /// A Hidden Markov Model for regime detection.
@@ -30,12 +30,7 @@ pub struct HMM {
 
 impl HMM {
     /// Creates a new HMM with pre-defined parameters.
-    pub fn new(
-        a: Vec<Vec<f64>>,
-        means: Vec<f64>,
-        stds: Vec<f64>,
-        pi: Vec<f64>,
-    ) -> Self {
+    pub fn new(a: Vec<Vec<f64>>, means: Vec<f64>, stds: Vec<f64>, pi: Vec<f64>) -> Self {
         let n_states = a.len();
         Self {
             n_states,
@@ -124,7 +119,7 @@ impl Next<f64> for HMM {
                 }
                 let emission = Self::gaussian_pdf(x, self.means[j], self.stds[j]);
                 next_delta[j] = max_prev + emission.ln();
-                
+
                 if next_delta[j] > max_prob {
                     max_prob = next_delta[j];
                     best_state = j;

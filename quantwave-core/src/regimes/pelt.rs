@@ -1,7 +1,7 @@
 //! Changepoint Detection (Killick et al. 2012)
 //!
-//! Source: Killick, R., Fearnhead, P., & Eckley, I. A. (2012). 
-//! "Optimal Detection of Changepoints with a Linear Computational Cost." 
+//! Source: Killick, R., Fearnhead, P., & Eckley, I. A. (2012).
+//! "Optimal Detection of Changepoints with a Linear Computational Cost."
 //! Journal of the American Statistical Association, 107(500), 1590-1598.
 //!
 //! Implementation of the Pruned Exact Linear Time (PELT) algorithm for exact segmentation.
@@ -29,7 +29,9 @@ impl PELT {
     /// Normal log-likelihood cost function for change in mean.
     /// C(y_s:t) = (t-s) * var(y_s:t)
     fn cost(&self, data: &[f64], start: usize, end: usize) -> f64 {
-        if end <= start { return 0.0; }
+        if end <= start {
+            return 0.0;
+        }
         let n = (end - start) as f64;
         let mut sum = 0.0;
         let mut sum_sq = 0.0;
@@ -46,7 +48,9 @@ impl PELT {
     /// Returns indices of changepoints.
     pub fn detect(&self, data: &[f64]) -> Vec<usize> {
         let n = data.len();
-        if n < self.min_dist * 2 { return vec![]; }
+        if n < self.min_dist * 2 {
+            return vec![];
+        }
 
         let mut f = vec![0.0; n + 1];
         let mut cp = vec![0; n + 1];
@@ -59,7 +63,9 @@ impl PELT {
             let mut best_tau = 0;
 
             for &tau in &r {
-                if t - tau < self.min_dist { continue; }
+                if t - tau < self.min_dist {
+                    continue;
+                }
                 let val = f[tau] + self.cost(data, tau, t) + self.penalty;
                 if val < min_val {
                     min_val = val;

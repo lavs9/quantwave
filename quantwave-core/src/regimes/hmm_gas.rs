@@ -1,13 +1,13 @@
 //! HMM-GAS (Score-Driven Transitions)
-//! 
-//! Source: Creal, Koopman, and Lucas (2013) 
+//!
+//! Source: Creal, Koopman, and Lucas (2013)
 //! "Generalized Autoregressive Score Models with Applications."
-//! 
-//! HMM-GAS models allow transition probabilities to be time-varying, 
+//!
+//! HMM-GAS models allow transition probabilities to be time-varying,
 //! driven by the scaled score of the observation likelihood.
 
-use crate::traits::Next;
 use crate::regimes::MarketRegime;
+use crate::traits::Next;
 use serde::{Deserialize, Serialize};
 
 /// A 2-state Hidden Markov Model with Score-Driven Transitions.
@@ -64,7 +64,7 @@ impl Next<f64> for HMMGAS {
         // Current transition probabilities
         let p11 = Self::logit_inv(self.f11);
         let p22 = Self::logit_inv(self.f22);
-        
+
         let a = [[p11, 1.0 - p11], [1.0 - p22, p22]];
 
         let mut likelihoods = [0.0; 2];
@@ -82,7 +82,10 @@ impl Next<f64> for HMMGAS {
         }
 
         let next_probs = if total_likelihood > 0.0 {
-            [likelihoods[0] / total_likelihood, likelihoods[1] / total_likelihood]
+            [
+                likelihoods[0] / total_likelihood,
+                likelihoods[1] / total_likelihood,
+            ]
         } else {
             self.last_probs
         };
@@ -93,8 +96,10 @@ impl Next<f64> for HMMGAS {
         let score11 = next_probs[0] - self.last_probs[0];
         let score22 = next_probs[1] - self.last_probs[1];
 
-        self.f11 = self.p11_params[0] + self.p11_params[1] * score11 + self.p11_params[2] * self.f11;
-        self.f22 = self.p22_params[0] + self.p22_params[1] * score22 + self.p22_params[2] * self.f22;
+        self.f11 =
+            self.p11_params[0] + self.p11_params[1] * score11 + self.p11_params[2] * self.f11;
+        self.f22 =
+            self.p22_params[0] + self.p22_params[1] * score22 + self.p22_params[2] * self.f22;
 
         self.last_probs = next_probs;
         self.initialized = true;

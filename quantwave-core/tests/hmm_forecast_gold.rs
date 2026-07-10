@@ -156,8 +156,14 @@ fn diagnostics_bundle_matches_forecast_gold() {
     let case = load_case();
     let params = params_from(&case);
     let decode = params.decode(&case.observations).expect("decode");
-    let diag = params.diagnostics(&decode, &case.observations).expect("diag");
-    assert_relative_eq!(diag.forecast_vol_h1, case.expected.forecast_vol_h1, epsilon = 1e-9);
+    let diag = params
+        .diagnostics(&decode, &case.observations)
+        .expect("diag");
+    assert_relative_eq!(
+        diag.forecast_vol_h1,
+        case.expected.forecast_vol_h1,
+        epsilon = 1e-9
+    );
     assert_eq!(diag.pseudo_residuals.len(), case.observations.len());
     assert_eq!(diag.decode_stats.len(), case.observations.len());
     assert_eq!(diag.state_obs_stats.len(), 2);

@@ -235,7 +235,12 @@ fn test_feature_regime_conditional_and_stability() {
         let mean_trend: f64 = hurst_trending.iter().sum::<f64>() / hurst_trending.len() as f64;
         let mean_mr: f64 = hurst_mr.iter().sum::<f64>() / hurst_mr.len() as f64;
         // In this generator, trending should be directionally more persistent
-        assert!(mean_trend > mean_mr - 0.08, "Hurst trending mean {} not > mean-rev {}", mean_trend, mean_mr);
+        assert!(
+            mean_trend > mean_mr - 0.08,
+            "Hurst trending mean {} not > mean-rev {}",
+            mean_trend,
+            mean_mr
+        );
     }
 
     // CyberCycle on oscillatory-ish segments should produce non-trivial cycle amplitude after warmup
@@ -249,7 +254,10 @@ fn test_feature_regime_conditional_and_stability() {
     }
     if cycle_vals.len() > 10 {
         let max_cycle = cycle_vals.iter().cloned().fold(0.0f64, f64::max);
-        assert!(max_cycle > 0.1, "CyberCycle produced near-zero amplitude in mean-rev regime");
+        assert!(
+            max_cycle > 0.1,
+            "CyberCycle produced near-zero amplitude in mean-rev regime"
+        );
     }
 
     // Stability: in "steady" regime, features should not explode in variance
@@ -263,8 +271,13 @@ fn test_feature_regime_conditional_and_stability() {
     }
     if steady_tf.len() > 5 {
         let mean: f64 = steady_tf.iter().sum::<f64>() / steady_tf.len() as f64;
-        let var: f64 = steady_tf.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / steady_tf.len() as f64;
-        assert!(var < 25.0, "Trendflex variance too high ({}) in steady regime - stability failure", var);
+        let var: f64 =
+            steady_tf.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / steady_tf.len() as f64;
+        assert!(
+            var < 25.0,
+            "Trendflex variance too high ({}) in steady regime - stability failure",
+            var
+        );
     }
 }
 
@@ -300,8 +313,8 @@ mod real_data_like_samples {
     #[test]
     fn test_features_on_realistic_sample() {
         let realistic: Vec<f64> = vec![
-            100.0, 100.8, 99.7, 101.2, 100.5, 102.1, 101.8, 99.9, 103.4, 102.7,
-            104.1, 103.0, 101.5, 105.2, 104.8, 106.3, 105.9, 104.2, 107.1, 106.5,
+            100.0, 100.8, 99.7, 101.2, 100.5, 102.1, 101.8, 99.9, 103.4, 102.7, 104.1, 103.0,
+            101.5, 105.2, 104.8, 106.3, 105.9, 104.2, 107.1, 106.5,
         ];
 
         let mut h = HurstFeatureExtractor::new(8);

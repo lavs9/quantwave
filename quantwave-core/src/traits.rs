@@ -9,7 +9,7 @@ pub trait Next<Input> {
     /// Process a batch of inputs eagerly.
     /// This allows implementations to override with vectorized logic,
     /// while falling back to scalar processing by default.
-    fn next_batch(&mut self, inputs: &[Input]) -> Vec<Self::Output> 
+    fn next_batch(&mut self, inputs: &[Input]) -> Vec<Self::Output>
     where
         Input: Copy,
     {

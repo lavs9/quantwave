@@ -44,21 +44,27 @@ fn map4(inputs: &[Series], f: impl Fn(f64, f64, f64, f64) -> f64) -> PolarsResul
 fn options_bs_delta(inputs: &[Series], kwargs: SpotCallKwargs) -> PolarsResult<Series> {
     let spot = kwargs.spot;
     let is_call = kwargs.is_call;
-    map4(inputs, |k, sigma, r, t| options_india::bs_delta(spot, k, r, t, sigma, is_call))
+    map4(inputs, |k, sigma, r, t| {
+        options_india::bs_delta(spot, k, r, t, sigma, is_call)
+    })
 }
 
 /// inputs: strike, sigma, r, t — kwargs: spot
 #[polars_expr(output_type = Float64)]
 fn options_bs_gamma(inputs: &[Series], kwargs: SpotKwargs) -> PolarsResult<Series> {
     let spot = kwargs.spot;
-    map4(inputs, |k, sigma, r, t| options_india::bs_gamma(spot, k, r, t, sigma))
+    map4(inputs, |k, sigma, r, t| {
+        options_india::bs_gamma(spot, k, r, t, sigma)
+    })
 }
 
 /// inputs: strike, sigma, r, t — kwargs: spot
 #[polars_expr(output_type = Float64)]
 fn options_bs_vega(inputs: &[Series], kwargs: SpotKwargs) -> PolarsResult<Series> {
     let spot = kwargs.spot;
-    map4(inputs, |k, sigma, r, t| options_india::bs_vega(spot, k, r, t, sigma))
+    map4(inputs, |k, sigma, r, t| {
+        options_india::bs_vega(spot, k, r, t, sigma)
+    })
 }
 
 /// inputs: strike, sigma, r, t — kwargs: spot, is_call
@@ -66,7 +72,9 @@ fn options_bs_vega(inputs: &[Series], kwargs: SpotKwargs) -> PolarsResult<Series
 fn options_bs_theta(inputs: &[Series], kwargs: SpotCallKwargs) -> PolarsResult<Series> {
     let spot = kwargs.spot;
     let is_call = kwargs.is_call;
-    map4(inputs, |k, sigma, r, t| options_india::bs_theta(spot, k, r, t, sigma, is_call))
+    map4(inputs, |k, sigma, r, t| {
+        options_india::bs_theta(spot, k, r, t, sigma, is_call)
+    })
 }
 
 /// inputs: strike, sigma, r, t — kwargs: spot, is_call
@@ -74,21 +82,27 @@ fn options_bs_theta(inputs: &[Series], kwargs: SpotCallKwargs) -> PolarsResult<S
 fn options_bs_rho(inputs: &[Series], kwargs: SpotCallKwargs) -> PolarsResult<Series> {
     let spot = kwargs.spot;
     let is_call = kwargs.is_call;
-    map4(inputs, |k, sigma, r, t| options_india::bs_rho(spot, k, r, t, sigma, is_call))
+    map4(inputs, |k, sigma, r, t| {
+        options_india::bs_rho(spot, k, r, t, sigma, is_call)
+    })
 }
 
 /// inputs: strike, r, t, sigma — kwargs: spot
 #[polars_expr(output_type = Float64)]
 fn options_bs_call_price(inputs: &[Series], kwargs: SpotKwargs) -> PolarsResult<Series> {
     let spot = kwargs.spot;
-    map4(inputs, |k, r, t, sigma| options_india::bs_call_price(spot, k, r, t, sigma))
+    map4(inputs, |k, r, t, sigma| {
+        options_india::bs_call_price(spot, k, r, t, sigma)
+    })
 }
 
 /// inputs: strike, r, t, sigma — kwargs: spot
 #[polars_expr(output_type = Float64)]
 fn options_bs_put_price(inputs: &[Series], kwargs: SpotKwargs) -> PolarsResult<Series> {
     let spot = kwargs.spot;
-    map4(inputs, |k, r, t, sigma| options_india::bs_put_price(spot, k, r, t, sigma))
+    map4(inputs, |k, r, t, sigma| {
+        options_india::bs_put_price(spot, k, r, t, sigma)
+    })
 }
 
 /// inputs: market_price, strike, r, t — kwargs: spot, is_call

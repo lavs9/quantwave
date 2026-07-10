@@ -97,8 +97,11 @@ where
     }
 }
 
-pub fn assert_indicator_parity_vec<I>(mut indicator: I, input: &[f64], expected: &[Vec<Option<f64>>])
-where
+pub fn assert_indicator_parity_vec<I>(
+    mut indicator: I,
+    input: &[f64],
+    expected: &[Vec<Option<f64>>],
+) where
     I: Next<f64, Output = Vec<f64>>,
 {
     for (i, &val) in input.iter().enumerate() {
@@ -112,8 +115,11 @@ where
     }
 }
 
-pub fn assert_indicator_parity_loops<I>(mut indicator: I, input: &[(f64, f64)], expected: &[(Option<f64>, Option<f64>)])
-where
+pub fn assert_indicator_parity_loops<I>(
+    mut indicator: I,
+    input: &[(f64, f64)],
+    expected: &[(Option<f64>, Option<f64>)],
+) where
     I: Next<(f64, f64), Output = (f64, f64)>,
 {
     for (i, &val) in input.iter().enumerate() {
@@ -143,8 +149,11 @@ pub fn load_gold_standard_tuple(name: &str) -> TestCaseTuple {
     serde_json::from_str(&content).expect("Failed to parse gold standard JSON")
 }
 
-pub fn assert_indicator_parity_oc<I>(mut indicator: I, input: &[(f64, f64)], expected: &[Option<f64>])
-where
+pub fn assert_indicator_parity_oc<I>(
+    mut indicator: I,
+    input: &[(f64, f64)],
+    expected: &[Option<f64>],
+) where
     I: Next<(f64, f64), Output = f64>,
 {
     for (i, &val) in input.iter().enumerate() {
@@ -156,8 +165,11 @@ where
     }
 }
 
-pub fn assert_indicator_parity_tuple<I>(mut indicator: I, input: &[f64], expected: &[(Option<f64>, Option<f64>)])
-where
+pub fn assert_indicator_parity_tuple<I>(
+    mut indicator: I,
+    input: &[f64],
+    expected: &[(Option<f64>, Option<f64>)],
+) where
     I: Next<f64, Output = (f64, f64)>,
 {
     for (i, &val) in input.iter().enumerate() {
@@ -217,7 +229,11 @@ pub struct SyntheticStructureCase {
 /// Generate a clean bullish structure sequence (HL, HH, HL) ending in confirmed bearish flip (LH after bias).
 /// Uses fixed swing window; adds optional gaussian-ish noise.
 /// Matches the "bias >=2 before flip" + min_swing_distance logic in market_structure.
-pub fn generate_bullish_structure_confirmed_flip(_swing_strength: usize, noise_std: f64, seed: u64) -> SyntheticStructureCase {
+pub fn generate_bullish_structure_confirmed_flip(
+    _swing_strength: usize,
+    noise_std: f64,
+    seed: u64,
+) -> SyntheticStructureCase {
     // Deterministic construction (seed for reproducibility in proptests)
     let mut rng_state = seed;
     let mut next_rand = || {
@@ -237,7 +253,11 @@ pub fn generate_bullish_structure_confirmed_flip(_swing_strength: usize, noise_s
         highs[flip_bar] = highs[flip_bar - 3] - 1.5; // force LH
     }
 
-    let data: Vec<(f64, f64)> = highs.into_iter().zip(lows).map(|(h, l)| (h.max(l), l.min(h))).collect();
+    let data: Vec<(f64, f64)> = highs
+        .into_iter()
+        .zip(lows)
+        .map(|(h, l)| (h.max(l), l.min(h)))
+        .collect();
 
     SyntheticStructureCase {
         data,
@@ -248,7 +268,11 @@ pub fn generate_bullish_structure_confirmed_flip(_swing_strength: usize, noise_s
 }
 
 /// Generate a clean bearish structure with confirmed bullish flip (HL after bear bias).
-pub fn generate_bearish_structure_confirmed_flip(_swing_strength: usize, noise_std: f64, seed: u64) -> SyntheticStructureCase {
+pub fn generate_bearish_structure_confirmed_flip(
+    _swing_strength: usize,
+    noise_std: f64,
+    seed: u64,
+) -> SyntheticStructureCase {
     let mut rng_state = seed;
     let mut next_rand = || {
         rng_state = rng_state.wrapping_mul(6364136223846793005).wrapping_add(1);
@@ -264,7 +288,11 @@ pub fn generate_bearish_structure_confirmed_flip(_swing_strength: usize, noise_s
         lows[flip_bar] = lows[flip_bar - 3] + 1.2; // force HL
     }
 
-    let data: Vec<(f64, f64)> = highs.into_iter().zip(lows).map(|(h, l)| (h.max(l), l.min(h))).collect();
+    let data: Vec<(f64, f64)> = highs
+        .into_iter()
+        .zip(lows)
+        .map(|(h, l)| (h.max(l), l.min(h)))
+        .collect();
 
     SyntheticStructureCase {
         data,
@@ -286,7 +314,7 @@ pub struct SyntheticGeometricCase {
 #[derive(Debug, Clone, PartialEq)]
 pub struct FlagPatternGroundTruth {
     pub is_bull: bool,
-    pub pole_length_atr_min: f64, // must satisfy > MinPoleATR
+    pub pole_length_atr_min: f64,  // must satisfy > MinPoleATR
     pub max_retrace_observed: f64, // <= 61.8
     pub pullbacks_gt_pushes: bool,
     pub breakout_bar_approx: usize,
@@ -297,8 +325,8 @@ pub struct HsPatternGroundTruth {
     pub is_bearish: bool,
     pub head_dominance: bool,
     pub shoulder_symmetry: f64, // |ls-rs|/head <= 0.02
-    pub score_min: f64, // >=60
-    pub height_atr_min: f64, // >=1.5
+    pub score_min: f64,         // >=60
+    pub height_atr_min: f64,    // >=1.5
 }
 
 /// Generate clean bullish flag: strong 3-bar pole (body sum >> ATR), then consolidation with pullbacks>pushes, retrace<61.8%, clean breakout.
@@ -332,7 +360,11 @@ pub fn generate_clean_bull_flag(_swing_strength: usize, atr_proxy: f64) -> Synth
         lows[i] = lows[15];
     }
 
-    let data: Vec<_> = highs.into_iter().zip(lows).map(|(h,l)| (h.max(l), l.min(h))).collect();
+    let data: Vec<_> = highs
+        .into_iter()
+        .zip(lows)
+        .map(|(h, l)| (h.max(l), l.min(h)))
+        .collect();
 
     SyntheticGeometricCase {
         data,
@@ -355,17 +387,31 @@ pub fn generate_perfect_bear_hs(_atr_proxy: f64) -> SyntheticGeometricCase {
     let mut highs = vec![100.0; 45];
     let mut lows = vec![99.0; 45];
 
-    let ls_bar=10; let neck1=12; let head=20; let neck2=28; let rs_bar=35;
-    highs[ls_bar] = 102.0; lows[neck1] = 100.0; highs[head] = 108.0; lows[neck2] = 100.2; highs[rs_bar] = 102.1;
+    let ls_bar = 10;
+    let neck1 = 12;
+    let head = 20;
+    let neck2 = 28;
+    let rs_bar = 35;
+    highs[ls_bar] = 102.0;
+    lows[neck1] = 100.0;
+    highs[head] = 108.0;
+    lows[neck2] = 100.2;
+    highs[rs_bar] = 102.1;
 
     // Fill some bars for swing detection window (strength ~3)
-    for i in (ls_bar-3)..(rs_bar+3) {
+    for i in (ls_bar - 3)..(rs_bar + 3) {
         if i < highs.len() {
-            if highs[i] < 101.0 { highs[i] = 101.0 + (i as f64 % 3.0) * 0.1; }
+            if highs[i] < 101.0 {
+                highs[i] = 101.0 + (i as f64 % 3.0) * 0.1;
+            }
         }
     }
 
-    let data: Vec<_> = highs.into_iter().zip(lows).map(|(h,l)| (h.max(l), l.min(h))).collect();
+    let data: Vec<_> = highs
+        .into_iter()
+        .zip(lows)
+        .map(|(h, l)| (h.max(l), l.min(h)))
+        .collect();
 
     SyntheticGeometricCase {
         data,

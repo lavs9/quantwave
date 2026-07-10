@@ -1,12 +1,12 @@
 //! Markov-Switching GARCH (MS-GARCH)
-//! 
+//!
 //! Source: Reher (2011) "Markov-switching GARCH models in finance"
-//! 
-//! MS-GARCH models allow volatility dynamics (GARCH parameters) to vary across 
+//!
+//! MS-GARCH models allow volatility dynamics (GARCH parameters) to vary across
 //! different hidden market regimes.
 
-use crate::traits::Next;
 use crate::regimes::MarketRegime;
+use crate::traits::Next;
 
 /// Parameters for a single GARCH(1,1) regime.
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
@@ -111,7 +111,8 @@ impl Next<f64> for MSGarch {
         for j in 0..self.n_states {
             let p = &self.params[j];
             // sigma_t^2 = omega + alpha * eps_{t-1}^2 + beta * sigma_{t-1}^2
-            self.last_variances[j] = p.omega + p.alpha * epsilon_sq + p.beta * self.last_variances[j];
+            self.last_variances[j] =
+                p.omega + p.alpha * epsilon_sq + p.beta * self.last_variances[j];
         }
 
         self.last_probs = next_probs;

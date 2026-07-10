@@ -1,8 +1,8 @@
 use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
-use serde::Deserialize;
-use quantwave_core::*;
 use quantwave_core::traits::Next;
+use quantwave_core::*;
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 struct AutoTuneFilterKwargs {
@@ -121,7 +121,7 @@ fn exp_dev_bands(inputs: &[Series], kwargs: ExpDevBandsKwargs) -> PolarsResult<S
     let s_upper = Series::new("upper".into(), upper_vals);
     let s_mid = Series::new("middle".into(), mid_vals);
     let s_lower = Series::new("lower".into(), lower_vals);
-    
+
     let out = StructChunked::from_series(
         "exp_dev_bands".into(),
         s.len(),

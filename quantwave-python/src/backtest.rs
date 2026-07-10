@@ -9,15 +9,15 @@ use pyo3::exceptions::{PyKeyError, PyRuntimeError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList, PyType};
 use pyo3_polars::PyDataFrame;
-use std::io::Cursor;
 use quantwave_backtest::{
-    monte_carlo_return_paths, monte_carlo_trade_bootstrap, render_tearsheet_html,
-    run_walk_forward, run_walk_forward_optimize, BacktestConfig, BacktestEngine, BacktestError,
-    BacktestReport, BacktestResult, CostModel, ExecutionDelay, ExecutionModel, MonteCarloConfig,
-    MonteCarloPathSummary, MonteCarloReturnConfig, MonteCarloSummary, PerformanceMetrics,
-    PortfolioAllocator, PortfolioMode, StopConfig, StopEvaluationMode, SweepVariant,
-    TearsheetOptions, WalkForwardConfig,
+    BacktestConfig, BacktestEngine, BacktestError, BacktestReport, BacktestResult, CostModel,
+    ExecutionDelay, ExecutionModel, MonteCarloConfig, MonteCarloPathSummary,
+    MonteCarloReturnConfig, MonteCarloSummary, PerformanceMetrics, PortfolioAllocator,
+    PortfolioMode, StopConfig, StopEvaluationMode, SweepVariant, TearsheetOptions,
+    WalkForwardConfig, monte_carlo_return_paths, monte_carlo_trade_bootstrap,
+    render_tearsheet_html, run_walk_forward, run_walk_forward_optimize,
 };
+use std::io::Cursor;
 
 fn parse_stop_evaluation(touched_exit: bool) -> StopEvaluationMode {
     if touched_exit {
@@ -79,7 +79,9 @@ fn dataframe_from_py(ob: &Bound<'_, PyAny>) -> PyResult<DataFrame> {
     let io = PyModule::import(py, "io")?;
     let buf = io.getattr("BytesIO")?.call0()?;
     ob.call_method1("write_ipc", (buf.clone(),))?;
-    let bytes = buf.call_method0("getvalue")?.extract::<Bound<'_, PyBytes>>()?;
+    let bytes = buf
+        .call_method0("getvalue")?
+        .extract::<Bound<'_, PyBytes>>()?;
     let cursor = Cursor::new(bytes.as_bytes());
     IpcReader::new(cursor)
         .finish()
@@ -238,7 +240,11 @@ impl PyBacktestEngine {
         Ok(PyBacktestReport { inner: report })
     }
 
-    fn run_metrics_only<'py>(&self, py: Python<'py>, df: &Bound<'_, PyAny>) -> PyResult<Bound<'py, PyDict>> {
+    fn run_metrics_only<'py>(
+        &self,
+        py: Python<'py>,
+        df: &Bound<'_, PyAny>,
+    ) -> PyResult<Bound<'py, PyDict>> {
         let metrics = self
             .inner
             .run_metrics_only(dataframe_from_py(df)?.lazy())
@@ -356,7 +362,8 @@ fn monte_carlo_trade_bootstrap_py<'py>(
         n_simulations,
         seed,
     };
-    let summary = monte_carlo_trade_bootstrap(&result.inner, initial_cash, &cfg).map_err(map_err)?;
+    let summary =
+        monte_carlo_trade_bootstrap(&result.inner, initial_cash, &cfg).map_err(map_err)?;
     mc_summary_to_dict(py, &summary)
 }
 
@@ -389,12 +396,8 @@ fn run_walk_forward_py(
 ) -> PyResult<PyDataFrame> {
     let mut wf = WalkForwardConfig::new(train_bars, test_bars);
     wf.step_bars = step_bars;
-    let out = run_walk_forward(
-        dataframe_from_py(df)?.lazy(),
-        &config.inner,
-        &wf,
-    )
-    .map_err(map_err)?;
+    let out =
+        run_walk_forward(dataframe_from_py(df)?.lazy(), &config.inner, &wf).map_err(map_err)?;
     Ok(PyDataFrame(out))
 }
 

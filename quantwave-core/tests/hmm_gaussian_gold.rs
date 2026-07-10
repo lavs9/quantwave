@@ -35,13 +35,8 @@ fn load_case(name: &str) -> HmmGoldCase {
 #[test]
 fn hmm_gaussian_mllk_matches_gold_standard() {
     let case = load_case("hmm_gaussian_2state");
-    let params = GaussianHmmParams::new(
-        case.delta,
-        case.gamma,
-        case.means,
-        case.stds,
-    )
-    .expect("valid params");
+    let params = GaussianHmmParams::new(case.delta, case.gamma, case.means, case.stds)
+        .expect("valid params");
 
     let mllk = params.mllk(&case.observations).expect("mllk");
     assert_relative_eq!(mllk, case.expected.mllk, epsilon = 1e-9);
@@ -50,13 +45,8 @@ fn hmm_gaussian_mllk_matches_gold_standard() {
 #[test]
 fn hmm_gaussian_smooth_probs_match_gold_standard() {
     let case = load_case("hmm_gaussian_2state");
-    let params = GaussianHmmParams::new(
-        case.delta,
-        case.gamma,
-        case.means,
-        case.stds,
-    )
-    .expect("valid params");
+    let params = GaussianHmmParams::new(case.delta, case.gamma, case.means, case.stds)
+        .expect("valid params");
 
     let decode = params.decode(&case.observations).expect("decode");
     assert_eq!(decode.smooth_probs.len(), case.n_states);
@@ -70,13 +60,8 @@ fn hmm_gaussian_smooth_probs_match_gold_standard() {
 #[test]
 fn hmm_gaussian_viterbi_matches_gold_standard() {
     let case = load_case("hmm_gaussian_2state");
-    let params = GaussianHmmParams::new(
-        case.delta,
-        case.gamma,
-        case.means,
-        case.stds,
-    )
-    .expect("valid params");
+    let params = GaussianHmmParams::new(case.delta, case.gamma, case.means, case.stds)
+        .expect("valid params");
 
     let decode = params.decode(&case.observations).expect("decode");
     assert_eq!(decode.viterbi_path, case.expected.viterbi_path);

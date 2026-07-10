@@ -31,9 +31,7 @@ pub fn ecld_log_pdf(x: f64, mu: f64, sigma: f64, lambda: f64) -> f64 {
 #[inline]
 pub fn ecld_cdf(x: f64, mu: f64, sigma: f64, lambda: f64) -> f64 {
     if (lambda - 1.0).abs() < 1e-12 {
-        return Normal::new(mu, sigma)
-            .map(|n| n.cdf(x))
-            .unwrap_or(0.5);
+        return Normal::new(mu, sigma).map(|n| n.cdf(x)).unwrap_or(0.5);
     }
     let beta = 2.0 / lambda;
     let u = (x - mu) / sigma;

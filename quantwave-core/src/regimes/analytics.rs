@@ -1,10 +1,10 @@
 //! Core Analytics and Diagnostics for Market Regimes
-//! 
+//!
 //! This module provides tools to analyze regime persistence, transitions, and stability.
 
+use nalgebra::DMatrix;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use nalgebra::DMatrix;
 
 /// Statistics regarding the duration of a specific regime.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,7 +22,7 @@ pub struct RegimeAnalytics;
 
 impl RegimeAnalytics {
     /// Constructs an empirical transition matrix from a sequence of regime states.
-    /// 
+    ///
     /// The matrix `T[i][j]` represents the probability of transitioning from state `i` to state `j`.
     pub fn transition_matrix(states: &[u32], num_states: usize) -> Vec<Vec<f64>> {
         let mut transitions = vec![vec![0usize; num_states]; num_states];
@@ -49,7 +49,7 @@ impl RegimeAnalytics {
     }
 
     /// Forecasts the state probability distribution `n` steps ahead.
-    /// 
+    ///
     /// Uses matrix exponentiation (powering) of the transition matrix.
     pub fn forecast_state(
         transition_matrix: &[Vec<f64>],
@@ -57,14 +57,16 @@ impl RegimeAnalytics {
         steps: usize,
     ) -> Vec<f64> {
         let n = transition_matrix.len();
-        if n == 0 { return vec![]; }
-        
+        if n == 0 {
+            return vec![];
+        }
+
         let mut mat_data = Vec::with_capacity(n * n);
         for row in transition_matrix {
             mat_data.extend_from_slice(row);
         }
-        
-        // nalgebra DMatrix is column-major by default in some constructors, 
+
+        // nalgebra DMatrix is column-major by default in some constructors,
         // but from_row_slice makes it clear.
         let m = DMatrix::from_row_slice(n, n, &mat_data);
         let m_n = m.pow(steps as u32);
@@ -87,8 +89,10 @@ impl RegimeAnalytics {
     /// Calculates duration statistics for each regime in the sequence.
     pub fn duration_stats(states: &[u32], num_states: usize) -> Vec<DurationStats> {
         let mut durations: BTreeMap<u32, Vec<usize>> = BTreeMap::new();
-        
-        if states.is_empty() { return vec![]; }
+
+        if states.is_empty() {
+            return vec![];
+        }
 
         let mut current_regime = states[0];
         let mut current_duration = 1;
@@ -97,12 +101,18 @@ impl RegimeAnalytics {
             if state == current_regime {
                 current_duration += 1;
             } else {
-                durations.entry(current_regime).or_default().push(current_duration);
+                durations
+                    .entry(current_regime)
+                    .or_default()
+                    .push(current_duration);
                 current_regime = state;
                 current_duration = 1;
             }
         }
-        durations.entry(current_regime).or_default().push(current_duration);
+        durations
+            .entry(current_regime)
+            .or_default()
+            .push(current_duration);
 
         let mut results = Vec::new();
         for i in 0..num_states as u32 {
@@ -110,15 +120,17 @@ impl RegimeAnalytics {
                 let total_obs: usize = d_list.iter().sum();
                 let n = d_list.len() as f64;
                 let mean = total_obs as f64 / n;
-                
+
                 let mut sorted = d_list.clone();
                 sorted.sort_unstable();
                 let median = sorted[sorted.len() / 2] as f64;
                 let max_dur = *sorted.last().unwrap_or(&0);
 
-                let variance = d_list.iter()
+                let variance = d_list
+                    .iter()
                     .map(|&d| (d as f64 - mean).powi(2))
-                    .sum::<f64>() / n;
+                    .sum::<f64>()
+                    / n;
                 let std = variance.sqrt();
 
                 results.push(DurationStats {
@@ -135,18 +147,20 @@ impl RegimeAnalytics {
     }
 
     /// Calculates a stability score (0.0 to 1.0).
-    /// 
+    ///
     /// Higher scores indicate fewer regime switches relative to the total sequence length.
     pub fn stability_score(states: &[u32]) -> f64 {
-        if states.len() < 2 { return 1.0; }
-        
+        if states.len() < 2 {
+            return 1.0;
+        }
+
         let mut switches = 0;
         for pair in states.windows(2) {
             if pair[0] != pair[1] {
                 switches += 1;
             }
         }
-        
+
         1.0 - (switches as f64 / (states.len() - 1) as f64)
     }
 }

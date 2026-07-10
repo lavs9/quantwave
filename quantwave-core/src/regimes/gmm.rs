@@ -221,7 +221,12 @@ impl GMM {
                     max_log = lp;
                 }
             }
-            let ll = max_log + log_probs.iter().map(|&lp| (lp - max_log).exp()).sum::<f64>().ln();
+            let ll = max_log
+                + log_probs
+                    .iter()
+                    .map(|&lp| (lp - max_log).exp())
+                    .sum::<f64>()
+                    .ln();
             total += ll;
         }
         total

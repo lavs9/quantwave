@@ -93,7 +93,7 @@ jobs:
 
       - name: cargo fmt + clippy + nextest (core crates)
         run: |
-          cargo fmt --all -- --check
+          ./scripts/rustfmt_check.sh
           cargo clippy -p quantwave-core -p quantwave-polars -p quantwave-backtest --all-targets -- -D warnings
           cargo nextest run -p quantwave-core
           cargo nextest run -p quantwave-polars

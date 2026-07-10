@@ -146,7 +146,9 @@ impl GaussianHmmParams {
     pub fn validate(&self) -> Result<(), GaussianHmmError> {
         let m = self.n_states;
         if m == 0 {
-            return Err(GaussianHmmError::InvalidParams("n_states must be > 0".into()));
+            return Err(GaussianHmmError::InvalidParams(
+                "n_states must be > 0".into(),
+            ));
         }
         if self.gamma.len() != m
             || self.means.len() != m
@@ -203,7 +205,12 @@ impl GaussianHmmParams {
     }
 
     pub fn emission_pdf(&self, state: usize, x: f64) -> f64 {
-        ecld_pdf(x, self.means[state], self.stds[state], self.lambda_at(state))
+        ecld_pdf(
+            x,
+            self.means[state],
+            self.stds[state],
+            self.lambda_at(state),
+        )
     }
 
     pub fn emission_log_pdf(&self, state: usize, x: f64) -> f64 {
@@ -559,15 +566,17 @@ fn e_step(
         let mut numer = vec![vec![0.0; m]; m];
         for i in 0..m {
             for j in 0..m {
-                numer[i][j] = smooth[i][t]
-                    * params.gamma[i][j]
-                    * params.emission_pdf(j, x[t + 1]);
+                numer[i][j] = smooth[i][t] * params.gamma[i][j] * params.emission_pdf(j, x[t + 1]);
                 denom += numer[i][j];
             }
         }
         for i in 0..m {
             for j in 0..m {
-                xi[t][i][j] = if denom > 0.0 { numer[i][j] / denom } else { 0.0 };
+                xi[t][i][j] = if denom > 0.0 {
+                    numer[i][j] / denom
+                } else {
+                    0.0
+                };
             }
         }
     }
@@ -686,31 +695,22 @@ fn weighted_neg_log_likelihood(
 }
 
 /// Weighted 1-D profile likelihood for λ (golden-section search on log λ).
-fn profile_lambda_for_state(
-    x: &[f64],
-    weights: &[f64],
-    mu: f64,
-    sigma: f64,
-    _initial: f64,
-) -> f64 {
-    let objective = |log_lam: f64| weighted_neg_log_likelihood(x, weights, mu, sigma, log_lam.exp());
+fn profile_lambda_for_state(x: &[f64], weights: &[f64], mu: f64, sigma: f64, _initial: f64) -> f64 {
+    let objective =
+        |log_lam: f64| weighted_neg_log_likelihood(x, weights, mu, sigma, log_lam.exp());
     golden_section_minimize_log(objective, 1.0f64.ln(), 5.0f64.ln())
         .exp()
         .clamp(1.0, 5.0)
 }
 
-fn profile_sigma_for_state(
-    x: &[f64],
-    weights: &[f64],
-    mu: f64,
-    lambda: f64,
-    initial: f64,
-) -> f64 {
+fn profile_sigma_for_state(x: &[f64], weights: &[f64], mu: f64, lambda: f64, initial: f64) -> f64 {
     let lo = 1e-5f64.ln();
     let hi = (initial.max(1e-4) * 4.0).max(0.05).ln();
     let objective =
         |log_sigma: f64| weighted_neg_log_likelihood(x, weights, mu, log_sigma.exp(), lambda);
-    golden_section_minimize_log(objective, lo, hi).exp().max(1e-6)
+    golden_section_minimize_log(objective, lo, hi)
+        .exp()
+        .max(1e-6)
 }
 
 fn golden_section_minimize_log<F>(f: F, mut a: f64, mut b: f64) -> f64
@@ -741,11 +741,7 @@ where
             fd = f(d);
         }
     }
-    if fc < fd {
-        c
-    } else {
-        d
-    }
+    if fc < fd { c } else { d }
 }
 
 // --- IndicatorMetadata (quantwave-i9dn) ---
@@ -754,20 +750,11 @@ use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 
 pub const GAUSSIAN_HMM_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "gaussian_hmm",
-    description:
-        "Fittable HMM with Gaussian or lambda (ecld) emissions for generic univariate series (e.g. log-returns).",
+    description: "Fittable HMM with Gaussian or lambda (ecld) emissions for generic univariate series (e.g. log-returns).",
     usage: "Fit with EM on an observation vector (Gaussian or lambda emission family), decode smoothed state \
              probabilities and a Viterbi path, or stream causal forward-filter probabilities for live regime labeling.",
     keywords: &[
-        "regime",
-        "hmm",
-        "gaussian",
-        "lambda",
-        "ecld",
-        "em",
-        "mle",
-        "viterbi",
-        "ldhmm",
+        "regime", "hmm", "gaussian", "lambda", "ecld", "em", "mle", "viterbi", "ldhmm",
     ],
     ehlers_summary: "Homogeneous first-order HMM with Gaussian or symmetric lambda (ecld) state emissions and \
                      Baum–Welch EM fitting. Gaussian mode aligns with ldhmm at λ=1; lambda mode matches ldhmm \
@@ -807,8 +794,7 @@ pub const GAUSSIAN_HMM_METADATA: IndicatorMetadata = IndicatorMetadata {
 
 pub const LAMBDA_HMM_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "lambda_hmm",
-    description:
-        "Lambda-distribution (ecld) emission HMM for leptokurtic returns — ldhmm parity mode.",
+    description: "Lambda-distribution (ecld) emission HMM for leptokurtic returns — ldhmm parity mode.",
     usage: "Same API as gaussian_hmm with emission_family=Lambda; per-state (μ, σ, λ) and optional λ MLE.",
     keywords: &["regime", "hmm", "lambda", "ecld", "ldhmm", "leptokurtic"],
     ehlers_summary: "Symmetric exponential-power emissions (β=2/λ) per ldhmm ecld.*; λ=1 reduces to Gaussian.",

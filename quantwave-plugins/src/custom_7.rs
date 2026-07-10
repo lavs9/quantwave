@@ -1,8 +1,8 @@
 use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
-use serde::Deserialize;
-use quantwave_core::*;
 use quantwave_core::traits::Next;
+use quantwave_core::*;
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct AdaptiveEmaKwargs {
@@ -42,7 +42,7 @@ fn regimes_ms_garch(inputs: &[Series]) -> PolarsResult<Series> {
     for i in 0..s.len() {
         let ret = ca.get(i).unwrap_or(0.0);
         let (regime, vol) = model.next(ret);
-        
+
         let r_val = match regime {
             quantwave_core::regimes::MarketRegime::Steady => 0u32,
             quantwave_core::regimes::MarketRegime::Crisis => 1,
@@ -56,11 +56,8 @@ fn regimes_ms_garch(inputs: &[Series]) -> PolarsResult<Series> {
 
     let s_regime = Series::new("regime".into(), regimes);
     let s_vol = Series::new("estimated_vol".into(), vols);
-    let struct_series = StructChunked::from_series(
-        "ms_garch_data".into(),
-        s.len(),
-        [s_regime, s_vol].iter(),
-    )?;
+    let struct_series =
+        StructChunked::from_series("ms_garch_data".into(), s.len(), [s_regime, s_vol].iter())?;
     Ok(struct_series.into_series())
 }
 
@@ -95,12 +92,15 @@ fn regimes_transition_matrix_output(_: &[Field]) -> PolarsResult<Field> {
 }
 
 #[polars_expr(output_type_func=regimes_transition_matrix_output)]
-fn regimes_transition_matrix(inputs: &[Series], kwargs: RegimesTransitionMatrixKwargs) -> PolarsResult<Series> {
+fn regimes_transition_matrix(
+    inputs: &[Series],
+    kwargs: RegimesTransitionMatrixKwargs,
+) -> PolarsResult<Series> {
     let s = &inputs[0];
     let ca = s.u32()?;
     let states: Vec<u32> = ca.into_iter().map(|v| v.unwrap_or(0)).collect();
     let matrix = quantwave_core::RegimeAnalytics::transition_matrix(&states, kwargs.num_states);
-    
+
     let mut builders = ListPrimitiveChunkedBuilder::<Float64Type>::new(
         "transition_matrix".into(),
         matrix.len(),
@@ -110,7 +110,7 @@ fn regimes_transition_matrix(inputs: &[Series], kwargs: RegimesTransitionMatrixK
     for row in matrix {
         builders.append_slice(&row);
     }
-    
+
     let list_ca = builders.finish();
     Ok(list_ca.into_series())
 }

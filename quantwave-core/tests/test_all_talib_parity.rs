@@ -1,6 +1,6 @@
-use quantwave_core::*;
-use quantwave_core::traits::Next;
 use proptest::prelude::*;
+use quantwave_core::traits::Next;
+use quantwave_core::*;
 
 proptest! {
 
@@ -17,7 +17,7 @@ proptest! {
             let mut indicator = MACDEXT::new(fastperiod, fastmatype, slowperiod, slowmatype, signalperiod, signalmatype);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next(input[i])).collect();
             let (b1, b2, b3) = talib_rs::momentum::macd_ext(&input, fastperiod, fastmatype, slowperiod, slowmatype, signalperiod, signalmatype).unwrap_or_else(|_| (vec![f64::NAN; len], vec![f64::NAN; len], vec![f64::NAN; len]));
-            
+
             for (i, (s1, s2, s3)) in streaming_results.into_iter().enumerate() {
                 if s1.is_nan() {
                     assert!(b1[i].is_nan());
@@ -46,7 +46,7 @@ proptest! {
             let mut indicator = MACDFIX::new(signalperiod);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next(input[i])).collect();
             let (b1, b2, b3) = talib_rs::momentum::macd_fix(&input, signalperiod).unwrap_or_else(|_| (vec![f64::NAN; len], vec![f64::NAN; len], vec![f64::NAN; len]));
-            
+
             for (i, (s1, s2, s3)) in streaming_results.into_iter().enumerate() {
                 if s1.is_nan() {
                     assert!(b1[i].is_nan());
@@ -88,7 +88,7 @@ proptest! {
             let mut indicator = STOCHF::new(fastk_period, fastd_period, fastd_matype);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next((in1[i], in2[i], in3[i]))).collect();
             let (b1, b2) = talib_rs::momentum::stochf(&in1, &in2, &in3, fastk_period, fastd_period, fastd_matype).unwrap_or_else(|_| (vec![f64::NAN; len], vec![f64::NAN; len]));
-            
+
             for (i, (s1, s2)) in streaming_results.into_iter().enumerate() {
                 if s1.is_nan() {
                     assert!(b1[i].is_nan());
@@ -115,7 +115,7 @@ proptest! {
             let mut indicator = STOCHRSI::new(timeperiod, fastk_period, fastd_period, fastd_matype);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next(input[i])).collect();
             let (b1, b2) = talib_rs::momentum::stochrsi(&input, timeperiod, fastk_period, fastd_period, fastd_matype).unwrap_or_else(|_| (vec![f64::NAN; len], vec![f64::NAN; len]));
-            
+
             for (i, (s1, s2)) in streaming_results.into_iter().enumerate() {
                 if s1.is_nan() {
                     assert!(b1[i].is_nan());
@@ -141,7 +141,7 @@ proptest! {
             let mut indicator = APO::new(fastperiod, slowperiod, matype);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next(input[i])).collect();
             let b_res = talib_rs::momentum::apo(&input, fastperiod, slowperiod, matype).unwrap_or_else(|_| vec![f64::NAN; len]);
-            
+
             for (i, s_res) in streaming_results.into_iter().enumerate() {
                 if s_res.is_nan() {
                     assert!(b_res[i].is_nan());
@@ -162,7 +162,7 @@ proptest! {
             let mut indicator = PPO::new(fastperiod, slowperiod, matype);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next(input[i])).collect();
             let b_res = talib_rs::momentum::ppo(&input, fastperiod, slowperiod, matype).unwrap_or_else(|_| vec![f64::NAN; len]);
-            
+
             for (i, s_res) in streaming_results.into_iter().enumerate() {
                 if s_res.is_nan() {
                     assert!(b_res[i].is_nan());
@@ -191,11 +191,11 @@ proptest! {
                 in4.push(c);
             }
             if len == 0 { return Ok(()); }
-            
+
             let mut indicator = BOP::new();
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next((in1[i], in2[i], in3[i], in4[i]))).collect();
             let b_res = talib_rs::momentum::bop(&in1, &in2, &in3, &in4).unwrap_or_else(|_| vec![f64::NAN; len]);
-            
+
             for (i, s_res) in streaming_results.into_iter().enumerate() {
                 if s_res.is_nan() {
                     assert!(b_res[i].is_nan());
@@ -222,7 +222,7 @@ proptest! {
             let mut indicator = AROONOSC::new(timeperiod);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next((in1[i], in2[i]))).collect();
             let b_res = talib_rs::momentum::aroon_osc(&in1, &in2, timeperiod).unwrap_or_else(|_| vec![f64::NAN; len]);
-            
+
             for (i, s_res) in streaming_results.into_iter().enumerate() {
                 if s_res.is_nan() {
                     assert!(b_res[i].is_nan());
@@ -255,7 +255,7 @@ proptest! {
             let mut indicator = MFI::new(timeperiod);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next((in1[i], in2[i], in3[i], in4[i]))).collect();
             let b_res = talib_rs::momentum::mfi(&in1, &in2, &in3, &in4, timeperiod).unwrap_or_else(|_| vec![f64::NAN; len]);
-            
+
             for (i, s_res) in streaming_results.into_iter().enumerate() {
                 if s_res.is_nan() {
                     assert!(b_res[i].is_nan());
@@ -287,7 +287,7 @@ proptest! {
             let mut indicator = ULTOSC::new(timeperiod1, timeperiod2, timeperiod3);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next((in1[i], in2[i], in3[i]))).collect();
             let b_res = talib_rs::momentum::ultosc(&in1, &in2, &in3, timeperiod1, timeperiod2, timeperiod3).unwrap_or_else(|_| vec![f64::NAN; len]);
-            
+
             for (i, s_res) in streaming_results.into_iter().enumerate() {
                 if s_res.is_nan() {
                     assert!(b_res[i].is_nan());
@@ -307,7 +307,7 @@ proptest! {
             let mut indicator = T3::new(timeperiod, v_factor);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next(input[i])).collect();
             let b_res = talib_rs::overlap::t3(&input, timeperiod, v_factor).unwrap_or_else(|_| vec![f64::NAN; len]);
-            
+
             for (i, s_res) in streaming_results.into_iter().enumerate() {
                 if s_res.is_nan() {
                     assert!(b_res[i].is_nan());
@@ -335,7 +335,7 @@ proptest! {
             let mut indicator = SAR::new(acceleration, maximum);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next((in1[i], in2[i]))).collect();
             let b_res = talib_rs::overlap::sar(&in1, &in2, acceleration, maximum).unwrap_or_else(|_| vec![f64::NAN; len]);
-            
+
             for (i, s_res) in streaming_results.into_iter().enumerate() {
                 if s_res.is_nan() {
                     assert!(b_res[i].is_nan());
@@ -369,7 +369,7 @@ proptest! {
             let mut indicator = SAREXT::new(startvalue, offsetonreverse, accelerationinitlong, accelerationlong, accelerationmaxlong, accelerationinitshort, accelerationshort, accelerationmaxshort);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next((in1[i], in2[i]))).collect();
             let b_res = talib_rs::overlap::sar_ext(&in1, &in2, startvalue, offsetonreverse, accelerationinitlong, accelerationlong, accelerationmaxlong, accelerationinitshort, accelerationshort, accelerationmaxshort).unwrap_or_else(|_| vec![f64::NAN; len]);
-            
+
             for (i, s_res) in streaming_results.into_iter().enumerate() {
                 if s_res.is_nan() {
                     assert!(b_res[i].is_nan());
@@ -398,7 +398,7 @@ proptest! {
             let mut indicator = MAVP::new(minperiod, maxperiod, matype);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next((in1[i], in2[i]))).collect();
             let b_res = talib_rs::overlap::mavp(&in1, &in2, minperiod, maxperiod, matype).unwrap_or_else(|_| vec![f64::NAN; len]);
-            
+
             for (i, s_res) in streaming_results.into_iter().enumerate() {
                 if s_res.is_nan() {
                     assert!(b_res[i].is_nan());
@@ -413,11 +413,11 @@ proptest! {
         fn test_ht_phasor_parity_auto(input in prop::collection::vec(1.0..100.0, 10..100)) {
             let len = input.len();
             if len == 0 { return Ok(()); }
-            
+
             let mut indicator = HT_PHASOR::new();
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next(input[i])).collect();
             let (b1, b2) = talib_rs::cycle::ht_phasor(&input).unwrap_or_else(|_| (vec![f64::NAN; len], vec![f64::NAN; len]));
-            
+
             for (i, (s1, s2)) in streaming_results.into_iter().enumerate() {
                 if s1.is_nan() {
                     assert!(b1[i].is_nan());
@@ -437,11 +437,11 @@ proptest! {
         fn test_ht_sine_parity_auto(input in prop::collection::vec(1.0..100.0, 10..100)) {
             let len = input.len();
             if len == 0 { return Ok(()); }
-            
+
             let mut indicator = HT_SINE::new();
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next(input[i])).collect();
             let (b1, b2) = talib_rs::cycle::ht_sine(&input).unwrap_or_else(|_| (vec![f64::NAN; len], vec![f64::NAN; len]));
-            
+
             for (i, (s1, s2)) in streaming_results.into_iter().enumerate() {
                 if s1.is_nan() {
                     assert!(b1[i].is_nan());
@@ -473,7 +473,7 @@ proptest! {
             let mut indicator = PLUS_DM::new(timeperiod);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next((in1[i], in2[i]))).collect();
             let b_res = talib_rs::momentum::plus_dm(&in1, &in2, timeperiod).unwrap_or_else(|_| vec![f64::NAN; len]);
-            
+
             for (i, s_res) in streaming_results.into_iter().enumerate() {
                 if s_res.is_nan() {
                     assert!(b_res[i].is_nan());
@@ -500,7 +500,7 @@ proptest! {
             let mut indicator = MINUS_DM::new(timeperiod);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next((in1[i], in2[i]))).collect();
             let b_res = talib_rs::momentum::minus_dm(&in1, &in2, timeperiod).unwrap_or_else(|_| vec![f64::NAN; len]);
-            
+
             for (i, s_res) in streaming_results.into_iter().enumerate() {
                 if s_res.is_nan() {
                     assert!(b_res[i].is_nan());

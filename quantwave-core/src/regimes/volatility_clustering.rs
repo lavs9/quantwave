@@ -1,17 +1,17 @@
 //! Volatility Regimes (Prakash et al. 2021)
 //!
-//! Source: Prakash, A., James, N., Menzies, M., & Francis, G. (2021). 
-//! "Structural clustering of volatility regimes for dynamic trading strategies." 
+//! Source: Prakash, A., James, N., Menzies, M., & Francis, G. (2021).
+//! "Structural clustering of volatility regimes for dynamic trading strategies."
 //! Applied Mathematical Finance, 28(3), 236-274.
 //!
 //! Implementation of structural clustering of volatility regimes using rolling ATR and online K-Means.
 //! This module identifies discrete volatility states (e.g., Low, Medium, High) by clustering
 //! recent ATR values.
 
-use crate::utils::RingBuffer as VecDeque;
 use crate::indicators::volatility::ATR;
-use crate::traits::Next;
 use crate::regimes::MarketRegime;
+use crate::traits::Next;
+use crate::utils::RingBuffer as VecDeque;
 use serde::{Deserialize, Serialize};
 
 /// A streaming volatility clusterer that identifies market regimes based on ATR.
@@ -86,7 +86,7 @@ impl Next<(f64, f64, f64)> for VolatilityClusterer {
 
     fn next(&mut self, input: (f64, f64, f64)) -> Self::Output {
         let atr_val = self.atr.next(input);
-        
+
         if self.window.len() >= self.window_size {
             self.window.pop_front();
         }
@@ -107,10 +107,13 @@ impl Next<(f64, f64, f64)> for VolatilityClusterer {
                 .unwrap_or(std::cmp::Ordering::Equal)
         });
 
-        let rank = sorted_indices.iter().position(|&i| i == cluster_idx).unwrap_or(0);
+        let rank = sorted_indices
+            .iter()
+            .position(|&i| i == cluster_idx)
+            .unwrap_or(0);
 
         match rank {
-            0 => MarketRegime::Steady, // Lowest vol
+            0 => MarketRegime::Steady,                    // Lowest vol
             r if r == self.k - 1 => MarketRegime::Crisis, // Highest vol
             _ => MarketRegime::Cluster(rank as u8),
         }

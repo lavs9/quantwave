@@ -24,19 +24,27 @@ fn main() -> Result<()> {
     let indicators_dir = workspace_root.join("quantwave-core/src/indicators");
 
     if !workspace_root.exists() {
-        return Err(anyhow::anyhow!("Workspace root does not exist: {:?}", workspace_root));
+        return Err(anyhow::anyhow!(
+            "Workspace root does not exist: {:?}",
+            workspace_root
+        ));
     }
 
     if !indicators_dir.exists() {
-        return Err(anyhow::anyhow!("Indicators directory does not exist: {:?}", indicators_dir));
+        return Err(anyhow::anyhow!(
+            "Indicators directory does not exist: {:?}",
+            indicators_dir
+        ));
     }
 
-    fs::create_dir_all(indicators_base.join("native")).context("Failed to create indicators/native directory")?;
+    fs::create_dir_all(indicators_base.join("native"))
+        .context("Failed to create indicators/native directory")?;
 
     // Remove legacy TA-Lib wrapper docs (all indicators are native now).
     let talib_dir = indicators_base.join("talib");
     if talib_dir.exists() {
-        fs::remove_dir_all(&talib_dir).context("Failed to remove legacy indicators/talib directory")?;
+        fs::remove_dir_all(&talib_dir)
+            .context("Failed to remove legacy indicators/talib directory")?;
     }
 
     run_python(&workspace_root, "scripts/generate_native_docs.py")?;

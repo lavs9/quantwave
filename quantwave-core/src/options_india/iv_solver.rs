@@ -2,6 +2,7 @@
 // Ported to Rust for QuantWave.
 // Permission to use, copy, modify, and distribute this software is freely granted,
 // provided that this notice is preserved.
+// rustfmt off — long numeric literals wedge rustfmt 1.9 stable (100% CPU).
 
 use std::f64;
 

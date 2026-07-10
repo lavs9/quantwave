@@ -107,7 +107,8 @@ pub fn pseudo_residuals(
             "forward_filter length must match observations".into(),
         ));
     }
-    let normal = Normal::new(0.0, 1.0).map_err(|e| GaussianHmmError::InvalidParams(e.to_string()))?;
+    let normal =
+        Normal::new(0.0, 1.0).map_err(|e| GaussianHmmError::InvalidParams(e.to_string()))?;
     let mut out = Vec::with_capacity(n);
     for t in 0..n {
         let probs: Vec<f64> = (0..m).map(|s| forward_filter[s][t]).collect();
@@ -226,7 +227,9 @@ impl GaussianHmmParams {
             ));
         }
         let m = self.n_states;
-        let last_probs: Vec<f64> = (0..m).map(|s| decode.forward_filter[s].last().copied().unwrap_or(0.0)).collect();
+        let last_probs: Vec<f64> = (0..m)
+            .map(|s| decode.forward_filter[s].last().copied().unwrap_or(0.0))
+            .collect();
         Ok(HmmDiagnostics {
             pseudo_residuals: pseudo_residuals(self, &decode.forward_filter, observations)?,
             decode_stats: decode_stats_history(self, &decode.smooth_probs)?,
@@ -256,7 +259,9 @@ pub struct HmmDiagnostics {
 fn transition_power(gamma: &[Vec<f64>], horizon: usize) -> Result<DMatrix<f64>, GaussianHmmError> {
     let m = gamma.len();
     if m == 0 {
-        return Err(GaussianHmmError::InvalidParams("empty transition matrix".into()));
+        return Err(GaussianHmmError::InvalidParams(
+            "empty transition matrix".into(),
+        ));
     }
     let flat: Vec<f64> = gamma.iter().flat_map(|row| row.iter().copied()).collect();
     if flat.len() != m * m {
@@ -268,11 +273,7 @@ fn transition_power(gamma: &[Vec<f64>], horizon: usize) -> Result<DMatrix<f64>, 
 }
 
 fn mixture_mean(probs: &[f64], means: &[f64]) -> f64 {
-    probs
-        .iter()
-        .zip(means.iter())
-        .map(|(&p, &mu)| p * mu)
-        .sum()
+    probs.iter().zip(means.iter()).map(|(&p, &mu)| p * mu).sum()
 }
 
 fn mixture_vol(probs: &[f64], means: &[f64], params: &GaussianHmmParams) -> f64 {
@@ -325,8 +326,7 @@ use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 
 pub const HMM_FORECAST_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "hmm_forecast",
-    description:
-        "HMM forecasting and diagnostics: state/vol/probability forecasts, pseudo-residuals, decode stats.",
+    description: "HMM forecasting and diagnostics: state/vol/probability forecasts, pseudo-residuals, decode stats.",
     usage: "After fitting/decoding a Gaussian or lambda HMM, forecast regimes and volatility h steps ahead, \
              evaluate mixture predictive densities, and extract pseudo-residuals for model checking.",
     keywords: &[
@@ -340,13 +340,11 @@ pub const HMM_FORECAST_METADATA: IndicatorMetadata = IndicatorMetadata {
     ],
     ehlers_summary: "ldhmm-style post-fit analytics on homogeneous HMMs: π_{t+h|t}=π_t·Γ^h state forecasts, \
                      mixture volatility per SSRN 2979516, filtered pseudo-residuals, and decode_stats_history.",
-    params: &[
-        ParamDef {
-            name: "horizon",
-            default: "1",
-            description: "Forecast horizon h (bars ahead).",
-        },
-    ],
+    params: &[ParamDef {
+        name: "horizon",
+        default: "1",
+        description: "Forecast horizon h (bars ahead).",
+    }],
     formula_source: "references/ldhmm/ldhmm-cran-reference.pdf; references/ldhmm/ssrn-2979516.pdf",
     formula_latex: "",
     gold_standard_file: "hmm_lambda_2state.json",

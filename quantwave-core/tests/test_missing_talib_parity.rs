@@ -1,6 +1,6 @@
-use quantwave_core::*;
-use quantwave_core::traits::Next;
 use proptest::prelude::*;
+use quantwave_core::traits::Next;
+use quantwave_core::*;
 
 proptest! {
 

@@ -1,8 +1,8 @@
 use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
-use serde::Deserialize;
-use quantwave_core::*;
 use quantwave_core::traits::Next;
+use quantwave_core::*;
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct TaVarKwargs {

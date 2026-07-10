@@ -17,17 +17,25 @@ fn ad(inputs: &[Series]) -> PolarsResult<Series> {
     let low = inputs[1].f64()?;
     let close = inputs[2].f64()?;
     let volume = inputs[3].f64()?;
-    
+
     let mut indicator = AD::new();
-    
-    let out: Float64Chunked = high.into_iter().zip(low.into_iter()).zip(close.into_iter()).zip(volume.into_iter()).map(|(((h, l), c), v)| {
-        match (h, l, c, v) {
-            (Some(hv), Some(lv), Some(cv), Some(vv)) if !hv.is_nan() && !lv.is_nan() && !cv.is_nan() && !vv.is_nan() => Some(indicator.next((hv, lv, cv, vv))),
+
+    let out: Float64Chunked = high
+        .into_iter()
+        .zip(low.into_iter())
+        .zip(close.into_iter())
+        .zip(volume.into_iter())
+        .map(|(((h, l), c), v)| match (h, l, c, v) {
+            (Some(hv), Some(lv), Some(cv), Some(vv))
+                if !hv.is_nan() && !lv.is_nan() && !cv.is_nan() && !vv.is_nan() =>
+            {
+                Some(indicator.next((hv, lv, cv, vv)))
+            }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
-        }
-    }).collect();
-    
+        })
+        .collect();
+
     Ok(out.into_series())
 }
 
@@ -37,17 +45,25 @@ fn adosc(inputs: &[Series], kwargs: AdoscKwargs) -> PolarsResult<Series> {
     let low = inputs[1].f64()?;
     let close = inputs[2].f64()?;
     let volume = inputs[3].f64()?;
-    
+
     let mut indicator = ADOSC::new(kwargs.fastperiod, kwargs.slowperiod);
-    
-    let out: Float64Chunked = high.into_iter().zip(low.into_iter()).zip(close.into_iter()).zip(volume.into_iter()).map(|(((h, l), c), v)| {
-        match (h, l, c, v) {
-            (Some(hv), Some(lv), Some(cv), Some(vv)) if !hv.is_nan() && !lv.is_nan() && !cv.is_nan() && !vv.is_nan() => Some(indicator.next((hv, lv, cv, vv))),
+
+    let out: Float64Chunked = high
+        .into_iter()
+        .zip(low.into_iter())
+        .zip(close.into_iter())
+        .zip(volume.into_iter())
+        .map(|(((h, l), c), v)| match (h, l, c, v) {
+            (Some(hv), Some(lv), Some(cv), Some(vv))
+                if !hv.is_nan() && !lv.is_nan() && !cv.is_nan() && !vv.is_nan() =>
+            {
+                Some(indicator.next((hv, lv, cv, vv)))
+            }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
-        }
-    }).collect();
-    
+        })
+        .collect();
+
     Ok(out.into_series())
 }
 

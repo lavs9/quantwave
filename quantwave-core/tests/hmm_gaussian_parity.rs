@@ -9,15 +9,15 @@
 use approx::assert_relative_eq;
 use proptest::prelude::*;
 use quantwave_core::regimes::gaussian_hmm::{
-    fit_em, EmissionFamily, GaussianHmmFitConfig, GaussianHmmParams,
+    EmissionFamily, GaussianHmmFitConfig, GaussianHmmParams, fit_em,
 };
 use quantwave_core::regimes::hmm::HMM;
 use quantwave_core::traits::Next;
 
 fn synthetic_two_state_series() -> Vec<f64> {
     vec![
-        0.01, -0.008, 0.012, -0.015, 0.009, -0.011, 0.007, -0.013, 0.011, -0.009, 0.008,
-        -0.014, 0.006, -0.01, 0.013, -0.012, 0.005, -0.007, 0.01, -0.016,
+        0.01, -0.008, 0.012, -0.015, 0.009, -0.011, 0.007, -0.013, 0.011, -0.009, 0.008, -0.014,
+        0.006, -0.01, 0.013, -0.012, 0.005, -0.007, 0.01, -0.016,
     ]
 }
 
@@ -95,10 +95,10 @@ fn bull_bear_preset_streaming_unchanged() {
 /// Synthetic leptokurtic log-return path: mostly small moves with occasional fat-tail spikes.
 fn leptokurtic_return_series() -> Vec<f64> {
     vec![
-        0.002, -0.003, 0.001, -0.002, 0.003, -0.001, 0.002, -0.004, 0.001, -0.002, 0.035,
-        -0.041, 0.002, -0.003, 0.001, 0.038, -0.002, 0.001, -0.036, 0.003, -0.001, 0.002,
-        -0.039, 0.004, -0.002, 0.001, -0.003, 0.042, -0.001, 0.002, -0.004, 0.001, -0.037,
-        0.003, -0.002, 0.001, 0.040, -0.003, 0.002, -0.001,
+        0.002, -0.003, 0.001, -0.002, 0.003, -0.001, 0.002, -0.004, 0.001, -0.002, 0.035, -0.041,
+        0.002, -0.003, 0.001, 0.038, -0.002, 0.001, -0.036, 0.003, -0.001, 0.002, -0.039, 0.004,
+        -0.002, 0.001, -0.003, 0.042, -0.001, 0.002, -0.004, 0.001, -0.037, 0.003, -0.002, 0.001,
+        0.040, -0.003, 0.002, -0.001,
     ]
 }
 
@@ -138,7 +138,11 @@ fn lambda_em_fit_runs_on_leptokurtic_series_without_regression() {
         lambda_fit.log_likelihood
     );
     assert!(
-        lambda_fit.params.lambdas.iter().all(|&l| l >= 1.0 && l <= 5.0),
+        lambda_fit
+            .params
+            .lambdas
+            .iter()
+            .all(|&l| l >= 1.0 && l <= 5.0),
         "fitted λ must stay in ldhmm leptokurtic range [1, 5]: {:?}",
         lambda_fit.params.lambdas
     );

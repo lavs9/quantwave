@@ -1,8 +1,8 @@
 use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
-use serde::Deserialize;
-use quantwave_core::*;
 use quantwave_core::traits::Next;
+use quantwave_core::*;
+use serde::Deserialize;
 
 fn u8_to_matype(matype: u8) -> talib::MaType {
     match matype {
@@ -32,7 +32,11 @@ fn mavp(inputs: &[Series], kwargs: MavpKwargs) -> PolarsResult<Series> {
     let in1_ca = inputs[0].f64()?;
     let in2_ca = inputs[1].f64()?;
 
-    let mut indicator = MAVP::new(kwargs.minperiod, kwargs.maxperiod, u8_to_matype(kwargs.matype));
+    let mut indicator = MAVP::new(
+        kwargs.minperiod,
+        kwargs.maxperiod,
+        u8_to_matype(kwargs.matype),
+    );
     let mut values = Vec::with_capacity(in1_ca.len());
 
     for i in 0..in1_ca.len() {
@@ -101,7 +105,10 @@ struct VolatilityClustererKwargs {
 }
 
 #[polars_expr(output_type=UInt32)]
-fn volatility_clusterer(inputs: &[Series], kwargs: VolatilityClustererKwargs) -> PolarsResult<Series> {
+fn volatility_clusterer(
+    inputs: &[Series],
+    kwargs: VolatilityClustererKwargs,
+) -> PolarsResult<Series> {
     let high = inputs[0].f64()?;
     let low = inputs[1].f64()?;
     let close = inputs[2].f64()?;

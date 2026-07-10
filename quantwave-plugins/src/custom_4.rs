@@ -1,8 +1,8 @@
 use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
-use serde::Deserialize;
-use quantwave_core::*;
 use quantwave_core::traits::Next;
+use quantwave_core::*;
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 struct RegimesNextStateProbKwargs {
@@ -18,12 +18,15 @@ pub fn regimes_next_state_prob_output(_: &[Field]) -> PolarsResult<Field> {
 }
 
 #[polars_expr(output_type_func=regimes_next_state_prob_output)]
-fn regimes_next_state_prob(inputs: &[Series], kwargs: RegimesNextStateProbKwargs) -> PolarsResult<Series> {
+fn regimes_next_state_prob(
+    inputs: &[Series],
+    kwargs: RegimesNextStateProbKwargs,
+) -> PolarsResult<Series> {
     let s = &inputs[0];
     let ca = s.u32()?;
     let states: Vec<u32> = ca.into_iter().map(|v| v.unwrap_or(0)).collect();
     let matrix = quantwave_core::RegimeAnalytics::transition_matrix(&states, kwargs.num_states);
-    
+
     let mut builders = ListPrimitiveChunkedBuilder::<Float64Type>::new(
         "next_state_probs".into(),
         s.len(),
@@ -35,7 +38,7 @@ fn regimes_next_state_prob(inputs: &[Series], kwargs: RegimesNextStateProbKwargs
         let probs = quantwave_core::RegimeAnalytics::forecast_state(&matrix, current, kwargs.steps);
         builders.append_slice(&probs);
     }
-    
+
     let list_ca = builders.finish();
     Ok(list_ca.into_series())
 }
@@ -89,7 +92,7 @@ fn regimes_stability_score(inputs: &[Series]) -> PolarsResult<Series> {
     let ca = s.u32()?;
     let states: Vec<u32> = ca.into_iter().map(|v| v.unwrap_or(0)).collect();
     let score = quantwave_core::RegimeAnalytics::stability_score(&states);
-    
+
     Ok(Series::new("stability_score".into(), vec![score; s.len()]))
 }
 
@@ -102,22 +105,28 @@ pub fn geometric_patterns_output(_: &[Field]) -> PolarsResult<Field> {
     Ok(Field::new(
         "geometric_patterns".into(),
         DataType::Struct(vec![
-            Field::new("flag".into(), DataType::Struct(vec![
-                Field::new("id".into(), DataType::UInt32),
-                Field::new("is_bull".into(), DataType::Boolean),
-                Field::new("pole_length".into(), DataType::Float64),
-                Field::new("pole_length_atr".into(), DataType::Float64),
-                Field::new("breakout_confirmed".into(), DataType::Boolean),
-                Field::new("breakout_price".into(), DataType::Float64),
-            ])),
-            Field::new("hs".into(), DataType::Struct(vec![
-                Field::new("id".into(), DataType::UInt32),
-                Field::new("is_bearish".into(), DataType::Boolean),
-                Field::new("height".into(), DataType::Float64),
-                Field::new("height_atr".into(), DataType::Float64),
-                Field::new("score".into(), DataType::Float64),
-                Field::new("breakout_confirmed".into(), DataType::Boolean),
-            ])),
+            Field::new(
+                "flag".into(),
+                DataType::Struct(vec![
+                    Field::new("id".into(), DataType::UInt32),
+                    Field::new("is_bull".into(), DataType::Boolean),
+                    Field::new("pole_length".into(), DataType::Float64),
+                    Field::new("pole_length_atr".into(), DataType::Float64),
+                    Field::new("breakout_confirmed".into(), DataType::Boolean),
+                    Field::new("breakout_price".into(), DataType::Float64),
+                ]),
+            ),
+            Field::new(
+                "hs".into(),
+                DataType::Struct(vec![
+                    Field::new("id".into(), DataType::UInt32),
+                    Field::new("is_bearish".into(), DataType::Boolean),
+                    Field::new("height".into(), DataType::Float64),
+                    Field::new("height_atr".into(), DataType::Float64),
+                    Field::new("score".into(), DataType::Float64),
+                    Field::new("breakout_confirmed".into(), DataType::Boolean),
+                ]),
+            ),
         ]),
     ))
 }
@@ -126,7 +135,7 @@ pub fn geometric_patterns_output(_: &[Field]) -> PolarsResult<Field> {
 fn geometric_patterns(inputs: &[Series], kwargs: GeometricPatternsKwargs) -> PolarsResult<Series> {
     let highs = &inputs[0].f64()?;
     let lows = &inputs[1].f64()?;
-    
+
     let n = highs.len();
     let mut scanner = quantwave_core::GeometricPatternScanner::new(kwargs.swing_strength);
 
@@ -147,8 +156,16 @@ fn geometric_patterns(inputs: &[Series], kwargs: GeometricPatternsKwargs) -> Pol
     for i in 0..n {
         let h = highs.get(i).unwrap_or(f64::NAN);
         let l = lows.get(i).unwrap_or(f64::NAN);
-        let hh = if h.is_nan() || l.is_nan() { f64::NAN } else { h.max(l) };
-        let ll = if h.is_nan() || l.is_nan() { f64::NAN } else { l.min(h) };
+        let hh = if h.is_nan() || l.is_nan() {
+            f64::NAN
+        } else {
+            h.max(l)
+        };
+        let ll = if h.is_nan() || l.is_nan() {
+            f64::NAN
+        } else {
+            l.min(h)
+        };
         let (_state, flag, hs) = scanner.next((hh, ll));
 
         if let Some(f) = flag {

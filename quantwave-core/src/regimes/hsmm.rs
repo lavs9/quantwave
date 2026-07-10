@@ -1,12 +1,12 @@
 //! Hidden Semi-Markov Models (HSMM)
-//! 
+//!
 //! Source: Yu (2010) "Hidden Semi-Markov Models"
-//! 
-//! HSMMs extend HMMs by allowing explicit modeling of the duration of each state, 
+//!
+//! HSMMs extend HMMs by allowing explicit modeling of the duration of each state,
 //! avoiding the geometric duration distribution inherent in standard HMMs.
 
-use crate::traits::Next;
 use crate::regimes::MarketRegime;
+use crate::traits::Next;
 use serde::{Deserialize, Serialize};
 use statrs::distribution::{Discrete, Poisson};
 
@@ -22,13 +22,15 @@ pub enum DurationDistribution {
 impl DurationDistribution {
     pub fn p(&self, d: usize) -> f64 {
         match self {
-            Self::Poisson { lambda } => {
-                Poisson::new(*lambda)
-                    .map(|dist| dist.pmf(d as u64))
-                    .unwrap_or(0.0)
-            }
+            Self::Poisson { lambda } => Poisson::new(*lambda)
+                .map(|dist| dist.pmf(d as u64))
+                .unwrap_or(0.0),
             Self::Fixed { duration } => {
-                if d == *duration { 1.0 } else { 0.0 }
+                if d == *duration {
+                    1.0
+                } else {
+                    0.0
+                }
             }
         }
     }
@@ -90,23 +92,26 @@ impl Next<f64> for HSMM {
 
         // Calculate probability of staying vs switching
         let prob_stay = self.durations[self.last_state].p(self.current_duration);
-        
+
         let mut max_prob;
         let mut best_state = self.last_state;
 
         // 1. Evaluate staying in current state
-        let emission_stay = Self::gaussian_pdf(x, self.means[self.last_state], self.stds[self.last_state]);
+        let emission_stay =
+            Self::gaussian_pdf(x, self.means[self.last_state], self.stds[self.last_state]);
         max_prob = prob_stay * emission_stay;
 
         // 2. Evaluate switching to other states
         for j in 0..self.n_states {
-            if j == self.last_state { continue; }
-            
+            if j == self.last_state {
+                continue;
+            }
+
             let transition_prob = self.a[self.last_state][j];
             let emission_j = Self::gaussian_pdf(x, self.means[j], self.stds[j]);
             // Probability of starting new state j (duration 1)
             let prob_j = (1.0 - prob_stay) * transition_prob * self.durations[j].p(1) * emission_j;
-            
+
             if prob_j > max_prob {
                 max_prob = prob_j;
                 best_state = j;

@@ -1,8 +1,8 @@
 use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
-use serde::Deserialize;
-use quantwave_core::*;
 use quantwave_core::traits::Next;
+use quantwave_core::*;
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 struct HmaKwargs {
@@ -66,11 +66,8 @@ fn obvm(inputs: &[Series], kwargs: ObvmKwargs) -> PolarsResult<Series> {
 
     let s_obvm = Series::new("obvm".into(), obvm_vals);
     let s_signal = Series::new("signal".into(), signal_vals);
-    let out = StructChunked::from_series(
-        "obvm_data".into(),
-        high.len(),
-        [s_obvm, s_signal].iter(),
-    )?;
+    let out =
+        StructChunked::from_series("obvm_data".into(), high.len(), [s_obvm, s_signal].iter())?;
     Ok(out.into_series())
 }
 

@@ -28,13 +28,14 @@ fn synthetic_input(n: usize) -> Vec<f64> {
     (0..n)
         .map(|i| {
             let t = i as f64;
-            100.0 + 2.0 * (2.0 * std::f64::consts::PI * t / 20.0).sin()
+            100.0
+                + 2.0 * (2.0 * std::f64::consts::PI * t / 20.0).sin()
                 + 0.5 * (2.0 * std::f64::consts::PI * t / 7.0).sin()
         })
         .collect()
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let input = synthetic_input(120);
     let mut gs = GriffithsSpectrum::new(18, 40, 40);
     let expected: Vec<Vec<f64>> = input.iter().map(|&v| gs.next(v)).collect();
@@ -52,7 +53,8 @@ fn main() {
 
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let out = manifest_dir.join("tests/gold_standard/griffiths_spectrum.json");
-    let json = serde_json::to_string_pretty(&fixture).expect("serialize fixture");
-    fs::write(&out, format!("{json}\n")).expect("write fixture");
+    let json = serde_json::to_string_pretty(&fixture)?;
+    fs::write(&out, format!("{json}\n"))?;
     eprintln!("wrote {}", out.display());
+    Ok(())
 }

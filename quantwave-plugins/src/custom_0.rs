@@ -1,8 +1,8 @@
 use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
-use serde::Deserialize;
-use quantwave_core::*;
 use quantwave_core::traits::Next;
+use quantwave_core::*;
+use serde::Deserialize;
 
 #[polars_expr(output_type=Float64)]
 fn anchored_vwap(inputs: &[Series]) -> PolarsResult<Series> {
@@ -38,7 +38,9 @@ pub struct KinematicKalmanKwargs {
 fn kinematic_kalman(inputs: &[Series], kwargs: KinematicKalmanKwargs) -> PolarsResult<Series> {
     let s = inputs[0].f64()?;
     let mut indicator = quantwave_core::indicators::kinematic_kalman::KinematicKalmanFilter::new(
-        kwargs.q_pos, kwargs.q_vel, kwargs.r
+        kwargs.q_pos,
+        kwargs.q_vel,
+        kwargs.r,
     );
     let mut values = Vec::with_capacity(s.len());
 
@@ -177,7 +179,8 @@ fn ttm_squeeze(inputs: &[Series], kwargs: TtmKwargs) -> PolarsResult<Series> {
     let low = inputs[1].f64()?;
     let close = inputs[2].f64()?;
 
-    let mut ttm = quantwave_core::TTMSqueeze::new(kwargs.period, kwargs.multiplier_bb, kwargs.multiplier_kc);
+    let mut ttm =
+        quantwave_core::TTMSqueeze::new(kwargs.period, kwargs.multiplier_bb, kwargs.multiplier_kc);
     let mut histograms = Vec::with_capacity(high.len());
     let mut squeezed = Vec::with_capacity(high.len());
 

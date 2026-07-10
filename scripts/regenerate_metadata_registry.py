@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import re
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -81,7 +82,9 @@ def render_registered_entry(const_name: str, struct_name: str, source_stem: str)
 
 
 def render(entries: list[tuple[str, str, str, str]]) -> str:
-    use_lines = sorted({f"use {mod_path}::{const_name};" for mod_path, const_name, _, _ in entries})
+    # Match rustfmt import order: module path, then symbol (prefix before extension).
+    use_items = sorted({(mod_path, const_name) for mod_path, const_name, _, _ in entries})
+    use_lines = [f"use {mod_path}::{const_name};" for mod_path, const_name in use_items]
     registered = "\n".join(
         render_registered_entry(c, s, stem) for _, c, s, stem in entries
     )
@@ -116,9 +119,17 @@ pub const METADATA_COUNT: usize = {len(entries)};
 """
 
 
+def rustfmt_file(path: Path) -> None:
+    subprocess.run(
+        ["rustfmt", "--edition", "2024", str(path)],
+        check=True,
+    )
+
+
 def main() -> None:
     entries = collect_entries()
     OUT.write_text(render(entries), encoding="utf-8")
+    rustfmt_file(OUT)
     print(f"Wrote {len(entries)} metadata entries to {OUT}")
 
 

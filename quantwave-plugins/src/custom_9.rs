@@ -1,8 +1,8 @@
 use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
-use serde::Deserialize;
-use quantwave_core::*;
 use quantwave_core::traits::Next;
+use quantwave_core::*;
+use serde::Deserialize;
 
 // 1. sdo
 #[derive(Deserialize)]
@@ -19,7 +19,8 @@ fn sdo_output(_: &[Field]) -> PolarsResult<Field> {
 #[polars_expr(output_type_func=sdo_output)]
 fn sdo(inputs: &[Series], kwargs: SdoKwargs) -> PolarsResult<Series> {
     let s = inputs[0].f64()?;
-    let mut indicator = quantwave_core::SDO::new(kwargs.lookback_period, kwargs.period, kwargs.ema_pds);
+    let mut indicator =
+        quantwave_core::SDO::new(kwargs.lookback_period, kwargs.period, kwargs.ema_pds);
     let mut values = Vec::with_capacity(s.len());
 
     for i in 0..s.len() {
@@ -102,7 +103,7 @@ fn ichimoku_cloud(inputs: &[Series], kwargs: IchimokuCloudKwargs) -> PolarsResul
     for i in 0..high.len() {
         let h = high.get(i).unwrap_or(f64::NAN);
         let l = low.get(i).unwrap_or(f64::NAN);
-        
+
         if h.is_nan() || l.is_nan() {
             t_vals.push(Some(f64::NAN));
             k_vals.push(Some(f64::NAN));
@@ -170,11 +171,7 @@ fn mama(inputs: &[Series], kwargs: MamaKwargs) -> PolarsResult<Series> {
     let s_mama = Float64Chunked::new("mama".into(), mama_vals).into_series();
     let s_fama = Float64Chunked::new("fama".into(), fama_vals).into_series();
 
-    let out = StructChunked::from_series(
-        "mama_result".into(),
-        s.len(),
-        [s_mama, s_fama].iter(),
-    )?;
+    let out = StructChunked::from_series("mama_result".into(), s.len(), [s_mama, s_fama].iter())?;
 
     Ok(out.into_series())
 }

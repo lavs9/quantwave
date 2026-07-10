@@ -1,22 +1,22 @@
 #![allow(clippy::unused_unit)]
+pub mod hilbert;
 pub mod momentum;
 pub mod options_india;
+pub mod overlap;
+pub mod price_transform;
+pub mod statistics;
 pub mod volatility;
 pub mod volume;
-pub mod price_transform;
-pub mod overlap;
-pub mod statistics;
-pub mod hilbert;
 
 use polars::prelude::*;
-use pyo3_polars::derive::polars_expr;
 use pyo3::prelude::*;
+use pyo3_polars::derive::polars_expr;
 use serde::Deserialize;
 
-use quantwave_core::indicators::smoothing::{SMA, EMA};
-use quantwave_core::indicators::incremental::rsi::RSI;
-use quantwave_core::indicators::incremental::macd::MACD;
 use quantwave_core::indicators::incremental::bbands::BBANDS;
+use quantwave_core::indicators::incremental::macd::MACD;
+use quantwave_core::indicators::incremental::rsi::RSI;
+use quantwave_core::indicators::smoothing::{EMA, SMA};
 use quantwave_core::traits::Next;
 use talib_rs::MaType;
 
@@ -29,17 +29,18 @@ struct SmaKwargs {
 fn sma(inputs: &[Series], kwargs: SmaKwargs) -> PolarsResult<Series> {
     let s = &inputs[0];
     let s_f64 = s.f64()?;
-    
+
     let mut indicator = SMA::new(kwargs.period);
-    
-    let out: Float64Chunked = s_f64.into_iter().map(|opt_v| {
-        match opt_v {
+
+    let out: Float64Chunked = s_f64
+        .into_iter()
+        .map(|opt_v| match opt_v {
             Some(v) if !v.is_nan() => Some(indicator.next(v)),
             Some(_) => Some(f64::NAN),
             None => None,
-        }
-    }).collect();
-    
+        })
+        .collect();
+
     Ok(out.into_series())
 }
 
@@ -52,17 +53,18 @@ struct EmaKwargs {
 fn ema(inputs: &[Series], kwargs: EmaKwargs) -> PolarsResult<Series> {
     let s = &inputs[0];
     let s_f64 = s.f64()?;
-    
+
     let mut indicator = EMA::new(kwargs.period);
-    
-    let out: Float64Chunked = s_f64.into_iter().map(|opt_v| {
-        match opt_v {
+
+    let out: Float64Chunked = s_f64
+        .into_iter()
+        .map(|opt_v| match opt_v {
             Some(v) if !v.is_nan() => Some(indicator.next(v)),
             Some(_) => Some(f64::NAN),
             None => None,
-        }
-    }).collect();
-    
+        })
+        .collect();
+
     Ok(out.into_series())
 }
 
@@ -75,17 +77,18 @@ struct RsiKwargs {
 fn rsi(inputs: &[Series], kwargs: RsiKwargs) -> PolarsResult<Series> {
     let s = &inputs[0];
     let s_f64 = s.f64()?;
-    
+
     let mut indicator = RSI::new(kwargs.timeperiod);
-    
-    let out: Float64Chunked = s_f64.into_iter().map(|opt_v| {
-        match opt_v {
+
+    let out: Float64Chunked = s_f64
+        .into_iter()
+        .map(|opt_v| match opt_v {
             Some(v) if !v.is_nan() => Some(indicator.next(v)),
             Some(_) => Some(f64::NAN),
             None => None,
-        }
-    }).collect();
-    
+        })
+        .collect();
+
     Ok(out.into_series())
 }
 
@@ -111,13 +114,13 @@ pub fn macd_output(_: &[Field]) -> PolarsResult<Field> {
 fn macd(inputs: &[Series], kwargs: MacdKwargs) -> PolarsResult<Series> {
     let s = &inputs[0];
     let s_f64 = s.f64()?;
-    
+
     let mut indicator = MACD::new(kwargs.fast, kwargs.slow, kwargs.signal);
-    
+
     let mut macd_vec = Vec::with_capacity(s_f64.len());
     let mut signal_vec = Vec::with_capacity(s_f64.len());
     let mut hist_vec = Vec::with_capacity(s_f64.len());
-    
+
     for opt_v in s_f64.into_iter() {
         match opt_v {
             Some(v) if !v.is_nan() => {
@@ -138,14 +141,18 @@ fn macd(inputs: &[Series], kwargs: MacdKwargs) -> PolarsResult<Series> {
             }
         }
     }
-    
+
     let ca_macd = Float64Chunked::new("macd".into(), macd_vec);
     let ca_signal = Float64Chunked::new("signal".into(), signal_vec);
     let ca_hist = Float64Chunked::new("hist".into(), hist_vec);
-    
-    let series_vec = vec![ca_macd.into_series(), ca_signal.into_series(), ca_hist.into_series()];
+
+    let series_vec = vec![
+        ca_macd.into_series(),
+        ca_signal.into_series(),
+        ca_hist.into_series(),
+    ];
     let out = StructChunked::from_series("macd".into(), s_f64.len(), series_vec.iter())?;
-    
+
     Ok(out.into_series())
 }
 
@@ -172,7 +179,7 @@ pub fn bbands_output(_: &[Field]) -> PolarsResult<Field> {
 fn bbands(inputs: &[Series], kwargs: BbandsKwargs) -> PolarsResult<Series> {
     let s = &inputs[0];
     let s_f64 = s.f64()?;
-    
+
     let ma_type = match kwargs.matype {
         0 => MaType::Sma,
         1 => MaType::Ema,
@@ -185,13 +192,13 @@ fn bbands(inputs: &[Series], kwargs: BbandsKwargs) -> PolarsResult<Series> {
         8 => MaType::T3,
         _ => MaType::Sma,
     };
-    
+
     let mut indicator = BBANDS::new(kwargs.timeperiod, kwargs.nbdevup, kwargs.nbdevdn, ma_type);
-    
+
     let mut upper_vec = Vec::with_capacity(s_f64.len());
     let mut middle_vec = Vec::with_capacity(s_f64.len());
     let mut lower_vec = Vec::with_capacity(s_f64.len());
-    
+
     for opt_v in s_f64.into_iter() {
         match opt_v {
             Some(v) if !v.is_nan() => {
@@ -212,14 +219,18 @@ fn bbands(inputs: &[Series], kwargs: BbandsKwargs) -> PolarsResult<Series> {
             }
         }
     }
-    
+
     let ca_upper = Float64Chunked::new("upper".into(), upper_vec);
     let ca_middle = Float64Chunked::new("middle".into(), middle_vec);
     let ca_lower = Float64Chunked::new("lower".into(), lower_vec);
-    
-    let series_vec = vec![ca_upper.into_series(), ca_middle.into_series(), ca_lower.into_series()];
+
+    let series_vec = vec![
+        ca_upper.into_series(),
+        ca_middle.into_series(),
+        ca_lower.into_series(),
+    ];
     let out = StructChunked::from_series("bbands".into(), s_f64.len(), series_vec.iter())?;
-    
+
     Ok(out.into_series())
 }
 
@@ -229,10 +240,10 @@ fn quantwave_plugins(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())
 }
-pub mod generated;
 pub mod custom;
 pub mod custom_0;
 pub mod custom_1;
+pub mod custom_10;
 pub mod custom_2;
 pub mod custom_3;
 pub mod custom_4;
@@ -241,4 +252,4 @@ pub mod custom_6;
 pub mod custom_7;
 pub mod custom_8;
 pub mod custom_9;
-pub mod custom_10;
+pub mod generated;

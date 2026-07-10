@@ -1,12 +1,12 @@
 //! Threshold Autoregressive (TAR / SETAR) Models
-//! 
+//!
 //! Source: Tong (1983) "Non-Linear Time Series: A Dynamical System Approach"
-//! 
-//! TAR models allow regime shifts to be triggered by an observable signal 
+//!
+//! TAR models allow regime shifts to be triggered by an observable signal
 //! (e.g., volatility or price relative to a threshold).
 
-use crate::traits::Next;
 use crate::regimes::MarketRegime;
+use crate::traits::Next;
 use serde::{Deserialize, Serialize};
 
 /// A Threshold Autoregressive model with multiple thresholds.
@@ -19,7 +19,9 @@ pub struct TAR {
 impl TAR {
     /// Creates a new TAR model with a single threshold.
     pub fn new(threshold: f64) -> Self {
-        Self { thresholds: vec![threshold] }
+        Self {
+            thresholds: vec![threshold],
+        }
     }
 
     /// Creates a multi-threshold TAR model (SETAR).

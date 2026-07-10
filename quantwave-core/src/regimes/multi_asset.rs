@@ -1,13 +1,13 @@
 //! Multi-Asset Regime Detection
-//! 
-//! Identifies joint market regimes across multiple assets by clustering 
+//!
+//! Identifies joint market regimes across multiple assets by clustering
 //! based on returns and rolling correlation structures.
 
-use crate::traits::Next;
 use crate::regimes::MarketRegime;
 use crate::regimes::volatility_clustering::VolatilityClusterer;
-use serde::{Deserialize, Serialize};
+use crate::traits::Next;
 use crate::utils::RingBuffer as VecDeque;
+use serde::{Deserialize, Serialize};
 
 /// A clusterer for identifying regimes across multiple assets.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -21,7 +21,7 @@ pub struct MultiAssetClusterer {
 
 impl MultiAssetClusterer {
     pub fn new(n_assets: usize, window_size: usize, k: usize) -> Self {
-        // Feature vector size: 
+        // Feature vector size:
         // 1. Mean absolute return (1)
         // 2. Dispersion (1)
         // 3. Average correlation (1)
@@ -50,7 +50,11 @@ impl MultiAssetClusterer {
             }
         }
 
-        if pairs == 0 { 1.0 } else { total_corr / pairs as f64 }
+        if pairs == 0 {
+            1.0
+        } else {
+            total_corr / pairs as f64
+        }
     }
 
     fn correlation(&self, i: usize, j: usize) -> f64 {
@@ -97,10 +101,11 @@ impl Next<&[f64]> for MultiAssetClusterer {
         // Feature engineering
         // 1. Mean absolute return (Magnitude of move)
         let mean_abs_ret = returns.iter().map(|r| r.abs()).sum::<f64>() / self.n_assets as f64;
-        
+
         // 2. Dispersion (how much assets are moving in different directions)
         let mean_ret = returns.iter().sum::<f64>() / self.n_assets as f64;
-        let dispersion = returns.iter().map(|r| (r - mean_ret).powi(2)).sum::<f64>() / self.n_assets as f64;
+        let dispersion =
+            returns.iter().map(|r| (r - mean_ret).powi(2)).sum::<f64>() / self.n_assets as f64;
 
         // 3. Average Correlation
         let avg_corr = self.calculate_average_correlation();
@@ -108,7 +113,11 @@ impl Next<&[f64]> for MultiAssetClusterer {
         // Pass features to inner clusterer
         // We use mean_abs_ret as the primary signal, dispersion and correlation as modifiers
         // For VolatilityClusterer, we'll map these to high/low/close equivalents
-        self.inner.next((mean_abs_ret, mean_abs_ret * (1.0 - dispersion.sqrt()), avg_corr))
+        self.inner.next((
+            mean_abs_ret,
+            mean_abs_ret * (1.0 - dispersion.sqrt()),
+            avg_corr,
+        ))
     }
 }
 
@@ -119,22 +128,28 @@ mod tests {
     #[test]
     fn test_multi_asset_clusterer_basic() {
         let mut clusterer = MultiAssetClusterer::new(2, 5, 2);
-        
+
         // Steady market
         for _ in 0..10 {
             clusterer.next(&[0.01, 0.01]);
         }
         let r1 = clusterer.next(&[0.01, 0.01]);
-        
+
         // Highly volatile/correlated
         for _ in 0..10 {
             clusterer.next(&[0.05, 0.05]);
         }
         let r2 = clusterer.next(&[0.05, 0.05]);
-        
+
         // Assert different regimes if enough data for clustering
         // Since it's a dynamic clusterer, exact states depend on initialization
-        assert!(matches!(r1, MarketRegime::Steady | MarketRegime::Cluster(_)));
-        assert!(matches!(r2, MarketRegime::Steady | MarketRegime::Cluster(_)));
+        assert!(matches!(
+            r1,
+            MarketRegime::Steady | MarketRegime::Cluster(_)
+        ));
+        assert!(matches!(
+            r2,
+            MarketRegime::Steady | MarketRegime::Cluster(_)
+        ));
     }
 }

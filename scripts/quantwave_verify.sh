@@ -71,8 +71,8 @@ fi
 
 if [[ "$SKIP_RUST" -eq 0 ]]; then
   run_cached rust bash -c '
-    echo "-- cargo fmt --check"
-    cargo fmt --all -- --check
+    echo "-- rustfmt check (batched; avoids lib.rs hang)"
+    ./scripts/rustfmt_check.sh
     echo "-- cargo clippy (-D warnings)"
     cargo clippy -p quantwave-core -p quantwave-polars -p quantwave-backtest --all-targets -- -D warnings
     echo "-- cargo nextest (core)"
