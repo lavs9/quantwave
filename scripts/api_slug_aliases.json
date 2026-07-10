@@ -1,0 +1,103 @@
+{
+  "_comment": "Manual slug -> surface name overrides for generate_api_stubs.py",
+  "atr_ts": {
+    "polars_method": "atr_trailing_stop",
+    "native_batch": "atrts",
+    "native_streaming": "AtrTs"
+  },
+  "sr_monitor": {
+    "slug_alias": "sr_interaction_monitor",
+    "polars_method": "sr_interaction_monitor",
+    "native_streaming": "SrInteractionMonitor"
+  },
+  "gaussian_filter": {
+    "native_batch": "gaussian",
+    "native_streaming": "Gaussian",
+    "polars_method": "gaussian"
+  },
+  "hamming_filter": {
+    "native_batch": "hamming",
+    "native_streaming": "Hamming"
+  },
+  "hann_filter": {
+    "native_batch": "hann",
+    "native_streaming": "Hann"
+  },
+  "fourier_series_model": {
+    "native_batch": "fourier_series",
+    "native_streaming": "FourierSeries"
+  },
+  "linreg": {
+    "polars_method": "linearreg",
+    "native_batch": "linearreg"
+  },
+  "true_range": {
+    "polars_method": "trange",
+    "native_batch": "trange"
+  },
+  "vwap": {
+    "polars_method": "anchored_vwap"
+  },
+  "precision_trend_analysis": {
+    "native_batch": "precision_trend",
+    "native_streaming": "PrecisionTrend"
+  },
+  "oc2": {
+    "polars_method": "avgprice",
+    "native_batch": "avgprice"
+  },
+  "my_rsi": {
+    "native_batch": "oc_price_rsi",
+    "native_streaming": "OcPriceRsi"
+  },
+  "am_detector": {
+    "native_batch": "amdetector",
+    "native_streaming": "AmDetector"
+  },
+  "fm_demodulator": {
+    "native_batch": "fm_demodulator",
+    "native_streaming": "FmDemodulator"
+  },
+  "cdldoji": {
+    "polars_method": "cdl_doji"
+  },
+  "cdldojistar": {
+    "polars_method": "cdl_dojistar"
+  },
+  "cdl2crows": {
+    "polars_method": "cdl_2crows"
+  },
+  "cdl3blackcrows": {
+    "polars_method": "cdl_3blackcrows"
+  },
+  "cdl3inside": {
+    "polars_method": "cdl_3inside"
+  },
+  "cdl3linestrike": {
+    "polars_method": "cdl_3linestrike"
+  },
+  "cdl3outside": {
+    "polars_method": "cdl_3outside"
+  },
+  "cdl3starsinsouth": {
+    "polars_method": "cdl_3starsinsouth"
+  },
+  "cdl3whitesoldiers": {
+    "polars_method": "cdl_3white_soldiers"
+  },
+  "bill_williams_fractals": {
+    "polars_method": "bill_williams_fractals"
+  },
+  "fractals": {
+    "polars_method": "bill_williams_fractals"
+  },
+  "gaussian_hmm": {
+    "native_streaming": "GaussianHmmFilterPy"
+  },
+  "hmm_forecast": {
+    "native_batch": "gaussian_hmm_forecast_state"
+  },
+  "lambda_hmm": {
+    "native_batch": "fit_gaussian_hmm"
+  }
+}

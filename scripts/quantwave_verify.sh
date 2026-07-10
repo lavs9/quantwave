@@ -38,6 +38,8 @@ if [[ "$SKIP_METADATA" -eq 0 ]]; then
   run_cached metadata bash -c '
     echo "-- metadata codegen drift check"
     python3 scripts/check_metadata_drift.py
+    echo "-- API registry + .pyi stub drift"
+    python3 scripts/check_api_stubs_drift.py
     echo "-- indicator nav + slug redirect sync"
     python3 scripts/sync_indicator_docs.py
     echo "-- documentation drift check"

@@ -162,75 +162,15 @@ _OPTIONS_SYMBOLS = frozenset({
     "nse_risk_free_rate",
 })
 
-# --- Dynamic ta namespace population (replaces fragile manual class + "from . import ta") ---
-# This makes indicators(), is_indicator(), streaming_class, and qw.ta.* robust
-# even when some advanced ML/PA feature objects are added in later tasks (tha, gw7s, ej8b).
-# Pulls from the native _quantwave (source of truth for compiled indicators + new uniffi/PyO3 objects)
-# + falls back to metadata keys. Also exposes at top-level for backward compat.
+# --- Explicit ta namespace (codegen registry) ---
+from ._ta_registry_generated import SPECIAL_SYMBOLS, TA_REGISTRY
+
 
 class ta:
-    """Dynamic namespace aggregating available indicators (batch + streaming classes)
-    and feature/PA helpers. Populated at import time from the compiled extension.
-    """
+    """Indicator namespace: one attribute per metadata slug (+ explicit ML/PA helpers)."""
+
     pass
 
-# Populate from native extension.
-# IMPORTANT for gqem (namespace cleanup): Do NOT dump *Result / *Protocol / internal
-# types to top-level globals (that was the ~150 item pollution). Only clean indicator
-# names go to top-level + ta. Result types live in quantwave.results (and ta if useful).
-# This directly advances the "move MacdResult, *Protocol etc out of top-level" goal.
-try:
-    if hasattr(_quantwave, "__all__"):
-        _native_syms = getattr(_quantwave, "__all__")
-    else:
-        _native_syms = [x for x in dir(_quantwave) if not x.startswith("_") and not x.startswith("Py")]
-    for _sym in _native_syms:
-        if _sym in _OPTIONS_SYMBOLS:
-            continue  # options live in quantwave.options only (05q7)
-        try:
-            _val = getattr(_quantwave, _sym)
-            setattr(ta, _sym, _val)  # always available under qw.ta for discovery / advanced use
-            is_internal = _sym.endswith("Result") or _sym.endswith("Protocol") or _sym.endswith("Error") or "Protocol" in _sym
-            if not is_internal:
-                globals()[_sym] = _val  # clean top-level exposure only for indicators / public fns
-        except Exception:
-            pass
-except Exception as _e:
-    warnings.warn(f"Partial native symbol import into quantwave.ta / top-level: {_e}")
-
-# Also ensure any metadata-registered indicators are attached (for pure-Py or future)
-for _meta in list_metadata():
-    _n = _meta.name
-    if not hasattr(ta, _n):
-        for _cand in (_n, _n.capitalize(), _n.replace("_", "")):
-            if hasattr(_quantwave, _cand):
-                _v = getattr(_quantwave, _cand)
-                setattr(ta, _n, _v)
-                globals()[_n] = _v
-                break
-
-# Special recently-wired objects (ML features, PA structs, regime) that may have specific casing
-for _special in [
-    "CyberCycleFeatureExtractor", "HurstFeatureExtractor",
-    "InstantaneousTrendlineFeatureExtractor", "TrendflexFeatureExtractor",
-    "GriffithsDominantCycleFeatureExtractor", "BullBearHMM",
-    "GaussianHmmFilterPy", "GaussianHmmDiagnosticsPy",
-    "fit_gaussian_hmm", "gaussian_hmm_diagnostics",
-    "gaussian_hmm_forecast_state", "gaussian_hmm_forecast_vol",
-    "regime_to_features", "griffiths_dominant_cycle_features",
-    "MarketStructure", "GeometricPatternScanner", "market_structure_batch",
-]:
-    if not hasattr(ta, _special):
-        for _cand in (_special, _special.lower().replace("featureextractor", "feature_extractor")):
-            if hasattr(_quantwave, _cand):
-                _v = getattr(_quantwave, _cand)
-                setattr(ta, _special, _v)
-                globals()[_special] = _v
-                break
-
-# --- Basic Discovery API ---
-# Now backed primarily by metadata (reliable) + dir(ta) for anything extra the native exposes.
-# This closes the "first-pass" + "will be refined as metadata built" gap.
 
 def _is_internal_symbol(name: str) -> bool:
     return (
@@ -240,6 +180,69 @@ def _is_internal_symbol(name: str) -> bool:
         or "Protocol" in name
     )
 
+
+def _require_native(symbol: str):
+    if not hasattr(_quantwave, symbol):
+        raise ImportError(
+            f"quantwave native binding missing required symbol {symbol!r}. "
+            "Rebuild/install the wheel (maturin develop --manifest-path quantwave-python/Cargo.toml)."
+        )
+    return getattr(_quantwave, symbol)
+
+
+class _PolarsOnlySurface:
+    """Metadata slug exposed on ``qw.ta``; batch/streaming via Polars ``.ta`` plugins."""
+
+    __slots__ = ("slug", "polars_method")
+
+    def __init__(self, slug: str, polars_method: str | None) -> None:
+        self.slug = slug
+        self.polars_method = polars_method or slug
+
+    def __call__(self, *args, **kwargs):
+        raise NotImplementedError(
+            f"Indicator {self.slug!r} is Polars-batch only. "
+            f"Use: import quantwave; pl.col('close').ta.{self.polars_method}(...)"
+        )
+
+    def __repr__(self) -> str:
+        return f"<quantwave.ta.{self.slug} polars-only -> .ta.{self.polars_method}>"
+
+
+def _bind_ta(slug: str, obj) -> None:
+    setattr(ta, slug, obj)
+    if not _is_internal_symbol(slug) and not isinstance(obj, _PolarsOnlySurface):
+        globals()[slug] = obj
+
+
+def _resolve_ta_binding(slug: str, entry: dict) -> object:
+    for key in ("native_batch", "native_streaming"):
+        native_name = entry.get(key)
+        if native_name and hasattr(_quantwave, native_name):
+            return getattr(_quantwave, native_name)
+    polars_method = entry.get("polars_method")
+    if polars_method:
+        return _PolarsOnlySurface(slug, polars_method)
+    raise ImportError(
+        f"TA registry entry {slug!r} is missing native symbols "
+        f"{entry.get('native_batch')!r}/{entry.get('native_streaming')!r} "
+        "and has no polars_method fallback"
+    )
+
+
+for _slug, _entry in TA_REGISTRY.items():
+    _bind_ta(_slug, _resolve_ta_binding(_slug, _entry))
+
+for _pub, _native in SPECIAL_SYMBOLS.items():
+    if hasattr(_quantwave, _native):
+        _bind_ta(_pub, getattr(_quantwave, _native))
+    else:
+        warnings.warn(
+            f"Optional quantwave.ta.{_pub} unavailable (native {_native!r} not in build)",
+            stacklevel=1,
+        )
+
+# --- Basic Discovery API ---
 
 def _build_indicator_names() -> set[str]:
     """Canonical indicator slugs from Rust metadata export (221); never dir(ta) pollution."""
@@ -286,24 +289,15 @@ def streaming_class(name: str):
         return None
 
     key = name.lower()
-
-    # Try direct attribute first (common case)
-    if hasattr(ta, key):
-        candidate = getattr(ta, key)
+    entry = TA_REGISTRY.get(key)
+    if entry and entry.get("native_streaming"):
+        candidate = _require_native(entry["native_streaming"])
         if isinstance(candidate, type):
             return candidate
 
-    # Fallback: try common PascalCase conversions
-    pascal = "".join(word.capitalize() for word in key.split("_"))
-    if hasattr(ta, pascal) and isinstance(getattr(ta, pascal), type):
-        return getattr(ta, pascal)
-
-    # Last resort: search for anything that looks like a streaming class
-    for attr_name in dir(ta):
-        if attr_name.lower() == key or attr_name.lower().replace("_", "") == key.replace("_", ""):
-            obj = getattr(ta, attr_name)
-            if isinstance(obj, type):
-                return obj
+    candidate = getattr(ta, key, None)
+    if isinstance(candidate, type):
+        return candidate
 
     return None
 
