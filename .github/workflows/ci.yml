@@ -45,7 +45,10 @@ jobs:
               - '.github/workflows/ci.yml'
             python_gold:
               - 'tests/python/**'
+              - 'tests/options_india/**'
               - 'quantwave-python/**'
+              - 'quantwave-plugins/**'
+              - 'quantwave-core/src/options_india/**'
               - 'quantwave-core/tests/gold_standard/**'
               - '.github/workflows/ci.yml'
 
@@ -123,17 +126,24 @@ jobs:
         run: |
           python -m venv .venv
           source .venv/bin/activate
-          pip install maturin "uniffi-bindgen==0.31.0" pytest numpy
+          pip install maturin "uniffi-bindgen==0.31.0" pytest numpy polars
 
-      - name: Build quantwave (editable)
+      - name: Build quantwave + plugins (editable)
         run: |
           source .venv/bin/activate
           maturin develop --release --manifest-path quantwave-python/Cargo.toml
+          maturin develop --release --manifest-path quantwave-plugins/Cargo.toml
 
       - name: Gold-standard streaming parity
         run: |
           source .venv/bin/activate
           python -m pytest tests/python/test_gold_parity.py -q
+
+      - name: Options India analytics parity + docstrings
+        run: |
+          source .venv/bin/activate
+          python -m pytest tests/options_india \
+            --doctest-modules quantwave-python/python/quantwave/polars.py -q
 
   plugins:
     name: Plugin wheels
