@@ -8,16 +8,33 @@ from typing import Union
 import polars as pl
 from polars.plugins import register_plugin_function
 
+# Whole-chain reductions (max pain, OI zones, GEX flip, ATM straddle) reuse the
+# exact Rust core math via a single per-batch FFI call. The per-strike and
+# lookup analytics are expressed as native Polars expressions (no FFI, no
+# per-row Python loops) — see the individual methods below.
 from ._quantwave import (
     max_pain as core_max_pain,
-    strike_pcr as core_strike_pcr,
-    chain_pcr as core_chain_pcr,
     oi_zones as core_oi_zones,
-    gex_per_strike as core_gex_per_strike,
     gex_flip_strike as core_gex_flip_strike,
     atm_straddle as core_atm_straddle,
-    synthetic_futures as core_synthetic_futures,
 )
+
+# NSE lot sizes mirror quantwave_core::options_india::india::nse_lot_size.
+# Kept in lockstep by test_polars_chain / test_chain_analytics parity assertions.
+_NSE_LOT_SIZES: dict[str, int] = {
+    "NIFTY": 50,
+    "BANKNIFTY": 15,
+    "FINNIFTY": 40,
+    "MIDCPNIFTY": 75,
+    "SENSEX": 10,
+}
+
+
+def _as_expr(arg: Union[str, pl.Expr, float, int]) -> Union[pl.Expr, float, int]:
+    """Column name -> pl.col; Expr / scalar passed through for use in expressions."""
+    if isinstance(arg, str):
+        return pl.col(arg)
+    return arg
 
 
 def _plugin_path() -> Path:
@@ -56,7 +73,13 @@ class options:
             exprs.append(pl.col(arg))
             return arg
         if isinstance(arg, pl.Expr):
-            exprs.append(arg.alias(default_name))
+            # Broadcast a length-1 literal (e.g. pl.lit(0.18)) to the reference
+            # column length; a full-length column expression is unchanged by
+            # `col*0 + expr`, so this is safe for both.
+            if length_ref is not None:
+                exprs.append((pl.col(length_ref) * 0 + arg).alias(default_name))
+            else:
+                exprs.append(arg.alias(default_name))
             return default_name
         if length_ref is not None:
             exprs.append((pl.col(length_ref) * 0 + arg).alias(default_name))
@@ -218,87 +241,149 @@ class options:
 
     @staticmethod
     def max_pain(strikes_col, ce_oi_col, pe_oi_col, lot_size_col_or_val):
-        exprs = []
+        """Max-pain strike for one option chain (whole-chain reduction).
+
+        Returns the strike at which total buyer loss is minimised. This is an
+        O(n^2) reduction over the whole chain, computed in a single native Rust
+        call (``quantwave_core::options_india::chain_analytics::max_pain``) — no
+        per-row Python loop. Apply per expiry snapshot (one chain per call, or
+        inside ``group_by(expiry)``).
+
+        Parameters
+        ----------
+        strikes_col : str or Expr
+            Strike prices.
+        ce_oi_col, pe_oi_col : str or Expr
+            Call / put open interest (integer contracts).
+        lot_size_col_or_val : int, float, str, or Expr
+            Contract lot size (scalar per chain).
+
+        Returns
+        -------
+        pl.Expr
+            Length-1 Float64 (the max-pain strike).
+
+        Examples
+        --------
+        >>> import polars as pl
+        >>> from quantwave.polars import options
+        >>> df = pl.DataFrame({"k": [24800.0, 25000.0, 25200.0],
+        ...                    "ce": [10000, 5000, 2000], "pe": [2000, 5000, 10000]})
+        >>> df.select(options.max_pain("k", "ce", "pe", 50).alias("x"))["x"][0]
+        25000.0
+        """
+        exprs: list[pl.Expr] = []
         s_name = options._handle_arg(exprs, strikes_col, "_s_col")
         c_name = options._handle_arg(exprs, ce_oi_col, "_c_col")
         p_name = options._handle_arg(exprs, pe_oi_col, "_p_col")
         l_name = options._handle_arg(exprs, lot_size_col_or_val, "_l_val")
 
-        return pl.struct(exprs).map_batches(
-            lambda s: pl.Series([
-                core_max_pain(
-                    s.struct.field(s_name).to_list(),
-                    s.struct.field(c_name).to_list(),
-                    s.struct.field(p_name).to_list(),
-                    row[l_name],
-                )
-                for row in s.to_list()
-            ]),
-            return_dtype=pl.Float64,
-        )
+        def _max_pain(batch: pl.Series) -> pl.Series:
+            lot = int(batch.struct.field(l_name).to_list()[0])
+            value = core_max_pain(
+                batch.struct.field(s_name).to_list(),
+                batch.struct.field(c_name).to_list(),
+                batch.struct.field(p_name).to_list(),
+                lot,
+            )
+            return pl.Series([value])
+
+        return pl.struct(exprs).map_batches(_max_pain, return_dtype=pl.Float64)
 
     @staticmethod
     def strike_pcr(ce_oi_col, pe_oi_col):
-        return pl.struct([ce_oi_col, pe_oi_col]).map_batches(
-            lambda s: pl.Series(
-                core_strike_pcr(
-                    s.struct.field(ce_oi_col).to_list(),
-                    s.struct.field(pe_oi_col).to_list(),
-                )
-            ),
-            return_dtype=pl.Float64,
-        )
+        """Per-strike Put-Call Ratio (PE_OI / CE_OI), native Polars expression.
+
+        Matches ``chain_analytics::strike_pcr``: 0.0 where CE_OI is zero.
+
+        Examples
+        --------
+        >>> import polars as pl
+        >>> from quantwave.polars import options
+        >>> df = pl.DataFrame({"ce": [10000, 2000], "pe": [2000, 10000]})
+        >>> df.select(options.strike_pcr("ce", "pe").alias("x"))["x"].to_list()
+        [0.2, 5.0]
+        """
+        ce = _as_expr(ce_oi_col)
+        pe = _as_expr(pe_oi_col)
+        return pl.when(ce == 0).then(0.0).otherwise(pe / ce)
 
     @staticmethod
     def chain_pcr(ce_oi_col, pe_oi_col):
-        return pl.struct([ce_oi_col, pe_oi_col]).map_batches(
-            lambda s: pl.Series([
-                core_chain_pcr(
-                    s.struct.field(ce_oi_col).to_list(),
-                    s.struct.field(pe_oi_col).to_list(),
-                )
-            ]),
-            return_dtype=pl.Float64,
-        )
+        """Chain-level Put-Call Ratio: sum(PE_OI) / sum(CE_OI) (0.0 if no CE_OI).
+
+        Native Polars aggregation; returns a length-1 Float64.
+
+        Examples
+        --------
+        >>> import polars as pl
+        >>> from quantwave.polars import options
+        >>> df = pl.DataFrame({"ce": [10000, 5000], "pe": [2000, 8000]})
+        >>> df.select(options.chain_pcr("ce", "pe").alias("x"))["x"][0]
+        0.6666666666666666
+        """
+        ce = _as_expr(ce_oi_col)
+        pe = _as_expr(pe_oi_col)
+        total_ce = ce.sum()
+        return pl.when(total_ce == 0).then(0.0).otherwise(pe.sum() / total_ce)
 
     @staticmethod
     def synthetic_futures(strikes_col, ce_ltp_col, pe_ltp_col):
-        return pl.struct([strikes_col, ce_ltp_col, pe_ltp_col]).map_batches(
-            lambda s: pl.Series(
-                core_synthetic_futures(
-                    s.struct.field(strikes_col).to_list(),
-                    s.struct.field(ce_ltp_col).to_list(),
-                    s.struct.field(pe_ltp_col).to_list(),
-                )
-            ),
-            return_dtype=pl.Float64,
-        )
+        """Per-strike synthetic future (CE_LTP - PE_LTP + Strike), native expression.
+
+        Examples
+        --------
+        >>> import polars as pl
+        >>> from quantwave.polars import options
+        >>> df = pl.DataFrame({"k": [24800.0], "ce": [250.0], "pe": [10.0]})
+        >>> df.select(options.synthetic_futures("k", "ce", "pe").alias("x"))["x"][0]
+        25040.0
+        """
+        return _as_expr(ce_ltp_col) - _as_expr(pe_ltp_col) + _as_expr(strikes_col)
 
     @staticmethod
     def oi_zones(strikes_col, ce_oi_col, pe_oi_col, n_col_or_val):
-        exprs = []
+        """Top-N OI support/resistance strikes for one chain (whole-chain reduction).
+
+        Resistance = strikes with highest CE_OI; support = highest PE_OI. Computed
+        in a single native Rust call (``chain_analytics::oi_zones``); returns a
+        length-1 struct of two Float64 lists. Apply per expiry snapshot.
+
+        Returns
+        -------
+        pl.Expr
+            Struct{resistance_strikes: list[f64], support_strikes: list[f64]}.
+
+        Examples
+        --------
+        >>> import polars as pl
+        >>> from quantwave.polars import options
+        >>> df = pl.DataFrame({"k": [24800.0, 25000.0, 25200.0],
+        ...                    "ce": [10000, 5000, 2000], "pe": [2000, 5000, 10000]})
+        >>> df.select(options.oi_zones("k", "ce", "pe", 1).alias("z"))["z"][0]["resistance_strikes"]
+        [24800.0]
+        """
+        exprs: list[pl.Expr] = []
         s_name = options._handle_arg(exprs, strikes_col, "_s_col")
         c_name = options._handle_arg(exprs, ce_oi_col, "_c_col")
         p_name = options._handle_arg(exprs, pe_oi_col, "_p_col")
         n_name = options._handle_arg(exprs, n_col_or_val, "_n_val")
 
-        def _get_zones(s):
-            results = []
-            for row in s.to_list():
-                res = core_oi_zones(
-                    s.struct.field(s_name).to_list(),
-                    s.struct.field(c_name).to_list(),
-                    s.struct.field(p_name).to_list(),
-                    row[n_name],
-                )
-                results.append({
-                    "resistance_strikes": res.resistance_strikes,
-                    "support_strikes": res.support_strikes,
-                })
-            return pl.Series(results)
+        def _oi_zones(batch: pl.Series) -> pl.Series:
+            n = int(batch.struct.field(n_name).to_list()[0])
+            res = core_oi_zones(
+                batch.struct.field(s_name).to_list(),
+                batch.struct.field(c_name).to_list(),
+                batch.struct.field(p_name).to_list(),
+                n,
+            )
+            return pl.Series([{
+                "resistance_strikes": res.resistance_strikes,
+                "support_strikes": res.support_strikes,
+            }])
 
         return pl.struct(exprs).map_batches(
-            _get_zones,
+            _oi_zones,
             return_dtype=pl.Struct([
                 pl.Field("resistance_strikes", pl.List(pl.Float64)),
                 pl.Field("support_strikes", pl.List(pl.Float64)),
@@ -315,70 +400,100 @@ class options:
         pe_oi_col,
         lot_size_col_or_val,
     ):
-        exprs = []
-        sp_name = options._handle_arg(exprs, spot_col_or_val, "_sp_val")
-        st_name = options._handle_arg(exprs, strikes_col, "_st_col")
-        cg_name = options._handle_arg(exprs, ce_gamma_col, "_cg_col")
-        pg_name = options._handle_arg(exprs, pe_gamma_col, "_pg_col")
-        co_name = options._handle_arg(exprs, ce_oi_col, "_co_col")
-        po_name = options._handle_arg(exprs, pe_oi_col, "_po_col")
-        lt_name = options._handle_arg(exprs, lot_size_col_or_val, "_lt_val")
+        """Per-strike Gamma Exposure (native Polars expression).
 
-        def _get_gex(s):
-            row = s.to_list()[0]
-            res = core_gex_per_strike(
-                row[sp_name],
-                s.struct.field(st_name).to_list(),
-                s.struct.field(cg_name).to_list(),
-                s.struct.field(pg_name).to_list(),
-                s.struct.field(co_name).to_list(),
-                s.struct.field(po_name).to_list(),
-                row[lt_name],
-            )
-            return pl.Series([
-                {"ce_gex": r.ce_gex, "pe_gex": r.pe_gex, "net_gex": r.net_gex} for r in res
-            ])
+        CE GEX = CE_OI * CE_gamma * spot * lot * 0.01; PE GEX uses -0.01; the
+        struct also carries net_gex = CE + PE. Mirrors ``chain_analytics::
+        gex_per_strike`` exactly, with no per-row FFI.
 
-        return pl.struct(exprs).map_batches(
-            _get_gex,
-            return_dtype=pl.Struct([
-                pl.Field("ce_gex", pl.Float64),
-                pl.Field("pe_gex", pl.Float64),
-                pl.Field("net_gex", pl.Float64),
-            ]),
+        Returns
+        -------
+        pl.Expr
+            Struct{ce_gex: f64, pe_gex: f64, net_gex: f64} (same length as input).
+
+        Examples
+        --------
+        >>> import polars as pl
+        >>> from quantwave.polars import options
+        >>> df = pl.DataFrame({"k": [25000.0], "cg": [0.0005], "pg": [0.0005],
+        ...                    "ce": [4000], "pe": [5000]})
+        >>> df.select(options.gex_per_strike(25000.0, "k", "cg", "pg", "ce", "pe", 50)
+        ...          )["k"][0]["net_gex"]  # doctest: +SKIP
+        """
+        spot = _as_expr(spot_col_or_val)
+        lot = _as_expr(lot_size_col_or_val)
+        ce_gex = _as_expr(ce_oi_col) * _as_expr(ce_gamma_col) * spot * lot * 0.01
+        pe_gex = _as_expr(pe_oi_col) * _as_expr(pe_gamma_col) * spot * lot * -0.01
+        return pl.struct(
+            ce_gex.alias("ce_gex"),
+            pe_gex.alias("pe_gex"),
+            (ce_gex + pe_gex).alias("net_gex"),
         )
 
     @staticmethod
     def gex_flip_strike(strikes_col, net_gex_col):
-        exprs = []
+        """Strike where cumulative Net GEX first changes sign (whole-chain reduction).
+
+        Single native Rust call (``chain_analytics::gex_flip_strike``); returns a
+        length-1 Float64 (null if no sign change). Apply per expiry snapshot.
+
+        Examples
+        --------
+        >>> import polars as pl
+        >>> from quantwave.polars import options
+        >>> df = pl.DataFrame({"k": [24800.0, 25000.0], "gex": [4.0, -0.5]})
+        >>> df.select(options.gex_flip_strike("k", "gex").alias("x"))["x"][0]
+        24800.0
+        """
+        exprs: list[pl.Expr] = []
         s_name = options._handle_arg(exprs, strikes_col, "_s_col")
         n_name = options._handle_arg(exprs, net_gex_col, "_n_col")
 
-        return pl.struct(exprs).map_batches(
-            lambda s: pl.Series([
+        def _flip(batch: pl.Series) -> pl.Series:
+            return pl.Series([
                 core_gex_flip_strike(
-                    s.struct.field(s_name).to_list(),
-                    s.struct.field(n_name).to_list(),
+                    batch.struct.field(s_name).to_list(),
+                    batch.struct.field(n_name).to_list(),
                 )
-            ]),
-            return_dtype=pl.Float64,
-        )
+            ])
+
+        return pl.struct(exprs).map_batches(_flip, return_dtype=pl.Float64)
 
     @staticmethod
     def atm_straddle(spot_col_or_val, strikes_col, ce_ltp_col, pe_ltp_col):
-        exprs = []
+        """ATM straddle analytics for one chain (whole-chain reduction).
+
+        Finds the strike closest to spot and returns its straddle premium and
+        implied move. Single native Rust call (``chain_analytics::atm_straddle``);
+        returns a length-1 struct. Apply per expiry snapshot.
+
+        Returns
+        -------
+        pl.Expr
+            Struct{atm_strike: f64, straddle_premium: f64, implied_move_pct: f64}.
+
+        Examples
+        --------
+        >>> import polars as pl
+        >>> from quantwave.polars import options
+        >>> df = pl.DataFrame({"k": [24800.0, 25000.0], "ce": [250.0, 100.0],
+        ...                    "pe": [10.0, 60.0]})
+        >>> df.select(options.atm_straddle(25000.0, "k", "ce", "pe").alias("s"))["s"][0]["atm_strike"]
+        25000.0
+        """
+        exprs: list[pl.Expr] = []
         sp_name = options._handle_arg(exprs, spot_col_or_val, "_sp_val")
         st_name = options._handle_arg(exprs, strikes_col, "_st_col")
         cl_name = options._handle_arg(exprs, ce_ltp_col, "_cl_col")
         pl_name = options._handle_arg(exprs, pe_ltp_col, "_pl_col")
 
-        def _get_straddle(s):
-            row = s.to_list()[0]
+        def _straddle(batch: pl.Series) -> pl.Series:
+            spot = batch.struct.field(sp_name).to_list()[0]
             res = core_atm_straddle(
-                row[sp_name],
-                s.struct.field(st_name).to_list(),
-                s.struct.field(cl_name).to_list(),
-                s.struct.field(pl_name).to_list(),
+                spot,
+                batch.struct.field(st_name).to_list(),
+                batch.struct.field(cl_name).to_list(),
+                batch.struct.field(pl_name).to_list(),
             )
             return pl.Series([{
                 "atm_strike": res.atm_strike,
@@ -387,7 +502,7 @@ class options:
             }])
 
         return pl.struct(exprs).map_batches(
-            _get_straddle,
+            _straddle,
             return_dtype=pl.Struct([
                 pl.Field("atm_strike", pl.Float64),
                 pl.Field("straddle_premium", pl.Float64),
@@ -397,18 +512,45 @@ class options:
 
     @staticmethod
     def moneyness(spot, strike_col):
-        from ._quantwave import moneyness as core_moneyness
+        """Per-strike moneyness (ITM/ATM/OTM) from a call perspective, native expression.
 
-        return pl.col(strike_col).map_batches(
-            lambda s: pl.Series([core_moneyness(spot, k) for k in s.to_list()]),
-            return_dtype=pl.String,
+        ATM band is spot +/- 0.2% (mirrors ``options_india::india::moneyness``):
+        strike < spot*0.998 -> ITM, strike > spot*1.002 -> OTM, else ATM.
+
+        Examples
+        --------
+        >>> import polars as pl
+        >>> from quantwave.polars import options
+        >>> df = pl.DataFrame({"k": [24800.0, 25000.0, 25200.0]})
+        >>> df.select(options.moneyness(25000.0, "k").alias("x"))["x"].to_list()
+        ['ITM', 'ATM', 'OTM']
+        """
+        strike = _as_expr(strike_col)
+        return (
+            pl.when(strike < spot * 0.998)
+            .then(pl.lit("ITM"))
+            .when(strike > spot * 1.002)
+            .then(pl.lit("OTM"))
+            .otherwise(pl.lit("ATM"))
         )
 
     @staticmethod
     def nse_lot_size(symbol_col):
-        from ._quantwave import nse_lot_size as core_nse_lot_size
+        """Map an NSE index symbol column to its lot size (native expression).
 
-        return pl.col(symbol_col).map_batches(
-            lambda s: pl.Series([core_nse_lot_size(sym) for sym in s.to_list()]),
-            return_dtype=pl.Int64,
+        Mirrors ``options_india::india::nse_lot_size``; unknown symbols map to
+        null. Case-insensitive.
+
+        Examples
+        --------
+        >>> import polars as pl
+        >>> from quantwave.polars import options
+        >>> df = pl.DataFrame({"sym": ["NIFTY", "BANKNIFTY"]})
+        >>> df.select(options.nse_lot_size("sym").alias("x"))["x"].to_list()
+        [50, 15]
+        """
+        return (
+            _as_expr(symbol_col)
+            .str.to_uppercase()
+            .replace_strict(_NSE_LOT_SIZES, default=None, return_dtype=pl.Int64)
         )
