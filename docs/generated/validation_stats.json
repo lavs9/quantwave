@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-10T04:38:26Z",
+  "generated_at": "2026-07-10T15:39:00Z",
   "indicator_count": 221,
   "metadata_with_gold_file": 217,
   "gold_fixture_count": 28,
@@ -33,7 +33,7 @@
     "voss_predictor.json",
     "wavetrend_10_21_4.json"
   ],
-  "python_gold_parity_count": 25,
+  "python_gold_parity_count": 26,
   "python_gold_parity_deferred": 2,
   "rust_tests_by_package": {
     "quantwave-core": 541,

@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -23,15 +22,27 @@ RUST_TEST_PACKAGES = (
 )
 
 
+def _iter_rs_files(paths: list[Path]):
+    for p in paths:
+        if not p.exists():
+            continue
+        if p.is_file():
+            yield p
+        else:
+            yield from p.rglob("*.rs")
+
+
 def _rg_count(pattern: str, paths: list[Path]) -> int:
-    cmd = ["rg", "-c", pattern, *[str(p) for p in paths if p.exists()]]
-    try:
-        out = subprocess.check_output(cmd, text=True, cwd=ROOT, stderr=subprocess.DEVNULL)
-    except subprocess.CalledProcessError as exc:
-        if exc.returncode == 1:
-            return 0
-        raise
-    return sum(int(line.split(":")[-1]) for line in out.splitlines() if ":" in line)
+    """Count matching lines across .rs files (matches ``rg -c`` semantics)."""
+    regex = re.compile(pattern)
+    total = 0
+    for path in _iter_rs_files(paths):
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        total += sum(1 for line in text.splitlines() if regex.search(line))
+    return total
 
 
 def _indicator_count() -> int:
