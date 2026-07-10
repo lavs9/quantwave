@@ -20,7 +20,7 @@ class GoldParityCase:
     rtol: float = 1e-6
 
 
-# 25 streaming cases backed by quantwave-core/tests/gold_standard/*.json
+# 26 streaming cases backed by quantwave-core/tests/gold_standard/*.json
 GOLD_PARITY_CASES: tuple[GoldParityCase, ...] = (
     GoldParityCase("sma_5", "sma", "scalar", kwargs={"period": 3}),
     GoldParityCase("alma_9_085_6", "alma", "scalar", kwargs={"period": 9, "offset": 0.85, "sigma": 6.0}),
@@ -33,6 +33,7 @@ GOLD_PARITY_CASES: tuple[GoldParityCase, ...] = (
     GoldParityCase("mesa_stochastic", "mesa_stochastic", "scalar", args=(20, 48, 10)),
     GoldParityCase("voss_predictor", "voss_predictor", "tuple", kwargs={"period": 20, "predict": 3}),
     GoldParityCase("ehlers_autocorrelation", "ehlers_autocorrelation", "vec", args=(20, 10)),
+    GoldParityCase("griffiths_spectrum", "griffiths_spectrum", "vec", args=(18, 40, 40)),
     GoldParityCase("cycle_trend_analytics", "cycle_trend_analytics", "cycle_trend", args=(5, 15)),
     GoldParityCase("ehlers_loops", "ehlers_loops", "loops", args=(20, 125)),
     GoldParityCase("oc_price_rsi", "oc_price_rsi", "oc", kwargs={"period": 14}),

@@ -7,14 +7,14 @@ QuantWave's primary credibility claim is **correctness**: one mathematical imple
 ## Coverage snapshot
 
 <!-- VALIDATION:STATS:START -->
-**Last updated:** 2026-07-10T04:38:26Z (UTC)
+**Last updated:** 2026-07-10T15:39:00Z (UTC)
 
 | Metric | Count | Source |
 |--------|------:|--------|
 | Native indicators (`*_METADATA`) | **221** | `metadata_export.json` |
 | Metadata entries with gold file reference | 217 | `metadata_export.json` |
 | Gold-standard JSON fixtures (on disk) | **28** | `quantwave-core/tests/gold_standard/` |
-| Python streaming gold parity cases | **25** | `tests/python/gold_parity_registry.py` |
+| Python streaming gold parity cases | **26** | `tests/python/gold_parity_registry.py` |
 | Python gold parity deferred (HMM) | 2 | regime fixtures — separate suite |
 | Rust `#[test]` functions (core) | 541 | `rg '#[test]' quantwave-core` |
 | Rust `#[test]` functions (polars) | 45 | `rg '#[test]' quantwave-polars` |
