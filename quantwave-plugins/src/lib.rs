@@ -1,5 +1,6 @@
 #![allow(clippy::unused_unit)]
 pub mod momentum;
+pub mod options_india;
 pub mod volatility;
 pub mod volume;
 pub mod price_transform;
