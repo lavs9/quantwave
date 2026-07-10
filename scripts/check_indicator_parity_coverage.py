@@ -23,8 +23,14 @@ EXEMPTIONS = CORE / "tests" / "parity_exemptions.toml"
 GOLD_DIR = CORE / "tests" / "gold_standard"
 REPORT = ROOT / "docs" / "generated" / "parity_coverage.json"
 
+# Tolerant of both single-line and rustfmt multi-line struct formatting.
 REGISTERED_RE = re.compile(
-    r'RegisteredMetadata \{ slug: "([^"]+)", meta: &\w+, struct_name: "[^"]*", source_file: "([^"]+)" \}'
+    r'RegisteredMetadata\s*\{\s*'
+    r'slug:\s*"([^"]+)",\s*'
+    r'meta:\s*&\w+,\s*'
+    r'struct_name:\s*"[^"]*",\s*'
+    r'source_file:\s*"([^"]+)",?\s*'
+    r'\}'
 )
 
 # Slug -> extra proptest function name stems (without test_ prefix / _parity suffix).
