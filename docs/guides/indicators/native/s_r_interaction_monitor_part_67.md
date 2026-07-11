@@ -32,10 +32,14 @@ QuantWave implements this via the universal `Next<T>` trait — bit-identical ac
 
 **Implementation** (`quantwave-core/src/indicators/sr_monitor.rs`):
 
-\text{side} = \text{sign}(price - level)\\
-\text{touch if } |level - [L,H]| \le tol\\
-\text{breakout if side flips}\\
-\text{retest if post-breakout distance} \le tol
+\[
+\begin{aligned}
+\text{side} &= \text{sign}(price - level)\\
+\text{touch} &\text{ if } |level - [L,H]| \le tol\\
+\text{breakout} &\text{ if side flips}\\
+\text{retest} &\text{ if post-breakout distance} \le tol
+\end{aligned}
+\]
 
 
 ## Parameters

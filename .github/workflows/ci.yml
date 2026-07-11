@@ -77,6 +77,7 @@ jobs:
           python3 scripts/check_bead_ids.py
           python3 scripts/check_talib_map_drift.py
           python3 scripts/check_api_stubs_drift.py
+          python3 scripts/check_doc_latex.py
 
   rust-gate:
     name: Rust quality gate
