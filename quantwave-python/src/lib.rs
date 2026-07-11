@@ -1,3 +1,5 @@
+use pyo3::prelude::*;
+use pyo3::wrap_pyfunction;
 use quantwave_core::indicators::alligator::Alligator as CoreAlligator;
 use quantwave_core::indicators::alma::ALMA as CoreALMA;
 use quantwave_core::indicators::amfm::{
@@ -111,13 +113,9 @@ use quantwave_core::indicators::zero_lag::ZeroLag as CoreZeroLag;
 use quantwave_core::traits::Next;
 
 // ML Feature extractors (for quantwave-gw7s canonical notebook + validation)
-use quantwave_core::features::cyber_cycle::{
-    CyberCycleFeatureExtractor as CoreCyberCycleFE, CyberCycleFeatures as CoreCyberCycleF,
-};
+use quantwave_core::features::cyber_cycle::CyberCycleFeatureExtractor as CoreCyberCycleFE;
 use quantwave_core::features::griffiths_dominant_cycle::GriffithsDominantCycleFeatureExtractor as CoreGriffithsDCFE;
-use quantwave_core::features::hurst::{
-    HurstFeatureExtractor as CoreHurstFE, HurstFeatures as CoreHurstF,
-};
+use quantwave_core::features::hurst::HurstFeatureExtractor as CoreHurstFE;
 use quantwave_core::features::instantaneous_trendline::InstantaneousTrendlineFeatureExtractor as CoreITFE;
 use quantwave_core::features::regime::regime_to_features as core_regime_to_features;
 use quantwave_core::features::trendflex::TrendflexFeatureExtractor as CoreTrendflexFE;
@@ -134,89 +132,99 @@ use quantwave_core::regimes::gaussian_hmm::{
 use quantwave_core::regimes::hmm::HMM as CoreHMM;
 use quantwave_core::regimes::hmm_forecast::{
     forecast_state as core_forecast_state, forecast_volatility as core_forecast_volatility,
-    pseudo_residuals as core_pseudo_residuals,
 };
 
 use paste::paste;
 use std::sync::Mutex;
-
-uniffi::setup_scaffolding!();
-
 // --- Records ---
 
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct SuperTrendResult {
     pub value: f64,
     pub direction: i8,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct MacdResult {
     pub macd: f64,
     pub signal: f64,
     pub histogram: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct BbandsResult {
     pub upper: f64,
     pub middle: f64,
     pub lower: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct StochResult {
     pub k: f64,
     pub d: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct MamaResult {
     pub mama: f64,
     pub fama: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct AroonResult {
     pub up: f64,
     pub down: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct IchimokuResult {
     pub tenkan: f64,
     pub kijun: f64,
     pub senkou_a: f64,
     pub senkou_b: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct AlligatorResult {
     pub jaw: f64,
     pub teeth: f64,
     pub lips: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct AtrTsResult {
     pub stop: f64,
     pub direction: i8,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct DonchianResult {
     pub upper: f64,
     pub middle: f64,
     pub lower: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct EmdResult {
     pub trend: f64,
     pub upper: f64,
     pub lower: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct EhlersLoopsResult {
     pub price_rms: f64,
     pub vol_rms: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct FractalsResult {
     pub bearish: bool,
     pub bullish: bool,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct HeikinAshiResult {
     pub open: f64,
     pub high: f64,
@@ -225,20 +233,23 @@ pub struct HeikinAshiResult {
 }
 
 // --- PA / MarketStructure + Geometric foundation (quantwave-5thj) ---
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct SwingPointResult {
     pub bar: u64,
     pub price: f64,
     pub is_high: bool,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct FlipEventResult {
     pub is_bearish: bool,
     pub price: f64,
     pub bar: u64,
     pub structure_strength: u32,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct MarketStructureStateResult {
     pub bias: u32, // 0=Neutral, 1=Bullish, 2=Bearish
     pub last_swing_high: Option<SwingPointResult>,
@@ -247,7 +258,8 @@ pub struct MarketStructureStateResult {
     pub swing_depth_used: u32,
     pub bar_index: u64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct FlagPatternResult {
     pub id: u32,
     pub is_bull: bool,
@@ -260,7 +272,8 @@ pub struct FlagPatternResult {
     pub breakout_confirmed: bool,
     pub breakout_price: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct HsPatternResult {
     pub id: u32,
     pub is_bearish: bool,
@@ -270,29 +283,34 @@ pub struct HsPatternResult {
     pub breakout_confirmed: bool,
 }
 
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct GeometricNextResult {
     pub market_structure: MarketStructureStateResult,
     pub flag: Option<FlagPatternResult>,
     pub hs: Option<HsPatternResult>,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct KeltnerResult {
     pub upper: f64,
     pub middle: f64,
     pub lower: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct PairsRotationResult {
     pub ratio: f64,
     pub angle: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct PhasorResult {
     pub in_phase: f64,
     pub quadrature: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct PivotPointsResult {
     pub p: f64,
     pub r1: f64,
@@ -300,7 +318,8 @@ pub struct PivotPointsResult {
     pub r2: f64,
     pub s2: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct SystemEvaluatorResult {
     pub average_win_loss_ratio: f64,
     pub average_trade: f64,
@@ -310,93 +329,112 @@ pub struct SystemEvaluatorResult {
     pub weighted_average_trade: f64,
     pub theoretical_consecutive_losers: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct UltimateBandsResult {
     pub upper: f64,
     pub middle: f64,
     pub lower: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct UltimateChannelResult {
     pub upper: f64,
     pub center: f64,
     pub lower: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct VortexResult {
     pub plus: f64,
     pub minus: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct WaveTrendResult {
     pub wt1: f64,
     pub wt2: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct VossPredictorResult {
     pub filt: f64,
     pub voss: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct CycleTrendAnalyticsResult {
     pub cycle: f64,
     pub trend: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct ZeroLagResult {
     pub value: f64,
     pub trigger: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct CyberCycleResult {
     pub value: f64,
     pub trigger: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct HtSineResult {
     pub sine: f64,
     pub leadsine: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct VolumeProfileResult {
     pub poc: f64,
     pub vah: f64,
     pub val: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct PmaResult {
     pub pma: f64,
     pub predict: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct TrendRocResult {
     pub trend: f64,
     pub roc: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct UdmaResult {
     pub fast: f64,
     pub slow: f64,
 }
-#[derive(uniffi::Record)]
+// name = "OiZonesResult" preserves the uniffi-era Python symbol (uniffi re-cased the
+// `OI` capital-run via heck).
+#[pyclass(name = "OiZonesResult", get_all)]
+#[derive(Clone)]
 pub struct OIZonesResult {
     pub resistance_strikes: Vec<f64>,
     pub support_strikes: Vec<f64>,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct GexResult {
     pub ce_gex: f64,
     pub pe_gex: f64,
     pub net_gex: f64,
 }
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct StraddleResult {
     pub atm_strike: f64,
     pub straddle_premium: f64,
     pub implied_move_pct: f64,
 }
 
-#[derive(uniffi::Enum)]
+#[pyclass(eq, eq_int)]
+#[derive(Clone, PartialEq)]
 pub enum SwissMode {
     EMA,
     SMA,
@@ -429,7 +467,7 @@ impl From<SwissMode> for SwissArmyKnifeMode {
 macro_rules! export_1_in_1_out {
     ($name:ident, $core_type:ty, ($($param:ident: $param_type:ty),*)) => {
         paste! {
-            #[uniffi::export]
+            #[pyfunction]
             pub fn [<$name:lower>]($( $param: $param_type , )* series: Vec<f64>) -> Vec<f64> {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 series.iter().map(|&x| indicator.next(x)).collect()
@@ -438,9 +476,9 @@ macro_rules! export_1_in_1_out {
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError."]
-            #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
-            #[uniffi::export] impl $name {
-                #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
+            #[pyclass] pub struct $name { inner: Mutex<$core_type> }
+            #[pymethods] impl $name {
+                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
                 pub fn next(&self, input: f64) -> f64 { self.inner.lock().unwrap().next(input) }
             }
         }
@@ -450,7 +488,7 @@ macro_rules! export_1_in_1_out {
 macro_rules! export_1_in_record_out {
     ($name:ident, $core_type:ty, $result_type:ty, ($($param:ident: $param_type:ty),*), $res_var:ident, $body:expr) => {
         paste! {
-            #[uniffi::export]
+            #[pyfunction]
             pub fn [<$name:lower>]($( $param: $param_type , )* series: Vec<f64>) -> Vec<$result_type> {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 series.iter().map(|&x| { let $res_var = indicator.next(x); $body }).collect()
@@ -459,9 +497,9 @@ macro_rules! export_1_in_record_out {
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError."]
-            #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
-            #[uniffi::export] impl $name {
-                #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
+            #[pyclass] pub struct $name { inner: Mutex<$core_type> }
+            #[pymethods] impl $name {
+                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
                 pub fn next(&self, input: f64) -> $result_type { let $res_var = self.inner.lock().unwrap().next(input); $body }
             }
         }
@@ -471,7 +509,7 @@ macro_rules! export_1_in_record_out {
 macro_rules! export_1_in_vec_out {
     ($name:ident, $core_type:ty, ($($param:ident: $param_type:ty),*)) => {
         paste! {
-            #[uniffi::export]
+            #[pyfunction]
             pub fn [<$name:lower>]($( $param: $param_type , )* series: Vec<f64>) -> Vec<Vec<f64>> {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 series.iter().map(|&x| indicator.next(x)).collect()
@@ -480,9 +518,9 @@ macro_rules! export_1_in_vec_out {
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError."]
-            #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
-            #[uniffi::export] impl $name {
-                #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
+            #[pyclass] pub struct $name { inner: Mutex<$core_type> }
+            #[pymethods] impl $name {
+                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
                 pub fn next(&self, input: f64) -> Vec<f64> { self.inner.lock().unwrap().next(input) }
             }
         }
@@ -492,7 +530,7 @@ macro_rules! export_1_in_vec_out {
 macro_rules! export_ohlc_in_1_out {
     ($name:ident, $core_type:ty, ($($param:ident: $param_type:ty),*)) => {
         paste! {
-            #[uniffi::export]
+            #[pyfunction]
             pub fn [<$name:lower>]($( $param: $param_type , )* high: Vec<f64>, low: Vec<f64>, close: Vec<f64>) -> Vec<f64> {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 high.iter().zip(low.iter()).zip(close.iter()).map(|((&h, &l), &c)| indicator.next((h, l, c))).collect()
@@ -501,9 +539,9 @@ macro_rules! export_ohlc_in_1_out {
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError."]
-            #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
-            #[uniffi::export] impl $name {
-                #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
+            #[pyclass] pub struct $name { inner: Mutex<$core_type> }
+            #[pymethods] impl $name {
+                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
                 pub fn next(&self, high: f64, low: f64, close: f64) -> f64 { self.inner.lock().unwrap().next((high, low, close)) }
             }
         }
@@ -513,7 +551,7 @@ macro_rules! export_ohlc_in_1_out {
 macro_rules! export_ohlc_in_record_out {
     ($name:ident, $core_type:ty, $result_type:ty, ($($param:ident: $param_type:ty),*), $res_var:ident, $body:expr) => {
         paste! {
-            #[uniffi::export]
+            #[pyfunction]
             pub fn [<$name:lower>]($( $param: $param_type , )* high: Vec<f64>, low: Vec<f64>, close: Vec<f64>) -> Vec<$result_type> {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 high.iter().zip(low.iter()).zip(close.iter()).map(|((&h, &l), &c)| { let $res_var = indicator.next((h, l, c)); $body }).collect()
@@ -522,9 +560,9 @@ macro_rules! export_ohlc_in_record_out {
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError."]
-            #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
-            #[uniffi::export] impl $name {
-                #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
+            #[pyclass] pub struct $name { inner: Mutex<$core_type> }
+            #[pymethods] impl $name {
+                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
                 pub fn next(&self, high: f64, low: f64, close: f64) -> $result_type { let $res_var = self.inner.lock().unwrap().next((high, low, close)); $body }
             }
         }
@@ -534,7 +572,7 @@ macro_rules! export_ohlc_in_record_out {
 macro_rules! export_hl_in_1_out {
     ($name:ident, $core_type:ty, ($($param:ident: $param_type:ty),*)) => {
         paste! {
-            #[uniffi::export]
+            #[pyfunction]
             pub fn [<$name:lower>]($( $param: $param_type , )* high: Vec<f64>, low: Vec<f64>) -> Vec<f64> {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 high.iter().zip(low.iter()).map(|(&h, &l)| indicator.next((h, l))).collect()
@@ -543,9 +581,9 @@ macro_rules! export_hl_in_1_out {
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError."]
-            #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
-            #[uniffi::export] impl $name {
-                #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
+            #[pyclass] pub struct $name { inner: Mutex<$core_type> }
+            #[pymethods] impl $name {
+                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
                 pub fn next(&self, high: f64, low: f64) -> f64 { self.inner.lock().unwrap().next((high, low)) }
             }
         }
@@ -555,7 +593,7 @@ macro_rules! export_hl_in_1_out {
 macro_rules! export_hl_in_record_out {
     ($name:ident, $core_type:ty, $result_type:ty, ($($param:ident: $param_type:ty),*), $res_var:ident, $body:expr) => {
         paste! {
-            #[uniffi::export]
+            #[pyfunction]
             pub fn [<$name:lower>]($( $param: $param_type , )* high: Vec<f64>, low: Vec<f64>) -> Vec<$result_type> {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 high.iter().zip(low.iter()).map(|(&h, &l)| { let $res_var = indicator.next((h, l)); $body }).collect()
@@ -564,9 +602,9 @@ macro_rules! export_hl_in_record_out {
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError."]
-            #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
-            #[uniffi::export] impl $name {
-                #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
+            #[pyclass] pub struct $name { inner: Mutex<$core_type> }
+            #[pymethods] impl $name {
+                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
                 pub fn next(&self, high: f64, low: f64) -> $result_type { let $res_var = self.inner.lock().unwrap().next((high, low)); $body }
             }
         }
@@ -576,7 +614,7 @@ macro_rules! export_hl_in_record_out {
 macro_rules! export_co_in_1_out {
     ($name:ident, $core_type:ty, ($($param:ident: $param_type:ty),*)) => {
         paste! {
-            #[uniffi::export]
+            #[pyfunction]
             pub fn [<$name:lower>]($( $param: $param_type , )* close: Vec<f64>, open: Vec<f64>) -> Vec<f64> {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 close.iter().zip(open.iter()).map(|(&c, &o)| indicator.next((c, o))).collect()
@@ -585,9 +623,9 @@ macro_rules! export_co_in_1_out {
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError."]
-            #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
-            #[uniffi::export] impl $name {
-                #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
+            #[pyclass] pub struct $name { inner: Mutex<$core_type> }
+            #[pymethods] impl $name {
+                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
                 pub fn next(&self, close: f64, open: f64) -> f64 { self.inner.lock().unwrap().next((close, open)) }
             }
         }
@@ -597,7 +635,7 @@ macro_rules! export_co_in_1_out {
 macro_rules! export_co_in_record_out {
     ($name:ident, $core_type:ty, $result_type:ty, ($($param:ident: $param_type:ty),*), $res_var:ident, $body:expr) => {
         paste! {
-            #[uniffi::export]
+            #[pyfunction]
             pub fn [<$name:lower>]($( $param: $param_type , )* close: Vec<f64>, open: Vec<f64>) -> Vec<$result_type> {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 close.iter().zip(open.iter()).map(|(&c, &o)| { let $res_var = indicator.next((c, o)); $body }).collect()
@@ -606,9 +644,9 @@ macro_rules! export_co_in_record_out {
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError."]
-            #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
-            #[uniffi::export] impl $name {
-                #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
+            #[pyclass] pub struct $name { inner: Mutex<$core_type> }
+            #[pymethods] impl $name {
+                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
                 pub fn next(&self, close: f64, open: f64) -> $result_type { let $res_var = self.inner.lock().unwrap().next((close, open)); $body }
             }
         }
@@ -618,7 +656,7 @@ macro_rules! export_co_in_record_out {
 macro_rules! export_pv_in_1_out {
     ($name:ident, $core_type:ty, ($($param:ident: $param_type:ty),*)) => {
         paste! {
-            #[uniffi::export]
+            #[pyfunction]
             pub fn [<$name:lower>]($( $param: $param_type , )* price: Vec<f64>, volume: Vec<f64>) -> Vec<f64> {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 price.iter().zip(volume.iter()).map(|(&p, &v)| indicator.next((p, v))).collect()
@@ -627,9 +665,9 @@ macro_rules! export_pv_in_1_out {
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError."]
-            #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
-            #[uniffi::export] impl $name {
-                #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
+            #[pyclass] pub struct $name { inner: Mutex<$core_type> }
+            #[pymethods] impl $name {
+                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
                 pub fn next(&self, price: f64, volume: f64) -> f64 { self.inner.lock().unwrap().next((price, volume)) }
             }
         }
@@ -639,7 +677,7 @@ macro_rules! export_pv_in_1_out {
 macro_rules! export_pv_in_record_out {
     ($name:ident, $core_type:ty, $result_type:ty, ($($param:ident: $param_type:ty),*), $res_var:ident, $body:expr) => {
         paste! {
-            #[uniffi::export]
+            #[pyfunction]
             pub fn [<$name:lower>]($( $param: $param_type , )* price: Vec<f64>, volume: Vec<f64>) -> Vec<$result_type> {
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
                 price.iter().zip(volume.iter()).map(|(&p, &v)| { let $res_var = indicator.next((p, v)); $body }).collect()
@@ -648,9 +686,9 @@ macro_rules! export_pv_in_record_out {
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError."]
-            #[derive(uniffi::Object)] pub struct $name { inner: Mutex<$core_type> }
-            #[uniffi::export] impl $name {
-                #[uniffi::constructor] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
+            #[pyclass] pub struct $name { inner: Mutex<$core_type> }
+            #[pymethods] impl $name {
+                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
                 pub fn next(&self, price: f64, volume: f64) -> $result_type { let $res_var = self.inner.lock().unwrap().next((price, volume)); $body }
             }
         }
@@ -669,7 +707,7 @@ export_ohlc_in_1_out!(Atr, ATR, (period: u64));
 export_ohlc_in_1_out!(Adx, ADX, (period: u64));
 export_ohlc_in_1_out!(Cci, CCI, (period: u64));
 
-#[uniffi::export]
+#[pyfunction]
 pub fn stoch(
     high: Vec<f64>,
     low: Vec<f64>,
@@ -694,13 +732,13 @@ pub fn stoch(
         })
         .collect()
 }
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct Stoch {
     inner: Mutex<STOCH>,
 }
-#[uniffi::export]
+#[pymethods]
 impl Stoch {
-    #[uniffi::constructor]
+    #[new]
     pub fn new(fastk: u64, slowk: u64, slowd: u64) -> Self {
         Self {
             inner: Mutex::new(STOCH::new(
@@ -729,7 +767,7 @@ export_ohlc_in_1_out!(Willr, WILLR, (period: u64));
 export_1_in_1_out!(Dema, DEMA, (period: u64));
 export_1_in_1_out!(Tema, TEMA, (period: u64));
 
-#[uniffi::export]
+#[pyfunction]
 pub fn ichimoku(
     high: Vec<f64>,
     low: Vec<f64>,
@@ -751,13 +789,13 @@ pub fn ichimoku(
         })
         .collect()
 }
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct Ichimoku {
     inner: Mutex<CoreIchimoku>,
 }
-#[uniffi::export]
+#[pymethods]
 impl Ichimoku {
-    #[uniffi::constructor]
+    #[new]
     pub fn new(tenkan: u64, kijun: u64, senkou_b: u64) -> Self {
         Self {
             inner: Mutex::new(CoreIchimoku::new(
@@ -812,7 +850,7 @@ export_1_in_1_out!(CorrelationTrend, CoreCorrelationTrend, (length: u64));
 export_1_in_1_out!(CyberneticOscillator, CoreCyberneticOscillator, (hp_length: u64, lp_length: u64, rms_len: u64));
 export_hl_in_1_out!(Dmh, CoreDMH, (length: u64));
 
-#[uniffi::export]
+#[pyfunction]
 pub fn donchian(high: Vec<f64>, low: Vec<f64>, period: u64) -> Vec<DonchianResult> {
     let mut it = CoreDonchian::new(period as usize);
     high.iter()
@@ -827,13 +865,13 @@ pub fn donchian(high: Vec<f64>, low: Vec<f64>, period: u64) -> Vec<DonchianResul
         })
         .collect()
 }
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct Donchian {
     inner: Mutex<CoreDonchian>,
 }
-#[uniffi::export]
+#[pymethods]
 impl Donchian {
-    #[uniffi::constructor]
+    #[new]
     pub fn new(period: u64) -> Self {
         Self {
             inner: Mutex::new(CoreDonchian::new(period as usize)),
@@ -881,7 +919,7 @@ export_1_in_vec_out!(GriffithsSpectrum, CoreGriffithsSpectrum, (lower_bound: u64
 export_1_in_1_out!(Hamming, CoreHamming, (period: u64, pedestal: f64));
 export_1_in_1_out!(Hann, CoreHann, (period: u64));
 
-#[uniffi::export]
+#[pyfunction]
 pub fn heikin_ashi(
     open: Vec<f64>,
     high: Vec<f64>,
@@ -904,13 +942,13 @@ pub fn heikin_ashi(
         })
         .collect()
 }
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct HeikinAshi {
     inner: Mutex<CoreHeikinAshi>,
 }
-#[uniffi::export]
+#[pymethods]
 impl HeikinAshi {
-    #[uniffi::constructor]
+    #[new]
     pub fn new() -> Self {
         Self {
             inner: Mutex::new(CoreHeikinAshi::new()),
@@ -933,7 +971,7 @@ export_1_in_1_out!(EhlersWma4, CoreEhlersWma4, ());
 export_1_in_1_out!(InstantaneousTrendline, CoreInstantaneousTrendline, ());
 export_1_in_record_out!(UndersampledDoubleMa, CoreUDMA, UdmaResult, (fast_len: u64, slow_len: u64, samp_per: u64), res, UdmaResult { fast: res.0, slow: res.1 });
 
-#[uniffi::export]
+#[pyfunction]
 pub fn keltner(
     high: Vec<f64>,
     low: Vec<f64>,
@@ -956,13 +994,13 @@ pub fn keltner(
         })
         .collect()
 }
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct Keltner {
     inner: Mutex<CoreKeltner>,
 }
-#[uniffi::export]
+#[pymethods]
 impl Keltner {
-    #[uniffi::constructor]
+    #[new]
     pub fn new(ema_period: u64, atr_period: u64, multiplier: f64) -> Self {
         Self {
             inner: Mutex::new(CoreKeltner::new(
@@ -1000,7 +1038,7 @@ export_1_in_record_out!(
 );
 export_co_in_1_out!(OcPriceRsi, CoreOcPriceRSI, (period: u64));
 
-#[uniffi::export]
+#[pyfunction]
 pub fn pivot_points(high: Vec<f64>, low: Vec<f64>, close: Vec<f64>) -> Vec<PivotPointsResult> {
     let mut it = CorePivotPoints::new();
     high.iter()
@@ -1018,13 +1056,13 @@ pub fn pivot_points(high: Vec<f64>, low: Vec<f64>, close: Vec<f64>) -> Vec<Pivot
         })
         .collect()
 }
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct PivotPoints {
     inner: Mutex<CorePivotPoints>,
 }
-#[uniffi::export]
+#[pymethods]
 impl PivotPoints {
-    #[uniffi::constructor]
+    #[new]
     pub fn new() -> Self {
         Self {
             inner: Mutex::new(CorePivotPoints::new()),
@@ -1058,18 +1096,18 @@ export_1_in_record_out!(
     }
 );
 
-#[uniffi::export]
+#[pyfunction]
 pub fn swiss_army_knife(series: Vec<f64>, mode: SwissMode, period: u64, delta: f64) -> Vec<f64> {
     let mut it = CoreSwissArmyKnife::new(mode.into(), period as usize, delta);
     series.iter().map(|&x| it.next(x)).collect()
 }
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct SwissArmyKnife {
     inner: Mutex<CoreSwissArmyKnife>,
 }
-#[uniffi::export]
+#[pymethods]
 impl SwissArmyKnife {
-    #[uniffi::constructor]
+    #[new]
     pub fn new(mode: SwissMode, period: u64, delta: f64) -> Self {
         Self {
             inner: Mutex::new(CoreSwissArmyKnife::new(mode.into(), period as usize, delta)),
@@ -1088,13 +1126,13 @@ export_1_in_record_out!(
     res,
     res.into()
 );
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct RobustnessEvaluator {
     inner: Mutex<CoreRobustnessEvaluator>,
 }
-#[uniffi::export]
+#[pymethods]
 impl RobustnessEvaluator {
-    #[uniffi::constructor]
+    #[new]
     pub fn new() -> Self {
         Self {
             inner: Mutex::new(CoreRobustnessEvaluator::new()),
@@ -1110,7 +1148,7 @@ impl RobustnessEvaluator {
 
 export_ohlc_in_record_out!(TtmSqueeze, CoreTtmSqueeze, SuperTrendResult, (period: u64, mult_bb: f64, mult_kc: f64), res, SuperTrendResult { value: res.0, direction: if res.1 { 1 } else { 0 } });
 
-#[uniffi::export]
+#[pyfunction]
 pub fn ultimate_bands(series: Vec<f64>, length: u64, num_sds: f64) -> Vec<UltimateBandsResult> {
     let mut it = CoreUltimateBands::new(length as usize, num_sds);
     series
@@ -1125,13 +1163,13 @@ pub fn ultimate_bands(series: Vec<f64>, length: u64, num_sds: f64) -> Vec<Ultima
         })
         .collect()
 }
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct UltimateBands {
     inner: Mutex<CoreUltimateBands>,
 }
-#[uniffi::export]
+#[pymethods]
 impl UltimateBands {
-    #[uniffi::constructor]
+    #[new]
     pub fn new(length: u64, num_sds: f64) -> Self {
         Self {
             inner: Mutex::new(CoreUltimateBands::new(length as usize, num_sds)),
@@ -1147,7 +1185,7 @@ impl UltimateBands {
     }
 }
 
-#[uniffi::export]
+#[pyfunction]
 pub fn ultimate_channel(
     high: Vec<f64>,
     low: Vec<f64>,
@@ -1170,13 +1208,13 @@ pub fn ultimate_channel(
         })
         .collect()
 }
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct UltimateChannel {
     inner: Mutex<CoreUltimateChannel>,
 }
-#[uniffi::export]
+#[pymethods]
 impl UltimateChannel {
-    #[uniffi::constructor]
+    #[new]
     pub fn new(length: u64, str_length: u64, num_strs: f64) -> Self {
         Self {
             inner: Mutex::new(CoreUltimateChannel::new(
@@ -1199,7 +1237,7 @@ impl UltimateChannel {
 export_1_in_1_out!(UltimateSmoother, CoreUltimateSmoother, (period: u64));
 export_1_in_1_out!(Usi, CoreUSI, (length: u64));
 
-#[uniffi::export]
+#[pyfunction]
 pub fn ad(high: Vec<f64>, low: Vec<f64>, close: Vec<f64>, volume: Vec<f64>) -> Vec<f64> {
     let mut it = CoreAD::new();
     high.iter()
@@ -1209,13 +1247,13 @@ pub fn ad(high: Vec<f64>, low: Vec<f64>, close: Vec<f64>, volume: Vec<f64>) -> V
         .map(|(((&h, &l), &c), &v)| it.next((h, l, c, v)))
         .collect()
 }
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct Ad {
     inner: Mutex<CoreAD>,
 }
-#[uniffi::export]
+#[pymethods]
 impl Ad {
-    #[uniffi::constructor]
+    #[new]
     pub fn new() -> Self {
         Self {
             inner: Mutex::new(CoreAD::new()),
@@ -1226,7 +1264,7 @@ impl Ad {
     }
 }
 
-#[uniffi::export]
+#[pyfunction]
 pub fn adosc(
     high: Vec<f64>,
     low: Vec<f64>,
@@ -1243,13 +1281,13 @@ pub fn adosc(
         .map(|(((&h, &l), &c), &v)| it.next((h, l, c, v)))
         .collect()
 }
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct Adosc {
     inner: Mutex<CoreADOSC>,
 }
-#[uniffi::export]
+#[pymethods]
 impl Adosc {
-    #[uniffi::constructor]
+    #[new]
     pub fn new(fast: u64, slow: u64) -> Self {
         Self {
             inner: Mutex::new(CoreADOSC::new(fast as usize, slow as usize)),
@@ -1263,7 +1301,7 @@ impl Adosc {
 export_pv_in_1_out!(Obv, CoreOBV, ());
 export_ohlc_in_record_out!(Vortex, CoreVortex, VortexResult, (period: u64), res, VortexResult { plus: res.0, minus: res.1 });
 
-#[uniffi::export]
+#[pyfunction]
 pub fn anchored_vwap(price: Vec<f64>, volume: Vec<f64>, anchor: Vec<bool>) -> Vec<f64> {
     let mut it = CoreAnchoredVWAP::new();
     price
@@ -1273,13 +1311,13 @@ pub fn anchored_vwap(price: Vec<f64>, volume: Vec<f64>, anchor: Vec<bool>) -> Ve
         .map(|((&p, &v), &a)| it.next((p, v, a)))
         .collect()
 }
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct AnchoredVwap {
     inner: Mutex<CoreAnchoredVWAP>,
 }
-#[uniffi::export]
+#[pymethods]
 impl AnchoredVwap {
-    #[uniffi::constructor]
+    #[new]
     pub fn new() -> Self {
         Self {
             inner: Mutex::new(CoreAnchoredVWAP::new()),
@@ -1298,7 +1336,7 @@ export_1_in_1_out!(Rsih, CoreRSIH, (length: u64));
 export_1_in_record_out!(VossPredictor, CoreVossPredictor, VossPredictorResult, (period: u64, predict: u64), res, VossPredictorResult { filt: res.0, voss: res.1 });
 export_1_in_1_out!(SyntheticOscillator, CoreSyntheticOscillator, (lower_bound: u64, upper_bound: u64));
 
-#[uniffi::export]
+#[pyfunction]
 pub fn cycletrendanalytics(
     series: Vec<f64>,
     min_length: u64,
@@ -1316,13 +1354,13 @@ pub fn cycletrendanalytics(
         })
         .collect()
 }
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct CycleTrendAnalytics {
     inner: Mutex<CoreCycleTrendAnalytics>,
 }
-#[uniffi::export]
+#[pymethods]
 impl CycleTrendAnalytics {
-    #[uniffi::constructor]
+    #[new]
     pub fn new(min_length: u64, max_length: u64) -> Self {
         Self {
             inner: Mutex::new(CoreCycleTrendAnalytics::new(
@@ -1381,7 +1419,7 @@ export_1_in_1_out!(RocketRsi, CoreRocketRSI, (rsi_length: u64, smooth_length: u6
 export_1_in_1_out!(Trendflex, CoreTrendflex, (length: u64));
 export_1_in_1_out!(TruncatedBandpass, CoreTruncatedBandpass, (period: u64, bandwidth: f64, length: u64));
 
-#[uniffi::export]
+#[pyfunction]
 pub fn volumeprofile(
     price: Vec<f64>,
     volume: Vec<f64>,
@@ -1402,13 +1440,13 @@ pub fn volumeprofile(
         })
         .collect()
 }
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct VolumeProfile {
     inner: Mutex<CoreVolumeProfile>,
 }
-#[uniffi::export]
+#[pymethods]
 impl VolumeProfile {
-    #[uniffi::constructor]
+    #[new]
     pub fn new(period: u64, bins: u64) -> Self {
         Self {
             inner: Mutex::new(CoreVolumeProfile::new(period as usize, bins as usize)),
@@ -1443,35 +1481,35 @@ impl From<quantwave_core::indicators::system_evaluator::SystemEvaluationResults>
 
 // --- Options India ---
 
-#[uniffi::export]
+#[pyfunction]
 pub fn bs_call_price(s: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {
     options_india::bs_call_price(s, k, r, t, sigma)
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn bs_put_price(s: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {
     options_india::bs_put_price(s, k, r, t, sigma)
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn bs_delta(s: f64, k: f64, r: f64, t: f64, sigma: f64, is_call: bool) -> f64 {
     options_india::bs_delta(s, k, r, t, sigma, is_call)
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn bs_gamma(s: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {
     options_india::bs_gamma(s, k, r, t, sigma)
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn bs_theta(s: f64, k: f64, r: f64, t: f64, sigma: f64, is_call: bool) -> f64 {
     options_india::bs_theta(s, k, r, t, sigma, is_call)
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn bs_vega(s: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {
     options_india::bs_vega(s, k, r, t, sigma)
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn bs_rho(s: f64, k: f64, r: f64, t: f64, sigma: f64, is_call: bool) -> f64 {
     options_india::bs_rho(s, k, r, t, sigma, is_call)
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn implied_vol(
     market_price: f64,
     s: f64,
@@ -1493,19 +1531,19 @@ pub fn implied_vol(
         Some(iv)
     }
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn max_pain(strikes: Vec<f64>, ce_oi: Vec<u64>, pe_oi: Vec<u64>, lot_size: u32) -> f64 {
     options_india::max_pain(&strikes, &ce_oi, &pe_oi, lot_size)
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn strike_pcr(ce_oi: Vec<u64>, pe_oi: Vec<u64>) -> Vec<f64> {
     options_india::strike_pcr(&ce_oi, &pe_oi)
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn chain_pcr(ce_oi: Vec<u64>, pe_oi: Vec<u64>) -> f64 {
     options_india::chain_pcr(&ce_oi, &pe_oi)
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn oi_zones(strikes: Vec<f64>, ce_oi: Vec<u64>, pe_oi: Vec<u64>, n: u64) -> OIZonesResult {
     let zones = options_india::oi_zones(&strikes, &ce_oi, &pe_oi, n as usize);
     OIZonesResult {
@@ -1513,7 +1551,7 @@ pub fn oi_zones(strikes: Vec<f64>, ce_oi: Vec<u64>, pe_oi: Vec<u64>, n: u64) -> 
         support_strikes: zones.support_strikes,
     }
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn gex_per_strike(
     spot: f64,
     strikes: Vec<f64>,
@@ -1534,11 +1572,11 @@ pub fn gex_per_strike(
     })
     .collect()
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn gex_flip_strike(strikes: Vec<f64>, net_gex: Vec<f64>) -> Option<f64> {
     options_india::gex_flip_strike(&strikes, &net_gex)
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn atm_straddle(
     spot: f64,
     strikes: Vec<f64>,
@@ -1552,19 +1590,19 @@ pub fn atm_straddle(
         implied_move_pct: pct,
     }
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn synthetic_futures(strikes: Vec<f64>, ce_ltp: Vec<f64>, pe_ltp: Vec<f64>) -> Vec<f64> {
     options_india::synthetic_futures(&strikes, &ce_ltp, &pe_ltp)
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn moneyness(spot: f64, strike: f64) -> String {
     options_india::moneyness(spot, strike).to_string()
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn nse_lot_size(symbol: String) -> Option<u32> {
     options_india::nse_lot_size(&symbol)
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn nse_risk_free_rate() -> f64 {
     options_india::NSE_RISK_FREE_RATE
 }
@@ -1577,7 +1615,8 @@ pub fn nse_risk_free_rate() -> f64 {
 // Sources: features/mod.rs + the four * .rs files (wrapping Ehlers + Hurst).
 // ============================================================================
 
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct CyberCycleFeaturesResult {
     pub cycle: f64,
     pub trigger: f64,
@@ -1585,13 +1624,13 @@ pub struct CyberCycleFeaturesResult {
     pub trigger_signal: f64,
 }
 
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct CyberCycleFeatureExtractor {
     inner: Mutex<CoreCyberCycleFE>,
 }
-#[uniffi::export]
+#[pymethods]
 impl CyberCycleFeatureExtractor {
-    #[uniffi::constructor]
+    #[new]
     pub fn new(length: u64) -> Self {
         Self {
             inner: Mutex::new(CoreCyberCycleFE::new(length as usize)),
@@ -1607,7 +1646,7 @@ impl CyberCycleFeatureExtractor {
         }
     }
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn cyber_cycle_features(length: u64, series: Vec<f64>) -> Vec<CyberCycleFeaturesResult> {
     let mut ext = CoreCyberCycleFE::new(length as usize);
     series
@@ -1624,20 +1663,21 @@ pub fn cyber_cycle_features(length: u64, series: Vec<f64>) -> Vec<CyberCycleFeat
         .collect()
 }
 
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct HurstFeaturesResult {
     pub persistence: f64,
     /// -1 mean-reverting, 0 random, +1 trending (or None -> -99 sentinel for FFI simplicity in some consumers)
     pub regime_label: i32,
 }
 
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct HurstFeatureExtractor {
     inner: Mutex<CoreHurstFE>,
 }
-#[uniffi::export]
+#[pymethods]
 impl HurstFeatureExtractor {
-    #[uniffi::constructor]
+    #[new]
     pub fn new(period: u64) -> Self {
         Self {
             inner: Mutex::new(CoreHurstFE::new(period as usize)),
@@ -1651,7 +1691,7 @@ impl HurstFeatureExtractor {
         }
     }
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn hurst_features(period: u64, series: Vec<f64>) -> Vec<HurstFeaturesResult> {
     let mut ext = CoreHurstFE::new(period as usize);
     series
@@ -1666,19 +1706,20 @@ pub fn hurst_features(period: u64, series: Vec<f64>) -> Vec<HurstFeaturesResult>
         .collect()
 }
 
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct InstantaneousTrendlineFeaturesResult {
     pub trend: f64,
     pub strength: f64,
 }
 
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct InstantaneousTrendlineFeatureExtractor {
     inner: Mutex<CoreITFE>,
 }
-#[uniffi::export]
+#[pymethods]
 impl InstantaneousTrendlineFeatureExtractor {
-    #[uniffi::constructor]
+    #[new]
     pub fn new() -> Self {
         Self {
             inner: Mutex::new(CoreITFE::new()),
@@ -1692,7 +1733,7 @@ impl InstantaneousTrendlineFeatureExtractor {
         }
     }
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn instantaneous_trendline_features(
     series: Vec<f64>,
 ) -> Vec<InstantaneousTrendlineFeaturesResult> {
@@ -1709,18 +1750,19 @@ pub fn instantaneous_trendline_features(
         .collect()
 }
 
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct TrendflexFeaturesResult {
     pub trendflex: f64,
 }
 
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct TrendflexFeatureExtractor {
     inner: Mutex<CoreTrendflexFE>,
 }
-#[uniffi::export]
+#[pymethods]
 impl TrendflexFeatureExtractor {
-    #[uniffi::constructor]
+    #[new]
     pub fn new(length: u64) -> Self {
         Self {
             inner: Mutex::new(CoreTrendflexFE::new(length as usize)),
@@ -1733,7 +1775,7 @@ impl TrendflexFeatureExtractor {
         }
     }
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn trendflex_features(length: u64, series: Vec<f64>) -> Vec<TrendflexFeaturesResult> {
     let mut ext = CoreTrendflexFE::new(length as usize);
     series
@@ -1751,18 +1793,19 @@ pub fn trendflex_features(length: u64, series: Vec<f64>) -> Vec<TrendflexFeature
 // Sources: quantwave-core/src/features/griffiths_dominant_cycle.rs + regime.rs + regimes/hmm.rs (HMM::bull_bear)
 // These complete the 4 locked .ta.features.* surface for Python consumers (Hurst + Cyber already present; griffiths + regime now added).
 
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct GriffithsDominantCycleFeaturesResult {
     pub dominant_cycle: f64,
 }
 
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct GriffithsDominantCycleFeatureExtractor {
     inner: Mutex<CoreGriffithsDCFE>,
 }
-#[uniffi::export]
+#[pymethods]
 impl GriffithsDominantCycleFeatureExtractor {
-    #[uniffi::constructor]
+    #[new]
     pub fn new(lower: u64, upper: u64, length: u64) -> Self {
         Self {
             inner: Mutex::new(CoreGriffithsDCFE::new(
@@ -1779,7 +1822,7 @@ impl GriffithsDominantCycleFeatureExtractor {
         }
     }
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn griffiths_dominant_cycle_features(
     lower: u64,
     upper: u64,
@@ -1798,13 +1841,15 @@ pub fn griffiths_dominant_cycle_features(
         .collect()
 }
 
-#[derive(uniffi::Object)]
+// name = "BullBearHmm" preserves the uniffi-era Python symbol (uniffi re-cased the
+// `HMM` capital-run via heck); keeps the generated _ta registry / metadata unchanged.
+#[pyclass(name = "BullBearHmm")]
 pub struct BullBearHMM {
     inner: Mutex<CoreHMM>,
 }
-#[uniffi::export]
+#[pymethods]
 impl BullBearHMM {
-    #[uniffi::constructor]
+    #[new]
     pub fn bull_bear() -> Self {
         Self {
             inner: Mutex::new(CoreHMM::bull_bear()),
@@ -1825,7 +1870,8 @@ impl BullBearHMM {
     }
 }
 
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct GaussianHmmParamsPy {
     pub n_states: u32,
     pub delta: Vec<f64>,
@@ -1836,7 +1882,8 @@ pub struct GaussianHmmParamsPy {
     pub lambdas: Vec<f64>,
 }
 
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct GaussianHmmFitResultPy {
     pub params: GaussianHmmParamsPy,
     pub log_likelihood: f64,
@@ -1891,7 +1938,7 @@ fn core_params_from_py(params: &GaussianHmmParamsPy) -> CoreGaussianHmmParams {
     .expect("invalid HMM params")
 }
 
-#[uniffi::export]
+#[pyfunction]
 pub fn fit_gaussian_hmm(
     observations: Vec<f64>,
     n_states: u32,
@@ -1932,7 +1979,8 @@ pub fn fit_gaussian_hmm(
     }
 }
 
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct GaussianHmmDiagnosticsPy {
     pub pseudo_residuals: Vec<f64>,
     pub decode_weighted_means: Vec<f64>,
@@ -1943,7 +1991,7 @@ pub struct GaussianHmmDiagnosticsPy {
     pub forecast_mean_h1: f64,
 }
 
-#[uniffi::export]
+#[pyfunction]
 pub fn gaussian_hmm_diagnostics(
     params: GaussianHmmParamsPy,
     observations: Vec<f64>,
@@ -1969,7 +2017,7 @@ pub fn gaussian_hmm_diagnostics(
     }
 }
 
-#[uniffi::export]
+#[pyfunction]
 pub fn gaussian_hmm_forecast_vol(
     params: GaussianHmmParamsPy,
     current_state_probs: Vec<f64>,
@@ -1980,7 +2028,7 @@ pub fn gaussian_hmm_forecast_vol(
         .expect("forecast vol failed")
 }
 
-#[uniffi::export]
+#[pyfunction]
 pub fn gaussian_hmm_forecast_state(
     params: GaussianHmmParamsPy,
     current_state_probs: Vec<f64>,
@@ -1991,13 +2039,13 @@ pub fn gaussian_hmm_forecast_state(
         .expect("forecast state failed")
 }
 
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct GaussianHmmFilterPy {
     inner: Mutex<CoreGaussianHmmFilter>,
 }
-#[uniffi::export]
+#[pymethods]
 impl GaussianHmmFilterPy {
-    #[uniffi::constructor]
+    #[new]
     pub fn from_params(params: GaussianHmmParamsPy) -> Self {
         let core_params = core_params_from_py(&params);
         Self {
@@ -2018,12 +2066,13 @@ impl GaussianHmmFilterPy {
 }
 
 // Simple regime -> feature vector helper (for completeness; notebook primarily uses the extractors)
-#[derive(uniffi::Record)]
+#[pyclass(get_all)]
+#[derive(Clone)]
 pub struct RegimeFeaturesResult {
     pub regime_vector: Vec<f64>, // 5-elem one-hot style
     pub regime_label: i32,       // 0=Bull,1=Bear,2=Crisis,3=Steady,4+=Cluster
 }
-#[uniffi::export]
+#[pyfunction]
 pub fn regime_to_features(regime_id: u32) -> RegimeFeaturesResult {
     let regime = match regime_id {
         0 => quantwave_core::regimes::MarketRegime::Bull,
@@ -2055,13 +2104,13 @@ pub fn regime_to_features(regime_id: u32) -> RegimeFeaturesResult {
 use quantwave_core::indicators::geometric_patterns::GeometricPatternScanner as CoreGeo;
 use quantwave_core::indicators::market_structure::{Bias as CoreBias, MarketStructure as CoreMS};
 
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct MarketStructure {
     inner: Mutex<CoreMS>,
 }
-#[uniffi::export]
+#[pymethods]
 impl MarketStructure {
-    #[uniffi::constructor]
+    #[new]
     pub fn new(swing_strength: u64) -> Self {
         Self {
             inner: Mutex::new(CoreMS::new(swing_strength as usize)),
@@ -2098,13 +2147,13 @@ impl MarketStructure {
     }
 }
 
-#[derive(uniffi::Object)]
+#[pyclass]
 pub struct GeometricPatternScanner {
     inner: Mutex<CoreGeo>,
 }
-#[uniffi::export]
+#[pymethods]
 impl GeometricPatternScanner {
-    #[uniffi::constructor]
+    #[new]
     pub fn new(swing_strength: u64) -> Self {
         Self {
             inner: Mutex::new(CoreGeo::new(swing_strength as usize)),
@@ -2167,7 +2216,7 @@ impl GeometricPatternScanner {
 }
 
 // Batch helpers for notebook convenience (equivalent to Polars collect over synthetic/real series)
-#[uniffi::export]
+#[pyfunction]
 pub fn market_structure_batch(
     swing_strength: u64,
     highs: Vec<f64>,
@@ -2206,4 +2255,351 @@ pub fn market_structure_batch(
             }
         })
         .collect()
+}
+
+// --- PyO3 module registration (generated by transform_lib.py; replaces the uniffi scaffolding macro) ---
+#[pymodule]
+fn _quantwave(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_class::<SuperTrendResult>()?;
+    m.add_class::<MacdResult>()?;
+    m.add_class::<BbandsResult>()?;
+    m.add_class::<StochResult>()?;
+    m.add_class::<MamaResult>()?;
+    m.add_class::<AroonResult>()?;
+    m.add_class::<IchimokuResult>()?;
+    m.add_class::<AlligatorResult>()?;
+    m.add_class::<AtrTsResult>()?;
+    m.add_class::<DonchianResult>()?;
+    m.add_class::<EmdResult>()?;
+    m.add_class::<EhlersLoopsResult>()?;
+    m.add_class::<FractalsResult>()?;
+    m.add_class::<HeikinAshiResult>()?;
+    m.add_class::<SwingPointResult>()?;
+    m.add_class::<FlipEventResult>()?;
+    m.add_class::<MarketStructureStateResult>()?;
+    m.add_class::<FlagPatternResult>()?;
+    m.add_class::<HsPatternResult>()?;
+    m.add_class::<GeometricNextResult>()?;
+    m.add_class::<KeltnerResult>()?;
+    m.add_class::<PairsRotationResult>()?;
+    m.add_class::<PhasorResult>()?;
+    m.add_class::<PivotPointsResult>()?;
+    m.add_class::<SystemEvaluatorResult>()?;
+    m.add_class::<UltimateBandsResult>()?;
+    m.add_class::<UltimateChannelResult>()?;
+    m.add_class::<VortexResult>()?;
+    m.add_class::<WaveTrendResult>()?;
+    m.add_class::<VossPredictorResult>()?;
+    m.add_class::<CycleTrendAnalyticsResult>()?;
+    m.add_class::<ZeroLagResult>()?;
+    m.add_class::<CyberCycleResult>()?;
+    m.add_class::<HtSineResult>()?;
+    m.add_class::<VolumeProfileResult>()?;
+    m.add_class::<PmaResult>()?;
+    m.add_class::<TrendRocResult>()?;
+    m.add_class::<UdmaResult>()?;
+    m.add_class::<OIZonesResult>()?;
+    m.add_class::<GexResult>()?;
+    m.add_class::<StraddleResult>()?;
+    m.add_class::<CyberCycleFeaturesResult>()?;
+    m.add_class::<HurstFeaturesResult>()?;
+    m.add_class::<InstantaneousTrendlineFeaturesResult>()?;
+    m.add_class::<TrendflexFeaturesResult>()?;
+    m.add_class::<GriffithsDominantCycleFeaturesResult>()?;
+    m.add_class::<GaussianHmmParamsPy>()?;
+    m.add_class::<GaussianHmmFitResultPy>()?;
+    m.add_class::<GaussianHmmDiagnosticsPy>()?;
+    m.add_class::<RegimeFeaturesResult>()?;
+    m.add_class::<SwissMode>()?;
+    m.add_class::<Stoch>()?;
+    m.add_class::<Ichimoku>()?;
+    m.add_class::<Donchian>()?;
+    m.add_class::<HeikinAshi>()?;
+    m.add_class::<Keltner>()?;
+    m.add_class::<PivotPoints>()?;
+    m.add_class::<SwissArmyKnife>()?;
+    m.add_class::<RobustnessEvaluator>()?;
+    m.add_class::<UltimateBands>()?;
+    m.add_class::<UltimateChannel>()?;
+    m.add_class::<Ad>()?;
+    m.add_class::<Adosc>()?;
+    m.add_class::<AnchoredVwap>()?;
+    m.add_class::<CycleTrendAnalytics>()?;
+    m.add_class::<VolumeProfile>()?;
+    m.add_class::<CyberCycleFeatureExtractor>()?;
+    m.add_class::<HurstFeatureExtractor>()?;
+    m.add_class::<InstantaneousTrendlineFeatureExtractor>()?;
+    m.add_class::<TrendflexFeatureExtractor>()?;
+    m.add_class::<GriffithsDominantCycleFeatureExtractor>()?;
+    m.add_class::<BullBearHMM>()?;
+    m.add_class::<GaussianHmmFilterPy>()?;
+    m.add_class::<MarketStructure>()?;
+    m.add_class::<GeometricPatternScanner>()?;
+    m.add_function(wrap_pyfunction!(stoch, m)?)?;
+    m.add_function(wrap_pyfunction!(ichimoku, m)?)?;
+    m.add_function(wrap_pyfunction!(donchian, m)?)?;
+    m.add_function(wrap_pyfunction!(heikin_ashi, m)?)?;
+    m.add_function(wrap_pyfunction!(keltner, m)?)?;
+    m.add_function(wrap_pyfunction!(pivot_points, m)?)?;
+    m.add_function(wrap_pyfunction!(swiss_army_knife, m)?)?;
+    m.add_function(wrap_pyfunction!(ultimate_bands, m)?)?;
+    m.add_function(wrap_pyfunction!(ultimate_channel, m)?)?;
+    m.add_function(wrap_pyfunction!(ad, m)?)?;
+    m.add_function(wrap_pyfunction!(adosc, m)?)?;
+    m.add_function(wrap_pyfunction!(anchored_vwap, m)?)?;
+    m.add_function(wrap_pyfunction!(cycletrendanalytics, m)?)?;
+    m.add_function(wrap_pyfunction!(volumeprofile, m)?)?;
+    m.add_function(wrap_pyfunction!(bs_call_price, m)?)?;
+    m.add_function(wrap_pyfunction!(bs_put_price, m)?)?;
+    m.add_function(wrap_pyfunction!(bs_delta, m)?)?;
+    m.add_function(wrap_pyfunction!(bs_gamma, m)?)?;
+    m.add_function(wrap_pyfunction!(bs_theta, m)?)?;
+    m.add_function(wrap_pyfunction!(bs_vega, m)?)?;
+    m.add_function(wrap_pyfunction!(bs_rho, m)?)?;
+    m.add_function(wrap_pyfunction!(implied_vol, m)?)?;
+    m.add_function(wrap_pyfunction!(max_pain, m)?)?;
+    m.add_function(wrap_pyfunction!(strike_pcr, m)?)?;
+    m.add_function(wrap_pyfunction!(chain_pcr, m)?)?;
+    m.add_function(wrap_pyfunction!(oi_zones, m)?)?;
+    m.add_function(wrap_pyfunction!(gex_per_strike, m)?)?;
+    m.add_function(wrap_pyfunction!(gex_flip_strike, m)?)?;
+    m.add_function(wrap_pyfunction!(atm_straddle, m)?)?;
+    m.add_function(wrap_pyfunction!(synthetic_futures, m)?)?;
+    m.add_function(wrap_pyfunction!(moneyness, m)?)?;
+    m.add_function(wrap_pyfunction!(nse_lot_size, m)?)?;
+    m.add_function(wrap_pyfunction!(nse_risk_free_rate, m)?)?;
+    m.add_function(wrap_pyfunction!(cyber_cycle_features, m)?)?;
+    m.add_function(wrap_pyfunction!(hurst_features, m)?)?;
+    m.add_function(wrap_pyfunction!(instantaneous_trendline_features, m)?)?;
+    m.add_function(wrap_pyfunction!(trendflex_features, m)?)?;
+    m.add_function(wrap_pyfunction!(griffiths_dominant_cycle_features, m)?)?;
+    m.add_function(wrap_pyfunction!(fit_gaussian_hmm, m)?)?;
+    m.add_function(wrap_pyfunction!(gaussian_hmm_diagnostics, m)?)?;
+    m.add_function(wrap_pyfunction!(gaussian_hmm_forecast_vol, m)?)?;
+    m.add_function(wrap_pyfunction!(gaussian_hmm_forecast_state, m)?)?;
+    m.add_function(wrap_pyfunction!(regime_to_features, m)?)?;
+    m.add_function(wrap_pyfunction!(market_structure_batch, m)?)?;
+    m.add_class::<Sma>()?;
+    m.add_function(wrap_pyfunction!(sma, m)?)?;
+    m.add_class::<Ema>()?;
+    m.add_function(wrap_pyfunction!(ema, m)?)?;
+    m.add_class::<Wma>()?;
+    m.add_function(wrap_pyfunction!(wma, m)?)?;
+    m.add_class::<Rsi>()?;
+    m.add_function(wrap_pyfunction!(rsi, m)?)?;
+    m.add_class::<SuperTrend>()?;
+    m.add_function(wrap_pyfunction!(supertrend, m)?)?;
+    m.add_class::<Macd>()?;
+    m.add_function(wrap_pyfunction!(macd, m)?)?;
+    m.add_class::<Atr>()?;
+    m.add_function(wrap_pyfunction!(atr, m)?)?;
+    m.add_class::<Adx>()?;
+    m.add_function(wrap_pyfunction!(adx, m)?)?;
+    m.add_class::<Cci>()?;
+    m.add_function(wrap_pyfunction!(cci, m)?)?;
+    m.add_class::<Aroon>()?;
+    m.add_function(wrap_pyfunction!(aroon, m)?)?;
+    m.add_class::<Mama>()?;
+    m.add_function(wrap_pyfunction!(mama, m)?)?;
+    m.add_class::<Kama>()?;
+    m.add_function(wrap_pyfunction!(kama, m)?)?;
+    m.add_class::<T3>()?;
+    m.add_function(wrap_pyfunction!(t3, m)?)?;
+    m.add_class::<Sar>()?;
+    m.add_function(wrap_pyfunction!(sar, m)?)?;
+    m.add_class::<Mom>()?;
+    m.add_function(wrap_pyfunction!(mom, m)?)?;
+    m.add_class::<Roc>()?;
+    m.add_function(wrap_pyfunction!(roc, m)?)?;
+    m.add_class::<Willr>()?;
+    m.add_function(wrap_pyfunction!(willr, m)?)?;
+    m.add_class::<Dema>()?;
+    m.add_function(wrap_pyfunction!(dema, m)?)?;
+    m.add_class::<Tema>()?;
+    m.add_function(wrap_pyfunction!(tema, m)?)?;
+    m.add_class::<Cg>()?;
+    m.add_function(wrap_pyfunction!(cg, m)?)?;
+    m.add_class::<CyberCycle>()?;
+    m.add_function(wrap_pyfunction!(cybercycle, m)?)?;
+    m.add_class::<Fisher>()?;
+    m.add_function(wrap_pyfunction!(fisher, m)?)?;
+    m.add_class::<InverseFisher>()?;
+    m.add_function(wrap_pyfunction!(inversefisher, m)?)?;
+    m.add_class::<SuperSmoother>()?;
+    m.add_function(wrap_pyfunction!(supersmoother, m)?)?;
+    m.add_class::<Bandpass>()?;
+    m.add_function(wrap_pyfunction!(bandpass, m)?)?;
+    m.add_class::<RoofingFilter>()?;
+    m.add_function(wrap_pyfunction!(roofingfilter, m)?)?;
+    m.add_class::<ZeroLag>()?;
+    m.add_function(wrap_pyfunction!(zerolag, m)?)?;
+    m.add_class::<ChoppinessIndex>()?;
+    m.add_function(wrap_pyfunction!(choppinessindex, m)?)?;
+    m.add_class::<ClassicLaguerre>()?;
+    m.add_function(wrap_pyfunction!(classiclaguerre, m)?)?;
+    m.add_class::<Alligator>()?;
+    m.add_function(wrap_pyfunction!(alligator, m)?)?;
+    m.add_class::<Alma>()?;
+    m.add_function(wrap_pyfunction!(alma, m)?)?;
+    m.add_class::<AtrTs>()?;
+    m.add_function(wrap_pyfunction!(atrts, m)?)?;
+    m.add_class::<Butterworth2>()?;
+    m.add_function(wrap_pyfunction!(butterworth2, m)?)?;
+    m.add_class::<Butterworth3>()?;
+    m.add_function(wrap_pyfunction!(butterworth3, m)?)?;
+    m.add_class::<ChannelCycle>()?;
+    m.add_function(wrap_pyfunction!(channelcycle, m)?)?;
+    m.add_class::<ContinuationIndex>()?;
+    m.add_function(wrap_pyfunction!(continuationindex, m)?)?;
+    m.add_class::<CorrelationCycle>()?;
+    m.add_function(wrap_pyfunction!(correlationcycle, m)?)?;
+    m.add_class::<CorrelationTrend>()?;
+    m.add_function(wrap_pyfunction!(correlationtrend, m)?)?;
+    m.add_class::<CyberneticOscillator>()?;
+    m.add_function(wrap_pyfunction!(cyberneticoscillator, m)?)?;
+    m.add_class::<Dmh>()?;
+    m.add_function(wrap_pyfunction!(dmh, m)?)?;
+    m.add_class::<Dsma>()?;
+    m.add_function(wrap_pyfunction!(dsma, m)?)?;
+    m.add_class::<Emd>()?;
+    m.add_function(wrap_pyfunction!(emd, m)?)?;
+    m.add_class::<AmDetector>()?;
+    m.add_function(wrap_pyfunction!(amdetector, m)?)?;
+    m.add_class::<FmDemodulator>()?;
+    m.add_function(wrap_pyfunction!(fmdemodulator, m)?)?;
+    m.add_class::<EhlersAutocorrelation>()?;
+    m.add_function(wrap_pyfunction!(ehlersautocorrelation, m)?)?;
+    m.add_class::<EhlersFilter>()?;
+    m.add_function(wrap_pyfunction!(ehlersfilter, m)?)?;
+    m.add_class::<EhlersLoops>()?;
+    m.add_function(wrap_pyfunction!(ehlersloops, m)?)?;
+    m.add_class::<EhlersStochastic>()?;
+    m.add_function(wrap_pyfunction!(ehlersstochastic, m)?)?;
+    m.add_class::<EhlersUltimateOscillator>()?;
+    m.add_function(wrap_pyfunction!(ehlersultimateoscillator, m)?)?;
+    m.add_class::<FisherHighPass>()?;
+    m.add_function(wrap_pyfunction!(fisherhighpass, m)?)?;
+    m.add_class::<FourierSeries>()?;
+    m.add_function(wrap_pyfunction!(fourierseries, m)?)?;
+    m.add_class::<FourierDominantCycle>()?;
+    m.add_function(wrap_pyfunction!(fourierdominantcycle, m)?)?;
+    m.add_class::<Fractals>()?;
+    m.add_function(wrap_pyfunction!(fractals, m)?)?;
+    m.add_class::<Frama>()?;
+    m.add_function(wrap_pyfunction!(frama, m)?)?;
+    m.add_class::<Gaussian>()?;
+    m.add_function(wrap_pyfunction!(gaussian, m)?)?;
+    m.add_class::<GeneralizedLaguerre>()?;
+    m.add_function(wrap_pyfunction!(generalizedlaguerre, m)?)?;
+    m.add_class::<GriffithsDominantCycle>()?;
+    m.add_function(wrap_pyfunction!(griffithsdominantcycle, m)?)?;
+    m.add_class::<GriffithsPredictor>()?;
+    m.add_function(wrap_pyfunction!(griffithspredictor, m)?)?;
+    m.add_class::<GriffithsSpectrum>()?;
+    m.add_function(wrap_pyfunction!(griffithsspectrum, m)?)?;
+    m.add_class::<Hamming>()?;
+    m.add_function(wrap_pyfunction!(hamming, m)?)?;
+    m.add_class::<Hann>()?;
+    m.add_function(wrap_pyfunction!(hann, m)?)?;
+    m.add_class::<HighPass>()?;
+    m.add_function(wrap_pyfunction!(highpass, m)?)?;
+    m.add_class::<Hma>()?;
+    m.add_function(wrap_pyfunction!(hma, m)?)?;
+    m.add_class::<EhlersWma4>()?;
+    m.add_function(wrap_pyfunction!(ehlerswma4, m)?)?;
+    m.add_class::<InstantaneousTrendline>()?;
+    m.add_function(wrap_pyfunction!(instantaneoustrendline, m)?)?;
+    m.add_class::<UndersampledDoubleMa>()?;
+    m.add_function(wrap_pyfunction!(undersampleddoublema, m)?)?;
+    m.add_class::<LaguerreFilter>()?;
+    m.add_function(wrap_pyfunction!(laguerrefilter, m)?)?;
+    m.add_class::<LaguerreOscillator>()?;
+    m.add_function(wrap_pyfunction!(laguerreoscillator, m)?)?;
+    m.add_class::<LaguerreRsi>()?;
+    m.add_function(wrap_pyfunction!(laguerrersi, m)?)?;
+    m.add_class::<NoiseElimination>()?;
+    m.add_function(wrap_pyfunction!(noiseelimination, m)?)?;
+    m.add_class::<PairsRotation>()?;
+    m.add_function(wrap_pyfunction!(pairsrotation, m)?)?;
+    m.add_class::<Phasor>()?;
+    m.add_function(wrap_pyfunction!(phasor, m)?)?;
+    m.add_class::<OcPriceRsi>()?;
+    m.add_function(wrap_pyfunction!(ocpricersi, m)?)?;
+    m.add_class::<OneEuroFilter>()?;
+    m.add_function(wrap_pyfunction!(oneeurofilter, m)?)?;
+    m.add_class::<ProjectedMovingAverage>()?;
+    m.add_function(wrap_pyfunction!(projectedmovingaverage, m)?)?;
+    m.add_class::<PrecisionTrend>()?;
+    m.add_function(wrap_pyfunction!(precisiontrend, m)?)?;
+    m.add_class::<ReversionIndex>()?;
+    m.add_function(wrap_pyfunction!(reversionindex, m)?)?;
+    m.add_class::<SineWave>()?;
+    m.add_function(wrap_pyfunction!(sinewave, m)?)?;
+    m.add_class::<SystemEvaluator>()?;
+    m.add_function(wrap_pyfunction!(systemevaluator, m)?)?;
+    m.add_class::<TtmSqueeze>()?;
+    m.add_function(wrap_pyfunction!(ttmsqueeze, m)?)?;
+    m.add_class::<UltimateSmoother>()?;
+    m.add_function(wrap_pyfunction!(ultimatesmoother, m)?)?;
+    m.add_class::<Usi>()?;
+    m.add_function(wrap_pyfunction!(usi, m)?)?;
+    m.add_class::<Obv>()?;
+    m.add_function(wrap_pyfunction!(obv, m)?)?;
+    m.add_class::<Vortex>()?;
+    m.add_function(wrap_pyfunction!(vortex, m)?)?;
+    m.add_class::<WaveTrend>()?;
+    m.add_function(wrap_pyfunction!(wavetrend, m)?)?;
+    m.add_class::<SimplePredictor>()?;
+    m.add_function(wrap_pyfunction!(simplepredictor, m)?)?;
+    m.add_class::<Mad>()?;
+    m.add_function(wrap_pyfunction!(mad, m)?)?;
+    m.add_class::<MesaStochastic>()?;
+    m.add_function(wrap_pyfunction!(mesastochastic, m)?)?;
+    m.add_class::<Rsih>()?;
+    m.add_function(wrap_pyfunction!(rsih, m)?)?;
+    m.add_class::<VossPredictor>()?;
+    m.add_function(wrap_pyfunction!(vosspredictor, m)?)?;
+    m.add_class::<SyntheticOscillator>()?;
+    m.add_function(wrap_pyfunction!(syntheticoscillator, m)?)?;
+    m.add_class::<Madh>()?;
+    m.add_function(wrap_pyfunction!(madh, m)?)?;
+    m.add_class::<Stc>()?;
+    m.add_function(wrap_pyfunction!(stc, m)?)?;
+    m.add_class::<HomodyneDiscriminator>()?;
+    m.add_function(wrap_pyfunction!(homodynediscriminator, m)?)?;
+    m.add_class::<UniversalOscillator>()?;
+    m.add_function(wrap_pyfunction!(universaloscillator, m)?)?;
+    m.add_class::<TriangleFilter>()?;
+    m.add_function(wrap_pyfunction!(trianglefilter, m)?)?;
+    m.add_class::<HtDcPeriod>()?;
+    m.add_function(wrap_pyfunction!(htdcperiod, m)?)?;
+    m.add_class::<HtPhasor>()?;
+    m.add_function(wrap_pyfunction!(htphasor, m)?)?;
+    m.add_class::<HtDcPhase>()?;
+    m.add_function(wrap_pyfunction!(htdcphase, m)?)?;
+    m.add_class::<HtSine>()?;
+    m.add_function(wrap_pyfunction!(htsine, m)?)?;
+    m.add_class::<HtTrendMode>()?;
+    m.add_function(wrap_pyfunction!(httrendmode, m)?)?;
+    m.add_class::<HurstExponent>()?;
+    m.add_function(wrap_pyfunction!(hurstexponent, m)?)?;
+    m.add_class::<FracDiff>()?;
+    m.add_function(wrap_pyfunction!(fracdiff, m)?)?;
+    m.add_class::<KalmanFilter>()?;
+    m.add_function(wrap_pyfunction!(kalmanfilter, m)?)?;
+    m.add_class::<MarketState>()?;
+    m.add_function(wrap_pyfunction!(marketstate, m)?)?;
+    m.add_class::<RecursiveMedian>()?;
+    m.add_function(wrap_pyfunction!(recursivemedian, m)?)?;
+    m.add_class::<RecursiveMedianOscillator>()?;
+    m.add_function(wrap_pyfunction!(recursivemedianoscillator, m)?)?;
+    m.add_class::<Reflex>()?;
+    m.add_function(wrap_pyfunction!(reflex, m)?)?;
+    m.add_class::<RocketRsi>()?;
+    m.add_function(wrap_pyfunction!(rocketrsi, m)?)?;
+    m.add_class::<Trendflex>()?;
+    m.add_function(wrap_pyfunction!(trendflex, m)?)?;
+    m.add_class::<TruncatedBandpass>()?;
+    m.add_function(wrap_pyfunction!(truncatedbandpass, m)?)?;
+    Ok(())
 }

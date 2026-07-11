@@ -128,7 +128,7 @@ jobs:
         run: |
           python -m venv .venv
           source .venv/bin/activate
-          pip install maturin "uniffi-bindgen==0.31.0" pytest numpy polars
+          pip install maturin pytest numpy polars
 
       - name: Build quantwave + plugins (editable)
         run: |

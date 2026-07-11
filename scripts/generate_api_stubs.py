@@ -102,11 +102,16 @@ def load_manual_aliases() -> dict[str, dict[str, Any]]:
 def parse_native_symbols() -> tuple[set[str], set[str]]:
     text = LIB_RS.read_text(encoding="utf-8")
     batch = set(re.findall(r"^pub fn ([a-z][a-z0-9_]*)\(", text, re.M))
-    streaming = set(re.findall(r"^#\[derive\(uniffi::Object\)\] pub struct (\w+)", text, re.M))
-    for m in re.finditer(r"^#\[derive\(uniffi::Object\)\]\s+pub struct (\w+)", text, re.M):
-        streaming.add(m.group(1))
-    for m in re.finditer(r"^pub struct (\w+) \{ inner:", text, re.M):
-        streaming.add(m.group(1))
+    streaming: set[str] = set()
+    # Hand-written streaming classes: a #[pyclass] struct with an `inner:` state field.
+    # Honor an explicit #[pyclass(name = "...")] (PyO3 keeps the raw Rust identifier,
+    # so the re-cased uniffi-era symbols are pinned via a name attr).
+    for m in re.finditer(
+        r"#\[pyclass(\([^)]*\))?\]\s*\npub struct (\w+)\s*\{[^}]*?\binner\s*:", text
+    ):
+        attrs, struct = m.group(1) or "", m.group(2)
+        name_attr = re.search(r'name\s*=\s*"([^"]+)"', attrs)
+        streaming.add(name_attr.group(1) if name_attr else struct)
     for type_name in re.findall(r"export_[a-z0-9_]+!\s*\(\s*(\w+)", text):
         batch.add(pascal_to_snake(type_name))
         streaming.add(type_name)

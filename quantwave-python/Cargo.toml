@@ -16,9 +16,6 @@ name = "quantwave_python"
 crate-type = ["cdylib"]
 
 [dependencies]
-uniffi = { version = "0.31", features = ["cli"] }
+pyo3 = { version = "0.23", features = ["extension-module", "abi3-py39"] }
 quantwave-core = { workspace = true }
 paste = "1.0.15"
-
-[build-dependencies]
-uniffi = { version = "0.31", features = ["build"] }
