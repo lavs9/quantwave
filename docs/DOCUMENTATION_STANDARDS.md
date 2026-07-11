@@ -36,7 +36,7 @@ import quantwave as qw # or: from quantwave import ta df = ( pl.read_csv("ohlcv.
 - Performance characteristics (especially recursive Ehlers filters).
 - When the indicator produces noisy or low-value signals (e.g. patterns in strong trends without confirmation).
 - Any known divergences from reference implementations and why. ## Related Indicators & See Also 4–8 high-value links:
-- Other native pages with similar purpose or common pairing (relative paths, e.g. `[Stochastic Oscillator](stochastic_oscillator.md)`).
+- Other native pages with similar purpose or common pairing (relative paths, e.g. `[Stochastic Oscillator](guides/indicators/native/stochastic_oscillator.md)`).
 - Gallery, native index, Ehlers index, PA notebook.
 - Relevant references/ PDFs or MQL5 articles.
 - Higher-level guides (regimes, ML features). Example ending:
@@ -56,7 +56,7 @@ Use to identify overbought (>70) and oversold (<30) conditions... ## Background
 [Source](https://www.investopedia.com/...)
 ``` **Problems**: No code, no visual, no edges, generic background, weak source, no ML/strategy depth, promises in gallery/index not delivered. **Good Example** (target quality — excerpt): ```markdown
 # Relative Strength Index (RSI) <div class="indicator-meta"><span class="category-badge">Classic</span> <span class="kw-badge">momentum</span> ... </div> The Relative Strength Index (RSI) is a bounded momentum oscillator (0–100) that quantifies the magnitude of recent price gains versus losses over a lookback window. It is one of the most widely applied tools for identifying potential reversals via overbought/oversold levels and divergence analysis. ## Visual Example
-![RSI (14) preview](../../../assets/indicator-previews/rsi.png){ width="420" } *Typical RSI oscillation between 30/70 bands with clear divergence at the second peak.* ## Description
+![RSI (14) preview](assets/indicator-previews/rsi.png){ width="420" } *Typical RSI oscillation between 30/70 bands with clear divergence at the second peak.* ## Description
 ... ## Formula / Specification
 $$
 RS = \frac{\text{Avg Gain}}{\text{Avg Loss}}, \quad RSI = 100 - \frac{100}{1 + RS}
@@ -68,9 +68,9 @@ $$
 - In strong trends RSI can remain >70 or <30 for extended periods ("overbought can stay overbought").
 - Low-volatility or thinly traded assets produce noisy RSI; combine with ATR or regime filters.
 - ... ## Related Indicators & See Also
-- [Stochastic Oscillator](stochastic_oscillator.md)
-- [Chande Momentum Oscillator](chande_momentum_oscillator_cmo.md)
-- [MarketState](marketstate.md) (for regime-aware RSI usage)
+- [Stochastic Oscillator](guides/indicators/native/stochastic_oscillator.md)
+- [Chande Momentum Oscillator](guides/indicators/native/chande_momentum_oscillator_cmo.md)
+- [MarketState](guides/indicators/native/marketstate.md) (for regime-aware RSI usage)
 - ... **Primary Source**: Wilder, "New Concepts in Technical Trading Systems" (1978) + StockCharts School implementation details. **Gold Standard**: `/tests/gold_standard/...` (or applicable)
 ``` ### Type B: Candlestick / Simple Pattern (e.g. Engulfing, Morning Star, Doji family, Three White Soldiers) **Current Typical (unacceptable)** — identical across dozens of files: ```markdown
 # Engulfing / Morning Star A pattern where a larger candle completely covers... ## Usage

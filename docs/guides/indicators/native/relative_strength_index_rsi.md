@@ -18,8 +18,8 @@ Common uses:
 
 - **Mean-reversion entries** — fade extremes when higher-timeframe trend agrees
 - **Divergence detection** — price makes new high while RSI does not (bearish divergence)
-- **ML features** — stationary bounded oscillator; pairs well with [Hurst](hurst_exponent/) and regime labels
-- **Signal gating** — only take longs when RSI recovers from oversold in an uptrend ([SuperTrend](supertrend/) direction > 0)
+- **ML features** — stationary bounded oscillator; pairs well with [Hurst](../hurst_exponent/) and regime labels
+- **Signal gating** — only take longs when RSI recovers from oversold in an uptrend ([SuperTrend](../supertrend/) direction > 0)
 
 QuantWave implements Wilder-smoothed RSI via `Next<f64>`, bit-identical across Rust streaming, Python streaming, and the Polars `.ta.rsi()` plugin. Validated against TA-Lib parity proptests and `rsi.json` gold-standard vectors.
 
@@ -115,7 +115,7 @@ signal_df = df.with_columns(
 - **Trending markets:** RSI can remain overbought/oversold for extended runs — use trend filters, not raw levels alone.
 - **Warm-up:** First `timeperiod` bars build Wilder state; early values follow core warmup semantics.
 - **Flat markets:** Zero average loss → RSI defined as 100 in Wilder convention.
-- **Divergence is visual:** Automating divergence requires swing detection — consider [Market Structure](market_structure/) for structure-aware logic.
+- **Divergence is visual:** Automating divergence requires swing detection — consider [Market Structure](../market_structure/) for structure-aware logic.
 
 ## Boundary Behavior
 
@@ -128,9 +128,9 @@ signal_df = df.with_columns(
 
 ## Related Indicators & See Also
 
-- [Laguerre RSI](laguerre_rsi/) — Ehlers low-lag alternative
-- [Stochastic Oscillator](stochastic_oscillator/) — range-based momentum cousin
-- [Chande Momentum Oscillator](chande_momentum_oscillator_cmo/) — unsmoothed sensitivity variant
+- [Laguerre RSI](../laguerre_rsi/) — Ehlers low-lag alternative
+- [Stochastic Oscillator](../stochastic_oscillator/) — range-based momentum cousin
+- [Chande Momentum Oscillator](../chande_momentum_oscillator_cmo/) — unsmoothed sensitivity variant
 - [ML Feature Stability notebook](../../../examples/notebooks/ml_feature_stability.md)
 - [Indicator Gallery](../gallery.md)
 

@@ -117,7 +117,7 @@ All three surfaces are bit-identical by construction: the Python and Rust classe
 - [Reflex](reflex.md) — zero-lag cycle synchronizer that internally uses a SuperSmoother
 - [Ehlers Stochastic](ehlers_stochastic.md) — cycle-aware oscillator that benefits from clean upstream filtering
 - [Market Structure](market_structure.md) — use bias / BOS state to gate or weight the filter output
-- [Indicator Gallery](../gallery.md) • [Native Indicators](native/index.md) • [Ehlers DSP Suite](../ehlers/index.md)
+- [Indicator Gallery](../gallery.md) • [Native Indicators](../native/index.md) • [Ehlers DSP Suite](../ehlers/index.md)
 - Full runnable examples: `docs/examples/notebooks/multi_indicator_analysis.ipynb` (and the ML feature parity notebook)
 
 ## Sources & References

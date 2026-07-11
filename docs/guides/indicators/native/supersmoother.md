@@ -106,7 +106,7 @@ All surfaces are bit-identical (enforced by the universal `Next<T>` trait and pr
 - [Instantaneous Trendline](instantaneous_trendline.md) — heavier adaptive smoother; SuperSmoother is the lightweight workhorse
 - [Cyber Cycle](cyber_cycle.md) — FIR smoother stage + recursive; often paired with SuperSmoother pre-filtering in practice
 - All classic overlap indicators when lag reduction is priority
-- [Indicator Gallery](../gallery.md) • [Native Indicators](native/index.md) • [Ehlers DSP Suite](ehlers/index.md)
+- [Indicator Gallery](../gallery.md) • [Native Indicators](../native/index.md) • [Ehlers DSP Suite](../ehlers/index.md)
 
 ## Sources & References
 

@@ -8,7 +8,7 @@ Fittable HMM with Gaussian or lambda (ecld) emissions for generic univariate ser
 
 ![Regime decode schematic — smoothed state probabilities over synthetic returns](../../../assets/indicator-previews/supertrend.png)
 
-*Conceptual regime decode: forward-backward smoothed state weights and Viterbi path from a fitted 2-state HMM on log-returns. See [Regime Detection guide](../regimes/) for ldhmm-style workflows.*
+*Conceptual regime decode: forward-backward smoothed state weights and Viterbi path from a fitted 2-state HMM on log-returns. See [Regime Detection guide](../../regimes/) for ldhmm-style workflows.*
 
 ## Description
 
@@ -16,7 +16,7 @@ A **fittable first-order Hidden Markov Model** for univariate series such as dai
 
 **Baum–Welch EM** estimates transition matrix Γ, initial distribution δ, and per-state (μ, σ) — optionally per-state λ. **Forward–backward** decoding yields smoothed state probabilities; **Viterbi** yields a global path. A causal **forward filter** implements `Next<f64>` for live regime labeling with batch parity.
 
-Typical workflow: fit on a return series → decode regimes → optionally chain [hmm_forecast](hmm_forecast/) for vol/state forecasts. See the step-by-step [ldhmm-Style HMM Workflow](../regimes/ldhmm_workflow.md). Gold-standard vectors in `hmm_gaussian_2state.json` lock MLLK, smooth probs, and Viterbi against reference Python. The preset `HMM::bull_bear()` remains available for zero-config backtests.
+Typical workflow: fit on a return series → decode regimes → optionally chain [hmm_forecast](../hmm_forecast/) for vol/state forecasts. See the step-by-step [ldhmm-Style HMM Workflow](../regimes/ldhmm_workflow.md). Gold-standard vectors in `hmm_gaussian_2state.json` lock MLLK, smooth probs, and Viterbi against reference Python. The preset `HMM::bull_bear()` remains available for zero-config backtests.
 
 ## Formula / Specification
 
@@ -106,7 +106,7 @@ for &x in &returns {
 - [Native Indicators index](index.md)
 - [Batch vs Streaming guide](../../../examples/batch-streaming.md)
 - [RSI](relative_strength_index_rsi.md)
-- [SuperTrend](supertrend/)
+- [SuperTrend](../supertrend/)
 
 ## Sources & References
 

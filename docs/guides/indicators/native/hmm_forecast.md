@@ -14,7 +14,7 @@ HMM forecasting and diagnostics: state/vol/probability forecasts, pseudo-residua
 
 **Post-fit HMM analytics** aligned with ldhmm / SSRN 2979516: multi-step **state probability forecasts** (π_{t+h|t} = π_t · Γ^h), **mixture volatility** forecasts using lambda-aware emission variances, **pseudo-residuals** for model checking via the probability integral transform, and **decode_stats_history** (per-bar weighted mean, vol, λ).
 
-Apply after fitting a [gaussian_hmm](gaussian_hmm/) or [lambda_hmm](lambda_hmm/) model. Polars exposes `.hmm_forecast_vol`, `.hmm_pseudo_residuals`, and `.hmm_decode_stats`; Python exposes `gaussian_hmm_diagnostics` and point forecast helpers. Gold-standard parity on `hmm_lambda_2state.json` locks forecast_state, vol, and pseudo-residuals. Use pseudo-residuals to assess calibration; under a well-specified model they should be approximately standard normal.
+Apply after fitting a [gaussian_hmm](../gaussian_hmm/) or [lambda_hmm](../lambda_hmm/) model. Polars exposes `.hmm_forecast_vol`, `.hmm_pseudo_residuals`, and `.hmm_decode_stats`; Python exposes `gaussian_hmm_diagnostics` and point forecast helpers. Gold-standard parity on `hmm_lambda_2state.json` locks forecast_state, vol, and pseudo-residuals. Use pseudo-residuals to assess calibration; under a well-specified model they should be approximately standard normal.
 
 ## Formula / Specification
 
@@ -93,7 +93,7 @@ let vol_h1 = forecast_volatility(&params, &last, 1)?;
 - [Native Indicators index](index.md)
 - [Batch vs Streaming guide](../../../examples/batch-streaming.md)
 - [RSI](relative_strength_index_rsi.md)
-- [SuperTrend](supertrend/)
+- [SuperTrend](../supertrend/)
 
 ## Sources & References
 

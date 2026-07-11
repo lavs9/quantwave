@@ -112,7 +112,7 @@ All surfaces are bit-identical (enforced by the universal `Next<T>` trait and pr
 - [SuperSmoother](supersmoother.md) — foundational low-lag smoother used internally by many Ehlers tools
 - [Market Structure (Swings + BOS)](market_structure.md) — establish directional bias before trusting trendline slope
 - [Geometric Patterns (Flags + H&S)](geometric_patterns.md)
-- [Indicator Gallery](../gallery.md) • [Native Indicators](native/index.md) • [Ehlers DSP Suite](ehlers/index.md)
+- [Indicator Gallery](../gallery.md) • [Native Indicators](../native/index.md) • [Ehlers DSP Suite](../ehlers/index.md)
 - Full strategy + ML examples: `docs/examples/notebooks/pa_flag_breakout_strategy.md` and `ml_feature_backtest_parity.md`
 
 ## Sources & References

@@ -69,7 +69,7 @@ Curated concepts — full API depth lives on docs.rs:
 | Goal | Next step |
 |------|-----------|
 | Polars from Python | [Python getting started](python.md) |
-| Indicator catalog | [Full catalog](../guides/indicators/native/) |
+| Indicator catalog | [Full catalog](../../guides/indicators/native/) |
 | Backtest from Python | [Backtest quickstart](../guides/backtest/quickstart.md) |
 | Benchmarks | [Performance numbers](../benchmarks.md) |
 | Full funnel | [Getting Started hub](index.md) |

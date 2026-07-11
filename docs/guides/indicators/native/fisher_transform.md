@@ -103,7 +103,7 @@ All surfaces are bit-identical (enforced by the universal `Next<T>` trait and pr
 - [Cyber Cycle](cyber_cycle.md), [Roofing Filter](roofing_filter.md) — ideal inputs after normalization
 - [Fisher High Pass](fisherhighpass.md) — variant that includes internal high-pass + normalization
 - [Stochastic Oscillator](stochastic_oscillator.md) and other bounded oscillators — classic candidates for Fisher post-processing
-- [Indicator Gallery](../gallery.md) • [Native Indicators](native/index.md) • [Ehlers DSP Suite](ehlers/index.md)
+- [Indicator Gallery](../gallery.md) • [Native Indicators](../native/index.md) • [Ehlers DSP Suite](../ehlers/index.md)
 - `docs/examples/notebooks/multi_indicator_analysis.py` (normalization + transform examples)
 
 ## Sources & References

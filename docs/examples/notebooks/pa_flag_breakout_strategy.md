@@ -10,9 +10,9 @@
 python -m marimo edit docs/examples/notebooks/pa_flag_breakout_strategy.py
 # or: marimo run ... (after `pip install "quantwave[all]" marimo polars numpy`)
 ``` ## Companion Documentation (Read These First)
-The notebook is intentionally **code-first**. For full explanations, field semantics, when-to-use, ML ideas, and annotated visuals, start with the dedicated pages: - [Market Structure (Swings + Confirmed BOS)](../guides/indicators/native/market_structure.md)
-- [Geometric Patterns (Flags + Head & Shoulders)](../guides/indicators/native/geometric_patterns.md)
-- [S/R Interactions](../guides/indicators/native/sr_monitor.md)
-- [Using Rich PA Events & Metadata for Strategies and ML](../guides/indicators/native/pa_events_strategies.md) All four + this notebook + the visual assets in `docs/assets/pa-visuals/` were professionalized under documentation epic (tasks n6e7 / za0u / 0ywt). ## Parity & Fidelity
+The notebook is intentionally **code-first**. For full explanations, field semantics, when-to-use, ML ideas, and annotated visuals, start with the dedicated pages: - [Market Structure (Swings + Confirmed BOS)](../../guides/indicators/native/market_structure.md)
+- [Geometric Patterns (Flags + Head & Shoulders)](../../guides/indicators/native/geometric_patterns.md)
+- [S/R Interactions](../../guides/indicators/native/sr_monitor.md)
+- [Using Rich PA Events & Metadata for Strategies and ML](../../guides/indicators/native/pa_events_strategies.md) All four + this notebook + the visual assets in `docs/assets/pa-visuals/` were professionalized under documentation epic (tasks n6e7 / za0u / 0ywt). ## Parity & Fidelity
 Every example here is designed to produce identical output to the Rust `Next` implementations and Polars `.ta.*` expressions (validated by the property tests in `/tests/` and the generators in `test_utils.rs`). The synthetic vectors are the single source of truth for the documented behaviors. ## Visuals
 The notebook text describes the charts; the high-quality annotated PNGs (bos_flip.png, bull_flag.png, bear_head_shoulders.png, sr_interactions.png) live in the dedicated guides and were generated under the visual strategy in DOCUMENTATION_DECISIONS.md. --- *This notebook + the four dedicated guides together deliver the complete, professional, leak-free documentation for the PA / geometric features. No internal planning references remain in public content.*

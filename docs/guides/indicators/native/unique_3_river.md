@@ -21,7 +21,7 @@ QuantWave evaluates this pattern on completed OHLC windows using TA-Lib-aligned 
 **Typical applications:**
 
 - Scan for completed pattern windows — never act on partial formations
-- Combine with [Market Structure](market_structure/) or trend filters in production
+- Combine with [Market Structure](../market_structure/) or trend filters in production
 - Encode signed output (+/−/0) before ML training
 - Expect false positives in choppy ranges; require volume or HTF confirmation
 
@@ -109,7 +109,7 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 - [Indicator Gallery](../gallery.md)
 - [Native Indicators index](index.md)
 - [Engulfing](engulfing.md)
-- [Market Structure](../price_action/market_structure.md)
+- [Market Structure](market_structure.md)
 - [PA Flag Breakout notebook](../../../examples/notebooks/pa_flag_breakout_strategy.md)
 
 ## Sources & References

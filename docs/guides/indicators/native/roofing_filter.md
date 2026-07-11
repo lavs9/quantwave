@@ -115,7 +115,7 @@ All surfaces are bit-identical (enforced by the universal `Next<T>` trait and pr
 - [Cyber Cycle](cyber_cycle.md) — classic Ehlers oscillator that benefits enormously from Roofing pre-filtering
 - [Instantaneous Trendline](instantaneous_trendline.md), [Trendflex](trendflex.md) — use Roofing output when you want cycle-aware versions of these
 - [Fisher Transform](fisher_transform.md) — apply Fisher to a Roofing-cleaned oscillator for even sharper turns
-- [Indicator Gallery](../gallery.md) • [Native Indicators](native/index.md) • [Ehlers DSP Suite](ehlers/index.md)
+- [Indicator Gallery](../gallery.md) • [Native Indicators](../native/index.md) • [Ehlers DSP Suite](../ehlers/index.md)
 - `docs/examples/notebooks/multi_indicator_analysis.py` (band-pass concepts)
 
 ## Sources & References

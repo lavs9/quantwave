@@ -115,7 +115,7 @@ All surfaces are bit-identical (enforced by the universal `Next<T>` trait and pr
 - [Instantaneous Trendline](instantaneous_trendline.md) — fully adaptive (no length param) alternative
 - [Cyber Cycle](cyber_cycle.md), [Roofing Filter](roofing_filter.md) — cycle isolation tools that complement trend measures
 - [Market Structure (Swings + BOS)](market_structure.md) — confirm trend direction with structure before acting on Trendflex slope
-- [Indicator Gallery](../gallery.md) • [Native Indicators](native/index.md) • [Ehlers DSP Suite](ehlers/index.md)
+- [Indicator Gallery](../gallery.md) • [Native Indicators](../native/index.md) • [Ehlers DSP Suite](../ehlers/index.md)
 - Strategy notebooks: `docs/examples/notebooks/pa_flag_breakout_strategy.md`
 
 ## Sources & References

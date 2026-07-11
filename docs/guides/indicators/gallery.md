@@ -8,13 +8,13 @@ Each indicator page includes formulas, parameters, Rust/Python/Polars examples, 
 
 These tools deliver outsized practical value for strategies, risk management, and ML feature engineering:
 
-- **[SuperTrend](../native/supertrend/)**: ATR-based trend-following with dynamic stops. One of the most widely used signals in production. Rust-native batch and streaming paths; see [benchmarks](../../../benchmarks.md) for measured performance (harness in progress).
+- **[SuperTrend](../native/supertrend/)**: ATR-based trend-following with dynamic stops. One of the most widely used signals in production. Rust-native batch and streaming paths; see [benchmarks](../../benchmarks.md) for measured performance (harness in progress).
 
-- **[Cyber Cycle](../native/cyber_cycle/)** (Ehlers DSP): Low-lag cycle extractor that cleanly separates trend from cycle. A foundational tool for regime-aware systems. Throughput benchmarks publish via [benchmarks](../../../benchmarks.md) once the harness lands.
+- **[Cyber Cycle](../native/cyber_cycle/)** (Ehlers DSP): Low-lag cycle extractor that cleanly separates trend from cycle. A foundational tool for regime-aware systems. Throughput benchmarks publish via [benchmarks](../../benchmarks.md) once the harness lands.
 
-- **[Market Structure](../native/market_structure/)** (MQL5 Part 21): Adaptive swing detection with Bullish/Bearish/Neutral bias and confirmed Break-of-Structure (BOS) flips (only after structure established). Rich `MarketStructureState` + `PAEvent` for gating strategies and ML. See dedicated guide + [notebook](../../../examples/notebooks/pa_flag_breakout_strategy.md).
+- **[Market Structure](../native/market_structure/)** (MQL5 Part 21): Adaptive swing detection with Bullish/Bearish/Neutral bias and confirmed Break-of-Structure (BOS) flips (only after structure established). Rich `MarketStructureState` + `PAEvent` for gating strategies and ML. See dedicated guide + [notebook](../../examples/notebooks/pa_flag_breakout_strategy.md).
 
-- **[Geometric Patterns (Flags + H&S)](../native/geometric_patterns/)** (MQL5 Parts 66 & 69): Continuation Flags and reversal Head & Shoulders built on Market Structure. Rich structs with `pole_length_atr` (sizing), `score`, symmetry, `breakout_confirmed`. Ideal for ML features and dynamic risk. Full guide + examples in the dedicated page and [notebook](../../../examples/notebooks/pa_flag_breakout_strategy.md).
+- **[Geometric Patterns (Flags + H&S)](../native/geometric_patterns/)** (MQL5 Parts 66 & 69): Continuation Flags and reversal Head & Shoulders built on Market Structure. Rich structs with `pole_length_atr` (sizing), `score`, symmetry, `breakout_confirmed`. Ideal for ML features and dynamic risk. Full guide + examples in the dedicated page and [notebook](../../examples/notebooks/pa_flag_breakout_strategy.md).
 
 - **[S/R Interactions](../native/sr_monitor/)** (MQL5 Part 67): Real-time classification of horizontal level interactions (Approach/Touch/Breakout/Reversal/Retest) with rich provenance. Perfect confluence with geometric patterns.
 
@@ -48,7 +48,7 @@ QuantWave's most distinctive modern capability: faithful, production-ready ports
 
 Archived reference `.mq5` files live in `references/MQL5/lynnchris/implemented/`.
 
-**Practical usage**: The [Price Action Patterns notebook](../../../examples/notebooks/pa_flag_breakout_strategy.md) demonstrates complete batch + streaming examples, flag breakout strategy with sizing derived from `pole_length_atr`, regime + ML filters, and visual descriptions of every pattern and event type. This is the recommended starting point for the PA suite.
+**Practical usage**: The [Price Action Patterns notebook](../../examples/notebooks/pa_flag_breakout_strategy.md) demonstrates complete batch + streaming examples, flag breakout strategy with sizing derived from `pole_length_atr`, regime + ML filters, and visual descriptions of every pattern and event type. This is the recommended starting point for the PA suite.
 
 In addition, QuantWave ships 50+ classic candlestick patterns (Engulfing, Morning/Evening Star families, Harami, Hikkake variants, Three White Soldiers, etc.) plus Bill Williams Fractals — all documented individually under the Patterns section of the native index.
 
@@ -58,7 +58,7 @@ In addition, QuantWave ships 50+ classic candlestick patterns (Engulfing, Mornin
 Moving averages (SMA, EMA, HMA, KAMA, ALMA, FRAMA, T3, DEMA, TEMA, Zero-Lag variants), MACD, RSI, Stochastic, CCI, ADX, Bollinger Bands, ATR, Parabolic SAR, Vortex, and many more. See the Classic subsection in [Native Indicators](../native/).
 
 ### Ehlers DSP Suite
-30+ specialized low-lag tools from John Ehlers: Cyber Cycle, Instantaneous Trendline, Trendflex, Reflex, Ehlers Filter, Ehlers Stochastic, Ehlers Loops, UltimateSmoother, Fisher & Inverse Fisher, MAMA/MESA, Mesa Stochastic, Hilbert Transform variants (dominant cycle, phasor, sine wave, trend vs cycle), Autocorrelation, Roofing Filter, SuperSmoother, Butterworth, Laguerre family, and more. See [Ehlers DSP guide](../ehlers/index.md) and the Ehlers DSP subsection in the native index.
+30+ specialized low-lag tools from John Ehlers: Cyber Cycle, Instantaneous Trendline, Trendflex, Reflex, Ehlers Filter, Ehlers Stochastic, Ehlers Loops, UltimateSmoother, Fisher & Inverse Fisher, MAMA/MESA, Mesa Stochastic, Hilbert Transform variants (dominant cycle, phasor, sine wave, trend vs cycle), Autocorrelation, Roofing Filter, SuperSmoother, Butterworth, Laguerre family, and more. See [Ehlers DSP guide](ehlers/index.md) and the Ehlers DSP subsection in the native index.
 
 ### Volatility, Channels & Bands
 Donchian Channels, Keltner Channels, TTM Squeeze, Ultimate Bands, SVE Volatility Bands, Exponential Deviation Bands, ATR Trailing Stop, and related.
@@ -81,26 +81,26 @@ All classic TA-Lib-style functions (RSI, MACD, Bollinger Bands, candlestick patt
 
 - **Parity guarantee** — The same `Next<T>` implementation powers both the Polars plugins and all streaming structs.
 - **Rich outputs where it matters** — Scalar values for classic indicators; full event structs with metadata for PA tools.
-- **Production ready** — Zero-copy where possible, extensively proptested, and benchmarked (see [Benchmarks](../../../benchmarks.md)).
+- **Production ready** — Zero-copy where possible, extensively proptested, and benchmarked (see [Benchmarks](../../benchmarks.md)).
 - **Source transparency** — Every implementation records its primary reference per project standards.
 
 ## Next Steps
 
 1. **Start coding immediately**
-   - [Getting Started (Python)](../../../getting-started/python.md)
-   - [Getting Started (Rust)](../../../getting-started/rust.md)
+   - [Getting Started (Python)](../../getting-started/python.md)
+   - [Getting Started (Rust)](../../getting-started/rust.md)
 
 2. **See indicators in action**
-   - [Batch & Streaming Examples](../../../examples/batch-streaming.md)
-   - [Price Action Flag Breakout Strategy Notebook](../../../examples/notebooks/pa_flag_breakout_strategy.md) (essential for Geometric / Market Structure usage)
+   - [Batch & Streaming Examples](../../examples/batch-streaming.md)
+   - [Price Action Flag Breakout Strategy Notebook](../../examples/notebooks/pa_flag_breakout_strategy.md) (essential for Geometric / Market Structure usage)
 
 3. **Deepen your understanding**
    - [Native Indicators](../native/) — the complete browsable catalog with SUMMARY navigation
-   - [Ehlers DSP Suite](../ehlers/index.md)
-   - [Benchmarks](../../../benchmarks.md)
+   - [Ehlers DSP Suite](ehlers/index.md)
+   - [Benchmarks](../../benchmarks.md)
 
 4. **Participate**
-   - [Contributing](../../../contributing.md)
+   - [Contributing](../../contributing.md)
    - GitHub repository for discussions and issues
 
 The gallery is your map. The individual pages, notebooks, and source code are where the real depth lives. Everything is built for quantitative developers who need both correctness at scale and rich, actionable signals.

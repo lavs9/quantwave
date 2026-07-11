@@ -6,9 +6,9 @@
 | **Ehlers DSP** | 30+ dedicated tools | Minimal | A few community ports |
 | **Price action** | Market Structure, flags/H&S, S/R monitor | Candlestick patterns only | Limited |
 | **Regime detection** | HMM, GMM, PELT, vol clustering | No | No |
-| **Batch ↔ streaming parity** | **[Guaranteed](../validation.md)** (`Next<T>` + proptests) | N/A (batch only) | No |
+| **Batch ↔ streaming parity** | **[Guaranteed](validation.md)** (`Next<T>` + proptests) | N/A (batch only) | No |
 | **Backtest engine** | Built-in (sweep, WFO, Monte Carlo) | No | No |
-| **Large-data speed** | See [benchmarks](../benchmarks.md) | Fast C for classics | Slow on 1M+ rows |
+| **Large-data speed** | See [benchmarks](benchmarks.md) | Fast C for classics | Slow on 1M+ rows |
 | **License** | MIT | BSD-like | MIT |
 | **Migration path** | `quantwave.talib` shim + `.ta` names | — | Re-write columns to Polars `.ta` | --- ## Same indicator, three stacks ### RSI (14) on OHLCV === "QuantWave (Polars)" ```python
 import polars as pl df = pl.read_parquet("ohlcv.parquet")
@@ -22,7 +22,7 @@ df["rsi"] = talib.RSI(df["close"].values, timeperiod=14)
 import pandas as pd
 import pandas_ta as ta df = pd.read_parquet("ohlcv.parquet")
 df.ta.rsi(length=14, append=True) # adds RSI column
-``` **Takeaway:** ergonomics are similar for classics. QuantWave's advantage shows on **Polars lazy pipelines**, **multi-indicator feature matrices**, and when you need the **same RSI** in a live stream without re-implementing warmup logic. ### SuperTrend (recursive — where speed diverges) SuperTrend is stateful bar-by-bar math. pandas-ta and naive pandas loops pay Python interpreter cost on every row; QuantWave compiles the same `Next<T>` path for batch plugins and streaming. Measured throughput comparisons are being rebuilt on a reproducible harness. Until those results publish, see [benchmarks](../benchmarks.md) for methodology and the memory measurements that are already verified. --- ## When QuantWave wins - **Polars is your execution engine** — you want `.ta` and `.bt` on `LazyFrame`, not `.apply()` bridges from pandas.
+``` **Takeaway:** ergonomics are similar for classics. QuantWave's advantage shows on **Polars lazy pipelines**, **multi-indicator feature matrices**, and when you need the **same RSI** in a live stream without re-implementing warmup logic. ### SuperTrend (recursive — where speed diverges) SuperTrend is stateful bar-by-bar math. pandas-ta and naive pandas loops pay Python interpreter cost on every row; QuantWave compiles the same `Next<T>` path for batch plugins and streaming. Measured throughput comparisons are being rebuilt on a reproducible harness. Until those results publish, see [benchmarks](benchmarks.md) for methodology and the memory measurements that are already verified. --- ## When QuantWave wins - **Polars is your execution engine** — you want `.ta` and `.bt` on `LazyFrame`, not `.apply()` bridges from pandas.
 - **Research → production parity** — batch columns must match live `streaming_class()` output (`qw.assert_parity()`).
 - **Beyond TA-Lib classics** — Ehlers cycle tools, MQL5-style price action, regime changepoints, fractional differentiation for ML.
 - **One MIT stack** — indicators + backtest + metadata discovery without gluing TA-Lib + vectorbt + custom Rust.
@@ -38,11 +38,11 @@ print(ta.list_functions()) # uppercase TA-Lib names in this build
 ``` For production Polars pipelines, prefer native names and metadata: ```python
 import quantwave as qw meta = qw.metadata("rsi")
 n = qw.warmup_bars("rsi", {"period": 14})
-``` Full Python setup: [Getting Started (Python)](../getting-started/python.md#ta-lib-migration). ### From pandas-ta Typical migration steps: 1. **Move data to Polars** — `pl.from_pandas(df)` or read Parquet directly.
+``` Full Python setup: [Getting Started (Python)](getting-started/python.md#ta-lib-migration). ### From pandas-ta Typical migration steps: 1. **Move data to Polars** — `pl.from_pandas(df)` or read Parquet directly.
 2. **Map strategy names** — use search or `qw.indicators()`; many pandas-ta names map 1:1 (`rsi`, `macd`, `bbands`).
 3. **Replace `.ta.*` append calls** with lazy `.with_columns(pl.col(...).ta.*)`.
 4. **Verify warmup** — `qw.warmup_bars()` and `qw.assert_parity()` before trusting live signals.
-5. **Re-run benchmarks** on your schema — [benchmarks](../benchmarks.md) uses 1M-row OHLCV; your cardinality may differ. ```python
+5. **Re-run benchmarks** on your schema — [benchmarks](benchmarks.md) uses 1M-row OHLCV; your cardinality may differ. ```python
 # pandas-ta habit
 # df.ta.sma(length=20, append=True) # QuantWave equivalent
 df = df.lazy().with_columns( pl.col("close").ta.sma(period=20).alias("sma_20")
@@ -52,7 +52,7 @@ df = df.lazy().with_columns( pl.col("close").ta.sma(period=20).alias("sma_20")
 | `pl.col("close").ta.rsi(14)` | Expression-plugin hot paths |
 | `lf.ta().rsi(14)` | Multi-column LazyFrame research |
 | `qw.streaming_class("rsi")` | Live bar-by-bar |
-| `lf.bt.backtest_with_report()` | Strategy evaluation | See [Plugin vs `.ta`](../guides/plugin_vs_ta.md) and the [backtest capability matrix](../guides/backtest/capability_matrix.md). --- ## Also compared (brief) | Library | Role | vs QuantWave |
+| `lf.bt.backtest_with_report()` | Strategy evaluation | See [Plugin vs `.ta`](guides/plugin_vs_ta.md) and the [backtest capability matrix](guides/backtest/capability_matrix.md). --- ## Also compared (brief) | Library | Role | vs QuantWave |
 |---------|------|--------------|
 | **vectorbt** | Vectorized portfolio backtest | Stronger if backtest-only is the product; AGPL license; bring your own indicators |
 | **polars-backtest** | Long-format sim on Polars | Simpler sim, no indicator breadth |
@@ -61,4 +61,4 @@ df = df.lazy().with_columns( pl.col("close").ta.sma(period=20).alias("sma_20")
 ``` ```python
 import quantwave as qw qw.assert_parity("rsi", {"period": 14}, your_closes)
 print(len(qw.indicators()), "registered names")
-``` [Full benchmarks →](../benchmarks.md) · [Getting started →](../getting-started/index.md) · [Indicator gallery →](../guides/indicators/gallery.md)
+``` [Full benchmarks →](benchmarks.md) · [Getting started →](getting-started/index.md) · [Indicator gallery →](guides/indicators/gallery.md)
