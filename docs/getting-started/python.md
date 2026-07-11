@@ -4,7 +4,7 @@ QuantWave is designed to feel like a natural extension of Polars.
 
 !!! tip "New here?"
     Follow the [Getting Started funnel](../index.md) for install → first indicator → pick your path.  
-    Migrating from TA-Lib or pandas-ta? See [QuantWave vs alternatives](../../comparison.md).
+    Migrating from TA-Lib or pandas-ta? See [QuantWave vs alternatives](../comparison.md).
 
 ## Installation
 
@@ -143,9 +143,9 @@ except qw.QuantwaveError:
 
 ## ML features & backtesting
 
-- [ML Feature Engineering guide](../../guides/ml_features.md)
-- [Backtest Quickstart](../../guides/backtest/quickstart.md)
-- [ML Features → Backtest (E2E)](../../examples/notebooks/ml_feature_backtest_parity.md)
+- [ML Feature Engineering guide](../guides/ml_features.md)
+- [Backtest Quickstart](../guides/backtest/quickstart.md)
+- [ML Features → Backtest (E2E)](../examples/notebooks/ml_feature_backtest_parity.md)
 
 ## Options (India)
 
@@ -162,15 +162,15 @@ Legacy `import quantwave; quantwave.bs_call_price(...)` still works but emits a 
 
 ## Backtesting
 
-QuantWave includes a Polars-native, high-performance backtest engine. You can run backtests, param sweeps, and walk-forward optimizations directly on your dataframes using the `.bt` namespace. For a 5-minute introduction, see the [Backtest Quickstart](../../guides/backtest/quickstart.md).
+QuantWave includes a Polars-native, high-performance backtest engine. You can run backtests, param sweeps, and walk-forward optimizations directly on your dataframes using the `.bt` namespace. For a 5-minute introduction, see the [Backtest Quickstart](../guides/backtest/quickstart.md).
 
 ## Where to go next
 
 | Goal | Next step |
 |------|-----------|
-| Compare stacks | [QuantWave vs TA-Lib & pandas-ta](../../comparison.md) |
-| Browse indicators | [Indicators overview](../../guides/indicators/index.md) · [Gallery](../../guides/indicators/gallery.md) |
-| Batch ↔ streaming deep dive | [Examples guide](../../examples/batch-streaming.md) |
-| Plugin vs `.ta` | [When to use which](../../guides/plugin_vs_ta.md) |
-| Backtest | [Quickstart](../../guides/backtest/quickstart.md) · [Strategy notebook](../../examples/notebooks/strategy_backtest.md) |
+| Compare stacks | [QuantWave vs TA-Lib & pandas-ta](../comparison.md) |
+| Browse indicators | [Indicators overview](../guides/indicators/index.md) · [Gallery](../guides/indicators/gallery.md) |
+| Batch ↔ streaming deep dive | [Examples guide](../examples/batch-streaming.md) |
+| Plugin vs `.ta` | [When to use which](../guides/plugin_vs_ta.md) |
+| Backtest | [Quickstart](../guides/backtest/quickstart.md) · [Strategy notebook](../examples/notebooks/strategy_backtest.md) |
 | Full funnel | [Getting Started hub](../index.md) |

@@ -12,11 +12,11 @@ Lambda-distribution (ecld) emission HMM for leptokurtic returns — ldhmm parity
 
 ## Description
 
-**Lambda-distribution HMM** mode for leptokurtic financial returns — the core differentiator of the ldhmm package (Lihn, SSRN 2979516). Each state emits from a symmetric exponential-power density with `(μ, σ, λ)`; **λ=1** reduces to Gaussian, nesting the [gaussian_hmm](gaussian_hmm/) mode.
+**Lambda-distribution HMM** mode for leptokurtic financial returns — the core differentiator of the ldhmm package (Lihn, SSRN 2979516). Each state emits from a symmetric exponential-power density with `(μ, σ, λ)`; **λ=1** reduces to Gaussian, nesting the [gaussian_hmm](../gaussian_hmm/) mode.
 
 Enable via `fit_lambdas=True` on `fit_gaussian_hmm` / `.ta().hmm_fit(..., fit_lambdas=True)`. The M-step alternates profile likelihood updates for λ and σ per state while EM refits transitions and means. Use when return series show excess kurtosis that degrades Gaussian HMM fit quality.
 
-Validated against `hmm_lambda_2state.json` (generic 2-state fixture). Pairs with [hmm_forecast](hmm_forecast/) for mixture volatility forecasts used in ldhmm vol studies.
+Validated against `hmm_lambda_2state.json` (generic 2-state fixture). Pairs with [hmm_forecast](../hmm_forecast/) for mixture volatility forecasts used in ldhmm vol studies.
 
 ## Formula / Specification
 
@@ -38,7 +38,7 @@ Gold-standard parity vectors: `quantwave-core/tests/gold_standard/hmm_lambda_2st
 
 ## Usage Examples
 
-Same API as [gaussian_hmm](gaussian_hmm/) with `fit_lambdas=True` (lambda / ecld emissions, ldhmm parity).
+Same API as [gaussian_hmm](../gaussian_hmm/) with `fit_lambdas=True` (lambda / ecld emissions, ldhmm parity).
 
 **Polars**
 
@@ -85,7 +85,7 @@ print(fit.params.lambdas)  # per-state λ (≥ 1 for leptokurtic tails)
 - [Native Indicators index](index.md)
 - [Batch vs Streaming guide](../../../examples/batch-streaming.md)
 - [RSI](relative_strength_index_rsi.md)
-- [SuperTrend](supertrend/)
+- [SuperTrend](../supertrend/)
 
 ## Sources & References
 

@@ -5,6 +5,24 @@ repo_name: lavs9/quantwave
 repo_url: https://github.com/lavs9/quantwave
 edit_uri: edit/main/docs/
 
+# Targeted link/anchor validation (5ipk.5). Real breakage → warn (fails under
+# --strict); benign nav/orphan noise stays info so builds aren't brittle.
+validation:
+  omitted_files: info
+  absolute_links: warn
+  # Bare directory links (e.g. ../native/) resolve via directory URLs in the
+  # browser but MkDocs can't map them to a source file — don't fail on them.
+  unrecognized_links: ignore
+  links:
+    not_found: warn
+    anchors: warn
+    absolute_links: warn
+    unrecognized_links: ignore
+  nav:
+    omitted_files: info
+    not_found: warn
+    absolute_links: warn
+
 theme:
   name: material
   palette:

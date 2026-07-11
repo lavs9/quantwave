@@ -112,7 +112,7 @@ All surfaces are bit-identical via the single `Next<f64>` implementation and its
 - [Ehlers Filter](ehlers_filter.md) — adaptive alternative when regime changes are frequent
 - [Reflex](reflex.md) — explicitly built on a SuperSmoother; UltimateSmoother is a higher-quality drop-in replacement in many pipelines
 - [Roofing Filter](roofing_filter.md) — uses similar 2-pole techniques
-- [Indicator Gallery](../gallery.md) • [Native Indicators](native/index.md) • [Ehlers DSP Suite](../ehlers/index.md)
+- [Indicator Gallery](../gallery.md) • [Native Indicators](../native/index.md) • [Ehlers DSP Suite](../ehlers/index.md)
 
 ## Sources & References
 

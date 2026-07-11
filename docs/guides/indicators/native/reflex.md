@@ -108,7 +108,7 @@ All surfaces share the identical `Next<f64>` implementation; parity is proven by
 - [Trendflex](trendflex.md) — the trend counterpart in the same 2020 TradersTips article
 - [Ehlers Stochastic](ehlers_stochastic.md) — another zero-lag cycle tool from the Ehlers family
 - [Market Structure](market_structure.md) — confirm bias before acting on Reflex crosses
-- [Indicator Gallery](../gallery.md) • [Native Indicators](native/index.md)
+- [Indicator Gallery](../gallery.md) • [Native Indicators](../native/index.md)
 - See Ehlers 2020 Traders' Tips article for the original EasyLanguage reference.
 
 ## Sources & References

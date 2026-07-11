@@ -484,7 +484,7 @@ def _application_bullets(rec: IndicatorRecord) -> str:
     if rec.is_pattern:
         bullets = [
             "Scan for completed pattern windows — never act on partial formations",
-            "Combine with [Market Structure](market_structure/) or trend filters in production",
+            "Combine with [Market Structure](../market_structure/) or trend filters in production",
             "Encode signed output (+/−/0) before ML training",
             "Expect false positives in choppy ranges; require volume or HTF confirmation",
         ]
@@ -786,7 +786,7 @@ def render_related(rec: IndicatorRecord) -> str:
         links += [
             "- [Batch vs Streaming guide](../../../examples/batch-streaming.md)",
             "- [RSI](relative_strength_index_rsi.md)",
-            "- [SuperTrend](supertrend/)",
+            "- [SuperTrend](../supertrend/)",
         ]
     return "## Related Indicators & See Also\n\n" + "\n".join(links) + "\n"
 

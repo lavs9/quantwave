@@ -108,10 +108,10 @@ df = df.with_columns(
 
 ## Edge Cases & Limitations
 
-- **Range markets:** Frequent signal-line crossovers without trend — gate with [ADX](average_directional_index_adx/) or [SuperTrend](supertrend/).
+- **Range markets:** Frequent signal-line crossovers without trend — gate with [ADX](../average_directional_index_adx/) or [SuperTrend](../supertrend/).
 - **Warm-up:** Needs `slowperiod + signalperiod` bars for stable signal EMA.
-- **Lag:** Inherent to EMA construction; Ehlers tools ([Cyber Cycle](cyber_cycle/)) offer lower-lag alternatives for timing.
-- **Single price input:** Volume-less; combine with [MFI](money_flow_index_mfi/) or OBV for flow confirmation.
+- **Lag:** Inherent to EMA construction; Ehlers tools ([Cyber Cycle](../cyber_cycle/)) offer lower-lag alternatives for timing.
+- **Single price input:** Volume-less; combine with [MFI](../money_flow_index_mfi/) or OBV for flow confirmation.
 
 ## Boundary Behavior
 
@@ -124,9 +124,9 @@ df = df.with_columns(
 
 ## Related Indicators & See Also
 
-- [PPO](percentage_price_oscillator_ppo/) — percentage-scaled MACD for cross-asset ranks
-- [RSI](relative_strength_index_rsi/) — complementary momentum oscillator
-- [APO](absolute_price_oscillator_apo/) — MACD without signal line
+- [PPO](../percentage_price_oscillator_ppo/) — percentage-scaled MACD for cross-asset ranks
+- [RSI](../relative_strength_index_rsi/) — complementary momentum oscillator
+- [APO](../absolute_price_oscillator_apo/) — MACD without signal line
 - [Multi-Indicator Analysis notebook](../../../examples/notebooks/multi_indicator_analysis.md)
 
 ## Sources & References

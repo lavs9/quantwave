@@ -17,9 +17,9 @@ Cyber Cycle applies a **symmetrical 4-bar FIR smoother** and a second-order IIR 
 Use Cyber Cycle when you need:
 
 - **Cycle timing** — entries/exits around cycle turns in mean-reverting regimes
-- **Regime gating** — suppress cycle trades when [Hurst](hurst_exponent/) or trend tools show persistence
+- **Regime gating** — suppress cycle trades when [Hurst](../hurst_exponent/) or trend tools show persistence
 - **ML features** — rich struct output via `.ta.features.cyber_cycle()` (cycle, trigger, momentum, signal)
-- **Ehlers stacks** — chain with [Roofing Filter](roofing_filter/), [SuperSmoother](super_smoother/), [Instantaneous Trendline](instantaneous_trendline/)
+- **Ehlers stacks** — chain with [Roofing Filter](../roofing_filter/), [SuperSmoother](../super_smoother/), [Instantaneous Trendline](../instantaneous_trendline/)
 
 QuantWave sources the math from Ehlers' *Cybernetic Analysis for Stocks and Futures* (2004), Chapter 4. The streaming indicator returns `(cycle, trigger)`; the feature extractor adds momentum and signal fields for ML pipelines.
 
@@ -114,7 +114,7 @@ See [ML Features → Backtest E2E](../../../examples/notebooks/ml_feature_backte
 - **Trending markets:** Bandpass assumes cyclic component exists — trending data produces drift; gate with trend/regime filters.
 - **Warm-up:** FIR + IIR state needs several bars; early outputs are unstable.
 - **Noisy inputs:** Pre-filter with Roofing or SuperSmoother on very choppy series.
-- **Not a standalone system:** Pair with structure ([Market Structure](market_structure/)) or regime tools.
+- **Not a standalone system:** Pair with structure ([Market Structure](../market_structure/)) or regime tools.
 
 ## Boundary Behavior
 
@@ -128,9 +128,9 @@ See [ML Features → Backtest E2E](../../../examples/notebooks/ml_feature_backte
 ## Related Indicators & See Also
 
 - [Ehlers DSP guide](../ehlers/index.md)
-- [Instantaneous Trendline](instantaneous_trendline/) — complementary trend/cycle separator
-- [Trendflex](trendflex/) — adaptive trend/cycle decomposition
-- [Roofing Filter](roofing_filter/) — recommended pre-filter
+- [Instantaneous Trendline](../instantaneous_trendline/) — complementary trend/cycle separator
+- [Trendflex](../trendflex/) — adaptive trend/cycle decomposition
+- [Roofing Filter](../roofing_filter/) — recommended pre-filter
 - [ML Feature Stability notebook](../../../examples/notebooks/ml_feature_stability.md)
 
 ## Sources & References

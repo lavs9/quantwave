@@ -107,7 +107,7 @@ df = (
 
 - [Cyber Cycle](cyber_cycle.md), [Homodyne Discriminator](homodyne_discriminator.md) — other tools for measuring dominant cycle and regime
 - [Market Structure](market_structure.md) — combine loop shape with confirmed BOS for high-conviction regime calls
-- [Indicator Gallery](../gallery.md) • [Native Indicators](native/index.md)
+- [Indicator Gallery](../gallery.md) • [Native Indicators](../native/index.md)
 - Ehlers Loops are discussed in the June 2022 Traders' Tips and in *Cycle Analytics for Traders*.
 
 ## Sources & References

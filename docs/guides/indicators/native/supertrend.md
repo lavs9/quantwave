@@ -128,7 +128,7 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 ## Edge Cases & Limitations
 
 - **Warm-up:** First `period` bars build ATR state; early values follow core warmup semantics (see Boundary Behavior).
-- **Whipsaws:** Ranging markets produce frequent direction flips — combine with higher-timeframe trend or [Market Structure](market_structure/) filters.
+- **Whipsaws:** Ranging markets produce frequent direction flips — combine with higher-timeframe trend or [Market Structure](../market_structure/) filters.
 - **Gaps:** Overnight gaps can trigger immediate flips; consider execution delay in backtests (`execution_delay="next_bar"`).
 - **Parameter sensitivity:** Lower `multiplier` or `period` increases noise; higher values increase lag.
 - **No look-ahead:** Direction is known only after the bar closes; safe for live streaming and batch features.
@@ -144,9 +144,9 @@ All surfaces are bit-identical via the single `Next<T>` implementation and propt
 
 ## Related Indicators & See Also
 
-- [ATR Trailing Stop](atr_trailing_stop/) — alternative ATR-based exit
-- [Keltner Channels](keltner_channels/) — envelope bands with similar volatility scaling
-- [Parabolic SAR](parabolic_sar/) — complementary stop-and-reverse system
+- [ATR Trailing Stop](../atr_trailing_stop/) — alternative ATR-based exit
+- [Keltner Channels](../keltner_channels/) — envelope bands with similar volatility scaling
+- [Parabolic SAR](../parabolic_sar/) — complementary stop-and-reverse system
 - [Strategy Backtest notebook](../../../examples/notebooks/strategy_backtest.md) — SuperTrend → `.bt` E2E
 - [Indicator Gallery](../gallery.md)
 

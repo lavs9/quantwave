@@ -110,7 +110,7 @@ Parity across surfaces is guaranteed by the single `Next<f64>` source and valida
 - [Cyber Cycle](cyber_cycle.md), [Reflex](reflex.md) — other low-lag cycle tools for confluence
 - [MESA Stochastic](mesa_stochastic.md) — related adaptive stochastic family
 - [Market Structure](market_structure.md) — use BOS/bias to decide long/short bias before reading the stochastic
-- [Indicator Gallery](../gallery.md) • [Native Indicators](native/index.md)
+- [Indicator Gallery](../gallery.md) • [Native Indicators](../native/index.md)
 - Ehlers "Anticipating Turning Points" paper for the original rationale.
 
 ## Sources & References

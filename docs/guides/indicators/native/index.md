@@ -2,7 +2,7 @@
 
 QuantWave ships **221 production-grade native indicators** in Rust with bit-identical batch (Polars `.ta()`) and streaming (`Next<T>`) parity.
 
-Every page follows [Documentation Standards](../../DOCUMENTATION_STANDARDS.md).
+Every page follows [Documentation Standards](../../../DOCUMENTATION_STANDARDS.md).
 
 ## Quick links
 
@@ -11,7 +11,7 @@ Every page follows [Documentation Standards](../../DOCUMENTATION_STANDARDS.md).
 - [Regime Detection](../regimes/index.md)
 - [ldhmm-Style HMM Workflow](../regimes/ldhmm_workflow.md)
 - [ML Features](../../ml_features.md)
-- [Price Action notebook](../../examples/notebooks/pa_flag_breakout_strategy.md)
+- [Price Action notebook](../../../examples/notebooks/pa_flag_breakout_strategy.md)
 
 ## Complete indicator catalog
 

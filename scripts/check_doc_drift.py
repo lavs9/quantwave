@@ -124,6 +124,25 @@ def resolve_doc_link(source: Path, href: str) -> Path | None:
     return (source.parent / href).resolve()
 
 
+def resolve_link(source: Path, href: str) -> Path | None:
+    """Resolve a hub link the way it actually renders.
+
+    MkDocs rewrites ``.md`` links using file-path (source-relative) resolution, so
+    those must resolve from the source file's directory. Bare directory links
+    (``../native/foo/``) are left as-is and resolve in the browser via directory
+    URLs, so those use the page-URL (directory) model. Matching each type keeps
+    this checker in agreement with ``mkdocs build --strict``.
+    """
+    stripped = href.strip()
+    path = stripped.split("#", 1)[0].split("?", 1)[0]
+    # Bare directory links (``foo/``) are left as-is by MkDocs and resolve via
+    # directory URLs. ``.md`` pages and static assets (``foo.png``, ``foo.txt``)
+    # are rewritten by MkDocs using file-path resolution.
+    if path.endswith("/"):
+        return resolve_mkdocs_link(source, stripped)
+    return resolve_doc_link(source, stripped)
+
+
 def is_mkdocs_generated_path(rel: Path) -> bool:
     """Paths materialized only at `mkdocs build` (gen-files), not on disk in CI."""
     normalized = rel.as_posix().strip("/")
@@ -151,12 +170,16 @@ def check_hub_links() -> list[str]:
             continue
         text = hub.read_text(encoding="utf-8")
         for href in LINK_RE.findall(text):
-            target = resolve_mkdocs_link(hub, href)
+            target = resolve_link(hub, href)
             if target is None:
                 continue
             try:
                 rel = target.relative_to(DOCS_ROOT)
             except ValueError:
+                # A .md link that resolves outside docs/ is the extra-`../` bug.
+                failures.append(
+                    f"{hub.relative_to(ROOT)}: broken link `{href}` (escapes docs tree)"
+                )
                 continue
             if is_mkdocs_generated_path(rel):
                 continue
