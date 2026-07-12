@@ -60,7 +60,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Install build tools
-        run: pip install maturin uniffi-bindgen==0.31.0 wheel
+        run: pip install maturin wheel
 
       - name: Build unified wheel (core + backtest + plugins)
         run: python scripts/build_unified_wheel.py --out dist

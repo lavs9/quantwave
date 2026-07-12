@@ -34,7 +34,7 @@ quantwave-core     Next<T> — single mathematical truth
 quantwave-polars   lf.ta.*() + lf.ta.features.*
 quantwave-plugins  Polars expression plugins (zero-copy)
 quantwave-backtest Backtest engine + tearsheets
-quantwave-python   UniFFI + PyO3 Python package
+quantwave-python   PyO3 (abi3) Python package
 ```
 
 ---

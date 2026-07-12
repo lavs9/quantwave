@@ -13,7 +13,6 @@ keywords.workspace = true
 
 [lib]
 name = "quantwave_backtest"
-path = "../quantwave-python/src/backtest.rs"
 crate-type = ["cdylib"]
 
 [dependencies]

@@ -7,7 +7,7 @@ QuantWave's primary credibility claim is **correctness**: one mathematical imple
 ## Coverage snapshot
 
 <!-- VALIDATION:STATS:START -->
-**Last updated:** 2026-07-10T15:39:00Z (UTC)
+**Last updated:** 2026-07-11T10:01:18Z (UTC)
 
 | Metric | Count | Source |
 |--------|------:|--------|
@@ -89,7 +89,7 @@ Dedicated integration tests in `quantwave-core/tests/test_all_talib_parity.rs` a
 
 ## Python cross-language parity
 
-The unified PyPI wheel bundles UniFFI core + PyO3 backtest + Polars plugins. Python gold parity tests assert that **streaming classes** match the same JSON vectors as Rust — catching FFI field swaps, warmup mishandling, or ABI mismatches before release.
+The unified PyPI wheel bundles the PyO3 (abi3) core + backtest + Polars plugins extensions. Python gold parity tests assert that **streaming classes** match the same JSON vectors as Rust — catching FFI field swaps, warmup mishandling, or ABI mismatches before release.
 
 CI runs `tests/python/test_gold_parity.py` on **Linux and macOS** after `maturin develop` (see `.github/workflows/ci.yml`).
 

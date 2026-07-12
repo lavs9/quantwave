@@ -31,7 +31,7 @@ fi
 source .venv/bin/activate
 
 python3 scripts/verify_cache.py ensure pip-deps -- \
-  python3 -m pip install -q pytest polars maturin "uniffi-bindgen==0.31.0" wheel
+  python3 -m pip install -q pytest polars maturin wheel
 
 python3 scripts/verify_cache.py ensure maturin-python -- \
   maturin develop --manifest-path quantwave-python/Cargo.toml --release -q
