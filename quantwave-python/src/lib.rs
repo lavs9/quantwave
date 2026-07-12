@@ -1849,7 +1849,9 @@ pub struct BullBearHMM {
 }
 #[pymethods]
 impl BullBearHMM {
-    #[new]
+    // Named alternate constructor: uniffi exposed `#[uniffi::constructor]`-with-a-name
+    // as a classmethod (`BullBearHmm.bull_bear()`), so it maps to #[staticmethod], not #[new].
+    #[staticmethod]
     pub fn bull_bear() -> Self {
         Self {
             inner: Mutex::new(CoreHMM::bull_bear()),
@@ -2045,7 +2047,8 @@ pub struct GaussianHmmFilterPy {
 }
 #[pymethods]
 impl GaussianHmmFilterPy {
-    #[new]
+    // Named alternate constructor (see BullBearHMM::bull_bear): classmethod, not #[new].
+    #[staticmethod]
     pub fn from_params(params: GaussianHmmParamsPy) -> Self {
         let core_params = core_params_from_py(&params);
         Self {

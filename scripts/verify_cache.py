@@ -87,7 +87,7 @@ IMPORT_CHECKS: dict[str, str] = {
 }
 
 PIP_DEPS_KEY = "pip-deps"
-PIP_DEPS_SPEC = "pytest polars maturin uniffi-bindgen==0.31.0 wheel"
+PIP_DEPS_SPEC = "pytest polars maturin wheel"
 
 
 def cache_enabled() -> bool:
