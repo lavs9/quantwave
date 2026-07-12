@@ -1,28 +1,29 @@
 [package]
-name = "quantwave-plugins"
+name = "quantwave-py"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Polars expression plugins for quantwave"
+description = "Unified PyO3 (abi3) extension for quantwave: indicators, Polars plugins, backtest"
 repository.workspace = true
 homepage.workspace = true
 readme = "../README.md"
-documentation = "https://docs.rs/quantwave-plugins"
 categories.workspace = true
 keywords.workspace = true
 
 [lib]
-name = "quantwave_plugins"
+name = "quantwave_py"
 crate-type = ["cdylib"]
 
 [dependencies]
 quantwave-core = { workspace = true }
+quantwave-backtest = { workspace = true }
 talib-rs = { workspace = true }
 
-polars = { workspace = true }
+polars = { workspace = true, features = ["ipc"] }
 polars-arrow = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 pyo3 = { version = "0.23", features = ["extension-module", "abi3-py39"] }
 pyo3-polars = { version = "0.20", features = ["derive"] }
+paste = "1.0.15"

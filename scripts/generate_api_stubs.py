@@ -9,17 +9,18 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-METADATA_GEN = ROOT / "quantwave-python" / "python" / "quantwave" / "_metadata_generated.py"
+METADATA_GEN = ROOT / "quantwave-py" / "python" / "quantwave" / "_metadata_generated.py"
 REGISTRY_RS = ROOT / "quantwave-core" / "src" / "indicators" / "metadata_registry.rs"
-LIB_RS = ROOT / "quantwave-python" / "src" / "lib.rs"
-PLUGINS_DIR = ROOT / "quantwave-plugins" / "quantwave_plugins"
+LIB_RS = ROOT / "quantwave-py" / "src" / "indicators.rs"
+PLUGINS_DIR = ROOT / "quantwave-py" / "python" / "quantwave"
 ALIASES = ROOT / "scripts" / "api_slug_aliases.json"
 OVERLAY = ROOT / "scripts" / "metadata_overlay.json"
 
-OUT_REGISTRY = ROOT / "quantwave-python" / "python" / "quantwave" / "_ta_registry_generated.py"
-OUT_TA_PYI = ROOT / "quantwave-python" / "python" / "quantwave" / "ta.pyi"
-OUT_PLUGINS_TA_PYI = ROOT / "quantwave-plugins" / "quantwave_plugins" / "ta.pyi"
-OUT_TYPED = ROOT / "quantwave-python" / "python" / "quantwave" / "py.typed"
+OUT_REGISTRY = ROOT / "quantwave-py" / "python" / "quantwave" / "_ta_registry_generated.py"
+OUT_TA_PYI = ROOT / "quantwave-py" / "python" / "quantwave" / "ta.pyi"
+# Unified crate: plugins ta.pyi is the same file as the package ta.pyi.
+OUT_PLUGINS_TA_PYI = OUT_TA_PYI
+OUT_TYPED = ROOT / "quantwave-py" / "python" / "quantwave" / "py.typed"
 
 # ML / PA / regime helpers — explicit surface (not metadata slugs).
 SPECIAL_SYMBOLS: dict[str, str] = {
@@ -334,10 +335,10 @@ def main() -> None:
     registry, unbound = build_registry()
     OUT_REGISTRY.write_text(render_registry_py(registry, unbound), encoding="utf-8")
     OUT_TA_PYI.write_text(render_quantwave_ta_pyi(registry), encoding="utf-8")
-    OUT_PLUGINS_TA_PYI.write_text(render_plugins_ta_pyi(parse_plugin_signatures()), encoding="utf-8")
+    # Unified crate: OUT_PLUGINS_TA_PYI == OUT_TA_PYI, so no separate plugins stub write.
     OUT_TYPED.write_text("", encoding="utf-8")
     print(f"Wrote TA registry ({len(registry)} slugs, {len(unbound)} unbound) -> {OUT_REGISTRY}")
-    print(f"Wrote stubs -> {OUT_TA_PYI}, {OUT_PLUGINS_TA_PYI}")
+    print(f"Wrote stubs -> {OUT_TA_PYI}")
     if unbound:
         print("Unbound slugs:", ", ".join(unbound[:12]), ("..." if len(unbound) > 12 else ""))
 

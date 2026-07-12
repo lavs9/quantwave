@@ -71,7 +71,6 @@ wait_for_crate quantwave-core "${VERSION}"
 
 # 2. Crates that depend only on core
 publish_crate quantwave-backtest
-publish_crate quantwave-plugins
 wait_for_crate quantwave-backtest "${VERSION}"
 
 # 3. Polars integration (depends on core + backtest)

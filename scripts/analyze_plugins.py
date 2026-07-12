@@ -2,7 +2,7 @@ import os
 import re
 
 POLARS_LIB_PATH = "quantwave-polars/src/lib.rs"
-PLUGINS_SRC_DIR = "quantwave-plugins/src/"
+PLUGINS_SRC_DIR = "quantwave-py/src/plugins/"
 
 implemented = set()
 for file in os.listdir(PLUGINS_SRC_DIR):

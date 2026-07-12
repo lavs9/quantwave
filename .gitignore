@@ -43,3 +43,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Compiled PyO3 extension (maturin develop drops it into the package dir)
+*.abi3.so
+*.so
+quantwave-py/python/quantwave/*.so
+

@@ -63,7 +63,7 @@ jobs:
         run: pip install maturin wheel
 
       - name: Build unified wheel (core + backtest + plugins)
-        run: python scripts/build_unified_wheel.py --out dist
+        run: maturin build --release --manifest-path quantwave-py/Cargo.toml --out dist
         env:
           MACOSX_DEPLOYMENT_TARGET: "11.0"
 

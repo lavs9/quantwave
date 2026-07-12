@@ -5,7 +5,7 @@ Generate Python indicator metadata from Rust IndicatorMetadata registry.
 Pipeline:
   1. scripts/regenerate_metadata_registry.py  (Rust registry from *_METADATA consts)
   2. cargo run -p quantwave-core --bin export_metadata  (JSON on stdout)
-  3. This script  -> quantwave-python/python/quantwave/_metadata_generated.py
+  3. This script  -> quantwave-py/python/quantwave/_metadata_generated.py
 
 Hand-curated overrides live in scripts/metadata_overlay.json (data_inputs, outputs,
 warmup_bars, slug aliases). The main _metadata.py merges generated + hand entries.
@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "quantwave-python" / "python" / "quantwave" / "_metadata_generated.py"
+OUT = ROOT / "quantwave-py" / "python" / "quantwave" / "_metadata_generated.py"
 OVERLAY = ROOT / "scripts" / "metadata_overlay.json"
 
 # Rust param names -> Python param names

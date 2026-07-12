@@ -10,7 +10,6 @@ Two workflows. Everything else was merged here for clarity.
 changes ──┬──► sanity (always)
           ├──► rust-gate (Rust paths changed)
           ├──► python-gold-parity (Linux + macOS, Python/gold paths changed)
-          ├──► plugins (quantwave-plugins/ changed)
           └──► deploy-docs (main push only, after sanity)
 ```
 
@@ -18,8 +17,7 @@ changes ──┬──► sanity (always)
 |-----|----------------|------|
 | **Doc & metadata sanity** | metadata/doc/benchmark/hygiene drift checks | Always (~1 min) |
 | **Rust quality gate** | `cargo fmt --check`, `cargo clippy -D warnings`, `cargo nextest` (core/polars/backtest) | `**/*.rs`, `Cargo.*` changed, or manual dispatch |
-| **Python gold parity** | 25+ streaming indicators vs `gold_standard/*.json` | `tests/python`, `quantwave-python`, gold fixtures changed |
-| **Plugin wheels** | Build `quantwave-plugins` wheel + pytest | `quantwave-plugins/**` changed, or manual dispatch |
+| **Python gold parity** | 25+ streaming indicators vs `gold_standard/*.json` | `tests/python`, `quantwave-py`, gold fixtures changed |
 | **Deploy docs** | mkdocs → GitHub Pages | `main` push only, after sanity |
 
 **Full quality gate (local, pre-push):** `./scripts/install-git-hooks.sh` — superset of CI (unified wheel + full pytest).  
@@ -35,8 +33,8 @@ publish-rust ──► build-python-wheels (matrix) ──► verify-python-whee
 
 | Job | What |
 |-----|------|
-| **Publish Rust crates** | `scripts/publish_crates.sh` — core → backtest/plugins → polars → quantwave (idempotent) |
-| **Python wheels** | Unified wheel via `scripts/build_unified_wheel.py` (core + backtest + plugins) on linux x64, linux arm64, macOS, Windows |
+| **Publish Rust crates** | `scripts/publish_crates.sh` — core → backtest → polars → quantwave (idempotent) |
+| **Python wheels** | Unified wheel via `maturin build --manifest-path quantwave-py/Cargo.toml` (core + backtest + plugins) on linux x64, linux arm64, macOS, Windows |
 | **Verify wheel** | Import + RSI smoke on Python 3.9 / 3.11 / 3.12 / 3.13 |
 | **Publish Python** | `pypa/gh-action-pypi-publish` via PyPI OIDC trusted publisher (no API token) |
 

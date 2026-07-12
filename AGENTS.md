@@ -8,7 +8,8 @@ The project is structured as a Rust workspace to maximize modularity and perform
 
 - **`quantwave-core`**: The engine containing core traits (`Next<T>`), state machines, and streaming implementations.
 - **`quantwave-polars`**: High-level Polars integration providing the `.ta()` namespace on LazyFrames and Series.
-- **`quantwave-plugins`**: Native Polars Expression Plugins (UDFs) for zero-copy, high-performance vectorized calculations.
+- **`quantwave-backtest`**: Vectorized/streaming backtest engine + performance metrics.
+- **`quantwave-py`**: The single PyO3 (abi3) extension. One cdylib exposes the indicator classes/batch fns (`quantwave._quantwave`), the backtest bindings (`quantwave._backtest`), and the native `#[polars_expr]` plugins behind the `pl.col().ta` namespace. Built with one `maturin build` → one `cp39-abi3` wheel (no wheel-merge step).
 
 ## 🛠 Building and Running
 

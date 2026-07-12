@@ -45,5 +45,5 @@ Repository = "https://github.com/lavs9/quantwave"
 "Bug Tracker" = "https://github.com/lavs9/quantwave/issues"
 
 [tool.maturin]
-module-name = "quantwave._quantwave"
+module-name = "quantwave._lib"
 python-source = "python"

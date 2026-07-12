@@ -88,7 +88,7 @@ if [[ "$SKIP_WHEEL" -eq 0 ]]; then
   run_cached wheel bash -c '
     echo "-- unified PyPI wheel build + smoke test"
     python3 -m pip install -q wheel maturin 2>/dev/null || true
-    python3 scripts/build_unified_wheel.py --out dist
+    maturin build --release --manifest-path quantwave-py/Cargo.toml --out dist
     WHEEL="$(ls -t dist/quantwave-*.whl 2>/dev/null | head -1)"
     test -n "$WHEEL" || { echo "no quantwave wheel in dist/"; exit 1; }
     python3 scripts/pypi_smoke_test.py "$WHEEL"
@@ -100,15 +100,8 @@ if [[ "$SKIP_PYTHON" -eq 0 ]]; then
     echo "-- pytest (Python DX + backtest smoke)"
     python3 -m pytest \
       tests/python/test_gold_parity.py \
-      quantwave-python/tests/test_python_dx.py \
-      quantwave-python/tests/test_warmup_options.py \
-      quantwave-python/tests/test_metadata_codegen.py \
-      quantwave-python/tests/test_streaming_readiness.py \
-      quantwave-python/tests/test_backtest.py \
-      quantwave-python/tests/test_tier2.py \
-      quantwave-python/tests/test_frac_diff.py \
-      quantwave-python/tests/test_tearsheet.py \
-      quantwave-python/tests/test_portfolio_backtest.py \
+      tests/options_india \
+      tests/python/plugins \
       -q
   '
 fi

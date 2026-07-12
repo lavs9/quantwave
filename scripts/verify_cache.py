@@ -33,7 +33,7 @@ STEP_PATHS: dict[str, list[str]] = {
         "docs/upgrade_to_standards.py",
         "docs",
         "quantwave-core/src/metadata.rs",
-        "quantwave-python/python/quantwave/metadata.py",
+        "quantwave-py/python/quantwave/metadata.py",
     ],
     "rust": [
         "quantwave-core",
@@ -43,47 +43,29 @@ STEP_PATHS: dict[str, list[str]] = {
         "Cargo.lock",
     ],
     "maturin-python": [
-        "quantwave-python",
+        "quantwave-py",
         "quantwave-core",
-        "Cargo.toml",
-        "Cargo.lock",
-    ],
-    "maturin-backtest": [
-        "quantwave-backtest-py",
         "quantwave-backtest",
-        "quantwave-python/src/backtest.rs",
-        "Cargo.toml",
-        "Cargo.lock",
-    ],
-    "maturin-plugins": [
-        "quantwave-plugins",
-        "quantwave-core",
         "Cargo.toml",
         "Cargo.lock",
     ],
     "wheel": [
-        "quantwave-python",
-        "quantwave-backtest-py",
-        "quantwave-plugins",
+        "quantwave-py",
         "quantwave-core",
         "quantwave-backtest",
-        "scripts/build_unified_wheel.py",
         "scripts/pypi_smoke_test.py",
         "Cargo.toml",
         "Cargo.lock",
     ],
     "pytest": [
-        "quantwave-python/tests",
-        "quantwave-python/python",
-        "quantwave-backtest-py",
-        "quantwave-plugins",
+        "quantwave-py/python",
+        "tests/python",
+        "tests/options_india",
     ],
 }
 
 IMPORT_CHECKS: dict[str, str] = {
-    "maturin-python": "import quantwave",
-    "maturin-backtest": "import quantwave._backtest",
-    "maturin-plugins": "import quantwave_plugins",
+    "maturin-python": "import quantwave; import quantwave._backtest",
 }
 
 PIP_DEPS_KEY = "pip-deps"
@@ -206,8 +188,6 @@ def cmd_status(_: argparse.Namespace) -> int:
         "metadata",
         "rust",
         "maturin-python",
-        "maturin-backtest",
-        "maturin-plugins",
         "wheel",
         "pytest",
     ]:

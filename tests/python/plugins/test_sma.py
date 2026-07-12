@@ -1,5 +1,5 @@
 import polars as pl
-import quantwave_plugins
+import quantwave
 import math
 
 def test_sma():

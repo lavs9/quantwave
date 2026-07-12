@@ -42,7 +42,7 @@ check_tree() {
   fi
 }
 
-for pkg in quantwave quantwave-backtest quantwave-polars quantwave-plugins quantwave-python quantwave-xtask; do
+for pkg in quantwave quantwave-backtest quantwave-polars quantwave-py quantwave-xtask; do
   echo "-- rustfmt check: $pkg"
   cargo fmt -p "$pkg" -- --check
 done

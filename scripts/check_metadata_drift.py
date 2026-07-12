@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TRACKED = [
     ROOT / "quantwave-core/src/indicators/metadata_registry.rs",
-    ROOT / "quantwave-python/python/quantwave/_metadata_generated.py",
+    ROOT / "quantwave-py/python/quantwave/_metadata_generated.py",
 ]
 
 

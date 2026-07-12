@@ -10,15 +10,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 # Crate / package names — not tracker IDs.
-_CRATE_NAMES = frozenset({"core", "plugins", "python", "backtest", "polars"})
+_CRATE_NAMES = frozenset({"core", "plugins", "python", "py", "backtest", "polars"})
 
 BEAD_RE = re.compile(
     r"\bquantwave-(?!(?:" + "|".join(_CRATE_NAMES) + r")\b)[a-z][a-z0-9]{1,4}\b"
 )
 
 SCAN_ROOTS = (
-    ROOT / "quantwave-python" / "python",
-    ROOT / "quantwave-plugins" / "quantwave_plugins",
+    ROOT / "quantwave-py" / "python",
     ROOT / "docs",
 )
 
