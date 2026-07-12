@@ -242,6 +242,24 @@ for _pub, _native in SPECIAL_SYMBOLS.items():
             stacklevel=1,
         )
 
+# Backward-compat: expose native symbols at the top level by their exact native
+# name — streaming classes (``qw.FracDiff``, ``qw.SuperTrend``) and batch functions
+# (``qw.fracdiff``, ``qw.rsi``). The slug-based ``.ta`` bindings above take
+# precedence (we never overwrite an existing name); result records / errors are
+# skipped via ``_is_internal_symbol``. Iterating ``dir(_quantwave)`` keeps this in
+# sync as new indicators are added, restoring the aliases the old hardcoded
+# ``class ta:`` used to provide.
+for _native_name in dir(_quantwave):
+    if _native_name.startswith("_") or _native_name in globals():
+        continue
+    if _is_internal_symbol(_native_name) or _native_name in _OPTIONS_SYMBOLS:
+        # Options helpers stay deprecated-only at the top level (routed through
+        # __getattr__ so ``qw.bs_call_price`` still warns); use ``qw.options.*``.
+        continue
+    _native_obj = getattr(_quantwave, _native_name)
+    if callable(_native_obj):
+        globals()[_native_name] = _native_obj
+
 # --- Basic Discovery API ---
 
 def _build_indicator_names() -> set[str]:
