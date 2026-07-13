@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0] - 2026-07-13
+
+### Added
+- **Complete classic TA-Lib surface** (`quantwave.talib`): **161** functions, up from 8 — RSI, MACD, SMA, EMA, ATR, ADX, BBANDS, STOCH, OBV, all 61 candlestick patterns, and the math/price transforms. The classic array-in/array-out API (`talib.RSI(close, timeperiod=14)`, multi-output tuples, OHLC/candlestick inputs) delegates to the Polars `.ta` plugins, so values are the talib-rs-parity-tested Rust results. (`quantwave-yp9a`)
+- Top-level native symbol access restored: `qw.FracDiff`, `qw.fracdiff`, `qw.rsi`, `qw.SuperTrend`, … bind alongside the slug-based `qw.ta` namespace.
+
+### Changed
+- **Unified the Python FFI on PyO3 (abi3), retiring uniffi.** The indicator bindings, the Polars expression plugins, and the backtest engine are now a **single** PyO3 `abi3-py39` extension in one crate (`quantwave-py`) producing one cdylib — a single `maturin build` yields one `cp39-abi3` wheel with no wheel-merge step. (`quantwave-5ipk.10`, `quantwave-6dgg`)
+- Collapsed the three PyO3 crates (`quantwave-python`, `quantwave-plugins`, `quantwave-backtest-py`) into `quantwave-py`; deleted `scripts/build_unified_wheel.py` and consolidated to one `pyproject.toml`.
+
+### Fixed
+- **Wheel tag / install correctness**: the published wheel is now `cp39-abi3` and installs correctly on **CPython 3.9–3.13**. 0.6.1 shipped a `py3-none` wheel bundling CPython-3.12-only extensions, which broke `pip install` on 3.9/3.10/3.11/3.13. (`quantwave-9gek.1`)
+
 ## [0.6.0] - 2026-06-28
 
 ### Added
