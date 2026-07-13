@@ -16,6 +16,18 @@ PARITY_FILES = (
 # test_macdext_parity_auto -> macdext; test_cdldoji_parity_auto -> cdldoji
 TEST_FN_RE = re.compile(r"fn\s+test_([a-z0-9_]+)_parity")
 
+# Canonical TA-Lib indicators that quantwave implements (exposed via the Polars `.ta`
+# namespace) but that are validated by gold-standard vectors rather than talib-rs
+# parity tests, so they are not discovered by the parity-test harvest above. Without
+# these the classic `quantwave.talib` surface would be missing RSI/MACD/SMA/... The
+# `quantwave.talib` wrapper binds only the subset actually present as `.ta` methods,
+# so listing a name here that isn't implemented is harmless. (quantwave-yp9a)
+CORE_TALIB_SLUGS = {
+    "rsi", "macd", "sma", "ema", "wma", "dema", "tema", "trima", "kama", "mama",
+    "t3", "bbands", "atr", "natr", "trange", "adx", "stoch", "obv", "ad", "avgprice",
+    "medprice", "beta", "correl", "linearreg", "stddev", "tsf", "var", "ht_dcperiod",
+}
+
 
 def slug_to_talib(slug: str) -> str:
     """Map quantwave slug to TA-Lib uppercase export name."""
@@ -37,6 +49,7 @@ def harvest() -> dict[str, str]:
             if slug.endswith("_auto"):
                 slug = slug[: -len("_auto")]
             slugs.add(slug)
+    slugs |= CORE_TALIB_SLUGS
     return {slug: slug_to_talib(slug) for slug in sorted(slugs)}
 
 
