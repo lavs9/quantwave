@@ -33,6 +33,8 @@ Exception contract (``quantwave.QuantwaveError`` hierarchy):
 ``StreamingError``, and ``InternalError`` (native FFI). See ``quantwave._errors``.
 """
 
+from __future__ import annotations  # PEP 604 (str | None) annotations on Python 3.9
+
 from typing import List, Dict, Any
 import warnings
 
