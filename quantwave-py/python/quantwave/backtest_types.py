@@ -28,9 +28,17 @@ class PerformanceMetrics:
         
     def keys(self):
         return self.as_dict().keys()
-        
+
     def __getitem__(self, key: str):
         return getattr(self, key)
+
+    def __contains__(self, key: object) -> bool:
+        # Without this, ``"x" in metrics`` falls back to integer-index iteration
+        # via __getitem__ (getattr(self, 0)) and raises TypeError.
+        return isinstance(key, str) and key in self.as_dict()
+
+    def __iter__(self):
+        return iter(self.keys())
 
 @dataclass(frozen=True)
 class BacktestStats:
@@ -50,6 +58,12 @@ class BacktestStats:
         
     def keys(self):
         return self.as_dict().keys()
-        
+
     def __getitem__(self, key: str):
         return getattr(self, key)
+
+    def __contains__(self, key: object) -> bool:
+        return isinstance(key, str) and key in self.as_dict()
+
+    def __iter__(self):
+        return iter(self.keys())

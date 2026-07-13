@@ -1883,6 +1883,30 @@ pub struct GaussianHmmParamsPy {
     /// Per-state λ (empty → 1.0 per state, Gaussian mode).
     pub lambdas: Vec<f64>,
 }
+#[pymethods]
+impl GaussianHmmParamsPy {
+    // Constructable from Python (input params, not a read-only result record):
+    // `qw.GaussianHmmParamsPy(n_states, delta, gamma_flat, means, stds, lambdas=[])`.
+    #[new]
+    #[pyo3(signature = (n_states, delta, gamma_flat, means, stds, lambdas = Vec::new()))]
+    pub fn new(
+        n_states: u32,
+        delta: Vec<f64>,
+        gamma_flat: Vec<f64>,
+        means: Vec<f64>,
+        stds: Vec<f64>,
+        lambdas: Vec<f64>,
+    ) -> Self {
+        Self {
+            n_states,
+            delta,
+            gamma_flat,
+            means,
+            stds,
+            lambdas,
+        }
+    }
+}
 
 #[pyclass(get_all)]
 #[derive(Clone)]
