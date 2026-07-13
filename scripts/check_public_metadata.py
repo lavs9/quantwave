@@ -13,8 +13,8 @@ METADATA_FILE = ROOT / "metadata_export.json"
 # User-facing files that must not advertise stale indicator counts.
 PUBLIC_FILES = [
     ROOT / "README.md",
-    ROOT / "quantwave-python" / "README.md",
-    ROOT / "quantwave-python" / "pyproject.toml",
+    ROOT / "quantwave-py" / "README.md",
+    ROOT / "quantwave-py" / "pyproject.toml",
     ROOT / "docs" / "llms.txt",
 ]
 
@@ -92,7 +92,6 @@ def main() -> None:
     docs_rs_fields = [
         ROOT / "quantwave-core" / "Cargo.toml",
         ROOT / "quantwave-polars" / "Cargo.toml",
-        ROOT / "quantwave-plugins" / "Cargo.toml",
         ROOT / "quantwave-backtest" / "Cargo.toml",
         ROOT / "quantwave" / "Cargo.toml",
     ]

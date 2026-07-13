@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 HARVEST = ROOT / "docs" / "generated" / "talib_map.json"
-OUT = ROOT / "quantwave-python" / "python" / "quantwave" / "_talib_map_generated.py"
+OUT = ROOT / "quantwave-py" / "python" / "quantwave" / "_talib_map_generated.py"
 
 
 def main() -> int:

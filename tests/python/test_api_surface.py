@@ -16,7 +16,7 @@ from quantwave._ta_registry_generated import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-INIT_PY = ROOT / "quantwave-python" / "python" / "quantwave" / "__init__.py"
+INIT_PY = ROOT / "quantwave-py" / "python" / "quantwave" / "__init__.py"
 
 
 def _ta_indicator_attrs() -> set[str]:
@@ -50,9 +50,8 @@ def test_indicators_matches_registry():
 
 
 def test_pyi_stubs_exist():
-    pkg = ROOT / "quantwave-python" / "python" / "quantwave"
-    plugins = ROOT / "quantwave-plugins" / "quantwave_plugins"
-    for path in (pkg / "ta.pyi", plugins / "ta.pyi", pkg / "py.typed"):
+    pkg = ROOT / "quantwave-py" / "python" / "quantwave"
+    for path in (pkg / "ta.pyi", pkg / "py.typed"):
         assert path.is_file(), f"missing stub marker {path}"
 
 

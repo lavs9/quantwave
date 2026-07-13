@@ -120,10 +120,10 @@ def _cmd_doctor(_args: argparse.Namespace) -> int:
         check("backtest native (_backtest)", lambda: __import__("quantwave._backtest"))
         check("Polars .bt namespace", lambda: getattr(pl.LazyFrame({"a": [1]}).lazy(), "bt"))
         try:
-            import quantwave_plugins  # noqa: F401
+            from quantwave import _ta_namespace  # noqa: F401
             print("  ✓ Polars expression plugins (pl.col().ta)")
         except ImportError:
-            print("  ✗ quantwave_plugins missing — reinstall quantwave wheel (unified build)")
+            print("  ✗ .ta namespace missing — reinstall quantwave wheel (unified build)")
             ok = False
 
     if ok:

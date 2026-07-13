@@ -1,5 +1,5 @@
 import polars as pl
-import quantwave_plugins
+import quantwave  # registers pl.col().ta
 import pytest
 
 def test_generated_math_transforms():

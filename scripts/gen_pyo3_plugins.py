@@ -2,7 +2,7 @@ import os
 import re
 
 POLARS_LIB_PATH = "quantwave-polars/src/lib.rs"
-PLUGINS_SRC_DIR = "quantwave-plugins/src/"
+PLUGINS_SRC_DIR = "quantwave-py/src/plugins/"
 
 with open(POLARS_LIB_PATH, "r") as f:
     polars_content = f.read()
@@ -180,5 +180,5 @@ fn {m}(inputs: &[Series]) -> PolarsResult<Series> {{
 }}
 """
 
-with open("quantwave-plugins/src/generated.rs", "w") as f:
+with open("quantwave-py/src/plugins/generated.rs", "w") as f:
     f.write(rust_code)

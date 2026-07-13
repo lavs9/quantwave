@@ -234,12 +234,9 @@ fn bbands(inputs: &[Series], kwargs: BbandsKwargs) -> PolarsResult<Series> {
     Ok(out.into_series())
 }
 
-#[pymodule]
-#[pyo3(name = "quantwave_plugins")]
-fn quantwave_plugins(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
-    Ok(())
-}
+// (The former `quantwave_plugins` #[pymodule] only added a version string; the real
+// surface is the #[polars_expr] C symbols compiled into the cdylib, discovered by
+// Polars via plugin_path. Nothing to register here.)
 pub mod custom;
 pub mod custom_0;
 pub mod custom_1;

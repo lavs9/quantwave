@@ -9,10 +9,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TRACKED = [
-    ROOT / "quantwave-python/python/quantwave/_ta_registry_generated.py",
-    ROOT / "quantwave-python/python/quantwave/ta.pyi",
-    ROOT / "quantwave-plugins/quantwave_plugins/ta.pyi",
-    ROOT / "quantwave-python/python/quantwave/py.typed",
+    ROOT / "quantwave-py/python/quantwave/_ta_registry_generated.py",
+    ROOT / "quantwave-py/python/quantwave/ta.pyi",
+    ROOT / "quantwave-py/python/quantwave/py.typed",
 ]
 
 

@@ -1893,16 +1893,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "quantwave-backtest-py"
-version = "0.6.1"
-dependencies = [
- "polars",
- "pyo3",
- "pyo3-polars",
- "quantwave-backtest",
-]
-
-[[package]]
 name = "quantwave-core"
 version = "0.6.1"
 dependencies = [
@@ -1922,20 +1912,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "quantwave-plugins"
-version = "0.6.1"
-dependencies = [
- "polars",
- "polars-arrow",
- "pyo3",
- "pyo3-polars",
- "quantwave-core",
- "serde",
- "serde_json",
- "talib-rs",
-]
-
-[[package]]
 name = "quantwave-polars"
 version = "0.6.1"
 dependencies = [
@@ -1948,12 +1924,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "quantwave-python"
+name = "quantwave-py"
 version = "0.6.1"
 dependencies = [
  "paste",
+ "polars",
+ "polars-arrow",
  "pyo3",
+ "pyo3-polars",
+ "quantwave-backtest",
  "quantwave-core",
+ "serde",
+ "serde_json",
+ "talib-rs",
 ]
 
 [[package]]

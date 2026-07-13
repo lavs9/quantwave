@@ -7,8 +7,7 @@
 #   1. sanity        — fast metadata + doc drift checks (~1 min)
 #   2. rust-gate     — fmt + clippy + nextest (core/polars/backtest) when Rust sources change
 #   3. python-gold   — gold-vector streaming parity (Linux + macOS)
-#   4. plugins       — plugin wheel smoke test (only when quantwave-plugins/ changes)
-#   5. docs          — mkdocs gh-pages deploy (main branch only)
+#   4. docs          — mkdocs gh-pages deploy (main branch only)
 #
 # Release (crates.io + PyPI) is a separate workflow: release.yml on v* tags.
 
@@ -46,8 +45,7 @@ jobs:
             python_gold:
               - 'tests/python/**'
               - 'tests/options_india/**'
-              - 'quantwave-python/**'
-              - 'quantwave-plugins/**'
+              - 'quantwave-py/**'
               - 'quantwave-core/src/options_india/**'
               - 'quantwave-core/tests/gold_standard/**'
               - '.github/workflows/ci.yml'
@@ -130,63 +128,26 @@ jobs:
           source .venv/bin/activate
           pip install maturin pytest numpy polars
 
-      - name: Build quantwave + plugins (editable)
+      - name: Build quantwave (editable)
         run: |
           source .venv/bin/activate
-          maturin develop --release --manifest-path quantwave-python/Cargo.toml
-          maturin develop --release --manifest-path quantwave-plugins/Cargo.toml
+          maturin develop --release --manifest-path quantwave-py/Cargo.toml
 
       - name: Gold-standard streaming parity
         run: |
           source .venv/bin/activate
           python -m pytest tests/python/test_gold_parity.py -q
 
+      - name: Polars .ta plugin surface (unified crate)
+        run: |
+          source .venv/bin/activate
+          python -m pytest tests/python/plugins -q
+
       - name: Options India analytics parity + docstrings
         run: |
           source .venv/bin/activate
           python -m pytest tests/options_india \
-            --doctest-modules quantwave-python/python/quantwave/polars.py -q
-
-  plugins:
-    name: Plugin wheels
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: dorny/paths-filter@v3
-        id: changes
-        with:
-          filters: |
-            plugins:
-              - 'quantwave-plugins/**'
-
-      - uses: actions/setup-python@v5
-        if: steps.changes.outputs.plugins == 'true' || github.event_name == 'workflow_dispatch'
-        with:
-          python-version: "3.12"
-
-      - uses: dtolnay/rust-toolchain@stable
-        if: steps.changes.outputs.plugins == 'true' || github.event_name == 'workflow_dispatch'
-
-      - name: Build plugin wheel
-        if: steps.changes.outputs.plugins == 'true' || github.event_name == 'workflow_dispatch'
-        uses: PyO3/maturin-action@v1
-        with:
-          command: build
-          args: --release --manifest-path quantwave-plugins/Cargo.toml --out dist
-
-      - name: Test plugin wheel
-        if: steps.changes.outputs.plugins == 'true' || github.event_name == 'workflow_dispatch'
-        run: |
-          pip install polars pytest
-          pip install dist/*.whl
-          pytest quantwave-plugins/tests -q
-
-      - name: Skipped (no plugin changes)
-        if: steps.changes.outputs.plugins != 'true' && github.event_name != 'workflow_dispatch'
-        run: echo "quantwave-plugins/ unchanged — plugin wheel job skipped."
+            --doctest-modules quantwave-py/python/quantwave/polars.py -q
 
   deploy-docs:
     name: Deploy docs

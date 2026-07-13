@@ -440,8 +440,7 @@ fn run_walk_forward_optimize_py(
 }
 
 /// Native backtest engine (PyO3 + pyo3-polars).
-#[pymodule]
-fn _backtest(m: &Bound<'_, PyModule>) -> PyResult<()> {
+pub fn register(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyBacktestConfig>()?;
     m.add_class::<PyBacktestEngine>()?;
     m.add_class::<PyBacktestResult>()?;

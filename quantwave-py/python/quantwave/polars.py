@@ -44,9 +44,9 @@ def _as_expr(arg: Union[str, pl.Expr, float, int]) -> Union[pl.Expr, float, int]
 
 
 def _plugin_path() -> Path:
-    import quantwave_plugins
-
-    return Path(quantwave_plugins.__file__).resolve().parent
+    # Unified extension (_lib) and the .ta registration modules live in this
+    # package directory; the plugin .so is discovered here.
+    return Path(__file__).resolve().parent
 
 
 def _options_plugin(

@@ -9,7 +9,6 @@ import sys
 def main() -> int:
     import polars as pl
     import quantwave  # noqa: F401 — registers .ta namespace
-    import quantwave_plugins  # noqa: F401
 
     names = quantwave.indicators()
     if not names:

@@ -43,6 +43,11 @@ try:
 except (PackageNotFoundError, Exception):
     __version__ = "0.6.0.dev"
 
+# Unified compiled extension: importing it registers the
+# `_quantwave` (indicators) and `_backtest` submodules into sys.modules, so the
+# historical `from . import _quantwave` / `_backtest` imports keep working.
+from . import _lib  # noqa: F401
+
 # Core compiled extension
 from . import _quantwave  # noqa
 
@@ -78,13 +83,15 @@ if _backtest_available:
             f"use `pip install \"quantwave[polars]\"`): {_e}"
         )
 
-# Polars expression plugins — bundled in unified wheel; registers pl.col().ta.
+# Polars expression plugins — the pl.col().ta namespace is registered by importing
+# the in-package TaNamespace module; the plugin symbols live in the unified _lib
+# extension (formerly the separate quantwave_plugins package).
 try:
-    import quantwave_plugins  # noqa: F401
+    from . import _ta_namespace  # noqa: F401
 except ImportError:
     pass
 except Exception as _e:  # pragma: no cover
-    warnings.warn(f"quantwave_plugins unavailable: {_e}")
+    warnings.warn(f"quantwave .ta namespace unavailable: {_e}")
 
 # Backtest Python API (PyO3 + pyo3-polars; requires polars extra).
 try:

@@ -30,11 +30,11 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python benchmark deps
-        run: pip install polars pandas numpy psutil maturin wheel "uniffi-bindgen==0.31.0"
+        run: pip install polars pandas numpy psutil maturin wheel
 
       - name: Build and install quantwave wheel
         run: |
-          python scripts/build_unified_wheel.py --out dist
+          maturin build --release --manifest-path quantwave-py/Cargo.toml --out dist
           pip install dist/quantwave-*.whl "polars>=1.20.0,<2.0.0"
 
       - name: Run benchmark harness (1M rows)

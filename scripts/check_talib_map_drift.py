@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-GENERATED = ROOT / "quantwave-python" / "python" / "quantwave" / "_talib_map_generated.py"
+GENERATED = ROOT / "quantwave-py" / "python" / "quantwave" / "_talib_map_generated.py"
 HARVEST = ROOT / "docs" / "generated" / "talib_map.json"
 
 

@@ -2,7 +2,7 @@ import os
 import re
 
 POLARS_LIB_PATH = "quantwave-polars/src/lib.rs"
-PYTHON_INIT_PATH = "quantwave-plugins/quantwave_plugins/__init__.py"
+PYTHON_INIT_PATH = "quantwave-py/python/quantwave/_ta_namespace.py"
 
 with open(POLARS_LIB_PATH, "r") as f:
     polars_content = f.read()
