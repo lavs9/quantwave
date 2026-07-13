@@ -25,9 +25,11 @@ from __future__ import annotations
 import inspect
 from typing import Any, Callable, Dict, List, Optional
 
-import numpy as np
-
 from quantwave._talib_map_generated import TALIB_SLUG_TO_NAME as _TALIB_MAP
+
+# numpy is imported lazily (inside the wrappers) so that `import quantwave` — and the
+# rest of quantwave.talib's discovery API (list_functions) — work without numpy
+# installed. Calling a talib function does require numpy (classic array in/out).
 
 # Canonical TA-Lib price-input order. Multi-input functions receive their arrays in
 # this order (subset), matching classic talib (e.g. ATR(high, low, close)).
@@ -148,6 +150,8 @@ def _make_wrapper(talib_name: str, method_name: str) -> Callable[..., Any]:
     spec = _Signature(method_name)
 
     def wrapper(*arrays, **kwargs):
+        import numpy as np  # lazy: classic talib API is numpy-based
+
         if len(arrays) != len(spec.input_roles):
             raise TypeError(
                 f"{talib_name} expects {len(spec.input_roles)} input array(s) "
