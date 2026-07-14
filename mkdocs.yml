@@ -83,6 +83,7 @@ nav:
       - ML Features: guides/ml_features.md
       - Plugin vs .ta: guides/plugin_vs_ta.md
       - Options India: guides/options_india.md
+      - TA-Lib Migration: guides/talib_migration.md
   - Backtest:
       - Overview: guides/backtest/index.md
       - Quickstart: guides/backtest/quickstart.md
