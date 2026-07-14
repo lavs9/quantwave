@@ -19,11 +19,7 @@ fn registry_len_matches_declared_count() {
 fn every_entry_is_well_formed() {
     for m in ALL_INDICATOR_METADATA {
         assert!(!m.name.trim().is_empty(), "indicator has empty name");
-        assert!(
-            !m.category.trim().is_empty(),
-            "{}: empty category",
-            m.name
-        );
+        assert!(!m.category.trim().is_empty(), "{}: empty category", m.name);
         assert!(
             !m.description.trim().is_empty(),
             "{}: empty description",
