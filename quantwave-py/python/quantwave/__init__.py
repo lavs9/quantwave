@@ -552,6 +552,18 @@ from .features import (
     feature_column_names,
 )
 
+# TA-Lib abstract-API-style introspection (imported after metadata + talib are
+# loaded). `quantwave.abstract.Function(name)` + top-level get_functions /
+# get_function_groups let tools drive every indicator generically.
+try:
+    from . import abstract
+    from .abstract import get_functions, get_function_groups
+except Exception as _e:  # pragma: no cover
+    warnings.warn(f"quantwave.abstract introspection unavailable: {_e}")
+
+    class _DummyNS: pass
+    abstract = _DummyNS()
+
 
 def __getattr__(name: str):
     """Deprecated top-level access for options helpers."""
@@ -581,6 +593,9 @@ __all__ = [
     "categories",
     "indicators_by_category",
     "category",
+    "get_functions",
+    "get_function_groups",
+    "abstract",
     "IndicatorMeta",
     "BoundaryInfo",
     "Param",

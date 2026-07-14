@@ -148,6 +148,11 @@ jobs:
           source .venv/bin/activate
           python -m pytest tests/python/test_talib_surface.py tests/python/test_talib_map.py -q
 
+      - name: Abstract introspection registry
+        run: |
+          source .venv/bin/activate
+          python -m pytest tests/python/test_abstract_api.py -q
+
       - name: Options India analytics parity + docstrings
         run: |
           source .venv/bin/activate
