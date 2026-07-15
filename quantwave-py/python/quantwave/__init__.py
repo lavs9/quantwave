@@ -225,10 +225,20 @@ def _bind_ta(slug: str, obj) -> None:
 
 
 def _resolve_ta_binding(slug: str, entry: dict) -> object:
-    for key in ("native_batch", "native_streaming"):
-        native_name = entry.get(key)
-        if native_name and hasattr(_quantwave, native_name):
-            return getattr(_quantwave, native_name)
+    native_batch = entry.get("native_batch")
+    if native_batch:
+        if not hasattr(_quantwave, native_batch):
+            raise ImportError(
+                f"TA registry entry {slug!r} declares native_batch={native_batch!r}, "
+                f"but the compiled module exports no such symbol. The registry is stale "
+                f"— regenerate it with scripts/generate_api_stubs.py. (Falling back to "
+                f"the streaming class here would silently change {slug!r}'s calling "
+                f"convention from a batch function to a class.)"
+            )
+        return getattr(_quantwave, native_batch)
+    native_streaming = entry.get("native_streaming")
+    if native_streaming and hasattr(_quantwave, native_streaming):
+        return getattr(_quantwave, native_streaming)
     polars_method = entry.get("polars_method")
     if polars_method:
         return _PolarsOnlySurface(slug, polars_method)
