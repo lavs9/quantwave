@@ -114,7 +114,9 @@ def parse_native_symbols() -> tuple[set[str], set[str]]:
         name_attr = re.search(r'name\s*=\s*"([^"]+)"', attrs)
         streaming.add(name_attr.group(1) if name_attr else struct)
     for type_name in re.findall(r"export_[a-z0-9_]+!\s*\(\s*(\w+)", text):
-        batch.add(pascal_to_snake(type_name))
+        # uniffi's export_*! macros emit `pub fn [<$name:lower>]` — all-lowercase,
+        # no separators. pascal_to_snake would yield `super_trend`, which never exists.
+        batch.add(type_name.lower())
         streaming.add(type_name)
     return batch, streaming
 

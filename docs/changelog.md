@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- **68 indicators silently resolved to a streaming class instead of their batch function** (`quantwave-84cu`). The generated TA registry introduced in 0.7.0 derived native batch symbol names with `pascal_to_snake()` (`SuperTrend` → `super_trend`), but the `export_*!` macros emit `pub fn [<$name:lower>]` (`SuperTrend` → `supertrend`). Every multi-word name missed; the 44 single-word ones (`rsi`, `sma`, `atr`) passed only because `pascal_to_snake("Rsi") == "rsi"`. `_resolve_ta_binding` treated the miss as a fallback and returned `native_streaming`, so `qw.supertrend` was a **class** while `qw.rsi` was a function — with no error or warning. `qw.supertrend(period=10, multiplier=3.0, high=…, low=…, close=…)` again returns `list[SuperTrendResult]` as it did in 0.6; callers need no changes.
+- `_resolve_ta_binding` now raises `ImportError` when an entry declares a `native_batch` symbol the build does not export, rather than silently substituting the streaming class (whose calling convention differs). A `native_batch` of `None` still falls through to streaming/polars as before.
+- Corrected stale hand-written aliases in `scripts/api_slug_aliases.json`: `fm_demodulator`, `fourier_series_model`, `my_rsi`, `precision_trend_analysis` named non-existent snake_cased symbols; `linreg`, `oc2`, `true_range` declared batch exports that do not exist and now fall through to their polars methods; `sr_monitor` declared `SrInteractionMonitor`, a class never exported to Python.
+
+### Added
+- `test_registry_native_symbols_resolve_against_build` — asserts every declared native symbol exists in the compiled module. The prior test only checked a name was *present*, never that it *resolved*, so `native_batch: "super_trend"` passed cleanly. Plus a regression test that multi-word slugs bind as batch functions, not classes.
+
 ## [0.7.0] - 2026-07-13
 
 ### Added

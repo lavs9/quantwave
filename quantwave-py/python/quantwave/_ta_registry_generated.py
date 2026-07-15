@@ -504,19 +504,19 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "channel_cycle": {
         "slug": "channel_cycle",
         "polars_method": None,
-        "native_batch": "channel_cycle",
+        "native_batch": "channelcycle",
         "native_streaming": "ChannelCycle",
     },
     "choppiness_index": {
         "slug": "choppiness_index",
         "polars_method": None,
-        "native_batch": "choppiness_index",
+        "native_batch": "choppinessindex",
         "native_streaming": "ChoppinessIndex",
     },
     "classic_laguerre": {
         "slug": "classic_laguerre",
         "polars_method": None,
-        "native_batch": "classic_laguerre",
+        "native_batch": "classiclaguerre",
         "native_streaming": "ClassicLaguerre",
     },
     "cmo": {
@@ -528,7 +528,7 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "continuation_index": {
         "slug": "continuation_index",
         "polars_method": None,
-        "native_batch": "continuation_index",
+        "native_batch": "continuationindex",
         "native_streaming": "ContinuationIndex",
     },
     "correl": {
@@ -540,25 +540,25 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "correlation_cycle": {
         "slug": "correlation_cycle",
         "polars_method": None,
-        "native_batch": "correlation_cycle",
+        "native_batch": "correlationcycle",
         "native_streaming": "CorrelationCycle",
     },
     "correlation_trend": {
         "slug": "correlation_trend",
         "polars_method": None,
-        "native_batch": "correlation_trend",
+        "native_batch": "correlationtrend",
         "native_streaming": "CorrelationTrend",
     },
     "cyber_cycle": {
         "slug": "cyber_cycle",
         "polars_method": None,
-        "native_batch": "cyber_cycle",
+        "native_batch": "cybercycle",
         "native_streaming": "CyberCycle",
     },
     "cybernetic_oscillator": {
         "slug": "cybernetic_oscillator",
         "polars_method": None,
-        "native_batch": "cybernetic_oscillator",
+        "native_batch": "cyberneticoscillator",
         "native_streaming": "CyberneticOscillator",
     },
     "cycle_trend_analytics": {
@@ -594,31 +594,31 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "ehlers_autocorrelation": {
         "slug": "ehlers_autocorrelation",
         "polars_method": None,
-        "native_batch": "ehlers_autocorrelation",
+        "native_batch": "ehlersautocorrelation",
         "native_streaming": "EhlersAutocorrelation",
     },
     "ehlers_filter": {
         "slug": "ehlers_filter",
         "polars_method": None,
-        "native_batch": "ehlers_filter",
+        "native_batch": "ehlersfilter",
         "native_streaming": "EhlersFilter",
     },
     "ehlers_loops": {
         "slug": "ehlers_loops",
         "polars_method": None,
-        "native_batch": "ehlers_loops",
+        "native_batch": "ehlersloops",
         "native_streaming": "EhlersLoops",
     },
     "ehlers_stochastic": {
         "slug": "ehlers_stochastic",
         "polars_method": None,
-        "native_batch": "ehlers_stochastic",
+        "native_batch": "ehlersstochastic",
         "native_streaming": "EhlersStochastic",
     },
     "ehlers_ultimate_oscillator": {
         "slug": "ehlers_ultimate_oscillator",
         "polars_method": None,
-        "native_batch": "ehlers_ultimate_oscillator",
+        "native_batch": "ehlersultimateoscillator",
         "native_streaming": "EhlersUltimateOscillator",
     },
     "ema": {
@@ -642,31 +642,31 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "fisher_high_pass": {
         "slug": "fisher_high_pass",
         "polars_method": None,
-        "native_batch": "fisher_high_pass",
+        "native_batch": "fisherhighpass",
         "native_streaming": "FisherHighPass",
     },
     "fm_demodulator": {
         "slug": "fm_demodulator",
         "polars_method": None,
-        "native_batch": "fm_demodulator",
+        "native_batch": "fmdemodulator",
         "native_streaming": "FmDemodulator",
     },
     "fourier_dominant_cycle": {
         "slug": "fourier_dominant_cycle",
         "polars_method": None,
-        "native_batch": "fourier_dominant_cycle",
+        "native_batch": "fourierdominantcycle",
         "native_streaming": "FourierDominantCycle",
     },
     "fourier_series_model": {
         "slug": "fourier_series_model",
         "polars_method": None,
-        "native_batch": "fourier_series",
+        "native_batch": "fourierseries",
         "native_streaming": "FourierSeries",
     },
     "frac_diff": {
         "slug": "frac_diff",
         "polars_method": None,
-        "native_batch": "frac_diff",
+        "native_batch": "fracdiff",
         "native_streaming": "FracDiff",
     },
     "fractals": {
@@ -702,7 +702,7 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "generalized_laguerre": {
         "slug": "generalized_laguerre",
         "polars_method": None,
-        "native_batch": "generalized_laguerre",
+        "native_batch": "generalizedlaguerre",
         "native_streaming": "GeneralizedLaguerre",
     },
     "geometric_patterns": {
@@ -714,19 +714,19 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "griffiths_dominant_cycle": {
         "slug": "griffiths_dominant_cycle",
         "polars_method": None,
-        "native_batch": "griffiths_dominant_cycle",
+        "native_batch": "griffithsdominantcycle",
         "native_streaming": "GriffithsDominantCycle",
     },
     "griffiths_predictor": {
         "slug": "griffiths_predictor",
         "polars_method": None,
-        "native_batch": "griffiths_predictor",
+        "native_batch": "griffithspredictor",
         "native_streaming": "GriffithsPredictor",
     },
     "griffiths_spectrum": {
         "slug": "griffiths_spectrum",
         "polars_method": None,
-        "native_batch": "griffiths_spectrum",
+        "native_batch": "griffithsspectrum",
         "native_streaming": "GriffithsSpectrum",
     },
     "hamming_filter": {
@@ -756,7 +756,7 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "high_pass": {
         "slug": "high_pass",
         "polars_method": None,
-        "native_batch": "high_pass",
+        "native_batch": "highpass",
         "native_streaming": "HighPass",
     },
     "hma": {
@@ -774,43 +774,43 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "homodyne_discriminator": {
         "slug": "homodyne_discriminator",
         "polars_method": None,
-        "native_batch": "homodyne_discriminator",
+        "native_batch": "homodynediscriminator",
         "native_streaming": "HomodyneDiscriminator",
     },
     "ht_dcperiod": {
         "slug": "ht_dcperiod",
         "polars_method": "ht_dcperiod",
-        "native_batch": "ht_dc_period",
+        "native_batch": "htdcperiod",
         "native_streaming": "HtDcPeriod",
     },
     "ht_dcphase": {
         "slug": "ht_dcphase",
         "polars_method": "ht_dcphase",
-        "native_batch": "ht_dc_phase",
+        "native_batch": "htdcphase",
         "native_streaming": "HtDcPhase",
     },
     "ht_phasor": {
         "slug": "ht_phasor",
         "polars_method": "ht_phasor",
-        "native_batch": "ht_phasor",
+        "native_batch": "htphasor",
         "native_streaming": "HtPhasor",
     },
     "ht_sine": {
         "slug": "ht_sine",
         "polars_method": "ht_sine",
-        "native_batch": "ht_sine",
+        "native_batch": "htsine",
         "native_streaming": "HtSine",
     },
     "ht_trendmode": {
         "slug": "ht_trendmode",
         "polars_method": "ht_trendmode",
-        "native_batch": "ht_trend_mode",
+        "native_batch": "httrendmode",
         "native_streaming": "HtTrendMode",
     },
     "hurst_exponent": {
         "slug": "hurst_exponent",
         "polars_method": None,
-        "native_batch": "hurst_exponent",
+        "native_batch": "hurstexponent",
         "native_streaming": "HurstExponent",
     },
     "ichimoku": {
@@ -822,19 +822,19 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "instantaneous_trendline": {
         "slug": "instantaneous_trendline",
         "polars_method": None,
-        "native_batch": "instantaneous_trendline",
+        "native_batch": "instantaneoustrendline",
         "native_streaming": "InstantaneousTrendline",
     },
     "inverse_fisher": {
         "slug": "inverse_fisher",
         "polars_method": None,
-        "native_batch": "inverse_fisher",
+        "native_batch": "inversefisher",
         "native_streaming": "InverseFisher",
     },
     "kalman_filter": {
         "slug": "kalman_filter",
         "polars_method": None,
-        "native_batch": "kalman_filter",
+        "native_batch": "kalmanfilter",
         "native_streaming": "KalmanFilter",
     },
     "kama": {
@@ -858,19 +858,19 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "laguerre_filter": {
         "slug": "laguerre_filter",
         "polars_method": None,
-        "native_batch": "laguerre_filter",
+        "native_batch": "laguerrefilter",
         "native_streaming": "LaguerreFilter",
     },
     "laguerre_oscillator": {
         "slug": "laguerre_oscillator",
         "polars_method": None,
-        "native_batch": "laguerre_oscillator",
+        "native_batch": "laguerreoscillator",
         "native_streaming": "LaguerreOscillator",
     },
     "laguerre_rsi": {
         "slug": "laguerre_rsi",
         "polars_method": None,
-        "native_batch": "laguerre_rsi",
+        "native_batch": "laguerrersi",
         "native_streaming": "LaguerreRsi",
     },
     "lambda_hmm": {
@@ -882,7 +882,7 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "linreg": {
         "slug": "linreg",
         "polars_method": "linearreg",
-        "native_batch": "linearreg",
+        "native_batch": None,
         "native_streaming": None,
     },
     "macd": {
@@ -912,7 +912,7 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "market_state": {
         "slug": "market_state",
         "polars_method": None,
-        "native_batch": "market_state",
+        "native_batch": "marketstate",
         "native_streaming": "MarketState",
     },
     "market_structure": {
@@ -930,7 +930,7 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "mesa_stochastic": {
         "slug": "mesa_stochastic",
         "polars_method": None,
-        "native_batch": "mesa_stochastic",
+        "native_batch": "mesastochastic",
         "native_streaming": "MesaStochastic",
     },
     "mfi": {
@@ -948,7 +948,7 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "my_rsi": {
         "slug": "my_rsi",
         "polars_method": None,
-        "native_batch": "oc_price_rsi",
+        "native_batch": "ocpricersi",
         "native_streaming": "OcPriceRsi",
     },
     "natr": {
@@ -960,7 +960,7 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "noise_elimination": {
         "slug": "noise_elimination",
         "polars_method": None,
-        "native_batch": "noise_elimination",
+        "native_batch": "noiseelimination",
         "native_streaming": "NoiseElimination",
     },
     "obv": {
@@ -972,25 +972,25 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "oc2": {
         "slug": "oc2",
         "polars_method": "avgprice",
-        "native_batch": "avgprice",
+        "native_batch": None,
         "native_streaming": None,
     },
     "oc_price_rsi": {
         "slug": "oc_price_rsi",
         "polars_method": None,
-        "native_batch": "oc_price_rsi",
+        "native_batch": "ocpricersi",
         "native_streaming": "OcPriceRsi",
     },
     "one_euro_filter": {
         "slug": "one_euro_filter",
         "polars_method": None,
-        "native_batch": "one_euro_filter",
+        "native_batch": "oneeurofilter",
         "native_streaming": "OneEuroFilter",
     },
     "pairs_rotation": {
         "slug": "pairs_rotation",
         "polars_method": None,
-        "native_batch": "pairs_rotation",
+        "native_batch": "pairsrotation",
         "native_streaming": "PairsRotation",
     },
     "phasor": {
@@ -1014,25 +1014,25 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "precision_trend_analysis": {
         "slug": "precision_trend_analysis",
         "polars_method": None,
-        "native_batch": "precision_trend",
+        "native_batch": "precisiontrend",
         "native_streaming": "PrecisionTrend",
     },
     "projected_moving_average": {
         "slug": "projected_moving_average",
         "polars_method": None,
-        "native_batch": "projected_moving_average",
+        "native_batch": "projectedmovingaverage",
         "native_streaming": "ProjectedMovingAverage",
     },
     "recursive_median": {
         "slug": "recursive_median",
         "polars_method": None,
-        "native_batch": "recursive_median",
+        "native_batch": "recursivemedian",
         "native_streaming": "RecursiveMedian",
     },
     "recursive_median_oscillator": {
         "slug": "recursive_median_oscillator",
         "polars_method": None,
-        "native_batch": "recursive_median_oscillator",
+        "native_batch": "recursivemedianoscillator",
         "native_streaming": "RecursiveMedianOscillator",
     },
     "reflex": {
@@ -1050,7 +1050,7 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "reversion_index": {
         "slug": "reversion_index",
         "polars_method": None,
-        "native_batch": "reversion_index",
+        "native_batch": "reversionindex",
         "native_streaming": "ReversionIndex",
     },
     "roc": {
@@ -1062,13 +1062,13 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "rocket_rsi": {
         "slug": "rocket_rsi",
         "polars_method": None,
-        "native_batch": "rocket_rsi",
+        "native_batch": "rocketrsi",
         "native_streaming": "RocketRsi",
     },
     "roofing_filter": {
         "slug": "roofing_filter",
         "polars_method": None,
-        "native_batch": "roofing_filter",
+        "native_batch": "roofingfilter",
         "native_streaming": "RoofingFilter",
     },
     "rsi": {
@@ -1098,13 +1098,13 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "simple_predictor": {
         "slug": "simple_predictor",
         "polars_method": None,
-        "native_batch": "simple_predictor",
+        "native_batch": "simplepredictor",
         "native_streaming": "SimplePredictor",
     },
     "sine_wave": {
         "slug": "sine_wave",
         "polars_method": None,
-        "native_batch": "sine_wave",
+        "native_batch": "sinewave",
         "native_streaming": "SineWave",
     },
     "sma": {
@@ -1117,7 +1117,7 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
         "slug": "sr_monitor",
         "polars_method": "sr_interaction_monitor",
         "native_batch": None,
-        "native_streaming": "SrInteractionMonitor",
+        "native_streaming": None,
     },
     "stc": {
         "slug": "stc",
@@ -1140,13 +1140,13 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "super_smoother": {
         "slug": "super_smoother",
         "polars_method": None,
-        "native_batch": "super_smoother",
+        "native_batch": "supersmoother",
         "native_streaming": "SuperSmoother",
     },
     "supertrend": {
         "slug": "supertrend",
         "polars_method": "supertrend",
-        "native_batch": "super_trend",
+        "native_batch": "supertrend",
         "native_streaming": "SuperTrend",
     },
     "swiss_army_knife": {
@@ -1158,13 +1158,13 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "synthetic_oscillator": {
         "slug": "synthetic_oscillator",
         "polars_method": None,
-        "native_batch": "synthetic_oscillator",
+        "native_batch": "syntheticoscillator",
         "native_streaming": "SyntheticOscillator",
     },
     "system_evaluator": {
         "slug": "system_evaluator",
         "polars_method": None,
-        "native_batch": "system_evaluator",
+        "native_batch": "systemevaluator",
         "native_streaming": "SystemEvaluator",
     },
     "t3": {
@@ -1194,7 +1194,7 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "triangle_filter": {
         "slug": "triangle_filter",
         "polars_method": None,
-        "native_batch": "triangle_filter",
+        "native_batch": "trianglefilter",
         "native_streaming": "TriangleFilter",
     },
     "trima": {
@@ -1212,19 +1212,19 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "true_range": {
         "slug": "true_range",
         "polars_method": "trange",
-        "native_batch": "trange",
+        "native_batch": None,
         "native_streaming": None,
     },
     "truncated_bandpass": {
         "slug": "truncated_bandpass",
         "polars_method": None,
-        "native_batch": "truncated_bandpass",
+        "native_batch": "truncatedbandpass",
         "native_streaming": "TruncatedBandpass",
     },
     "ttm_squeeze": {
         "slug": "ttm_squeeze",
         "polars_method": "ttm_squeeze",
-        "native_batch": "ttm_squeeze",
+        "native_batch": "ttmsqueeze",
         "native_streaming": "TtmSqueeze",
     },
     "typprice": {
@@ -1248,7 +1248,7 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "ultimate_smoother": {
         "slug": "ultimate_smoother",
         "polars_method": None,
-        "native_batch": "ultimate_smoother",
+        "native_batch": "ultimatesmoother",
         "native_streaming": "UltimateSmoother",
     },
     "ultosc": {
@@ -1260,13 +1260,13 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "undersampled_double_ma": {
         "slug": "undersampled_double_ma",
         "polars_method": None,
-        "native_batch": "undersampled_double_ma",
+        "native_batch": "undersampleddoublema",
         "native_streaming": "UndersampledDoubleMa",
     },
     "universal_oscillator": {
         "slug": "universal_oscillator",
         "polars_method": None,
-        "native_batch": "universal_oscillator",
+        "native_batch": "universaloscillator",
         "native_streaming": "UniversalOscillator",
     },
     "usi": {
@@ -1290,7 +1290,7 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "voss_predictor": {
         "slug": "voss_predictor",
         "polars_method": None,
-        "native_batch": "voss_predictor",
+        "native_batch": "vosspredictor",
         "native_streaming": "VossPredictor",
     },
     "vpn": {
@@ -1308,7 +1308,7 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "wavetrend": {
         "slug": "wavetrend",
         "polars_method": "wavetrend",
-        "native_batch": "wave_trend",
+        "native_batch": "wavetrend",
         "native_streaming": "WaveTrend",
     },
     "wclprice": {
@@ -1332,7 +1332,7 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     "zero_lag": {
         "slug": "zero_lag",
         "polars_method": None,
-        "native_batch": "zero_lag",
+        "native_batch": "zerolag",
         "native_streaming": "ZeroLag",
     },
     "zlema": {

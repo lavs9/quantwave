@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import ast
+import inspect
 import re
 from pathlib import Path
+
+import pytest
 
 import quantwave as qw
 from quantwave._metadata_generated import GENERATED_ENTRIES
@@ -83,6 +86,26 @@ def test_registry_entries_have_surface_binding():
             or entry.get("native_streaming")
             or entry.get("polars_method")
         ), slug
+
+
+def test_registry_native_symbols_resolve_against_build():
+    """A declared native symbol must actually exist — a name alone proves nothing."""
+    import quantwave._quantwave as _q
+
+    missing = [
+        (slug, entry[key])
+        for slug, entry in TA_REGISTRY.items()
+        for key in ("native_batch", "native_streaming")
+        if entry.get(key) and not hasattr(_q, entry[key])
+    ]
+    assert missing == [], f"registry names absent from build: {missing}"
+
+
+@pytest.mark.parametrize("slug", ["supertrend", "wavetrend", "frac_diff", "cyber_cycle"])
+def test_multiword_indicators_are_batch_functions_not_classes(slug):
+    """Regression: pascal_to_snake once made every multi-word slug degrade to a class."""
+    obj = getattr(qw, slug)
+    assert not inspect.isclass(obj), f"qw.{slug} degraded to a streaming class"
 
 
 def test_streaming_class_uses_registry_for_rsi():

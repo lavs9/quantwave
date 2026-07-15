@@ -8,7 +8,7 @@
   "sr_monitor": {
     "slug_alias": "sr_interaction_monitor",
     "polars_method": "sr_interaction_monitor",
-    "native_streaming": "SrInteractionMonitor"
+    "native_streaming": null
   },
   "gaussian_filter": {
     "native_batch": "gaussian",
@@ -24,30 +24,30 @@
     "native_streaming": "Hann"
   },
   "fourier_series_model": {
-    "native_batch": "fourier_series",
+    "native_batch": "fourierseries",
     "native_streaming": "FourierSeries"
   },
   "linreg": {
     "polars_method": "linearreg",
-    "native_batch": "linearreg"
+    "native_batch": null
   },
   "true_range": {
     "polars_method": "trange",
-    "native_batch": "trange"
+    "native_batch": null
   },
   "vwap": {
     "polars_method": "anchored_vwap"
   },
   "precision_trend_analysis": {
-    "native_batch": "precision_trend",
+    "native_batch": "precisiontrend",
     "native_streaming": "PrecisionTrend"
   },
   "oc2": {
     "polars_method": "avgprice",
-    "native_batch": "avgprice"
+    "native_batch": null
   },
   "my_rsi": {
-    "native_batch": "oc_price_rsi",
+    "native_batch": "ocpricersi",
     "native_streaming": "OcPriceRsi"
   },
   "am_detector": {
@@ -55,7 +55,7 @@
     "native_streaming": "AmDetector"
   },
   "fm_demodulator": {
-    "native_batch": "fm_demodulator",
+    "native_batch": "fmdemodulator",
     "native_streaming": "FmDemodulator"
   },
   "cdldoji": {
