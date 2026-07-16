@@ -33,8 +33,11 @@ def _library_versions() -> dict[str, str]:
     return versions
 
 
-def _tail_sma_pandas(close: np.ndarray, period: int) -> np.ndarray:
-    import pandas as pd
+def _tail_sma_pandas(close: np.ndarray, period: int) -> np.ndarray | None:
+    try:
+        import pandas as pd
+    except ImportError:
+        return None
 
     return pd.Series(close).rolling(period).mean().to_numpy()
 
@@ -80,12 +83,15 @@ def correctness_precheck(df: pl.DataFrame) -> dict[str, Any]:
 
     checks: dict[str, str] = {}
     pd_sma = _tail_sma_pandas(close, SMA_PERIOD)
-    mask = ~np.isnan(ref) & ~np.isnan(pd_sma)
-    if mask.any():
-        ok = np.allclose(ref[mask], pd_sma[mask], rtol=TOLERANCE, atol=TOLERANCE)
-        checks["pandas_rolling"] = "ok" if ok else "mismatch"
+    if pd_sma is not None:
+        mask = ~np.isnan(ref) & ~np.isnan(pd_sma)
+        if mask.any():
+            ok = np.allclose(ref[mask], pd_sma[mask], rtol=TOLERANCE, atol=TOLERANCE)
+            checks["pandas_rolling"] = "ok" if ok else "mismatch"
+        else:
+            checks["pandas_rolling"] = "insufficient_warmup"
     else:
-        checks["pandas_rolling"] = "insufficient_warmup"
+        checks["pandas_rolling"] = "not_installed"
 
     qw = _tail_sma_quantwave(small, SMA_PERIOD)
     if qw is not None:
