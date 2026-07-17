@@ -20,4 +20,4 @@ import quantwave as qw
 qw.assert_parity("rsi", {"period": 14}, closes)
 ``` CI (`.github/workflows/ci.yml`) runs `scripts/quantwave_verify.sh` on every push/PR to `main`; docs deploy and plugin wheels are jobs in the same workflow. See `.github/workflows/README.md`. --- ## Sources - `s/src/lib.rs` — LazyFrame `.ta()` namespace
 - `ns/` — expression plugin implementations
-- Closed epic `quantwave-3f7g` — full plugin ↔ `.ta` parity
+- Full plugin ↔ `.ta` parity

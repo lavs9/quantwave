@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PA Visuals Generator for QuantWave docs (quantwave-0ywt).
+PA Visuals Generator for QuantWave docs.
 
 Generates high-quality annotated PNG charts for Market Structure, Flags, H&S, SR
 using matplotlib on carefully crafted synthetic high/low sequences that exhibit
