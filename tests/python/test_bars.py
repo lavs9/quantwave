@@ -52,3 +52,36 @@ def test_renko_invalid_box_raises():
         qw.bars.renko([10.0, 11.0], box_size=0.0)
     with pytest.raises(ValueError):
         qw.bars.renko([10.0, 11.0], box_size="bogus")
+
+
+def test_range_bars_single_bar():
+    b = qw.bars.range_bars([10.0, 10.5, 11.0, 12.0], range_size=2.0)
+    assert b.columns == ["open", "high", "low", "close"]
+    assert b.height == 1
+    assert b.row(0) == (10.0, 12.0, 10.0, 12.0)
+
+
+def test_range_bars_span_both_directions():
+    b = qw.bars.range_bars([10.0, 11.0, 9.0], range_size=2.0)
+    assert b.height == 1
+    assert b["high"][0] == 11.0 and b["low"][0] == 9.0 and b["close"][0] == 9.0
+
+
+def test_range_bars_no_bar_within_range():
+    assert qw.bars.range_bars([10.0, 10.9, 10.1, 10.5], range_size=2.0).height == 0
+
+
+def test_range_bars_span_invariant():
+    df = qw.datasets.synthetic(seed=4, rows=300)
+    b = qw.bars.range_bars(df, range_size=3.0)
+    spans = b["high"] - b["low"]
+    assert (spans >= 3.0 - 1e-9).all()
+
+
+def test_range_bars_atr_and_errors():
+    df = qw.datasets.synthetic(seed=6, rows=200)
+    assert qw.bars.range_bars(df, range_size="atr", multiplier=2.0).height > 0
+    with pytest.raises(Exception):
+        qw.bars.range_bars([10.0, 11.0], range_size=0.0)
+    with pytest.raises(ValueError):
+        qw.bars.range_bars([10.0, 11.0], range_size="bogus")

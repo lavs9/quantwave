@@ -65,6 +65,35 @@ def renko(
     return _bars.renko(prices, float(box_size))
 
 
+def range_bars(
+    data: "Union[pl.DataFrame, pl.LazyFrame, list[float]]",
+    range_size: "Union[float, str]" = 2.0,
+    *,
+    price_col: str = "close",
+    atr_period: int = 14,
+    multiplier: float = 1.0,
+) -> "pl.DataFrame":
+    """Build constant-range OHLC bars from a price series.
+
+    A bar closes as soon as its high-low span reaches ``range_size`` (a positive
+    float, or ``"atr"`` to derive it from ``multiplier * ATR(atr_period)``); a new
+    bar opens at the triggering price.
+
+    Returns:
+        DataFrame with columns ``open``, ``high``, ``low``, ``close`` (one row per
+        completed bar).
+    """
+    from quantwave import _bars
+
+    prices = _prices(data, price_col)
+    if isinstance(range_size, str):
+        if range_size != "atr":
+            raise ValueError("range_size must be a positive float or 'atr'")
+        atr = _atr_value(data, price_col, atr_period)
+        return _bars.range_bars_atr(prices, atr, multiplier)
+    return _bars.range_bars(prices, float(range_size))
+
+
 def _atr_value(data, price_col: str, period: int) -> float:
     """A single representative ATR over the series (mean true range)."""
     pl = _pl()
