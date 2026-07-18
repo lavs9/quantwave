@@ -80,6 +80,7 @@ pub use indicators::statistics::{
     LinearRegression, StandardDeviation, TaBETA, TaCORREL, TaLINEARREG, TaLINEARREG_ANGLE,
     TaLINEARREG_INTERCEPT, TaLINEARREG_SLOPE, TaSTDDEV, TaTSF, TaVAR,
 };
+pub use indicators::renko::{renko_atr_batch, renko_batch, RenkoBrick, RenkoBuilder};
 pub use indicators::supertrend::SuperTrend;
 pub use indicators::sve_volatility_bands::SVEVolatilityBands;
 pub use indicators::tema::{TEMA, ZLEMA};

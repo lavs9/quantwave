@@ -14,6 +14,7 @@
 use pyo3::prelude::*;
 
 mod backtest;
+mod bars;
 mod indicators;
 pub mod plugins;
 
@@ -32,6 +33,12 @@ fn _lib(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     backtest::register(&backtest_mod)?;
     sys_modules.set_item("quantwave._backtest", &backtest_mod)?;
     m.add_submodule(&backtest_mod)?;
+
+    // Alternative bar construction -> quantwave._bars
+    let bars_mod = PyModule::new(py, "_bars")?;
+    bars::register(&bars_mod)?;
+    sys_modules.set_item("quantwave._bars", &bars_mod)?;
+    m.add_submodule(&bars_mod)?;
 
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())

@@ -108,6 +108,7 @@ pub mod sr_monitor;
 pub mod statistics;
 pub mod stc;
 pub mod super_smoother;
+pub mod renko;
 pub mod supertrend;
 pub mod sve_volatility_bands;
 pub mod swiss_army_knife;
