@@ -574,6 +574,14 @@ except Exception as _e:  # pragma: no cover
     class _DummyNS: pass
     abstract = _DummyNS()
 
+# Bulk-compute feature matrix: registers the `df.ta.all()` / `lf.ta.all()`
+# DataFrame/LazyFrame namespaces (built on the abstract-API registry above)
+# and exposes the `qw.feature_matrix()` top-level alias.
+try:
+    from .bulk import feature_matrix as feature_matrix
+except Exception as _e:  # pragma: no cover
+    warnings.warn(f"quantwave.bulk (df.ta.all()) unavailable: {_e}")
+
 
 def __getattr__(name: str):
     """Deprecated top-level access for options helpers."""
@@ -606,6 +614,7 @@ __all__ = [
     "get_functions",
     "get_function_groups",
     "abstract",
+    "feature_matrix",
     "IndicatorMeta",
     "BoundaryInfo",
     "Param",
