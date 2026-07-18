@@ -219,3 +219,18 @@ def feature_column_names(
     for spec in specs:
         names.extend(_apply_feature([100.0] * 3, spec).keys())
     return names
+
+
+# ML pipeline surface: bulk feature extraction, labels, and leakage-safe CV
+# splits. Imported at the end so FeatureSpec/_apply_feature (above) are already
+# defined when feature_extract imports them back — avoids a circular import.
+# Guarded because these need numpy/polars (optional extras) — feature_splits
+# imports numpy at module load — while the core install ships neither; they are
+# unusable without those deps anyway, so skipping them keeps `import quantwave`
+# working on a bare core install.
+try:
+    from .feature_extract import extract  # noqa: E402,F401
+    from .feature_labels import forward_returns, triple_barrier  # noqa: E402,F401
+    from .feature_splits import purged_kfold, walk_forward  # noqa: E402,F401
+except ImportError:  # pragma: no cover - core install without numpy/polars
+    pass
