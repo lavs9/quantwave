@@ -8,7 +8,7 @@ use polars::prelude::*;
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3_polars::PyDataFrame;
-use quantwave_core::{renko_atr_batch, renko_batch, RenkoBrick};
+use quantwave_core::{RenkoBrick, renko_atr_batch, renko_batch};
 
 fn bricks_to_frame(bricks: &[RenkoBrick]) -> PolarsResult<DataFrame> {
     let open: Vec<f64> = bricks.iter().map(|b| b.open).collect();
