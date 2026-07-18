@@ -119,6 +119,10 @@ except Exception as _e:  # pragma: no cover
     options = _DummyNS()
     talib = _DummyNS()
 
+# Data layer (p2k0.4): synthetic()/load_sample() are pure Python/Polars and
+# have no native/optional-extra dependency, so this import is unconditional.
+from . import datasets
+
 # Public exception types (must survive partial native load).
 from ._errors import (
     QuantwaveError,
@@ -627,6 +631,7 @@ __all__ = [
     "results",
     "options",
     "talib",
+    "datasets",
     "options_india",  # legacy compat (will warn in future)
     "PerformanceMetrics",
     "BacktestStats",
