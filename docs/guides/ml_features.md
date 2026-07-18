@@ -103,6 +103,10 @@ verified batch/streaming parity:
 
 For backtest engine basics, see [Backtest Quickstart](backtest/quickstart.md).
 
+Need the whole 200+ indicator surface as feature columns, not just the curated
+Ehlers/regime preset? See [`df.ta.all()`](talib_migration.md#bulk-compute-dftaall)
+for the bulk, registry-driven equivalent.
+
 ---
 
 ## Sources

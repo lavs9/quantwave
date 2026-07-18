@@ -102,6 +102,55 @@ signals = screen(frame, "Momentum")
 Swap `"Momentum"` for any key of `qw.get_function_groups()` (e.g. `"Overlap"`,
 `"Volume"`, `"Candlestick"`) to sweep a different family.
 
+For the common case of "compute everything a frame supports," skip the manual
+loop above and use `df.ta.all()` (below) — it does the same
+input-satisfiability filtering, but as one batched Polars pipeline.
+
+## Bulk-compute: `df.ta.all()`
+
+`df.ta.all()` / `lf.ta.all()` drive the *entire* registry generically over a
+Polars DataFrame or LazyFrame in a single lazy pass: every batch-capable
+indicator whose required input columns are present gets computed and added as
+new columns, in one `collect()`. Streaming-only indicators (no batch `.ta`
+implementation) and indicators whose inputs aren't satisfiable by the frame
+(missing OHLCV columns, or multi-series indicators like `beta`/`correl` that
+need arbitrary paired series) are skipped with a recorded reason — nothing
+raises.
+
+```python
+import polars as pl
+import quantwave as qw
+
+df = pl.DataFrame({"open": o, "high": h, "low": l, "close": c, "volume": v})
+
+features, manifest = df.ta.all()
+# features: df + one column per single-output indicator (e.g. "rsi"),
+#           and f"{name}_{field}" per multi-output indicator (e.g. "bbands_upper")
+# manifest: {"computed": [...], "skipped": [{"name", "reason"}, ...], "columns": [...]}
+
+lazy_features, manifest = df.lazy().ta.all()   # LazyFrame in -> LazyFrame out (uncollected)
+```
+
+Filter the universe with `include`/`exclude`/`groups` (set algebra: start from
+all indicators, restrict to `groups`, restrict further to `include`, subtract
+`exclude`), or override any indicator's parameters per-call via `params`:
+
+```python
+features, manifest = df.ta.all(
+    groups=["Momentum", "Volatility"],
+    exclude=["mama"],
+    params={"rsi": {"timeperiod": 21}},
+)
+```
+
+Pass `timing=True` to add a `manifest["timing"]` map of per-indicator wall
+time (computed via a separate pass, so it trades away some of the batched
+pipeline's parallelism — only pay for it when profiling).
+
+`qw.feature_matrix(df, **same_kwargs)` is a thin alias returning
+`(df, feature_column_names)` for quick ML pipeline wiring, in place of the
+richer manifest.
+
 ## See also
 
 - [Plugin vs `.ta`](plugin_vs_ta.md) — when to use expression plugins vs the accessor
