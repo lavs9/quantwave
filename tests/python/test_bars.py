@@ -15,9 +15,12 @@ def test_renko_fixed_box_uptrend():
     assert b["close"].to_list() == [11.0, 12.0, 13.0]
 
 
-def test_renko_reversal():
+def test_renko_reversal_non_retracing():
+    # Drozda Def. 1: reversal bricks are adjacent below the band, not retracing
+    # the last up-brick — up to 12 gives [10,11],[11,12]; reversal to 9 gives
+    # [11,10],[10,9] → dirs [1,1,-1,-1].
     b = qw.bars.renko([10.0, 12.0, 11.5, 10.0, 9.0], box_size=1.0)
-    assert b["direction"].to_list() == [1, 1, -1, -1, -1]
+    assert b["direction"].to_list() == [1, 1, -1, -1]
     assert b["close"].to_list()[-1] == 9.0
 
 
