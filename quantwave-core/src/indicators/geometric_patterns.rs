@@ -787,9 +787,20 @@ impl GeometricPatternScanner {
                 still_pending.push((pole_start, pole_end, is_bull));
             }
         }
+        // Expire poles too old to still form a flag. Without this, poles that
+        // never activate accumulate unbounded, and the per-bar sort+scan over
+        // pending_poles turns detection super-linear (quantwave-88cg). 60 bars
+        // matches the H&S staleness window used in update_active_hs.
+        still_pending.retain(|&(_, pole_end, _)| {
+            self.bar_index.saturating_sub(pole_end) <= MAX_PENDING_POLE_AGE
+        });
         self.pending_poles = still_pending;
     }
 }
+
+/// Bars after which an un-activated pole can no longer form a flag and is dropped
+/// from the pending queue (bounds pending_poles → linear-time detection).
+const MAX_PENDING_POLE_AGE: usize = 60;
 
 fn min_in_range(vals: &[f64], start: usize, end: usize) -> f64 {
     let mut m = f64::MAX;
