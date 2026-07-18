@@ -3862,12 +3862,12 @@
     ],
     "params": [
       {
-        "name": "fast_limit",
+        "name": "fastlimit",
         "default": "0.5",
         "description": "Fast limit for alpha"
       },
       {
-        "name": "slow_limit",
+        "name": "slowlimit",
         "default": "0.05",
         "description": "Slow limit for alpha"
       }
@@ -5446,22 +5446,17 @@
     ],
     "params": [
       {
-        "name": "bb_period",
+        "name": "period",
         "default": "20",
-        "description": "Bollinger Bands Period"
+        "description": "Bollinger Bands / Keltner Channel period"
       },
       {
-        "name": "bb_mult",
+        "name": "multiplier_bb",
         "default": "2.0",
         "description": "Bollinger Bands Multiplier"
       },
       {
-        "name": "kc_period",
-        "default": "20",
-        "description": "Keltner Channel Period"
-      },
-      {
-        "name": "kc_mult",
+        "name": "multiplier_kc",
         "default": "1.5",
         "description": "Keltner Channel Multiplier"
       }
@@ -5890,6 +5885,11 @@
         "name": "n2",
         "default": "21",
         "description": "Average Length"
+      },
+      {
+        "name": "n3",
+        "default": "4",
+        "description": "Signal Length (WT2 = SMA(WT1, n3))"
       }
     ],
     "formula_source": "https://www.tradingview.com/script/2KE8wTuF-Indicator-WaveTrend-Oscillator-WT/",

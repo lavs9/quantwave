@@ -114,10 +114,22 @@ def indicator_meta_from_rust(entry: dict, overlay: dict | None) -> dict[str, Any
     )
     desc += boundary_docs
 
+    # Faithful raw param defaults (un-aliased, unfiltered by required/optional) —
+    # keyed by the actual Rust/`.ta` param name so the abstract introspection
+    # layer can supply an authoritative default for any param the `.ta` signature
+    # leaves required. `optional_params` above drops required params and renames
+    # via PARAM_ALIASES, so it cannot serve this purpose.
+    param_defaults = {
+        p["name"]: parse_int_default(p.get("default", "0"))
+        for p in params
+        if p.get("default", "") not in ("", None)
+    }
+
     return {
         "slug": slug,
         "required_params": required,
         "optional_params": optional,
+        "param_defaults": param_defaults,
         "data_inputs": data_inputs,
         "outputs": outputs,
         "warmup_bars": warmup,
@@ -150,6 +162,16 @@ def render_python(items: dict[str, dict[str, Any]]) -> str:
             "description": m["description"],
         }
         lines.append(f'    "{slug}": {repr(blob)},')
+    lines.append("}")
+    lines.append("")
+    # Sibling map: authoritative raw-name param defaults for the abstract-API
+    # introspection layer (quantwave.abstract). Kept separate from
+    # GENERATED_ENTRIES so it is not folded into IndicatorMeta.
+    lines.append("PARAM_DEFAULTS: dict[str, dict[str, Any]] = {")
+    for slug in sorted(items.keys()):
+        pd = items[slug].get("param_defaults") or {}
+        if pd:
+            lines.append(f'    "{slug}": {repr(pd)},')
     lines.append("}")
     lines.append("")
     return "\n".join(lines)

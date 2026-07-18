@@ -225,12 +225,12 @@ pub const MAMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     ehlers_summary: "Presented in Rocket Science for Traders (2001), MAMA adapts its alpha based on the rate of phase change measured by the Hilbert Transform Discriminator. Fast cycles produce large alpha for responsiveness; slow cycles produce small alpha to reduce noise.",
     params: &[
         ParamDef {
-            name: "fast_limit",
+            name: "fastlimit",
             default: "0.5",
             description: "Fast limit for alpha",
         },
         ParamDef {
-            name: "slow_limit",
+            name: "slowlimit",
             default: "0.05",
             description: "Slow limit for alpha",
         },

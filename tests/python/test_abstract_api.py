@@ -90,3 +90,56 @@ def test_missing_input_column_raises(ohlcv):
     _, _, _, close, _ = ohlcv
     with pytest.raises(KeyError):
         Function("ATR")({"close": close})  # missing high, low
+
+
+# --- schema completeness (quantwave-n4w8) -----------------------------------
+# Regression guards for the introspection gap found by live verification: a
+# generic caller (df.ta.all(), screeners) reads Function.parameters and
+# input_names to drive every indicator, so a None default or an undercounted
+# input silently crashes or mis-feeds the call. These assert the whole
+# batch-capable set, not a happy-path sample.
+
+
+def _batch_capable():
+    for name in qw.get_functions():
+        f = Function(name)
+        if f._method is not None:  # has a .ta batch implementation
+            yield name, f
+
+
+def test_no_batch_capable_function_has_none_param_default():
+    offenders = {
+        name: [k for k, v in f.parameters.items() if v is None]
+        for name, f in _batch_capable()
+    }
+    offenders = {k: v for k, v in offenders.items() if v}
+    assert offenders == {}, f"None param defaults would crash df.ta.all(): {offenders}"
+
+
+@pytest.mark.parametrize("name", ["beta", "correl"])
+def test_multiseries_functions_declare_both_inputs(name):
+    # beta/correl correlate two series; the schema must not undercount to one.
+    assert len(Function(name).input_names) == 2
+
+
+def test_bbands_default_tracks_the_callable_not_the_registry():
+    # Guards the design rule: introspection reports the .ta callable's own
+    # default (TA-Lib's 5), not the curated registry's textbook 20.
+    assert Function("bbands").parameters["timeperiod"] == 5
+
+
+def test_batch_capable_functions_callable_with_their_defaults(ohlcv):
+    # Every batch-capable indicator must actually run when driven by exactly the
+    # inputs + defaults it advertises — the end-to-end contract df.ta.all() relies
+    # on. Feed each function by its own declared input_names (roles like 'in1' /
+    # 'other' for multi-series functions get a valid price series too).
+    open_, high, low, close, volume = ohlcv
+    named = {"open": open_, "high": high, "low": low, "close": close, "volume": volume}
+    failures = {}
+    for name, f in _batch_capable():
+        frame = {iname: named.get(iname, close) for iname in f.input_names}
+        try:
+            f(frame, **{k: v for k, v in f.parameters.items() if v is not None})
+        except Exception as exc:  # noqa: BLE001 — collect all, report together
+            failures[name] = f"{type(exc).__name__}: {exc}"
+    assert failures == {}, f"batch-capable indicators failed on default call: {failures}"
