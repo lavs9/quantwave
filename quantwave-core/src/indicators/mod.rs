@@ -90,6 +90,7 @@ pub mod pivot_points;
 pub mod pma;
 pub mod precision_trend;
 pub mod price_transform;
+pub mod range_bars;
 pub mod recursive_median;
 pub mod reflex;
 pub mod renko;
