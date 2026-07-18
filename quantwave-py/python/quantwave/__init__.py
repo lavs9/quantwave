@@ -107,8 +107,15 @@ except Exception as _e:  # pragma: no cover
     backtest = _DummyNS()
 
 # Multi-timeframe helpers: resample/apply/broadcast for base-vs-higher-timeframe
-# pipelines (lookahead-safe join_asof broadcast); pure Python/Polars, no native deps.
-from . import mtf  # noqa: F401
+# pipelines (lookahead-safe join_asof broadcast). Built on Polars, so guarded
+# like the other Polars-layer submodules (core install has no polars).
+try:
+    from . import mtf  # noqa: F401
+except Exception as _e:  # pragma: no cover
+    warnings.warn(
+        f"quantwave.mtf unavailable (requires polars; "
+        f"use `pip install \"quantwave[polars]\"`): {_e}"
+    )
 
 # Popular namespaces (guarded: some may require full maturin build or follow-up on gqem/05q7)
 try:
@@ -123,9 +130,15 @@ except Exception as _e:  # pragma: no cover
     options = _DummyNS()
     talib = _DummyNS()
 
-# Data layer (p2k0.4): synthetic()/load_sample() are pure Python/Polars and
-# have no native/optional-extra dependency, so this import is unconditional.
-from . import datasets
+# Data layer: synthetic()/load_sample() build Polars frames, so this needs the
+# Polars layer and is guarded like the other polars-dependent submodules.
+try:
+    from . import datasets  # noqa: F401
+except Exception as _e:  # pragma: no cover
+    warnings.warn(
+        f"quantwave.datasets unavailable (requires polars; "
+        f"use `pip install \"quantwave[polars]\"`): {_e}"
+    )
 
 # Public exception types (must survive partial native load).
 from ._errors import (
