@@ -140,6 +140,16 @@ except Exception as _e:  # pragma: no cover
         f"use `pip install \"quantwave[polars]\"`): {_e}"
     )
 
+# Alternative bar construction (Renko, ...) — frame-in/frame-out helpers built
+# on the native _bars submodule; guarded like the other polars-dependent ones.
+try:
+    from . import bars  # noqa: F401
+except Exception as _e:  # pragma: no cover
+    warnings.warn(
+        f"quantwave.bars unavailable (requires polars; "
+        f"use `pip install \"quantwave[polars]\"`): {_e}"
+    )
+
 # Portfolio optimization (numpy) — guarded so `import quantwave` survives the
 # core install without numpy.
 try:

@@ -67,6 +67,7 @@ pub use indicators::pa_confluence::{
 pub use indicators::pattern::*;
 pub use indicators::pivot_points::PivotPoints;
 pub use indicators::price_transform::*;
+pub use indicators::renko::{RenkoBrick, RenkoBuilder, renko_atr_batch, renko_batch};
 pub use indicators::reverse_ema::ReverseEMA;
 pub use indicators::rodc::RODC;
 pub use indicators::rsmk::RSMK;

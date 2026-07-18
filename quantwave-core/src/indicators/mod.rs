@@ -92,6 +92,7 @@ pub mod precision_trend;
 pub mod price_transform;
 pub mod recursive_median;
 pub mod reflex;
+pub mod renko;
 pub mod reverse_ema;
 pub mod reversion_index;
 pub mod robustness;
