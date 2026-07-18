@@ -56,14 +56,22 @@ impl RenkoBuilder {
         while price >= self.anchor + self.box_size {
             let open = self.anchor;
             let close = self.anchor + self.box_size;
-            out.push(RenkoBrick { open, close, direction: 1 });
+            out.push(RenkoBrick {
+                open,
+                close,
+                direction: 1,
+            });
             self.anchor = close;
             self.direction = 1;
         }
         while price <= self.anchor - self.box_size {
             let open = self.anchor;
             let close = self.anchor - self.box_size;
-            out.push(RenkoBrick { open, close, direction: -1 });
+            out.push(RenkoBrick {
+                open,
+                close,
+                direction: -1,
+            });
             self.anchor = close;
             self.direction = -1;
         }

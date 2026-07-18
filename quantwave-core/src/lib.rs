@@ -67,6 +67,7 @@ pub use indicators::pa_confluence::{
 pub use indicators::pattern::*;
 pub use indicators::pivot_points::PivotPoints;
 pub use indicators::price_transform::*;
+pub use indicators::renko::{RenkoBrick, RenkoBuilder, renko_atr_batch, renko_batch};
 pub use indicators::reverse_ema::ReverseEMA;
 pub use indicators::rodc::RODC;
 pub use indicators::rsmk::RSMK;
@@ -80,7 +81,6 @@ pub use indicators::statistics::{
     LinearRegression, StandardDeviation, TaBETA, TaCORREL, TaLINEARREG, TaLINEARREG_ANGLE,
     TaLINEARREG_INTERCEPT, TaLINEARREG_SLOPE, TaSTDDEV, TaTSF, TaVAR,
 };
-pub use indicators::renko::{renko_atr_batch, renko_batch, RenkoBrick, RenkoBuilder};
 pub use indicators::supertrend::SuperTrend;
 pub use indicators::sve_volatility_bands::SVEVolatilityBands;
 pub use indicators::tema::{TEMA, ZLEMA};
