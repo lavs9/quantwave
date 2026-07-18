@@ -167,6 +167,11 @@ pub const WAVETREND_METADATA: IndicatorMetadata = IndicatorMetadata {
             default: "21",
             description: "Average Length",
         },
+        ParamDef {
+            name: "n3",
+            default: "4",
+            description: "Signal Length (WT2 = SMA(WT1, n3))",
+        },
     ],
     formula_source: "https://www.tradingview.com/script/2KE8wTuF-Indicator-WaveTrend-Oscillator-WT/",
     formula_latex: r#"

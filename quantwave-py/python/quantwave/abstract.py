@@ -62,9 +62,40 @@ class Function:
             if p.default is not inspect.Parameter.empty:
                 out[p.name] = p.default
             else:
-                # Required by the .ta method — surface the classic-talib default.
-                out[p.name] = _REQUIRED_DEFAULTS.get(p.name)
+                # Required by the .ta signature — source the authoritative default
+                # from the curated (Rust-exported) metadata before the generic
+                # classic-talib guess table. Only stays None if neither knows it.
+                out[p.name] = self._meta_default(p.name)
         return out
+
+    def _meta_default(self, param: str) -> Any:
+        """Best known default for a param the ``.ta`` signature leaves required.
+
+        Prefers the Rust-exported ``optional_params`` (keyed by the raw ``.ta``
+        param name) over the 5-key classic-talib guess table, so a generic caller
+        (``df.ta.all()``, screeners) gets a real value instead of ``None``. Reads
+        the generated entry directly rather than the merged metadata, because a
+        hand overlay may blank ``optional_params`` on collision."""
+        for src in (self._generated_params(), self._merged_optional()):
+            val = src.get(param)
+            if val is not None:
+                return val
+        return _REQUIRED_DEFAULTS.get(param)
+
+    def _generated_params(self) -> Dict[str, Any]:
+        # Faithful raw-name param defaults from the Rust export (not the
+        # required-filtered / alias-renamed optional_params).
+        try:
+            from ._metadata_generated import PARAM_DEFAULTS
+        except ImportError:
+            return {}
+        for key in (self._name, self._name.lower(), self._method):
+            if key and key in PARAM_DEFAULTS:
+                return PARAM_DEFAULTS[key]
+        return {}
+
+    def _merged_optional(self) -> Dict[str, Any]:
+        return (getattr(self._meta, "optional_params", None) or {}) if self._meta else {}
 
     # --- talib.abstract-style introspection surface ---
 
@@ -74,11 +105,18 @@ class Function:
 
     @property
     def input_names(self) -> List[str]:
-        if self._meta is not None and getattr(self._meta, "data_inputs", None):
-            return list(self._meta.data_inputs)
-        if self._spec is not None:
-            return list(self._spec.input_roles)
-        return []
+        meta_inputs = (
+            list(self._meta.data_inputs)
+            if self._meta is not None and getattr(self._meta, "data_inputs", None)
+            else []
+        )
+        spec_inputs = list(self._spec.input_roles) if self._spec is not None else []
+        # Curated data_inputs can undercount multi-series functions (beta/correl
+        # take a second `other` series); trust the actual .ta signature when it
+        # declares more inputs, so a generic caller feeds the right count.
+        if len(spec_inputs) > len(meta_inputs):
+            return spec_inputs
+        return meta_inputs or spec_inputs
 
     @property
     def output_names(self) -> List[str]:

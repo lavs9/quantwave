@@ -167,22 +167,17 @@ pub const TTM_SQUEEZE_METADATA: IndicatorMetadata = IndicatorMetadata {
     ehlers_summary: "The TTM Squeeze, developed by John Carter, identifies market consolidation by detecting when Bollinger Bands contract inside Keltner Channels — a squeeze condition indicating coiling energy. When the bands expand back outside the Keltner Channels, the squeeze releases and a momentum histogram shows the expected breakout direction. — Mastering the Trade, John Carter",
     params: &[
         ParamDef {
-            name: "bb_period",
+            name: "period",
             default: "20",
-            description: "Bollinger Bands Period",
+            description: "Bollinger Bands / Keltner Channel period",
         },
         ParamDef {
-            name: "bb_mult",
+            name: "multiplier_bb",
             default: "2.0",
             description: "Bollinger Bands Multiplier",
         },
         ParamDef {
-            name: "kc_period",
-            default: "20",
-            description: "Keltner Channel Period",
-        },
-        ParamDef {
-            name: "kc_mult",
+            name: "multiplier_kc",
             default: "1.5",
             description: "Keltner Channel Multiplier",
         },
