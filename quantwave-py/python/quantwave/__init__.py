@@ -106,6 +106,17 @@ except Exception as _e:  # pragma: no cover
     class _DummyNS: pass
     backtest = _DummyNS()
 
+# Multi-timeframe helpers: resample/apply/broadcast for base-vs-higher-timeframe
+# pipelines (lookahead-safe join_asof broadcast). Built on Polars, so guarded
+# like the other Polars-layer submodules (core install has no polars).
+try:
+    from . import mtf  # noqa: F401
+except Exception as _e:  # pragma: no cover
+    warnings.warn(
+        f"quantwave.mtf unavailable (requires polars; "
+        f"use `pip install \"quantwave[polars]\"`): {_e}"
+    )
+
 # Popular namespaces (guarded: some may require full maturin build or follow-up on gqem/05q7)
 try:
     from . import results
@@ -118,6 +129,16 @@ except Exception as _e:  # pragma: no cover
     results = _DummyNS()
     options = _DummyNS()
     talib = _DummyNS()
+
+# Data layer: synthetic()/load_sample() build Polars frames, so this needs the
+# Polars layer and is guarded like the other polars-dependent submodules.
+try:
+    from . import datasets  # noqa: F401
+except Exception as _e:  # pragma: no cover
+    warnings.warn(
+        f"quantwave.datasets unavailable (requires polars; "
+        f"use `pip install \"quantwave[polars]\"`): {_e}"
+    )
 
 # Public exception types (must survive partial native load).
 from ._errors import (
@@ -574,6 +595,14 @@ except Exception as _e:  # pragma: no cover
     class _DummyNS: pass
     abstract = _DummyNS()
 
+# Bulk-compute feature matrix: registers the `df.ta.all()` / `lf.ta.all()`
+# DataFrame/LazyFrame namespaces (built on the abstract-API registry above)
+# and exposes the `qw.feature_matrix()` top-level alias.
+try:
+    from .bulk import feature_matrix as feature_matrix
+except Exception as _e:  # pragma: no cover
+    warnings.warn(f"quantwave.bulk (df.ta.all()) unavailable: {_e}")
+
 
 def __getattr__(name: str):
     """Deprecated top-level access for options helpers."""
@@ -606,6 +635,7 @@ __all__ = [
     "get_functions",
     "get_function_groups",
     "abstract",
+    "feature_matrix",
     "IndicatorMeta",
     "BoundaryInfo",
     "Param",
@@ -627,6 +657,7 @@ __all__ = [
     "results",
     "options",
     "talib",
+    "datasets",
     "options_india",  # legacy compat (will warn in future)
     "PerformanceMetrics",
     "BacktestStats",
