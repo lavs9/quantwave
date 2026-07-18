@@ -106,6 +106,10 @@ except Exception as _e:  # pragma: no cover
     class _DummyNS: pass
     backtest = _DummyNS()
 
+# Multi-timeframe helpers: resample/apply/broadcast for base-vs-higher-timeframe
+# pipelines (lookahead-safe join_asof broadcast); pure Python/Polars, no native deps.
+from . import mtf  # noqa: F401
+
 # Popular namespaces (guarded: some may require full maturin build or follow-up on gqem/05q7)
 try:
     from . import results
