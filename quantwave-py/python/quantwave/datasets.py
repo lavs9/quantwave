@@ -1,4 +1,4 @@
-"""quantwave.datasets — zero-network OHLCV data layer (bead quantwave-p2k0.4).
+"""quantwave.datasets — zero-network OHLCV data layer.
 
 Canonical OHLCV schema
 -----------------------
