@@ -1,39 +1,145 @@
 {
   "_comment": "Python-specific fields not in Rust IndicatorMetadata. Keys override/extend Rust codegen slugs.",
   "rsi": {
-    "data_inputs": ["close"],
-    "outputs": ["rsi"],
+    "data_inputs": [
+      "close"
+    ],
+    "outputs": [
+      "rsi"
+    ],
     "warmup_bars": 14,
-    "required_params": ["period"]
+    "required_params": [
+      "period"
+    ]
   },
   "macd": {
-    "data_inputs": ["close"],
-    "outputs": ["macd", "signal", "histogram"],
+    "data_inputs": [
+      "close"
+    ],
+    "outputs": [
+      "macd",
+      "signal",
+      "histogram"
+    ],
     "warmup_bars": 26,
-    "optional_params": {"fast": 12, "slow": 26, "signal": 9}
+    "optional_params": {
+      "fast": 12,
+      "slow": 26,
+      "signal": 9
+    }
   },
   "supertrend": {
-    "data_inputs": ["high", "low", "close"],
-    "outputs": ["supertrend", "direction"],
-    "required_params": ["period", "multiplier"]
+    "data_inputs": [
+      "high",
+      "low",
+      "close"
+    ],
+    "outputs": [
+      "supertrend",
+      "direction"
+    ],
+    "required_params": [
+      "period",
+      "multiplier"
+    ]
   },
   "geometric_patterns": {
-    "data_inputs": ["high", "low"],
-    "outputs": ["flag", "hs"],
+    "data_inputs": [
+      "high",
+      "low"
+    ],
+    "outputs": [
+      "flag",
+      "hs"
+    ],
     "warmup_bars": 0,
-    "required_params": ["swing_strength"]
+    "required_params": [
+      "swing_strength"
+    ]
   },
   "sr_interaction_monitor": {
     "slug_alias": "sr_monitor",
-    "data_inputs": ["high", "low", "close"],
-    "outputs": ["bias", "active_levels", "interaction_count", "has_interaction", "interaction_type", "level_price", "strength", "distance", "atr"],
+    "data_inputs": [
+      "high",
+      "low",
+      "close"
+    ],
+    "outputs": [
+      "bias",
+      "active_levels",
+      "interaction_count",
+      "has_interaction",
+      "interaction_type",
+      "level_price",
+      "strength",
+      "distance",
+      "atr"
+    ],
     "warmup_bars": 0,
-    "required_params": ["swing_strength", "touch_tolerance", "approach_zone"]
+    "required_params": [
+      "swing_strength",
+      "touch_tolerance",
+      "approach_zone"
+    ]
   },
   "market_structure": {
-    "data_inputs": ["high", "low"],
-    "outputs": ["bias", "has_flip", "flip_bearish", "flip_price", "flip_strength"],
+    "data_inputs": [
+      "high",
+      "low"
+    ],
+    "outputs": [
+      "bias",
+      "last_high_price",
+      "last_high_bar",
+      "last_low_price",
+      "last_low_bar",
+      "has_flip",
+      "flip_bearish",
+      "flip_price",
+      "flip_bar",
+      "flip_strength",
+      "swing_depth",
+      "bar_index"
+    ],
     "warmup_bars": 0,
-    "required_params": ["swing_strength"]
+    "required_params": [
+      "swing_strength"
+    ]
+  },
+  "gap_momentum": {
+    "outputs": [
+      "gap_ratio",
+      "gap_signal"
+    ]
+  },
+  "ht_phasor": {
+    "outputs": [
+      "inphase",
+      "quadrature"
+    ]
+  },
+  "ht_sine": {
+    "outputs": [
+      "sine",
+      "leadsine"
+    ]
+  },
+  "mama": {
+    "outputs": [
+      "mama",
+      "fama"
+    ]
+  },
+  "ttm_squeeze": {
+    "outputs": [
+      "histogram",
+      "is_squeezed"
+    ]
+  },
+  "wavetrend": {
+    "outputs": [
+      "wt1",
+      "wt2"
+    ]
   }
 }

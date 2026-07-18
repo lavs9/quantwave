@@ -66,7 +66,7 @@ _HAND_METADATA: Dict[str, IndicatorMeta] = {
     "rsi": IndicatorMeta("rsi", ["period"], {}, ["close"], ["rsi"], 14, "Momentum", description="Relative Strength Index"),
     "macd": IndicatorMeta("macd", [], {"fast": 12, "slow": 26, "signal": 9}, ["close"], ["macd", "signal", "histogram"], 26, "Momentum"),
     "stoch": IndicatorMeta("stoch", ["fastk", "slowk", "slowd"], {}, ["high", "low", "close"], ["slowk", "slowd"], 14, "Momentum"),
-    "adx": IndicatorMeta("adx", ["period"], {}, ["high", "low", "close"], ["adx", "plus_di", "minus_di"], 14, "Momentum"),
+    "adx": IndicatorMeta("adx", ["period"], {}, ["high", "low", "close"], ["adx"], 14, "Momentum"),
     "cci": IndicatorMeta("cci", ["period"], {}, ["high", "low", "close"], ["cci"], 20, "Momentum"),
     "willr": IndicatorMeta("willr", ["period"], {}, ["high", "low", "close"], ["willr"], 14, "Momentum"),
     "roc": IndicatorMeta("roc", ["period"], {}, ["close"], ["roc"], 10, "Momentum"),

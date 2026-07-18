@@ -143,3 +143,30 @@ def test_batch_capable_functions_callable_with_their_defaults(ohlcv):
         except Exception as exc:  # noqa: BLE001 — collect all, report together
             failures[name] = f"{type(exc).__name__}: {exc}"
     assert failures == {}, f"batch-capable indicators failed on default call: {failures}"
+
+
+def test_output_names_arity_matches_actual_ta_output():
+    """output_names must match the real .ta output arity (quantwave-jni1): a
+    consumer reading output_names to unpack columns breaks if metadata over- or
+    under-declares outputs. Exercises every batch-capable indicator."""
+    import numpy as np
+
+    n = 80
+    frame = {
+        "open": np.arange(n, dtype=float) + 1,
+        "high": np.arange(n, dtype=float) + 2,
+        "low": np.arange(n, dtype=float),
+        "close": np.arange(n, dtype=float) + 1,
+        "volume": np.abs(np.arange(n, dtype=float)) + 1e3,
+    }
+    mism = {}
+    for name, f in _batch_capable():
+        got_frame = {iname: frame.get(iname, frame["close"]) for iname in f.input_names}
+        try:
+            out = f(got_frame, **{k: v for k, v in f.parameters.items() if v is not None})
+        except Exception:
+            continue
+        actual = len(out) if isinstance(out, tuple) else 1
+        if actual != len(f.output_names):
+            mism[name] = (len(f.output_names), actual)
+    assert mism == {}, f"output_names arity != actual .ta output: {mism}"
