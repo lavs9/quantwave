@@ -140,6 +140,24 @@ except Exception as _e:  # pragma: no cover
         f"use `pip install \"quantwave[polars]\"`): {_e}"
     )
 
+# Portfolio optimization (numpy) — guarded so `import quantwave` survives the
+# core install without numpy.
+try:
+    from . import portfolio  # noqa: F401
+except Exception as _e:  # pragma: no cover
+    warnings.warn(f"quantwave.portfolio unavailable (requires numpy): {_e}")
+
+# QuantStats interop (Polars returns + lazy pandas/quantstats) — guarded like
+# the other polars-dependent submodules.
+try:
+    from . import quantstats_interop  # noqa: F401
+    from .quantstats_interop import backtest_returns, to_quantstats  # noqa: F401
+except Exception as _e:  # pragma: no cover
+    warnings.warn(
+        f"quantwave.quantstats_interop unavailable (requires polars; "
+        f"use `pip install \"quantwave[polars]\"`): {_e}"
+    )
+
 # Public exception types (must survive partial native load).
 from ._errors import (
     QuantwaveError,
