@@ -7,8 +7,8 @@ Primary source of truth: Rust `*_METADATA` constants in quantwave-core, exported
 Hand-curated entries in `_HAND_METADATA` override generated slugs for Python DX
 (TA-Lib names, data_inputs, warmup).
 
-Warmup / NaN semantics (quantwave-976r)
----------------------------------------
+Warmup / NaN semantics
+----------------------
 During the warmup period an indicator has not yet accumulated enough history to
 produce a meaningful value. QuantWave uses three conventions:
 

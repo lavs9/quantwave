@@ -1,4 +1,4 @@
-# ML Features → Realistic Backtest with Rich Metadata (E2E) **Primary canonical artifact** closing the loop between feature engineering (`quantwave-4ps`) and the vectorized backtester (``). ## What you'll learn - Using the locked `.ta().features()` surface (Hurst, CyberCycle Struct, Griffiths Dominant Cycle, regime labels)
+# ML Features → Realistic Backtest with Rich Metadata (E2E) **Primary canonical artifact** closing the loop between feature engineering and the vectorized backtester. ## What you'll learn - Using the locked `.ta().features()` surface (Hurst, CyberCycle Struct, Griffiths Dominant Cycle, regime labels)
 - Building exposure + metadata columns in Polars (batch path)
 - Streaming path using a `Next<&Bar, Output=StrategySignal>` adapter that preserves rich metadata
 - Exact batch vs streaming parity verification (equity curves, trade lists, PnL, stats)

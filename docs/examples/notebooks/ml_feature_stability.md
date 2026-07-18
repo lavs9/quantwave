@@ -1,6 +1,6 @@
 # ML Feature Engineering: Stability, Parity & Tiny Model
 
-**Canonical example** for correct usage of QuantWave's ML feature toolkit (part of the `quantwave-4ps` work).
+**Canonical example** for correct usage of QuantWave's ML feature toolkit (part of the ML-features work).
 
 ## What this notebook demonstrates
 

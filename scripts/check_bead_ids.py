@@ -12,8 +12,11 @@ ROOT = Path(__file__).resolve().parent.parent
 # Crate / package names — not tracker IDs.
 _CRATE_NAMES = frozenset({"core", "plugins", "python", "py", "backtest", "polars"})
 
+# Tracker IDs are random base36 — roughly a quarter start with a digit
+# (e.g. quantwave-976r, quantwave-5ipk), so the leading char must accept
+# digits too. A letter-only first char silently misses those (quantwave-5ipk.9).
 BEAD_RE = re.compile(
-    r"\bquantwave-(?!(?:" + "|".join(_CRATE_NAMES) + r")\b)[a-z][a-z0-9]{1,4}\b"
+    r"\bquantwave-(?!(?:" + "|".join(_CRATE_NAMES) + r")\b)[a-z0-9]{2,5}\b"
 )
 
 SCAN_ROOTS = (
@@ -51,6 +54,10 @@ def _allowed(path: Path) -> bool:
         if rel.endswith(suffix):
             return True
     if rel.startswith("docs/generated/"):
+        return True
+    # Historical release notes are records of what was announced; like the
+    # already-exempt changelog.md / roadmap.md, they may cite tracker IDs.
+    if rel.startswith("docs/releases/"):
         return True
     return False
 
