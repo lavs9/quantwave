@@ -9,8 +9,9 @@ use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3_polars::PyDataFrame;
 use quantwave_core::{
-    KagiLine, RangeBar, RenkoBrick, kagi_atr_batch, kagi_batch, range_bars_atr_batch,
-    range_bars_batch, renko_atr_batch, renko_batch,
+    KagiLine, PointFigureColumn, RangeBar, RenkoBrick, kagi_atr_batch, kagi_batch,
+    point_figure_atr_batch, point_figure_batch, range_bars_atr_batch, range_bars_batch,
+    renko_atr_batch, renko_batch,
 };
 
 fn bricks_to_frame(bricks: &[RenkoBrick]) -> PolarsResult<DataFrame> {
@@ -30,6 +31,15 @@ fn kagi_to_frame(lines: &[KagiLine]) -> PolarsResult<DataFrame> {
         "close" => lines.iter().map(|l| l.close).collect::<Vec<f64>>(),
         "direction" => lines.iter().map(|l| l.direction).collect::<Vec<i8>>(),
         "thickness" => lines.iter().map(|l| l.thickness).collect::<Vec<i8>>(),
+    ]
+}
+
+fn pf_to_frame(cols: &[PointFigureColumn]) -> PolarsResult<DataFrame> {
+    df![
+        "top" => cols.iter().map(|c| c.top).collect::<Vec<f64>>(),
+        "bottom" => cols.iter().map(|c| c.bottom).collect::<Vec<f64>>(),
+        "direction" => cols.iter().map(|c| c.direction).collect::<Vec<i8>>(),
+        "boxes" => cols.iter().map(|c| c.boxes).collect::<Vec<u32>>(),
     ]
 }
 
@@ -92,6 +102,42 @@ fn kagi_atr(prices: Vec<f64>, atr: f64, multiplier: f64) -> PyResult<PyDataFrame
     Ok(PyDataFrame(df))
 }
 
+/// Fixed-box Point & Figure: `prices` → DataFrame with columns
+/// top/bottom/direction/boxes (one row per completed column).
+#[pyfunction]
+#[pyo3(signature = (prices, box_size, reversal=3))]
+fn point_figure(prices: Vec<f64>, box_size: f64, reversal: u32) -> PyResult<PyDataFrame> {
+    if !(box_size > 0.0) {
+        return Err(PyValueError::new_err("box_size must be > 0"));
+    }
+    if reversal < 1 {
+        return Err(PyValueError::new_err("reversal must be >= 1"));
+    }
+    let df = pf_to_frame(&point_figure_batch(&prices, box_size, reversal))
+        .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+    Ok(PyDataFrame(df))
+}
+
+/// ATR-box Point & Figure: box size = `multiplier * atr`.
+#[pyfunction]
+#[pyo3(signature = (prices, atr, multiplier=1.0, reversal=3))]
+fn point_figure_atr(
+    prices: Vec<f64>,
+    atr: f64,
+    multiplier: f64,
+    reversal: u32,
+) -> PyResult<PyDataFrame> {
+    if !(atr > 0.0) || !(multiplier > 0.0) {
+        return Err(PyValueError::new_err("atr and multiplier must be > 0"));
+    }
+    if reversal < 1 {
+        return Err(PyValueError::new_err("reversal must be >= 1"));
+    }
+    let df = pf_to_frame(&point_figure_atr_batch(&prices, atr, multiplier, reversal))
+        .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+    Ok(PyDataFrame(df))
+}
+
 /// Constant-range bars: `prices` → DataFrame with columns open/high/low/close.
 #[pyfunction]
 #[pyo3(signature = (prices, range_size))]
@@ -121,6 +167,8 @@ pub fn register(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(renko_atr, m)?)?;
     m.add_function(wrap_pyfunction!(kagi, m)?)?;
     m.add_function(wrap_pyfunction!(kagi_atr, m)?)?;
+    m.add_function(wrap_pyfunction!(point_figure, m)?)?;
+    m.add_function(wrap_pyfunction!(point_figure_atr, m)?)?;
     m.add_function(wrap_pyfunction!(range_bars, m)?)?;
     m.add_function(wrap_pyfunction!(range_bars_atr, m)?)?;
     Ok(())

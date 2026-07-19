@@ -1,4 +1,4 @@
-"""Alternative bar construction (Renko, Kagi, range bars).
+"""Alternative bar construction (Renko, Kagi, range bars, Point & Figure).
 
 Bar transforms discard time and produce a different number of rows than the
 input, so they are frame-in / frame-out helpers rather than ``.ta`` expressions.
@@ -8,6 +8,7 @@ input, so they are frame-in / frame-out helpers rather than ``.ta`` expressions.
     bricks = qw.bars.renko(ohlcv_df, box_size="atr", atr_period=14, multiplier=2.0)
     lines = qw.bars.kagi(ohlcv_df, reversal=2.0)            # DataFrame[open, close, direction, thickness]
     bars = qw.bars.range_bars(ohlcv_df, range_size=2.0)     # DataFrame[open, high, low, close]
+    cols = qw.bars.point_figure(ohlcv_df, box_size=1.0)     # DataFrame[top, bottom, direction, boxes]
 """
 
 from __future__ import annotations
@@ -97,6 +98,46 @@ def kagi(
         atr = _atr_value(data, price_col, atr_period)
         return _bars.kagi_atr(prices, atr, multiplier)
     return _bars.kagi(prices, float(reversal))
+
+
+def point_figure(
+    data: "Union[pl.DataFrame, pl.LazyFrame, list[float]]",
+    box_size: "Union[float, str]" = 1.0,
+    reversal: int = 3,
+    *,
+    price_col: str = "close",
+    atr_period: int = 14,
+    multiplier: float = 1.0,
+) -> "pl.DataFrame":
+    """Build Point & Figure columns from a price series (close-based).
+
+    Price is reduced to a grid of boxes of height ``box_size``; rising columns of
+    X's and falling columns of O's alternate, and a new column starts only when
+    price reverses by at least ``reversal`` boxes (the classic N-box reversal,
+    default 3).
+
+    Args:
+        data: OHLCV DataFrame/LazyFrame (uses ``price_col``) or a list of prices.
+        box_size: a positive float for a fixed box, or ``"atr"`` to derive it from
+            ``multiplier * ATR(atr_period)``.
+        reversal: number of boxes required to start a new (opposite) column.
+        price_col: price column when ``data`` is a frame.
+        atr_period / multiplier: used only when ``box_size == "atr"``.
+
+    Returns:
+        DataFrame with columns ``top``, ``bottom`` (the column's box-level range),
+        ``direction`` (+1 X / -1 O), and ``boxes`` (the span in box units), one
+        row per completed column.
+    """
+    from quantwave import _bars
+
+    prices = _prices(data, price_col)
+    if isinstance(box_size, str):
+        if box_size != "atr":
+            raise ValueError("box_size must be a positive float or 'atr'")
+        atr = _atr_value(data, price_col, atr_period)
+        return _bars.point_figure_atr(prices, atr, multiplier, reversal)
+    return _bars.point_figure(prices, float(box_size), reversal)
 
 
 def range_bars(

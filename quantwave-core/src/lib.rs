@@ -70,6 +70,9 @@ pub use indicators::pa_confluence::{
 };
 pub use indicators::pattern::*;
 pub use indicators::pivot_points::PivotPoints;
+pub use indicators::point_figure::{
+    PointFigureBuilder, PointFigureColumn, point_figure_atr_batch, point_figure_batch,
+};
 pub use indicators::price_transform::*;
 pub use indicators::range_bars::{
     RangeBar, RangeBarBuilder, range_bars_atr_batch, range_bars_batch,

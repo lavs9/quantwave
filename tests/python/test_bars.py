@@ -104,6 +104,43 @@ def test_kagi_atr_and_errors():
         qw.bars.kagi([10.0, 11.0], reversal="bogus")
 
 
+def test_point_figure_single_x_column():
+    b = qw.bars.point_figure([10.0, 13.0, 10.0], box_size=1.0, reversal=3)
+    assert b.columns == ["top", "bottom", "direction", "boxes"]
+    assert b.height == 1
+    assert b.row(0) == (13.0, 10.0, 1, 3)
+
+
+def test_point_figure_alternating_columns():
+    b = qw.bars.point_figure([10.0, 13.0, 10.0, 7.0, 10.0], box_size=1.0, reversal=3)
+    assert b["direction"].to_list() == [1, -1]
+    assert b["top"].to_list() == [13.0, 12.0]
+    assert b["bottom"].to_list() == [10.0, 7.0]
+
+
+def test_point_figure_no_reversal_within_threshold():
+    assert qw.bars.point_figure([10.0, 13.0, 11.0, 13.5], box_size=1.0, reversal=3).height == 0
+
+
+def test_point_figure_span_invariant_on_frame():
+    df = qw.datasets.synthetic(seed=9, rows=300)
+    b = qw.bars.point_figure(df, box_size=2.0, reversal=3)
+    assert (b["top"] >= b["bottom"]).all()
+    assert set(b["direction"].unique().to_list()) <= {-1, 1}
+    # boxes is the span in box units.
+    span = ((b["top"] - b["bottom"]) / 2.0).round().cast(pl.Int64)
+    assert (span == b["boxes"].cast(pl.Int64)).all()
+
+
+def test_point_figure_atr_and_errors():
+    df = qw.datasets.synthetic(seed=10, rows=200)
+    assert qw.bars.point_figure(df, box_size="atr", reversal=3).height >= 0
+    with pytest.raises(Exception):
+        qw.bars.point_figure([10.0, 11.0], box_size=0.0)
+    with pytest.raises(ValueError):
+        qw.bars.point_figure([10.0, 11.0], box_size="bogus")
+
+
 def test_range_bars_single_bar():
     b = qw.bars.range_bars([10.0, 10.5, 11.0, 12.0], range_size=2.0)
     assert b.columns == ["open", "high", "low", "close"]
