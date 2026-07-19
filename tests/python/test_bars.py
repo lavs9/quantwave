@@ -1,4 +1,4 @@
-"""Alternative bar construction — Renko (quantwave-p2k0.9, slice 1)."""
+"""Alternative bar construction — Renko / range bars / Kagi (quantwave-p2k0.9)."""
 
 import polars as pl
 import pytest
@@ -55,6 +55,53 @@ def test_renko_invalid_box_raises():
         qw.bars.renko([10.0, 11.0], box_size=0.0)
     with pytest.raises(ValueError):
         qw.bars.renko([10.0, 11.0], box_size="bogus")
+
+
+def test_kagi_single_reversal():
+    # Anchor 10, H=2. Rise to 14, retrace to 11 (<=14-2) → up-line [10,14].
+    b = qw.bars.kagi([10.0, 12.0, 14.0, 11.0], reversal=2.0)
+    assert b.columns == ["open", "close", "direction", "thickness"]
+    assert b.height == 1
+    assert b.row(0) == (10.0, 14.0, 1, 0)
+
+
+def test_kagi_alternating_directions():
+    b = qw.bars.kagi([10.0, 14.0, 10.0, 14.0], reversal=2.0)
+    assert b["direction"].to_list() == [1, -1]
+    assert b["open"].to_list() == [10.0, 14.0]
+    assert b["close"].to_list() == [14.0, 10.0]
+
+
+def test_kagi_yang_on_higher_high():
+    # Up [10,14] (shoulder 14), down [14,11], then up past 14 to 17 → yang line.
+    b = qw.bars.kagi([10.0, 14.0, 11.0, 17.0, 14.0], reversal=2.0)
+    assert b.height == 3
+    assert b["thickness"].to_list() == [0, 0, 1]
+    assert b["direction"].to_list() == [1, -1, 1]
+
+
+def test_kagi_no_reversal_within_threshold():
+    assert qw.bars.kagi([10.0, 11.0, 10.2, 11.5, 10.8], reversal=2.0).height == 0
+
+
+def test_kagi_alternation_invariant_on_frame():
+    df = qw.datasets.synthetic(seed=7, rows=300)
+    b = qw.bars.kagi(df, reversal=2.0)
+    dirs = b["direction"].to_list()
+    # Consecutive lines strictly alternate and connect end-to-start.
+    assert all(a == -c for a, c in zip(dirs, dirs[1:]))
+    opens, closes = b["open"].to_list(), b["close"].to_list()
+    assert all(closes[i] == opens[i + 1] for i in range(len(opens) - 1))
+    assert set(b["thickness"].unique().to_list()) <= {-1, 0, 1}
+
+
+def test_kagi_atr_and_errors():
+    df = qw.datasets.synthetic(seed=8, rows=200)
+    assert qw.bars.kagi(df, reversal="atr", multiplier=2.0).height >= 0
+    with pytest.raises(Exception):
+        qw.bars.kagi([10.0, 11.0], reversal=0.0)
+    with pytest.raises(ValueError):
+        qw.bars.kagi([10.0, 11.0], reversal="bogus")
 
 
 def test_range_bars_single_bar():

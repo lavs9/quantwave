@@ -1,4 +1,4 @@
-"""Alternative bar construction (Renko, ...).
+"""Alternative bar construction (Renko, Kagi, range bars).
 
 Bar transforms discard time and produce a different number of rows than the
 input, so they are frame-in / frame-out helpers rather than ``.ta`` expressions.
@@ -6,6 +6,8 @@ input, so they are frame-in / frame-out helpers rather than ``.ta`` expressions.
     import quantwave as qw
     bricks = qw.bars.renko(ohlcv_df, box_size=2.0)          # DataFrame[open, close, direction]
     bricks = qw.bars.renko(ohlcv_df, box_size="atr", atr_period=14, multiplier=2.0)
+    lines = qw.bars.kagi(ohlcv_df, reversal=2.0)            # DataFrame[open, close, direction, thickness]
+    bars = qw.bars.range_bars(ohlcv_df, range_size=2.0)     # DataFrame[open, high, low, close]
 """
 
 from __future__ import annotations
@@ -63,6 +65,38 @@ def renko(
         atr = _atr_value(data, price_col, atr_period)
         return _bars.renko_atr(prices, atr, multiplier)
     return _bars.renko(prices, float(box_size))
+
+
+def kagi(
+    data: "Union[pl.DataFrame, pl.LazyFrame, list[float]]",
+    reversal: "Union[float, str]" = 2.0,
+    *,
+    price_col: str = "close",
+    atr_period: int = 14,
+    multiplier: float = 1.0,
+) -> "pl.DataFrame":
+    """Build Kagi lines from a price series.
+
+    A Kagi line keeps extending in its current direction while price advances and
+    reverses only when price retraces from the running extreme by at least
+    ``reversal`` (a positive float, or ``"atr"`` to derive it from
+    ``multiplier * ATR(atr_period)``). Each row is one completed line between two
+    turning points; ``thickness`` is the yin/yang state (+1 yang, -1 yin, 0
+    undetermined).
+
+    Returns:
+        DataFrame with columns ``open``, ``close``, ``direction`` (+1/-1),
+        ``thickness`` (+1/-1/0), one row per completed line.
+    """
+    from quantwave import _bars
+
+    prices = _prices(data, price_col)
+    if isinstance(reversal, str):
+        if reversal != "atr":
+            raise ValueError("reversal must be a positive float or 'atr'")
+        atr = _atr_value(data, price_col, atr_period)
+        return _bars.kagi_atr(prices, atr, multiplier)
+    return _bars.kagi(prices, float(reversal))
 
 
 def range_bars(
