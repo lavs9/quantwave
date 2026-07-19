@@ -90,6 +90,7 @@ pub mod pattern;
 pub mod phasor;
 pub mod pivot_points;
 pub mod pma;
+pub mod point_figure;
 pub mod precision_trend;
 pub mod price_transform;
 pub mod range_bars;

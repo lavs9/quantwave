@@ -22,6 +22,7 @@ prices, and each supports an ATR-derived threshold (`"atr"`).
 | `qw.bars.renko` | Fixed box `ΔP`; a new brick when close leaves the band | `open, close, direction` | Drozda, Cavojsky, Sebes (2024), *On Suitability of Renko Charts for Algorithmic Trading*, Def. 1 |
 | `qw.bars.range_bars` | Bar closes when high−low span reaches `range_size` | `open, high, low, close` | Constant-range (constant-range bar) construction |
 | `qw.bars.kagi` | Line reverses when price retraces `reversal` from the extreme | `open, close, direction, thickness` | Bogomolov (2013) reversal construction + Nison yin/yang |
+| `qw.bars.point_figure` | Columns of X/O boxes; new column after an `reversal`-box reversal | `top, bottom, direction, boxes` | Cohen (1947) N-box reversal + du Plessis (2012); close-price method |
 
 ```python
 import quantwave as qw
@@ -31,6 +32,7 @@ df = qw.datasets.synthetic(seed=3, rows=300)
 bricks = qw.bars.renko(df, box_size=2.0)              # or box_size="atr"
 bars   = qw.bars.range_bars(df, range_size=3.0)
 lines  = qw.bars.kagi(df, reversal=2.0)               # thickness: +1 yang / -1 yin / 0
+cols   = qw.bars.point_figure(df, box_size=1.0, reversal=3)   # X/O columns
 ```
 
 The Kagi `thickness` column is the classic **yin/yang** signal: `+1` (yang) once
