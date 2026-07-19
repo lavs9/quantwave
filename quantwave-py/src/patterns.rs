@@ -34,6 +34,7 @@ fn patterns_to_frame(pats: &[HarmonicPattern]) -> PolarsResult<DataFrame> {
         "bc_ab" => pats.iter().map(|p| p.bc_ab).collect::<Vec<f64>>(),
         "cd_ab" => pats.iter().map(|p| p.cd_ab).collect::<Vec<f64>>(),
         "cd_bc" => pats.iter().map(|p| p.cd_bc).collect::<Vec<f64>>(),
+        "d_xa" => pats.iter().map(|p| p.d_xa).collect::<Vec<Option<f64>>>(),
         "prz_low" => pats.iter().map(|p| p.prz_low).collect::<Vec<f64>>(),
         "prz_high" => pats.iter().map(|p| p.prz_high).collect::<Vec<f64>>(),
         "size_atr" => pats.iter().map(|p| p.size_atr).collect::<Vec<f64>>(),
@@ -54,6 +55,7 @@ fn patterns_to_frame(pats: &[HarmonicPattern]) -> PolarsResult<DataFrame> {
     detect_abcd = true,
     detect_alternate_abcd = true,
     detect_5_0 = true,
+    detect_xabcd = true,
 ))]
 #[allow(clippy::too_many_arguments)]
 fn harmonic(
@@ -67,6 +69,7 @@ fn harmonic(
     detect_abcd: bool,
     detect_alternate_abcd: bool,
     detect_5_0: bool,
+    detect_xabcd: bool,
 ) -> PyResult<PyDataFrame> {
     if highs.len() != lows.len() {
         return Err(PyValueError::new_err(
@@ -87,6 +90,7 @@ fn harmonic(
         detect_abcd,
         detect_alternate_abcd,
         detect_5_0,
+        detect_xabcd,
     };
     let bars: Vec<(f64, f64)> = highs.into_iter().zip(lows).collect();
     let pats = harmonic_patterns_batch(&bars, swing_strength, config);

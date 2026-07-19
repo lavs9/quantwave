@@ -62,20 +62,37 @@ Ratio definitions follow:
 - **AB=CD** and **Alternate AB=CD** — Carney, *Harmonic Trading: Volume One*
   (2010), Ch. 4 "The AB=CD Pattern", and [harmonictrader.com › AB=CD](https://harmonictrader.com/harmonic-patterns/abcd-pattern/)
   / [Alternate ABCD](https://harmonictrader.com/harmonic-patterns/alternate-abcd-pattern/).
-- **5-0** — Carney, *Harmonic Trading: Volume Two* (2010), Ch. 3 "New Harmonic
-  Patterns", pp. 78–79, and [harmonictrader.com › 5-0](https://harmonictrader.com/harmonic-patterns/5-0/).
+- **Gartley, Bat, Butterfly, Crab** — Carney, *Harmonic Trading: Volume One*
+  (2010), Ch. 5–8.
+- **5-0** and **Alternate Bat** — Carney, *Harmonic Trading: Volume Two* (2010),
+  Ch. 3 "New Harmonic Patterns" (5-0 at pp. 78–79), and [harmonictrader.com › 5-0](https://harmonictrader.com/harmonic-patterns/5-0/).
 
 ### Patterns and ratios
 
-| Pattern (`kind`) | Points | Ratio gates |
-|---|---|---|
-| `abcd` | A, B, C, D | C retraces AB by 0.382–0.886; **CD = AB** (equal length) |
-| `alternate_abcd` | A, B, C, D | C retraces AB by 0.382–0.886; **CD = 1.27 × AB or 1.618 × AB** |
-| `5-0` | X, A, B, C, D | B = 1.13–1.618 of XA; C = 1.618–2.24 of AB; **D = 50% of BC** and the reciprocal AB=CD |
+**Four-point patterns** — C retraces AB by 0.382–0.886:
 
-The AB=CD reciprocal table (C retracement `{0.382, 0.50, 0.618, 0.707, 0.786,
-0.886}` pairs with the BC projection `{2.618/2.24, 2.0, 1.618, 1.41, 1.27,
-1.13}`) is applied via the equal-length CD constraint.
+| Pattern (`kind`) | Ratio gate |
+|---|---|
+| `abcd` | **CD = AB** (equal length) |
+| `alternate_abcd` | **CD = 1.27 × AB or 1.618 × AB** |
+
+**Five-point patterns** (X, A, B, C, D) — the AB=CD reciprocal table (C
+retracement `{0.382, 0.50, 0.618, 0.707, 0.786, 0.886}` pairs with the BC
+projection `{2.618/2.24, 2.0, 1.618, 1.41, 1.27, 1.13}`) underlies the
+completion. The **XABCD "Gartley family"** is distinguished by `d_xa` — D's
+retracement/extension of the XA leg, each pattern's *defining number*:
+
+| Pattern (`kind`) | B (of XA) | BC projection | **D (of XA) = `d_xa`** |
+|---|---|---|---|
+| `gartley` | 0.618 | ≤ 1.618 | **0.786** |
+| `bat` | < 0.618 (~0.50) | 1.618–2.618 | **0.886** |
+| `butterfly` | 0.786 | ≥ 1.618 | **1.27** |
+| `crab` | ≤ 0.618 | 2.618–3.618 | **1.618** |
+| `alternate_bat` | 0.382 | extreme | **1.13** |
+| `5-0` | 1.13–1.618 *(extension)* | — | 50% of BC + reciprocal AB=CD |
+
+All XABCD patterns take C as a 0.382–0.886 retracement of AB. Enable/disable the
+family with `detect_xabcd`, or filter the output by `kind`.
 
 ### Usage
 
