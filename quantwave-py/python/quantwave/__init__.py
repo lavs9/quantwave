@@ -150,6 +150,16 @@ except Exception as _e:  # pragma: no cover
         f"use `pip install \"quantwave[polars]\"`): {_e}"
     )
 
+# Price-action pattern detection (harmonic) — frame-in/frame-out helpers built
+# on the native _patterns submodule; guarded like the other polars-dependent ones.
+try:
+    from . import patterns  # noqa: F401
+except Exception as _e:  # pragma: no cover
+    warnings.warn(
+        f"quantwave.patterns unavailable (requires polars; "
+        f"use `pip install \"quantwave[polars]\"`): {_e}"
+    )
+
 # Portfolio optimization (numpy) — guarded so `import quantwave` survives the
 # core install without numpy.
 try:

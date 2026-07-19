@@ -48,3 +48,7 @@ __pycache__/
 *.so
 quantwave-py/python/quantwave/*.so
 
+
+# Copyrighted reference material — local only, never commit (attribution lives in docs)
+/sources/
+/references/*.pdf

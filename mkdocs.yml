@@ -78,6 +78,7 @@ nav:
       - Overview: guides/indicators/index.md
       - Gallery: guides/indicators/gallery.md
       - Full Catalog: guides/indicators/native/index.md
+      - Bar Types & Patterns: guides/indicators/bars_and_patterns.md
       - Ehlers DSP: guides/indicators/ehlers/index.md
       - Regime Detection: guides/indicators/regimes/index.md
       - ML Features: guides/ml_features.md

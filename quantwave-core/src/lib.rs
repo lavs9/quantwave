@@ -47,6 +47,9 @@ pub use indicators::frac_diff::FracDiff;
 pub use indicators::fractals::BillWilliamsFractals;
 pub use indicators::gap_momentum::GapMomentum;
 pub use indicators::geometric_patterns::{FlagPattern, GeometricPatternScanner, HsPattern};
+pub use indicators::harmonic::{
+    HarmonicConfig, HarmonicKind, HarmonicPattern, HarmonicPatternScanner, harmonic_patterns_batch,
+};
 pub use indicators::harrington_adx::HarringtonADXOscillator;
 pub use indicators::heikin_ashi::HeikinAshi;
 pub use indicators::hma::HMA;

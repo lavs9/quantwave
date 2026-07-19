@@ -1,6 +1,6 @@
 {
   "crate": "quantwave-core",
-  "files_scanned": 201,
+  "files_scanned": 204,
   "unsafe_forbidden": true,
   "panic_forbidden": true,
   "forbidden_violations": 0,
