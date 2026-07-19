@@ -1,11 +1,12 @@
-//! Harmonic pattern detection (AB=CD, Alternate AB=CD, 5-0).
+//! Harmonic pattern detection (AB=CD, Alternate AB=CD, 5-0, and the XABCD
+//! Gartley family: Gartley, Bat, Butterfly, Crab, Alternate Bat).
 //!
 //! Harmonic patterns are Fibonacci-ratio-constrained price structures. This
-//! module implements three of them, built on the shared swing foundation
-//! ([`MarketStructure`], Part 21) exactly like [`GeometricPatternScanner`]:
-//! confirmed swing pivots are collected into an alternating sequence, and the
-//! most recent 4 (AB=CD) or 5 (5-0) pivots are tested against the pattern's
-//! ratio gates. A pattern is emitted only once its completion pivot `D` is a
+//! module builds them on the shared swing foundation ([`MarketStructure`],
+//! Part 21) exactly like [`GeometricPatternScanner`]: confirmed swing pivots are
+//! collected into an alternating sequence, and the most recent 4 (AB=CD) or 5
+//! (5-0 and the XABCD patterns) pivots are tested against the pattern's ratio
+//! gates. A pattern is emitted only once its completion pivot `D` is a
 //! *confirmed* swing — which lags the pivot by `swing_strength` bars — so
 //! detection never uses information from beyond `D` (anti-lookahead).
 //!
@@ -25,6 +26,10 @@
 //! - 5-0 pattern (B = 1.13–1.618 of XA; C = 1.618–2.24 of AB; D = 50% of BC and
 //!   the reciprocal AB=CD): Carney, *Harmonic Trading: Volume Two* (2010),
 //!   Ch. 3 "New Harmonic Patterns", pp. 78–79 / harmonictrader.com "5-0".
+//! - XABCD reversal patterns, distinguished by D's retracement/extension of the
+//!   XA leg (see [`XABCD_SPECS`]): Gartley (D 0.786), Bat (D 0.886), Butterfly
+//!   (D 1.27), Crab (D 1.618) — *Volume One* Ch. 5–8 — and Alternate Bat
+//!   (D 1.13) — *Volume Two* Ch. 3.
 //!
 //! Signal output is a rich [`HarmonicPattern`] struct (pivots, measured ratios,
 //! fit score, PRZ), kept separate from any visualization per the project's PA
@@ -44,6 +49,16 @@ pub enum HarmonicKind {
     AlternateAbCd,
     /// 5-0: five-point structure completing at a 50% BC retrace / reciprocal AB=CD.
     FiveZero,
+    /// Gartley: XABCD with B = 0.618 XA, D = 0.786 XA.
+    Gartley,
+    /// Bat: XABCD with B < 0.618 XA, D = 0.886 XA.
+    Bat,
+    /// Butterfly: XABCD with B = 0.786 XA, D = 1.27 XA (extension).
+    Butterfly,
+    /// Crab: XABCD with B ≤ 0.618 XA, D = 1.618 XA (deep extension).
+    Crab,
+    /// Alternate Bat: XABCD with B = 0.382 XA, D = 1.13 XA.
+    AlternateBat,
 }
 
 impl HarmonicKind {
@@ -52,6 +67,11 @@ impl HarmonicKind {
             HarmonicKind::AbCd => "abcd",
             HarmonicKind::AlternateAbCd => "alternate_abcd",
             HarmonicKind::FiveZero => "5-0",
+            HarmonicKind::Gartley => "gartley",
+            HarmonicKind::Bat => "bat",
+            HarmonicKind::Butterfly => "butterfly",
+            HarmonicKind::Crab => "crab",
+            HarmonicKind::AlternateBat => "alternate_bat",
         }
     }
 
@@ -60,9 +80,84 @@ impl HarmonicKind {
             HarmonicKind::AbCd => 0,
             HarmonicKind::AlternateAbCd => 1,
             HarmonicKind::FiveZero => 2,
+            HarmonicKind::Gartley => 3,
+            HarmonicKind::Bat => 4,
+            HarmonicKind::Butterfly => 5,
+            HarmonicKind::Crab => 6,
+            HarmonicKind::AlternateBat => 7,
         }
     }
 }
+
+/// Ratio specification for an XABCD reversal pattern (Gartley family). `d_xa` —
+/// the D retracement/extension of the XA leg — is each pattern's defining number.
+/// Ratios per Carney, *Harmonic Trading* Vols. 1–2 (see module docs).
+struct XabcdSpec {
+    kind: HarmonicKind,
+    /// B as a retracement of XA: `[lo, hi]` gate and `ideal` for scoring.
+    b_lo: f64,
+    b_hi: f64,
+    b_ideal: f64,
+    /// BC projection gate `[lo, hi]` (D as an extension of BC).
+    bc_lo: f64,
+    bc_hi: f64,
+    /// D as a retracement/extension of XA — the defining number.
+    d_xa: f64,
+}
+
+/// Carney XABCD specs. C always retraces AB by 0.382–0.886.
+const XABCD_SPECS: [XabcdSpec; 5] = [
+    // Gartley: Vol. 1 Ch. 6 — B 0.618, BC ≤ 1.618, D 0.786 XA.
+    XabcdSpec {
+        kind: HarmonicKind::Gartley,
+        b_lo: 0.618,
+        b_hi: 0.618,
+        b_ideal: 0.618,
+        bc_lo: 1.13,
+        bc_hi: 1.618,
+        d_xa: 0.786,
+    },
+    // Bat: Vol. 1 Ch. 5 — B < 0.618 (pref 0.50), BC 1.618–2.618, D 0.886 XA.
+    XabcdSpec {
+        kind: HarmonicKind::Bat,
+        b_lo: 0.382,
+        b_hi: 0.618,
+        b_ideal: 0.50,
+        bc_lo: 1.618,
+        bc_hi: 2.618,
+        d_xa: 0.886,
+    },
+    // Butterfly: Vol. 1 Ch. 8 — B 0.786, BC ≥ 1.618, D 1.27 XA.
+    XabcdSpec {
+        kind: HarmonicKind::Butterfly,
+        b_lo: 0.786,
+        b_hi: 0.786,
+        b_ideal: 0.786,
+        bc_lo: 1.618,
+        bc_hi: 2.618,
+        d_xa: 1.27,
+    },
+    // Crab: Vol. 1 Ch. 7 — B ≤ 0.618, BC 2.618–3.618, D 1.618 XA.
+    XabcdSpec {
+        kind: HarmonicKind::Crab,
+        b_lo: 0.382,
+        b_hi: 0.618,
+        b_ideal: 0.50,
+        bc_lo: 2.618,
+        bc_hi: 3.618,
+        d_xa: 1.618,
+    },
+    // Alternate Bat: Vol. 2 Ch. 3 — B 0.382, extreme BC, D 1.13 XA.
+    XabcdSpec {
+        kind: HarmonicKind::AlternateBat,
+        b_lo: 0.236,
+        b_hi: 0.382,
+        b_ideal: 0.382,
+        bc_lo: 1.618,
+        bc_hi: 3.618,
+        d_xa: 1.13,
+    },
+];
 
 /// A detected harmonic pattern. Points are labelled X, A, B, C, D; `x_*` is
 /// populated only for the 5-0 (four-point AB=CD patterns have no X). `is_bull`
@@ -92,6 +187,10 @@ pub struct HarmonicPattern {
     pub cd_ab: f64,
     /// |CD| / |BC| — ~0.5 for the 5-0 completion.
     pub cd_bc: f64,
+    /// XABCD (Gartley family) only: D as a retracement/extension of the XA leg —
+    /// the pattern's defining number (0.786 Gartley, 0.886 Bat, 1.27 Butterfly,
+    /// 1.618 Crab, 1.13 Alternate Bat). `None` for AB=CD and 5-0.
+    pub d_xa: Option<f64>,
     /// Potential Reversal Zone (price band where the pattern projects to complete).
     pub prz_low: f64,
     pub prz_high: f64,
@@ -112,6 +211,9 @@ pub struct HarmonicConfig {
     pub detect_abcd: bool,
     pub detect_alternate_abcd: bool,
     pub detect_5_0: bool,
+    /// Enable the XABCD (Gartley / Bat / Butterfly / Crab / Alternate Bat) family;
+    /// filter the output by `kind` for finer control.
+    pub detect_xabcd: bool,
 }
 
 impl Default for HarmonicConfig {
@@ -124,6 +226,7 @@ impl Default for HarmonicConfig {
             detect_abcd: true,
             detect_alternate_abcd: true,
             detect_5_0: true,
+            detect_xabcd: true,
         }
     }
 }
@@ -325,6 +428,7 @@ impl HarmonicPatternScanner {
             bc_ab,
             cd_ab,
             cd_bc: cd / bc,
+            d_xa: None,
             prz_low: d_proj - band,
             prz_high: d_proj + band,
             size_atr: self.size_atr(&[a.price, b.price, c.price, d.price]),
@@ -393,8 +497,91 @@ impl HarmonicPatternScanner {
             bc_ab,
             cd_ab,
             cd_bc,
+            d_xa: None,
             prz_low: lvl_50.min(lvl_abcd),
             prz_high: lvl_50.max(lvl_abcd),
+            size_atr: self.size_atr(&[x.price, a.price, b.price, c.price, d.price]),
+        })
+    }
+
+    /// Test the last five swings (X, A, B, C, D) as an XABCD reversal pattern
+    /// (Gartley / Bat / Butterfly / Crab / Alternate Bat). Returns the
+    /// best-scoring match, whose defining number is D's retracement of the XA leg.
+    fn classify_xabcd(
+        &self,
+        x: &SwingPoint,
+        a: &SwingPoint,
+        b: &SwingPoint,
+        c: &SwingPoint,
+        d: &SwingPoint,
+    ) -> Option<HarmonicPattern> {
+        if !self.config.detect_xabcd {
+            return None;
+        }
+        if !(x.bar < a.bar && a.bar < b.bar && b.bar < c.bar && c.bar < d.bar) {
+            return None;
+        }
+        let xa = leg(x.price, a.price);
+        let ab = leg(a.price, b.price);
+        let bc = leg(b.price, c.price);
+        let cd = leg(c.price, d.price);
+        if xa <= 0.0 || ab <= 0.0 || bc <= 0.0 || cd <= 0.0 {
+            return None;
+        }
+        let b_xa = ab / xa; // B retracement of XA
+        let c_ab = bc / ab; // C retracement of AB
+        let bc_proj = cd / bc; // D as an extension of BC
+        let d_xa = leg(a.price, d.price) / xa; // D retracement/extension of XA
+        let tol = self.config.ratio_tolerance;
+        if !in_band(c_ab, 0.382, 0.886, tol) {
+            return None;
+        }
+
+        // Pick the best-scoring spec whose gates all pass. D's XA ratio is the
+        // defining number (weighted most); the B point differentiates lookalikes.
+        let mut best: Option<(f64, &XabcdSpec)> = None;
+        for spec in &XABCD_SPECS {
+            if !in_band(b_xa, spec.b_lo, spec.b_hi, tol)
+                || !in_band(bc_proj, spec.bc_lo, spec.bc_hi, tol)
+                || ratio_fit(d_xa, spec.d_xa, tol) == 0.0
+            {
+                continue;
+            }
+            let score = 0.6 * ratio_fit(d_xa, spec.d_xa, tol)
+                + 0.4 * ratio_fit(b_xa, spec.b_ideal, tol * 2.0);
+            if best.is_none_or(|(bs, _)| score > bs) {
+                best = Some((score, spec));
+            }
+        }
+        let (score, spec) = best?;
+
+        let is_bull = !d.is_high;
+        // PRZ: the XA-ratio completion price (the defining number), banded.
+        let sign = if is_bull { -1.0 } else { 1.0 };
+        let d_proj = a.price + sign * spec.d_xa * xa;
+        let band = tol * xa;
+        Some(HarmonicPattern {
+            id: 0,
+            kind: spec.kind,
+            is_bull,
+            x_bar: Some(x.bar),
+            x_price: Some(x.price),
+            a_bar: a.bar,
+            a_price: a.price,
+            b_bar: b.bar,
+            b_price: b.price,
+            c_bar: c.bar,
+            c_price: c.price,
+            d_bar: d.bar,
+            d_price: d.price,
+            score,
+            xa_ext: Some(b_xa),
+            bc_ab: c_ab,
+            cd_ab: cd / ab,
+            cd_bc: bc_proj,
+            d_xa: Some(d_xa),
+            prz_low: d_proj - band,
+            prz_high: d_proj + band,
             size_atr: self.size_atr(&[x.price, a.price, b.price, c.price, d.price]),
         })
     }
@@ -411,6 +598,11 @@ impl HarmonicPatternScanner {
                 self.swings[n - 1].clone(),
             );
             if let Some(p) = self.classify_5_0(&x, &a, &b, &c, &d)
+                && let Some(p) = self.emit(p)
+            {
+                out.push(p);
+            }
+            if let Some(p) = self.classify_xabcd(&x, &a, &b, &c, &d)
                 && let Some(p) = self.emit(p)
             {
                 out.push(p);
@@ -651,6 +843,116 @@ mod tests {
         assert!(!abcd[0].is_bull);
     }
 
+    /// Assert a single XABCD pattern of the given kind is found with score ~1.
+    fn assert_xabcd(pivots: &[(f64, bool)], kind: HarmonicKind, d_xa: f64) {
+        let pats = run(pivots);
+        let hits: Vec<_> = pats.iter().filter(|p| p.kind == kind).collect();
+        assert_eq!(hits.len(), 1, "expected one {:?}, got {:?}", kind, pats);
+        let p = hits[0];
+        assert!(p.is_bull);
+        assert!(p.x_bar.is_some());
+        assert!(p.score > 0.9, "score {}", p.score);
+        assert!(
+            (p.d_xa.unwrap() - d_xa).abs() < 0.03,
+            "d_xa {}",
+            p.d_xa.unwrap()
+        );
+    }
+
+    #[test]
+    fn gold_bullish_gartley() {
+        // X=100,A=110 (XA=10); B=0.618 XA=103.82; C=0.618 AB=107.64; D=0.786 XA=102.14.
+        assert_xabcd(
+            &[
+                (100.0, false),
+                (110.0, true),
+                (103.82, false),
+                (107.64, true),
+                (102.14, false),
+            ],
+            HarmonicKind::Gartley,
+            0.786,
+        );
+    }
+
+    #[test]
+    fn gold_bullish_bat() {
+        // B=0.50 XA=105; C=0.618 AB=108.09; D=0.886 XA=101.14.
+        assert_xabcd(
+            &[
+                (100.0, false),
+                (110.0, true),
+                (105.0, false),
+                (108.09, true),
+                (101.14, false),
+            ],
+            HarmonicKind::Bat,
+            0.886,
+        );
+    }
+
+    #[test]
+    fn gold_bullish_butterfly() {
+        // B=0.786 XA=102.14; C=0.50 AB=106.07; D=1.27 XA=97.30 (extension).
+        assert_xabcd(
+            &[
+                (100.0, false),
+                (110.0, true),
+                (102.14, false),
+                (106.07, true),
+                (97.30, false),
+            ],
+            HarmonicKind::Butterfly,
+            1.27,
+        );
+    }
+
+    #[test]
+    fn gold_bullish_crab() {
+        // B=0.50 XA=105; C=0.886 AB=109.43; D=1.618 XA=93.82 (deep extension).
+        assert_xabcd(
+            &[
+                (100.0, false),
+                (110.0, true),
+                (105.0, false),
+                (109.43, true),
+                (93.82, false),
+            ],
+            HarmonicKind::Crab,
+            1.618,
+        );
+    }
+
+    #[test]
+    fn gold_bullish_alternate_bat() {
+        // B=0.382 XA=106.18; C=0.786 AB=109.18; D=1.13 XA=98.70.
+        assert_xabcd(
+            &[
+                (100.0, false),
+                (110.0, true),
+                (106.18, false),
+                (109.18, true),
+                (98.70, false),
+            ],
+            HarmonicKind::AlternateBat,
+            1.13,
+        );
+    }
+
+    #[test]
+    fn gartley_not_misread_as_bat() {
+        // A textbook Gartley (BC proj ~1.44, D 0.786) must not also fire as a Bat
+        // (needs BC >= 1.618 and D 0.886).
+        let pats = run(&[
+            (100.0, false),
+            (110.0, true),
+            (103.82, false),
+            (107.64, true),
+            (102.14, false),
+        ]);
+        assert!(pats.iter().all(|p| p.kind != HarmonicKind::Bat));
+    }
+
     proptest! {
         // On arbitrary bars, every emitted pattern must satisfy the universal
         // invariants: anti-lookahead (detection bar >= D), ordered/labelled
@@ -687,6 +989,21 @@ mod tests {
                             prop_assert!(p.x_bar.is_some());
                             prop_assert!(in_band(p.bc_ab, 1.618, 2.24, cfg.ratio_tolerance));
                             prop_assert!(ratio_fit(p.cd_bc, 0.5, cfg.ratio_tolerance) > 0.0);
+                        }
+                        // XABCD family: 5 points, C retraces AB 0.382–0.886, and D
+                        // sits at one of the canonical XA ratios.
+                        HarmonicKind::Gartley
+                        | HarmonicKind::Bat
+                        | HarmonicKind::Butterfly
+                        | HarmonicKind::Crab
+                        | HarmonicKind::AlternateBat => {
+                            prop_assert!(p.x_bar.is_some());
+                            prop_assert!(in_band(p.bc_ab, 0.382, 0.886, cfg.ratio_tolerance));
+                            let dxa = p.d_xa.unwrap();
+                            let hit = [0.786, 0.886, 1.27, 1.618, 1.13]
+                                .iter()
+                                .any(|&t| ratio_fit(dxa, t, cfg.ratio_tolerance) > 0.0);
+                            prop_assert!(hit, "d_xa {} matches no canonical target", dxa);
                         }
                     }
                 }

@@ -83,6 +83,34 @@ def test_bullish_5_0_exact():
     assert row["score"] > 0.9
 
 
+@pytest.mark.parametrize(
+    "kind,d_xa,pivots",
+    [
+        ("gartley", 0.786, [(100.0, False), (110.0, True), (103.82, False), (107.64, True), (102.14, False)]),
+        ("bat", 0.886, [(100.0, False), (110.0, True), (105.0, False), (108.09, True), (101.14, False)]),
+        ("butterfly", 1.27, [(100.0, False), (110.0, True), (102.14, False), (106.07, True), (97.30, False)]),
+        ("crab", 1.618, [(100.0, False), (110.0, True), (105.0, False), (109.43, True), (93.82, False)]),
+        ("alternate_bat", 1.13, [(100.0, False), (110.0, True), (106.18, False), (109.18, True), (98.70, False)]),
+    ],
+)
+def test_xabcd_patterns_exact(kind, d_xa, pivots):
+    hits = detect(pivots).filter(pl.col("kind") == kind)
+    assert hits.height == 1, f"expected one {kind}"
+    row = hits.row(0, named=True)
+    assert row["is_bull"] is True
+    assert row["x_bar"] is not None
+    assert row["score"] > 0.9
+    assert row["d_xa"] == pytest.approx(d_xa, abs=0.03)
+
+
+def test_xabcd_can_be_disabled():
+    pivots = [(100.0, False), (110.0, True), (103.82, False), (107.64, True), (102.14, False)]
+    pats = qw.patterns.harmonic(
+        series_from_pivots(pivots), swing_strength=STRENGTH, detect_xabcd=False
+    )
+    assert pats.filter(pl.col("kind") == "gartley").height == 0
+
+
 def test_perturbed_abcd_rejected():
     # CD = 1.5 x AB is neither AB=CD (1.0) nor Alternate (1.27/1.618) within 10%.
     pats = detect([(110.0, True), (100.0, False), (106.18, True), (91.18, False)])

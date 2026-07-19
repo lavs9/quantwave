@@ -75,8 +75,9 @@ def harmonic(
     detect_abcd: bool = True,
     detect_alternate_abcd: bool = True,
     detect_5_0: bool = True,
+    detect_xabcd: bool = True,
 ) -> "pl.DataFrame":
-    """Detect harmonic patterns (AB=CD, Alternate AB=CD, 5-0).
+    """Detect harmonic patterns (AB=CD, 5-0, and the XABCD Gartley family).
 
     Built on the shared MarketStructure swing foundation: confirmed swing pivots
     are tested against Carney's Fibonacci-ratio gates, and a pattern is emitted
@@ -93,13 +94,16 @@ def harmonic(
         min_size_atr: minimum pattern extent in ATR units (0 disables the filter).
         atr_period: ATR period used for ``size_atr`` normalization.
         detect_abcd / detect_alternate_abcd / detect_5_0: enable each family.
+        detect_xabcd: enable the XABCD family (Gartley, Bat, Butterfly, Crab,
+            Alternate Bat); filter the output by ``kind`` for finer control.
 
     Returns:
         DataFrame with one row per detected pattern: ``id``, ``kind``
-        (``abcd``/``alternate_abcd``/``5-0``), ``is_bull``, the pivot bars/prices
-        (``x_*`` null for AB=CD), ``score``, the measured ratios (``xa_ext``,
-        ``bc_ab``, ``cd_ab``, ``cd_bc``), the ``prz_low``/``prz_high`` reversal
-        zone, and ``size_atr``.
+        (``abcd``/``alternate_abcd``/``5-0``/``gartley``/``bat``/``butterfly``/
+        ``crab``/``alternate_bat``), ``is_bull``, the pivot bars/prices (``x_*``
+        null for AB=CD), ``score``, the measured ratios (``xa_ext``, ``bc_ab``,
+        ``cd_ab``, ``cd_bc``, and ``d_xa`` — D's XA ratio, the XABCD defining
+        number), the ``prz_low``/``prz_high`` reversal zone, and ``size_atr``.
     """
     from quantwave import _patterns
 
@@ -115,4 +119,5 @@ def harmonic(
         detect_abcd,
         detect_alternate_abcd,
         detect_5_0,
+        detect_xabcd,
     )

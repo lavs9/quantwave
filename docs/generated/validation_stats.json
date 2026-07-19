@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-19T04:47:13Z",
+  "generated_at": "2026-07-19T05:38:19Z",
   "indicator_count": 221,
   "metadata_with_gold_file": 217,
   "gold_fixture_count": 28,
@@ -36,11 +36,11 @@
   "python_gold_parity_count": 26,
   "python_gold_parity_deferred": 2,
   "rust_tests_by_package": {
-    "quantwave-core": 571,
+    "quantwave-core": 577,
     "quantwave-polars": 45,
     "quantwave-backtest": 92
   },
-  "rust_test_total": 708,
+  "rust_test_total": 714,
   "proptest_blocks": 159,
   "batch_streaming_parity_checks": 4,
   "talib_parity_test_fns": 134,
