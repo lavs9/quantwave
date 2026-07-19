@@ -51,6 +51,7 @@ pub use indicators::harrington_adx::HarringtonADXOscillator;
 pub use indicators::heikin_ashi::HeikinAshi;
 pub use indicators::hma::HMA;
 pub use indicators::ichimoku::IchimokuCloud;
+pub use indicators::kagi::{KagiBuilder, KagiLine, kagi_atr_batch, kagi_batch};
 pub use indicators::keltner::KeltnerChannels;
 pub use indicators::market_structure::{
     Bias, FlipEvent, MarketStructure, MarketStructureState, PAEvent, PAEventKind, SwingPoint,

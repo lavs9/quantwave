@@ -9,7 +9,8 @@ use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3_polars::PyDataFrame;
 use quantwave_core::{
-    RangeBar, RenkoBrick, range_bars_atr_batch, range_bars_batch, renko_atr_batch, renko_batch,
+    KagiLine, RangeBar, RenkoBrick, kagi_atr_batch, kagi_batch, range_bars_atr_batch,
+    range_bars_batch, renko_atr_batch, renko_batch,
 };
 
 fn bricks_to_frame(bricks: &[RenkoBrick]) -> PolarsResult<DataFrame> {
@@ -20,6 +21,15 @@ fn bricks_to_frame(bricks: &[RenkoBrick]) -> PolarsResult<DataFrame> {
         "open" => open,
         "close" => close,
         "direction" => direction,
+    ]
+}
+
+fn kagi_to_frame(lines: &[KagiLine]) -> PolarsResult<DataFrame> {
+    df![
+        "open" => lines.iter().map(|l| l.open).collect::<Vec<f64>>(),
+        "close" => lines.iter().map(|l| l.close).collect::<Vec<f64>>(),
+        "direction" => lines.iter().map(|l| l.direction).collect::<Vec<i8>>(),
+        "thickness" => lines.iter().map(|l| l.thickness).collect::<Vec<i8>>(),
     ]
 }
 
@@ -57,6 +67,31 @@ fn renko_atr(prices: Vec<f64>, atr: f64, multiplier: f64) -> PyResult<PyDataFram
     Ok(PyDataFrame(df))
 }
 
+/// Fixed-reversal Kagi: `prices` → DataFrame with columns
+/// open/close/direction/thickness (one row per completed line).
+#[pyfunction]
+#[pyo3(signature = (prices, reversal))]
+fn kagi(prices: Vec<f64>, reversal: f64) -> PyResult<PyDataFrame> {
+    if !(reversal > 0.0) {
+        return Err(PyValueError::new_err("reversal must be > 0"));
+    }
+    let df = kagi_to_frame(&kagi_batch(&prices, reversal))
+        .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+    Ok(PyDataFrame(df))
+}
+
+/// ATR-reversal Kagi: reversal amount = `multiplier * atr`.
+#[pyfunction]
+#[pyo3(signature = (prices, atr, multiplier=1.0))]
+fn kagi_atr(prices: Vec<f64>, atr: f64, multiplier: f64) -> PyResult<PyDataFrame> {
+    if !(atr > 0.0) || !(multiplier > 0.0) {
+        return Err(PyValueError::new_err("atr and multiplier must be > 0"));
+    }
+    let df = kagi_to_frame(&kagi_atr_batch(&prices, atr, multiplier))
+        .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+    Ok(PyDataFrame(df))
+}
+
 /// Constant-range bars: `prices` → DataFrame with columns open/high/low/close.
 #[pyfunction]
 #[pyo3(signature = (prices, range_size))]
@@ -84,6 +119,8 @@ fn range_bars_atr(prices: Vec<f64>, atr: f64, multiplier: f64) -> PyResult<PyDat
 pub fn register(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(renko, m)?)?;
     m.add_function(wrap_pyfunction!(renko_atr, m)?)?;
+    m.add_function(wrap_pyfunction!(kagi, m)?)?;
+    m.add_function(wrap_pyfunction!(kagi_atr, m)?)?;
     m.add_function(wrap_pyfunction!(range_bars, m)?)?;
     m.add_function(wrap_pyfunction!(range_bars_atr, m)?)?;
     Ok(())

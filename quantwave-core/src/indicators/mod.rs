@@ -61,6 +61,7 @@ pub mod incremental;
 pub mod instantaneous_trendline;
 pub mod inverse_fisher;
 pub mod just_ignore_them;
+pub mod kagi;
 pub mod kalman;
 pub mod kama;
 pub mod keltner;
