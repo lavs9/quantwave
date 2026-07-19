@@ -49,6 +49,7 @@ pub mod griffiths_predictor;
 pub mod griffiths_spectrum;
 pub mod hamming;
 pub mod hann;
+pub mod harmonic;
 pub mod harrington_adx;
 pub mod heikin_ashi;
 pub mod high_pass;

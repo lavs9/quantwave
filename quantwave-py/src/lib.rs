@@ -16,6 +16,7 @@ use pyo3::prelude::*;
 mod backtest;
 mod bars;
 mod indicators;
+mod patterns;
 pub mod plugins;
 
 #[pymodule]
@@ -39,6 +40,12 @@ fn _lib(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     bars::register(&bars_mod)?;
     sys_modules.set_item("quantwave._bars", &bars_mod)?;
     m.add_submodule(&bars_mod)?;
+
+    // Pattern detection (harmonic) -> quantwave._patterns
+    let patterns_mod = PyModule::new(py, "_patterns")?;
+    patterns::register(&patterns_mod)?;
+    sys_modules.set_item("quantwave._patterns", &patterns_mod)?;
+    m.add_submodule(&patterns_mod)?;
 
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())
