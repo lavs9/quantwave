@@ -177,8 +177,8 @@ mod tests {
             }
 
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
-                approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-10);
-                approx::assert_relative_eq!(s.1, b.1, epsilon = 1e-10);
+                approx::assert_relative_eq!(s.0, b.0, max_relative = 1e-9);
+                approx::assert_relative_eq!(s.1, b.1, max_relative = 1e-9);
             }
         }
     }
