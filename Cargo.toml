@@ -6,6 +6,7 @@ members = [
     "quantwave-xtask",
     "quantwave-py",
     "quantwave-backtest",
+    "quantwave-wasm",
 ]
 resolver = "2"
 
