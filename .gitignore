@@ -52,3 +52,7 @@ quantwave-py/python/quantwave/*.so
 # Copyrighted reference material — local only, never commit (attribution lives in docs)
 /sources/
 /references/*.pdf
+
+# quantwave-wasm build output (wasm-pack)
+/quantwave-wasm/pkg/
+/quantwave-wasm/pkg-node/

@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 # Crate / package names — not tracker IDs.
-_CRATE_NAMES = frozenset({"core", "plugins", "python", "py", "backtest", "polars"})
+_CRATE_NAMES = frozenset({"core", "plugins", "python", "py", "backtest", "polars", "wasm"})
 
 # Tracker IDs are random base36 — roughly a quarter start with a digit
 # (e.g. quantwave-976r, quantwave-5ipk), so the leading char must accept

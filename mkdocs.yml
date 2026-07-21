@@ -79,6 +79,7 @@ nav:
       - Gallery: guides/indicators/gallery.md
       - Full Catalog: guides/indicators/native/index.md
       - Bar Types & Patterns: guides/indicators/bars_and_patterns.md
+      - Live Playground (WASM): guides/wasm-playground.md
       - Ehlers DSP: guides/indicators/ehlers/index.md
       - Regime Detection: guides/indicators/regimes/index.md
       - ML Features: guides/ml_features.md
@@ -110,6 +111,7 @@ nav:
 extra_css:
   - assets/indicator-badges.css
   - assets/landing.css
+  - assets/wasm/playground.css
 
 plugins:
   - search
@@ -155,3 +157,5 @@ markdown_extensions:
 
 extra_javascript:
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+  - path: assets/wasm/playground.js
+    type: module
