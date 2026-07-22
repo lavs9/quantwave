@@ -19,6 +19,7 @@ crate-type = ["cdylib"]
 quantwave-core = { workspace = true }
 quantwave-backtest = { workspace = true }
 talib-rs = { workspace = true }
+nalgebra = { workspace = true }
 
 polars = { workspace = true, features = ["ipc"] }
 polars-arrow = { workspace = true }

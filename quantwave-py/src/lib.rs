@@ -18,6 +18,7 @@ mod bars;
 mod indicators;
 mod patterns;
 pub mod plugins;
+mod portfolio;
 
 #[pymodule]
 fn _lib(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -46,6 +47,12 @@ fn _lib(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     patterns::register(&patterns_mod)?;
     sys_modules.set_item("quantwave._patterns", &patterns_mod)?;
     m.add_submodule(&patterns_mod)?;
+
+    // Portfolio optimization (Rust/nalgebra port of quantwave.portfolio) -> quantwave._portfolio
+    let portfolio_mod = PyModule::new(py, "_portfolio")?;
+    portfolio::register(&portfolio_mod)?;
+    sys_modules.set_item("quantwave._portfolio", &portfolio_mod)?;
+    m.add_submodule(&portfolio_mod)?;
 
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())
