@@ -10,12 +10,13 @@ use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList, PyType};
 use pyo3_polars::PyDataFrame;
 use quantwave_backtest::{
-    BacktestConfig, BacktestEngine, BacktestError, BacktestReport, BacktestResult, CostModel,
-    ExecutionDelay, ExecutionModel, InFoldOptimizer, MonteCarloConfig, MonteCarloPathSummary,
-    MonteCarloReturnConfig, MonteCarloSummary, PerformanceMetrics, PortfolioAllocator,
-    PortfolioMode, StopConfig, StopEvaluationMode, SweepVariant, TearsheetOptions, TpeConfig,
-    WalkForwardConfig, monte_carlo_return_paths, monte_carlo_trade_bootstrap,
-    render_tearsheet_html, run_walk_forward, run_walk_forward_optimize_with,
+    BacktestConfig, BacktestEngine, BacktestError, BacktestReport, BacktestResult, BenchmarkMetrics,
+    CostModel, ExecutionDelay, ExecutionModel, InFoldOptimizer, MonteCarloConfig,
+    MonteCarloPathSummary, MonteCarloReturnConfig, MonteCarloSummary, PerformanceMetrics,
+    PortfolioAllocator, PortfolioMode, StopConfig, StopEvaluationMode, SweepVariant,
+    TearsheetOptions, TpeConfig, WalkForwardConfig, monte_carlo_return_paths,
+    monte_carlo_trade_bootstrap, render_tearsheet_html, run_walk_forward,
+    run_walk_forward_optimize_with,
 };
 use std::io::Cursor;
 
@@ -125,6 +126,12 @@ fn stats_to_dict<'py>(
 }
 
 fn metrics_to_dict<'py>(py: Python<'py>, m: &PerformanceMetrics) -> PyResult<Bound<'py, PyDict>> {
+    // NOTE: keys here are a stable, tested contract (see
+    // tests/python/test_backtest_output_contract.py, test_backtest.py,
+    // test_pa_flag_backtest.py — all assert an *exact* key set). Do not add keys
+    // here; new additive metrics (calmar/VaR/CVaR/benchmark) live in
+    // `extended_metrics_to_dict` / `.extended_metrics()` / `.metrics_with_benchmark()`
+    // instead (quantwave-b5gr).
     let dict = PyDict::new(py);
     dict.set_item("num_trades", m.num_trades)?;
     dict.set_item("win_rate", m.win_rate)?;
@@ -136,6 +143,38 @@ fn metrics_to_dict<'py>(py: Python<'py>, m: &PerformanceMetrics) -> PyResult<Bou
     dict.set_item("total_return", m.total_return)?;
     dict.set_item("final_equity", m.final_equity)?;
     dict.set_item("avg_trade_pnl", m.avg_trade_pnl)?;
+    Ok(dict)
+}
+
+fn benchmark_metrics_to_dict<'py>(
+    py: Python<'py>,
+    b: &BenchmarkMetrics,
+) -> PyResult<Bound<'py, PyDict>> {
+    let dict = PyDict::new(py);
+    dict.set_item("alpha", b.alpha)?;
+    dict.set_item("beta", b.beta)?;
+    dict.set_item("cumulative_return", b.cumulative_return)?;
+    dict.set_item("benchmark_cumulative_return", b.benchmark_cumulative_return)?;
+    dict.set_item("excess_cumulative_return", b.excess_cumulative_return)?;
+    Ok(dict)
+}
+
+/// Extended (additive, quantwave-b5gr) metrics: base 10 keys plus
+/// `calmar_ratio` / `var_95` / `cvar_95`, and a nested `benchmark` dict when
+/// benchmark-relative analytics are attached. Opt-in surface — `.metrics()`
+/// keeps its original 10-key contract untouched.
+fn extended_metrics_to_dict<'py>(
+    py: Python<'py>,
+    m: &PerformanceMetrics,
+) -> PyResult<Bound<'py, PyDict>> {
+    let dict = metrics_to_dict(py, m)?;
+    dict.set_item("calmar_ratio", m.calmar_ratio)?;
+    dict.set_item("var_95", m.var_95)?;
+    dict.set_item("cvar_95", m.cvar_95)?;
+    match &m.benchmark {
+        Some(b) => dict.set_item("benchmark", benchmark_metrics_to_dict(py, b)?)?,
+        None => dict.set_item("benchmark", py.None())?,
+    }
     Ok(dict)
 }
 
@@ -302,6 +341,25 @@ impl PyBacktestResult {
     fn metrics<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
         metrics_to_dict(py, &self.inner.metrics())
     }
+
+    /// Extended metrics (calmar_ratio, var_95, cvar_95, benchmark=None) — additive
+    /// surface alongside `.metrics()` (quantwave-b5gr).
+    fn extended_metrics<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        extended_metrics_to_dict(py, &self.inner.metrics())
+    }
+
+    /// Extended metrics with benchmark-relative analytics (alpha/beta/cumulative
+    /// return) computed against `benchmark_returns` (per-bar simple returns,
+    /// aligned by index to the strategy's per-bar returns).
+    fn metrics_with_benchmark<'py>(
+        &self,
+        py: Python<'py>,
+        benchmark_returns: Vec<f64>,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        let metrics =
+            PerformanceMetrics::from_result_with_benchmark(&self.inner, &benchmark_returns);
+        extended_metrics_to_dict(py, &metrics)
+    }
 }
 
 #[pyclass(name = "BacktestReport")]
@@ -330,20 +388,78 @@ impl PyBacktestReport {
         metrics_to_dict(py, &self.inner.metrics)
     }
 
-    /// Self-contained HTML tear sheet (equity, drawdown, metrics, trades).
-    #[pyo3(signature = (title=None))]
-    fn to_html(&self, title: Option<String>) -> String {
+    /// Extended metrics (calmar_ratio, var_95, cvar_95, benchmark=None) — additive
+    /// surface alongside `.metrics()` (quantwave-b5gr).
+    fn extended_metrics<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        extended_metrics_to_dict(py, &self.inner.metrics)
+    }
+
+    /// Extended metrics with benchmark-relative analytics (alpha/beta/cumulative
+    /// return) computed against `benchmark_returns` (per-bar simple returns,
+    /// aligned by index to the strategy's per-bar returns).
+    fn metrics_with_benchmark<'py>(
+        &self,
+        py: Python<'py>,
+        benchmark_returns: Vec<f64>,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        let metrics =
+            PerformanceMetrics::from_result_with_benchmark(&self.inner.result, &benchmark_returns);
+        extended_metrics_to_dict(py, &metrics)
+    }
+
+    /// Self-contained HTML tear sheet: equity, drawdown, metrics, trades, monthly
+    /// returns heatmap, rolling Sharpe/vol, trade blotter, and run metadata
+    /// (quantwave-b5gr). All new sections are additive; `benchmark_returns` is
+    /// optional and adds a Benchmark-Relative section when supplied.
+    #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (title=None, seed=None, run_metadata=None, benchmark_returns=None, rolling_window=None))]
+    fn to_html(
+        &self,
+        title: Option<String>,
+        seed: Option<u64>,
+        run_metadata: Option<Vec<(String, String)>>,
+        benchmark_returns: Option<Vec<f64>>,
+        rolling_window: Option<usize>,
+    ) -> String {
         let opts = TearsheetOptions {
             title: title.unwrap_or_else(|| "QuantWave Backtest Report".to_string()),
+            seed,
+            run_metadata: run_metadata.unwrap_or_default(),
+            rolling_window: rolling_window.unwrap_or(20),
             ..Default::default()
         };
-        render_tearsheet_html(&self.inner, &opts)
+
+        let metrics = match &benchmark_returns {
+            Some(bench) => {
+                PerformanceMetrics::from_result_with_benchmark(&self.inner.result, bench)
+            }
+            None => self.inner.metrics.clone(),
+        };
+        let report_view = BacktestReport {
+            result: BacktestResult {
+                trades: self.inner.result.trades.clone(),
+                equity_curve: self.inner.result.equity_curve.clone(),
+                stats: self.inner.result.stats.clone(),
+            },
+            metrics,
+        };
+        render_tearsheet_html(&report_view, &opts)
     }
 
     /// Write tear sheet HTML to `path`.
-    #[pyo3(signature = (path, title=None))]
-    fn save_html(&self, path: &str, title: Option<String>) -> PyResult<()> {
-        std::fs::write(path, self.to_html(title))
+    #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (path, title=None, seed=None, run_metadata=None, benchmark_returns=None, rolling_window=None))]
+    fn save_html(
+        &self,
+        path: &str,
+        title: Option<String>,
+        seed: Option<u64>,
+        run_metadata: Option<Vec<(String, String)>>,
+        benchmark_returns: Option<Vec<f64>>,
+        rolling_window: Option<usize>,
+    ) -> PyResult<()> {
+        let html = self.to_html(title, seed, run_metadata, benchmark_returns, rolling_window);
+        std::fs::write(path, html)
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))
     }
 }

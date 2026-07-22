@@ -27,6 +27,33 @@ When you call `.metrics()` on a `BacktestReport` (or dictionary result), it retu
 
 *Note: For backward compatibility, `metrics()["sharpe_ratio"]` will continue to work exactly like dictionary access.*
 
+*This 10-key set is a **stable contract** enforced by tests — `.metrics()` will never gain or lose keys. New/extra analytics (below) live on separate, opt-in methods.*
+
+## Extended Metrics & Benchmark-Relative Analytics (additive)
+
+`BacktestReport` / `BacktestResult` also expose an **additive, opt-in** surface that does not change `.metrics()`:
+
+- `.extended_metrics()` — a dict with all 10 keys above plus:
+
+    | Key | Definition | Units / Sign |
+    |-----|------------|--------------|
+    | `calmar_ratio` | `cagr / max_drawdown_pct` | ratio (`inf` if no drawdown and positive CAGR) |
+    | `var_95` | Historical 95% Value-at-Risk on per-bar returns | **positive fraction** (loss magnitude) |
+    | `cvar_95` | Historical 95% Conditional VaR (Expected Shortfall) | **positive fraction** (loss magnitude) |
+    | `benchmark` | `None`, unless benchmark-relative analytics were attached | dict or `None` |
+
+- `.metrics_with_benchmark(benchmark_returns)` — same as `.extended_metrics()`, but computes benchmark-relative analytics against a supplied per-bar benchmark return series (aligned by index). The `benchmark` key is populated with:
+
+    | Key | Definition | Units / Sign |
+    |-----|------------|--------------|
+    | `alpha` | Annualized (×252) alpha: `mean(r_s) - beta * mean(r_b)` | fraction |
+    | `beta` | `Cov(r_s, r_b) / Var(r_b)` | ratio |
+    | `cumulative_return` | Strategy cumulative return over the aligned window | fraction |
+    | `benchmark_cumulative_return` | Benchmark cumulative return over the aligned window | fraction |
+    | `excess_cumulative_return` | `cumulative_return - benchmark_cumulative_return` | fraction |
+
+`benchmark` is `None` when no benchmark series is supplied, the aligned window has fewer than 2 observations, or the benchmark series has ~zero variance (beta undefined).
+
 ## Summary Statistics
 
 Calling `.stats()` returns a `BacktestStats` object which contains a stable subset of summary data:

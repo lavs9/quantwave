@@ -69,16 +69,73 @@ class BacktestReport:
     def metrics(self) -> PerformanceMetrics:
         """Detailed performance metrics."""
         return PerformanceMetrics(**self._inner.metrics())
-        
+
+    def extended_metrics(self) -> dict:
+        """Additive metrics beyond the stable 10-key contract: adds
+        ``calmar_ratio``, ``var_95``, ``cvar_95``, and a ``benchmark`` key
+        (``None`` unless a benchmark series was supplied via
+        :meth:`metrics_with_benchmark`).
+        """
+        return self._inner.extended_metrics()
+
+    def metrics_with_benchmark(self, benchmark_returns: list[float]) -> dict:
+        """Extended metrics with benchmark-relative analytics (alpha, beta,
+        cumulative return vs. benchmark) computed against ``benchmark_returns``
+        (per-bar simple returns, aligned by index to the strategy's per-bar
+        returns).
+        """
+        return self._inner.metrics_with_benchmark(benchmark_returns)
+
     def stats(self) -> BacktestStats:
         """Core summary statistics from the backtest."""
         return BacktestStats(**self._inner.stats())
-        
-    def to_html(self, title: str | None = None) -> str:
-        return self._inner.to_html(title=title)
-        
-    def save_html(self, path: str, title: str | None = None):
-        return self._inner.save_html(path, title=title)
+
+    def to_html(
+        self,
+        title: str | None = None,
+        seed: int | None = None,
+        run_metadata: list[tuple[str, str]] | dict | None = None,
+        benchmark_returns: list[float] | None = None,
+        rolling_window: int | None = None,
+    ) -> str:
+        """Self-contained HTML tear sheet.
+
+        Beyond equity/drawdown/metrics/trades, the report packet includes a
+        monthly-returns heatmap, rolling Sharpe/volatility charts, a full trade
+        blotter, and a reproducible run-metadata section (title, generated-at
+        timestamp, optional ``seed``, and any ``run_metadata`` key/value pairs
+        e.g. serialized config). Passing ``benchmark_returns`` adds a
+        Benchmark-Relative section (alpha/beta/cumulative return).
+        """
+        if isinstance(run_metadata, dict):
+            run_metadata = list(run_metadata.items())
+        return self._inner.to_html(
+            title=title,
+            seed=seed,
+            run_metadata=run_metadata,
+            benchmark_returns=benchmark_returns,
+            rolling_window=rolling_window,
+        )
+
+    def save_html(
+        self,
+        path: str,
+        title: str | None = None,
+        seed: int | None = None,
+        run_metadata: list[tuple[str, str]] | dict | None = None,
+        benchmark_returns: list[float] | None = None,
+        rolling_window: int | None = None,
+    ):
+        if isinstance(run_metadata, dict):
+            run_metadata = list(run_metadata.items())
+        return self._inner.save_html(
+            path,
+            title=title,
+            seed=seed,
+            run_metadata=run_metadata,
+            benchmark_returns=benchmark_returns,
+            rolling_window=rolling_window,
+        )
 
 class BacktestEngine:
     """Vectorized backtest engine."""

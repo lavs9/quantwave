@@ -2,9 +2,19 @@
 //!
 //! Produces a single self-contained HTML file with summary metrics, equity curve,
 //! drawdown chart, and trade statistics — no external JS/CSS dependencies.
+//!
+//! ## Report packet (v2 — additive, quantwave-b5gr)
+//! Beyond the v1 sections, the packet adds: a monthly-returns heatmap, a rolling
+//! Sharpe/volatility section, a trade blotter table, a benchmark-relative summary
+//! (when [`PerformanceMetrics::benchmark`] is populated), and reproducible run
+//! metadata (title, generated-at timestamp, seed, and arbitrary config key/values
+//! via [`TearsheetOptions::run_metadata`]). All additions are opt-in / degrade
+//! gracefully to "no data" messages — no existing section's markup changed.
 
 use crate::{BacktestReport, PerformanceMetrics};
+use chrono::{DateTime, Datelike, Utc};
 use polars::prelude::*;
+use std::collections::BTreeMap;
 
 /// Options for HTML tear sheet rendering.
 #[derive(Debug, Clone)]
@@ -12,6 +22,14 @@ pub struct TearsheetOptions {
     pub title: String,
     pub width: u32,
     pub height: u32,
+    /// Random seed used for the run (e.g. Monte Carlo / walk-forward), shown in the
+    /// run metadata section for reproducibility. `None` omits the row.
+    pub seed: Option<u64>,
+    /// Arbitrary config key/value pairs (e.g. serialized `BacktestConfig` fields)
+    /// rendered in the run metadata section, in insertion order.
+    pub run_metadata: Vec<(String, String)>,
+    /// Window size (in bars) for the rolling Sharpe / rolling volatility charts.
+    pub rolling_window: usize,
 }
 
 impl Default for TearsheetOptions {
@@ -20,6 +38,9 @@ impl Default for TearsheetOptions {
             title: "QuantWave Backtest Report".to_string(),
             width: 720,
             height: 220,
+            seed: None,
+            run_metadata: Vec::new(),
+            rolling_window: 20,
         }
     }
 }
@@ -27,7 +48,9 @@ impl Default for TearsheetOptions {
 /// Render a self-contained HTML tear sheet from a completed backtest report.
 pub fn render_tearsheet_html(report: &BacktestReport, options: &TearsheetOptions) -> String {
     let equity = extract_f64_column(&report.result.equity_curve, "equity");
+    let ts = extract_i64_column(&report.result.equity_curve, "ts");
     let drawdown = compute_drawdown_pct(&equity);
+    let returns = returns_from_equity(&equity);
     let metrics = &report.metrics;
 
     let equity_svg = line_chart_svg(&equity, options.width, options.height, "#2563eb", "Equity");
@@ -39,9 +62,31 @@ pub fn render_tearsheet_html(report: &BacktestReport, options: &TearsheetOptions
         "Drawdown %",
     );
 
+    let window = options.rolling_window.max(2);
+    let rolling_sharpe = rolling_sharpe_series(&returns, window);
+    let rolling_vol = rolling_vol_series(&returns, window);
+    let rolling_sharpe_svg = line_chart_svg(
+        &rolling_sharpe,
+        options.width,
+        options.height,
+        "#7c3aed",
+        &format!("Rolling Sharpe ({window}-bar)"),
+    );
+    let rolling_vol_svg = line_chart_svg(
+        &rolling_vol,
+        options.width,
+        options.height,
+        "#ea580c",
+        &format!("Rolling Vol ({window}-bar, annualized)"),
+    );
+
     let metrics_table = metrics_table_html(metrics);
     let trade_table = trade_stats_html(&report.result.trades);
     let stats_extra = stats_kv_html(&report.result.stats);
+    let blotter_table = trade_blotter_html(&report.result.trades);
+    let monthly_heatmap = monthly_returns_heatmap_html(&ts, &equity);
+    let benchmark_section = benchmark_section_html(metrics);
+    let run_metadata_table = run_metadata_html(options);
 
     format!(
         r##"<!DOCTYPE html>
@@ -62,6 +107,10 @@ pub fn render_tearsheet_html(report: &BacktestReport, options: &TearsheetOptions
   th {{ color: #6b7280; font-weight: 600; }}
   svg {{ max-width: 100%; height: auto; }}
   .footer {{ margin-top: 24px; font-size: 0.75rem; color: #9ca3af; }}
+  .scroll-x {{ overflow-x: auto; }}
+  .heatmap {{ border-collapse: collapse; font-size: 0.75rem; }}
+  .heatmap th, .heatmap td {{ text-align: center; padding: 4px 8px; border: 1px solid #f3f4f6; }}
+  .heatmap th {{ color: #6b7280; }}
 </style>
 </head>
 <body>
@@ -70,21 +119,35 @@ pub fn render_tearsheet_html(report: &BacktestReport, options: &TearsheetOptions
   <div class="grid">
     <div class="card"><h2>Performance Metrics</h2>{metrics_table}</div>
     <div class="card"><h2>Run Stats</h2>{stats_extra}</div>
+    <div class="card"><h2>Run Metadata</h2>{run_metadata_table}</div>
   </div>
   <div class="grid" style="margin-top:16px">
     <div class="card"><h2>Equity Curve</h2>{equity_svg}</div>
     <div class="card"><h2>Drawdown</h2>{dd_svg}</div>
   </div>
+  <div class="grid" style="margin-top:16px">
+    <div class="card"><h2>Rolling Sharpe</h2>{rolling_sharpe_svg}</div>
+    <div class="card"><h2>Rolling Volatility</h2>{rolling_vol_svg}</div>
+  </div>
+  <div class="card" style="margin-top:16px"><h2>Monthly Returns</h2><div class="scroll-x">{monthly_heatmap}</div></div>
+  {benchmark_section}
   <div class="card" style="margin-top:16px"><h2>Trade Summary</h2>{trade_table}</div>
+  <div class="card" style="margin-top:16px"><h2>Trade Blotter</h2><div class="scroll-x">{blotter_table}</div></div>
   <p class="footer">QuantWave · batch/streaming parity backtest · not investment advice</p>
 </body>
 </html>"##,
         title = html_escape(&options.title),
         metrics_table = metrics_table,
         stats_extra = stats_extra,
+        run_metadata_table = run_metadata_table,
         equity_svg = equity_svg,
         dd_svg = dd_svg,
+        rolling_sharpe_svg = rolling_sharpe_svg,
+        rolling_vol_svg = rolling_vol_svg,
+        monthly_heatmap = monthly_heatmap,
+        benchmark_section = benchmark_section,
         trade_table = trade_table,
+        blotter_table = blotter_table,
     )
 }
 
@@ -94,6 +157,87 @@ fn extract_f64_column(df: &DataFrame, name: &str) -> Vec<f64> {
         .and_then(|c| c.f64().ok())
         .map(|ca| ca.into_iter().map(|v| v.unwrap_or(f64::NAN)).collect())
         .unwrap_or_default()
+}
+
+fn extract_i64_column(df: &DataFrame, name: &str) -> Vec<i64> {
+    df.column(name)
+        .ok()
+        .and_then(|c| c.i64().ok())
+        .map(|ca| ca.into_iter().map(|v| v.unwrap_or_default()).collect())
+        .unwrap_or_default()
+}
+
+fn extract_opt_i64_column(df: &DataFrame, name: &str) -> Vec<Option<i64>> {
+    df.column(name)
+        .ok()
+        .and_then(|c| c.i64().ok())
+        .map(|ca| ca.into_iter().collect())
+        .unwrap_or_default()
+}
+
+fn extract_u32_column(df: &DataFrame, name: &str) -> Vec<u32> {
+    df.column(name)
+        .ok()
+        .and_then(|c| c.u32().ok())
+        .map(|ca| ca.into_iter().map(|v| v.unwrap_or_default()).collect())
+        .unwrap_or_default()
+}
+
+fn extract_i8_column(df: &DataFrame, name: &str) -> Vec<i8> {
+    df.column(name)
+        .ok()
+        .and_then(|c| c.i8().ok())
+        .map(|ca| ca.into_iter().map(|v| v.unwrap_or_default()).collect())
+        .unwrap_or_default()
+}
+
+/// Simple per-bar returns from an equity series (same convention as `metrics.rs`).
+fn returns_from_equity(equity: &[f64]) -> Vec<f64> {
+    equity
+        .windows(2)
+        .filter_map(|w| {
+            if w[0].is_finite() && w[0].abs() > f64::EPSILON {
+                Some((w[1] - w[0]) / w[0])
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+/// Rolling Sharpe ratio (annualized, √252) over a trailing window of per-bar returns.
+fn rolling_sharpe_series(returns: &[f64], window: usize) -> Vec<f64> {
+    if returns.len() < window {
+        return Vec::new();
+    }
+    returns
+        .windows(window)
+        .map(|w| {
+            let mean = w.iter().sum::<f64>() / window as f64;
+            let variance = w.iter().map(|r| (r - mean).powi(2)).sum::<f64>() / (window - 1) as f64;
+            let std = variance.sqrt();
+            if std <= f64::EPSILON {
+                0.0
+            } else {
+                (mean / std) * 252.0_f64.sqrt()
+            }
+        })
+        .collect()
+}
+
+/// Rolling annualized volatility (√252 × std) over a trailing window of per-bar returns.
+fn rolling_vol_series(returns: &[f64], window: usize) -> Vec<f64> {
+    if returns.len() < window {
+        return Vec::new();
+    }
+    returns
+        .windows(window)
+        .map(|w| {
+            let mean = w.iter().sum::<f64>() / window as f64;
+            let variance = w.iter().map(|r| (r - mean).powi(2)).sum::<f64>() / (window - 1) as f64;
+            variance.sqrt() * 252.0_f64.sqrt()
+        })
+        .collect()
 }
 
 fn compute_drawdown_pct(equity: &[f64]) -> Vec<f64> {
@@ -205,6 +349,198 @@ fn trade_stats_html(trades: &DataFrame) -> String {
     table_from_pairs(&rows)
 }
 
+/// Monthly-returns heatmap: one row per year, one column per month (Jan..Dec).
+/// Returns for a given month are computed against the last equity value observed
+/// in the prior month (or the series' first value for the very first month).
+fn monthly_returns_heatmap_html(ts: &[i64], equity: &[f64]) -> String {
+    if ts.is_empty() || equity.is_empty() || ts.len() != equity.len() {
+        return "<p>No equity/timestamp data</p>".to_string();
+    }
+
+    // Last equity value observed per (year, month), preserving first-seen order.
+    let mut order: Vec<(i32, u32)> = Vec::new();
+    let mut last_in_month: BTreeMap<(i32, u32), f64> = BTreeMap::new();
+    for (&t, &eq) in ts.iter().zip(equity.iter()) {
+        if !eq.is_finite() {
+            continue;
+        }
+        let dt = DateTime::<Utc>::from_timestamp(t, 0).unwrap_or_else(Utc::now);
+        let key = (dt.year(), dt.month());
+        if !last_in_month.contains_key(&key) {
+            order.push(key);
+        }
+        last_in_month.insert(key, eq);
+    }
+    if order.is_empty() {
+        return "<p>No equity/timestamp data</p>".to_string();
+    }
+
+    let mut prev = equity[0];
+    let mut by_year: BTreeMap<i32, [Option<f64>; 12]> = BTreeMap::new();
+    for key in &order {
+        let last = last_in_month[key];
+        let ret = if prev.abs() > f64::EPSILON {
+            (last - prev) / prev
+        } else {
+            0.0
+        };
+        by_year.entry(key.0).or_insert([None; 12])[(key.1 - 1) as usize] = Some(ret);
+        prev = last;
+    }
+
+    const MONTH_NAMES: [&str; 12] = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
+
+    let header: String = MONTH_NAMES
+        .iter()
+        .map(|m| format!("<th>{m}</th>"))
+        .collect();
+
+    let body: String = by_year
+        .iter()
+        .map(|(year, months)| {
+            let cells: String = months
+                .iter()
+                .map(|opt| match opt {
+                    Some(r) => {
+                        let bg = heatmap_color(*r);
+                        format!(
+                            "<td style=\"background:{bg}\">{}</td>",
+                            format_pct_signed(*r)
+                        )
+                    }
+                    None => "<td>—</td>".to_string(),
+                })
+                .collect();
+            format!("<tr><th>{year}</th>{cells}</tr>")
+        })
+        .collect();
+
+    format!(
+        "<table class=\"heatmap\"><thead><tr><th>Year</th>{header}</tr></thead><tbody>{body}</tbody></table>"
+    )
+}
+
+/// Green (positive) / red (negative) background color, intensity scaled by
+/// magnitude (clipped at ±10% for a stable color range).
+fn heatmap_color(ret: f64) -> String {
+    let clipped = ret.clamp(-0.10, 0.10);
+    let intensity = (clipped.abs() / 0.10 * 180.0) as u8;
+    if ret >= 0.0 {
+        format!("rgba(22,163,74,{:.2})", intensity as f64 / 255.0)
+    } else {
+        format!("rgba(220,38,38,{:.2})", intensity as f64 / 255.0)
+    }
+}
+
+fn format_pct_signed(v: f64) -> String {
+    if !v.is_finite() {
+        return "—".to_string();
+    }
+    format!("{:+.2}%", v * 100.0)
+}
+
+/// Full trade blotter: entry/exit timestamp, side, prices, quantity, net PnL.
+fn trade_blotter_html(trades: &DataFrame) -> String {
+    let height = trades.height();
+    if height == 0 {
+        return "<p>No trades recorded</p>".to_string();
+    }
+
+    let trade_id = extract_u32_column(trades, "trade_id");
+    let side = extract_i8_column(trades, "side");
+    let entry_ts = extract_i64_column(trades, "entry_ts");
+    let exit_ts = extract_opt_i64_column(trades, "exit_ts");
+    let entry_price = extract_f64_column(trades, "entry_price");
+    let exit_price = extract_f64_column(trades, "exit_price");
+    let quantity = extract_f64_column(trades, "quantity");
+    let pnl_net = extract_f64_column(trades, "pnl_net");
+
+    let mut rows = String::new();
+    for i in 0..height {
+        let id = trade_id.get(i).copied().unwrap_or_default();
+        let s = side.get(i).copied().unwrap_or_default();
+        let side_label = if s >= 0 { "long" } else { "short" };
+        let entry = format_ts(entry_ts.get(i).copied());
+        let exit = format_ts(exit_ts.get(i).copied().flatten());
+        let ep = entry_price.get(i).copied().unwrap_or(f64::NAN);
+        let xp = exit_price.get(i).copied().unwrap_or(f64::NAN);
+        let qty = quantity.get(i).copied().unwrap_or(f64::NAN);
+        let pnl = pnl_net.get(i).copied().unwrap_or(f64::NAN);
+        rows.push_str(&format!(
+            "<tr><td>{id}</td><td>{side_label}</td><td>{entry}</td><td>{exit}</td>\
+             <td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
+            format_num(ep, 4),
+            format_num(xp, 4),
+            format_num(qty, 4),
+            format_num(pnl, 2),
+        ));
+    }
+
+    format!(
+        "<table><thead><tr><th>#</th><th>Side</th><th>Entry</th><th>Exit</th>\
+         <th>Entry px</th><th>Exit px</th><th>Qty</th><th>PnL (net)</th></tr></thead>\
+         <tbody>{rows}</tbody></table>"
+    )
+}
+
+fn format_ts(ts: Option<i64>) -> String {
+    match ts {
+        Some(t) => DateTime::<Utc>::from_timestamp(t, 0)
+            .map(|dt| dt.format("%Y-%m-%d %H:%M").to_string())
+            .unwrap_or_else(|| "—".to_string()),
+        None => "open".to_string(),
+    }
+}
+
+/// Benchmark-relative summary card (alpha/beta/cumulative return), omitted entirely
+/// when `metrics.benchmark` is `None` (no benchmark series was supplied).
+fn benchmark_section_html(metrics: &PerformanceMetrics) -> String {
+    let Some(b) = &metrics.benchmark else {
+        return String::new();
+    };
+    let rows = [
+        ("Alpha (annualized)", format_pct_signed(b.alpha)),
+        ("Beta", format_num(b.beta, 3)),
+        (
+            "Strategy cumulative return",
+            format_pct(b.cumulative_return),
+        ),
+        (
+            "Benchmark cumulative return",
+            format_pct(b.benchmark_cumulative_return),
+        ),
+        (
+            "Excess cumulative return",
+            format_pct_signed(b.excess_cumulative_return),
+        ),
+    ];
+    format!(
+        "<div class=\"card\" style=\"margin-top:16px\"><h2>Benchmark-Relative</h2>{}</div>",
+        table_from_pairs(&rows)
+    )
+}
+
+/// Reproducible run metadata: title, generated-at timestamp, optional seed, and
+/// any caller-supplied config key/value pairs.
+fn run_metadata_html(options: &TearsheetOptions) -> String {
+    let mut rows: Vec<(&str, String)> = vec![
+        ("Title", options.title.clone()),
+        (
+            "Generated at (UTC)",
+            Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+        ),
+    ];
+    if let Some(seed) = options.seed {
+        rows.push(("Seed", seed.to_string()));
+    }
+    for (k, v) in &options.run_metadata {
+        rows.push((k.as_str(), v.clone()));
+    }
+    table_from_pairs(&rows)
+}
+
 fn table_from_pairs(rows: &[(&str, String)]) -> String {
     let body: String = rows
         .iter()
@@ -269,5 +605,62 @@ mod tests {
         assert!(html.contains("Drawdown"));
         assert!(html.contains("Trade Summary"));
         assert!(html.contains("<svg"));
+    }
+
+    #[test]
+    fn tearsheet_html_contains_additive_report_packet_sections() {
+        let html = render_tearsheet_html(&mini_report(), &TearsheetOptions::default());
+        assert!(html.contains("Monthly Returns"));
+        assert!(html.contains("Rolling Sharpe"));
+        assert!(html.contains("Rolling Volatility"));
+        assert!(html.contains("Trade Blotter"));
+        assert!(html.contains("Run Metadata"));
+        assert!(html.contains("Generated at (UTC)"));
+        // No benchmark supplied -> section omitted entirely (additive, opt-in).
+        assert!(!html.contains("Benchmark-Relative"));
+    }
+
+    #[test]
+    fn tearsheet_html_includes_seed_and_run_metadata_when_supplied() {
+        let options = TearsheetOptions {
+            seed: Some(42),
+            run_metadata: vec![
+                ("commission_bps".to_string(), "5".to_string()),
+                ("execution_delay".to_string(), "same_bar".to_string()),
+            ],
+            ..TearsheetOptions::default()
+        };
+        let html = render_tearsheet_html(&mini_report(), &options);
+        assert!(html.contains("42"));
+        assert!(html.contains("commission_bps"));
+        assert!(html.contains("execution_delay"));
+    }
+
+    #[test]
+    fn tearsheet_html_shows_benchmark_section_when_metrics_have_benchmark() {
+        let mut report = mini_report();
+        let strategy_returns = vec![0.01, -0.02, 0.015, 0.005, -0.01];
+        report.metrics = report
+            .metrics
+            .clone()
+            .with_benchmark(&strategy_returns, &strategy_returns);
+        let html = render_tearsheet_html(&report, &TearsheetOptions::default());
+        assert!(html.contains("Benchmark-Relative"));
+        assert!(html.contains("Alpha (annualized)"));
+        assert!(html.contains("Beta"));
+    }
+
+    #[test]
+    fn monthly_returns_heatmap_handles_empty_input() {
+        let html = monthly_returns_heatmap_html(&[], &[]);
+        assert!(html.contains("No equity/timestamp data"));
+    }
+
+    #[test]
+    fn trade_blotter_handles_empty_trades() {
+        let empty =
+            DataFrame::new(vec![Column::new("trade_id".into(), Vec::<u32>::new())]).unwrap();
+        let html = trade_blotter_html(&empty);
+        assert!(html.contains("No trades recorded"));
     }
 }
