@@ -77,6 +77,7 @@ mod cross_sectional;
 mod live_bridge;
 mod metrics;
 mod monte_carlo;
+mod orders;
 mod portfolio;
 mod stops;
 mod sweep;
@@ -102,6 +103,9 @@ pub use portfolio::{
 use quantwave_core::traits::Next; // Re-exported for future streaming parity work (used in hybrid mode later per quantwave-ug9t)
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+pub use orders::{
+    ExecBar, ExitLeg, Fill, FillKind, OrderType, Side, fill_order, resolve_bracket,
+};
 pub use stops::{StopConfig, StopEvaluationMode};
 pub use sweep::{SweepVariant, run_param_sweep, single_param_variants};
 pub use tearsheet::{TearsheetOptions, render_tearsheet_html};
