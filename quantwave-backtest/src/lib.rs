@@ -80,6 +80,7 @@ mod cross_sectional;
 mod live_bridge;
 mod metrics;
 mod monte_carlo;
+mod order_exec;
 mod orders;
 mod portfolio;
 pub mod risk;
@@ -100,7 +101,10 @@ pub use monte_carlo::{
     MonteCarloConfig, MonteCarloPathSummary, MonteCarloReturnConfig, MonteCarloSummary,
     monte_carlo_return_paths, monte_carlo_trade_bootstrap,
 };
-pub use orders::{ExecBar, ExitLeg, Fill, FillKind, OrderType, Side, fill_order, resolve_bracket};
+pub use order_exec::{OrderSim, run_order_simulation};
+pub use orders::{
+    ExecBar, ExitLeg, Fill, FillKind, Order, OrderType, Side, fill_order, resolve_bracket,
+};
 use polars::prelude::*;
 pub use portfolio::{
     PortfolioAllocator, PortfolioBar, PortfolioMode, run_shared_capital_streaming_simulation,
@@ -464,7 +468,7 @@ pub struct Trade {
 }
 
 /// Per-bar equity snapshot (for the equity curve DF).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EquityPoint {
     pub ts: DateTime<Utc>,
     pub symbol: Option<String>, // None for aggregated in MVP

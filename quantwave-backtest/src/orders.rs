@@ -34,6 +34,20 @@ pub enum OrderType {
     StopLimit { trigger: f64, limit: f64 },
 }
 
+/// A submitted order: a direction, a type, and a quantity (in units).
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct Order {
+    pub side: Side,
+    pub kind: OrderType,
+    pub qty: f64,
+}
+
+impl Order {
+    pub fn new(side: Side, kind: OrderType, qty: f64) -> Self {
+        Self { side, kind, qty }
+    }
+}
+
 /// Why/how an order filled (for the trade record).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FillKind {
