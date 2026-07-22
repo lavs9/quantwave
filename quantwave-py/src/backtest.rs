@@ -11,11 +11,11 @@ use pyo3::types::{PyBytes, PyDict, PyList, PyType};
 use pyo3_polars::PyDataFrame;
 use quantwave_backtest::{
     BacktestConfig, BacktestEngine, BacktestError, BacktestReport, BacktestResult, CostModel,
-    ExecutionDelay, ExecutionModel, MonteCarloConfig, MonteCarloPathSummary,
+    ExecutionDelay, ExecutionModel, InFoldOptimizer, MonteCarloConfig, MonteCarloPathSummary,
     MonteCarloReturnConfig, MonteCarloSummary, PerformanceMetrics, PortfolioAllocator,
-    PortfolioMode, StopConfig, StopEvaluationMode, SweepVariant, TearsheetOptions,
+    PortfolioMode, StopConfig, StopEvaluationMode, SweepVariant, TearsheetOptions, TpeConfig,
     WalkForwardConfig, monte_carlo_return_paths, monte_carlo_trade_bootstrap,
-    render_tearsheet_html, run_walk_forward, run_walk_forward_optimize,
+    render_tearsheet_html, run_walk_forward, run_walk_forward_optimize_with,
 };
 use std::io::Cursor;
 
@@ -45,6 +45,31 @@ fn parse_portfolio_allocator(s: &str) -> PyResult<PortfolioAllocator> {
         "signal_weighted" | "signalweighted" | "signal" => Ok(PortfolioAllocator::SignalWeighted),
         other => Err(PyValueError::new_err(format!(
             "portfolio_allocator must be 'equal_weight' or 'signal_weighted', got '{other}'"
+        ))),
+    }
+}
+
+/// Parse the in-fold optimizer selection for `walk_forward_optimize`. `"grid"`
+/// (default, exhaustive — existing behavior) or `"tpe"` (Bayesian, adaptive subset —
+/// quantwave-lzzq). `n_trials` is required for `"tpe"`.
+fn parse_in_fold_optimizer(
+    optimizer: &str,
+    n_trials: Option<usize>,
+    seed: u64,
+) -> PyResult<InFoldOptimizer> {
+    match optimizer.to_ascii_lowercase().as_str() {
+        "grid" => Ok(InFoldOptimizer::Grid),
+        "tpe" => {
+            let n_trials = n_trials.ok_or_else(|| {
+                PyValueError::new_err("n_trials is required when optimizer='tpe'")
+            })?;
+            if n_trials == 0 {
+                return Err(PyValueError::new_err("n_trials must be > 0"));
+            }
+            Ok(InFoldOptimizer::Tpe(TpeConfig::new(n_trials, seed)))
+        }
+        other => Err(PyValueError::new_err(format!(
+            "optimizer must be 'grid' or 'tpe', got '{other}'"
         ))),
     }
 }
@@ -412,7 +437,10 @@ fn sweep_variants_from_py_list(variants: &Bound<'_, PyList>) -> PyResult<Vec<Swe
 }
 
 #[pyfunction]
-#[pyo3(signature = (df, config, train_bars, test_bars, variants, objective_metric="sharpe_ratio", step_bars=None, overfit_threshold=1.0))]
+#[pyo3(signature = (
+    df, config, train_bars, test_bars, variants, objective_metric="sharpe_ratio",
+    step_bars=None, overfit_threshold=1.0, optimizer="grid", n_trials=None, seed=42
+))]
 #[allow(clippy::too_many_arguments)]
 fn run_walk_forward_optimize_py(
     df: &Bound<'_, PyAny>,
@@ -423,17 +451,22 @@ fn run_walk_forward_optimize_py(
     objective_metric: &str,
     step_bars: Option<usize>,
     overfit_threshold: f64,
+    optimizer: &str,
+    n_trials: Option<usize>,
+    seed: u64,
 ) -> PyResult<PyDataFrame> {
     let mut wf = WalkForwardConfig::new(train_bars, test_bars);
     wf.step_bars = step_bars;
     wf.overfit_threshold = overfit_threshold;
     let sweep_variants = sweep_variants_from_py_list(variants)?;
-    let out = run_walk_forward_optimize(
+    let in_fold_optimizer = parse_in_fold_optimizer(optimizer, n_trials, seed)?;
+    let out = run_walk_forward_optimize_with(
         dataframe_from_py(df)?.lazy(),
         &config.inner,
         &wf,
         &sweep_variants,
         objective_metric,
+        &in_fold_optimizer,
     )
     .map_err(map_err)?;
     Ok(PyDataFrame(out))

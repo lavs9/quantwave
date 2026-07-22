@@ -553,3 +553,88 @@ def test_bt_walk_forward_optimize_python():
     
     for train, oos, overfit in zip(train_metrics, oos_metrics, overfits):
         assert overfit == (train - oos > 0.0)
+
+
+def test_bt_walk_forward_optimize_tpe_python():
+    # Same scenario as test_bt_walk_forward_optimize_python, but exercising the
+    # optional Bayesian (TPE) in-fold optimizer via optimizer="tpe" (quantwave-lzzq).
+    def build_fn(lf, params):
+        p = params["thresh"]
+        return lf.with_columns(
+            pl.when(pl.col("close") > p).then(1.0).otherwise(-1.0).alias("signal")
+        )
+
+    n = 60
+    timestamps = list(range(n))
+    closes = [100.0 + i * (1.0 if i < 30 else -1.0) for i in range(n)]
+
+    df = pl.DataFrame({
+        "timestamp": timestamps,
+        "close": closes,
+    })
+
+    res = df.lazy().bt.walk_forward_optimize(
+        param_grid={"thresh": [110.0, 120.0]},
+        build_fn=build_fn,
+        objective="total_return",
+        train_bars=20,
+        test_bars=10,
+        commission_bps=0.0,
+        slippage_bps=0.0,
+        overfit_threshold=0.0,
+        optimizer="tpe",
+        n_trials=2,
+        seed=7,
+    )
+
+    assert res.height == 4
+    assert "best_thresh" in res.columns
+    assert "train_metric" in res.columns
+    assert "oos_metric" in res.columns
+    assert "overfit_flag" in res.columns
+
+    # Deterministic given the same seed.
+    res2 = df.lazy().bt.walk_forward_optimize(
+        param_grid={"thresh": [110.0, 120.0]},
+        build_fn=build_fn,
+        objective="total_return",
+        train_bars=20,
+        test_bars=10,
+        commission_bps=0.0,
+        slippage_bps=0.0,
+        overfit_threshold=0.0,
+        optimizer="tpe",
+        n_trials=2,
+        seed=7,
+    )
+    assert res["best_thresh"].to_list() == res2["best_thresh"].to_list()
+    assert res["train_metric"].to_list() == res2["train_metric"].to_list()
+
+
+def test_bt_walk_forward_optimize_invalid_optimizer_raises():
+    def build_fn(lf, params):
+        return lf.with_columns(pl.lit(1.0).alias("signal"))
+
+    df = pl.DataFrame({
+        "timestamp": list(range(40)),
+        "close": [100.0 + i for i in range(40)],
+    })
+
+    with pytest.raises(ValueError):
+        df.lazy().bt.walk_forward_optimize(
+            param_grid={"thresh": [1.0]},
+            build_fn=build_fn,
+            train_bars=20,
+            test_bars=10,
+            optimizer="not_a_real_optimizer",
+        )
+
+    with pytest.raises(ValueError):
+        df.lazy().bt.walk_forward_optimize(
+            param_grid={"thresh": [1.0]},
+            build_fn=build_fn,
+            train_bars=20,
+            test_bars=10,
+            optimizer="tpe",
+            # n_trials omitted -> should raise
+        )

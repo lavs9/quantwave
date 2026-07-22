@@ -65,6 +65,7 @@ Legend: ✅ Shipped · ⏸ Deferred · ❌ Out of scope
 |---|-------------|--------|-----|-------|
 | 14 | Walk-forward OOS | ✅ | `.bt.walk_forward()` | `test_bt_walk_forward_returns_folds` |
 | 14b | Walk-forward with in-fold optimization | ✅ | `.bt.walk_forward_optimize()` | `test_wfo_opt_*` |
+| 14c | Optional Bayesian (TPE) in-fold optimizer | ✅ | `.bt.walk_forward_optimize(optimizer="tpe", n_trials=...)` | `tpe::tests::*`, `test_wfo_tpe_*`, `test_bt_walk_forward_optimize_tpe_python` |
 | 15 | Monte Carlo (trade bootstrap) | ✅ | `monte_carlo_trade_bootstrap` | `quantwave-backtest/tests/p2_features.rs` |
 | 15b | Monte Carlo (return-path VaR/CVaR) | ✅ | `monte_carlo_return_paths` | `monte_carlo.rs` tests |
 | 16 | Cross-sectional factor panel | ✅ | `.bt.cross_sectional_backtest()` | `test_cross_sectional_*` |

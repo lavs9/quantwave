@@ -39,7 +39,7 @@ All methods are on `df.lazy().bt` after `import quantwave` (registers the namesp
 | `sweep()` | Grid over a pre-built signal column |
 | `sweep_callback()` | Rebuild signals per parameter via `build_fn` |
 | `walk_forward()` | Rolling out-of-sample folds |
-| `walk_forward_optimize()` | In-fold param sweep, locked OOS evaluation |
+| `walk_forward_optimize()` | In-fold param sweep, locked OOS evaluation. `optimizer="grid"` (default, exhaustive) or `optimizer="tpe"` (optional Bayesian search, `n_trials=` required) |
 | `cross_sectional_backtest()` | Universe rank long/short (`transform=` optional) |
 | `portfolio_backtest()` | **Shared-capital** multi-symbol portfolio simulation |
 

@@ -425,6 +425,9 @@ class BtLazyNamespace:
         test_bars: int,
         step_bars: int | None = None,
         overfit_threshold: float = 1.0,
+        optimizer: str = "grid",
+        n_trials: int | None = None,
+        seed: int = 42,
         timestamp_col: str = "timestamp",
         close_col: str = "close",
         signal: str = "signal",
@@ -434,7 +437,18 @@ class BtLazyNamespace:
         slippage_bps: float = 2.0,
         execution_delay: str = "same_bar",
     ) -> pl.DataFrame:
-        """Walk-forward with train-window parameter optimization (Rust core)."""
+        """Walk-forward with train-window parameter optimization (Rust core).
+
+        ``optimizer`` selects the in-fold parameter search strategy:
+
+        * ``"grid"`` (default) — exhaustively backtests every ``param_grid``
+          combination on each training fold, exactly as before.
+        * ``"tpe"`` — Bayesian alternative (Tree-structured Parzen Estimator,
+          Bergstra et al. 2011). Instead of backtesting the full grid, it
+          adaptively backtests only ``n_trials`` combinations per fold, useful
+          when ``param_grid`` is large. Requires ``n_trials``. Deterministic
+          given ``seed``.
+        """
         import itertools
 
         if not param_grid:
@@ -443,6 +457,10 @@ class BtLazyNamespace:
             raise ValueError("build_fn must be callable")
         if train_bars <= 0 or test_bars <= 0:
             raise ValueError("train_bars and test_bars must be > 0")
+        if optimizer not in ("grid", "tpe"):
+            raise ValueError("optimizer must be 'grid' or 'tpe'")
+        if optimizer == "tpe" and not n_trials:
+            raise ValueError("n_trials is required when optimizer='tpe'")
 
         from quantwave._backtest import run_walk_forward_optimize_py
 

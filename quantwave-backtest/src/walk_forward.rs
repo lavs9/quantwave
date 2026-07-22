@@ -172,13 +172,101 @@ fn unique_sorted_timestamps(df: &DataFrame, ts_col: &str) -> Result<Vec<i64>, Ba
     Ok(values)
 }
 
+/// In-fold parameter search strategy used by [`run_walk_forward_optimize_with`] to
+/// pick the winning variant on each training window.
+///
+/// `Grid` (the default everywhere) exhaustively backtests every variant on the train
+/// fold, exactly as `run_walk_forward_optimize` has always done — existing behavior
+/// and existing tests are unaffected.
+///
+/// `Tpe` is an optional Bayesian alternative: Tree-structured Parzen Estimator
+/// (Bergstra et al. 2011, "Algorithms for Hyper-Parameter Optimization"). Instead of
+/// backtesting every variant, it adaptively selects `n_trials` variants to backtest
+/// per fold, useful when the grid is large. See `crate::tpe` for the implementation.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub enum InFoldOptimizer {
+    #[default]
+    Grid,
+    Tpe(crate::TpeConfig),
+}
+
+/// Map each variant's parameter values to a point normalized to `[0, 1]` per
+/// dimension (min-max over the variant pool), in `param_keys` order. TPE's KDE
+/// scoring assumes roughly comparable dimension scales, so this keeps e.g. a
+/// `period` parameter spanning 1..200 from swamping a `threshold` spanning 0..1.
+/// A constant dimension (min == max across the pool) maps to `0.5` for every variant.
+fn normalized_param_points(
+    variants: &[crate::SweepVariant],
+    param_keys: &[String],
+) -> Vec<Vec<f64>> {
+    let mut bounds: Vec<(f64, f64)> = param_keys
+        .iter()
+        .map(|k| {
+            let mut lo = f64::INFINITY;
+            let mut hi = f64::NEG_INFINITY;
+            for v in variants {
+                if let Some(&val) = v.params.get(k) {
+                    lo = lo.min(val);
+                    hi = hi.max(val);
+                }
+            }
+            (lo, hi)
+        })
+        .collect();
+    // Guard against no variant carrying a given key (shouldn't happen since
+    // param_keys is derived from variants, but keeps this total).
+    for b in &mut bounds {
+        if !b.0.is_finite() || !b.1.is_finite() {
+            *b = (0.0, 0.0);
+        }
+    }
+
+    variants
+        .iter()
+        .map(|v| {
+            param_keys
+                .iter()
+                .zip(bounds.iter())
+                .map(|(k, &(lo, hi))| {
+                    let val = v.params.get(k).copied().unwrap_or(lo);
+                    if hi > lo { (val - lo) / (hi - lo) } else { 0.5 }
+                })
+                .collect()
+        })
+        .collect()
+}
+
 /// Run walk-forward optimization: sweep on train fold, pick best by objective, backtest OOS.
+///
+/// Always uses the grid (exhaustive) in-fold optimizer — thin wrapper around
+/// [`run_walk_forward_optimize_with`] kept for backward compatibility.
 pub fn run_walk_forward_optimize(
     lf: LazyFrame,
     base_config: &BacktestConfig,
     wf: &WalkForwardConfig,
     variants: &[crate::SweepVariant],
     objective_metric: &str,
+) -> Result<DataFrame, BacktestError> {
+    run_walk_forward_optimize_with(
+        lf,
+        base_config,
+        wf,
+        variants,
+        objective_metric,
+        &InFoldOptimizer::Grid,
+    )
+}
+
+/// Run walk-forward optimization with a selectable in-fold optimizer (grid or TPE).
+/// See [`InFoldOptimizer`] for the strategies available. `run_walk_forward_optimize`
+/// is the grid-only, backward-compatible entry point that delegates here.
+pub fn run_walk_forward_optimize_with(
+    lf: LazyFrame,
+    base_config: &BacktestConfig,
+    wf: &WalkForwardConfig,
+    variants: &[crate::SweepVariant],
+    objective_metric: &str,
+    optimizer: &InFoldOptimizer,
 ) -> Result<DataFrame, BacktestError> {
     if wf.train_bars == 0 || wf.test_bars == 0 {
         return Err(BacktestError::InvalidInput(
@@ -189,6 +277,11 @@ pub fn run_walk_forward_optimize(
         return Err(BacktestError::InvalidInput(
             "at least one variant required".into(),
         ));
+    }
+    if !PerformanceMetrics::column_names().contains(&objective_metric) {
+        return Err(BacktestError::InvalidInput(format!(
+            "objective_metric '{objective_metric}' is not a known metric column"
+        )));
     }
 
     let df = lf.collect()?;
@@ -225,32 +318,65 @@ pub fn run_walk_forward_optimize(
         let ts_oos_start = timestamps[test_start_idx];
         let ts_oos_end = timestamps[test_end_idx - 1];
 
-        // 1. Train Sweep
+        // 1. Train Sweep (in-fold optimization: grid = exhaustive, tpe = adaptive subset)
         let train_lf = df.clone().lazy().filter(
             col(ts_col)
                 .gt_eq(lit(ts_train_start))
                 .and(col(ts_col).lt_eq(lit(ts_train_end))),
         );
-        let sweep_df = crate::sweep::run_param_sweep(train_lf, variants, base_config)?;
 
-        // Pick best variant
-        let obj_col = sweep_df
-            .column(objective_metric)
-            .map_err(|e| BacktestError::InvalidInput(format!("objective_metric not found: {e}")))?;
-        let obj_series = obj_col
-            .f64()
-            .map_err(|e| BacktestError::InvalidInput(e.to_string()))?;
+        let (best_idx, best_val) = match optimizer {
+            InFoldOptimizer::Grid => {
+                let sweep_df =
+                    crate::sweep::run_param_sweep(train_lf.clone(), variants, base_config)?;
 
-        let mut best_idx = 0;
-        let mut best_val = f64::NEG_INFINITY;
-        for (i, val) in obj_series.into_iter().enumerate() {
-            if let Some(v) = val
-                && (v > best_val || (best_val == f64::NEG_INFINITY && v.is_finite()))
-            {
-                best_val = v;
-                best_idx = i;
+                let obj_col = sweep_df.column(objective_metric).map_err(|e| {
+                    BacktestError::InvalidInput(format!("objective_metric not found: {e}"))
+                })?;
+                let obj_series = obj_col
+                    .f64()
+                    .map_err(|e| BacktestError::InvalidInput(e.to_string()))?;
+
+                let mut best_idx = 0;
+                let mut best_val = f64::NEG_INFINITY;
+                for (i, val) in obj_series.into_iter().enumerate() {
+                    if let Some(v) = val
+                        && (v > best_val || (best_val == f64::NEG_INFINITY && v.is_finite()))
+                    {
+                        best_val = v;
+                        best_idx = i;
+                    }
+                }
+                (best_idx, best_val)
             }
-        }
+            InFoldOptimizer::Tpe(tpe_config) => {
+                let points = normalized_param_points(variants, &param_keys);
+                let mut eval_err: Option<BacktestError> = None;
+                let (idx, val, _history) = crate::tpe_select_from_pool(&points, tpe_config, |i| {
+                    if eval_err.is_some() {
+                        return f64::NEG_INFINITY;
+                    }
+                    let mut cfg = base_config.clone();
+                    cfg.signal_col = variants[i].signal_col.clone();
+                    match BacktestEngine::new(cfg).backtest_with_report(train_lf.clone()) {
+                        Ok(report) => report
+                            .metrics
+                            .row_iter()
+                            .find(|(n, _)| *n == objective_metric)
+                            .map(|(_, v)| v)
+                            .unwrap_or(f64::NEG_INFINITY),
+                        Err(e) => {
+                            eval_err = Some(e);
+                            f64::NEG_INFINITY
+                        }
+                    }
+                });
+                if let Some(e) = eval_err {
+                    return Err(e);
+                }
+                (idx, val)
+            }
+        };
 
         let winning_variant = &variants[best_idx];
         for k in &param_keys {
@@ -570,5 +696,144 @@ mod tests {
         .unwrap();
 
         assert_eq!(out1.height(), out2.height());
+    }
+
+    #[test]
+    fn test_wfo_tpe_picks_higher_return_param_on_train() {
+        // Same scenario as test_wfo_opt_picks_higher_sharpe_param_on_train, but using
+        // the TPE in-fold optimizer instead of the default grid.
+        let wf = WalkForwardConfig::new(20, 20);
+        let df = wfo_base_df(40);
+        let variants = vec![
+            crate::SweepVariant {
+                params: std::collections::HashMap::from([("param".into(), 1.0)]),
+                signal_col: "signal_A".into(),
+            },
+            crate::SweepVariant {
+                params: std::collections::HashMap::from([("param".into(), 2.0)]),
+                signal_col: "signal_B".into(),
+            },
+        ];
+
+        let optimizer = InFoldOptimizer::Tpe(crate::TpeConfig::new(2, 7));
+        let out = run_walk_forward_optimize_with(
+            df.lazy(),
+            &zero_cost_config(),
+            &wf,
+            &variants,
+            "total_return",
+            &optimizer,
+        )
+        .unwrap();
+
+        assert_eq!(out.height(), 1);
+        let best_param = out
+            .column("best_param")
+            .unwrap()
+            .f64()
+            .unwrap()
+            .get(0)
+            .unwrap();
+        assert_eq!(best_param, 1.0);
+    }
+
+    #[test]
+    fn test_wfo_tpe_matches_grid_fold_count() {
+        let wf = WalkForwardConfig::new(20, 10);
+        let df = wfo_base_df(60);
+        let variants = vec![
+            crate::SweepVariant {
+                params: std::collections::HashMap::from([("p".into(), 1.0)]),
+                signal_col: "signal_A".into(),
+            },
+            crate::SweepVariant {
+                params: std::collections::HashMap::from([("p".into(), 2.0)]),
+                signal_col: "signal_B".into(),
+            },
+        ];
+        let optimizer = InFoldOptimizer::Tpe(crate::TpeConfig::new(2, 3));
+        let out_grid = run_walk_forward_optimize(
+            df.clone().lazy(),
+            &zero_cost_config(),
+            &wf,
+            &variants,
+            "total_return",
+        )
+        .unwrap();
+        let out_tpe = run_walk_forward_optimize_with(
+            df.lazy(),
+            &zero_cost_config(),
+            &wf,
+            &variants,
+            "total_return",
+            &optimizer,
+        )
+        .unwrap();
+
+        assert_eq!(out_grid.height(), out_tpe.height());
+    }
+
+    #[test]
+    fn test_wfo_tpe_deterministic_given_seed() {
+        let wf = WalkForwardConfig::new(20, 10);
+        let df = wfo_base_df(60);
+        let variants = vec![
+            crate::SweepVariant {
+                params: std::collections::HashMap::from([("p".into(), 1.0)]),
+                signal_col: "signal_A".into(),
+            },
+            crate::SweepVariant {
+                params: std::collections::HashMap::from([("p".into(), 2.0)]),
+                signal_col: "signal_B".into(),
+            },
+        ];
+        let optimizer = InFoldOptimizer::Tpe(crate::TpeConfig::new(2, 99));
+        let out1 = run_walk_forward_optimize_with(
+            df.clone().lazy(),
+            &zero_cost_config(),
+            &wf,
+            &variants,
+            "total_return",
+            &optimizer,
+        )
+        .unwrap();
+        let out2 = run_walk_forward_optimize_with(
+            df.lazy(),
+            &zero_cost_config(),
+            &wf,
+            &variants,
+            "total_return",
+            &optimizer,
+        )
+        .unwrap();
+
+        assert_eq!(
+            out1.column("best_p").unwrap().f64().unwrap().get(0),
+            out2.column("best_p").unwrap().f64().unwrap().get(0)
+        );
+        assert_eq!(
+            out1.column("train_metric").unwrap().f64().unwrap().get(0),
+            out2.column("train_metric").unwrap().f64().unwrap().get(0)
+        );
+    }
+
+    #[test]
+    fn test_wfo_unknown_objective_metric_errors() {
+        let wf = WalkForwardConfig::new(20, 20);
+        let df = wfo_base_df(40);
+        let variants = vec![crate::SweepVariant {
+            params: std::collections::HashMap::from([("param".into(), 1.0)]),
+            signal_col: "signal_A".into(),
+        }];
+        let err = run_walk_forward_optimize(
+            df.lazy(),
+            &zero_cost_config(),
+            &wf,
+            &variants,
+            "not_a_real_metric",
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(err.contains("not_a_real_metric"));
     }
 }

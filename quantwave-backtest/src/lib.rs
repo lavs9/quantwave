@@ -29,6 +29,9 @@
 //! - Param sweep helper `run_param_sweep` / `SweepVariant` (quantwave-cr6v.12).
 //! - Criterion benches vs naive row-loop (`benches/backtest_vs_naive.rs`, cr6v.13).
 //! - Walk-forward OOS + trade bootstrap Monte Carlo (cr6v.14).
+//! - Optional Bayesian (TPE) in-fold optimizer for walk-forward optimization —
+//!   `InFoldOptimizer::Tpe` / `run_walk_forward_optimize_with`, grid stays the
+//!   default (quantwave-lzzq).
 //! - Cross-sectional factor panel rank/long-short (sigc-inspired, cr6v.15).
 //! - `LiveBridge` trait for future Nautilus adapter (LGPL — cr6v.16).
 //! - Vectorized foundation now; streaming parity (Next<T> from quantwave-core)
@@ -82,6 +85,7 @@ mod portfolio;
 mod stops;
 mod sweep;
 mod tearsheet;
+mod tpe;
 mod walk_forward;
 
 use chrono::{DateTime, Utc};
@@ -110,7 +114,11 @@ pub use stops::{StopConfig, StopEvaluationMode};
 pub use sweep::{SweepVariant, run_param_sweep, single_param_variants};
 pub use tearsheet::{TearsheetOptions, render_tearsheet_html};
 use thiserror::Error;
-pub use walk_forward::{WalkForwardConfig, run_walk_forward, run_walk_forward_optimize};
+pub use tpe::{TpeConfig, TpeResult, TpeTrial, optimize_tpe, tpe_select_from_pool};
+pub use walk_forward::{
+    InFoldOptimizer, WalkForwardConfig, run_walk_forward, run_walk_forward_optimize,
+    run_walk_forward_optimize_with,
+};
 
 /// Errors from the simulation engine.
 #[derive(Error, Debug)]
