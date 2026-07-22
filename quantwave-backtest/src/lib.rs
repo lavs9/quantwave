@@ -99,6 +99,7 @@ pub use monte_carlo::{
     MonteCarloConfig, MonteCarloPathSummary, MonteCarloReturnConfig, MonteCarloSummary,
     monte_carlo_return_paths, monte_carlo_trade_bootstrap,
 };
+pub use orders::{ExecBar, ExitLeg, Fill, FillKind, OrderType, Side, fill_order, resolve_bracket};
 use polars::prelude::*;
 pub use portfolio::{
     PortfolioAllocator, PortfolioBar, PortfolioMode, run_shared_capital_streaming_simulation,
@@ -107,9 +108,6 @@ pub use portfolio::{
 use quantwave_core::traits::Next; // Re-exported for future streaming parity work (used in hybrid mode later per quantwave-ug9t)
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-pub use orders::{
-    ExecBar, ExitLeg, Fill, FillKind, OrderType, Side, fill_order, resolve_bracket,
-};
 pub use stops::{StopConfig, StopEvaluationMode};
 pub use sweep::{SweepVariant, run_param_sweep, single_param_variants};
 pub use tearsheet::{TearsheetOptions, render_tearsheet_html};
