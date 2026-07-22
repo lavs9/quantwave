@@ -107,7 +107,8 @@ pub use orders::{
 };
 use polars::prelude::*;
 pub use portfolio::{
-    PortfolioAllocator, PortfolioBar, PortfolioMode, run_shared_capital_streaming_simulation,
+    PortfolioAllocator, PortfolioBar, PortfolioMode, RebalancePolicy,
+    run_shared_capital_streaming_simulation,
 };
 #[allow(unused_imports)]
 use quantwave_core::traits::Next; // Re-exported for future streaming parity work (used in hybrid mode later per quantwave-ug9t)
@@ -411,6 +412,13 @@ pub struct BacktestConfig {
     /// (the default) makes this a no-op, so default backtests are
     /// byte-identical to pre-overlay behavior.
     pub risk_model: Option<risk::RiskModel>,
+    /// Optional shared-capital rebalance trigger (calendar / drift / signal /
+    /// turnover — quantwave-nbrx) applied at a single shared point in both
+    /// the batch and streaming portfolio paths (`portfolio::simulate_shared_capital`).
+    /// `None` (the default) rebalances every bar, matching pre-policy
+    /// behavior byte-for-byte. Only meaningful under
+    /// `PortfolioMode::SharedCapital`; ignored otherwise.
+    pub rebalance_policy: Option<portfolio::RebalancePolicy>,
 }
 
 impl Default for BacktestConfig {
@@ -432,6 +440,7 @@ impl Default for BacktestConfig {
             portfolio_mode: PortfolioMode::default(),
             portfolio_allocator: PortfolioAllocator::default(),
             risk_model: None,
+            rebalance_policy: None,
         }
     }
 }
@@ -958,6 +967,7 @@ impl BacktestEngine {
             self.config.execution_delay,
             &self.config.stop_config,
             self.config.portfolio_allocator,
+            self.config.rebalance_policy,
         );
 
         Self::assemble_shared_capital_result(&self.config, trades, per_symbol_equity, portfolio_eq)

@@ -32,6 +32,54 @@ pub enum PortfolioAllocator {
     SignalWeighted,
 }
 
+/// Decides, per bar, whether the shared-capital simulator re-evaluates
+/// target weights this bar (opening/closing/flipping positions per the
+/// current signals), or holds all existing positions unchanged and defers
+/// the decision to a later bar (quantwave-nbrx).
+///
+/// Stop-loss / take-profit / trailing exits (`StopConfig`) are a separate
+/// risk-management concern and are always evaluated regardless of this
+/// policy — only *signal-driven* entries/exits/flips are gated.
+///
+/// `None` (the default) rebalances every bar, which is today's behavior —
+/// runs without a policy are byte-identical to pre-policy output.
+///
+/// Concepts (clean-room; no code copied from any source): the
+/// calendar / threshold(drift) / signal-change / turnover-budget trigger
+/// taxonomy is a standard staple of the portfolio-rebalancing literature —
+/// see Perold & Sharpe (1988), "Dynamic Strategies for Asset Allocation",
+/// J. Portfolio Management, for the calendar-vs-threshold rebalancing
+/// trade-off, and Donohue & Yip (2003), "Optimal Portfolio Rebalancing with
+/// Transaction Costs", J. Portfolio Management, for turnover/no-trade-band
+/// rebalancing. QuantJourney-bt (inspiration only, not consulted for
+/// implementation) exposes an analogous calendar/drift rebalance-trigger
+/// split; only the general concept (not any code or API shape) is reused
+/// here.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub enum RebalancePolicy {
+    /// Rebalance every `every_n_bars` bars, counted from the start of the
+    /// run (bar 0 always rebalances). `0` and `1` both behave like "every
+    /// bar" (today's default).
+    Calendar { every_n_bars: usize },
+    /// Rebalance only when some symbol's mark-to-market weight
+    /// (`position notional / portfolio equity`) has drifted more than
+    /// `threshold` (a fraction of equity, e.g. `0.05` = 5 percentage
+    /// points) away from the weight it would be assigned if it were
+    /// (re)entered fresh this bar under the configured `PortfolioAllocator`.
+    Drift { threshold: f64 },
+    /// Rebalance only when the raw strategy signal (pre-sizer, pre-modifier)
+    /// for some symbol differs from the raw signal in effect at the last
+    /// rebalance — i.e. only on a genuine target-weight change (new symbol,
+    /// sign flip, or magnitude change).
+    Signal,
+    /// Skip a rebalance whose estimated turnover — the sum, across symbols,
+    /// of `|target_weight - current_weight|` for every symbol that would
+    /// need a close/open/flip this bar — would fall below `min_turnover`
+    /// (a fraction of equity). Caps how often small weight changes churn
+    /// the book.
+    Turnover { min_turnover: f64 },
+}
+
 /// Bar with symbol tag for shared-capital streaming parity.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PortfolioBar {
@@ -98,6 +146,121 @@ fn allocate_entry_units(
     sign * units_from_budget.min(cap)
 }
 
+/// Hypothetical mark-to-market weight (`notional / equity`, signed) a symbol
+/// would receive if it were (re)entered fresh this bar under `allocator`,
+/// given every symbol with a non-zero desired signal this bar as its peer
+/// set. Used only for `RebalancePolicy::Drift` / `Turnover` decisions — it
+/// does not execute a trade or mutate any book. Pure function of
+/// `desired_map` / `price` / `equity`, so it is deterministic and
+/// lookahead-free (data available at the current bar only), keeping batch
+/// and streaming in lockstep.
+fn hypothetical_target_weight(
+    allocator: PortfolioAllocator,
+    desired_map: &HashMap<String, f64>,
+    sym: &str,
+    price: f64,
+    equity: f64,
+) -> f64 {
+    if equity <= 0.0 || !price.is_finite() || price <= 0.0 {
+        return 0.0;
+    }
+    let desired = desired_map.get(sym).copied().unwrap_or(0.0);
+    if desired == 0.0 {
+        return 0.0;
+    }
+    let sign = if desired > 0.0 { 1.0 } else { -1.0 };
+    let active: Vec<f64> = desired_map
+        .values()
+        .filter(|v| **v != 0.0)
+        .map(|v| v.abs())
+        .collect();
+    let budget = match allocator {
+        PortfolioAllocator::EqualWeight => equity / active.len().max(1) as f64,
+        PortfolioAllocator::SignalWeighted => {
+            let total: f64 = active.iter().sum();
+            if total <= f64::EPSILON {
+                equity / active.len().max(1) as f64
+            } else {
+                equity * (desired.abs() / total)
+            }
+        }
+    };
+    let units = (budget / price).min(desired.abs());
+    sign * units * price / equity
+}
+
+/// Decide whether this bar re-evaluates target weights (signal-driven
+/// entries/exits/flips), per `policy`. `bar_index` counts bars from the
+/// start of the run (for `Calendar`). `last_rebalance_signal` is the raw
+/// signal map as of the last bar that *did* rebalance (for `Signal`); `None`
+/// before the first rebalance. Reads only `books` / `prices` / `desired_map`
+/// / `eq` as computed up to and including the current bar — no lookahead.
+#[allow(clippy::too_many_arguments)]
+fn should_rebalance(
+    policy: Option<RebalancePolicy>,
+    allocator: PortfolioAllocator,
+    bar_index: usize,
+    books: &HashMap<String, SymbolBook>,
+    prices: &HashMap<String, f64>,
+    desired_map: &HashMap<String, f64>,
+    raw_signal_map: &HashMap<String, f64>,
+    last_rebalance_signal: &Option<HashMap<String, f64>>,
+    eq: f64,
+) -> bool {
+    match policy {
+        None => true,
+        Some(RebalancePolicy::Calendar { every_n_bars }) => {
+            let n = every_n_bars.max(1);
+            bar_index.is_multiple_of(n)
+        }
+        Some(RebalancePolicy::Signal) => match last_rebalance_signal {
+            None => true,
+            Some(prev) => {
+                prev.len() != raw_signal_map.len()
+                    || raw_signal_map
+                        .iter()
+                        .any(|(sym, v)| prev.get(sym).copied().unwrap_or(0.0) != *v)
+            }
+        },
+        Some(RebalancePolicy::Drift { threshold }) => {
+            if eq <= 0.0 {
+                return false;
+            }
+            desired_map.keys().chain(books.keys()).any(|sym| {
+                let price = prices.get(sym).copied().unwrap_or(0.0);
+                let current_weight = books
+                    .get(sym)
+                    .map(|b| b.exposure * price / eq)
+                    .unwrap_or(0.0);
+                let target_weight =
+                    hypothetical_target_weight(allocator, desired_map, sym, price, eq);
+                (target_weight - current_weight).abs() > threshold
+            })
+        }
+        Some(RebalancePolicy::Turnover { min_turnover }) => {
+            if eq <= 0.0 {
+                return true;
+            }
+            let mut turnover = 0.0;
+            let mut seen: std::collections::HashSet<&String> = std::collections::HashSet::new();
+            for sym in desired_map.keys().chain(books.keys()) {
+                if !seen.insert(sym) {
+                    continue;
+                }
+                let price = prices.get(sym).copied().unwrap_or(0.0);
+                let current_weight = books
+                    .get(sym)
+                    .map(|b| b.exposure * price / eq)
+                    .unwrap_or(0.0);
+                let target_weight =
+                    hypothetical_target_weight(allocator, desired_map, sym, price, eq);
+                turnover += (target_weight - current_weight).abs();
+            }
+            turnover >= min_turnover
+        }
+    }
+}
+
 fn mark_to_market_equity(
     cash: f64,
     books: &HashMap<String, SymbolBook>,
@@ -122,6 +285,7 @@ pub(crate) fn simulate_shared_capital(
     _delay: ExecutionDelay,
     stops: &StopConfig,
     allocator: PortfolioAllocator,
+    rebalance_policy: Option<RebalancePolicy>,
 ) -> (
     Vec<Trade>,
     HashMap<String, Vec<EquityPoint>>,
@@ -137,6 +301,11 @@ pub(crate) fn simulate_shared_capital(
     let mut trades: Vec<Trade> = Vec::new();
     let mut per_symbol_equity: HashMap<String, Vec<EquityPoint>> = HashMap::new();
     let mut portfolio_curve: Vec<EquityPoint> = Vec::with_capacity(groups.len());
+    // Rebalance-policy state (quantwave-nbrx): tracked across bars so the
+    // decision is a deterministic function of data up to and including the
+    // current bar, applied identically in the batch and streaming paths
+    // (both funnel through this one function).
+    let mut last_rebalance_signal: Option<HashMap<String, f64>> = None;
 
     let mut record_exit = |cash: &mut f64,
                            sym: &str,
@@ -211,7 +380,7 @@ pub(crate) fn simulate_shared_capital(
         }
     };
 
-    for group in groups {
+    for (bar_index, group) in groups.iter().enumerate() {
         let ts = group.ts;
         let mut prices: HashMap<String, f64> = HashMap::new();
         for bar in &group.bars {
@@ -256,6 +425,7 @@ pub(crate) fn simulate_shared_capital(
         // Collect entry intents for this bar (after stops)
         let mut desired_map: HashMap<String, f64> = HashMap::new();
         let mut meta_map: HashMap<String, Option<HashMap<String, f64>>> = HashMap::new();
+        let mut raw_signal_map: HashMap<String, f64> = HashMap::new();
         for (idx, bar) in group.bars.iter().enumerate() {
             let raw = apply_signal_modifiers(bar.raw_signal, None, None);
             let sized = if let Some(s) = sizer {
@@ -266,85 +436,110 @@ pub(crate) fn simulate_shared_capital(
             };
             desired_map.insert(bar.symbol.clone(), sized);
             meta_map.insert(bar.symbol.clone(), bar.meta.clone());
+            raw_signal_map.insert(bar.symbol.clone(), bar.raw_signal);
             let _ = idx;
         }
 
         let eq = mark_to_market_equity(cash, &books, &prices);
-        let mut entry_peers: Vec<(String, f64, f64)> = Vec::new(); // sym, weight, price
-        for (sym, &desired) in &desired_map {
-            if desired == 0.0 {
-                continue;
-            }
-            let in_pos = books.get(sym).map(|b| b.exposure != 0.0).unwrap_or(false);
-            if !in_pos {
-                entry_peers.push((sym.clone(), desired.abs(), prices[sym]));
-            }
-        }
 
-        // Execute signals per symbol (deterministic symbol order)
-        let mut syms: Vec<&String> = desired_map.keys().collect();
-        syms.sort();
-        for sym in syms {
-            let close = prices[sym];
-            if !close.is_finite() {
-                continue;
+        // Rebalance-policy gate (quantwave-nbrx): a deterministic function of
+        // data up to and including this bar, applied identically whether we
+        // got here from the batch or the streaming caller — both call this
+        // one `simulate_shared_capital`. When `false`, all signal-driven
+        // entries/exits/flips below are skipped for this bar; stop-loss
+        // checks above are unaffected (separate concern, always active).
+        let do_rebalance = should_rebalance(
+            rebalance_policy,
+            allocator,
+            bar_index,
+            &books,
+            &prices,
+            &desired_map,
+            &raw_signal_map,
+            &last_rebalance_signal,
+            eq,
+        );
+
+        if do_rebalance {
+            last_rebalance_signal = Some(raw_signal_map.clone());
+
+            let mut entry_peers: Vec<(String, f64, f64)> = Vec::new(); // sym, weight, price
+            for (sym, &desired) in &desired_map {
+                if desired == 0.0 {
+                    continue;
+                }
+                let in_pos = books.get(sym).map(|b| b.exposure != 0.0).unwrap_or(false);
+                if !in_pos {
+                    entry_peers.push((sym.clone(), desired.abs(), prices[sym]));
+                }
             }
-            let desired_raw = desired_map[sym];
-            let meta = meta_map[sym].clone();
 
-            let book = books.entry(sym.clone()).or_insert(SymbolBook {
-                exposure: 0.0,
-                entry_price: 0.0,
-                entry_ts: None,
-                entry_metadata: None,
-                stop_state: stops::StopPositionState::default(),
-                trade_id: 0,
-            });
+            // Execute signals per symbol (deterministic symbol order)
+            let mut syms: Vec<&String> = desired_map.keys().collect();
+            syms.sort();
+            for sym in syms {
+                let close = prices[sym];
+                if !close.is_finite() {
+                    continue;
+                }
+                let desired_raw = desired_map[sym];
+                let meta = meta_map[sym].clone();
 
-            if desired_raw == 0.0 && book.exposure != 0.0 {
-                let snapshot = book.clone();
-                record_exit(&mut cash, sym, &snapshot, ts, close);
-                *book = SymbolBook {
+                let book = books.entry(sym.clone()).or_insert(SymbolBook {
                     exposure: 0.0,
                     entry_price: 0.0,
                     entry_ts: None,
                     entry_metadata: None,
                     stop_state: stops::StopPositionState::default(),
-                    trade_id: snapshot.trade_id,
-                };
-                continue;
-            }
+                    trade_id: 0,
+                });
 
-            if desired_raw == 0.0 {
-                continue;
-            }
+                if desired_raw == 0.0 && book.exposure != 0.0 {
+                    let snapshot = book.clone();
+                    record_exit(&mut cash, sym, &snapshot, ts, close);
+                    *book = SymbolBook {
+                        exposure: 0.0,
+                        entry_price: 0.0,
+                        entry_ts: None,
+                        entry_metadata: None,
+                        stop_state: stops::StopPositionState::default(),
+                        trade_id: snapshot.trade_id,
+                    };
+                    continue;
+                }
 
-            let want_long = desired_raw > 0.0;
-            let in_long = book.exposure > 0.0;
-            let in_short = book.exposure < 0.0;
-            let flip = (want_long && in_short) || (!want_long && in_long);
+                if desired_raw == 0.0 {
+                    continue;
+                }
 
-            if flip {
-                let snapshot = book.clone();
-                record_exit(&mut cash, sym, &snapshot, ts, close);
-                *book = SymbolBook {
-                    exposure: 0.0,
-                    entry_price: 0.0,
-                    entry_ts: None,
-                    entry_metadata: None,
-                    stop_state: stops::StopPositionState::default(),
-                    trade_id: snapshot.trade_id,
-                };
-            }
+                let want_long = desired_raw > 0.0;
+                let in_long = book.exposure > 0.0;
+                let in_short = book.exposure < 0.0;
+                let flip = (want_long && in_short) || (!want_long && in_long);
 
-            if book.exposure == 0.0 {
-                let peers: Vec<(f64, f64)> = entry_peers.iter().map(|(_, w, p)| (*w, *p)).collect();
-                let my_weight = desired_raw.abs();
-                let allocated =
-                    allocate_entry_units(allocator, desired_raw, close, eq, &peers, my_weight);
-                if allocated != 0.0 {
-                    trade_id += 1;
-                    *book = open_position(&mut cash, trade_id, allocated, ts, close, meta);
+                if flip {
+                    let snapshot = book.clone();
+                    record_exit(&mut cash, sym, &snapshot, ts, close);
+                    *book = SymbolBook {
+                        exposure: 0.0,
+                        entry_price: 0.0,
+                        entry_ts: None,
+                        entry_metadata: None,
+                        stop_state: stops::StopPositionState::default(),
+                        trade_id: snapshot.trade_id,
+                    };
+                }
+
+                if book.exposure == 0.0 {
+                    let peers: Vec<(f64, f64)> =
+                        entry_peers.iter().map(|(_, w, p)| (*w, *p)).collect();
+                    let my_weight = desired_raw.abs();
+                    let allocated =
+                        allocate_entry_units(allocator, desired_raw, close, eq, &peers, my_weight);
+                    if allocated != 0.0 {
+                        trade_id += 1;
+                        *book = open_position(&mut cash, trade_id, allocated, ts, close, meta);
+                    }
                 }
             }
         }
@@ -508,9 +703,17 @@ where
     let delay = config.execution_delay;
     let stops = &config.stop_config;
     let allocator = config.portfolio_allocator;
+    let rebalance_policy = config.rebalance_policy;
 
-    let (trades, per_symbol_equity, portfolio_eq) =
-        simulate_shared_capital(&groups, exec, sizer, delay, stops, allocator);
+    let (trades, per_symbol_equity, portfolio_eq) = simulate_shared_capital(
+        &groups,
+        exec,
+        sizer,
+        delay,
+        stops,
+        allocator,
+        rebalance_policy,
+    );
 
     crate::BacktestEngine::assemble_shared_capital_result(
         &config,
@@ -518,4 +721,261 @@ where
         per_symbol_equity,
         portfolio_eq,
     )
+}
+
+#[cfg(test)]
+mod rebalance_policy_tests {
+    //! Direct unit tests for `should_rebalance` (quantwave-nbrx): each
+    //! trigger checked against hand-crafted books/signals so the expected
+    //! rebalance bars are known exactly, without needing to hand-derive
+    //! multi-bar cash-flow arithmetic. Batch↔streaming parity and the
+    //! default-unchanged guarantee are covered at the integration-test
+    //! level (see `tests/portfolio_rebalance_policy.rs`), since both paths
+    //! share this exact function.
+    use super::*;
+
+    fn book(exposure: f64) -> SymbolBook {
+        SymbolBook {
+            exposure,
+            entry_price: 100.0,
+            entry_ts: None,
+            entry_metadata: None,
+            stop_state: stops::StopPositionState::default(),
+            trade_id: 1,
+        }
+    }
+
+    fn map1(sym: &str, v: f64) -> HashMap<String, f64> {
+        let mut m = HashMap::new();
+        m.insert(sym.to_string(), v);
+        m
+    }
+
+    #[test]
+    fn none_policy_always_rebalances() {
+        for bar in 0..5 {
+            assert!(should_rebalance(
+                None,
+                PortfolioAllocator::EqualWeight,
+                bar,
+                &HashMap::new(),
+                &HashMap::new(),
+                &HashMap::new(),
+                &HashMap::new(),
+                &None,
+                100_000.0,
+            ));
+        }
+    }
+
+    #[test]
+    fn calendar_rebalances_only_on_multiples_of_n() {
+        let policy = Some(RebalancePolicy::Calendar { every_n_bars: 3 });
+        let expected = [true, false, false, true, false, false, true];
+        for (bar, want) in expected.iter().enumerate() {
+            let got = should_rebalance(
+                policy,
+                PortfolioAllocator::EqualWeight,
+                bar,
+                &HashMap::new(),
+                &HashMap::new(),
+                &HashMap::new(),
+                &HashMap::new(),
+                &None,
+                100_000.0,
+            );
+            assert_eq!(got, *want, "bar {bar}: expected {want}, got {got}");
+        }
+    }
+
+    #[test]
+    fn calendar_zero_or_one_behaves_like_every_bar() {
+        for every_n_bars in [0usize, 1usize] {
+            let policy = Some(RebalancePolicy::Calendar { every_n_bars });
+            for bar in 0..4 {
+                assert!(should_rebalance(
+                    policy,
+                    PortfolioAllocator::EqualWeight,
+                    bar,
+                    &HashMap::new(),
+                    &HashMap::new(),
+                    &HashMap::new(),
+                    &HashMap::new(),
+                    &None,
+                    100_000.0,
+                ));
+            }
+        }
+    }
+
+    #[test]
+    fn signal_rebalances_only_when_raw_signal_changes() {
+        let policy = Some(RebalancePolicy::Signal);
+        // First call: no prior rebalance signal -> always rebalance.
+        let sig_a = map1("AAA", 1.0);
+        assert!(should_rebalance(
+            policy,
+            PortfolioAllocator::EqualWeight,
+            0,
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &sig_a,
+            &None,
+            100_000.0,
+        ));
+
+        // Unchanged signal vs last rebalance -> skip.
+        let last = Some(sig_a.clone());
+        assert!(!should_rebalance(
+            policy,
+            PortfolioAllocator::EqualWeight,
+            1,
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &sig_a,
+            &last,
+            100_000.0,
+        ));
+
+        // Changed magnitude/sign -> rebalance.
+        let sig_b = map1("AAA", -1.0);
+        assert!(should_rebalance(
+            policy,
+            PortfolioAllocator::EqualWeight,
+            2,
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &sig_b,
+            &last,
+            100_000.0,
+        ));
+
+        // New symbol appears -> rebalance even if the shared symbol's value is
+        // unchanged.
+        let mut sig_c = sig_a.clone();
+        sig_c.insert("BBB".to_string(), 1.0);
+        assert!(should_rebalance(
+            policy,
+            PortfolioAllocator::EqualWeight,
+            3,
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            &sig_c,
+            &last,
+            100_000.0,
+        ));
+    }
+
+    #[test]
+    fn drift_rebalances_when_weight_deviates_past_threshold() {
+        let policy_tight = Some(RebalancePolicy::Drift { threshold: 0.05 });
+        let policy_loose = Some(RebalancePolicy::Drift { threshold: 0.9 });
+        let mut books = HashMap::new();
+        // Currently fully invested in AAA (weight 1.0 given equity 10_000 and
+        // exposure*price = 100 * 100 = 10_000).
+        books.insert("AAA".to_string(), book(100.0));
+        let mut prices = HashMap::new();
+        prices.insert("AAA".to_string(), 100.0);
+        prices.insert("BBB".to_string(), 100.0);
+        // BBB now also wants in: with EqualWeight and 2 active symbols, AAA's
+        // hypothetical fresh target weight drops to ~0.5, a 0.5 drift from
+        // its current ~1.0 weight.
+        let mut desired = HashMap::new();
+        desired.insert("AAA".to_string(), 1_000_000.0);
+        desired.insert("BBB".to_string(), 1_000_000.0);
+
+        assert!(should_rebalance(
+            policy_tight,
+            PortfolioAllocator::EqualWeight,
+            5,
+            &books,
+            &prices,
+            &desired,
+            &HashMap::new(),
+            &None,
+            10_000.0,
+        ));
+        assert!(!should_rebalance(
+            policy_loose,
+            PortfolioAllocator::EqualWeight,
+            5,
+            &books,
+            &prices,
+            &desired,
+            &HashMap::new(),
+            &None,
+            10_000.0,
+        ));
+    }
+
+    #[test]
+    fn drift_no_change_stays_below_threshold() {
+        // AAA alone, signal unchanged: hypothetical fresh target == current
+        // weight (both derive from the same full-equity budget), so drift is
+        // ~0 regardless of threshold.
+        let policy = Some(RebalancePolicy::Drift { threshold: 0.001 });
+        let mut books = HashMap::new();
+        books.insert("AAA".to_string(), book(100.0));
+        let mut prices = HashMap::new();
+        prices.insert("AAA".to_string(), 100.0);
+        let mut desired = HashMap::new();
+        desired.insert("AAA".to_string(), 1_000_000.0);
+
+        assert!(!should_rebalance(
+            policy,
+            PortfolioAllocator::EqualWeight,
+            5,
+            &books,
+            &prices,
+            &desired,
+            &HashMap::new(),
+            &None,
+            10_000.0,
+        ));
+    }
+
+    #[test]
+    fn turnover_skips_small_changes_and_allows_large_ones() {
+        let mut books = HashMap::new();
+        books.insert("AAA".to_string(), book(100.0));
+        let mut prices = HashMap::new();
+        prices.insert("AAA".to_string(), 100.0);
+        prices.insert("BBB".to_string(), 100.0);
+        let mut desired = HashMap::new();
+        desired.insert("AAA".to_string(), 1_000_000.0);
+        desired.insert("BBB".to_string(), 1_000_000.0);
+
+        // Estimated turnover here is ~0.5 (AAA's weight moving from ~1.0
+        // toward ~0.5 as BBB joins, plus BBB's own ~0.5 entry) -> a high
+        // budget should skip it, a low budget should allow it.
+        let high_budget = Some(RebalancePolicy::Turnover { min_turnover: 5.0 });
+        let low_budget = Some(RebalancePolicy::Turnover { min_turnover: 0.01 });
+
+        assert!(!should_rebalance(
+            high_budget,
+            PortfolioAllocator::EqualWeight,
+            5,
+            &books,
+            &prices,
+            &desired,
+            &HashMap::new(),
+            &None,
+            10_000.0,
+        ));
+        assert!(should_rebalance(
+            low_budget,
+            PortfolioAllocator::EqualWeight,
+            5,
+            &books,
+            &prices,
+            &desired,
+            &HashMap::new(),
+            &None,
+            10_000.0,
+        ));
+    }
 }
