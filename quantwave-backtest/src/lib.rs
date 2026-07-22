@@ -82,6 +82,7 @@ mod metrics;
 mod monte_carlo;
 mod orders;
 mod portfolio;
+pub mod risk;
 mod stops;
 mod sweep;
 mod tearsheet;
@@ -400,6 +401,12 @@ pub struct BacktestConfig {
     pub portfolio_mode: PortfolioMode,
     /// Budget split when opening positions in `SharedCapital` mode.
     pub portfolio_allocator: PortfolioAllocator,
+    /// Optional risk overlay(s) (vol_target / inverse_vol / position_limit /
+    /// pre_trade) applied to target exposure each bar, in both batch and
+    /// streaming paths, at a single shared point (quantwave-pvmr). `None`
+    /// (the default) makes this a no-op, so default backtests are
+    /// byte-identical to pre-overlay behavior.
+    pub risk_model: Option<risk::RiskModel>,
 }
 
 impl Default for BacktestConfig {
@@ -420,6 +427,7 @@ impl Default for BacktestConfig {
             position_sizer: None,
             portfolio_mode: PortfolioMode::default(),
             portfolio_allocator: PortfolioAllocator::default(),
+            risk_model: None,
         }
     }
 }
@@ -1074,6 +1082,7 @@ impl BacktestEngine {
         let (highs, lows) = self.load_ohlc_columns(df)?;
         let delay = self.config.execution_delay;
         let stops = &self.config.stop_config;
+        let risk_model = &self.config.risk_model;
         let (mut trades, mut equity_points) = run_simulation(
             &timestamps,
             &closes,
@@ -1084,6 +1093,7 @@ impl BacktestEngine {
             sizer,
             delay,
             stops,
+            risk_model,
         );
 
         if let Some(sym) = symbol {
@@ -1491,6 +1501,7 @@ fn run_simulation(
     sizer: &Option<InitialRiskPositionSizer>,
     execution_delay: ExecutionDelay,
     stop_config: &StopConfig,
+    risk_model: &Option<risk::RiskModel>,
 ) -> (Vec<Trade>, Vec<EquityPoint>) {
     use stops::{OhlcBar, StopPositionState, evaluate_stops, trailing_level_at_entry};
     let mut cash = match exec {
@@ -1645,10 +1656,19 @@ fn run_simulation(
         };
         // Apply rich sizer if configured (n1yc.1) using current equity for % calc
         let current_equity = cash + current_exposure * close;
-        let desired_exposure = if let Some(s) = sizer {
+        let sized_exposure = if let Some(s) = sizer {
             s.compute_sized_exposure(raw_exposure, &meta, close, current_equity)
         } else {
             raw_exposure
+        };
+        // Risk overlay (quantwave-pvmr): single shared application point for both the
+        // batch (`simulate_dataframe`) and streaming (`run_streaming_simulation`) paths,
+        // since both call this same `run_simulation` core. Pure function of
+        // `closes[..=i]` (no future data) — keeps batch<->streaming parity intact.
+        let desired_exposure = if let Some(rm) = risk_model {
+            rm.apply(sized_exposure, closes, i, close, current_equity)
+        } else {
+            sized_exposure
         };
         let desired = if desired_exposure.is_finite() && desired_exposure != 0.0 {
             desired_exposure
@@ -1791,6 +1811,7 @@ where
 
     let delay = config.execution_delay;
     let stops = &config.stop_config;
+    let risk_model = &config.risk_model;
     let (trades, equity_points) = run_simulation(
         &timestamps,
         &closes,
@@ -1812,6 +1833,7 @@ where
         sizer,
         delay,
         stops,
+        risk_model,
     );
 
     // Build Polars (same as batch)
