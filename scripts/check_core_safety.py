@@ -33,12 +33,17 @@ TRACK_PATTERNS = (
 
 
 def _strip_cfg_test_modules(text: str) -> str:
-    """Remove `#[cfg(test)] mod tests { ... }` blocks (brace-balanced)."""
+    """Remove `#[cfg(test)] mod <name> { ... }` blocks (brace-balanced).
+
+    Matches any test-module name (``tests``, ``parity_tests``, ``unit``, …),
+    not just the literal ``tests`` — otherwise test-only ``unwrap()``/``expect()``
+    leak into the production tally.
+    """
     out: list[str] = []
     i = 0
     n = len(text)
     while i < n:
-        m = re.search(r"#\[cfg\(test\)\]\s*mod\s+tests\s*\{", text[i:])
+        m = re.search(r"#\[cfg\(test\)\]\s*mod\s+\w+\s*\{", text[i:])
         if not m:
             out.append(text[i:])
             break

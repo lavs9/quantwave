@@ -28,6 +28,22 @@ class CoreSafetyTests(unittest.TestCase):
     def test_main_repo_passes(self):
         self.assertEqual(self.mod.main(), 0)
 
+    def test_strips_nonstandard_test_module_name(self):
+        # `mod parity_tests` (not just `mod tests`) must be treated as test code,
+        # so its unwrap()/expect() do not leak into the tracked production tally.
+        src = (
+            "pub fn f() -> i32 { 1 }\n"
+            "#[cfg(test)]\n"
+            "mod parity_tests {\n"
+            "    use super::*;\n"
+            "    #[test]\n"
+            "    fn t() { let _ = f().unwrap(); f().expect(\"x\"); }\n"
+            "}\n"
+        )
+        stripped = self.mod._strip_cfg_test_modules(src)
+        self.assertNotIn("unwrap", stripped)
+        self.assertNotIn("expect", stripped)
+
     def test_unsafe_in_production_fails(self):
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / "src"
