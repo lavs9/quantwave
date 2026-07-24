@@ -8,9 +8,11 @@ QuantWave ships a **Polars-native, clean-room backtest engine** (`quantwave-back
 
 - Long-format LazyFrame input (single- and multi-symbol)
 - Realistic costs, execution delay, stops, shorts, sizing filters
+- First-class order types (market / limit / stop / stop-limit) with deterministic OHLC fills
+- Risk overlays (vol-target, inverse-vol, position-limit, pre-trade) and portfolio rebalance policies
 - Research analytics: sweeps, walk-forward optimization, Monte Carlo, cross-sectional panels
 - Shared-capital portfolio simulation across symbols
-- HTML tear sheets and rich `PerformanceMetrics`
+- HTML tear sheets, rich `PerformanceMetrics`, and benchmark-relative reporting (alpha / beta / Calmar / VaR / CVaR)
 - Rich PA/ML metadata preserved into trades
 
 **What it is not (yet):**
@@ -34,7 +36,7 @@ QuantWave ships a **Polars-native, clean-room backtest engine** (`quantwave-back
 
 ## Feature matrix
 
-Legend: ✅ Shipped · ⏸ Deferred · ❌ Out of scope
+Legend: ✅ Shipped · 🚧 In progress · ⏸ Deferred · ❌ Out of scope
 
 ### Core user-facing
 
@@ -58,6 +60,10 @@ Legend: ✅ Shipped · ⏸ Deferred · ❌ Out of scope
 | 11 | Struct signal column auto-parse + pole sizing | ✅ | `signal_col` Struct | nextest struct signal tests |
 | 12 | Param sweep helper | ✅ | `.bt.sweep()` | `test_bt_sweep_*` |
 | 13 | Criterion benches vs naive loop | ✅ | `benches/backtest_vs_naive.rs` | [backtest_benchmark.md](../../examples/notebooks/backtest_benchmark.md) |
+| 13a | First-class order types (market / limit / stop / stop-limit) | ✅ | `.bt.order_backtest()`, `quantwave-backtest/src/orders.rs` | `orders::tests::*`, `test_order_backtest.py` |
+| 13b | Order-mode batch ↔ streaming parity (fold == incremental) | ✅ | `quantwave-backtest/src/order_exec.rs` | `fold_equals_incremental_stepping_parity` |
+| 13c | Bracket / OCO exit primitive (pessimistic same-bar convention) | 🚧 | `orders::resolve_bracket` (tested primitive; run-loop + Python wiring in progress) | `bracket_pessimistic_stop_before_target_on_double_touch` |
+| 13d | Risk overlays (vol-target / inverse-vol / position-limit / pre-trade) | ✅ | `risk_model=`, `quantwave-backtest/src/risk.rs` | `risk_model_batch_streaming_parity`, `test_risk_and_rebalance.py` |
 
 ### Research robustness
 
@@ -73,6 +79,9 @@ Legend: ✅ Shipped · ⏸ Deferred · ❌ Out of scope
 | 17 | Nautilus live bridge | ⏸ | `LiveBridge` trait stub | planning ADR |
 | 18 | HTML tear sheets | ✅ | `tearsheet.render_html` | `test_tearsheet.py` |
 | 19 | Shared-capital portfolio backtest | ✅ | `.bt.portfolio_backtest()` | `test_portfolio_backtest.py`, [portfolio notebook](../../examples/notebooks/portfolio_shared_capital_backtest.md) |
+| 20 | Portfolio rebalance policies (calendar / drift / signal / turnover) | ✅ | `rebalance_policy=`, `quantwave-backtest/src/portfolio.rs` | `test_risk_and_rebalance.py` |
+| 21 | Benchmark-relative reporting (alpha / beta / excess return) | ✅ | `report.metrics_with_benchmark()` | `metrics.rs` benchmark tests |
+| 22 | Extended metrics (Calmar / VaR-95 / CVaR-95) | ✅ | `report.extended_metrics()` | `metrics.rs` tests |
 
 ### Additional shipped features
 
@@ -96,7 +105,11 @@ Legend: ✅ Shipped · ⏸ Deferred · ❌ Out of scope
 | `lf.bt.walk_forward()` | Rolling OOS folds |
 | `lf.bt.walk_forward_optimize()` | Train-window sweep + locked OOS param |
 | `lf.bt.cross_sectional_backtest()` | Universe rank long/short (`transform=` optional) |
-| `lf.bt.portfolio_backtest()` | Shared-capital multi-symbol simulation |
+| `lf.bt.portfolio_backtest()` | Shared-capital multi-symbol simulation (`rebalance_policy=` optional) |
+| `lf.bt.order_backtest()` | Order-driven sim from an explicit long-format order spec |
+| `risk_model=` kwarg | Risk overlays on `backtest()` / `backtest_with_report()` / `backtest_metrics()` |
+| `report.metrics_with_benchmark()` | Alpha / beta / excess return vs a benchmark series |
+| `report.extended_metrics()` | Calmar / VaR-95 / CVaR-95 beyond the stable 10-key contract |
 
 Rust-only helpers (no thin Python wrapper): `monte_carlo_return_paths`, factor transform primitives — Python uses equivalent `.bt` paths where noted above.
 
@@ -109,6 +122,7 @@ Rust-only helpers (no thin Python wrapper): `monte_carlo_return_paths`, factor t
 | Overview | [index.md](index.md) | Landing page |
 | Quickstart (5 min) | [quickstart.md](quickstart.md) | New evaluators |
 | Full `.bt` tour | [backtest_showcase.md](../../examples/notebooks/backtest_showcase.md) | Demo / sales |
+| Execution-aware research (orders + overlays + benchmark) | [execution_aware_research.md](../../examples/notebooks/execution_aware_research.md) | Execution realism |
 | Tear Sheets | [tear_sheets.md](tear_sheets.md) | HTML reports |
 | Portfolio shared capital | [portfolio_shared_capital_backtest.md](../../examples/notebooks/portfolio_shared_capital_backtest.md) | Multi-symbol books |
 | PA canonical strategy | [pa_flag_breakout_strategy.md](../../examples/notebooks/pa_flag_breakout_strategy.md) | PA moat |

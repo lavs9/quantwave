@@ -23,6 +23,9 @@ Runnable [Marimo](https://marimo.io/) notebooks demonstrating QuantWave end-to-e
 - **[Portfolio Shared Capital](portfolio_shared_capital_backtest.md)**  
   Multi-symbol book simulation with one cash pool via `.bt.portfolio_backtest()`.
 
+- **[Execution-Aware Research](execution_aware_research.md)** — *Canonical execution-realism example*  
+  First-class order types (limit / stop / stop-limit) via `.bt.order_backtest()`, risk overlays (`risk_model=`), and benchmark-relative reporting (alpha / beta / Calmar / VaR / CVaR) — all on the batch ↔ streaming parity core.
+
 ## Indicators & ML
 
 - **[Multi-Indicator Analysis](multi_indicator_analysis.md)**
