@@ -619,6 +619,17 @@ pub(crate) fn simulate_shared_capital(
         }
     }
 
+    // Deterministic trade order: symbol books are stored in a HashMap, so exit
+    // records can be pushed in a run-to-run-varying order. Sort by a stable
+    // content key so batch and streaming (both via this fn) and repeated runs
+    // are reproducible (entry timestamp → symbol → trade id).
+    trades.sort_by(|a, b| {
+        a.entry_ts
+            .cmp(&b.entry_ts)
+            .then_with(|| a.symbol.cmp(&b.symbol))
+            .then_with(|| a.trade_id.cmp(&b.trade_id))
+    });
+
     (trades, per_symbol_equity, portfolio_curve)
 }
 

@@ -41,6 +41,8 @@ def _config_from_kwargs(
     touched_exit: bool = False,
     portfolio_mode: str = "independent_books",
     portfolio_allocator: str = "equal_weight",
+    risk_model: dict | None = None,
+    rebalance_policy: dict | None = None,
 ) -> BacktestConfig:
     return BacktestConfig(
         signal_col=signal,
@@ -61,6 +63,8 @@ def _config_from_kwargs(
         touched_exit=touched_exit,
         portfolio_mode=portfolio_mode,
         portfolio_allocator=portfolio_allocator,
+        risk_model=risk_model,
+        rebalance_policy=rebalance_policy,
     )
 
 
@@ -103,7 +107,24 @@ class BtLazyNamespace:
         take_profit_pct: float | None = None,
         trailing_stop_pct: float | None = None,
         touched_exit: bool = False,
+        risk_model: dict | None = None,
     ):
+        """Run a backtest and return the raw :class:`BacktestResult`.
+
+        Args:
+            risk_model: Optional dict of risk overlays applied to the target
+                exposure at entry, e.g.
+                ``{"vol_target": {"target_annual_vol": 0.15, "lookback": 20},
+                "position_limit": {"max_abs_exposure": 50.0}}``. Only the
+                overlay keys present are applied; omitted overlays (and the
+                default ``None``) leave sizing untouched (byte-identical to
+                today's behavior). Overlays size a position **at entry**
+                only — the engine does not resize an already-open position
+                intra-trade. Supported keys: ``vol_target``, ``inverse_vol``,
+                ``position_limit``, ``pre_trade``. See
+                ``quantwave-backtest/src/risk.rs`` for each sub-config's
+                fields.
+        """
         config = _config_from_kwargs(
             signal=signal,
             timestamp_col=timestamp_col,
@@ -121,6 +142,7 @@ class BtLazyNamespace:
             take_profit_pct=take_profit_pct,
             trailing_stop_pct=trailing_stop_pct,
             touched_exit=touched_exit,
+            risk_model=risk_model,
         )
         return BacktestEngine(config).run(self._ldf.collect())
 
@@ -142,6 +164,7 @@ class BtLazyNamespace:
         take_profit_pct: float | None = None,
         trailing_stop_pct: float | None = None,
         touched_exit: bool = False,
+        risk_model: dict | None = None,
     ):
         """Run a backtest and return a full report (metrics, trades, equity).
 
@@ -164,6 +187,15 @@ class BtLazyNamespace:
             high_col: Bar high column (required when ``touched_exit=True``).
             low_col: Bar low column (required when ``touched_exit=True``).
             touched_exit: Use OHLC intrabar stop/target detection (polars-backtest style).
+            risk_model: Optional dict of risk overlays applied to the target
+                exposure at entry, e.g.
+                ``{"vol_target": {"target_annual_vol": 0.15, "lookback": 20},
+                "position_limit": {"max_abs_exposure": 50.0}}``. Only the
+                overlay keys present are applied; the default ``None``
+                leaves sizing byte-identical to today's behavior. Overlays
+                size a position **at entry** only — no intra-trade
+                resizing. Supported keys: ``vol_target``, ``inverse_vol``,
+                ``position_limit``, ``pre_trade``.
 
         Returns:
             BacktestReport with ``metrics``, ``trades``, and equity series accessors.
@@ -178,6 +210,10 @@ class BtLazyNamespace:
             ... })
             >>> report = df.lazy().bt.backtest_with_report(
             ...     signal="signal", close_col="close", timestamp_col="timestamp"
+            ... )
+            >>> report_capped = df.lazy().bt.backtest_with_report(
+            ...     signal="signal", close_col="close", timestamp_col="timestamp",
+            ...     risk_model={"position_limit": {"max_abs_exposure": 5.0}},
             ... )
         """
         config = _config_from_kwargs(
@@ -197,6 +233,7 @@ class BtLazyNamespace:
             take_profit_pct=take_profit_pct,
             trailing_stop_pct=trailing_stop_pct,
             touched_exit=touched_exit,
+            risk_model=risk_model,
         )
         return BacktestEngine(config).backtest_with_report(self._ldf.collect())
 
@@ -215,7 +252,15 @@ class BtLazyNamespace:
         stop_loss_pct: float | None = None,
         take_profit_pct: float | None = None,
         trailing_stop_pct: float | None = None,
+        risk_model: dict | None = None,
     ) -> dict[str, float]:
+        """Run a backtest and return only the metrics dict.
+
+        Args:
+            risk_model: Optional risk-overlay dict; see
+                :meth:`backtest_with_report` for the full schema. Default
+                ``None`` leaves sizing byte-identical to today's behavior.
+        """
         config = _config_from_kwargs(
             signal=signal,
             timestamp_col=timestamp_col,
@@ -230,6 +275,7 @@ class BtLazyNamespace:
             stop_loss_pct=stop_loss_pct,
             take_profit_pct=take_profit_pct,
             trailing_stop_pct=trailing_stop_pct,
+            risk_model=risk_model,
         )
         return BacktestEngine(config).run_metrics_only(self._ldf.collect())
 
@@ -251,8 +297,21 @@ class BtLazyNamespace:
         trailing_stop_pct: float | None = None,
         portfolio_mode: str = "shared_capital",
         portfolio_allocator: str = "equal_weight",
+        rebalance_policy: dict | None = None,
     ):
-        """Shared-capital multi-symbol backtest."""
+        """Shared-capital multi-symbol backtest.
+
+        Args:
+            rebalance_policy: Optional dict gating when signal-driven
+                entries/exits/flips are re-evaluated, e.g.
+                ``{"calendar": {"every_n_bars": 5}}``,
+                ``{"drift": {"threshold": 0.05}}``, ``{"signal": {}}``, or
+                ``{"turnover": {"min_turnover": 0.02}}``. Exactly one
+                top-level key. Default ``None`` rebalances every bar
+                (byte-identical to today's behavior). Stop-loss /
+                take-profit / trailing-stop exits are always evaluated
+                regardless of this policy.
+        """
         config = _config_from_kwargs(
             signal=signal,
             timestamp_col=timestamp_col,
@@ -269,6 +328,7 @@ class BtLazyNamespace:
             trailing_stop_pct=trailing_stop_pct,
             portfolio_mode=portfolio_mode,
             portfolio_allocator=portfolio_allocator,
+            rebalance_policy=rebalance_policy,
         )
         return BacktestEngine(config).backtest_with_report(self._ldf.collect())
 
@@ -575,6 +635,94 @@ class BtLazyNamespace:
             execution_delay=execution_delay,
         )
         return BacktestEngine(config).backtest_with_report(ranked)
+
+    def order_backtest(
+        self,
+        orders: pl.DataFrame | pl.LazyFrame,
+        *,
+        timestamp_col: str = "timestamp",
+        open_col: str = "open",
+        high_col: str = "high",
+        low_col: str = "low",
+        close_col: str = "close",
+        initial_cash: float = 100_000.0,
+        commission_bps: float = 5.0,
+        slippage_bps: float = 2.0,
+    ) -> tuple[pl.DataFrame, pl.DataFrame]:
+        """Order-driven backtest: explicit per-bar orders instead of a signal column.
+
+        Unlike :meth:`backtest` (which derives entries/exits from a ``signal``
+        column), this drives the flat/single-position order-execution core
+        directly (``quantwave-backtest::order_exec``) with first-class
+        ``Order`` objects — market / limit / stop / stop-limit — resolved
+        deterministically against each bar's OHLC (quantwave-bbhb).
+
+        Position model: flat-or-single-position, no pyramiding. An order that
+        fills while flat opens a position; an opposite-side fill closes it
+        (records a trade); a same-side fill while already in a position is
+        ignored. Any open position is flattened at the final bar's close.
+
+        Args:
+            orders: Long-format order spec, one row per order, with columns:
+
+                * ``bar_index`` (int) — 0-based row index into ``df`` this
+                  order is submitted/resting for.
+                * ``side`` (str) — ``"buy"`` or ``"sell"``.
+                * ``type`` (str) — ``"market"``, ``"limit"``, ``"stop"``, or
+                  ``"stop_limit"``.
+                * ``qty`` (float) — order quantity (units).
+                * ``price`` (float, nullable) — limit level for ``"limit"``/
+                  ``"stop_limit"`` (the stop-limit's limit leg); unused for
+                  ``"market"``/``"stop"``.
+                * ``trigger`` (float, nullable) — breakout/stop level for
+                  ``"stop"``/``"stop_limit"``; unused for ``"market"``/
+                  ``"limit"``.
+            timestamp_col: Monotonic bar index or datetime column on ``df``.
+            open_col, high_col, low_col, close_col: OHLC columns on ``df``.
+            initial_cash: Starting capital.
+            commission_bps: Commission in basis points per trade leg.
+            slippage_bps: Slippage in basis points applied to fill price.
+
+        Returns:
+            ``(trades_df, equity_df)`` — same column shape as
+            :meth:`backtest`'s ``BacktestResult.trades`` /
+            ``.equity_curve`` (single-symbol, no ``symbol`` column).
+
+        Example:
+            >>> import polars as pl
+            >>> import quantwave  # registers .bt
+            >>> bars = pl.DataFrame({
+            ...     "timestamp": [0, 1, 2, 3],
+            ...     "open": [100.0, 101.0, 103.0, 104.0],
+            ...     "high": [101.0, 103.0, 105.0, 106.0],
+            ...     "low": [99.0, 100.0, 101.0, 98.0],
+            ...     "close": [100.5, 102.0, 104.0, 99.0],
+            ... })
+            >>> orders = pl.DataFrame({
+            ...     "bar_index": [0, 3],
+            ...     "side": ["buy", "sell"],
+            ...     "type": ["market", "market"],
+            ...     "qty": [10.0, 10.0],
+            ...     "price": [None, None],
+            ...     "trigger": [None, None],
+            ... })
+            >>> trades, equity = bars.lazy().bt.order_backtest(orders)
+        """
+        from quantwave._backtest import order_backtest_py
+
+        orders_df = orders.collect() if isinstance(orders, pl.LazyFrame) else orders
+        return order_backtest_py(
+            self._ldf.collect(),
+            orders_df,
+            timestamp_col=timestamp_col,
+            open_col=open_col,
+            high_col=high_col,
+            low_col=low_col,
+            close_col=close_col,
+            initial_cash=initial_cash,
+            commission_bps=commission_bps,
+            slippage_bps=slippage_bps,
+        )
 
     def monte_carlo(
         self,

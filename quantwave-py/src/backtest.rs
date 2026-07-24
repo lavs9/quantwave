@@ -3,20 +3,24 @@
 //! Exposes `BacktestConfig`, `BacktestEngine`, `BacktestResult`, `PerformanceMetrics`,
 //! and `BacktestReport` to Python with zero-copy Polars DataFrame interop via `pyo3-polars`.
 
+use chrono::{DateTime, Utc};
 use polars::io::ipc::IpcReader;
 use polars::prelude::*;
 use pyo3::exceptions::{PyKeyError, PyRuntimeError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList, PyType};
 use pyo3_polars::PyDataFrame;
+use quantwave_backtest::risk::{
+    InverseVolConfig, PositionLimitConfig, PreTradeConfig, RiskModel, VolTargetConfig,
+};
 use quantwave_backtest::{
     BacktestConfig, BacktestEngine, BacktestError, BacktestReport, BacktestResult,
     BenchmarkMetrics, CostModel, ExecutionDelay, ExecutionModel, InFoldOptimizer, MonteCarloConfig,
-    MonteCarloPathSummary, MonteCarloReturnConfig, MonteCarloSummary, PerformanceMetrics,
-    PortfolioAllocator, PortfolioMode, StopConfig, StopEvaluationMode, SweepVariant,
-    TearsheetOptions, TpeConfig, WalkForwardConfig, monte_carlo_return_paths,
-    monte_carlo_trade_bootstrap, render_tearsheet_html, run_walk_forward,
-    run_walk_forward_optimize_with,
+    MonteCarloPathSummary, MonteCarloReturnConfig, MonteCarloSummary, Order, OrderType,
+    PerformanceMetrics, PortfolioAllocator, PortfolioMode, RebalancePolicy, Side, StopConfig,
+    StopEvaluationMode, SweepVariant, TearsheetOptions, TpeConfig, WalkForwardConfig,
+    monte_carlo_return_paths, monte_carlo_trade_bootstrap, render_tearsheet_html,
+    run_order_simulation, run_walk_forward, run_walk_forward_optimize_with,
 };
 use std::io::Cursor;
 
@@ -81,6 +85,159 @@ fn parse_execution_delay(s: &str) -> PyResult<ExecutionDelay> {
         "next_bar" | "nextbar" | "t1" => Ok(ExecutionDelay::NextBar),
         other => Err(PyValueError::new_err(format!(
             "execution_delay must be 'same_bar' or 'next_bar', got '{other}'"
+        ))),
+    }
+}
+
+fn get_subdict<'py>(dict: &Bound<'py, PyDict>, key: &str) -> PyResult<Option<Bound<'py, PyDict>>> {
+    match dict.get_item(key)? {
+        Some(v) if !v.is_none() => {
+            Ok(Some(v.downcast_into::<PyDict>().map_err(|e| {
+                PyTypeError::new_err(format!("'{key}' must be a dict, got {e}"))
+            })?))
+        }
+        _ => Ok(None),
+    }
+}
+
+fn get_f64(dict: &Bound<'_, PyDict>, key: &str, default: f64) -> PyResult<f64> {
+    match dict.get_item(key)? {
+        Some(v) if !v.is_none() => v.extract(),
+        _ => Ok(default),
+    }
+}
+
+fn get_opt_f64(dict: &Bound<'_, PyDict>, key: &str) -> PyResult<Option<f64>> {
+    match dict.get_item(key)? {
+        Some(v) if !v.is_none() => Ok(Some(v.extract()?)),
+        _ => Ok(None),
+    }
+}
+
+fn get_usize(dict: &Bound<'_, PyDict>, key: &str, default: usize) -> PyResult<usize> {
+    match dict.get_item(key)? {
+        Some(v) if !v.is_none() => v.extract(),
+        _ => Ok(default),
+    }
+}
+
+fn get_bool(dict: &Bound<'_, PyDict>, key: &str, default: bool) -> PyResult<bool> {
+    match dict.get_item(key)? {
+        Some(v) if !v.is_none() => v.extract(),
+        _ => Ok(default),
+    }
+}
+
+fn parse_vol_target_config(d: &Bound<'_, PyDict>) -> PyResult<VolTargetConfig> {
+    let default = VolTargetConfig::default();
+    Ok(VolTargetConfig {
+        target_annual_vol: get_f64(d, "target_annual_vol", default.target_annual_vol)?,
+        lookback: get_usize(d, "lookback", default.lookback)?,
+        bars_per_year: get_f64(d, "bars_per_year", default.bars_per_year)?,
+        min_scale: get_f64(d, "min_scale", default.min_scale)?,
+        max_scale: get_f64(d, "max_scale", default.max_scale)?,
+    })
+}
+
+fn parse_inverse_vol_config(d: &Bound<'_, PyDict>) -> PyResult<InverseVolConfig> {
+    let default = InverseVolConfig::default();
+    Ok(InverseVolConfig {
+        target_annual_vol: get_f64(d, "target_annual_vol", default.target_annual_vol)?,
+        lookback: get_usize(d, "lookback", default.lookback)?,
+        bars_per_year: get_f64(d, "bars_per_year", default.bars_per_year)?,
+        min_scale: get_f64(d, "min_scale", default.min_scale)?,
+        max_scale: get_f64(d, "max_scale", default.max_scale)?,
+    })
+}
+
+fn parse_position_limit_config(d: &Bound<'_, PyDict>) -> PyResult<PositionLimitConfig> {
+    Ok(PositionLimitConfig {
+        max_abs_exposure: get_opt_f64(d, "max_abs_exposure")?,
+        max_leverage: get_opt_f64(d, "max_leverage")?,
+    })
+}
+
+fn parse_pre_trade_config(d: &Bound<'_, PyDict>) -> PyResult<PreTradeConfig> {
+    Ok(PreTradeConfig {
+        max_notional: get_opt_f64(d, "max_notional")?,
+        max_leverage: get_opt_f64(d, "max_leverage")?,
+        veto_on_breach: get_bool(d, "veto_on_breach", false)?,
+    })
+}
+
+/// Parse a Python dict like
+/// `{"vol_target": {"target_annual_vol": 0.15, "lookback": 20}, "position_limit": {"max_abs_exposure": 50.0}}`
+/// into a `RiskModel`. Only the overlays present as keys are set; every
+/// sub-config field not supplied falls back to its Rust-side `Default`.
+/// Passing `None` at the call site (not this function) is what keeps
+/// default backtests byte-identical to pre-risk-model behavior.
+fn parse_risk_model(dict: &Bound<'_, PyDict>) -> PyResult<RiskModel> {
+    let mut model = RiskModel::default();
+    if let Some(d) = get_subdict(dict, "vol_target")? {
+        model.vol_target = Some(parse_vol_target_config(&d)?);
+    }
+    if let Some(d) = get_subdict(dict, "inverse_vol")? {
+        model.inverse_vol = Some(parse_inverse_vol_config(&d)?);
+    }
+    if let Some(d) = get_subdict(dict, "position_limit")? {
+        model.position_limit = Some(parse_position_limit_config(&d)?);
+    }
+    if let Some(d) = get_subdict(dict, "pre_trade")? {
+        model.pre_trade = Some(parse_pre_trade_config(&d)?);
+    }
+
+    const KNOWN: [&str; 4] = ["vol_target", "inverse_vol", "position_limit", "pre_trade"];
+    for key in dict.keys().iter() {
+        let key_str: String = key.extract()?;
+        if !KNOWN.contains(&key_str.as_str()) {
+            return Err(PyValueError::new_err(format!(
+                "risk_model: unknown key '{key_str}', expected one of {KNOWN:?}"
+            )));
+        }
+    }
+    Ok(model)
+}
+
+/// Parse a Python dict like `{"calendar": {"every_n_bars": 5}}`,
+/// `{"drift": {"threshold": 0.05}}`, `{"signal": {}}`, or
+/// `{"turnover": {"min_turnover": 0.02}}` into a `RebalancePolicy`. Exactly
+/// one top-level key is required.
+fn parse_rebalance_policy(dict: &Bound<'_, PyDict>) -> PyResult<RebalancePolicy> {
+    if dict.len() != 1 {
+        return Err(PyValueError::new_err(
+            "rebalance_policy dict must have exactly one key: 'calendar', 'drift', 'signal', or 'turnover'",
+        ));
+    }
+    let (key, value) = dict
+        .iter()
+        .next()
+        .ok_or_else(|| PyValueError::new_err("rebalance_policy dict is empty"))?;
+    let key: String = key.extract()?;
+    match key.as_str() {
+        "calendar" => {
+            let sub = value
+                .downcast::<PyDict>()
+                .map_err(|e| PyTypeError::new_err(format!("'calendar' must be a dict: {e}")))?;
+            let every_n_bars = get_usize(sub, "every_n_bars", 1)?;
+            Ok(RebalancePolicy::Calendar { every_n_bars })
+        }
+        "drift" => {
+            let sub = value
+                .downcast::<PyDict>()
+                .map_err(|e| PyTypeError::new_err(format!("'drift' must be a dict: {e}")))?;
+            let threshold = get_f64(sub, "threshold", 0.0)?;
+            Ok(RebalancePolicy::Drift { threshold })
+        }
+        "signal" => Ok(RebalancePolicy::Signal),
+        "turnover" => {
+            let sub = value
+                .downcast::<PyDict>()
+                .map_err(|e| PyTypeError::new_err(format!("'turnover' must be a dict: {e}")))?;
+            let min_turnover = get_f64(sub, "min_turnover", 0.0)?;
+            Ok(RebalancePolicy::Turnover { min_turnover })
+        }
+        other => Err(PyValueError::new_err(format!(
+            "rebalance_policy: unknown key '{other}', expected one of 'calendar', 'drift', 'signal', 'turnover'"
         ))),
     }
 }
@@ -211,6 +368,8 @@ impl PyBacktestConfig {
         touched_exit = false,
         portfolio_mode = "independent_books",
         portfolio_allocator = "equal_weight",
+        risk_model = None,
+        rebalance_policy = None,
     ))]
     #[allow(clippy::too_many_arguments)]
     fn new(
@@ -232,12 +391,19 @@ impl PyBacktestConfig {
         touched_exit: bool,
         portfolio_mode: &str,
         portfolio_allocator: &str,
+        risk_model: Option<Bound<'_, PyDict>>,
+        rebalance_policy: Option<Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
         let costs = CostModel {
             commission_bps,
             slippage_bps,
             initial_cash,
         };
+        let risk_model = risk_model.as_ref().map(parse_risk_model).transpose()?;
+        let rebalance_policy = rebalance_policy
+            .as_ref()
+            .map(parse_rebalance_policy)
+            .transpose()?;
         Ok(Self {
             inner: BacktestConfig {
                 cost_model: costs.clone(),
@@ -259,6 +425,8 @@ impl PyBacktestConfig {
                 },
                 portfolio_mode: parse_portfolio_mode(portfolio_mode)?,
                 portfolio_allocator: parse_portfolio_allocator(portfolio_allocator)?,
+                risk_model,
+                rebalance_policy,
                 ..Default::default()
             },
         })
@@ -588,6 +756,343 @@ fn run_walk_forward_optimize_py(
     Ok(PyDataFrame(out))
 }
 
+// ---------------------------------------------------------------------------
+// Order-driven backtest (`.bt.order_backtest`, quantwave-bbhb).
+//
+// Additive surface: wraps `quantwave_backtest::run_order_simulation` (the
+// order-execution core in `order_exec.rs`/`orders.rs`, which this file does
+// not modify) for an explicit, long-format per-bar order spec instead of a
+// signal column. Does not touch `PyBacktestConfig`/`PyBacktestEngine` or any
+// existing pyfunction above.
+// ---------------------------------------------------------------------------
+
+/// Cast a column to `Float64` and pull it out as a plain `Vec<f64>` (nulls -> NaN).
+fn extract_f64_col(df: &DataFrame, name: &str) -> PyResult<Vec<f64>> {
+    let col = df
+        .column(name)
+        .map_err(|_| PyKeyError::new_err(name.to_string()))?;
+    let casted = col
+        .cast(&DataType::Float64)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let ca = casted
+        .f64()
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    Ok(ca.into_iter().map(|v| v.unwrap_or(f64::NAN)).collect())
+}
+
+/// Parse a timestamp column: `Datetime` (ms since epoch) or `Int64`-castable
+/// (treated as unix seconds, falling back to row index when null). Mirrors the
+/// convention used by the existing `BacktestEngine` column parsing.
+fn extract_timestamps_col(df: &DataFrame, name: &str) -> PyResult<Vec<DateTime<Utc>>> {
+    let col = df
+        .column(name)
+        .map_err(|_| PyKeyError::new_err(name.to_string()))?;
+    if let Ok(ca) = col.datetime() {
+        return Ok(ca
+            .into_iter()
+            .map(|opt| {
+                opt.map(|v| {
+                    let secs = v / 1000;
+                    let nanos = ((v % 1000) * 1_000_000) as u32;
+                    DateTime::<Utc>::from_timestamp(secs, nanos).unwrap_or_else(Utc::now)
+                })
+                .unwrap_or_else(Utc::now)
+            })
+            .collect());
+    }
+    let casted = col
+        .cast(&DataType::Int64)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let ca = casted
+        .i64()
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    Ok(ca
+        .into_iter()
+        .enumerate()
+        .map(|(i, opt)| {
+            let v = opt.unwrap_or(i as i64);
+            DateTime::<Utc>::from_timestamp(v, 0).unwrap_or_else(Utc::now)
+        })
+        .collect())
+}
+
+fn parse_order_side(s: &str) -> PyResult<Side> {
+    match s.to_ascii_lowercase().as_str() {
+        "buy" | "long" => Ok(Side::Buy),
+        "sell" | "short" => Ok(Side::Sell),
+        other => Err(PyValueError::new_err(format!(
+            "order side must be 'buy' or 'sell', got '{other}'"
+        ))),
+    }
+}
+
+/// Build one [`Order`] from a long-format orders-DataFrame row.
+///
+/// `price` is the limit level (for `limit`/`stop_limit`); `trigger` is the
+/// breakout/stop level (for `stop`/`stop_limit`). `market` orders ignore both.
+fn parse_order_row(
+    side: &str,
+    kind: &str,
+    qty: f64,
+    price: Option<f64>,
+    trigger: Option<f64>,
+) -> PyResult<Order> {
+    let side = parse_order_side(side)?;
+    let order_type = match kind.to_ascii_lowercase().as_str() {
+        "market" => OrderType::Market,
+        "limit" => {
+            let price =
+                price.ok_or_else(|| PyValueError::new_err("limit order requires 'price'"))?;
+            OrderType::Limit { price }
+        }
+        "stop" => {
+            let trigger =
+                trigger.ok_or_else(|| PyValueError::new_err("stop order requires 'trigger'"))?;
+            OrderType::Stop { trigger }
+        }
+        "stop_limit" | "stoplimit" => {
+            let trigger = trigger
+                .ok_or_else(|| PyValueError::new_err("stop_limit order requires 'trigger'"))?;
+            let limit = price.ok_or_else(|| {
+                PyValueError::new_err("stop_limit order requires 'price' (the limit level)")
+            })?;
+            OrderType::StopLimit { trigger, limit }
+        }
+        other => {
+            return Err(PyValueError::new_err(format!(
+                "order type must be one of 'market'/'limit'/'stop'/'stop_limit', got '{other}'"
+            )));
+        }
+    };
+    Ok(Order::new(side, order_type, qty))
+}
+
+/// Group a long-format orders DataFrame (`bar_index, side, type, qty, price,
+/// trigger`) into `Vec<Order>` per bar (length `n_bars`).
+fn orders_by_bar_from_df(df: &DataFrame, n_bars: usize) -> PyResult<Vec<Vec<Order>>> {
+    let bar_idx = df
+        .column("bar_index")
+        .map_err(|_| PyKeyError::new_err("bar_index"))?
+        .cast(&DataType::Int64)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let bar_idx = bar_idx
+        .i64()
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+
+    let side_col = df
+        .column("side")
+        .map_err(|_| PyKeyError::new_err("side"))?
+        .cast(&DataType::String)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let side_col = side_col
+        .str()
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+
+    let type_col = df
+        .column("type")
+        .map_err(|_| PyKeyError::new_err("type"))?
+        .cast(&DataType::String)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let type_col = type_col
+        .str()
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+
+    let qty_col = df
+        .column("qty")
+        .map_err(|_| PyKeyError::new_err("qty"))?
+        .cast(&DataType::Float64)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let qty_col = qty_col
+        .f64()
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+
+    let price_col = df
+        .column("price")
+        .map_err(|_| PyKeyError::new_err("price"))?
+        .cast(&DataType::Float64)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let price_col = price_col
+        .f64()
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+
+    let trigger_col = df
+        .column("trigger")
+        .map_err(|_| PyKeyError::new_err("trigger"))?
+        .cast(&DataType::Float64)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let trigger_col = trigger_col
+        .f64()
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+
+    let mut out: Vec<Vec<Order>> = vec![Vec::new(); n_bars];
+    for i in 0..df.height() {
+        let bar_i = bar_idx
+            .get(i)
+            .ok_or_else(|| PyValueError::new_err(format!("orders row {i}: bar_index is null")))?;
+        if bar_i < 0 || bar_i as usize >= n_bars {
+            return Err(PyValueError::new_err(format!(
+                "orders row {i}: bar_index {bar_i} out of range [0, {n_bars})"
+            )));
+        }
+        let side = side_col
+            .get(i)
+            .ok_or_else(|| PyValueError::new_err(format!("orders row {i}: side is null")))?;
+        let kind = type_col
+            .get(i)
+            .ok_or_else(|| PyValueError::new_err(format!("orders row {i}: type is null")))?;
+        let qty = qty_col
+            .get(i)
+            .ok_or_else(|| PyValueError::new_err(format!("orders row {i}: qty is null")))?;
+        let price = price_col.get(i);
+        let trigger = trigger_col.get(i);
+        let order = parse_order_row(side, kind, qty, price, trigger)?;
+        out[bar_i as usize].push(order);
+    }
+    Ok(out)
+}
+
+/// Trade blotter -> DataFrame, matching the column set of the existing
+/// (single-symbol) `BacktestEngine::trades_to_df` output.
+fn order_trades_to_df(trades: &[quantwave_backtest::Trade]) -> PyResult<DataFrame> {
+    if trades.is_empty() {
+        let cols = vec![
+            Column::new("trade_id".into(), Vec::<u32>::new()),
+            Column::new("side".into(), Vec::<i8>::new()),
+            Column::new("entry_ts".into(), Vec::<i64>::new()),
+            Column::new("entry_price".into(), Vec::<f64>::new()),
+            Column::new("entry_fill_price".into(), Vec::<f64>::new()),
+            Column::new("exit_ts".into(), Vec::<Option<i64>>::new()),
+            Column::new("exit_price".into(), Vec::<Option<f64>>::new()),
+            Column::new("exit_fill_price".into(), Vec::<Option<f64>>::new()),
+            Column::new("quantity".into(), Vec::<f64>::new()),
+            Column::new("pnl_net".into(), Vec::<f64>::new()),
+        ];
+        return DataFrame::new(cols).map_err(|e| PyValueError::new_err(e.to_string()));
+    }
+
+    let ids: Vec<u32> = trades.iter().map(|t| t.trade_id).collect();
+    let sides: Vec<i8> = trades.iter().map(|t| t.side).collect();
+    let entry_ts: Vec<i64> = trades.iter().map(|t| t.entry_ts.timestamp()).collect();
+    let entry_px: Vec<f64> = trades.iter().map(|t| t.entry_price).collect();
+    let entry_fill_px: Vec<f64> = trades.iter().map(|t| t.entry_fill_price).collect();
+    let exit_ts: Vec<Option<i64>> = trades
+        .iter()
+        .map(|t| t.exit_ts.map(|d| d.timestamp()))
+        .collect();
+    let exit_px: Vec<Option<f64>> = trades.iter().map(|t| t.exit_price).collect();
+    let exit_fill_px: Vec<Option<f64>> = trades.iter().map(|t| t.exit_fill_price).collect();
+    let qty: Vec<f64> = trades.iter().map(|t| t.quantity).collect();
+    let pnl: Vec<f64> = trades.iter().map(|t| t.pnl_net).collect();
+
+    let cols = vec![
+        Column::new("trade_id".into(), ids),
+        Column::new("side".into(), sides),
+        Column::new("entry_ts".into(), entry_ts),
+        Column::new("entry_price".into(), entry_px),
+        Column::new("entry_fill_price".into(), entry_fill_px),
+        Column::new("exit_ts".into(), exit_ts),
+        Column::new("exit_price".into(), exit_px),
+        Column::new("exit_fill_price".into(), exit_fill_px),
+        Column::new("quantity".into(), qty),
+        Column::new("pnl_net".into(), pnl),
+    ];
+    DataFrame::new(cols).map_err(|e| PyValueError::new_err(e.to_string()))
+}
+
+/// Equity curve -> DataFrame, matching the column set of the existing
+/// (single-symbol) `BacktestEngine::equity_to_df` output.
+fn order_equity_to_df(points: &[quantwave_backtest::EquityPoint]) -> PyResult<DataFrame> {
+    if points.is_empty() {
+        let cols = vec![
+            Column::new("ts".into(), Vec::<i64>::new()),
+            Column::new("equity".into(), Vec::<f64>::new()),
+            Column::new("cash".into(), Vec::<f64>::new()),
+            Column::new("position".into(), Vec::<f64>::new()),
+            Column::new("close".into(), Vec::<f64>::new()),
+        ];
+        return DataFrame::new(cols).map_err(|e| PyValueError::new_err(e.to_string()));
+    }
+
+    let ts: Vec<i64> = points.iter().map(|p| p.ts.timestamp()).collect();
+    let eq: Vec<f64> = points.iter().map(|p| p.equity).collect();
+    let cash: Vec<f64> = points.iter().map(|p| p.cash).collect();
+    let pos: Vec<f64> = points.iter().map(|p| p.position).collect();
+    let close: Vec<f64> = points.iter().map(|p| p.close).collect();
+
+    let cols = vec![
+        Column::new("ts".into(), ts),
+        Column::new("equity".into(), eq),
+        Column::new("cash".into(), cash),
+        Column::new("position".into(), pos),
+        Column::new("close".into(), close),
+    ];
+    DataFrame::new(cols).map_err(|e| PyValueError::new_err(e.to_string()))
+}
+
+/// Order-driven backtest (quantwave-bbhb): runs `run_order_simulation` over an
+/// OHLC frame given an explicit, long-format per-bar order spec (columns
+/// `bar_index, side, type, qty, price, trigger` — `price`/`trigger` nullable).
+/// `side` is `"buy"`/`"sell"`; `type` is one of `"market"`/`"limit"`/`"stop"`/
+/// `"stop_limit"`. Returns `(trades_df, equity_df)` with the same column shape
+/// as the existing signal-driven `.bt.backtest()` output.
+#[pyfunction]
+#[pyo3(signature = (
+    df, orders, timestamp_col="timestamp", open_col="open", high_col="high",
+    low_col="low", close_col="close", initial_cash=100_000.0, commission_bps=5.0,
+    slippage_bps=2.0
+))]
+#[allow(clippy::too_many_arguments)]
+fn order_backtest_py(
+    df: &Bound<'_, PyAny>,
+    orders: &Bound<'_, PyAny>,
+    timestamp_col: &str,
+    open_col: &str,
+    high_col: &str,
+    low_col: &str,
+    close_col: &str,
+    initial_cash: f64,
+    commission_bps: f64,
+    slippage_bps: f64,
+) -> PyResult<(PyDataFrame, PyDataFrame)> {
+    let bars_df = dataframe_from_py(df)?;
+    let orders_df = dataframe_from_py(orders)?;
+
+    let timestamps = extract_timestamps_col(&bars_df, timestamp_col)?;
+    let opens = extract_f64_col(&bars_df, open_col)?;
+    let highs = extract_f64_col(&bars_df, high_col)?;
+    let lows = extract_f64_col(&bars_df, low_col)?;
+    let closes = extract_f64_col(&bars_df, close_col)?;
+
+    let n = closes.len();
+    if opens.len() != n || highs.len() != n || lows.len() != n || timestamps.len() != n {
+        return Err(PyValueError::new_err(
+            "open/high/low/close/timestamp columns must have equal length",
+        ));
+    }
+
+    let orders_by_bar = orders_by_bar_from_df(&orders_df, n)?;
+
+    let exec = ExecutionModel::Simple(CostModel {
+        commission_bps,
+        slippage_bps,
+        initial_cash,
+    });
+
+    let (trades, equity) = run_order_simulation(
+        &timestamps,
+        &opens,
+        &highs,
+        &lows,
+        &closes,
+        |i| orders_by_bar[i].clone(),
+        &exec,
+    );
+
+    let trades_df = order_trades_to_df(&trades)?;
+    let equity_df = order_equity_to_df(&equity)?;
+    Ok((PyDataFrame(trades_df), PyDataFrame(equity_df)))
+}
+
 /// Native backtest engine (PyO3 + pyo3-polars).
 pub fn register(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyBacktestConfig>()?;
@@ -598,5 +1103,6 @@ pub fn register(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(monte_carlo_return_paths_py, m)?)?;
     m.add_function(wrap_pyfunction!(run_walk_forward_py, m)?)?;
     m.add_function(wrap_pyfunction!(run_walk_forward_optimize_py, m)?)?;
+    m.add_function(wrap_pyfunction!(order_backtest_py, m)?)?;
     Ok(())
 }
