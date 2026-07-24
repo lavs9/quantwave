@@ -655,7 +655,7 @@ class BtLazyNamespace:
         column), this drives the flat/single-position order-execution core
         directly (``quantwave-backtest::order_exec``) with first-class
         ``Order`` objects — market / limit / stop / stop-limit — resolved
-        deterministically against each bar's OHLC (quantwave-bbhb).
+        deterministically against each bar's OHLC.
 
         Position model: flat-or-single-position, no pyramiding. An order that
         fills while flat opens a position; an opposite-side fill closes it
