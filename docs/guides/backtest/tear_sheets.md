@@ -56,4 +56,4 @@ report.to_html(
 )
 ```
 
-Passing `benchmark_returns` adds a **Benchmark-Relative** card (alpha, beta, strategy vs. benchmark cumulative return) computed from [`PerformanceMetrics.benchmark`](output-contract.md#benchmark-relative-analytics-additive). Omit it and the section is left out entirely — no empty card, no broken layout.
+Passing `benchmark_returns` adds a **Benchmark-Relative** card (alpha, beta, strategy vs. benchmark cumulative return) computed from [`PerformanceMetrics.benchmark`](output-contract.md#extended-metrics-benchmark-relative-analytics-additive). Omit it and the section is left out entirely — no empty card, no broken layout.

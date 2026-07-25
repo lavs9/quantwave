@@ -1,0 +1,25 @@
+# Dependabot keeps dependencies patched across all three ecosystems in this repo.
+# Grouped, weekly, low-noise: security updates land as they're disclosed; version
+# bumps are batched so the PR queue stays small.
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      rust-dependencies:
+        patterns: ["*"]
+
+  # The Python package is a maturin/PyO3 wrapper — its only runtime dep is the
+  # optional `polars` extra; the real dependency surface is Rust (cargo) + CI
+  # actions, so those are what Dependabot watches.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns: ["*"]

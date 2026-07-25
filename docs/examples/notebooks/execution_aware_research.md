@@ -29,8 +29,8 @@ Sections:
    plus Calmar / VaR / CVaR (`metrics_with_benchmark`,
    `extended_metrics`).
 
-Design notes: [Order-Mode Execution ADR](../../../planning/ORDER_MODE_EXECUTION_ADR.md)
-· [Capability Matrix](../../guides/backtest/capability_matrix.md)
+See the [Capability Matrix](../../guides/backtest/capability_matrix.md)
+for the full feature list and proofs.
 
 ```python {.marimo}
 # A deterministic OHLC series: gentle uptrend + a cyclical wobble so
@@ -233,11 +233,6 @@ report_rows
   unknowable; QuantWave uses the industry-standard conservative
   convention (stop before target on a same-bar double-touch) — for
   both bracket exits and standalone stops. Tick / lower-timeframe
-  fidelity is deliberately out of scope (see the ADR).
+  fidelity is deliberately out of scope.
 - **Entry-time overlays.** Continuous scalers size at entry; there is
   no intra-trade resizing.
-
-**Sources.** Execution convention & risk-overlay design:
-`planning/ORDER_MODE_EXECUTION_ADR.md`. Gap analysis motivating this
-layer: QuantJourney-bt (execution realism + reporting) vs QuantWave's
-Rust/Polars parity core.

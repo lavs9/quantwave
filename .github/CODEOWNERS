@@ -1,0 +1,5 @@
+# Code owners for QuantWave.
+# The `main` ruleset requires code-owner review on pull requests; this file is
+# what makes that rule enforceable. The repository admin retains "always" bypass,
+# so maintainer direct-pushes are unaffected — this gates outside contributions.
+*       @lavs9
