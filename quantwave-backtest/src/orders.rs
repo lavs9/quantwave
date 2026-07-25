@@ -34,17 +34,56 @@ pub enum OrderType {
     StopLimit { trigger: f64, limit: f64 },
 }
 
-/// A submitted order: a direction, a type, and a quantity (in units).
+/// A protective take-profit / stop-loss pair attached to an entry order. Once
+/// the entry fills, the bracket is evaluated against every *subsequent* bar via
+/// [`resolve_bracket`] — the same pessimistic (stop-before-target) convention
+/// the stops engine uses — and closes the position when a leg is touched.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct Bracket {
+    pub take_profit: f64,
+    pub stop_loss: f64,
+}
+
+/// A submitted order: a direction, a type, a quantity (in units), and an
+/// optional protective [`Bracket`] (take-profit / stop-loss) attached to the
+/// resulting position.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Order {
     pub side: Side,
     pub kind: OrderType,
     pub qty: f64,
+    pub bracket: Option<Bracket>,
 }
 
 impl Order {
+    /// A plain order with no attached bracket.
     pub fn new(side: Side, kind: OrderType, qty: f64) -> Self {
-        Self { side, kind, qty }
+        Self {
+            side,
+            kind,
+            qty,
+            bracket: None,
+        }
+    }
+
+    /// An order that, once filled, protects the position with a take-profit /
+    /// stop-loss bracket (an OCO exit pair).
+    pub fn with_bracket(
+        side: Side,
+        kind: OrderType,
+        qty: f64,
+        take_profit: f64,
+        stop_loss: f64,
+    ) -> Self {
+        Self {
+            side,
+            kind,
+            qty,
+            bracket: Some(Bracket {
+                take_profit,
+                stop_loss,
+            }),
+        }
     }
 }
 

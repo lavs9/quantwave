@@ -36,7 +36,7 @@ QuantWave ships a **Polars-native, clean-room backtest engine** (`quantwave-back
 
 ## Feature matrix
 
-Legend: ✅ Shipped · 🚧 In progress · ⏸ Deferred · ❌ Out of scope
+Legend: ✅ Shipped · ⏸ Deferred · ❌ Out of scope
 
 ### Core user-facing
 
@@ -62,7 +62,7 @@ Legend: ✅ Shipped · 🚧 In progress · ⏸ Deferred · ❌ Out of scope
 | 13 | Criterion benches vs naive loop | ✅ | `benches/backtest_vs_naive.rs` | [backtest_benchmark.md](../../examples/notebooks/backtest_benchmark.md) |
 | 13a | First-class order types (market / limit / stop / stop-limit) | ✅ | `.bt.order_backtest()`, `quantwave-backtest/src/orders.rs` | `orders::tests::*`, `test_order_backtest.py` |
 | 13b | Order-mode batch ↔ streaming parity (fold == incremental) | ✅ | `quantwave-backtest/src/order_exec.rs` | `fold_equals_incremental_stepping_parity` |
-| 13c | Bracket / OCO exit primitive (pessimistic same-bar convention) | 🚧 | `orders::resolve_bracket` (tested primitive; run-loop + Python wiring in progress) | `bracket_pessimistic_stop_before_target_on_double_touch` |
+| 13c | Bracket / OCO exits (pessimistic same-bar convention) | ✅ | `Order::with_bracket`, wired in `order_exec`; `take_profit`/`stop_loss` cols on `.bt.order_backtest()` | `bracket_*` (Rust), `test_bracket_*` (Python) |
 | 13d | Risk overlays (vol-target / inverse-vol / position-limit / pre-trade) | ✅ | `risk_model=`, `quantwave-backtest/src/risk.rs` | `risk_model_batch_streaming_parity`, `test_risk_and_rebalance.py` |
 
 ### Research robustness

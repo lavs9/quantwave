@@ -677,6 +677,13 @@ class BtLazyNamespace:
                 * ``trigger`` (float, nullable) — breakout/stop level for
                   ``"stop"``/``"stop_limit"``; unused for ``"market"``/
                   ``"limit"``.
+                * ``take_profit`` / ``stop_loss`` (float, nullable, optional
+                  columns) — when *both* are set on an entry row, attach a
+                  protective **bracket** (OCO exit pair) to the resulting
+                  position. Once open, the bracket is checked against every
+                  subsequent bar's OHLC; a same-bar double-touch resolves
+                  stop-before-target (pessimistic). Supplying only one leg
+                  raises. Omit the columns entirely for plain orders.
             timestamp_col: Monotonic bar index or datetime column on ``df``.
             open_col, high_col, low_col, close_col: OHLC columns on ``df``.
             initial_cash: Starting capital.

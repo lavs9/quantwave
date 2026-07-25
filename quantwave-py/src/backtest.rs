@@ -830,12 +830,16 @@ fn parse_order_side(s: &str) -> PyResult<Side> {
 ///
 /// `price` is the limit level (for `limit`/`stop_limit`); `trigger` is the
 /// breakout/stop level (for `stop`/`stop_limit`). `market` orders ignore both.
+/// `take_profit`/`stop_loss`, when both present, attach a protective bracket to
+/// the resulting position (an OCO exit pair); supplying only one is an error.
 fn parse_order_row(
     side: &str,
     kind: &str,
     qty: f64,
     price: Option<f64>,
     trigger: Option<f64>,
+    take_profit: Option<f64>,
+    stop_loss: Option<f64>,
 ) -> PyResult<Order> {
     let side = parse_order_side(side)?;
     let order_type = match kind.to_ascii_lowercase().as_str() {
@@ -864,7 +868,13 @@ fn parse_order_row(
             )));
         }
     };
-    Ok(Order::new(side, order_type, qty))
+    match (take_profit, stop_loss) {
+        (Some(tp), Some(sl)) => Ok(Order::with_bracket(side, order_type, qty, tp, sl)),
+        (None, None) => Ok(Order::new(side, order_type, qty)),
+        _ => Err(PyValueError::new_err(
+            "a bracket requires both 'take_profit' and 'stop_loss' (got only one)",
+        )),
+    }
 }
 
 /// Group a long-format orders DataFrame (`bar_index, side, type, qty, price,
@@ -924,6 +934,20 @@ fn orders_by_bar_from_df(df: &DataFrame, n_bars: usize) -> PyResult<Vec<Vec<Orde
         .f64()
         .map_err(|e| PyValueError::new_err(e.to_string()))?;
 
+    // `take_profit`/`stop_loss` are optional bracket columns — a DataFrame
+    // without them behaves exactly as before (every order is plain).
+    let opt_f64_col = |name: &str| -> PyResult<Option<Column>> {
+        match df.column(name) {
+            Ok(c) => Ok(Some(
+                c.cast(&DataType::Float64)
+                    .map_err(|e| PyValueError::new_err(e.to_string()))?,
+            )),
+            Err(_) => Ok(None),
+        }
+    };
+    let tp_col = opt_f64_col("take_profit")?;
+    let sl_col = opt_f64_col("stop_loss")?;
+
     let mut out: Vec<Vec<Order>> = vec![Vec::new(); n_bars];
     for i in 0..df.height() {
         let bar_i = bar_idx
@@ -945,7 +969,13 @@ fn orders_by_bar_from_df(df: &DataFrame, n_bars: usize) -> PyResult<Vec<Vec<Orde
             .ok_or_else(|| PyValueError::new_err(format!("orders row {i}: qty is null")))?;
         let price = price_col.get(i);
         let trigger = trigger_col.get(i);
-        let order = parse_order_row(side, kind, qty, price, trigger)?;
+        let take_profit = tp_col
+            .as_ref()
+            .and_then(|s| s.f64().ok().and_then(|ca| ca.get(i)));
+        let stop_loss = sl_col
+            .as_ref()
+            .and_then(|s| s.f64().ok().and_then(|ca| ca.get(i)));
+        let order = parse_order_row(side, kind, qty, price, trigger, take_profit, stop_loss)?;
         out[bar_i as usize].push(order);
     }
     Ok(out)

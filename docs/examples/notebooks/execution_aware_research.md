@@ -94,6 +94,36 @@ assert order_equity.height == bars.height
 order_trades
 ```
 
+### Bracket / OCO exits
+
+Attach a protective **take-profit + stop-loss** pair to an entry by
+adding `take_profit` / `stop_loss` columns. Once the position opens,
+the bracket is checked against every subsequent bar's OHLC; a same-bar
+double-touch resolves **stop-before-target** (pessimistic). Here a
+single market entry is protected by a bracket instead of a manual exit
+order.
+
+```python {.marimo}
+bracket_orders = pl.DataFrame(
+    {
+        "bar_index": [entry_bar],
+        "side": ["buy"],
+        "type": ["market"],
+        "qty": [400.0],
+        "price": [None],
+        "trigger": [None],
+        "take_profit": [close[entry_bar] + 6.0],
+        "stop_loss": [close[entry_bar] - 3.0],
+    }
+)
+bracket_trades, _bracket_equity = bars.lazy().bt.order_backtest(
+    bracket_orders,
+    commission_bps=1.0,
+    slippage_bps=1.0,
+)
+bracket_trades
+```
+
 ## 2 — Risk overlays (`risk_model=`)
 
 Overlays resize the desired exposure at **one shared point** in the
@@ -201,9 +231,9 @@ report_rows
   second engine, no "parity tier".
 - **OHLC-touched convention.** With only OHLC the intrabar path is
   unknowable; QuantWave uses the industry-standard conservative
-  convention (stop before target on a same-bar double-touch). Tick /
-  lower-timeframe fidelity is deliberately out of scope
-  (see the ADR).
+  convention (stop before target on a same-bar double-touch) — for
+  both bracket exits and standalone stops. Tick / lower-timeframe
+  fidelity is deliberately out of scope (see the ADR).
 - **Entry-time overlays.** Continuous scalers size at entry; there is
   no intra-trade resizing.
 

@@ -15,11 +15,20 @@
 //!   signal;
 //! - a **same-side** order while already in a position is ignored (no pyramiding).
 //!
-//! Deferred to later 9gk7 / bbhb slices: partial fills, pyramiding/averaging,
-//! same-bar flips, bracket/OCO wiring, and the Python DataFrame/streaming
-//! entry points. Costs/slippage reuse [`ExecutionModel`].
+//! ## Bracket / OCO exits
+//! An entry [`Order`] may carry a [`Bracket`] (take-profit + stop-loss). Once
+//! the position is open, the bracket is evaluated at the **start of every
+//! subsequent bar** via [`orders::resolve_bracket`] — a pure function of that
+//! bar's OHLC — and closes the position when a leg is touched. The entry bar
+//! itself is never checked (the position is not yet open when the bracket check
+//! runs), and a same-bar double-touch resolves stop-before-target (pessimistic),
+//! identical to the stops engine. Because the check is per-bar and pure, batch
+//! and streaming stay bit-identical.
+//!
+//! Deferred to later slices: partial fills, pyramiding/averaging, and the
+//! streaming Python order entry point. Costs/slippage reuse [`ExecutionModel`].
 
-use crate::orders::{ExecBar, Order, Side, fill_order};
+use crate::orders::{Bracket, ExecBar, Order, Side, fill_order, resolve_bracket};
 use crate::{EquityPoint, ExecutionModel, Trade};
 use chrono::{DateTime, Utc};
 
@@ -30,6 +39,7 @@ struct OpenTrade {
     entry_fill_px: f64,
     entry_commission: f64,
     entry_ts: DateTime<Utc>,
+    bracket: Option<Bracket>,
 }
 
 /// Stepping order-execution simulator. Feed it one bar (+ that bar's orders) at
@@ -119,6 +129,18 @@ impl<'a> OrderSim<'a> {
     pub fn step(&mut self, ts: DateTime<Utc>, bar: ExecBar, orders: &[Order]) -> EquityPoint {
         self.last_close = bar.close;
         self.last_ts = Some(ts);
+
+        // Protective bracket exit for an already-open position, evaluated before
+        // this bar's new orders. Pure function of the bar → parity-safe.
+        let bracket_exit = self.open.as_ref().and_then(|t| {
+            t.bracket.and_then(|br| {
+                resolve_bracket(t.side == 1, br.take_profit, br.stop_loss, bar).map(|(_leg, px)| px)
+            })
+        });
+        if let Some(px) = bracket_exit {
+            self.close_open(px, ts);
+        }
+
         for order in orders {
             let Some(fill) = fill_order(order.side, order.kind, bar) else {
                 continue;
@@ -135,6 +157,7 @@ impl<'a> OrderSim<'a> {
                         entry_fill_px: fill_px,
                         entry_commission: commission,
                         entry_ts: ts,
+                        bracket: order.bracket,
                     });
                 }
                 Some(t) => {
@@ -269,6 +292,120 @@ mod tests {
         // add after; terminal flatten closes it -> exactly one trade.
         assert_eq!(trades.len(), 1);
         assert_eq!(trades[0].entry_fill_price, 100.0);
+    }
+
+    #[test]
+    fn bracket_stop_loss_closes_position() {
+        let (t, o, h, l, c) = series();
+        let exec = zero_cost();
+        // Buy market bar 0 @ open 100, bracket tp=110 / sl=99.5. sl is first
+        // touched on bar 3 (low 98) -> exit at 99.5.
+        let orders = |i: usize| match i {
+            0 => vec![Order::with_bracket(
+                Side::Buy,
+                OrderType::Market,
+                10.0,
+                110.0,
+                99.5,
+            )],
+            _ => vec![],
+        };
+        let (trades, _eq) = run_order_simulation(&t, &o, &h, &l, &c, orders, &exec);
+        assert_eq!(trades.len(), 1);
+        let tr = &trades[0];
+        assert_eq!(tr.exit_price, Some(99.5));
+        assert_eq!(tr.exit_ts, Some(ts(3)));
+        assert!((tr.pnl_net - (-5.0)).abs() < 1e-9); // (99.5-100)*10
+    }
+
+    #[test]
+    fn bracket_take_profit_closes_position() {
+        let (t, o, h, l, c) = series();
+        let exec = zero_cost();
+        // Buy market bar 0 @ 100, bracket tp=104.5 / sl=95. tp touched bar 2 (high 105).
+        let orders = |i: usize| match i {
+            0 => vec![Order::with_bracket(
+                Side::Buy,
+                OrderType::Market,
+                10.0,
+                104.5,
+                95.0,
+            )],
+            _ => vec![],
+        };
+        let (trades, _eq) = run_order_simulation(&t, &o, &h, &l, &c, orders, &exec);
+        assert_eq!(trades.len(), 1);
+        let tr = &trades[0];
+        assert_eq!(tr.exit_price, Some(104.5));
+        assert_eq!(tr.exit_ts, Some(ts(2)));
+        assert!((tr.pnl_net - 45.0).abs() < 1e-9); // (104.5-100)*10
+    }
+
+    #[test]
+    fn bracket_same_bar_double_touch_is_pessimistic() {
+        let (t, o, h, l, c) = series();
+        let exec = zero_cost();
+        // Buy market bar 2 @ open 102, bracket tp=105.5 / sl=99.5. Bar 3 touches
+        // BOTH (high 106 >= tp, low 98 <= sl) -> stop-loss wins (pessimistic).
+        let orders = |i: usize| match i {
+            2 => vec![Order::with_bracket(
+                Side::Buy,
+                OrderType::Market,
+                10.0,
+                105.5,
+                99.5,
+            )],
+            _ => vec![],
+        };
+        let (trades, _eq) = run_order_simulation(&t, &o, &h, &l, &c, orders, &exec);
+        assert_eq!(trades.len(), 1);
+        let tr = &trades[0];
+        assert_eq!(tr.exit_price, Some(99.5)); // SL, not TP
+        assert_eq!(tr.exit_ts, Some(ts(3)));
+        assert!((tr.pnl_net - (-25.0)).abs() < 1e-9); // (99.5-102)*10
+    }
+
+    #[test]
+    fn bracket_exit_fold_stream_parity() {
+        let (t, o, h, l, c) = series();
+        let exec = zero_cost();
+        let orders_vec: Vec<Vec<Order>> = (0..BARS.len())
+            .map(|i| match i {
+                0 => vec![Order::with_bracket(
+                    Side::Buy,
+                    OrderType::Market,
+                    7.0,
+                    110.0,
+                    99.5,
+                )],
+                _ => vec![],
+            })
+            .collect();
+
+        let (batch_trades, batch_eq) =
+            run_order_simulation(&t, &o, &h, &l, &c, |i| orders_vec[i].clone(), &exec);
+
+        let mut sim = OrderSim::new(&exec);
+        let mut stream_eq = Vec::new();
+        for i in 0..BARS.len() {
+            let bar = ExecBar {
+                open: o[i],
+                high: h[i],
+                low: l[i],
+                close: c[i],
+            };
+            stream_eq.push(sim.step(t[i], bar, &orders_vec[i]));
+        }
+        let stream_trades = sim.finish();
+
+        assert_eq!(batch_eq, stream_eq);
+        assert_eq!(batch_trades.len(), 1);
+        assert_eq!(batch_trades.len(), stream_trades.len());
+        for (a, b) in batch_trades.iter().zip(stream_trades.iter()) {
+            assert_eq!(a.pnl_net, b.pnl_net);
+            assert_eq!(a.exit_price, b.exit_price);
+            assert_eq!(a.exit_ts, b.exit_ts);
+        }
     }
 
     #[test]

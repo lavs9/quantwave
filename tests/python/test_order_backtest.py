@@ -34,6 +34,8 @@ def _order(
     qty: float,
     price: float | None = None,
     trigger: float | None = None,
+    take_profit: float | None = None,
+    stop_loss: float | None = None,
 ) -> dict:
     return {
         "bar_index": bar_index,
@@ -42,6 +44,8 @@ def _order(
         "qty": qty,
         "price": price,
         "trigger": trigger,
+        "take_profit": take_profit,
+        "stop_loss": stop_loss,
     }
 
 
@@ -146,4 +150,58 @@ def test_out_of_range_bar_index_raises_value_error():
     bars = _bars()
     orders = pl.DataFrame([_order(99, "buy", "market", 1.0)])
     with pytest.raises(ValueError):
+        bars.lazy().bt.order_backtest(orders)
+
+
+def test_bracket_stop_loss_exits_position():
+    bars = _bars()
+    # Buy market bar 0 @ 100 with bracket tp=110 / sl=99.5. sl first touched on
+    # bar 3 (low 98) -> exit at 99.5.
+    orders = pl.DataFrame(
+        [_order(0, "buy", "market", 10.0, take_profit=110.0, stop_loss=99.5)]
+    )
+    trades, _equity = bars.lazy().bt.order_backtest(
+        orders, commission_bps=0.0, slippage_bps=0.0
+    )
+    assert trades.height == 1
+    row = trades.row(0, named=True)
+    assert row["exit_price"] == pytest.approx(99.5)
+    assert row["pnl_net"] == pytest.approx((99.5 - 100.0) * 10.0)
+
+
+def test_bracket_take_profit_exits_position():
+    bars = _bars()
+    # Buy market bar 0 @ 100 with bracket tp=104.5 / sl=95. tp touched bar 2 (high 105).
+    orders = pl.DataFrame(
+        [_order(0, "buy", "market", 10.0, take_profit=104.5, stop_loss=95.0)]
+    )
+    trades, _equity = bars.lazy().bt.order_backtest(
+        orders, commission_bps=0.0, slippage_bps=0.0
+    )
+    assert trades.height == 1
+    row = trades.row(0, named=True)
+    assert row["exit_price"] == pytest.approx(104.5)
+    assert row["pnl_net"] == pytest.approx((104.5 - 100.0) * 10.0)
+
+
+def test_bracket_same_bar_double_touch_is_pessimistic():
+    bars = _bars()
+    # Buy market bar 2 @ 102 with bracket tp=105.5 / sl=99.5. Bar 3 touches BOTH
+    # (high 106, low 98) -> stop-loss wins (pessimistic convention).
+    orders = pl.DataFrame(
+        [_order(2, "buy", "market", 10.0, take_profit=105.5, stop_loss=99.5)]
+    )
+    trades, _equity = bars.lazy().bt.order_backtest(
+        orders, commission_bps=0.0, slippage_bps=0.0
+    )
+    assert trades.height == 1
+    assert trades.row(0, named=True)["exit_price"] == pytest.approx(99.5)
+
+
+def test_bracket_requires_both_legs():
+    bars = _bars()
+    orders = pl.DataFrame(
+        [_order(0, "buy", "market", 10.0, take_profit=110.0)]  # stop_loss omitted
+    )
+    with pytest.raises(ValueError, match="bracket requires both"):
         bars.lazy().bt.order_backtest(orders)
