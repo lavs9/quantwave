@@ -103,6 +103,7 @@ nav:
       - Comparison: comparison.md
       - Roadmap: roadmap.md
       - Releases:
+          - 0.7.0: releases/0.7.0.md
           - 0.6.0: releases/0.6.0.md
           - 0.5.2: releases/0.5.2.md
       - Changelog: changelog.md
