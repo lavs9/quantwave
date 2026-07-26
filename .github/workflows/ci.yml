@@ -32,8 +32,8 @@ jobs:
       rust: ${{ steps.filter.outputs.rust }}
       python_gold: ${{ steps.filter.outputs.python_gold }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -54,9 +54,9 @@ jobs:
     name: Doc & metadata sanity
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -84,7 +84,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -112,9 +112,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -169,15 +169,15 @@ jobs:
     env:
       DISABLE_MKDOCS_2_WARNING: "true"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
       - uses: dtolnay/rust-toolchain@stable
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: .cache
           key: mkdocs-material-${{ runner.os }}-${{ hashFiles('requirements-docs.txt') }}
