@@ -56,3 +56,9 @@ quantwave-py/python/quantwave/*.so
 # quantwave-wasm build output (wasm-pack)
 /quantwave-wasm/pkg/
 /quantwave-wasm/pkg-node/
+# br doctor per-run artifacts
+.doctor/
+
+# Task-tracker migration backups (kept outside the repo; never commit)
+/.beads.bak-*/
+/.beads.bd-legacy-*/

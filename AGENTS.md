@@ -59,23 +59,29 @@ Prioritize generic, extensible components. For example, moving averages should s
 - [ ] Establish the `gold_standard` testing infrastructure.
 
 
-This project uses bd (beads) for issue tracking.
+This project uses br (beads_rust) for issue tracking. br replaced bd
+(beads/Dolt) on 2026-07-26 after the bd Dolt store's journal became
+corrupted; issues were recovered from a pre-corruption JSONL export and
+migrated into br's SQLite + JSONL store. bd's original data is preserved
+(not deleted) in `.beads.bak-20260726-092341/` and
+`.beads.bd-legacy-20260726/` at the repo root.
 
-- Run `bd prime` for workflow context and command guidance.
-- Use `bd ready`, `bd show <id>`, `bd update <id> --claim`, and `bd close <id>`.
-- Use `bd remember "insight"` for persistent project memory; do not create MEMORY.md files.
+- Run `br robot-docs guide` for workflow context and command guidance.
+- Use `br ready`, `br show <id>`, `br update <id> --claim`, and `br close <id>`.
+- br has no `bd remember` equivalent; use `br create --type task` (or a comment via `br comments add <id>`) to persist project memory instead of MEMORY.md files.
 - Do not use markdown TODO lists for task tracking.
+- br is **non-invasive**: it never commits, pushes, pulls, or installs git hooks on its own. After mutating commands (which auto-flush `.beads/issues.jsonl` by default), remember to `git add .beads/ && git commit` yourself when you want the JSONL export captured in git history.
 
-<!-- BEGIN BEADS INTEGRATION v:1 profile:full hash:d4f96305 -->
-## Issue Tracking with bd (beads)
+<!-- BEGIN BR INTEGRATION (migrated from bd 2026-07-26) -->
+## Issue Tracking with br (beads_rust)
 
-**IMPORTANT**: This project uses **bd (beads)** for ALL issue tracking. Do NOT use markdown TODOs, task lists, or other tracking methods.
+**IMPORTANT**: This project uses **br (beads_rust)** for ALL issue tracking. Do NOT use markdown TODOs, task lists, or other tracking methods.
 
-### Why bd?
+### Why br?
 
 - Dependency-aware: Track blockers and relationships between issues
-- Git-friendly: Dolt-powered version control with native sync
-- Agent-optimized: JSON output, ready work detection, discovered-from links
+- Git-friendly: SQLite (fast local queries) + JSONL export (clean git diffs/merges)
+- Agent-optimized: JSON output (`--json` everywhere), ready work detection, discovered-from links, `br robot-docs`
 - Prevents duplicate tracking systems and confusion
 
 ### Quick Start
@@ -83,27 +89,27 @@ This project uses bd (beads) for issue tracking.
 **Check for ready work:**
 
 ```bash
-bd ready --json
+br ready --json
 ```
 
 **Create new issues:**
 
 ```bash
-bd create "Issue title" --description="Detailed context" -t bug|feature|task -p 0-4 --json
-bd create "Issue title" --description="What this issue is about" -p 1 --deps discovered-from:bd-123 --json
+br create "Issue title" --description="Detailed context" -t bug|feature|task -p 0-4 --json
+br create "Issue title" --description="What this issue is about" -p 1 --deps discovered-from:quantwave-123 --json
 ```
 
 **Claim and update:**
 
 ```bash
-bd update <id> --claim --json
-bd update bd-42 --priority 1 --json
+br update <id> --status in_progress --json
+br update quantwave-42 --priority 1 --json
 ```
 
 **Complete work:**
 
 ```bash
-bd close bd-42 --reason "Completed" --json
+br close quantwave-42 --reason "Completed" --json
 ```
 
 ### Issue Types
@@ -124,28 +130,30 @@ bd close bd-42 --reason "Completed" --json
 
 ### Workflow for AI Agents
 
-1. **Check ready work**: `bd ready` shows unblocked issues
-2. **Claim your task atomically**: `bd update <id> --claim`
+1. **Check ready work**: `br ready` shows unblocked issues
+2. **Claim your task atomically**: `br update <id> --claim`
 3. **Work on it**: Implement, test, document
 4. **Reference Management**: When a task is completed, move the source paper/documentation from the original folder to the `implemented/` subfolder (e.g., `references/Ehlers Papers/implemented/`).
 5. **Discover new work?** Create linked issue:
-   - `bd create "Found bug" --description="Details about what was found" -p 1 --deps discovered-from:<parent-id>`
-6. **Complete**: `bd close <id> --reason "Done"`
+   - `br create "Found bug" --description="Details about what was found" -p 1 --deps discovered-from:<parent-id>`
+6. **Complete**: `br close <id> --reason "Done"`
 
-### Auto-Sync
+### Sync (Git-Explicit, Not Automatic)
 
-bd automatically syncs via Dolt:
+Unlike bd (which auto-committed to a Dolt server), **br never touches git on its own**:
 
-- Each write auto-commits to Dolt history
-- Use `bd dolt push`/`bd dolt pull` for remote sync
-- No manual export/import needed!
+- Mutating commands (`create`, `update`, `close`, `dep add`, ...) auto-flush `.beads/issues.jsonl` locally by default.
+- Nothing is committed or pushed until you run `git add .beads/ && git commit` yourself.
+- Run `br sync --flush-only` as an idempotent final export check before staging `.beads/` (useful after `--no-auto-flush` runs or before landing the plane).
+- There is no `bd dolt push`/`bd dolt pull` equivalent — plain `git push`/`git pull` on `.beads/issues.jsonl` is the sync mechanism now.
 
 ### Important Rules
 
-- ✅ Use bd for ALL task tracking
+- ✅ Use br for ALL task tracking
 - ✅ Always use `--json` flag for programmatic use
 - ✅ Link discovered work with `discovered-from` dependencies
-- ✅ Check `bd ready` before asking "what should I work on?"
+- ✅ Check `br ready` before asking "what should I work on?"
+- ✅ `git add .beads/ && git commit` after issue-tracker mutations you want preserved — br will not do this for you
 - ❌ Do NOT create markdown TODO lists
 - ❌ Do NOT use external issue trackers
 - ❌ Do NOT duplicate tracking systems
@@ -165,7 +173,8 @@ For more details, see README.md and docs/QUICKSTART.md.
 5. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
-   bd dolt push
+   br sync --flush-only
+   git add .beads/ && git commit -m "sync beads" || true  # no-op if nothing changed
    git push
    git status  # MUST show "up to date with origin"
    ```
@@ -181,4 +190,4 @@ For more details, see README.md and docs/QUICKSTART.md.
 
 - **IndicatorMetadata rule (quantwave-i9dn)**: Adding or modifying any Rust indicator without also creating/updating its `IndicatorMetadata` (the `XXX_METADATA` constant) is not permitted. This metadata is the source of truth for both documentation and Python DX. It must be done as part of landing the plane, before `git push`. See task `quantwave-i9dn`.
 
-<!-- END BEADS INTEGRATION -->
+<!-- END BR INTEGRATION -->

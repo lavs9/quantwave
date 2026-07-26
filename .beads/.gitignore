@@ -1,66 +1,47 @@
-# Dolt database (managed by Dolt, not git)
-dolt/
-dolt-access.lock
+# Database
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
 
-# Runtime files
-bd.sock
-bd.sock.startlock
-sync-state.json
-last-touched
-.exclusive-lock
-
-# Daemon runtime (lock, log, pid)
-daemon.*
-
-# Interactions log (runtime, not versioned)
-interactions.jsonl
-
-# Push state (runtime, per-machine)
-push-state.json
-
-# Lock files (various runtime locks)
+# Lock files
 *.lock
 
-# Local version tracking (prevents upgrade notification spam after git ops)
-.local_version
+# Temporary
+last-touched
+*.tmp
 
-# Worktree redirect file (contains relative path to main repo's .beads/)
-# Must not be committed as paths would be wrong in other clones
-redirect
+# Local history backups
+.br_history/
+
+# DB-family recovery artifacts (truncated WAL/SHM, quarantined sidecars)
+# — same lifecycle as .br_history/, written by recovery paths and
+# `br doctor --repair`. Filename suffix `.truncated-wal` slips past the
+# generic `*.db-wal` glob above, so it needs an explicit entry (#271).
+.br_recovery/
 
 # Sync state (local-only, per-machine)
-# These files are machine-specific and should not be shared across clones
 .sync.lock
-export-state/
+sync_base.jsonl
 
-# Ephemeral store (SQLite - wisps/molecules, intentionally not versioned)
-ephemeral.sqlite3
-ephemeral.sqlite3-journal
-ephemeral.sqlite3-wal
-ephemeral.sqlite3-shm
+# Merge artifacts (temporary files from 3-way merge)
+beads.base.jsonl
+beads.base.meta.json
+beads.left.jsonl
+beads.left.meta.json
+beads.right.jsonl
+beads.right.meta.json
 
-# Dolt server management (auto-started by bd)
-dolt-server.pid
-dolt-server.log
-dolt-server.lock
-dolt-server.port
+# Daemon runtime files
+daemon.lock
+daemon.log
+daemon.pid
+bd.sock
+sync-state.json
 
-# Corrupt backup directories (created by bd doctor --fix recovery)
-*.corrupt.backup/
+# Worktree redirect file
+redirect
 
-# Backup data (auto-exported JSONL, local-only)
-backup/
-
-# Legacy files (from pre-Dolt versions)
-*.db
-*.db?*
-*.db-journal
-*.db-wal
-*.db-shm
-db.sqlite
-bd.db
-# NOTE: Do NOT add negation patterns here.
-# They would override fork protection in .git/info/exclude.
-# Config files (metadata.json, config.yaml) are tracked by git by default
-# since no pattern above ignores them.
-.beads-credential-key
+# bv (beads viewer) lock file
+.bv.lock
+.write.lock
