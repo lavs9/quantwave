@@ -13,7 +13,28 @@ cargo nextest run
 For Python tests:
 ```bash
 pytest
-``` ## Adding a New Indicator 1. **Implement Core Logic**: Add the indicator to `/src/indicators/` implementing the `Next<T>` trait.
+```
+
+## Managing the build cache (`target/`)
+
+Cargo never garbage-collects `target/`. Artifacts are hash-named per (crate version × enabled features × toolchain × build profile), so dependency bumps, toolchain updates, and repeated `build` / `test` / `clippy` / `nextest` runs all deposit **new** files without removing the superseded ones. On a long-lived checkout `target/` can grow to tens of GB (debug builds carry full debug symbols).
+
+Keep it in check with [`cargo-sweep`](https://github.com/holmgr/cargo-sweep):
+
+```bash
+# one-time install
+cargo install cargo-sweep
+
+# remove artifacts not touched in the last 15 days
+cargo sweep --time 15
+
+# drop artifacts built by toolchains other than the current one
+cargo sweep --installed
+```
+
+For a full reset, `cargo clean` (or `rm -rf target/debug`) reclaims everything at the cost of a full recompile. To shrink debug builds up front, set `debug = "line-tables-only"` under `[profile.dev]` in the root `Cargo.toml`.
+
+## Adding a New Indicator 1. **Implement Core Logic**: Add the indicator to `/src/indicators/` implementing the `Next<T>` trait.
 2. **Add Polars Expression**: Expose the indicator in `ns` or `s`.
 3. **Write Tests**: - Unit tests in ``. - Parity tests (Streaming vs. Batch). - Add to `gold_standard` if applicable.
 4. **Document**: Add the indicator to `metadata.rs` and regenerate the metadata registry (`python scripts/regenerate_metadata_registry.py`). Then generate its documentation skeleton using `python scripts/generate_native_docs.py` (which emits into `docs/guides/indicators/native/`). Hand-enrich the generated page with visuals following [DOCUMENTATION_STANDARDS.md](DOCUMENTATION_STANDARDS.md). Generate previews with `python docs/generate_all_previews.py --sync-docs`. Run `python docs/upgrade_to_standards.py --lint` and `python docs/upgrade_to_standards.py --depth-lint` before landing doc changes. ## Style Guidelines
