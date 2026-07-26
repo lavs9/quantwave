@@ -15,7 +15,8 @@ from matplotlib.patches import FancyBboxPatch, Rectangle
 import numpy as np
 from pathlib import Path
 
-OUTPUT_DIR = Path("/Users/mayanklavania/moonshot_projects/quantwave/docs/assets/pa-visuals")
+# Resolve relative to this script (docs/gen_pa_visuals.py) so it works on any checkout.
+OUTPUT_DIR = Path(__file__).resolve().parent / "assets" / "pa-visuals"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 plt.rcParams.update({
