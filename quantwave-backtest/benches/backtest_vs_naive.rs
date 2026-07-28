@@ -3,12 +3,13 @@
 //! Run: `cargo bench -p quantwave-backtest`
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use polars::prelude::*;
 use quantwave_backtest::{BacktestConfig, BacktestEngine, CostModel};
 use rand::SeedableRng;
 use rand::prelude::*;
 use rand::rngs::StdRng;
+use std::hint::black_box;
 
 const BENCH_SEED: u64 = 0xC26E_0013;
 
