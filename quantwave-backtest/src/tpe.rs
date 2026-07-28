@@ -82,8 +82,8 @@ pub struct TpeResult {
 /// Box-Muller transform for a standard normal sample, so we don't need an extra
 /// `rand_distr` dependency just for Gaussian noise.
 fn sample_standard_normal(rng: &mut StdRng) -> f64 {
-    let u1: f64 = rng.gen_range(1e-12..1.0);
-    let u2: f64 = rng.gen_range(0.0..1.0);
+    let u1: f64 = rng.random_range(1e-12..1.0);
+    let u2: f64 = rng.random_range(0.0..1.0);
     (-2.0 * u1.ln()).sqrt() * (2.0 * std::f64::consts::PI * u2).cos()
 }
 
@@ -179,7 +179,11 @@ pub fn optimize_tpe<F: FnMut(&[f64]) -> f64>(
         (0..dims)
             .map(|i| {
                 let (lo, hi) = bounds[i];
-                if hi > lo { rng.gen_range(lo..=hi) } else { lo }
+                if hi > lo {
+                    rng.random_range(lo..=hi)
+                } else {
+                    lo
+                }
             })
             .collect()
     };
@@ -192,7 +196,7 @@ pub fn optimize_tpe<F: FnMut(&[f64]) -> f64>(
             let mut best_cand: Option<Vec<f64>> = None;
             let mut best_cand_score = f64::NEG_INFINITY;
             for _ in 0..config.n_candidates.max(1) {
-                let base_idx = rng.gen_range(0..good.len());
+                let base_idx = rng.random_range(0..good.len());
                 let base = &good[base_idx].params;
                 let cand: Vec<f64> = (0..dims)
                     .map(|i| {
@@ -262,7 +266,7 @@ pub fn tpe_select_from_pool<F: FnMut(usize) -> f64>(
         }
 
         let pick = if trial < config.n_startup_trials || history.len() < 2 {
-            remaining[rng.gen_range(0..remaining.len())]
+            remaining[rng.random_range(0..remaining.len())]
         } else {
             let (good, bad) = split_good_bad(&history, config.gamma);
             let mut best_i = remaining[0];
