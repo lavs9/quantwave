@@ -7,7 +7,7 @@ QuantWave's primary credibility claim is **correctness**: one mathematical imple
 ## Coverage snapshot
 
 <!-- VALIDATION:STATS:START -->
-**Last updated:** 2026-07-25T04:09:35Z (UTC)
+**Last updated:** 2026-07-28T04:39:02Z (UTC)
 
 | Metric | Count | Source |
 |--------|------:|--------|
@@ -83,13 +83,17 @@ Every streaming indicator is encouraged to use `check_batch_streaming_parity` (s
 
 `proptest!` blocks across `quantwave-core` exercise this property with randomized inputs and warmup-aware comparisons.
 
+**Core safety:** `scripts/check_core_safety.py` fails CI if `quantwave-core` production sources contain `unsafe` or `panic!`. Workspace `Cargo.toml` sets `forbid(unsafe_code)` and `deny(clippy::panic)`; `unwrap`/`expect` are `warn` until backtest de-panic.
+
+**CI meta-check:** `scripts/check_indicator_parity_coverage.py` walks every `RegisteredMetadata` entry and requires a slug-matched `proptest!` parity test (including TA-Lib integration tests and shared-module aliases) or a reviewed entry in `quantwave-core/tests/parity_exemptions.toml`. Coverage stats are written to `docs/generated/parity_coverage.json`.
+
 ## TA-Lib cross-check
 
 Dedicated integration tests in `quantwave-core/tests/test_all_talib_parity.rs` and `test_missing_talib_parity.rs` compare QuantWave streaming output against `talib-rs` batch functions for the mapped subset. This is a separate layer from gold JSON fixtures and catches drift in classic TA paths.
 
 ## Python cross-language parity
 
-The unified PyPI wheel bundles the PyO3 (abi3) core + backtest + Polars plugins extensions. Python gold parity tests assert that **streaming classes** match the same JSON vectors as Rust — catching FFI field swaps, warmup mishandling, or ABI mismatches before release.
+The unified PyPI wheel bundles UniFFI core + PyO3 backtest + Polars plugins. Python gold parity tests assert that **streaming classes** match the same JSON vectors as Rust — catching FFI field swaps, warmup mishandling, or ABI mismatches before release.
 
 CI runs `tests/python/test_gold_parity.py` on **Linux and macOS** after `maturin develop` (see `.github/workflows/ci.yml`).
 

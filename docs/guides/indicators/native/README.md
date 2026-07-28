@@ -1,1 +1,5 @@
-# Native Indicators See the [full professional landing page and catalog](index.md) for the complete overview of 221 native indicators (with guarantees, featured tools including the new rich PA suite, visuals generators and 10+ committed assets, categories aligned to SUMMARY.md, and actionable next steps). All pages follow or are being upgraded to [Documentation Standards v1.0](../../../DOCUMENTATION_STANDARDS.md) under documentation epic. The authoritative catalog navigation lives in the sidebar (SUMMARY-driven).
+# Native Indicators
+
+See the [full professional landing page and catalog](index.md) for the complete overview of 221 native indicators (with guarantees, featured tools including the new rich PA suite, visuals generators and 10+ committed assets, categories aligned to SUMMARY.md, and actionable next steps).
+
+All pages follow or are being upgraded to [Documentation Standards v1.0](../../../DOCUMENTATION_STANDARDS.md). The authoritative catalog navigation lives in the sidebar (SUMMARY-driven).

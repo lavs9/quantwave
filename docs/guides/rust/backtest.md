@@ -51,7 +51,7 @@ fn main() -> PolarsResult<()> {
 !!! warning "Units"
     Return-like metrics (`total_return`, `cagr`, `max_drawdown_pct`) are **fractions**, not percent.
     `max_drawdown_pct` is a **positive** fraction (0.10 = 10% drawdown).
-    A typed output contract is tracked in epic `quantwave-f2nn`.
+    A typed output contract is on the roadmap.
 
 ## Streaming parity
 
