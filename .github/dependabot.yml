@@ -8,6 +8,17 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    # polars 0.46 -> 0.54 is a breaking, multi-crate migration that does not
+    # compile in-tree (polars-stream fails) and is pinned back by pyo3-polars
+    # 0.20; it must be done as a deliberate migration, not an automated bump.
+    # Ignore its major/minor bumps so routine patches aren't blocked behind it.
+    ignore:
+      - dependency-name: "polars"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "polars-core"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "polars-arrow"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
     groups:
       rust-dependencies:
         patterns: ["*"]
