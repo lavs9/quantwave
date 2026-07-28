@@ -2024,7 +2024,7 @@ mod tests {
     #[test]
     fn test_synthetic_with_small_random_walk_and_bool_signal_matches_manual_calc() {
         // Tiny manual parity check: build expected equity manually for one known path.
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let n: usize = 8;
         let mut price = 100.0_f64;
         let mut closes = Vec::with_capacity(n);
@@ -2034,7 +2034,7 @@ mod tests {
         for i in 0..n {
             ts.push(1_700_000_200 + i as i64);
             closes.push(price);
-            price += rng.gen_range(-0.8..1.2);
+            price += rng.random_range(-0.8..1.2);
         }
 
         let df = DataFrame::new(vec![

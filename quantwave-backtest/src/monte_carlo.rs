@@ -96,7 +96,7 @@ pub fn monte_carlo_trade_bootstrap(
     for _ in 0..config.n_simulations {
         let mut equity = initial_cash;
         for _ in 0..n_trades {
-            let idx = rng.gen_range(0..n_trades);
+            let idx = rng.random_range(0..n_trades);
             equity += pnls[idx];
         }
         finals.push(equity);
@@ -151,7 +151,7 @@ pub fn monte_carlo_return_paths(
     for _ in 0..config.n_simulations {
         let mut equity = initial_cash;
         for _ in 0..config.n_bars_forward {
-            let idx = rng.gen_range(0..returns.len());
+            let idx = rng.random_range(0..returns.len());
             // simple fractional returns: E_t = E_{t-1} * (1 + r)
             equity *= 1.0 + returns[idx];
         }

@@ -41,7 +41,7 @@ fn synthetic_single_symbol(n_rows: usize) -> DataFrame {
     let mut price = 100.0_f64;
     let closes: Vec<f64> = (0..n_rows)
         .map(|_| {
-            price += rng.gen_range(-0.5..0.5);
+            price += rng.random_range(-0.5..0.5);
             price
         })
         .collect();
@@ -75,7 +75,7 @@ fn synthetic_multi_symbol(n_symbols: usize, bars_per_symbol: usize) -> DataFrame
     for b in 0..bars_per_symbol {
         let ts = 1_700_000_000 + b as i64 * 3600;
         for s in 0..n_symbols {
-            prices[s] += rng.gen_range(-0.25..0.25);
+            prices[s] += rng.random_range(-0.25..0.25);
             timestamps.push(ts);
             symbols.push(format!("SYM{s:03}"));
             closes.push(prices[s]);
