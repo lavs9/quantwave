@@ -179,7 +179,11 @@ pub fn optimize_tpe<F: FnMut(&[f64]) -> f64>(
         (0..dims)
             .map(|i| {
                 let (lo, hi) = bounds[i];
-                if hi > lo { rng.random_range(lo..=hi) } else { lo }
+                if hi > lo {
+                    rng.random_range(lo..=hi)
+                } else {
+                    lo
+                }
             })
             .collect()
     };
