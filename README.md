@@ -113,6 +113,7 @@ The same engine runs order-driven fills (`.bt.order_backtest`), risk overlays (`
 **Explore further**
 - [Browse All Indicators](https://lavs9.github.io/quantwave/guides/indicators/)
 - [See Real Benchmarks](https://lavs9.github.io/quantwave/benchmarks/)
+- [Agent Skill](https://lavs9.github.io/quantwave/guides/agent-skill/) — teach your coding agent QuantWave's conventions (and its silent footguns)
 - [llms.txt](https://lavs9.github.io/quantwave/llms.txt) (AI crawler index)
 - [Latest Release Notes](https://github.com/lavs9/quantwave/releases/latest)
 - [Ask DeepWiki](https://deepwiki.com/lavs9/quantwave)

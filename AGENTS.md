@@ -24,6 +24,7 @@ The project is structured as a Rust workspace to maximize modularity and perform
 - **Verify (full gate)**: `./scripts/quantwave_verify.sh` — metadata drift + nextest + pytest smoke (cached via `scripts/verify_cache.py`; `VERIFY_NO_CACHE=1` to force) (cached via `scripts/verify_cache.py`; `VERIFY_NO_CACHE=1` to force)
 - **Run Benchmarks**: `cargo bench`
 - **Check Linting**: `cargo clippy`
+- **Check Formatting**: `./scripts/rustfmt_check.sh` — ⚠️ **never `cargo fmt --all`**. `quantwave-core/src/options_india/iv_solver.rs` holds Horner-form polynomial approximations (~12 levels of nested parens on 500-char lines) that make rustfmt spin at 100% CPU indefinitely. rustfmt follows `mod` declarations, so `src/lib.rs` and `options_india/mod.rs` inherit the hang and the whole crate becomes unformattable via cargo. This script batches and skips those paths — full workspace in ~1.2s. Interrupted `cargo fmt` runs leave **orphaned rustfmt children** burning CPU; clean up with `pkill -f "bin/rustfmt"; pkill -f cargo-fmt`.
 
 ## 🧪 Development Conventions
 

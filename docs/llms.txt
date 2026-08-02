@@ -22,6 +22,7 @@ PyPI: https://pypi.org/project/quantwave/
 - Backtest quickstart: https://lavs9.github.io/quantwave/guides/backtest/quickstart/
 - Backtest output contract: https://lavs9.github.io/quantwave/guides/backtest/output-contract/
 - Plugin vs `.ta` decision guide: https://lavs9.github.io/quantwave/guides/plugin_vs_ta/
+- Agent skill (conventions + silent footguns): https://lavs9.github.io/quantwave/guides/agent-skill/
 - Python API reference: https://lavs9.github.io/quantwave/api/
 - Benchmarks: https://lavs9.github.io/quantwave/benchmarks/
 - FAQ: https://lavs9.github.io/quantwave/faq/
