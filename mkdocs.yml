@@ -96,6 +96,7 @@ nav:
       - Batch & Streaming: examples/batch-streaming.md
       - Notebooks: examples/notebooks/index.md
   - Reference:
+      - Agent Skill: guides/agent-skill.md
       - FAQ: faq.md
       - Validation: validation.md
       - Python API: api/

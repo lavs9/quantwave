@@ -62,3 +62,6 @@ quantwave-py/python/quantwave/*.so
 # Task-tracker migration backups (kept outside the repo; never commit)
 /.beads.bak-*/
 /.beads.bd-legacy-*/
+
+# Agent worktrees (contain full checkouts + build artifacts)
+.claude/worktrees/
