@@ -4,6 +4,8 @@
     QuantWave backtest metrics are typed as `PerformanceMetrics` and `BacktestStats` objects (with dict-like access for backward compatibility).
     - All return-like values are **fractions**, not percents (e.g. `0.05` = 5%).
     - `max_drawdown_pct` is a **positive fraction** (e.g. `0.10` = 10% decline).
+    - `sortino_ratio` / `profit_factor` are **`NaN` when undefined** (no downside / no losing trades) — test with `math.isnan()`, not `==`.
+    - Ratio metrics mean nothing below **30 trades**. Check `.diagnostics()`.
     - DataFrames have stable schemas: `entry_ts` and `exit_ts` are epoch seconds; sides are `1` (long) and `-1` (short).
 
 This document outlines the strict schema and semantic contract for the backtest engine outputs in QuantWave 0.6.0+.
@@ -17,10 +19,10 @@ When you call `.metrics()` on a `BacktestReport` (or dictionary result), it retu
 | `total_return` | final/initial − 1 | fraction |
 | `cagr` | annualized return | fraction |
 | `sharpe_ratio` | annualized, risk-free = 0 | ratio |
-| `sortino_ratio` | annualized downside | ratio |
+| `sortino_ratio` | annualized downside | ratio (**`NaN` if no negative returns** — undefined) |
 | `max_drawdown_pct` | peak-to-trough decline | **positive fraction** (0.10 = 10% drawdown) |
 | `win_rate` | winners / closed trades | fraction (0–1) |
-| `profit_factor` | gross profit / gross loss | ratio (inf if no losses) |
+| `profit_factor` | gross profit / gross loss | ratio (**`NaN` if no losing trades** — undefined) |
 | `num_trades` | closed trade count | count |
 | `avg_trade_pnl` | mean net PnL per trade | currency |
 | `final_equity` | ending portfolio value | currency |
@@ -28,6 +30,73 @@ When you call `.metrics()` on a `BacktestReport` (or dictionary result), it retu
 *Note: For backward compatibility, `metrics()["sharpe_ratio"]` will continue to work exactly like dictionary access.*
 
 *This 10-key set is a **stable contract** enforced by tests — `.metrics()` will never gain or lose keys. New/extra analytics (below) live on separate, opt-in methods.*
+
+### Undefined ratios are `NaN`, not `inf`
+
+`sortino_ratio` and `profit_factor` divide by a downside quantity. When that
+denominator is **empty** — no negative bar returns, or no losing trades — the
+ratio is not "infinitely good", it is **undefined**. QuantWave returns `NaN` for
+these cases rather than `inf`, because `inf` reads like a measurement and `NaN`
+reads like the absence of one.
+
+Consequences for your code:
+
+- Test with `math.isnan(x)` / `x != x` (Python) or `.is_nan()` (Rust).
+  **`NaN == NaN` is `False`** — an equality check will silently do the wrong thing.
+- `NaN` propagates through arithmetic. If you rank or sort strategies on
+  `profit_factor`, filter the undefined ones out first; otherwise comparisons
+  against `NaN` are all `False` and the ordering is not what you expect.
+- `0.0` still means "no activity at all" (no trades, or all trades exactly flat),
+  which is distinct from "undefined".
+
+Other surfaces keep their own conventions: `calmar_ratio` (an extended metric)
+still returns `inf` for zero drawdown with positive CAGR, and `sharpe_ratio`
+returns `0.0` when the return series has no variance.
+
+### Ratio metrics are unreliable below 30 trades
+
+**A backtest with a handful of trades produces meaningless ratios.** A single
+winning trade worth $2 yields `sharpe_ratio ≈ 7.98`, `win_rate = 1.0`, and
+undefined Sortino / profit factor — a screenful of numbers that look like a
+world-class strategy and are pure sampling noise.
+
+QuantWave uses **30 closed trades** as the threshold below which
+`sharpe_ratio`, `sortino_ratio`, `profit_factor` and `win_rate` should not be
+read as evidence of edge. The constant is
+`quantwave_backtest::MIN_TRADES_FOR_RELIABLE_RATIOS`.
+
+The metrics are still computed — nothing is suppressed or nulled out, and
+`.metrics()` is unchanged. Instead the warning is **additive**, on
+`.diagnostics()`:
+
+```python
+report = df.lazy().bt.backtest_with_report(...)
+
+report.metrics()          # unchanged: exactly the 10 keys above
+diag = report.diagnostics()
+
+if diag["low_sample_size"]:
+    for w in diag["warnings"]:
+        print("WARNING:", w)
+```
+
+`.diagnostics()` returns:
+
+| Key | Definition |
+|-----|------------|
+| `low_sample_size` | `True` when `num_trades < min_trades_for_reliable_ratios` |
+| `num_trades` | closed trade count the diagnostics were derived from |
+| `min_trades_for_reliable_ratios` | the threshold (30) |
+| `undefined_metrics` | list of contract metric names that came back `NaN` |
+| `warnings` | human-readable strings; **empty list means nothing looked suspect** |
+
+The same dict is also available as the `diagnostics` key of
+`.extended_metrics()`, and in Rust as `PerformanceMetrics::diagnostics()`.
+
+!!! warning "A clean `diagnostics()` is not a validation of your strategy"
+    It only means the sample was not obviously too thin and no ratio was
+    mathematically undefined. Look-ahead bias, overfitting, and unrealistic fills
+    are not detected here.
 
 ## Extended Metrics & Benchmark-Relative Analytics (additive)
 
@@ -40,6 +109,7 @@ When you call `.metrics()` on a `BacktestReport` (or dictionary result), it retu
     | `calmar_ratio` | `cagr / max_drawdown_pct` | ratio (`inf` if no drawdown and positive CAGR) |
     | `var_95` | Historical 95% Value-at-Risk on per-bar returns | **positive fraction** (loss magnitude) |
     | `cvar_95` | Historical 95% Conditional VaR (Expected Shortfall) | **positive fraction** (loss magnitude) |
+    | `diagnostics` | Thin-sample / undefined-metric warnings (see above) | dict |
     | `benchmark` | `None`, unless benchmark-relative analytics were attached | dict or `None` |
 
 - `.metrics_with_benchmark(benchmark_returns)` — same as `.extended_metrics()`, but computes benchmark-relative analytics against a supplied per-bar benchmark return series (aligned by index). The `benchmark` key is populated with:

@@ -73,5 +73,11 @@ fn test_metrics_from_result_matches_report() {
         .backtest_with_report(df.lazy())
         .unwrap();
     let from_result = PerformanceMetrics::from_result(&report.result);
-    assert_eq!(from_result, report.metrics);
+    // NaN-aware: this run has no losing trades, so `profit_factor` is NaN by
+    // design (quantwave-s3iu) and derived `==` would compare it unequal to itself.
+    assert!(
+        from_result.eq_including_nan(&report.metrics),
+        "from_result = {from_result:?}\nreport.metrics = {:?}",
+        report.metrics
+    );
 }

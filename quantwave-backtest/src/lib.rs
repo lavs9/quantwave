@@ -96,7 +96,10 @@ pub use cross_sectional::{
     run_cross_sectional_backtest, winsorize_factor, zscore_factor,
 };
 pub use live_bridge::{LiveBridge, LiveBridgeError, LiveSignalEvent, RecordingLiveBridge};
-pub use metrics::{BacktestReport, BenchmarkMetrics, PerformanceMetrics};
+pub use metrics::{
+    BacktestReport, BenchmarkMetrics, MIN_TRADES_FOR_RELIABLE_RATIOS, MetricsDiagnostics,
+    PerformanceMetrics,
+};
 pub use monte_carlo::{
     MonteCarloConfig, MonteCarloPathSummary, MonteCarloReturnConfig, MonteCarloSummary,
     monte_carlo_return_paths, monte_carlo_trade_bootstrap,

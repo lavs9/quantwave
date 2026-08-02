@@ -82,6 +82,7 @@ Legend: ✅ Shipped · ⏸ Deferred · ❌ Out of scope
 | 20 | Portfolio rebalance policies (calendar / drift / signal / turnover) | ✅ | `rebalance_policy=`, `quantwave-backtest/src/portfolio.rs` | `test_risk_and_rebalance.py` |
 | 21 | Benchmark-relative reporting (alpha / beta / excess return) | ✅ | `report.metrics_with_benchmark()` | `metrics.rs` benchmark tests |
 | 22 | Extended metrics (Calmar / VaR-95 / CVaR-95) | ✅ | `report.extended_metrics()` | `metrics.rs` tests |
+| 23 | Thin-sample / undefined-ratio diagnostics | ✅ | `report.diagnostics()` | `metrics.rs` diagnostics tests, `test_backtest_output_contract.py` |
 
 ### Additional shipped features
 
@@ -109,7 +110,8 @@ Legend: ✅ Shipped · ⏸ Deferred · ❌ Out of scope
 | `lf.bt.order_backtest()` | Order-driven sim from an explicit long-format order spec |
 | `risk_model=` kwarg | Risk overlays on `backtest()` / `backtest_with_report()` / `backtest_metrics()` |
 | `report.metrics_with_benchmark()` | Alpha / beta / excess return vs a benchmark series |
-| `report.extended_metrics()` | Calmar / VaR-95 / CVaR-95 beyond the stable 10-key contract |
+| `report.extended_metrics()` | Calmar / VaR-95 / CVaR-95 / diagnostics beyond the stable 10-key contract |
+| `report.diagnostics()` | Thin-sample (< 30 trades) and undefined-ratio (`NaN`) warnings |
 
 Rust-only helpers (no thin Python wrapper): `monte_carlo_return_paths`, factor transform primitives — Python uses equivalent `.bt` paths where noted above.
 
