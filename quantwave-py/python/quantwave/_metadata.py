@@ -190,6 +190,10 @@ def warmup_bars(name: str, params: dict = None) -> int:
     indices ``0 .. warmup-1`` are warmup), the indicator is considered ready for
     signal generation and parity comparison.
 
+    Warmup is emitted as **NaN, not null**, so ``drop_nulls()`` will not remove it.
+    Use :func:`quantwave.trim_warmup` to slice a frame by the max warmup across
+    several indicators while keeping the columns row-aligned.
+
     Args:
         name: Indicator name (case-insensitive), e.g. ``"rsi"``, ``"supertrend"``.
         params: Optional parameter dict used to refine the estimate when metadata

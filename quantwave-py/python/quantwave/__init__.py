@@ -215,6 +215,14 @@ from ._metadata import (
     Series,
 )
 
+# Warmup semantics (4rsq): indicator warmup is NaN, not null — drop_nulls() is a
+# no-op on it. trim_warmup() is the alignment-preserving way to remove warmup.
+from .warmup import (
+    WarmupWarning,
+    trim_warmup,
+    warmup_rows,
+)
+
 # DX helpers (defined later in this file for now to avoid circularity during cleanup)
 # We will gradually move more of these out.
 
@@ -661,6 +669,9 @@ __all__ = [
     "metadata",
     "list_metadata",
     "warmup_bars",
+    "warmup_rows",
+    "trim_warmup",
+    "WarmupWarning",
     "get_indicator_signature",
     "build_feature_matrix",
     "feature_column_names",

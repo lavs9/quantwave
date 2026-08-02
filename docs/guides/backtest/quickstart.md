@@ -63,7 +63,63 @@ metrics = report.metrics()
 
 ---
 
-## 4. What you get back
+## 4. Trim indicator warmup before you backtest
+
+!!! danger "Warmup is `NaN`, not `null` — `drop_nulls()` will not remove it"
+
+    If your signal comes from an indicator (it usually does), the first
+    `warmup_bars` rows are `NaN`. QuantWave emits warmup as **`NaN`, never
+    `null`**, which breaks the reflex everyone brings from pandas/Polars:
+
+    ```python
+    df = df.with_columns(pl.col("close").ta.rsi(14).alias("rsi"))
+    df["rsi"].null_count()   # 0  -> drop_nulls() / dropna() is a SILENT NO-OP
+    df["rsi"].is_nan().sum() # 14
+    ```
+
+    And because `NaN < 30` evaluates to `False`, a comparison-derived signal is
+    `0.0` for the entire warmup — the backtest cannot tell that apart from a real
+    "stay flat" decision. The result is a plausible-looking but wrong report.
+
+Trim first, with `qw.trim_warmup()`. It drops the **maximum** warmup across every
+indicator you name, so multi-indicator frames stay row-aligned:
+
+```python
+import polars as pl
+import quantwave as qw
+
+df = df.with_columns(
+    pl.col("close").ta.rsi(14).alias("rsi"),
+    pl.col("close").ta.ema(50).alias("ema"),
+)
+df = df.with_columns(
+    pl.when(pl.col("close") > pl.col("ema")).then(1.0).otherwise(0.0).alias("signal")
+)
+
+report = (
+    df.pipe(qw.trim_warmup, "rsi", ("ema", {"period": 50}))   # drops 50 leading rows
+    .lazy()
+    .bt.backtest_with_report(signal="signal")
+)
+```
+
+The `.bt` methods also check for you: if the `signal` or `close` column handed to
+a backtest starts with `NaN`/`null` rows, QuantWave emits a `quantwave.WarmupWarning`
+naming the column and the row count. It is a **warning, not an error** — the
+backtest still runs. Silence it once you have deliberately decided the leading
+rows are fine:
+
+```python
+import warnings
+warnings.filterwarnings("ignore", category=qw.WarmupWarning)
+```
+
+See [Warmup and NaN Semantics](../../getting-started/python.md#warmup-and-nan-semantics)
+for the full convention and the accepted `trim_warmup` spec forms.
+
+---
+
+## 5. What you get back
 
 | Output | Contents |
 |--------|----------|
@@ -75,7 +131,7 @@ Full key list: see [Capability Matrix](capability_matrix.md#python-bt-api-surfac
 
 ---
 
-## 5. Next steps
+## 6. Next steps
 
 | Goal | Go to |
 |------|-------|
