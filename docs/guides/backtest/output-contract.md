@@ -102,5 +102,25 @@ When configuring a backtest via `BacktestConfig`:
 - `stop_loss_pct` / `take_profit_pct` / `trailing_stop_pct`: Are always **fractions** (0.05 = 5%).
 - Default position size is **1 unit** unless `size_multiplier_col` is set.
 - `execution_delay`:
-    - `"same_bar"`: Fills trade on the signal bar's close.
-    - `"next_bar"`: Fills trade on the next bar's close.
+    - `"next_bar"` (**default**): Fills the trade on the *next* bar's close. A
+      signal observed on bar `t` fills at bar `t+1`'s close.
+    - `"same_bar"`: Fills the trade on the signal bar's own close — bar `t`'s
+      signal fills at bar `t`'s close.
+
+!!! warning "`same_bar` is opt-in for a reason"
+
+    Signals are almost always derived from the same bar's close (e.g.
+    `(rsi < 30)` computed on bar `t`). Filling that signal at bar `t`'s close
+    means executing on information that only exists at the instant the bar
+    ends — a look-ahead the live strategy will not have. On a rising series
+    this is measurably optimistic: the same signal frame entered at `100.5`
+    under `same_bar` versus `101.0` under `next_bar`.
+
+    Only reach for `"same_bar"` when it is genuinely true of your execution:
+
+    - you really do trade the closing auction, or
+    - your signal is built purely from data through bar `t-1`, so bar `t`'s
+      close is not an input.
+
+    In 0.7.0 and earlier the default was `"same_bar"`. See the
+    [changelog](../../changelog.md) for the migration note.

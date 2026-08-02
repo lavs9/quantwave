@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 0919205b81ec7aab54700579f51988fce09a5cf5c1168ec7d81da036472048f3 # shrinks to n_syms = 3, n_ts = 4, weights = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.6836075685261652, 0.0, 0.0, 0.0, 0.0]
+cc 72621c21eb9f2d435bab6135fe3f345e102da84cd6a8286ce6b42bb8d01189fd # shrinks to n_syms = 3, n_ts = 4, close_seed = 1.0, signal_bits = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]

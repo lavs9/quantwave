@@ -17,8 +17,8 @@
 use approx::assert_relative_eq;
 use polars::prelude::*;
 use quantwave_backtest::{
-    BacktestConfig, BacktestEngine, BacktestResult, CostModel, ExecutionModel, PerformanceMetrics,
-    backtest_simple_bool_signal,
+    BacktestConfig, BacktestEngine, BacktestResult, CostModel, ExecutionDelay, ExecutionModel,
+    PerformanceMetrics, backtest_simple_bool_signal,
 };
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -80,6 +80,9 @@ fn make_two_trade_win_loss_result() -> quantwave_backtest::BacktestResult {
             slippage_bps: 0.0,
             initial_cash: 100_000.0,
         }),
+        // quantwave-zmjw: these tests assert exact T+0 fill prices; the engine
+        // default is now NextBar, so pin SameBar to preserve their original intent.
+        execution_delay: ExecutionDelay::SameBar,
         signal_col: "signal".to_string(),
         ..Default::default()
     };
@@ -285,6 +288,9 @@ fn test_backtest_with_report_returns_report() {
             slippage_bps: 0.0,
             initial_cash: 100_000.0,
         }),
+        // quantwave-zmjw: these tests assert exact T+0 fill prices; the engine
+        // default is now NextBar, so pin SameBar to preserve their original intent.
+        execution_delay: ExecutionDelay::SameBar,
         signal_col: "signal".to_string(),
         ..Default::default()
     };
@@ -329,6 +335,9 @@ fn make_gold_standard_flip_result() -> BacktestResult {
             slippage_bps: 0.0,
             initial_cash: 100_000.0,
         }),
+        // quantwave-zmjw: these tests assert exact T+0 fill prices; the engine
+        // default is now NextBar, so pin SameBar to preserve their original intent.
+        execution_delay: ExecutionDelay::SameBar,
         signal_col: "signal".to_string(),
         ..Default::default()
     };

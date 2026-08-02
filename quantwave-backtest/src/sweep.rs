@@ -160,6 +160,10 @@ mod tests {
                 slippage_bps: 0.0,
                 initial_cash: 100_000.0,
             },
+            // quantwave-zmjw: these tests exercise the sweep machinery against
+            // hand-derived T+0 equity arithmetic, not the execution-delay default.
+            // The engine default is now NextBar, so pin SameBar to keep their intent.
+            execution_delay: crate::ExecutionDelay::SameBar,
             ..Default::default()
         }
     }

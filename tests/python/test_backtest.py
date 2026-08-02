@@ -46,7 +46,18 @@ def _single_trade_df():
 
 
 def test_backtest_engine_run_single_trade():
-    engine = BacktestEngine.with_default_costs()
+    # quantwave-zmjw: this asserts the trade is a *winner*, which on this
+    # rise-then-fall series only holds for a same-bar fill. The default is now
+    # next_bar, so pin same_bar to keep the test's original intent.
+    engine = BacktestEngine(
+        BacktestConfig(
+            signal_col="signal",
+            close_col="close",
+            commission_bps=5.0,
+            slippage_bps=2.0,
+            execution_delay="same_bar",
+        )
+    )
     result = engine.run(_single_trade_df())
 
     assert result.trades.height == 1
@@ -210,6 +221,8 @@ def test_bt_backtest_take_profit_exits():
         commission_bps=0.0,
         slippage_bps=0.0,
         take_profit_pct=0.03,
+        # quantwave-zmjw: exact T+0 exit price; default is now next_bar.
+        execution_delay="same_bar",
     )
     assert result.trades.height == 1
     assert result.trades["exit_price"][0] == pytest.approx(103.0)
@@ -227,6 +240,8 @@ def test_bt_backtest_trailing_stop_ratchets():
         commission_bps=0.0,
         slippage_bps=0.0,
         trailing_stop_pct=0.05,
+        # quantwave-zmjw: exact T+0 exit price; default is now next_bar.
+        execution_delay="same_bar",
     )
     assert result.trades.height == 1
     assert result.trades["exit_price"][0] == pytest.approx(104.0)
@@ -245,7 +260,10 @@ def test_bt_backtest_struct_signal_exposure():
             ],
         }
     )
-    result = df.lazy().bt.backtest(commission_bps=0.0, slippage_bps=0.0)
+    # quantwave-zmjw: exact T+0 PnL; default is now next_bar.
+    result = df.lazy().bt.backtest(
+        commission_bps=0.0, slippage_bps=0.0, execution_delay="same_bar"
+    )
     assert result.trades.height == 1
     assert result.trades["pnl_net"][0] == pytest.approx(4.0)
 
@@ -276,7 +294,10 @@ def test_bt_backtest_short_pnl_on_decline():
             "signal": [0.0, -1.0, -1.0, 0.0, 0.0],
         }
     )
-    result = df.lazy().bt.backtest(commission_bps=0.0, slippage_bps=0.0)
+    # quantwave-zmjw: exact T+0 PnL; default is now next_bar.
+    result = df.lazy().bt.backtest(
+        commission_bps=0.0, slippage_bps=0.0, execution_delay="same_bar"
+    )
     assert result.trades.height == 1
     assert result.trades["side"][0] == -1
     assert result.trades["pnl_net"][0] == pytest.approx(5.0)
@@ -293,6 +314,56 @@ def test_bt_backtest_long_short_flip():
     result = df.lazy().bt.backtest(commission_bps=0.0, slippage_bps=0.0)
     assert result.trades.height == 2
     assert result.trades["side"].to_list() == [1, -1]
+
+
+def test_bt_backtest_default_execution_delay_is_next_bar():
+    """quantwave-zmjw: an unspecified execution_delay must fill at the NEXT bar.
+
+    The signal first fires on bar 1 (close 101.0). A same-bar fill would use
+    information that only exists at the instant bar 1 closes, which is
+    systematically optimistic. The default must fill at bar 2's close (102.5).
+    """
+    result = _single_trade_df().lazy().bt.backtest(
+        commission_bps=0.0, slippage_bps=0.0
+    )
+    assert result.trades.height == 1
+    assert result.trades["entry_price"][0] == pytest.approx(102.5)
+
+    explicit = _single_trade_df().lazy().bt.backtest(
+        commission_bps=0.0, slippage_bps=0.0, execution_delay="next_bar"
+    )
+    assert result.trades["entry_ts"][0] == explicit.trades["entry_ts"][0]
+
+    # same_bar remains available for callers who opt in explicitly.
+    same_bar = _single_trade_df().lazy().bt.backtest(
+        commission_bps=0.0, slippage_bps=0.0, execution_delay="same_bar"
+    )
+    assert same_bar.trades["entry_price"][0] == pytest.approx(101.0)
+
+
+def test_backtest_config_default_execution_delay_is_next_bar():
+    """quantwave-zmjw: the pyo3 ``BacktestConfig`` signature default must be next_bar.
+
+    The ``.bt`` surface always forwards ``execution_delay`` explicitly, so it
+    cannot catch a regression in the Rust-side signature default. Construct
+    ``BacktestConfig`` without the kwarg to pin that default directly.
+    """
+    engine = BacktestEngine(
+        BacktestConfig(signal_col="signal", commission_bps=0.0, slippage_bps=0.0)
+    )
+    result = engine.run(_single_trade_df())
+    assert result.trades.height == 1
+    assert result.trades["entry_price"][0] == pytest.approx(102.5)
+
+    same_bar = BacktestEngine(
+        BacktestConfig(
+            signal_col="signal",
+            commission_bps=0.0,
+            slippage_bps=0.0,
+            execution_delay="same_bar",
+        )
+    ).run(_single_trade_df())
+    assert same_bar.trades["entry_price"][0] == pytest.approx(101.0)
 
 
 def test_bt_backtest_t1_delays_entry_one_bar():

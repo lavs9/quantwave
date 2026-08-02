@@ -672,6 +672,42 @@ pub(crate) fn build_timestamp_groups(
 }
 
 /// Run shared-capital streaming simulation for batch↔streaming parity.
+/// Shift each timestamp group's signals to the group they should be executed from.
+///
+/// Group *gi* executes the signal observed at group `signal_bar_index(gi, delay)`,
+/// matched per symbol. Symbols with no signal in the source group go flat (0.0),
+/// which mirrors the batch path's `delayed_signals` default.
+fn apply_group_execution_delay(groups: &mut [TimestampGroup], delay: ExecutionDelay) {
+    if delay == ExecutionDelay::SameBar {
+        return;
+    }
+    let sources: Vec<HashMap<String, (f64, Option<HashMap<String, f64>>)>> = (0..groups.len())
+        .map(|gi| match crate::signal_bar_index(gi, delay) {
+            Some(si) => groups[si]
+                .bars
+                .iter()
+                .map(|b| (b.symbol.clone(), (b.raw_signal, b.meta.clone())))
+                .collect(),
+            None => HashMap::new(),
+        })
+        .collect();
+
+    for (group, source) in groups.iter_mut().zip(sources) {
+        for bar in &mut group.bars {
+            match source.get(&bar.symbol) {
+                Some((sig, meta)) => {
+                    bar.raw_signal = *sig;
+                    bar.meta = meta.clone();
+                }
+                None => {
+                    bar.raw_signal = 0.0;
+                    bar.meta = None;
+                }
+            }
+        }
+    }
+}
+
 pub fn run_shared_capital_streaming_simulation<G>(
     bars: &[PortfolioBar],
     mut generator: G,
@@ -701,7 +737,7 @@ where
             meta: sig.metadata.clone(),
         });
     }
-    let groups: Vec<TimestampGroup> = groups_map
+    let mut groups: Vec<TimestampGroup> = groups_map
         .into_iter()
         .map(|(ts, mut bars)| {
             bars.sort_by(|a, b| a.symbol.cmp(&b.symbol));
@@ -712,6 +748,14 @@ where
     let exec = &config.execution_model;
     let sizer = &config.position_sizer;
     let delay = config.execution_delay;
+
+    // Apply the execution delay per timestamp group, exactly as the batch path
+    // does in `BacktestEngine::run_shared_capital_multi_symbol`. `simulate_shared_capital`
+    // consumes already-delayed signals, so this shift is what keeps batch↔streaming
+    // parity under `ExecutionDelay::NextBar` (quantwave-zmjw — previously the
+    // streaming path silently ignored the delay, which was invisible while
+    // `SameBar` was the default).
+    apply_group_execution_delay(&mut groups, delay);
     let stops = &config.stop_config;
     let allocator = config.portfolio_allocator;
     let rebalance_policy = config.rebalance_policy;

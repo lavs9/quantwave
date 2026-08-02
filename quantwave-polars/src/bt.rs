@@ -49,7 +49,8 @@ impl Default for BtOptions {
             commission_bps: 5.0,
             slippage_bps: 2.0,
             initial_cash: 100_000.0,
-            execution_delay: ExecutionDelay::SameBar,
+            // T+1 by default — no same-bar look-ahead (quantwave-zmjw).
+            execution_delay: ExecutionDelay::default(),
             stop_loss_pct: None,
             take_profit_pct: None,
             trailing_stop_pct: None,

@@ -34,7 +34,7 @@ def _config_from_kwargs(
     initial_cash: float = 100_000.0,
     commission_bps: float = 5.0,
     slippage_bps: float = 2.0,
-    execution_delay: str = "same_bar",
+    execution_delay: str = "next_bar",
     stop_loss_pct: float | None = None,
     take_profit_pct: float | None = None,
     trailing_stop_pct: float | None = None,
@@ -102,7 +102,7 @@ class BtLazyNamespace:
         initial_cash: float = 100_000.0,
         commission_bps: float = 5.0,
         slippage_bps: float = 2.0,
-        execution_delay: str = "same_bar",
+        execution_delay: str = "next_bar",
         stop_loss_pct: float | None = None,
         take_profit_pct: float | None = None,
         trailing_stop_pct: float | None = None,
@@ -159,7 +159,7 @@ class BtLazyNamespace:
         initial_cash: float = 100_000.0,
         commission_bps: float = 5.0,
         slippage_bps: float = 2.0,
-        execution_delay: str = "same_bar",
+        execution_delay: str = "next_bar",
         stop_loss_pct: float | None = None,
         take_profit_pct: float | None = None,
         trailing_stop_pct: float | None = None,
@@ -180,7 +180,11 @@ class BtLazyNamespace:
             initial_cash: Starting capital.
             commission_bps: Commission in basis points per trade leg.
             slippage_bps: Slippage in basis points.
-            execution_delay: ``"same_bar"`` or ``"next_bar"`` fill timing.
+            execution_delay: Fill timing. ``"next_bar"`` (default) fills a signal
+                from bar *t* at bar *t+1*'s close — no same-bar look-ahead.
+                ``"same_bar"`` fills at bar *t*'s own close; only honest for
+                close-auction execution or signals built purely from bar *t-1*
+                data, and systematically optimistic otherwise.
             stop_loss_pct: Optional stop-loss fraction (e.g. ``0.02`` for 2%).
             take_profit_pct: Optional take-profit fraction.
             trailing_stop_pct: Optional trailing stop fraction.
@@ -248,7 +252,7 @@ class BtLazyNamespace:
         initial_cash: float = 100_000.0,
         commission_bps: float = 5.0,
         slippage_bps: float = 2.0,
-        execution_delay: str = "same_bar",
+        execution_delay: str = "next_bar",
         stop_loss_pct: float | None = None,
         take_profit_pct: float | None = None,
         trailing_stop_pct: float | None = None,
@@ -291,7 +295,7 @@ class BtLazyNamespace:
         initial_cash: float = 100_000.0,
         commission_bps: float = 5.0,
         slippage_bps: float = 2.0,
-        execution_delay: str = "same_bar",
+        execution_delay: str = "next_bar",
         stop_loss_pct: float | None = None,
         take_profit_pct: float | None = None,
         trailing_stop_pct: float | None = None,
@@ -346,7 +350,7 @@ class BtLazyNamespace:
         initial_cash: float = 100_000.0,
         commission_bps: float = 5.0,
         slippage_bps: float = 2.0,
-        execution_delay: str = "same_bar",
+        execution_delay: str = "next_bar",
         stop_loss_pct: float | None = None,
         take_profit_pct: float | None = None,
         trailing_stop_pct: float | None = None,
@@ -396,7 +400,7 @@ class BtLazyNamespace:
         initial_cash: float = 100_000.0,
         commission_bps: float = 5.0,
         slippage_bps: float = 2.0,
-        execution_delay: str = "same_bar",
+        execution_delay: str = "next_bar",
         stop_loss_pct: float | None = None,
         take_profit_pct: float | None = None,
         trailing_stop_pct: float | None = None,
@@ -449,7 +453,7 @@ class BtLazyNamespace:
         initial_cash: float = 100_000.0,
         commission_bps: float = 5.0,
         slippage_bps: float = 2.0,
-        execution_delay: str = "same_bar",
+        execution_delay: str = "next_bar",
     ) -> pl.DataFrame:
         """Rolling OOS walk-forward → fold × metrics DataFrame (delegates to Rust)."""
         if train_bars <= 0 or test_bars <= 0:
@@ -495,7 +499,7 @@ class BtLazyNamespace:
         initial_cash: float = 100_000.0,
         commission_bps: float = 5.0,
         slippage_bps: float = 2.0,
-        execution_delay: str = "same_bar",
+        execution_delay: str = "next_bar",
     ) -> pl.DataFrame:
         """Walk-forward with train-window parameter optimization (Rust core).
 
@@ -574,7 +578,7 @@ class BtLazyNamespace:
         initial_cash: float = 100_000.0,
         commission_bps: float = 5.0,
         slippage_bps: float = 2.0,
-        execution_delay: str = "same_bar",
+        execution_delay: str = "next_bar",
         transform: str | None = None,
     ):
         """sigc-inspired rank → long/short panel backtest (cr6v.15)."""
@@ -743,7 +747,7 @@ class BtLazyNamespace:
         initial_cash: float = 100_000.0,
         commission_bps: float = 5.0,
         slippage_bps: float = 2.0,
-        execution_delay: str = "same_bar",
+        execution_delay: str = "next_bar",
         stop_loss_pct: float | None = None,
         take_profit_pct: float | None = None,
         trailing_stop_pct: float | None = None,

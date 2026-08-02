@@ -4,7 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING: `execution_delay` now defaults to `"next_bar"` (T+1) instead of `"same_bar"` (T+0)** (`quantwave-zmjw`). Affects `.bt.backtest`, `.bt.backtest_with_report`, `.bt.backtest_metrics`, `.bt.portfolio_backtest` and every other `.bt` entry point, the Python `BacktestConfig`, the Rust `BacktestConfig::default()` / `ExecutionDelay::default()`, and `BtOptions::default()` in `quantwave-polars`.
+
+    `"same_bar"` fills at the close of the very bar that produced the signal. Since signals are almost always derived from that same close (e.g. `(rsi < 30)` computed on bar `t`), the old default executed on information that only existed at the instant the bar ended — a look-ahead the live strategy never has, and one that flatters results systematically. On an identical signal frame over a rising series, `same_bar` entered at `100.5` where `next_bar` entered at `101.0`.
+
+    **Your existing backtests will report different — generally worse — numbers after upgrading. That difference is the look-ahead being removed, not a regression.**
+
+    To restore the previous behaviour, pass it explicitly:
+
+    ```python
+    lf.bt.backtest(signal="signal", execution_delay="same_bar")
+    ```
+
+    `"same_bar"` remains fully supported and is the correct choice when it genuinely describes your execution: you trade the closing auction, or your signal is built purely from data through bar `t-1` so bar `t`'s close is not an input. Otherwise, prefer the new default.
+
 ### Fixed
+- **Shared-capital portfolio streaming ignored `execution_delay`** (`quantwave-zmjw`). `run_shared_capital_streaming_simulation` passed the delay down to `simulate_shared_capital`, which discards it — the batch path pre-shifts signals per timestamp group, but the streaming path never did. Under `SameBar` (the old default) both paths agreed, so the bug was invisible; any caller who explicitly asked for `next_bar` silently got same-bar fills in streaming mode and broke batch↔streaming parity. The streaming path now applies the same per-timestamp-group shift as batch.
 - **68 indicators silently resolved to a streaming class instead of their batch function** (`quantwave-84cu`). The generated TA registry introduced in 0.7.0 derived native batch symbol names with `pascal_to_snake()` (`SuperTrend` → `super_trend`), but the `export_*!` macros emit `pub fn [<$name:lower>]` (`SuperTrend` → `supertrend`). Every multi-word name missed; the 44 single-word ones (`rsi`, `sma`, `atr`) passed only because `pascal_to_snake("Rsi") == "rsi"`. `_resolve_ta_binding` treated the miss as a fallback and returned `native_streaming`, so `qw.supertrend` was a **class** while `qw.rsi` was a function — with no error or warning. `qw.supertrend(period=10, multiplier=3.0, high=…, low=…, close=…)` again returns `list[SuperTrendResult]` as it did in 0.6; callers need no changes.
 - `_resolve_ta_binding` now raises `ImportError` when an entry declares a `native_batch` symbol the build does not export, rather than silently substituting the streaming class (whose calling convention differs). A `native_batch` of `None` still falls through to streaming/polars as before.
 - Corrected stale hand-written aliases in `scripts/api_slug_aliases.json`: `fm_demodulator`, `fourier_series_model`, `my_rsi`, `precision_trend_analysis` named non-existent snake_cased symbols; `linreg`, `oc2`, `true_range` declared batch exports that do not exist and now fall through to their polars methods; `sr_monitor` declared `SrInteractionMonitor`, a class never exported to Python.

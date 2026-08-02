@@ -347,7 +347,10 @@ impl PyBacktestConfig {
     ///
     /// Parameters with `pct` suffixes (like stop_loss_pct) expect fractions (e.g., 0.05 for 5%).
     /// Default position sizing is 1 unit unless size_multiplier_col is provided.
-    /// Execution delay can be 'same_bar' (fill on signal bar) or 'next_bar' (fill on next bar).
+    /// Execution delay can be 'next_bar' (fill on the next bar's close — the default,
+    /// no same-bar look-ahead) or 'same_bar' (fill on the signal bar's own close).
+    /// Only use 'same_bar' for close-auction execution or signals built purely from
+    /// bar t-1 data; otherwise it is systematically optimistic (quantwave-zmjw).
     #[new]
     #[pyo3(signature = (
         signal_col = "signal",
@@ -361,7 +364,7 @@ impl PyBacktestConfig {
         initial_cash = 100_000.0,
         commission_bps = 5.0,
         slippage_bps = 2.0,
-        execution_delay = "same_bar",
+        execution_delay = "next_bar",
         stop_loss_pct = None,
         take_profit_pct = None,
         trailing_stop_pct = None,

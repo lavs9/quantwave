@@ -103,36 +103,46 @@ fn test_t1_execution_price_close() {
     assert_relative_eq!(entry_price(&t1), 102.5, epsilon = 1e-9);
 }
 
+/// quantwave-zmjw: the default must be T+1 (`NextBar`). `SameBar` fills at the close
+/// of the very bar that produced the signal, which is systematically optimistic when
+/// the signal is derived from that same close — so it is opt-in, never the default.
 #[test]
-fn test_t0_regression_default() {
+fn test_default_delay_is_next_bar() {
     assert_eq!(
         BacktestConfig::default().execution_delay,
-        ExecutionDelay::SameBar,
-        "default must remain T+0 (SameBar) for backward compatibility"
+        ExecutionDelay::NextBar,
+        "default must be T+1 (NextBar) — no same-bar look-ahead (quantwave-zmjw)"
     );
 
     let df = single_trade_df();
-    let explicit_t0 = BacktestEngine::new(zero_cost_config(ExecutionDelay::SameBar))
+    let explicit_t1 = BacktestEngine::new(zero_cost_config(ExecutionDelay::NextBar))
         .run(df.clone().lazy())
-        .expect("explicit t0");
-    let default_delay_t0 = BacktestEngine::new(zero_cost_config(ExecutionDelay::default()))
-        .run(df.lazy())
-        .expect("default delay t0");
+        .expect("explicit t1");
+    let default_delay = BacktestEngine::new(zero_cost_config(ExecutionDelay::default()))
+        .run(df.clone().lazy())
+        .expect("default delay");
 
     for k in ["num_trades", "final_equity", "net_pnl"] {
-        let a = *explicit_t0.stats.get(k).unwrap();
-        let b = *default_delay_t0.stats.get(k).unwrap();
+        let a = *explicit_t1.stats.get(k).unwrap();
+        let b = *default_delay.stats.get(k).unwrap();
         assert_relative_eq!(a, b, epsilon = 1e-9, max_relative = 1e-9);
     }
+    assert_eq!(entry_ts_unix(&explicit_t1), entry_ts_unix(&default_delay));
+
+    // Signal flips 0→1 on bar 1 (close 101.0). The default must fill at bar 2's
+    // close (102.5), not bar 1's own close.
+    assert_relative_eq!(entry_price(&default_delay), 102.5, epsilon = 1e-9);
     assert_eq!(
-        entry_ts_unix(&explicit_t0),
-        entry_ts_unix(&default_delay_t0)
+        entry_ts_unix(&default_delay),
+        1_700_000_000 + 2 * 3600,
+        "default fill lands one bar after the signal bar"
     );
-    assert_relative_eq!(
-        entry_price(&explicit_t0),
-        entry_price(&default_delay_t0),
-        epsilon = 1e-9
-    );
+
+    // `SameBar` remains available for callers who ask for it explicitly.
+    let explicit_t0 = BacktestEngine::new(zero_cost_config(ExecutionDelay::SameBar))
+        .run(df.lazy())
+        .expect("explicit t0");
+    assert_relative_eq!(entry_price(&explicit_t0), 101.0, epsilon = 1e-9);
 }
 
 struct SignalReplay {

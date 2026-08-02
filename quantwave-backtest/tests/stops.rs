@@ -13,8 +13,8 @@ use approx::assert_relative_eq;
 use chrono::{TimeZone, Utc};
 use polars::prelude::*;
 use quantwave_backtest::{
-    BacktestConfig, BacktestEngine, Bar, CostModel, ExecutionModel, StopConfig, StopEvaluationMode,
-    StrategySignal, run_streaming_simulation,
+    BacktestConfig, BacktestEngine, Bar, CostModel, ExecutionDelay, ExecutionModel, StopConfig,
+    StopEvaluationMode, StrategySignal, run_streaming_simulation,
 };
 
 fn zero_cost_config(stops: StopConfig) -> BacktestConfig {
@@ -24,6 +24,9 @@ fn zero_cost_config(stops: StopConfig) -> BacktestConfig {
             slippage_bps: 0.0,
             initial_cash: 100_000.0,
         }),
+        // quantwave-zmjw: these tests assert exact T+0 fill prices; the engine
+        // default is now NextBar, so pin SameBar to preserve their original intent.
+        execution_delay: ExecutionDelay::SameBar,
         stop_config: stops,
         ..Default::default()
     }

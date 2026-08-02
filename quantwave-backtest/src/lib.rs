@@ -21,8 +21,8 @@
 //! - Ready for rich Struct signals (e.g. from future PA detectors containing
 //!   `pole_height`, `strength`, etc. for dynamic sizing/conviction).
 //! - Basic realistic execution: commission + slippage.
-//! - T+1 execution via `BacktestConfig.execution_delay` (`SameBar` default, `NextBar`
-//!   for polars-backtest-style next-bar fills — quantwave-cr6v.8).
+//! - T+1 execution via `BacktestConfig.execution_delay` (`NextBar` default — no
+//!   same-bar look-ahead; `SameBar` opt-in for close-auction execution — cr6v.8/zmjw).
 //! - Stop-loss / take-profit / trailing via `BacktestConfig.stop_config` (RaptorBT-inspired
 //!   clean-room — quantwave-cr6v.9).
 //! - Struct `signal_col` auto-parse with pole_height sizing (quantwave-cr6v.11).
@@ -254,10 +254,17 @@ impl SlippageModel for SquareRootMarketImpactSlippage {
 /// When a signal observed at bar *t* may be executed (clean-room polars-backtest T+1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum ExecutionDelay {
-    /// T+0: signal at bar *t* fills at bar *t* close (default).
-    #[default]
+    /// T+0: signal at bar *t* fills at bar *t* close.
+    ///
+    /// Only honest when the signal is built purely from data available before
+    /// bar *t* closes (or when you really do execute in the closing auction).
+    /// Signals derived from bar *t*'s own close (the common case) get a
+    /// look-ahead advantage under this mode, so it is no longer the default.
     SameBar,
     /// T+1: signal at bar *t* fills at bar *t+1* close (no same-bar look-ahead).
+    ///
+    /// The default (quantwave-zmjw): the safe, non-optimistic choice.
+    #[default]
     NextBar,
 }
 
@@ -395,7 +402,9 @@ pub struct BacktestConfig {
 
     // v0.2 rich execution (n1yc.2/3) + sizer (n1yc.1)
     pub execution_model: ExecutionModel,
-    /// Signal-to-fill timing (quantwave-cr6v.8). Default `SameBar` preserves T+0 behavior.
+    /// Signal-to-fill timing (quantwave-cr6v.8). Default `NextBar` (T+1) avoids
+    /// same-bar look-ahead; pass `SameBar` explicitly for close-auction execution
+    /// or signals built purely from bar *t-1* data (quantwave-zmjw).
     pub execution_delay: ExecutionDelay,
     /// Optional stop-loss / take-profit / trailing (quantwave-cr6v.9).
     pub stop_config: StopConfig,
@@ -446,7 +455,7 @@ impl Default for BacktestConfig {
 }
 
 /// Map simulation bar index to the signal bar used for execution decisions.
-fn signal_bar_index(bar: usize, delay: ExecutionDelay) -> Option<usize> {
+pub(crate) fn signal_bar_index(bar: usize, delay: ExecutionDelay) -> Option<usize> {
     match delay {
         ExecutionDelay::SameBar => Some(bar),
         ExecutionDelay::NextBar => bar.checked_sub(1),
@@ -1950,11 +1959,18 @@ mod tests {
     fn test_basic_long_only_flip_on_synthetic() {
         // Synthetic 6 bars. Signal goes 0 -> 1 (enter) -> 1 -> 0 (exit).
         // Prices rise then fall. With small costs, net should be positive on the move.
+        //
+        // quantwave-zmjw: this exercises the *default* config via
+        // `backtest_simple_bool_signal`, which is now T+1 (`NextBar`). The signal
+        // first fires on bar 1, so the fill lands on bar 2 (102.0) and the exit
+        // signal on bar 4 fills on bar 5 (105.0). Closes were re-picked so the
+        // trade is still a winner under the honest T+1 default rather than only
+        // under the old same-bar fill.
         let n: usize = 6;
         let timestamps: Vec<i64> = (0..n)
             .map(|i| 1_700_000_000i64 + (i as i64) * 3600)
             .collect(); // unix secs
-        let closes = vec![100.0, 101.0, 102.5, 103.0, 102.0, 101.0];
+        let closes = vec![100.0, 101.0, 102.0, 104.0, 106.0, 105.0];
         let signals = vec![0.0, 1.0, 1.0, 1.0, 0.0, 0.0];
 
         let df = DataFrame::new(vec![
@@ -2044,7 +2060,17 @@ mod tests {
         ])
         .unwrap();
 
-        let result = backtest_simple_bool_signal(df.clone(), "signal").unwrap();
+        // quantwave-zmjw: the manual loop below fills at bar `i`'s own close, i.e.
+        // it models T+0. The engine default is now T+1 (`NextBar`), so pin
+        // `SameBar` here to keep comparing like with like — this test is about
+        // the cost/PnL arithmetic, not about the execution-delay default.
+        let result = BacktestEngine::new(BacktestConfig {
+            signal_col: "signal".to_string(),
+            execution_delay: ExecutionDelay::SameBar,
+            ..Default::default()
+        })
+        .run(df.clone().lazy())
+        .unwrap();
 
         // Manual calc with same default costs (5bps comm, 2bps slip)
         let slip = 0.0002;
