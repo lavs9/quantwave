@@ -30,8 +30,27 @@ mask the initial bars. `metadata(name).warmup_bars` holds the curated value when
 known; otherwise a conservative heuristic derives it from `period` / `fast` / `slow`.
 """
 
-from dataclasses import dataclass
-from typing import Optional, List, Dict, Any, Mapping
+from dataclasses import dataclass, field, replace
+from typing import Optional, List, Dict, Any, Mapping, Tuple
+
+
+@dataclass(frozen=True)
+class ConventionNote:
+    """A calculation convention a caller could plausibly get wrong.
+
+    Some indicator names do not determine their formula: "ATR" may mean Wilder's
+    RMA or a plain EMA of true range, "stddev" may be ddof=0 or ddof=1, "roc" may
+    be scaled x100 or not. This records the convention QuantWave actually
+    implements so it is discoverable programmatically, not only in prose.
+
+    Mirrors ``quantwave_core::indicators::conventions::ConventionNote``.
+    """
+
+    aspect: str          # e.g. "smoothing", "scaling", "degrees of freedom"
+    convention: str      # what this implementation does
+    differs_from: str    # widely used conventions it does NOT match
+    source: str          # recorded provenance, or an explicit "NONE RECORDED"
+    guidance: str        # what the caller should do about it
 
 
 @dataclass(frozen=True)
@@ -43,6 +62,8 @@ class BoundaryInfo:
     nan_inputs: str
     invalid_params: str
     empty_data: str
+    #: Convention divergences for this specific indicator (empty for most).
+    conventions: Tuple[ConventionNote, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -58,6 +79,8 @@ class IndicatorMeta:
     has_streaming: bool = True
     has_polars: bool = True
     description: Optional[str] = None
+    #: Convention divergences for this indicator (empty for most).
+    conventions: Tuple[ConventionNote, ...] = field(default=())
 
 
 # Hand-curated overrides for high-traffic Python/Ta-Lib indicators (win on slug collision).
@@ -169,15 +192,177 @@ def _build_metadata_registry() -> Dict[str, IndicatorMeta]:
 _METADATA: Dict[str, IndicatorMeta] = _build_metadata_registry()
 
 
-def metadata(name: str) -> Optional[IndicatorMeta]:
-    key = name.lower()
+# --- Calculation conventions (see the ATR / stddev / roc convention notes in the project tracker) ---
+#
+# Source of truth: `quantwave-core/src/indicators/conventions.rs::CONVENTION_NOTES`.
+# Kept in sync by `tests/python/test_conventions.py`, which fails if the two drift.
+#
+# PROCESS RULE (AGENTS.md): the source of a calculation is recorded, never assumed.
+# Where no authoritative source has been established for the variant QuantWave
+# implements, `source` says "NONE RECORDED" rather than naming a plausible one.
+_CONVENTION_NOTES: Dict[str, Tuple[ConventionNote, ...]] = {
+    "atr": (
+        ConventionNote(
+            aspect="smoothing",
+            convention=(
+                "Exponential moving average of true range, alpha = 2/(period+1), seeded "
+                "from the first bar's true range (high - low, no prior close) with no NaN "
+                "warmup. Applies to the `Atr` streaming class and the "
+                "`atr(period, high, low, close)` native batch function."
+            ),
+            differs_from=(
+                "Wilder's RMA (alpha = 1/period, SMA-seeded over the first `period` true "
+                "ranges, NaN during warmup) as used by TA-Lib, TradingView's Pine `ta.atr`, "
+                "and pandas `ewm(alpha=1/period, adjust=False)`. Also differs from a simple "
+                "rolling mean of true range."
+            ),
+            source=(
+                "NONE RECORDED for the EMA-smoothed variant. This indicator's recorded "
+                "formula_source (Investopedia ATR) and its LaTeX formula both describe "
+                "Wilder's RMA, which is what `ta_atr` implements - not this one. Treated as "
+                "an undocumented divergence pending review."
+            ),
+            guidance=(
+                "For TA-Lib/TradingView-identical ATR use `ta_atr` (Rust `TaATR`, Polars "
+                "`.ta.ta_atr()` / `lf.ta().ta_atr()`). Note that the Polars plugin "
+                "`pl.col(close).ta.atr(high, low)` and `quantwave.talib.ATR` are ALREADY "
+                "Wilder - only the streaming class and native batch function are not."
+            ),
+        ),
+    ),
+    "atr_ts": (
+        ConventionNote(
+            aspect="smoothing",
+            convention="ATR trailing stop built on the EMA-smoothed `Atr` (alpha = 2/(period+1)).",
+            differs_from="TradingView ATR trailing stops, which use Wilder's RMA.",
+            source=(
+                "NONE RECORDED for the EMA smoothing. Recorded formula_source points at "
+                "TradingView's ATR page, which specifies Wilder. Inherited from `atr`."
+            ),
+            guidance=(
+                "Stop distances differ from a TradingView-equivalent ATR trailing stop. "
+                "Review this before using for live risk sizing."
+            ),
+        ),
+    ),
+    "keltner": (
+        ConventionNote(
+            aspect="smoothing",
+            convention=(
+                "Channel width uses the EMA-smoothed `Atr` (alpha = 2/(period+1)); the basis "
+                "is a plain EMA of close."
+            ),
+            differs_from=(
+                "The Investopedia / Chester Keltner formulation and most charting platforms, "
+                "which use Wilder-smoothed ATR for the band width."
+            ),
+            source="NONE RECORDED for the EMA smoothing. Inherited from `atr`.",
+            guidance="Band widths differ from a Wilder-ATR Keltner channel.",
+        ),
+    ),
+    "roc": (
+        ConventionNote(
+            aspect="scaling",
+            convention="Percentage: (price / price[-period] - 1) * 100, matching TA-Lib `ROC`.",
+            differs_from=(
+                "pandas `pct_change(period)` and TA-Lib `ROCP`, which return the plain ratio "
+                "(no x100)."
+            ),
+            source="TA-Lib ROC/ROCP definitions.",
+            guidance="Use `rocp` for the unscaled ratio. Mixing the two is a silent 100x error.",
+        ),
+    ),
+    "stddev": (
+        ConventionNote(
+            aspect="degrees of freedom",
+            convention="Population standard deviation, ddof = 0, matching TA-Lib `STDDEV`.",
+            differs_from=(
+                "pandas `Series.std()` and numpy `ndarray.std(ddof=1)` defaults, which use "
+                "the sample estimator ddof = 1."
+            ),
+            source="TA-Lib STDDEV definition.",
+            guidance=(
+                "Values differ by a factor of sqrt(N / (N - 1)); rescale if you are "
+                "reconciling against pandas."
+            ),
+        ),
+    ),
+    "supertrend": (
+        ConventionNote(
+            aspect="smoothing",
+            convention="Bands are built on the EMA-smoothed `Atr` (alpha = 2/(period+1)).",
+            differs_from="TradingView's SuperTrend, which uses Pine `ta.atr` - Wilder's RMA.",
+            source=(
+                "NONE RECORDED for the EMA smoothing. Recorded formula_source points at a "
+                "TradingView SuperTrend script, which uses Wilder. Inherited from `atr`."
+            ),
+            guidance="Flip points can differ from a TradingView SuperTrend on the same inputs.",
+        ),
+    ),
+    "ttm_squeeze": (
+        ConventionNote(
+            aspect="smoothing",
+            convention="The Keltner leg of the squeeze test uses the EMA-smoothed `Atr`.",
+            differs_from="Implementations that use Wilder-smoothed ATR for the Keltner leg.",
+            source="NONE RECORDED for the EMA smoothing. Inherited from `atr`.",
+            guidance="Squeeze on/off transitions can differ near the threshold.",
+        ),
+    ),
+    "vpn": (
+        ConventionNote(
+            aspect="smoothing",
+            convention="The volume-positive-negative threshold uses the EMA-smoothed `Atr`.",
+            differs_from="Implementations that use Wilder-smoothed ATR for the threshold.",
+            source="NONE RECORDED for the EMA smoothing. Inherited from `atr`.",
+            guidance="Threshold crossings can differ from a Wilder-ATR VPN.",
+        ),
+    ),
+}
+
+_ALIASES = {"bollinger_bands": "bbands", "atr_trailing_stop": "atr_ts"}
+
+
+def _canonical_slug(name: str) -> Optional[str]:
+    key = (name or "").lower()
     if key in _METADATA:
-        return _METADATA[key]
-    # simple aliases
-    aliases = {"bollinger_bands": "bbands", "atr_trailing_stop": "atr_ts"}
-    if key in aliases:
-        return _METADATA.get(aliases[key])
+        return key
+    alias = _ALIASES.get(key)
+    if alias in _METADATA:
+        return alias
     return None
+
+
+def conventions(name: str) -> Tuple[ConventionNote, ...]:
+    """Calculation conventions for ``name`` that a caller could plausibly get wrong.
+
+    Returns an empty tuple for indicators whose name unambiguously determines the
+    formula (the common case), and for unknown names.
+
+    Example:
+        >>> notes = conventions("atr")
+        >>> notes[0].aspect
+        'smoothing'
+    """
+    slug = _canonical_slug(name)
+    if slug is None:
+        return ()
+    return _CONVENTION_NOTES.get(slug, ())
+
+
+def convention_slugs() -> List[str]:
+    """Sorted slugs that carry at least one convention note."""
+    return sorted(_CONVENTION_NOTES)
+
+
+def metadata(name: str) -> Optional[IndicatorMeta]:
+    slug = _canonical_slug(name)
+    if slug is None:
+        return None
+    meta = _METADATA[slug]
+    notes = _CONVENTION_NOTES.get(slug, ())
+    if notes and meta.conventions != notes:
+        meta = replace(meta, conventions=notes)
+    return meta
 
 def list_metadata() -> List[IndicatorMeta]:
     return list(_METADATA.values())
@@ -326,15 +511,25 @@ def boundary_info(name: str) -> Optional[BoundaryInfo]:
     strategy code. Values are curated defaults by indicator kind; see the
     per-indicator guides for formula-specific edge cases.
 
+    ``.conventions`` carries any calculation convention that the indicator's name
+    does not determine (ATR smoothing, stddev ddof, roc scaling). It is empty for
+    most indicators; when non-empty, read it before reconciling against TA-Lib,
+    TradingView, or pandas.
+
     Example:
         >>> info = boundary_info("rsi")
         >>> "NaN" in info.warmup_behavior
         True
+        >>> boundary_info("atr").conventions[0].aspect
+        'smoothing'
     """
     meta = metadata(name)
     if not meta:
         return None
-    return _BOUNDARY_BY_KIND[_boundary_kind(meta)]
+    info = _BOUNDARY_BY_KIND[_boundary_kind(meta)]
+    if meta.conventions:
+        info = replace(info, conventions=meta.conventions)
+    return info
 
 
 # --- Categories API ---

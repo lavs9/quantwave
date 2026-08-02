@@ -2,6 +2,17 @@
 
 <div class="indicator-meta"><span class="category-badge">Classic</span> <span class="kw-badge">volatility</span> <span class="kw-badge">momentum</span> <span class="kw-badge">breakout</span> <span class="kw-badge">squeeze</span> <span class="kw-badge">classic</span></div>
 
+!!! warning "Uses the EMA-smoothed `Atr`, not Wilder's ATR"
+
+    The Keltner leg of the squeeze test is built on QuantWave's `Atr`, which smooths true range with an EMA
+    (`alpha = 2/(period+1)`) rather than Wilder's RMA (`alpha = 1/period`, SMA-seeded)
+    used by TA-Lib and TradingView Pine's `ta.atr`. Squeeze on/off transitions can differ near the threshold from implementations that use a Wilder ATR.
+
+    No source has been recorded for the EMA smoothing — the `formula_source` recorded
+    for this indicator describes the Wilder-based construction. See [Average True Range](average_true_range.md) for the full
+    surface-by-surface breakdown, and `quantwave.conventions("ttm_squeeze")` to read the
+    divergence programmatically.
+
 TTM Squeeze measures the relationship between Bollinger Bands and Keltner Channels to identify volatility consolidations.
 
 ## Visual Example

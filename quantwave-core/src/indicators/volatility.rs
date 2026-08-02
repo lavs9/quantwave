@@ -40,7 +40,24 @@ impl Next<(f64, f64, f64)> for TrueRange {
     }
 }
 
-/// Average True Range (ATR)
+/// Average True Range (ATR) — **EMA-smoothed variant, not Wilder's RMA**.
+///
+/// This smooths true range with a standard EMA (`alpha = 2/(period+1)`), seeded
+/// from the first bar's `high - low` and emitting a value from bar 0 with no NaN
+/// warmup. It is **not** the ATR that Wilder defined in 1978 and that TA-Lib,
+/// TradingView Pine `ta.atr`, and `pandas.ewm(alpha=1/period, adjust=False)`
+/// compute — for that, use [`TaATR`], which is proptest-verified against
+/// `talib_rs::volatility::atr`.
+///
+/// No authoritative source has been recorded for this EMA-smoothed variant; the
+/// divergence and its blast radius (SuperTrend, Keltner, ATR trailing stop, TTM
+/// Squeeze, VPN, S/R monitor, volatility-clustering regime) are tracked in
+/// `quantwave-xnaf` and recorded as data in
+/// [`crate::indicators::conventions::CONVENTION_NOTES`].
+///
+/// Note that the Polars plugin `pl.col(close).ta.atr(high, low)` and
+/// `quantwave.talib.ATR` are backed by [`TaATR`] and *are* Wilder; only this
+/// struct and the `atr(period, high, low, close)` PyO3 batch function are not.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ATR {
     tr: TrueRange,
@@ -160,19 +177,35 @@ TR = \max(H - L, |H - C_{t-1}|, |L - C_{t-1}|)
 
 pub const ATR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Average True Range",
-    description: "ATR represents the average of true ranges over a specified period.",
-    usage: "Use as the foundational volatility module providing ATR, True Range, and related volatility measures used by higher-level indicators such as SuperTrend and Keltner Channels.",
-    keywords: &["volatility", "atr", "classic", "range"],
+    description: "ATR represents the average of true ranges over a specified period. CONVENTION: the `Atr` streaming class and the `atr(period, high, low, close)` batch function smooth true range with an EMA (alpha = 2/(period+1)), NOT Wilder's RMA. For TA-Lib/TradingView-identical ATR use `ta_atr`. See the Average True Range indicator guide for the full surface-by-surface breakdown.",
+    usage: "Use as the foundational volatility module providing ATR, True Range, and related volatility measures used by higher-level indicators such as SuperTrend and Keltner Channels. Check `quantwave.conventions(\"atr\")` before reconciling values against TA-Lib, TradingView, or pandas.",
+    keywords: &[
+        "volatility",
+        "atr",
+        "classic",
+        "range",
+        "convention-divergence",
+    ],
     ehlers_summary: "Average True Range, developed by J. Welles Wilder in New Concepts in Technical Trading Systems (1978), measures the average of the true range over N bars. True Range accounts for overnight gaps by taking the maximum of: current high minus low, current high minus prior close, prior close minus current low. It remains the industry standard raw volatility measure.",
     params: &[ParamDef {
         name: "period",
         default: "14",
         description: "Smoothing period",
     }],
-    formula_source: "https://www.investopedia.com/terms/a/atr.asp",
+    // NOTE (quantwave-xnaf): this URL documents Wilder's RMA, which is what `ta_atr`
+    // implements. No source has been established for the EMA-smoothed variant that
+    // `Atr` / `atr()` actually compute; per AGENTS.md it is recorded as unsourced in
+    // `conventions::CONVENTION_NOTES` rather than having a source assumed for it.
+    formula_source: "https://www.investopedia.com/terms/a/atr.asp (documents Wilder's RMA — implemented by `ta_atr`; no source recorded for the EMA-smoothed `Atr`)",
     formula_latex: r#"
 \[
-ATR = \frac{ATR_{t-1} \times (n-1) + TR_t}{n}
+TR_t = \max(H_t - L_t, |H_t - C_{t-1}|, |L_t - C_{t-1}|)
+\]
+\[
+\text{Atr / atr() (EMA variant): } ATR_t = \alpha TR_t + (1-\alpha) ATR_{t-1}, \quad \alpha = \frac{2}{n+1}
+\]
+\[
+\text{ta\_atr (Wilder RMA, TA-Lib): } ATR_t = \frac{ATR_{t-1} \times (n-1) + TR_t}{n}
 \]
 "#,
     gold_standard_file: "atr.json",

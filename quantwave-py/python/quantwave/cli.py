@@ -64,6 +64,7 @@ def _cmd_info(args: argparse.Namespace) -> int:
             "outputs": meta.outputs,
             "warmup_bars": meta.warmup_bars,
             "boundary": boundary.__dict__ if boundary else None,
+            "conventions": [c.__dict__ for c in qw.conventions(slug)],
             "signature": sig,
             "docs": f"https://lavs9.github.io/quantwave/guides/indicators/native/{slug}/",
         }
@@ -83,6 +84,12 @@ def _cmd_info(args: argparse.Namespace) -> int:
         print(f"\nWarmup bars: {meta.warmup_bars}")
     if boundary:
         print(f"Boundary: {boundary.warmup_behavior}")
+    for note in qw.conventions(slug):
+        print(f"\n!! CONVENTION ({note.aspect}) — this name does not determine the formula")
+        print(f"   Implements:   {note.convention}")
+        print(f"   Differs from: {note.differs_from}")
+        print(f"   Source:       {note.source}")
+        print(f"   Guidance:     {note.guidance}")
     if sig:
         print(f"\nSignature hint: {sig}")
     print(f"\nDocs: https://lavs9.github.io/quantwave/guides/indicators/native/{slug}/")
