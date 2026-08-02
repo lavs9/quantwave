@@ -2,6 +2,17 @@
 
 <div class="indicator-meta"><span class="category-badge">Volume</span> <span class="kw-badge">volume</span> <span class="kw-badge">breakout</span> <span class="kw-badge">katsanos</span> <span class="kw-badge">vpn</span> <span class="kw-badge">momentum</span></div>
 
+!!! warning "Uses the EMA-smoothed `Atr`, not Wilder's ATR"
+
+    The VPN volume threshold is built on QuantWave's `Atr`, which smooths true range with an EMA
+    (`alpha = 2/(period+1)`) rather than Wilder's RMA (`alpha = 1/period`, SMA-seeded)
+    used by TA-Lib and TradingView Pine's `ta.atr`. Threshold crossings can differ from a Wilder-ATR VPN.
+
+    No source has been recorded for the EMA smoothing — the `formula_source` recorded
+    for this indicator describes the Wilder-based construction. See [Average True Range](average_true_range.md) for the full
+    surface-by-surface breakdown, and `quantwave.conventions("vpn")` to read the
+    divergence programmatically.
+
 Detects high-volume breakouts by comparing volume on up days vs down days, normalized between -100 and 100.
 
 ## Visual Example

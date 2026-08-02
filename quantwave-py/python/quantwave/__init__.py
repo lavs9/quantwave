@@ -28,6 +28,17 @@ Most indicators return NaN or truncated output during their warmup period.
 Use ``boundary_info(name)`` for curated per-kind semantics. Invalid parameters
 typically raise ``InvalidParameterError`` or ``ValueError``.
 
+Calculation conventions:
+A handful of indicator names do not determine their formula — "ATR" may mean
+Wilder's RMA or a plain EMA of true range, "stddev" may be ddof=0 or ddof=1,
+"roc" may be scaled x100 or not. ``conventions(name)`` returns the divergences
+QuantWave actually implements (empty for most indicators); the same notes appear
+on ``metadata(name).conventions`` and ``boundary_info(name).conventions``. Use
+``convention_slugs()`` to list every affected indicator. **``atr`` is the one to
+know about**: the ``Atr`` streaming class and the ``atr()`` batch function use an
+EMA of true range, while ``ta_atr`` / ``pl.col(...).ta.atr(...)`` /
+``quantwave.talib.ATR`` use Wilder's RMA. See ``conventions("atr")``.
+
 Exception contract (``quantwave.QuantwaveError`` hierarchy):
 ``IndicatorNotFoundError``, ``InvalidParameterError``, ``ParityError``,
 ``StreamingError``, and ``InternalError`` (native FFI). See ``quantwave._errors``.
@@ -203,11 +214,14 @@ globals()["InternalError"] = InternalError
 from ._metadata import (
     IndicatorMeta,
     BoundaryInfo,
+    ConventionNote,
     metadata,
     list_metadata,
     warmup_bars,
     get_indicator_signature,
     boundary_info,
+    conventions,
+    convention_slugs,
     categories,
     indicators_by_category,
     category,
@@ -678,6 +692,9 @@ __all__ = [
     "FeatureSpec",
     "RECOMMENDED_PRESET",
     "boundary_info",
+    "conventions",
+    "convention_slugs",
+    "ConventionNote",
     "categories",
     "indicators_by_category",
     "category",

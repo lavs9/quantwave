@@ -2,6 +2,17 @@
 
 <div class="indicator-meta"><span class="category-badge">Classic</span> <span class="kw-badge">volatility</span> <span class="kw-badge">trend</span> <span class="kw-badge">stop-loss</span> <span class="kw-badge">atr</span> <span class="kw-badge">classic</span></div>
 
+!!! warning "Uses the EMA-smoothed `Atr`, not Wilder's ATR"
+
+    This trailing stop is built on QuantWave's `Atr`, which smooths true range with an EMA
+    (`alpha = 2/(period+1)`) rather than Wilder's RMA (`alpha = 1/period`, SMA-seeded)
+    used by TA-Lib and TradingView Pine's `ta.atr`. Stop distances differ from a TradingView-equivalent ATR trailing stop. Review this before wiring it into live risk sizing.
+
+    No source has been recorded for the EMA smoothing — the `formula_source` recorded
+    for this indicator describes the Wilder-based construction. See [Average True Range](average_true_range.md) for the full
+    surface-by-surface breakdown, and `quantwave.conventions("atr_ts")` to read the
+    divergence programmatically.
+
 A trailing stop based on Average True Range to keep trades in a trend.
 
 ## Visual Example

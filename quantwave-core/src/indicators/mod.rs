@@ -1,6 +1,7 @@
 #[macro_use]
 pub mod talib_wrapper;
 
+pub mod conventions;
 pub mod metadata;
 pub mod metadata_registry;
 

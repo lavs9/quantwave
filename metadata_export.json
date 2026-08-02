@@ -264,14 +264,15 @@
   {
     "slug": "atr",
     "name": "Average True Range",
-    "description": "ATR represents the average of true ranges over a specified period.",
-    "usage": "Use as the foundational volatility module providing ATR, True Range, and related volatility measures used by higher-level indicators such as SuperTrend and Keltner Channels.",
+    "description": "ATR represents the average of true ranges over a specified period. CONVENTION: the `Atr` streaming class and the `atr(period, high, low, close)` batch function smooth true range with an EMA (alpha = 2/(period+1)), NOT Wilder's RMA. For TA-Lib/TradingView-identical ATR use `ta_atr`. See the Average True Range indicator guide for the full surface-by-surface breakdown.",
+    "usage": "Use as the foundational volatility module providing ATR, True Range, and related volatility measures used by higher-level indicators such as SuperTrend and Keltner Channels. Check `quantwave.conventions(\"atr\")` before reconciling values against TA-Lib, TradingView, or pandas.",
     "category": "Classic",
     "keywords": [
       "volatility",
       "atr",
       "classic",
-      "range"
+      "range",
+      "convention-divergence"
     ],
     "params": [
       {
@@ -280,8 +281,8 @@
         "description": "Smoothing period"
       }
     ],
-    "formula_source": "https://www.investopedia.com/terms/a/atr.asp",
-    "formula_latex": "\n\\[\nATR = \\frac{ATR_{t-1} \\times (n-1) + TR_t}{n}\n\\]\n",
+    "formula_source": "https://www.investopedia.com/terms/a/atr.asp (documents Wilder's RMA — implemented by `ta_atr`; no source recorded for the EMA-smoothed `Atr`)",
+    "formula_latex": "\n\\[\nTR_t = \\max(H_t - L_t, |H_t - C_{t-1}|, |L_t - C_{t-1}|)\n\\]\n\\[\n\\text{Atr / atr() (EMA variant): } ATR_t = \\alpha TR_t + (1-\\alpha) ATR_{t-1}, \\quad \\alpha = \\frac{2}{n+1}\n\\]\n\\[\n\\text{ta\\_atr (Wilder RMA, TA-Lib): } ATR_t = \\frac{ATR_{t-1} \\times (n-1) + TR_t}{n}\n\\]\n",
     "gold_standard_file": "atr.json",
     "ehlers_summary": "Average True Range, developed by J. Welles Wilder in New Concepts in Technical Trading Systems (1978), measures the average of the true range over N bars. True Range accounts for overnight gaps by taking the maximum of: current high minus low, current high minus prior close, prior close minus current low. It remains the industry standard raw volatility measure.",
     "struct_name": "Atr",
