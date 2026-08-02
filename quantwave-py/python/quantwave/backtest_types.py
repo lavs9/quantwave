@@ -11,8 +11,8 @@ class PerformanceMetrics:
     `max_drawdown_pct` is always a positive fraction.
 
     `sortino_ratio` and `profit_factor` are ``nan`` when undefined — no negative
-    bar returns, or no losing trades, leaves their denominator empty
-    (quantwave-s3iu). ``nan`` means "no value", not "infinitely good"; test with
+    bar returns, or no losing trades, leaves their denominator empty.
+    ``nan`` means "no value", not "infinitely good"; test with
     ``math.isnan(x)``, never ``x == float("nan")``, which is always False.
 
     These 10 fields are a stable, test-enforced contract and will never gain or
