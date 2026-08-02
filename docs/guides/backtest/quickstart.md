@@ -63,7 +63,43 @@ metrics = report.metrics()
 
 ---
 
-## 4. What you get back
+## 4. When your trades actually fill
+
+By default QuantWave fills a signal observed on bar `t` at bar **`t+1`**'s close
+(`execution_delay="next_bar"`). This is deliberate. Your signal is almost
+certainly computed from bar `t`'s close — `(rsi < 30)`, a moving-average cross,
+a breakout above bar `t`'s high — so filling *at* bar `t`'s close would execute
+on information that only exists once the bar has ended. Live, you cannot do
+that; the bar has to close before you can know the signal fired and send the
+order.
+
+```python
+# Default — honest. Signal on bar t, fill at bar t+1's close.
+lf.bt.backtest(signal="signal")
+
+# Opt in to same-bar fills, only if it's true of your execution.
+lf.bt.backtest(signal="signal", execution_delay="same_bar")
+```
+
+`"same_bar"` is the right call in exactly two situations:
+
+- you genuinely execute in the **closing auction** of bar `t`, or
+- your signal is built purely from data through **bar `t-1`**, so bar `t`'s
+  close is not an input to it.
+
+Otherwise `"same_bar"` will inflate your results — on a rising series, the same
+signal frame enters at `100.5` under `same_bar` and `101.0` under `next_bar`,
+and that gap is pure look-ahead.
+
+!!! warning "Changed in the upcoming release"
+
+    The default was previously `"same_bar"`. Backtests re-run after upgrading
+    will report different, usually worse, numbers — that is the look-ahead
+    being removed. See the [changelog](../../changelog.md).
+
+---
+
+## 5. What you get back
 
 | Output | Contents |
 |--------|----------|
@@ -75,7 +111,7 @@ Full key list: see [Capability Matrix](capability_matrix.md#python-bt-api-surfac
 
 ---
 
-## 5. Next steps
+## 6. Next steps
 
 | Goal | Go to |
 |------|-------|

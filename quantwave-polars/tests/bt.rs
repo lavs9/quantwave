@@ -34,6 +34,32 @@ fn zero_cost_options(signal_col: &str) -> BtOptions {
     }
 }
 
+/// quantwave-zmjw: the `.bt` surface must inherit the honest T+1 default. A
+/// signal on bar 1 (close 101.0) fills at bar 2's close (102.5), never at 101.0.
+#[test]
+fn test_bt_default_execution_delay_is_next_bar() {
+    assert_eq!(
+        BtOptions::default().execution_delay,
+        quantwave_backtest::ExecutionDelay::NextBar,
+    );
+
+    let result = single_trade_df()
+        .lazy()
+        .bt()
+        .backtest(zero_cost_options("signal"))
+        .expect("default-delay run");
+
+    let entry = result
+        .trades
+        .column("entry_price")
+        .unwrap()
+        .f64()
+        .unwrap()
+        .get(0)
+        .unwrap();
+    assert_relative_eq!(entry, 102.5, epsilon = 1e-9);
+}
+
 #[test]
 fn test_bt_namespace_exists() {
     let lf = single_trade_df().lazy();
@@ -81,10 +107,17 @@ fn test_bt_backtest_custom_columns() {
 
 #[test]
 fn test_bt_backtest_with_report() {
+    // quantwave-zmjw: this asserts the report wiring on a *winning* trade, which
+    // on this rise-then-fall series only holds for a same-bar fill. The default is
+    // now T+1, so pin SameBar to keep the test's original intent intact.
+    let opts = BtOptions {
+        execution_delay: quantwave_backtest::ExecutionDelay::SameBar,
+        ..zero_cost_options("signal")
+    };
     let report = single_trade_df()
         .lazy()
         .bt()
-        .backtest_with_report(zero_cost_options("signal"))
+        .backtest_with_report(opts)
         .expect("report run");
 
     assert_eq!(report.result.trades.height(), 1);
