@@ -71,7 +71,37 @@ The streaming API is powered by the universal `Next<T>` trait. Every indicator i
 
 ## Warmup and NaN Semantics
 
-Most indicators need a **warmup period** before their output is meaningful. During warmup, batch columns typically contain `NaN` and streaming `next()` may return `NaN` until enough history is accumulated.
+Most indicators need a **warmup period** before their output is meaningful. During warmup, batch columns contain `NaN` and streaming `next()` returns `NaN` until enough history is accumulated.
+
+!!! danger "Warmup is `NaN`, not `null` — `drop_nulls()` does nothing"
+
+    This is the highest-surprise convention in QuantWave. Read it once and you
+    will save yourself a wrong backtest.
+
+    ```python
+    df = df.with_columns(pl.col("close").ta.rsi(14).alias("rsi"))
+
+    df["rsi"].null_count()   # 0   <- there are NO nulls
+    df["rsi"].is_nan().sum() # 14  <- the warmup is NaN
+
+    df.drop_nulls()          # SILENT NO-OP: all rows survive, warmup included
+    df.dropna()              # (pandas reflex) same trap
+    df.drop_nans()           # this one actually drops warmup
+    ```
+
+    Two consequences:
+
+    1. **`.drop_nulls()` / `.dropna()` is a complete no-op on indicator warmup.**
+       Warmup rows flow straight into backtests, feature matrices and
+       aggregations with no error raised anywhere.
+    2. **NaN comparisons are always `False`.** `NaN < 30` is `False`, so
+       `(pl.col("rsi") < 30).cast(pl.Float64)` yields `0.0` across the whole
+       warmup — indistinguishable from a genuine no-signal period. Your
+       strategy looks like it simply chose not to trade for 14 bars.
+
+    Use [`qw.trim_warmup()`](#trimming-warmup) instead. It is alignment-preserving:
+    `drop_nans()` drops rows per column set, so which rows disappear depends on
+    which columns you happen to be holding at the time.
 
 ```python
 import quantwave as qw
@@ -100,6 +130,43 @@ for price in closes:
 | Event / struct | Empty events or default structs early on | Market Structure, S/R monitor |
 
 Use `qw.assert_parity()` for batch vs streaming checks — it compares warmup bars for agreement, then enforces equality on post-warmup values.
+
+### Trimming warmup
+
+`qw.trim_warmup()` slices off the **maximum** warmup across every indicator you
+name, so columns with different warmups stay row-aligned:
+
+```python
+import polars as pl
+import quantwave as qw
+
+df = df.with_columns(
+    pl.col("close").ta.rsi(14).alias("rsi"),
+    pl.col("close").ta.ema(50).alias("ema"),
+)
+
+clean = df.pipe(qw.trim_warmup, "rsi", ("ema", {"period": 50}))
+# -> 50 leading rows dropped; rsi and ema are both finite from row 0, still aligned
+```
+
+Accepted spec forms, freely mixed:
+
+| Form | Example |
+|------|---------|
+| Indicator name | `qw.trim_warmup(df, "rsi")` |
+| Name + the params you called it with | `qw.trim_warmup(df, ("rsi", {"period": 21}))` |
+| Mapping | `qw.trim_warmup(df, {"rsi": {"period": 21}, "ema": {"period": 50}})` |
+| Explicit bar count (custom/derived columns) | `qw.trim_warmup(df, "rsi", 30)` |
+
+Options:
+
+- `extra=` — extra bars to drop for transforms chained *after* the indicator
+  (a `diff()`, a `shift()`), which add warmup QuantWave cannot see.
+- `strict=` — defaults to `True`: a misspelled indicator name raises instead of
+  silently contributing `0` bars and trimming nothing. Pass `strict=False` to opt out.
+
+Works on `DataFrame`, `LazyFrame` and `Series`. `qw.warmup_rows(*specs)` returns
+the row count on its own if you want to slice by hand.
 
 ## Discovery, categories & boundaries
 

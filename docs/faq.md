@@ -50,6 +50,28 @@ Every indicator implements Rust's `Next<T>` trait once. That same logic powers:
 
 → [Batch & streaming guide](examples/batch-streaming.md)
 
+## Why doesn't `drop_nulls()` remove the indicator warmup?
+
+Because QuantWave emits warmup as **`NaN`, not `null`**. `null_count()` on a
+fresh `rsi(14)` column is `0`, so `drop_nulls()` (and the pandas `dropna()`
+reflex) is a **silent no-op** — every warmup row survives and flows into
+backtests, feature matrices and aggregations with no error.
+
+It compounds: `NaN < 30` is `False`, so a comparison-derived signal reads `0.0`
+across the whole warmup, indistinguishable from a genuine no-signal period.
+
+Use `qw.trim_warmup()`, which slices the max warmup across all named indicators
+and keeps columns row-aligned:
+
+```python
+clean = df.pipe(qw.trim_warmup, "rsi", ("ema", {"period": 50}))
+```
+
+The `.bt` backtest methods also emit a `quantwave.WarmupWarning` when the signal
+or close column they receive starts with `NaN`/`null`.
+
+→ [Warmup and NaN semantics](getting-started/python.md#warmup-and-nan-semantics)
+
 ## How do I install QuantWave for Polars?
 
 ```bash

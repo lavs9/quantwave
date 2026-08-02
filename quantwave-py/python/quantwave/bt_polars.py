@@ -15,10 +15,54 @@ The Rust core matches ``quantwave-backtest`` used in native Polars Rust pipeline
 
 from __future__ import annotations
 
+import warnings
+
 import polars as pl
 
 from quantwave._backtest import BacktestConfig
 from quantwave.backtest import BacktestEngine
+from quantwave.warmup import WarmupWarning, leading_nan_count
+
+
+def _warn_on_warmup(df: pl.DataFrame, *, signal=None, close_col=None, method="backtest") -> None:
+    """Warn when a frame handed to the backtest still has leading NaN rows (4rsq).
+
+    QuantWave indicators emit warmup as NaN, not null, so ``drop_nulls()`` does
+    not remove it and warmup silently reaches the engine. This is a warning, not
+    an error — the backtest still runs exactly as before.
+
+    Never raises: a detection failure must not break a working backtest.
+    """
+    try:
+        cols = []
+        if isinstance(signal, str):
+            cols.append(("signal", signal))
+        elif isinstance(signal, (list, tuple)):
+            cols.extend(("signal", c) for c in signal if isinstance(c, str))
+        if isinstance(close_col, str):
+            cols.append(("close", close_col))
+
+        available = set(df.columns)
+        for role, name in cols:
+            if name not in available:
+                continue
+            n = leading_nan_count(df.get_column(name))
+            if n <= 0:
+                continue
+            warnings.warn(
+                f"{method}: {role} column {name!r} starts with {n} NaN/null row(s) — "
+                "these look like indicator warmup. QuantWave emits warmup as NaN, not "
+                "null, so drop_nulls() does NOT remove it and NaN comparisons silently "
+                "evaluate to False (a 0.0 signal is indistinguishable from a real "
+                "no-signal bar). Trim first, e.g. "
+                'df.pipe(quantwave.trim_warmup, "rsi", ("ema", {"period": 50})), '
+                "or use drop_nans(). Silence with "
+                "warnings.filterwarnings('ignore', category=quantwave.WarmupWarning).",
+                WarmupWarning,
+                stacklevel=3,
+            )
+    except Exception:  # pragma: no cover - detection must never break a backtest
+        pass
 
 
 def _config_from_kwargs(
@@ -144,7 +188,9 @@ class BtLazyNamespace:
             touched_exit=touched_exit,
             risk_model=risk_model,
         )
-        return BacktestEngine(config).run(self._ldf.collect())
+        df = self._ldf.collect()
+        _warn_on_warmup(df, signal=signal, close_col=close_col, method="backtest")
+        return BacktestEngine(config).run(df)
 
     def backtest_with_report(
         self,
@@ -239,7 +285,9 @@ class BtLazyNamespace:
             touched_exit=touched_exit,
             risk_model=risk_model,
         )
-        return BacktestEngine(config).backtest_with_report(self._ldf.collect())
+        df = self._ldf.collect()
+        _warn_on_warmup(df, signal=signal, close_col=close_col, method="backtest_with_report")
+        return BacktestEngine(config).backtest_with_report(df)
 
     def backtest_metrics(
         self,
@@ -281,7 +329,9 @@ class BtLazyNamespace:
             trailing_stop_pct=trailing_stop_pct,
             risk_model=risk_model,
         )
-        return BacktestEngine(config).run_metrics_only(self._ldf.collect())
+        df = self._ldf.collect()
+        _warn_on_warmup(df, signal=signal, close_col=close_col, method="backtest_metrics")
+        return BacktestEngine(config).run_metrics_only(df)
 
     def portfolio_backtest(
         self,
@@ -334,7 +384,9 @@ class BtLazyNamespace:
             portfolio_allocator=portfolio_allocator,
             rebalance_policy=rebalance_policy,
         )
-        return BacktestEngine(config).backtest_with_report(self._ldf.collect())
+        df = self._ldf.collect()
+        _warn_on_warmup(df, signal=signal, close_col=close_col, method="portfolio_backtest")
+        return BacktestEngine(config).backtest_with_report(df)
 
     def sweep(
         self,
@@ -471,8 +523,10 @@ class BtLazyNamespace:
             slippage_bps=slippage_bps,
             execution_delay=execution_delay,
         )
+        df = self._ldf.collect()
+        _warn_on_warmup(df, signal=signal, close_col=close_col, method="walk_forward")
         return run_walk_forward_py(
-            self._ldf.collect(),
+            df,
             config,
             train_bars,
             test_bars,
@@ -722,8 +776,10 @@ class BtLazyNamespace:
         from quantwave._backtest import order_backtest_py
 
         orders_df = orders.collect() if isinstance(orders, pl.LazyFrame) else orders
+        df = self._ldf.collect()
+        _warn_on_warmup(df, close_col=close_col, method="order_backtest")
         return order_backtest_py(
-            self._ldf.collect(),
+            df,
             orders_df,
             timestamp_col=timestamp_col,
             open_col=open_col,
@@ -782,7 +838,9 @@ class BtLazyNamespace:
             monte_carlo_trade_bootstrap_py,
         )
 
-        result = BacktestEngine(config).run(self._ldf.collect())
+        df = self._ldf.collect()
+        _warn_on_warmup(df, signal=signal, close_col=close_col, method="monte_carlo")
+        result = BacktestEngine(config).run(df)
         if mode == "return_paths":
             return monte_carlo_return_paths_py(
                 result._inner,
