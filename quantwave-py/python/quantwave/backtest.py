@@ -46,6 +46,21 @@ class BacktestResult:
         """Detailed performance metrics."""
         return PerformanceMetrics(**self._inner.metrics())
 
+    def diagnostics(self) -> dict:
+        """How far to trust :meth:`metrics` for this run.
+
+        Additive surface — :meth:`metrics` stays a fixed 10-key contract. Keys:
+
+        - ``low_sample_size`` (bool): fewer closed trades than
+          ``min_trades_for_reliable_ratios``, so ``sharpe_ratio`` /
+          ``sortino_ratio`` / ``profit_factor`` / ``win_rate`` are noise.
+        - ``num_trades`` (int), ``min_trades_for_reliable_ratios`` (int).
+        - ``undefined_metrics`` (list[str]): contract metrics that came back
+          ``nan`` because their denominator was empty.
+        - ``warnings`` (list[str]): human-readable summary; empty means clean.
+        """
+        return self._inner.diagnostics()
+
 class BacktestReport:
     """Full backtest report with detailed metrics."""
     def __init__(self, inner: _BacktestReport):
@@ -72,11 +87,29 @@ class BacktestReport:
 
     def extended_metrics(self) -> dict:
         """Additive metrics beyond the stable 10-key contract: adds
-        ``calmar_ratio``, ``var_95``, ``cvar_95``, and a ``benchmark`` key
-        (``None`` unless a benchmark series was supplied via
+        ``calmar_ratio``, ``var_95``, ``cvar_95``, ``diagnostics``, and a
+        ``benchmark`` key (``None`` unless a benchmark series was supplied via
         :meth:`metrics_with_benchmark`).
         """
         return self._inner.extended_metrics()
+
+    def diagnostics(self) -> dict:
+        """How far to trust :meth:`metrics` for this run.
+
+        Additive surface — :meth:`metrics` stays a fixed 10-key contract. Keys:
+
+        - ``low_sample_size`` (bool): fewer closed trades than
+          ``min_trades_for_reliable_ratios``, so ``sharpe_ratio`` /
+          ``sortino_ratio`` / ``profit_factor`` / ``win_rate`` are noise.
+        - ``num_trades`` (int), ``min_trades_for_reliable_ratios`` (int).
+        - ``undefined_metrics`` (list[str]): contract metrics that came back
+          ``nan`` because their denominator was empty.
+        - ``warnings`` (list[str]): human-readable summary; empty means clean.
+
+        A clean result is not a validation of the strategy — look-ahead bias and
+        overfitting are not detected here.
+        """
+        return self._inner.diagnostics()
 
     def metrics_with_benchmark(self, benchmark_returns: list[float]) -> dict:
         """Extended metrics with benchmark-relative analytics (alpha, beta,

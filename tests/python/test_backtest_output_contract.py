@@ -1,6 +1,21 @@
+import math
+
 import pytest
 import polars as pl
 import quantwave.bt_polars
+
+def _single_win_trade_df():
+    """Exactly one winning trade, no losers — the quantwave-s3iu repro.
+
+    Ratios computed off this run are noise; sortino/profit_factor are undefined.
+    """
+    return pl.DataFrame(
+        {
+            "timestamp": [1_700_000_000 + i * 3600 for i in range(5)],
+            "close": [100.0, 101.0, 102.0, 103.0, 104.0],
+            "signal": [0.0, 1.0, 1.0, 0.0, 0.0],
+        }
+    )
 
 def _loss_trade_df():
     """Trade that loses money to create drawdown."""
@@ -117,5 +132,49 @@ def test_backtest_contract_trades_schema_empty():
         "exit_ts", "exit_price", "exit_fill_price", "quantity", "pnl_net"
     ]
     assert len(trades) == 0
+
+
+# --- quantwave-s3iu: undefined ratios are NaN, and thin samples are flagged ---
+
+def test_undefined_ratios_are_nan_not_inf():
+    """No losing trades / no downside -> undefined, not 'infinitely good'."""
+    df = _single_win_trade_df()
+    result = df.lazy().bt.backtest_with_report(commission_bps=0.0, slippage_bps=0.0)
+    metrics = result.metrics()
+
+    pf = metrics["profit_factor"]
+    sortino = metrics["sortino_ratio"]
+
+    assert math.isnan(pf), f"profit_factor should be NaN, got {pf}"
+    assert not math.isinf(pf), "profit_factor must not be inf"
+    assert math.isnan(sortino), f"sortino_ratio should be NaN, got {sortino}"
+    assert not math.isinf(sortino), "sortino_ratio must not be inf"
+
+def test_metrics_contract_still_exactly_ten_keys_with_nan_values():
+    """NaN ratios must not change the key set."""
+    df = _single_win_trade_df()
+    result = df.lazy().bt.backtest_with_report(commission_bps=0.0, slippage_bps=0.0)
+    assert len(set(result.metrics().keys())) == 10
+
+def test_diagnostics_flags_thin_sample():
+    df = _single_win_trade_df()
+    result = df.lazy().bt.backtest_with_report(commission_bps=0.0, slippage_bps=0.0)
+
+    diag = result.diagnostics()
+    assert diag["low_sample_size"] is True
+    assert diag["min_trades_for_reliable_ratios"] == 30
+    assert diag["num_trades"] < 30
+    assert set(diag["undefined_metrics"]) == {"profit_factor", "sortino_ratio"}
+    assert len(diag["warnings"]) == 2
+    assert any("30" in w for w in diag["warnings"])
+
+def test_diagnostics_is_additive_not_on_metrics():
+    """The diagnostics surface must live off `.metrics()`, which stays 10 keys."""
+    df = _single_win_trade_df()
+    result = df.lazy().bt.backtest_with_report(commission_bps=0.0, slippage_bps=0.0)
+
+    assert "diagnostics" not in set(result.metrics().keys())
+    assert "low_sample_size" not in set(result.metrics().keys())
+    assert "diagnostics" in result.extended_metrics()
 
 

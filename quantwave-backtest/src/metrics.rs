@@ -15,6 +15,17 @@
 //! - **Win rate / profit factor / avg trade PnL**: aggregated from trade blotter
 //!   `pnl_net` column (clean-room).
 //!
+//! ## Undefined-ratio convention (quantwave-s3iu)
+//! `sortino_ratio` and `profit_factor` return `f64::NAN` — not `f64::INFINITY` —
+//! when their denominator is empty (no negative returns / no losing trades). An
+//! empty denominator means the ratio is undefined, not unboundedly good. Compare
+//! with `.is_nan()`; `NaN == NaN` is false.
+//!
+//! Ratio metrics are also statistically meaningless on thin samples. See
+//! [`MIN_TRADES_FOR_RELIABLE_RATIOS`] and [`PerformanceMetrics::diagnostics`] for
+//! the additive warning surface — `.metrics()` itself is a frozen 10-key contract
+//! and never gains keys.
+//!
 //! ## Formula sources (v2 — additive, quantwave-b5gr)
 //! - **Calmar ratio**: `CAGR / max_drawdown_pct` — standard return-over-pain
 //!   ratio ([Investopedia — Calmar Ratio](https://www.investopedia.com/terms/c/calmarratio.asp)).
@@ -30,6 +41,43 @@
 //!   for both strategy and benchmark return series (clean-room).
 
 use crate::BacktestResult;
+
+/// Minimum number of closed trades before the ratio-style metrics
+/// (`sharpe_ratio`, `sortino_ratio`, `profit_factor`, `win_rate`) carry enough
+/// statistical weight to be worth reading (quantwave-s3iu).
+///
+/// 30 is the conventional "small sample" cutoff. Below it a single lucky trade
+/// dominates every ratio — a one-trade run can print a Sharpe near 8 off $2 of
+/// profit. The threshold is advisory: metrics are still computed, but
+/// [`PerformanceMetrics::diagnostics`] flags the run as statistically thin.
+pub const MIN_TRADES_FOR_RELIABLE_RATIOS: usize = 30;
+
+/// Additive, opt-in trustworthiness report for a [`PerformanceMetrics`] bundle
+/// (quantwave-s3iu).
+///
+/// This is deliberately **not** part of `.metrics()` — that surface is a stable
+/// 10-key contract. Reach for it via [`PerformanceMetrics::diagnostics`] (Rust)
+/// or `.diagnostics()` / `.extended_metrics()["diagnostics"]` (Python).
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct MetricsDiagnostics {
+    /// `true` when `num_trades < MIN_TRADES_FOR_RELIABLE_RATIOS`.
+    pub low_sample_size: bool,
+    /// Closed-trade count the diagnostics were derived from.
+    pub num_trades: usize,
+    /// Threshold used (`MIN_TRADES_FOR_RELIABLE_RATIOS`), echoed for callers.
+    pub min_trades_for_reliable_ratios: usize,
+    /// Names of contract metrics that came back `NaN` (mathematically undefined).
+    pub undefined_metrics: Vec<&'static str>,
+    /// Human-readable warnings. Empty means nothing looked suspect.
+    pub warnings: Vec<String>,
+}
+
+impl MetricsDiagnostics {
+    /// `true` when there is nothing to warn about.
+    pub fn is_clean(&self) -> bool {
+        self.warnings.is_empty()
+    }
+}
 
 /// Bundle of raw backtest output plus computed analytics.
 #[derive(Debug)]
@@ -120,6 +168,73 @@ impl PerformanceMetrics {
     /// Iterate (column name, value) pairs for sweep row assembly.
     pub fn row_iter(&self) -> impl Iterator<Item = (&'static str, f64)> {
         Self::column_names().iter().copied().zip(self.values())
+    }
+
+    /// Bit-identical comparison of the 10 contract metrics that treats `NaN` as
+    /// equal to `NaN` (quantwave-s3iu).
+    ///
+    /// `sortino_ratio` and `profit_factor` are `NaN` when undefined, and the
+    /// derived [`PartialEq`] follows IEEE-754 — so two bundles computed from the
+    /// same run compare unequal. Use this when you mean "same metrics", and the
+    /// derived `==` when you mean IEEE equality.
+    pub fn eq_including_nan(&self, other: &Self) -> bool {
+        self.values()
+            .iter()
+            .zip(other.values().iter())
+            .all(|(a, b)| a == b || (a.is_nan() && b.is_nan()))
+    }
+
+    /// Trustworthiness diagnostics for this metrics bundle (quantwave-s3iu).
+    ///
+    /// Additive surface — computing it never changes `.metrics()`, which stays a
+    /// stable 10-key contract. Flags two things:
+    ///
+    /// 1. **Thin samples** — fewer than [`MIN_TRADES_FOR_RELIABLE_RATIOS`] closed
+    ///    trades, where Sharpe/Sortino/profit-factor/win-rate are dominated by
+    ///    noise from individual trades.
+    /// 2. **Undefined metrics** — contract metrics that are `NaN` because their
+    ///    denominator was empty (no losing trades, no downside deviation).
+    pub fn diagnostics(&self) -> MetricsDiagnostics {
+        let num_trades = if self.num_trades.is_finite() && self.num_trades > 0.0 {
+            self.num_trades as usize
+        } else {
+            0
+        };
+
+        let low_sample_size = num_trades < MIN_TRADES_FOR_RELIABLE_RATIOS;
+
+        let undefined_metrics: Vec<&'static str> = Self::column_names()
+            .iter()
+            .copied()
+            .zip(self.values())
+            .filter(|(_, v)| v.is_nan())
+            .map(|(name, _)| name)
+            .collect();
+
+        let mut warnings = Vec::new();
+        if low_sample_size {
+            warnings.push(format!(
+                "Only {num_trades} closed trade(s) — below the {MIN_TRADES_FOR_RELIABLE_RATIOS}-trade \
+                 threshold. sharpe_ratio, sortino_ratio, profit_factor and win_rate are \
+                 statistically unreliable at this sample size and should not be read as \
+                 evidence of edge."
+            ));
+        }
+        if !undefined_metrics.is_empty() {
+            warnings.push(format!(
+                "Undefined (NaN) metric(s): {}. Their denominator was empty \
+                 (e.g. no losing trades, or no downside deviation), so the ratio has no value.",
+                undefined_metrics.join(", ")
+            ));
+        }
+
+        MetricsDiagnostics {
+            low_sample_size,
+            num_trades,
+            min_trades_for_reliable_ratios: MIN_TRADES_FOR_RELIABLE_RATIOS,
+            undefined_metrics,
+            warnings,
+        }
     }
 
     /// Compute metrics from a [`BacktestResult`].
@@ -253,13 +368,7 @@ impl PerformanceMetrics {
         }
 
         let win_rate = wins / num_trades;
-        let profit_factor = if gross_loss > f64::EPSILON {
-            gross_profit / gross_loss
-        } else if gross_profit > f64::EPSILON {
-            f64::INFINITY
-        } else {
-            0.0
-        };
+        let profit_factor = compute_profit_factor(gross_profit, gross_loss);
         let avg_trade_pnl = sum_pnl / num_trades;
 
         let n_bars = equity.len();
@@ -342,17 +451,32 @@ fn aggregate_trade_stats(pnls: &[f64]) -> (f64, f64, f64) {
     let gross_profit: f64 = pnls.iter().filter(|&&p| p > 0.0).copied().sum();
     let gross_loss: f64 = pnls.iter().filter(|&&p| p < 0.0).map(|p| p.abs()).sum();
 
-    let profit_factor = if gross_loss > f64::EPSILON {
-        gross_profit / gross_loss
-    } else if gross_profit > f64::EPSILON {
-        f64::INFINITY
-    } else {
-        0.0
-    };
+    let profit_factor = compute_profit_factor(gross_profit, gross_loss);
 
     let avg_trade_pnl = pnls.iter().sum::<f64>() / n;
 
     (win_rate, profit_factor, avg_trade_pnl)
+}
+
+/// Profit factor: `gross_profit / gross_loss`, both positive magnitudes.
+///
+/// With **no losing trades** the denominator is empty and the ratio is
+/// mathematically undefined, so this returns `f64::NAN` rather than
+/// `f64::INFINITY` (quantwave-s3iu). `inf` reads like a measurement — an
+/// unboundedly good strategy — when the honest answer is that one winning trade
+/// and zero losers tells you nothing. `NaN` propagates and compares as
+/// "unknown", which is the truth. Callers must test with `.is_nan()`, not `==`.
+///
+/// When there is neither profit nor loss (no trades, or all trades exactly flat)
+/// the result is `0.0`, preserving the long-standing no-activity convention.
+fn compute_profit_factor(gross_profit: f64, gross_loss: f64) -> f64 {
+    if gross_loss > f64::EPSILON {
+        gross_profit / gross_loss
+    } else if gross_profit > f64::EPSILON {
+        f64::NAN
+    } else {
+        0.0
+    }
 }
 
 /// Peak-to-trough drawdown on the equity curve as a fraction (0.10 = 10%).
@@ -524,6 +648,15 @@ fn compute_sharpe(returns: &[f64]) -> f64 {
 }
 
 /// Sortino ratio: √252 × mean(returns) / downside deviation (negative returns only).
+///
+/// When there are **no negative returns** (or the downside deviation rounds to
+/// zero) the denominator is empty and the ratio is undefined, so this returns
+/// `f64::NAN` rather than `f64::INFINITY` (quantwave-s3iu). A run with no losing
+/// bar has not demonstrated infinite risk-adjusted return — it has produced no
+/// downside sample to divide by. Callers must test with `.is_nan()`, not `==`.
+///
+/// An empty return series (no equity curve at all) still yields `0.0`, matching
+/// the no-activity convention used elsewhere in this module.
 fn compute_sortino(returns: &[f64]) -> f64 {
     if returns.is_empty() {
         return 0.0;
@@ -531,12 +664,12 @@ fn compute_sortino(returns: &[f64]) -> f64 {
     let mean = returns.iter().sum::<f64>() / returns.len() as f64;
     let downside: Vec<f64> = returns.iter().copied().filter(|&r| r < 0.0).collect();
     if downside.is_empty() {
-        return f64::INFINITY;
+        return f64::NAN;
     }
     let downside_var = downside.iter().map(|r| r * r).sum::<f64>() / downside.len() as f64;
     let downside_std = downside_var.sqrt();
     if downside_std <= f64::EPSILON {
-        return f64::INFINITY;
+        return f64::NAN;
     }
     (mean / downside_std) * TRADING_DAYS_PER_YEAR.sqrt()
 }
@@ -691,5 +824,136 @@ mod additive_metrics_tests {
         let with_bench = base.with_benchmark(&returns, &returns);
         let b = with_bench.benchmark.expect("benchmark attached");
         assert!((b.beta - 1.0).abs() < 1e-9);
+    }
+}
+
+/// Undefined-ratio (`NaN`, not `inf`) and thin-sample diagnostics (quantwave-s3iu).
+#[cfg(test)]
+mod undefined_ratio_and_diagnostics_tests {
+    use super::*;
+
+    fn metrics_with(num_trades: f64, profit_factor: f64, sortino_ratio: f64) -> PerformanceMetrics {
+        PerformanceMetrics {
+            num_trades,
+            win_rate: 1.0,
+            profit_factor,
+            max_drawdown_pct: 0.0,
+            cagr: 0.0,
+            sharpe_ratio: 0.0,
+            sortino_ratio,
+            total_return: 0.0,
+            final_equity: 100_000.0,
+            avg_trade_pnl: 0.0,
+            calmar_ratio: 0.0,
+            var_95: 0.0,
+            cvar_95: 0.0,
+            benchmark: None,
+        }
+    }
+
+    #[test]
+    fn profit_factor_is_nan_when_there_are_no_losing_trades() {
+        // One winning trade, zero losers -> denominator empty -> undefined.
+        let pf = compute_profit_factor(2.0, 0.0);
+        assert!(pf.is_nan(), "expected NaN, got {pf}");
+        assert!(!pf.is_infinite(), "must not be inf");
+    }
+
+    #[test]
+    fn profit_factor_is_zero_when_there_is_neither_profit_nor_loss() {
+        assert_eq!(compute_profit_factor(0.0, 0.0), 0.0);
+    }
+
+    #[test]
+    fn profit_factor_is_finite_ratio_when_both_sides_present() {
+        assert!((compute_profit_factor(30.0, 10.0) - 3.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn aggregate_trade_stats_single_winner_yields_nan_profit_factor() {
+        let (win_rate, profit_factor, avg_trade_pnl) = aggregate_trade_stats(&[2.0]);
+        assert_eq!(win_rate, 1.0);
+        assert!(profit_factor.is_nan(), "expected NaN, got {profit_factor}");
+        assert!((avg_trade_pnl - 2.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn sortino_is_nan_when_no_negative_returns() {
+        let s = compute_sortino(&[0.01, 0.02, 0.0, 0.005]);
+        assert!(s.is_nan(), "expected NaN, got {s}");
+        assert!(!s.is_infinite(), "must not be inf");
+    }
+
+    #[test]
+    fn sortino_is_zero_for_empty_return_series() {
+        assert_eq!(compute_sortino(&[]), 0.0);
+    }
+
+    #[test]
+    fn sortino_is_finite_when_downside_exists() {
+        let s = compute_sortino(&[0.01, -0.02, 0.015, -0.005]);
+        assert!(s.is_finite(), "expected finite, got {s}");
+    }
+
+    #[test]
+    fn diagnostics_flag_thin_samples_below_threshold() {
+        let d = metrics_with(1.0, 1.5, 2.0).diagnostics();
+        assert!(d.low_sample_size);
+        assert_eq!(d.num_trades, 1);
+        assert_eq!(
+            d.min_trades_for_reliable_ratios,
+            MIN_TRADES_FOR_RELIABLE_RATIOS
+        );
+        assert!(!d.is_clean());
+        assert!(
+            d.warnings.iter().any(|w| w.contains("closed trade")),
+            "warnings = {:?}",
+            d.warnings
+        );
+    }
+
+    #[test]
+    fn diagnostics_are_clean_at_or_above_threshold() {
+        let d = metrics_with(MIN_TRADES_FOR_RELIABLE_RATIOS as f64, 1.5, 2.0).diagnostics();
+        assert!(!d.low_sample_size);
+        assert!(d.undefined_metrics.is_empty());
+        assert!(d.is_clean(), "warnings = {:?}", d.warnings);
+    }
+
+    #[test]
+    fn diagnostics_list_undefined_nan_metrics_by_name() {
+        let d = metrics_with(50.0, f64::NAN, f64::NAN).diagnostics();
+        assert!(!d.low_sample_size, "50 trades is above the threshold");
+        assert_eq!(d.undefined_metrics, vec!["profit_factor", "sortino_ratio"]);
+        assert!(
+            d.warnings.iter().any(|w| w.contains("Undefined (NaN)")),
+            "warnings = {:?}",
+            d.warnings
+        );
+    }
+
+    /// The reproduction from quantwave-s3iu: one winning trade, no losers.
+    /// Every ratio must now announce itself as undefined or thin, not stellar.
+    #[test]
+    fn single_winning_trade_reports_nan_ratios_and_a_thin_sample_warning() {
+        let m = metrics_with(
+            1.0,
+            compute_profit_factor(2.0, 0.0),
+            compute_sortino(&[0.01, 0.02]),
+        );
+        assert!(m.profit_factor.is_nan());
+        assert!(m.sortino_ratio.is_nan());
+
+        let d = m.diagnostics();
+        assert!(d.low_sample_size);
+        assert_eq!(d.undefined_metrics, vec!["profit_factor", "sortino_ratio"]);
+        assert_eq!(d.warnings.len(), 2, "warnings = {:?}", d.warnings);
+    }
+
+    /// `.metrics()` must stay exactly 10 keys — diagnostics live elsewhere.
+    #[test]
+    fn contract_remains_exactly_ten_keys() {
+        assert_eq!(PerformanceMetrics::column_names().len(), 10);
+        assert_eq!(metrics_with(1.0, 1.0, 1.0).values().len(), 10);
     }
 }

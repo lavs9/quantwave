@@ -3,8 +3,28 @@ via ``.bt.backtest()`` / ``.bt.backtest_with_report()`` / ``.bt.backtest_metrics
 and ``.bt.portfolio_backtest()`` (quantwave-bbhb).
 """
 
+import math
+
 import polars as pl
 import quantwave  # noqa: F401  (registers .bt)
+
+
+def assert_same_metrics(left, right):
+    """Assert two metric bundles are identical, treating ``nan`` as equal.
+
+    ``sortino_ratio`` / ``profit_factor`` are ``nan`` when undefined
+    (quantwave-s3iu), and ``nan != nan``, so a plain ``==`` on the dataclass
+    reports a spurious difference. These tests mean "the two runs produced the
+    same numbers", which is what this checks.
+    """
+    lk = dict(left) if isinstance(left, dict) else dict(left.as_dict())
+    rk = dict(right) if isinstance(right, dict) else dict(right.as_dict())
+    assert lk.keys() == rk.keys(), f"key sets differ: {lk.keys()} vs {rk.keys()}"
+    for k in lk:
+        a, b = lk[k], rk[k]
+        if isinstance(a, float) and isinstance(b, float) and math.isnan(a) and math.isnan(b):
+            continue
+        assert a == b, f"{k}: {a} != {b}"
 
 
 def _trend_df(n: int = 40) -> pl.LazyFrame:
@@ -60,7 +80,7 @@ def test_risk_model_none_matches_default_behavior():
         risk_model=None,
     )
 
-    assert baseline.metrics() == explicit_none.metrics()
+    assert_same_metrics(baseline.metrics(), explicit_none.metrics())
     assert baseline.result.trades.equals(explicit_none.result.trades)
     assert baseline.result.equity_curve.equals(explicit_none.result.equity_curve)
 
@@ -71,7 +91,7 @@ def test_backtest_raw_risk_model_none_matches_default():
     baseline = df.bt.backtest(commission_bps=5.0, slippage_bps=2.0)
     explicit_none = df.bt.backtest(commission_bps=5.0, slippage_bps=2.0, risk_model=None)
 
-    assert baseline.metrics() == explicit_none.metrics()
+    assert_same_metrics(baseline.metrics(), explicit_none.metrics())
     assert baseline.trades.equals(explicit_none.trades)
 
 
@@ -83,7 +103,7 @@ def test_backtest_metrics_risk_model_none_matches_default():
         commission_bps=5.0, slippage_bps=2.0, risk_model=None
     )
 
-    assert baseline == explicit_none
+    assert_same_metrics(baseline, explicit_none)
 
 
 def _multi_symbol_df() -> pl.LazyFrame:
@@ -133,7 +153,7 @@ def test_rebalance_policy_none_matches_default():
         rebalance_policy=None,
     )
 
-    assert baseline.metrics() == explicit_none.metrics()
+    assert_same_metrics(baseline.metrics(), explicit_none.metrics())
     assert baseline.result.trades.equals(explicit_none.result.trades)
 
 

@@ -316,10 +316,32 @@ fn benchmark_metrics_to_dict<'py>(
     Ok(dict)
 }
 
+/// Statistical-trustworthiness diagnostics for a metrics bundle (quantwave-s3iu).
+///
+/// Additive surface only — never merged into `metrics_to_dict`, whose 10 keys are
+/// a frozen, test-enforced contract.
+fn diagnostics_to_dict<'py>(
+    py: Python<'py>,
+    m: &PerformanceMetrics,
+) -> PyResult<Bound<'py, PyDict>> {
+    let d = m.diagnostics();
+    let dict = PyDict::new(py);
+    dict.set_item("low_sample_size", d.low_sample_size)?;
+    dict.set_item("num_trades", d.num_trades)?;
+    dict.set_item(
+        "min_trades_for_reliable_ratios",
+        d.min_trades_for_reliable_ratios,
+    )?;
+    dict.set_item("undefined_metrics", d.undefined_metrics)?;
+    dict.set_item("warnings", d.warnings)?;
+    Ok(dict)
+}
+
 /// Extended (additive, quantwave-b5gr) metrics: base 10 keys plus
-/// `calmar_ratio` / `var_95` / `cvar_95`, and a nested `benchmark` dict when
-/// benchmark-relative analytics are attached. Opt-in surface — `.metrics()`
-/// keeps its original 10-key contract untouched.
+/// `calmar_ratio` / `var_95` / `cvar_95`, a nested `benchmark` dict when
+/// benchmark-relative analytics are attached, and a `diagnostics` dict
+/// (quantwave-s3iu). Opt-in surface — `.metrics()` keeps its original 10-key
+/// contract untouched.
 fn extended_metrics_to_dict<'py>(
     py: Python<'py>,
     m: &PerformanceMetrics,
@@ -328,6 +350,7 @@ fn extended_metrics_to_dict<'py>(
     dict.set_item("calmar_ratio", m.calmar_ratio)?;
     dict.set_item("var_95", m.var_95)?;
     dict.set_item("cvar_95", m.cvar_95)?;
+    dict.set_item("diagnostics", diagnostics_to_dict(py, m)?)?;
     match &m.benchmark {
         Some(b) => dict.set_item("benchmark", benchmark_metrics_to_dict(py, b)?)?,
         None => dict.set_item("benchmark", py.None())?,
@@ -513,10 +536,16 @@ impl PyBacktestResult {
         metrics_to_dict(py, &self.inner.metrics())
     }
 
-    /// Extended metrics (calmar_ratio, var_95, cvar_95, benchmark=None) — additive
-    /// surface alongside `.metrics()` (quantwave-b5gr).
+    /// Extended metrics (calmar_ratio, var_95, cvar_95, diagnostics, benchmark=None)
+    /// — additive surface alongside `.metrics()` (quantwave-b5gr).
     fn extended_metrics<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
         extended_metrics_to_dict(py, &self.inner.metrics())
+    }
+
+    /// Statistical-trustworthiness diagnostics for this run (quantwave-s3iu):
+    /// thin-sample warnings and undefined (NaN) metrics.
+    fn diagnostics<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        diagnostics_to_dict(py, &self.inner.metrics())
     }
 
     /// Extended metrics with benchmark-relative analytics (alpha/beta/cumulative
@@ -559,10 +588,16 @@ impl PyBacktestReport {
         metrics_to_dict(py, &self.inner.metrics)
     }
 
-    /// Extended metrics (calmar_ratio, var_95, cvar_95, benchmark=None) — additive
-    /// surface alongside `.metrics()` (quantwave-b5gr).
+    /// Extended metrics (calmar_ratio, var_95, cvar_95, diagnostics, benchmark=None)
+    /// — additive surface alongside `.metrics()` (quantwave-b5gr).
     fn extended_metrics<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
         extended_metrics_to_dict(py, &self.inner.metrics)
+    }
+
+    /// Statistical-trustworthiness diagnostics for this run (quantwave-s3iu):
+    /// thin-sample warnings and undefined (NaN) metrics.
+    fn diagnostics<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        diagnostics_to_dict(py, &self.inner.metrics)
     }
 
     /// Extended metrics with benchmark-relative analytics (alpha/beta/cumulative
