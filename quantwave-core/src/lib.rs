@@ -61,6 +61,7 @@ pub use indicators::market_structure::{
     Bias, FlipEvent, MarketStructure, MarketStructureState, PAEvent, PAEventKind, SwingPoint,
     extract_all_pa_events, extract_pa_events,
 };
+pub use indicators::ma_type::{InvalidMaType, MaType};
 pub use indicators::math::*;
 pub use indicators::momentum::*;
 pub use indicators::obvm::Obvm;
@@ -107,5 +108,6 @@ pub use indicators::wavetrend::WaveTrend;
 pub use streaming::{StreamingReadiness, TrackedNext, track, warmup_from_params};
 pub use traits::{IndicatorConfig, Next, SmoothingAlgorithm};
 
-/// Re-export talib-rs for convenience
-pub use talib_rs as talib;
+// NOTE: `pub use talib_rs as talib;` was removed — talib-rs is a parity oracle
+// used from `#[cfg(test)]` and `benches/`, never from the shipped library
+// surface. Use `quantwave_core::MaType` instead of `quantwave_core::talib::MaType`.

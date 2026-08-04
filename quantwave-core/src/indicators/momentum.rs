@@ -194,13 +194,13 @@ mod tests {
 
             let fastk = 5;
             let slowk = 3;
-            let slowk_ma = talib_rs::MaType::Sma;
+            let slowk_ma = crate::indicators::ma_type::MaType::Sma;
             let slowd = 3;
-            let slowd_ma = talib_rs::MaType::Sma;
+            let slowd_ma = crate::indicators::ma_type::MaType::Sma;
 
             let mut stoch = STOCH::new(fastk, slowk, slowk_ma, slowd, slowd_ma);
             let streaming_results: Vec<(f64, f64)> = (0..len).map(|i| stoch.next((high[i], low[i], close[i]))).collect();
-            let (b_k, b_d) = talib_rs::momentum::stoch(&high, &low, &close, fastk, slowk, slowk_ma, slowd, slowd_ma).unwrap_or_else(|_| {
+            let (b_k, b_d) = talib_rs::momentum::stoch(&high, &low, &close, fastk, slowk, slowk_ma.into(), slowd, slowd_ma.into()).unwrap_or_else(|_| {
                 (vec![f64::NAN; len], vec![f64::NAN; len])
             });
 

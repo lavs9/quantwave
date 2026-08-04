@@ -4,19 +4,8 @@ use quantwave_core::traits::Next;
 use quantwave_core::*;
 use serde::Deserialize;
 
-fn u8_to_matype(matype: u8) -> talib::MaType {
-    match matype {
-        0 => talib::MaType::Sma,
-        1 => talib::MaType::Ema,
-        2 => talib::MaType::Wma,
-        3 => talib::MaType::Dema,
-        4 => talib::MaType::Tema,
-        5 => talib::MaType::Trima,
-        6 => talib::MaType::Kama,
-        7 => talib::MaType::Mama,
-        8 => talib::MaType::T3,
-        _ => talib::MaType::Sma,
-    }
+fn u8_to_matype(matype: u8) -> MaType {
+    MaType::from_u8_or_sma(matype)
 }
 
 // 1. MAVP

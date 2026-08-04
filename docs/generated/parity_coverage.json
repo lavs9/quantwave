@@ -1,6 +1,6 @@
 {
   "indicator_count": 221,
-  "parity_proptest_count": 214,
+  "parity_proptest_count": 215,
   "exemption_count": 7,
   "gap_count": 0,
   "gaps": [],
@@ -1752,7 +1752,7 @@
     {
       "slug": "wma",
       "source_file": "smoothing",
-      "parity_proptest": null,
+      "parity_proptest": "quantwave-core/src/indicators/incremental/talib_wma.rs",
       "exempt": true,
       "gold_gap": null,
       "status": "ok"

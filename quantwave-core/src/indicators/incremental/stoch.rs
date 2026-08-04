@@ -2,9 +2,9 @@
 
 use crate::indicators::incremental::ma_stream::MaStream;
 use crate::indicators::incremental::rsi::RSI;
+use crate::indicators::ma_type::MaType;
 use crate::traits::Next;
 use crate::utils::RingBuffer;
-use talib_rs::MaType;
 
 /// Rolling highest high / lowest low over `period` bars.
 #[derive(Debug, Clone)]
@@ -299,6 +299,57 @@ mod tests {
     use super::*;
     use proptest::prelude::*;
 
+    /// `MaType`s whose lookback is exactly `period - 1`.
+    ///
+    /// `talib_rs::momentum::stoch` (and `stochf` / `stochrsi`) slice the NaN
+    /// prefix off the smoothed %K with the hard-coded length `slowk_period - 1`
+    /// rather than the selected MA's real lookback. For SMA/EMA/WMA/TRIMA that
+    /// is the same number and the oracle is meaningful. For DEMA/TEMA/KAMA/
+    /// MAMA/T3 the batch keeps NaNs inside the "valid" slice and then smooths
+    /// them, so the oracle's own output is NaN-poisoned garbage — there is
+    /// nothing coherent to assert parity against. Our streaming path uses each
+    /// MA's true warmup instead. Tracked for an upstream fix; do not "fix" the
+    /// streaming side to reproduce the poisoning.
+    const STOCH_PARITY_MATYPES: [MaType; 4] =
+        [MaType::Sma, MaType::Ema, MaType::Wma, MaType::Trima];
+
+    fn hlc(
+        len: usize,
+        highs: &[f64],
+        lows: &[f64],
+        closes: &[f64],
+    ) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
+        let mut high = Vec::with_capacity(len);
+        let mut low = Vec::with_capacity(len);
+        let mut close = Vec::with_capacity(len);
+        for i in 0..len {
+            let (h, l, c): (f64, f64, f64) = (highs[i], lows[i], closes[i]);
+            high.push(h.max(l).max(c));
+            low.push(h.min(l).min(c));
+            close.push(c);
+        }
+        (high, low, close)
+    }
+
+    fn assert_pair_parity(streaming: &[(f64, f64)], b_k: &[f64], b_d: &[f64], label: &str) {
+        for (i, &(s_k, s_d)) in streaming.iter().enumerate() {
+            for (s, b, name) in [(s_k, b_k[i], "k"), (s_d, b_d[i], "d")] {
+                if s.is_nan() {
+                    assert!(
+                        b.is_nan(),
+                        "{label} bar {i} {name}: streaming NaN, batch {b}"
+                    );
+                } else {
+                    assert!(
+                        !b.is_nan(),
+                        "{label} bar {i} {name}: streaming {s}, batch NaN"
+                    );
+                    approx::assert_relative_eq!(s, b, epsilon = 1e-6);
+                }
+            }
+        }
+    }
+
     proptest! {
         #[test]
         fn test_stoch_parity(
@@ -308,17 +359,7 @@ mod tests {
         ) {
             let len = highs.len().min(lows.len()).min(closes.len());
             if len < 20 { return Ok(()); }
-            let mut high = Vec::with_capacity(len);
-            let mut low = Vec::with_capacity(len);
-            let mut close = Vec::with_capacity(len);
-            for i in 0..len {
-                let val_h: f64 = highs[i];
-                let val_l: f64 = lows[i];
-                let val_c: f64 = closes[i];
-                high.push(val_h.max(val_l).max(val_c));
-                low.push(val_h.min(val_l).min(val_c));
-                close.push(val_c);
-            }
+            let (high, low, close) = hlc(len, &highs, &lows, &closes);
 
             let fastk = 5;
             let slowk = 3;
@@ -331,16 +372,73 @@ mod tests {
                 .map(|i| stoch.next((high[i], low[i], close[i])))
                 .collect();
             let (b_k, b_d) = talib_rs::momentum::stoch(
-                &high, &low, &close, fastk, slowk, slowk_ma, slowd, slowd_ma,
+                &high, &low, &close, fastk, slowk, slowk_ma.into(), slowd, slowd_ma.into(),
             )
             .unwrap_or_else(|_| (vec![f64::NAN; len], vec![f64::NAN; len]));
 
-            for (i, (s_k, s_d)) in streaming.into_iter().enumerate() {
-                if s_k.is_nan() { assert!(b_k[i].is_nan()); }
-                else { approx::assert_relative_eq!(s_k, b_k[i], epsilon = 1e-6); }
-                if s_d.is_nan() { assert!(b_d[i].is_nan()); }
-                else { approx::assert_relative_eq!(s_d, b_d[i], epsilon = 1e-6); }
+            assert_pair_parity(&streaming, &b_k, &b_d, "stoch/sma");
+        }
+
+        /// STOCH and STOCHF smooth through `MaStream`, so `slowk_matype` /
+        /// `fastd_matype` were silently ignored for everything except EMA.
+        #[test]
+        fn test_stoch_family_parity_matypes(
+            highs in prop::collection::vec(1.0..100.0, 60..120),
+            lows in prop::collection::vec(1.0..100.0, 60..120),
+            closes in prop::collection::vec(1.0..100.0, 60..120),
+            idx in 0usize..4,
+        ) {
+            let matype = STOCH_PARITY_MATYPES[idx];
+            let len = highs.len().min(lows.len()).min(closes.len());
+            let (high, low, close) = hlc(len, &highs, &lows, &closes);
+            let (fastk, slowk, slowd) = (5usize, 3usize, 3usize);
+
+            let mut stoch = STOCH::new(fastk, slowk, matype, slowd, matype);
+            let streaming: Vec<(f64, f64)> = (0..len)
+                .map(|i| stoch.next((high[i], low[i], close[i])))
+                .collect();
+            let (b_k, b_d) = talib_rs::momentum::stoch(
+                &high, &low, &close, fastk, slowk, matype.into(), slowd, matype.into(),
+            )
+            .unwrap_or_else(|_| (vec![f64::NAN; len], vec![f64::NAN; len]));
+            assert_pair_parity(&streaming, &b_k, &b_d, &format!("stoch/{matype}"));
+
+            let mut stochf = STOCHF::new(fastk, slowd, matype);
+            let streaming: Vec<(f64, f64)> = (0..len)
+                .map(|i| stochf.next((high[i], low[i], close[i])))
+                .collect();
+            let (b_k, b_d) = talib_rs::momentum::stochf(
+                &high, &low, &close, fastk, slowd, matype.into(),
+            )
+            .unwrap_or_else(|_| (vec![f64::NAN; len], vec![f64::NAN; len]));
+            assert_pair_parity(&streaming, &b_k, &b_d, &format!("stochf/{matype}"));
+        }
+    }
+
+    /// The `matype` argument must actually reach the smoothing stage.
+    #[test]
+    fn stoch_matype_changes_output() {
+        let bars: Vec<(f64, f64, f64)> = (0..200)
+            .map(|i| {
+                let c = 50.0 + 10.0 * (i as f64 * 0.3).sin();
+                (c + 1.0, c - 1.0, c)
+            })
+            .collect();
+        let run = |m: MaType| {
+            let mut s = STOCH::new(5, 3, m, 3, m);
+            bars.iter().map(|&b| s.next(b)).collect::<Vec<_>>()
+        };
+        let sma = run(MaType::Sma);
+        for matype in MaType::ALL {
+            if matype == MaType::Sma {
+                continue;
             }
+            let got = run(matype);
+            let identical = got.iter().zip(sma.iter()).all(|(a, b)| {
+                ((a.0.is_nan() && b.0.is_nan()) || (a.0 - b.0).abs() < 1e-12)
+                    && ((a.1.is_nan() && b.1.is_nan()) || (a.1 - b.1).abs() < 1e-12)
+            });
+            assert!(!identical, "STOCH with {matype} still produces SMA values");
         }
     }
 }

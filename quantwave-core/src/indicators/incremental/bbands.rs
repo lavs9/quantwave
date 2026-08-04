@@ -1,12 +1,24 @@
-//! Native O(1) Bollinger Bands (SMA middle) — TA-Lib parity.
+//! Native Bollinger Bands — TA-Lib parity, incremental for every `matype`.
+//!
+//! Both paths are streaming and bounded-memory:
+//! * `MaType::Sma` — O(1) per bar via a sliding `sum` / `sum_sq`.
+//! * every other `MaType` — the middle band comes from [`MaStream`], and the
+//!   deviation is a two-pass sum of squared deviations over a rolling window of
+//!   `timeperiod` inputs (O(timeperiod) per bar), exactly as the batch
+//!   `talib_rs::overlap::bbands` non-SMA path computes it.
+//!
+//! The non-SMA path used to push every bar onto an ever-growing `history` and
+//! re-run the *batch* `bbands` over the whole thing, i.e. O(n) per bar / O(n²)
+//! per series plus an unbounded memory leak in long-running streams.
 
+use crate::indicators::incremental::ma_stream::MaStream;
 use crate::indicators::incremental::utils::RingBuffer;
+use crate::indicators::ma_type::MaType;
 use crate::traits::Next;
-use talib_rs::MaType;
 
 const NAN_TRIPLE: (f64, f64, f64) = (f64::NAN, f64::NAN, f64::NAN);
 
-/// Bollinger Bands — matches `talib_rs::overlap::bbands` (SMA path O(1); other `matype` via batch on history).
+/// Bollinger Bands — matches `talib_rs::overlap::bbands` for every `matype`.
 #[derive(Debug, Clone)]
 #[allow(non_camel_case_types)]
 pub struct BBANDS {
@@ -14,10 +26,14 @@ pub struct BBANDS {
     pub nbdevup: f64,
     pub nbdevdn: f64,
     pub matype: MaType,
+    /// Rolling window of the last `timeperiod` inputs (both paths).
     window: RingBuffer<f64>,
+    // --- SMA fast path ---
     sum: f64,
     sum_sq: f64,
-    history: Vec<f64>,
+    // --- non-SMA path ---
+    ma: Option<MaStream>,
+    bars_seen: usize,
 }
 
 impl BBANDS {
@@ -30,7 +46,8 @@ impl BBANDS {
             window: RingBuffer::with_capacity(timeperiod.max(1)),
             sum: 0.0,
             sum_sq: 0.0,
-            history: Vec::new(),
+            ma: (matype != MaType::Sma).then(|| MaStream::new(timeperiod, matype)),
+            bars_seen: 0,
         }
     }
 
@@ -46,20 +63,28 @@ impl BBANDS {
         (upper, ma_val, lower)
     }
 
+    /// Push onto the rolling window, evicting the oldest value once full.
+    #[inline]
+    fn push_window(&mut self, input: f64) -> Option<f64> {
+        let evicted = if self.window.len() == self.timeperiod {
+            self.window.pop_front()
+        } else {
+            None
+        };
+        self.window.push_back(input);
+        evicted
+    }
+
     fn next_sma(&mut self, input: f64) -> (f64, f64, f64) {
         let tp = self.timeperiod;
         if tp == 0 {
             return NAN_TRIPLE;
         }
 
-        if self.window.len() == tp
-            && let Some(old) = self.window.pop_front()
-        {
+        if let Some(old) = self.push_window(input) {
             self.sum -= old;
             self.sum_sq -= old * old;
         }
-
-        self.window.push_back(input);
         self.sum += input;
         self.sum_sq += input * input;
 
@@ -70,23 +95,47 @@ impl BBANDS {
         self.bands_from_sums()
     }
 
-    fn next_fallback(&mut self, input: f64) -> (f64, f64, f64) {
-        self.history.push(input);
-        let (u, m, l) = talib_rs::overlap::bbands(
-            &self.history,
-            self.timeperiod,
-            self.nbdevup,
-            self.nbdevdn,
-            self.matype,
-        )
-        .unwrap_or_else(|_| {
-            let n = self.history.len();
-            (vec![f64::NAN; n], vec![f64::NAN; n], vec![f64::NAN; n])
-        });
+    fn next_non_sma(&mut self, input: f64) -> (f64, f64, f64) {
+        let tp = self.timeperiod;
+        if tp == 0 {
+            return NAN_TRIPLE;
+        }
+        let i = self.bars_seen;
+        self.bars_seen += 1;
+
+        self.push_window(input);
+        let ma_val = match self.ma {
+            Some(ref mut ma) => ma.next(input),
+            None => return NAN_TRIPLE,
+        };
+
+        if i + 1 < tp {
+            // Before `lookback = timeperiod - 1` the batch fills NaN everywhere.
+            return NAN_TRIPLE;
+        }
+        if ma_val.is_nan() {
+            // Past the BBANDS lookback but still inside the MA's own (longer)
+            // warmup — e.g. DEMA/TEMA/T3/MAMA. The batch leaves the zero-
+            // initialised band values in place here and writes NaN only into
+            // the middle band, so reproduce exactly that rather than inventing
+            // a different warmup convention. See the `continue` in the non-SMA
+            // loop of `talib_rs::overlap::bbands`.
+            return (0.0, f64::NAN, 0.0);
+        }
+
+        // Two-pass deviation about the MA value over the rolling window. Matches
+        // the batch `sum_sq_diff(window, ma_val)` and is the numerically stable
+        // form quantwave-qkft wants everywhere (no E[X²] - E[X]² cancellation).
+        let mut sum_sq_diff = 0.0;
+        for &v in self.window.iter() {
+            let d = v - ma_val;
+            sum_sq_diff += d * d;
+        }
+        let stddev = (sum_sq_diff / tp as f64).max(0.0).sqrt();
         (
-            *u.last().unwrap_or(&f64::NAN),
-            *m.last().unwrap_or(&f64::NAN),
-            *l.last().unwrap_or(&f64::NAN),
+            ma_val + self.nbdevup * stddev,
+            ma_val,
+            ma_val - self.nbdevdn * stddev,
         )
     }
 }
@@ -98,7 +147,7 @@ impl Next<f64> for BBANDS {
         if self.matype == MaType::Sma {
             self.next_sma(input)
         } else {
-            self.next_fallback(input)
+            self.next_non_sma(input)
         }
     }
 }
@@ -108,48 +157,79 @@ mod tests {
     use super::*;
     use proptest::prelude::*;
 
-    proptest! {
-        #[test]
-        fn test_bbands_parity(input in prop::collection::vec(0.1..100.0, 1..100)) {
-            let period = 10;
-            let nbdevup = 2.0;
-            let nbdevdn = 2.0;
-            let matype = MaType::Sma;
-            let mut bbands = BBANDS::new(period, nbdevup, nbdevdn, matype);
-            let streaming_results: Vec<(f64, f64, f64)> =
-                input.iter().map(|&x| bbands.next(x)).collect();
-            let (b_upper, b_middle, b_lower) = talib_rs::overlap::bbands(
-                &input,
-                period,
-                nbdevup,
-                nbdevdn,
-                matype,
-            )
-            .unwrap_or_else(|_| {
+    fn batch_bbands(
+        input: &[f64],
+        period: usize,
+        nbdevup: f64,
+        nbdevdn: f64,
+        matype: MaType,
+    ) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
+        talib_rs::overlap::bbands(input, period, nbdevup, nbdevdn, matype.into()).unwrap_or_else(
+            |_| {
                 (
                     vec![f64::NAN; input.len()],
                     vec![f64::NAN; input.len()],
                     vec![f64::NAN; input.len()],
                 )
-            });
+            },
+        )
+    }
 
-            for (i, (s_upper, s_middle, s_lower)) in streaming_results.into_iter().enumerate() {
-                if s_upper.is_nan() {
-                    assert!(b_upper[i].is_nan());
+    fn assert_parity(streaming: &[(f64, f64, f64)], batch: &(Vec<f64>, Vec<f64>, Vec<f64>)) {
+        let (b_upper, b_middle, b_lower) = batch;
+        for (i, &(s_upper, s_middle, s_lower)) in streaming.iter().enumerate() {
+            for (s, b, name) in [
+                (s_upper, b_upper[i], "upper"),
+                (s_middle, b_middle[i], "middle"),
+                (s_lower, b_lower[i], "lower"),
+            ] {
+                if s.is_nan() {
+                    assert!(b.is_nan(), "bar {i} {name}: streaming NaN, batch {b}");
                 } else {
-                    approx::assert_relative_eq!(s_upper, b_upper[i], epsilon = 1e-6);
-                }
-                if s_middle.is_nan() {
-                    assert!(b_middle[i].is_nan());
-                } else {
-                    approx::assert_relative_eq!(s_middle, b_middle[i], epsilon = 1e-6);
-                }
-                if s_lower.is_nan() {
-                    assert!(b_lower[i].is_nan());
-                } else {
-                    approx::assert_relative_eq!(s_lower, b_lower[i], epsilon = 1e-6);
+                    assert!(!b.is_nan(), "bar {i} {name}: streaming {s}, batch NaN");
+                    approx::assert_relative_eq!(s, b, epsilon = 1e-6);
                 }
             }
         }
+    }
+
+    proptest! {
+        #[test]
+        fn test_bbands_parity(input in prop::collection::vec(0.1..100.0, 1..100)) {
+            let period = 10;
+            let matype = MaType::Sma;
+            let mut bbands = BBANDS::new(period, 2.0, 2.0, matype);
+            let streaming: Vec<(f64, f64, f64)> =
+                input.iter().map(|&x| bbands.next(x)).collect();
+            assert_parity(&streaming, &batch_bbands(&input, period, 2.0, 2.0, matype));
+        }
+
+        /// Regression coverage for the non-SMA path: the old suite only ever
+        /// exercised `MaType::Sma`, which is why an O(n)-per-bar batch call hid
+        /// inside `next()` for every other matype. Lengths start past the
+        /// longest MA warmup (MAMA's 32, TEMA's 3*(p-1)) so the batch oracle
+        /// returns real values rather than an `InsufficientData` error.
+        #[test]
+        fn test_bbands_parity_all_matypes(
+            input in prop::collection::vec(0.1..100.0, 120..200),
+            idx in 0usize..9,
+        ) {
+            let matype = MaType::ALL[idx];
+            let period = 10;
+            let mut bbands = BBANDS::new(period, 2.0, 2.5, matype);
+            let streaming: Vec<(f64, f64, f64)> =
+                input.iter().map(|&x| bbands.next(x)).collect();
+            assert_parity(&streaming, &batch_bbands(&input, period, 2.0, 2.5, matype));
+        }
+    }
+
+    /// The non-SMA path must not retain more than `timeperiod` samples.
+    #[test]
+    fn non_sma_window_is_bounded() {
+        let mut bbands = BBANDS::new(10, 2.0, 2.0, MaType::Wma);
+        for i in 0..10_000 {
+            bbands.next(50.0 + (i as f64 * 0.01).sin());
+        }
+        assert_eq!(bbands.window.len(), 10);
     }
 }

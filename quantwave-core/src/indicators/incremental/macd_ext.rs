@@ -2,8 +2,8 @@
 
 use crate::indicators::incremental::ma_stream::MaStream;
 use crate::indicators::incremental::macd::MACD;
+use crate::indicators::ma_type::MaType;
 use crate::traits::Next;
-use talib_rs::MaType;
 
 const NAN_TRIPLE: (f64, f64, f64) = (f64::NAN, f64::NAN, f64::NAN);
 
@@ -191,6 +191,32 @@ mod tests {
     use super::*;
     use proptest::prelude::*;
 
+    type Triples = (Vec<f64>, Vec<f64>, Vec<f64>);
+
+    fn assert_parity(streaming: &[(f64, f64, f64)], batch: &Triples, label: &str) {
+        let (b_macd, b_signal, b_hist) = batch;
+        for (i, &(s_m, s_s, s_h)) in streaming.iter().enumerate() {
+            for (s, b, name) in [
+                (s_m, b_macd[i], "macd"),
+                (s_s, b_signal[i], "signal"),
+                (s_h, b_hist[i], "hist"),
+            ] {
+                if s.is_nan() {
+                    assert!(
+                        b.is_nan(),
+                        "{label} bar {i} {name}: streaming NaN, batch {b}"
+                    );
+                } else {
+                    assert!(
+                        !b.is_nan(),
+                        "{label} bar {i} {name}: streaming {s}, batch NaN"
+                    );
+                    approx::assert_relative_eq!(s, b, epsilon = 1e-6);
+                }
+            }
+        }
+    }
+
     proptest! {
         #[test]
         fn test_macdext_ema_parity(input in prop::collection::vec(0.1..100.0, 1..100)) {
@@ -200,19 +226,31 @@ mod tests {
             let matype = MaType::Ema;
             let mut ext = MACDEXT::new(fast, matype, slow, matype, signal, matype);
             let streaming: Vec<_> = input.iter().map(|&x| ext.next(x)).collect();
-            let (b_macd, b_signal, b_hist) = talib_rs::momentum::macd_ext(
-                &input, fast, matype, slow, matype, signal, matype,
+            let batch = talib_rs::momentum::macd_ext(
+                &input, fast, matype.into(), slow, matype.into(), signal, matype.into(),
             ).unwrap_or_else(|_| {
                 (vec![f64::NAN; input.len()], vec![f64::NAN; input.len()], vec![f64::NAN; input.len()])
             });
-            for (i, (s_m, s_s, s_h)) in streaming.into_iter().enumerate() {
-                if s_m.is_nan() { assert!(b_macd[i].is_nan()); }
-                else { approx::assert_relative_eq!(s_m, b_macd[i], epsilon = 1e-6); }
-                if s_s.is_nan() { assert!(b_signal[i].is_nan()); }
-                else { approx::assert_relative_eq!(s_s, b_signal[i], epsilon = 1e-6); }
-                if s_h.is_nan() { assert!(b_hist[i].is_nan()); }
-                else { approx::assert_relative_eq!(s_h, b_hist[i], epsilon = 1e-6); }
-            }
+            assert_parity(&streaming, &batch, "macdext/ema");
+        }
+
+        /// MACDEXT smooths all three legs through `MaStream`, so every matype
+        /// except EMA silently became SMA. Cover all nine.
+        #[test]
+        fn test_macdext_parity_all_matypes(
+            input in prop::collection::vec(0.1..100.0, 150..220),
+            idx in 0usize..9,
+        ) {
+            let matype = MaType::ALL[idx];
+            let (fast, slow, signal) = (12usize, 26usize, 9usize);
+            let mut ext = MACDEXT::new(fast, matype, slow, matype, signal, matype);
+            let streaming: Vec<_> = input.iter().map(|&x| ext.next(x)).collect();
+            let batch = talib_rs::momentum::macd_ext(
+                &input, fast, matype.into(), slow, matype.into(), signal, matype.into(),
+            ).unwrap_or_else(|_| {
+                (vec![f64::NAN; input.len()], vec![f64::NAN; input.len()], vec![f64::NAN; input.len()])
+            });
+            assert_parity(&streaming, &batch, &format!("macdext/{matype}"));
         }
 
         #[test]
@@ -220,18 +258,11 @@ mod tests {
             let signal = 9usize;
             let mut fix = MACDFIX::new(signal);
             let streaming: Vec<_> = input.iter().map(|&x| fix.next(x)).collect();
-            let (b_macd, b_signal, b_hist) = talib_rs::momentum::macd_fix(&input, signal)
+            let batch = talib_rs::momentum::macd_fix(&input, signal)
                 .unwrap_or_else(|_| {
                     (vec![f64::NAN; input.len()], vec![f64::NAN; input.len()], vec![f64::NAN; input.len()])
                 });
-            for (i, (s_m, s_s, s_h)) in streaming.into_iter().enumerate() {
-                if s_m.is_nan() { assert!(b_macd[i].is_nan()); }
-                else { approx::assert_relative_eq!(s_m, b_macd[i], epsilon = 1e-6); }
-                if s_s.is_nan() { assert!(b_signal[i].is_nan()); }
-                else { approx::assert_relative_eq!(s_s, b_signal[i], epsilon = 1e-6); }
-                if s_h.is_nan() { assert!(b_hist[i].is_nan()); }
-                else { approx::assert_relative_eq!(s_h, b_hist[i], epsilon = 1e-6); }
-            }
+            assert_parity(&streaming, &batch, "macdfix");
         }
     }
 }

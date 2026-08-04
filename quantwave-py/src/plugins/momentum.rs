@@ -1,8 +1,8 @@
 use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
 use serde::Deserialize;
-use talib_rs::MaType;
 
+use quantwave_core::MaType;
 use quantwave_core::indicators::incremental::apo::{APO, PPO};
 use quantwave_core::indicators::incremental::aroon::{AROON, AROONOSC};
 use quantwave_core::indicators::incremental::cci::CCI;
@@ -363,18 +363,7 @@ struct ApoKwargs {
 #[polars_expr(output_type=Float64)]
 fn apo(inputs: &[Series], kwargs: ApoKwargs) -> PolarsResult<Series> {
     let s = inputs[0].f64()?;
-    let ma_type = match kwargs.matype {
-        0 => MaType::Sma,
-        1 => MaType::Ema,
-        2 => MaType::Wma,
-        3 => MaType::Dema,
-        4 => MaType::Tema,
-        5 => MaType::Trima,
-        6 => MaType::Kama,
-        7 => MaType::Mama,
-        8 => MaType::T3,
-        _ => MaType::Sma,
-    };
+    let ma_type = MaType::from_u8_or_sma(kwargs.matype);
     let mut indicator = APO::new(kwargs.fastperiod, kwargs.slowperiod, ma_type);
     let out: Float64Chunked = s
         .into_iter()
@@ -390,18 +379,7 @@ fn apo(inputs: &[Series], kwargs: ApoKwargs) -> PolarsResult<Series> {
 #[polars_expr(output_type=Float64)]
 fn ppo(inputs: &[Series], kwargs: ApoKwargs) -> PolarsResult<Series> {
     let s = inputs[0].f64()?;
-    let ma_type = match kwargs.matype {
-        0 => MaType::Sma,
-        1 => MaType::Ema,
-        2 => MaType::Wma,
-        3 => MaType::Dema,
-        4 => MaType::Tema,
-        5 => MaType::Trima,
-        6 => MaType::Kama,
-        7 => MaType::Mama,
-        8 => MaType::T3,
-        _ => MaType::Sma,
-    };
+    let ma_type = MaType::from_u8_or_sma(kwargs.matype);
     let mut indicator = PPO::new(kwargs.fastperiod, kwargs.slowperiod, ma_type);
     let out: Float64Chunked = s
         .into_iter()
@@ -507,30 +485,8 @@ fn stoch(inputs: &[Series], kwargs: StochKwargs) -> PolarsResult<Series> {
     let low = inputs[1].f64()?;
     let close = inputs[2].f64()?;
 
-    let slowk_matype = match kwargs.slowk_matype {
-        0 => MaType::Sma,
-        1 => MaType::Ema,
-        2 => MaType::Wma,
-        3 => MaType::Dema,
-        4 => MaType::Tema,
-        5 => MaType::Trima,
-        6 => MaType::Kama,
-        7 => MaType::Mama,
-        8 => MaType::T3,
-        _ => MaType::Sma,
-    };
-    let slowd_matype = match kwargs.slowd_matype {
-        0 => MaType::Sma,
-        1 => MaType::Ema,
-        2 => MaType::Wma,
-        3 => MaType::Dema,
-        4 => MaType::Tema,
-        5 => MaType::Trima,
-        6 => MaType::Kama,
-        7 => MaType::Mama,
-        8 => MaType::T3,
-        _ => MaType::Sma,
-    };
+    let slowk_matype = MaType::from_u8_or_sma(kwargs.slowk_matype);
+    let slowd_matype = MaType::from_u8_or_sma(kwargs.slowd_matype);
 
     let mut indicator = STOCH::new(
         kwargs.fastk_period,
@@ -592,18 +548,7 @@ fn stochf(inputs: &[Series], kwargs: StochfKwargs) -> PolarsResult<Series> {
     let low = inputs[1].f64()?;
     let close = inputs[2].f64()?;
 
-    let fastd_matype = match kwargs.fastd_matype {
-        0 => MaType::Sma,
-        1 => MaType::Ema,
-        2 => MaType::Wma,
-        3 => MaType::Dema,
-        4 => MaType::Tema,
-        5 => MaType::Trima,
-        6 => MaType::Kama,
-        7 => MaType::Mama,
-        8 => MaType::T3,
-        _ => MaType::Sma,
-    };
+    let fastd_matype = MaType::from_u8_or_sma(kwargs.fastd_matype);
 
     let mut indicator = STOCHF::new(kwargs.fastk_period, kwargs.fastd_period, fastd_matype);
 
@@ -658,18 +603,7 @@ pub fn stochrsi_output(_: &[Field]) -> PolarsResult<Field> {
 fn stochrsi(inputs: &[Series], kwargs: StochrsiKwargs) -> PolarsResult<Series> {
     let s = inputs[0].f64()?;
 
-    let fastd_matype = match kwargs.fastd_matype {
-        0 => MaType::Sma,
-        1 => MaType::Ema,
-        2 => MaType::Wma,
-        3 => MaType::Dema,
-        4 => MaType::Tema,
-        5 => MaType::Trima,
-        6 => MaType::Kama,
-        7 => MaType::Mama,
-        8 => MaType::T3,
-        _ => MaType::Sma,
-    };
+    let fastd_matype = MaType::from_u8_or_sma(kwargs.fastd_matype);
 
     let mut indicator = STOCHRSI::new(
         kwargs.timeperiod,

@@ -323,6 +323,91 @@ impl Next<f64> for HT_PHASOR {
     }
 }
 
+/// MAMA / FAMA — MESA Adaptive Moving Average, TA-Lib parity (lookback 32).
+///
+/// Faithful incremental port of `talib_rs::overlap::mama`. Distinct from
+/// [`crate::indicators::mama::MAMA`], which is a simpler formulation that does
+/// not reproduce TA-Lib's values; this one is what [`MaType::Mama`] resolves to.
+///
+/// [`MaType::Mama`]: crate::indicators::ma_type::MaType::Mama
+#[derive(Debug, Clone)]
+pub struct TalibMama {
+    eng: HtEngine32,
+    fast_limit: f64,
+    slow_limit: f64,
+    prev_phase: f64,
+    prev_mama: f64,
+    prev_fama: f64,
+}
+
+impl Default for TalibMama {
+    fn default() -> Self {
+        Self::new(0.5, 0.05)
+    }
+}
+
+impl TalibMama {
+    pub fn new(fast_limit: f64, slow_limit: f64) -> Self {
+        Self {
+            eng: HtEngine32::new(),
+            fast_limit,
+            slow_limit,
+            prev_phase: 0.0,
+            prev_mama: 0.0,
+            prev_fama: 0.0,
+        }
+    }
+}
+
+impl Next<f64> for TalibMama {
+    /// `(mama, fama)`
+    type Output = (f64, f64);
+
+    fn next(&mut self, input: f64) -> Self::Output {
+        self.eng.push(input);
+        let Some(smoothed) = self.eng.step_wma() else {
+            return (f64::NAN, f64::NAN);
+        };
+        let today = self.eng.today();
+        let adj = 0.075 * self.eng.hs.period + 0.54;
+        // I1 used for the phase is the *delayed* detrender, read before the step
+        // rotates it — same convention as HT_PHASOR's in-phase output.
+        let i1 = if today.is_multiple_of(2) {
+            self.eng.hs.i1_for_even_prev3
+        } else {
+            self.eng.hs.i1_for_odd_prev3
+        };
+        let (_, q1, _, _) = self.eng.hs.step_hilbert(today, smoothed, adj);
+        self.eng.hs.adjust_period();
+
+        let phase = if i1 != 0.0 {
+            (q1 / i1).atan() * RAD2DEG
+        } else {
+            0.0
+        };
+        let delta_phase = (self.prev_phase - phase).max(1.0);
+        // Not `clamp` — that panics when slow_limit > fast_limit, which callers
+        // can construct even though TA-Lib rejects it.
+        let mut alpha = self.fast_limit / delta_phase;
+        if alpha < self.slow_limit {
+            alpha = self.slow_limit;
+        }
+        if alpha > self.fast_limit {
+            alpha = self.fast_limit;
+        }
+
+        self.prev_mama = alpha * input + (1.0 - alpha) * self.prev_mama;
+        self.prev_fama = 0.5 * alpha * self.prev_mama + (1.0 - 0.5 * alpha) * self.prev_fama;
+        self.prev_phase = phase;
+
+        if today >= HtEngine32::LOOKBACK {
+            (self.prev_mama, self.prev_fama)
+        } else {
+            (f64::NAN, f64::NAN)
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 struct HtEngine63 {
     prices: Vec<f64>,
@@ -692,6 +777,21 @@ mod tests {
                 else { approx::assert_relative_eq!(s_i, bi[i], epsilon = 1e-6); }
                 if s_q.is_nan() { assert!(bq[i].is_nan()); }
                 else { approx::assert_relative_eq!(s_q, bq[i], epsilon = 1e-6); }
+            }
+        }
+
+        #[test]
+        fn test_talib_mama_parity(input in prop::collection::vec(0.1..100.0, 33..120)) {
+            let mut mama = TalibMama::new(0.5, 0.05);
+            let streaming: Vec<_> = input.iter().map(|&x| mama.next(x)).collect();
+            let (bm, bf) = talib_rs::overlap::mama(&input, 0.5, 0.05).unwrap_or_else(|_| {
+                (vec![f64::NAN; input.len()], vec![f64::NAN; input.len()])
+            });
+            for (i, &(s_m, s_f)) in streaming.iter().enumerate() {
+                if s_m.is_nan() { assert!(bm[i].is_nan()); }
+                else { approx::assert_relative_eq!(s_m, bm[i], epsilon = 1e-6); }
+                if s_f.is_nan() { assert!(bf[i].is_nan()); }
+                else { approx::assert_relative_eq!(s_f, bf[i], epsilon = 1e-6); }
             }
         }
 
