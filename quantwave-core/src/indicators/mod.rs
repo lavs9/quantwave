@@ -89,6 +89,7 @@ pub mod overlap;
 pub mod pa_confluence;
 pub mod pairs_rotation;
 pub mod pattern;
+pub mod patterns;
 pub mod phasor;
 pub mod pivot_points;
 pub mod pma;

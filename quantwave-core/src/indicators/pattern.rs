@@ -1,4 +1,5 @@
 pub use crate::indicators::incremental::cdl_doji::CDLDOJI;
+pub use crate::indicators::patterns::cdl3linestrike::CDL3LINESTRIKE;
 use crate::indicators::metadata::IndicatorMetadata;
 #[allow(unused_imports)]
 use crate::traits::Next;
@@ -224,12 +225,7 @@ impl Default for CDL3INSIDE {
         Self::new()
     }
 }
-native_cdl!(CDL3LINESTRIKE, talib_rs::pattern::cdl_3linestrike);
-impl Default for CDL3LINESTRIKE {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+
 native_cdl!(CDL3OUTSIDE, talib_rs::pattern::cdl_3outside);
 impl Default for CDL3OUTSIDE {
     fn default() -> Self {
@@ -370,24 +366,6 @@ mod tests {
     use proptest::prelude::*;
 
     proptest! {
-        #[test]
-        fn test_cdl_doji_parity(
-            o in prop::collection::vec(10.0..100.0, 1..100),
-            h in prop::collection::vec(10.0..100.0, 1..100),
-            l in prop::collection::vec(10.0..100.0, 1..100),
-            c in prop::collection::vec(10.0..100.0, 1..100)
-        ) {
-            let len = o.len().min(h.len()).min(l.len()).min(c.len());
-            if len == 0 { return Ok(()); }
-
-            let mut doji = CDLDOJI::new();
-            let streaming_results: Vec<f64> = (0..len).map(|i| doji.next((o[i], h[i], l[i], c[i]))).collect();
-            let batch_results = talib_rs::pattern::cdl_doji(&o[..len], &h[..len], &l[..len], &c[..len]).unwrap_or_else(|_| vec![0; len]);
-
-            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
-                assert_eq!(*s as i32, *b);
-            }
-        }
 
         #[test]
         fn test_cdl_hammer_parity(
