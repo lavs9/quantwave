@@ -1,86 +1,29 @@
 pub use crate::indicators::incremental::cdl_doji::CDLDOJI;
 pub use crate::indicators::patterns::cdl3linestrike::CDL3LINESTRIKE;
+pub use crate::indicators::patterns::cdlhammer::CDLHAMMER;
+pub use crate::indicators::patterns::cdlclosingmarubozu::CDLCLOSINGMARUBOZU;
+pub use crate::indicators::patterns::cdldragonflydoji::CDLDRAGONFLYDOJI;
+pub use crate::indicators::patterns::cdlgravestonedoji::CDLGRAVESTONEDOJI;
+pub use crate::indicators::patterns::cdlhighwave::CDLHIGHWAVE;
+pub use crate::indicators::patterns::cdllongleggeddoji::CDLLONGLEGGEDDOJI;
+pub use crate::indicators::patterns::cdllongline::CDLLONGLINE;
+pub use crate::indicators::patterns::cdlmarubozu::CDLMARUBOZU;
+pub use crate::indicators::patterns::cdlrickshawman::CDLRICKSHAWMAN;
+pub use crate::indicators::patterns::cdlshortline::CDLSHORTLINE;
+pub use crate::indicators::patterns::cdlspinningtop::CDLSPINNINGTOP;
+pub use crate::indicators::patterns::cdltakuri::CDLTAKURI;
+pub use crate::indicators::patterns::cdlbelthold::CDLBELTHOLD;
 use crate::indicators::metadata::IndicatorMetadata;
 #[allow(unused_imports)]
 use crate::traits::Next;
-native_cdl!(CDLHAMMER, talib_rs::pattern::cdl_hammer);
-impl Default for CDLHAMMER {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+
 native_cdl!(CDLENGULFING, talib_rs::pattern::cdl_engulfing);
 impl Default for CDLENGULFING {
     fn default() -> Self {
         Self::new()
     }
 }
-native_cdl!(CDLCLOSINGMARUBOZU, talib_rs::pattern::cdl_closingmarubozu);
-impl Default for CDLCLOSINGMARUBOZU {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-native_cdl!(CDLDRAGONFLYDOJI, talib_rs::pattern::cdl_dragonflydoji);
-impl Default for CDLDRAGONFLYDOJI {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-native_cdl!(CDLGRAVESTONEDOJI, talib_rs::pattern::cdl_gravestonedoji);
-impl Default for CDLGRAVESTONEDOJI {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-native_cdl!(CDLHIGHWAVE, talib_rs::pattern::cdl_highwave);
-impl Default for CDLHIGHWAVE {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-native_cdl!(CDLLONGLEGGEDDOJI, talib_rs::pattern::cdl_longleggeddoji);
-impl Default for CDLLONGLEGGEDDOJI {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-native_cdl!(CDLLONGLINE, talib_rs::pattern::cdl_longline);
-impl Default for CDLLONGLINE {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-native_cdl!(CDLMARUBOZU, talib_rs::pattern::cdl_marubozu);
-impl Default for CDLMARUBOZU {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-native_cdl!(CDLRICKSHAWMAN, talib_rs::pattern::cdl_rickshawman);
-impl Default for CDLRICKSHAWMAN {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-native_cdl!(CDLSHORTLINE, talib_rs::pattern::cdl_shortline);
-impl Default for CDLSHORTLINE {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-native_cdl!(CDLSPINNINGTOP, talib_rs::pattern::cdl_spinningtop);
-impl Default for CDLSPINNINGTOP {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-native_cdl!(CDLTAKURI, talib_rs::pattern::cdl_takuri);
-impl Default for CDLTAKURI {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+
 native_cdl!(CDL2CROWS, talib_rs::pattern::cdl_2crows);
 impl Default for CDL2CROWS {
     fn default() -> Self {
@@ -207,12 +150,7 @@ impl Default for CDLTHRUSTING {
         Self::new()
     }
 }
-native_cdl!(CDLBELTHOLD, talib_rs::pattern::cdl_belthold);
-impl Default for CDLBELTHOLD {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+
 native_cdl!(CDL3BLACKCROWS, talib_rs::pattern::cdl_3blackcrows);
 impl Default for CDL3BLACKCROWS {
     fn default() -> Self {
@@ -367,24 +305,7 @@ mod tests {
 
     proptest! {
 
-        #[test]
-        fn test_cdl_hammer_parity(
-            o in prop::collection::vec(10.0..100.0, 1..100),
-            h in prop::collection::vec(10.0..100.0, 1..100),
-            l in prop::collection::vec(10.0..100.0, 1..100),
-            c in prop::collection::vec(10.0..100.0, 1..100)
-        ) {
-            let len = o.len().min(h.len()).min(l.len()).min(c.len());
-            if len == 0 { return Ok(()); }
 
-            let mut hammer = CDLHAMMER::new();
-            let streaming_results: Vec<f64> = (0..len).map(|i| hammer.next((o[i], h[i], l[i], c[i]))).collect();
-            let batch_results = talib_rs::pattern::cdl_hammer(&o[..len], &h[..len], &l[..len], &c[..len]).unwrap_or_else(|_| vec![0; len]);
-
-            for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
-                assert_eq!(*s as i32, *b);
-            }
-        }
     }
 }
 
