@@ -43,6 +43,10 @@ criterion = { workspace = true }
 name = "indicator_throughput"
 harness = false
 
+[[bench]]
+name = "talib_comparison"
+harness = false
+
 [[bin]]
 name = "benchmark_export"
 path = "src/bin/benchmark_export.rs"
