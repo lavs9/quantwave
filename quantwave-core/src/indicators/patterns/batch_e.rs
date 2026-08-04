@@ -853,10 +853,13 @@ impl Next<(f64, f64, f64, f64)> for CDLRISEFALL3METHODS {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::indicators::patterns::fixtures as fx;
+
     crate::test_pattern_parity!(
         test_cdlgapsidesidewhite,
         CDLGAPSIDESIDEWHITE,
-        talib_rs::pattern::cdl_gapsidesidewhite
+        talib_rs::pattern::cdl_gapsidesidewhite,
+        fx::gapsidesidewhite
     );
     crate::test_pattern_parity!(
         test_cdlidentical3crows,
@@ -871,43 +874,61 @@ mod tests {
     crate::test_pattern_parity!(
         test_cdltasukigap,
         CDLTASUKIGAP,
-        talib_rs::pattern::cdl_tasukigap
+        talib_rs::pattern::cdl_tasukigap,
+        fx::tasukigap
     );
-    crate::test_pattern_parity!(test_cdltristar, CDLTRISTAR, talib_rs::pattern::cdl_tristar);
+    crate::test_pattern_parity!(
+        test_cdltristar,
+        CDLTRISTAR,
+        talib_rs::pattern::cdl_tristar,
+        fx::tristar
+    );
     crate::test_pattern_parity!(
         test_cdlunique3river,
         CDLUNIQUE3RIVER,
-        talib_rs::pattern::cdl_unique3river
+        talib_rs::pattern::cdl_unique3river,
+        fx::unique3river
     );
     crate::test_pattern_parity!(
         test_cdlupsidegap2crows,
         CDLUPSIDEGAP2CROWS,
-        talib_rs::pattern::cdl_upsidegap2crows
+        talib_rs::pattern::cdl_upsidegap2crows,
+        fx::upsidegap2crows
     );
     crate::test_pattern_parity!(
         test_cdlxsidegap3methods,
         CDLXSIDEGAP3METHODS,
-        talib_rs::pattern::cdl_xsidegap3methods
+        talib_rs::pattern::cdl_xsidegap3methods,
+        fx::xsidegap3methods
     );
     crate::test_pattern_parity!(
         test_cdlbreakaway,
         CDLBREAKAWAY,
-        talib_rs::pattern::cdl_breakaway
+        talib_rs::pattern::cdl_breakaway,
+        fx::breakaway
     );
     crate::test_pattern_parity!(
         test_cdlconcealbabyswall,
         CDLCONCEALBABYSWALL,
-        talib_rs::pattern::cdl_concealbabyswall
+        talib_rs::pattern::cdl_concealbabyswall,
+        fx::concealbabyswall
     );
     crate::test_pattern_parity!(
         test_cdlladderbottom,
         CDLLADDERBOTTOM,
-        talib_rs::pattern::cdl_ladderbottom
+        talib_rs::pattern::cdl_ladderbottom,
+        fx::ladderbottom
     );
-    crate::test_pattern_parity!(test_cdlmathold, CDLMATHOLD, talib_rs::pattern::cdl_mathold);
+    crate::test_pattern_parity!(
+        test_cdlmathold,
+        CDLMATHOLD,
+        talib_rs::pattern::cdl_mathold,
+        fx::mathold
+    );
     crate::test_pattern_parity!(
         test_cdlrisefall3methods,
         CDLRISEFALL3METHODS,
-        talib_rs::pattern::cdl_risefall3methods
+        talib_rs::pattern::cdl_risefall3methods,
+        fx::risefall3methods
     );
 }

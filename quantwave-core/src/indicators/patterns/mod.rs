@@ -19,5 +19,8 @@ pub mod cdlspinningtop;
 pub mod cdltakuri;
 
 #[cfg(test)]
+pub mod fixtures;
+
+#[cfg(test)]
 #[macro_use]
 pub mod test_utils;

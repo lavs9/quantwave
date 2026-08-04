@@ -633,6 +633,7 @@ impl Next<(f64, f64, f64, f64)> for CDLONNECK {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::indicators::patterns::fixtures as fx;
 
     crate::test_pattern_parity!(
         test_cdl_engulfing_parity,
@@ -642,17 +643,20 @@ mod tests {
     crate::test_pattern_parity!(
         test_cdl_counterattack_parity,
         CDLCOUNTERATTACK,
-        talib_rs::pattern::cdl_counterattack
+        talib_rs::pattern::cdl_counterattack,
+        fx::counterattack
     );
     crate::test_pattern_parity!(
         test_cdl_darkcloudcover_parity,
         CDLDARKCLOUDCOVER,
-        talib_rs::pattern::cdl_darkcloudcover
+        talib_rs::pattern::cdl_darkcloudcover,
+        fx::darkcloudcover
     );
     crate::test_pattern_parity!(
         test_cdl_dojistar_parity,
         CDLDOJISTAR,
-        talib_rs::pattern::cdl_dojistar
+        talib_rs::pattern::cdl_dojistar,
+        fx::dojistar
     );
     crate::test_pattern_parity!(
         test_cdl_hangingman_parity,
@@ -662,27 +666,32 @@ mod tests {
     crate::test_pattern_parity!(
         test_cdl_harami_parity,
         CDLHARAMI,
-        talib_rs::pattern::cdl_harami
+        talib_rs::pattern::cdl_harami,
+        fx::harami
     );
     crate::test_pattern_parity!(
         test_cdl_haramicross_parity,
         CDLHARAMICROSS,
-        talib_rs::pattern::cdl_haramicross
+        talib_rs::pattern::cdl_haramicross,
+        fx::haramicross
     );
     crate::test_pattern_parity!(
         test_cdl_homingpigeon_parity,
         CDLHOMINGPIGEON,
-        talib_rs::pattern::cdl_homingpigeon
+        talib_rs::pattern::cdl_homingpigeon,
+        fx::homingpigeon
     );
     crate::test_pattern_parity!(
         test_cdl_inneck_parity,
         CDLINNECK,
-        talib_rs::pattern::cdl_inneck
+        talib_rs::pattern::cdl_inneck,
+        fx::inneck
     );
     crate::test_pattern_parity!(
         test_cdl_invertedhammer_parity,
         CDLINVERTEDHAMMER,
-        talib_rs::pattern::cdl_invertedhammer
+        talib_rs::pattern::cdl_invertedhammer,
+        fx::invertedhammer
     );
     crate::test_pattern_parity!(
         test_cdl_matchinglow_parity,
@@ -692,6 +701,7 @@ mod tests {
     crate::test_pattern_parity!(
         test_cdl_onneck_parity,
         CDLONNECK,
-        talib_rs::pattern::cdl_onneck
+        talib_rs::pattern::cdl_onneck,
+        fx::onneck
     );
 }
