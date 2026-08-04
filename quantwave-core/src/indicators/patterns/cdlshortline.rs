@@ -1,11 +1,11 @@
 //! Native O(1) streaming CDLSHORTLINE (matches `talib_rs::pattern::cdl_shortline`).
 //! Source: TA-Lib
 
-use crate::traits::Next;
 use crate::indicators::patterns::candle_settings::{
-    CandleWindow, RollingCandleAvg, BODY_SHORT, SHADOW_SHORT,
-    real_body, upper_shadow, lower_shadow, candle_color
+    BODY_SHORT, CandleWindow, RollingCandleAvg, SHADOW_SHORT, candle_color, lower_shadow,
+    real_body, upper_shadow,
 };
+use crate::traits::Next;
 
 const LOOKBACK: usize = 10; // max(10, 10)
 
@@ -52,7 +52,10 @@ impl Next<(f64, f64, f64, f64)> for CDLSHORTLINE {
 
         let out = (real_body(curr.open, curr.close) < self.body_short.val(0)
             && upper_shadow(curr.open, curr.high, curr.close) < self.shadow_short.val(0)
-            && lower_shadow(curr.open, curr.low, curr.close) < self.shadow_short.val(0)) as i32 * candle_color(curr.open, curr.close) * 100;
+            && lower_shadow(curr.open, curr.low, curr.close) < self.shadow_short.val(0))
+            as i32
+            * candle_color(curr.open, curr.close)
+            * 100;
 
         out as f64
     }
@@ -61,5 +64,9 @@ impl Next<(f64, f64, f64, f64)> for CDLSHORTLINE {
 #[cfg(test)]
 mod tests {
     use super::*;
-    crate::test_pattern_parity!(test_cdlshortline_parity, CDLSHORTLINE, talib_rs::pattern::cdl_shortline);
+    crate::test_pattern_parity!(
+        test_cdlshortline_parity,
+        CDLSHORTLINE,
+        talib_rs::pattern::cdl_shortline
+    );
 }

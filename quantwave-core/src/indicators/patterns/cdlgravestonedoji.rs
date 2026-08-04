@@ -1,11 +1,11 @@
 //! Native O(1) streaming CDLGRAVESTONEDOJI (matches `talib_rs::pattern::cdl_gravestonedoji`).
 //! Source: TA-Lib
 
-use crate::traits::Next;
 use crate::indicators::patterns::candle_settings::{
-    CandleWindow, RollingCandleAvg, BODY_DOJI, SHADOW_VERY_SHORT,
-    real_body, upper_shadow, lower_shadow
+    BODY_DOJI, CandleWindow, RollingCandleAvg, SHADOW_VERY_SHORT, lower_shadow, real_body,
+    upper_shadow,
 };
+use crate::traits::Next;
 
 const LOOKBACK: usize = 10; // max(10, 10)
 
@@ -52,7 +52,9 @@ impl Next<(f64, f64, f64, f64)> for CDLGRAVESTONEDOJI {
 
         let out = (real_body(curr.open, curr.close) <= self.body_doji.val(0)
             && lower_shadow(curr.open, curr.low, curr.close) < self.shadow_vs.val(0)
-            && upper_shadow(curr.open, curr.high, curr.close) > self.shadow_vs.val(0)) as i32 * 100;
+            && upper_shadow(curr.open, curr.high, curr.close) > self.shadow_vs.val(0))
+            as i32
+            * 100;
 
         out as f64
     }

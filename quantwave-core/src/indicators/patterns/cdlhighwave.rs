@@ -1,11 +1,11 @@
 //! Native O(1) streaming CDLHIGHWAVE (matches `talib_rs::pattern::cdl_highwave`).
 //! Source: TA-Lib
 
-use crate::traits::Next;
 use crate::indicators::patterns::candle_settings::{
-    CandleWindow, RollingCandleAvg, BODY_SHORT, SHADOW_VERY_LONG,
-    real_body, upper_shadow, lower_shadow, candle_color
+    BODY_SHORT, CandleWindow, RollingCandleAvg, SHADOW_VERY_LONG, candle_color, lower_shadow,
+    real_body, upper_shadow,
 };
+use crate::traits::Next;
 
 const LOOKBACK: usize = 10; // max(10, 0)
 
@@ -52,7 +52,10 @@ impl Next<(f64, f64, f64, f64)> for CDLHIGHWAVE {
 
         let out = (real_body(curr.open, curr.close) < self.body_short.val(0)
             && upper_shadow(curr.open, curr.high, curr.close) > self.shadow_vl.val(0)
-            && lower_shadow(curr.open, curr.low, curr.close) > self.shadow_vl.val(0)) as i32 * candle_color(curr.open, curr.close) * 100;
+            && lower_shadow(curr.open, curr.low, curr.close) > self.shadow_vl.val(0))
+            as i32
+            * candle_color(curr.open, curr.close)
+            * 100;
 
         out as f64
     }
@@ -61,5 +64,9 @@ impl Next<(f64, f64, f64, f64)> for CDLHIGHWAVE {
 #[cfg(test)]
 mod tests {
     use super::*;
-    crate::test_pattern_parity!(test_cdlhighwave_parity, CDLHIGHWAVE, talib_rs::pattern::cdl_highwave);
+    crate::test_pattern_parity!(
+        test_cdlhighwave_parity,
+        CDLHIGHWAVE,
+        talib_rs::pattern::cdl_highwave
+    );
 }
