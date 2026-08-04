@@ -785,6 +785,7 @@ impl Next<(f64, f64, f64, f64)> for CDLMORNINGSTAR {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::indicators::patterns::fixtures as fx;
     // talib-rs's cdl_3blackcrows is defective; the native implementation is correct
     // and is deliberately NOT made bug-compatible. Evidence:
     //
@@ -804,7 +805,7 @@ mod tests {
         test_cdl3blackcrows_parity,
         CDL3BLACKCROWS,
         talib_rs::pattern::cdl_3blackcrows,
-        |_, _, _, _| {},
+        fx::three_black_crows,
         oracle_exempt = "talib-rs's cdl_3blackcrows seeds shadow_sum[k] at bar `start-3+k` but \
                          uses it for bar `i-2+k`, then rolls that skewed set, producing a \
                          non-contiguous window matching no principled rolling average. A \

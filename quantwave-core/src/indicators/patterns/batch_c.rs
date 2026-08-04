@@ -768,7 +768,7 @@ mod tests {
         test_cdlhikkakemod,
         CDLHIKKAKEMOD,
         talib_rs::pattern::cdl_hikkakemod,
-        |_, _, _, _| {},
+        fx::hikkakemod,
         oracle_exempt = "talib-rs's cdl_hikkakemod NEAR rolling sum is non-contiguous: it \
                          seeds the window one bar early and then updates it with a rule that \
                          does not match the seed, leaving 6 terms divided by 5 with one \
