@@ -1,11 +1,11 @@
 //! Native O(1) streaming CDLHAMMER (matches `talib_rs::pattern::cdl_hammer`).
 //! Source: TA-Lib
 
-use crate::traits::Next;
 use crate::indicators::patterns::candle_settings::{
-    CandleWindow, RollingCandleAvg, BODY_SHORT, SHADOW_LONG, SHADOW_VERY_SHORT, NEAR,
-    real_body, upper_shadow, lower_shadow
+    BODY_SHORT, CandleWindow, NEAR, RollingCandleAvg, SHADOW_LONG, SHADOW_VERY_SHORT, lower_shadow,
+    real_body, upper_shadow,
 };
+use crate::traits::Next;
 
 const LOOKBACK: usize = 11; // max(10, 0, 10, 5) + 1
 
@@ -57,12 +57,11 @@ impl Next<(f64, f64, f64, f64)> for CDLHAMMER {
         let curr = self.window.bar(0);
         let prev = self.window.bar(1);
 
-        let out = (
-            real_body(curr.open, curr.close) < self.body_short.val(0) &&
-            lower_shadow(curr.open, curr.low, curr.close) > self.shadow_long.val(0) &&
-            upper_shadow(curr.open, curr.high, curr.close) < self.shadow_vs.val(0) &&
-            curr.open.min(curr.close) <= prev.low + self.near.val(1)
-        ) as i32 * 100;
+        let out = (real_body(curr.open, curr.close) < self.body_short.val(0)
+            && lower_shadow(curr.open, curr.low, curr.close) > self.shadow_long.val(0)
+            && upper_shadow(curr.open, curr.high, curr.close) < self.shadow_vs.val(0)
+            && curr.open.min(curr.close) <= prev.low + self.near.val(1)) as i32
+            * 100;
 
         out as f64
     }
@@ -71,5 +70,9 @@ impl Next<(f64, f64, f64, f64)> for CDLHAMMER {
 #[cfg(test)]
 mod tests {
     use super::*;
-    crate::test_pattern_parity!(test_cdlhammer_parity, CDLHAMMER, talib_rs::pattern::cdl_hammer);
+    crate::test_pattern_parity!(
+        test_cdlhammer_parity,
+        CDLHAMMER,
+        talib_rs::pattern::cdl_hammer
+    );
 }

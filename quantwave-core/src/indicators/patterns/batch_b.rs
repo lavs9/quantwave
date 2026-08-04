@@ -253,15 +253,11 @@ impl Next<(f64, f64, f64, f64)> for CDLHANGINGMAN {
         self.near.push(open, high, low, close);
         self.bars_seen += 1;
 
-        let lookback = *[
-            BODY_SHORT.avg_period,
-            SHADOW_LONG.avg_period,
-            SHADOW_VERY_SHORT.avg_period,
-            NEAR.avg_period,
-        ]
-        .iter()
-        .max()
-        .unwrap()
+        // SHADOW_LONG.avg_period is 0 and cannot raise the max.
+        let lookback = BODY_SHORT
+            .avg_period
+            .max(SHADOW_VERY_SHORT.avg_period)
+            .max(NEAR.avg_period)
             + 1;
         if self.bars_seen <= lookback {
             return 0.0;
@@ -519,15 +515,8 @@ impl Next<(f64, f64, f64, f64)> for CDLINVERTEDHAMMER {
         self.shadow_very_short.push(open, high, low, close);
         self.bars_seen += 1;
 
-        let lookback = *[
-            BODY_SHORT.avg_period,
-            SHADOW_LONG.avg_period,
-            SHADOW_VERY_SHORT.avg_period,
-        ]
-        .iter()
-        .max()
-        .unwrap()
-            + 1;
+        // SHADOW_LONG.avg_period is 0 and cannot raise the max.
+        let lookback = BODY_SHORT.avg_period.max(SHADOW_VERY_SHORT.avg_period) + 1;
         if self.bars_seen <= lookback {
             return 0.0;
         }

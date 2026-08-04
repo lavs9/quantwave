@@ -1,11 +1,11 @@
 //! Native O(1) streaming CDLRICKSHAWMAN (matches `talib_rs::pattern::cdl_rickshawman`).
 //! Source: TA-Lib
 
-use crate::traits::Next;
 use crate::indicators::patterns::candle_settings::{
-    CandleWindow, RollingCandleAvg, BODY_DOJI, SHADOW_LONG, NEAR,
-    real_body, upper_shadow, lower_shadow
+    BODY_DOJI, CandleWindow, NEAR, RollingCandleAvg, SHADOW_LONG, lower_shadow, real_body,
+    upper_shadow,
 };
+use crate::traits::Next;
 
 const LOOKBACK: usize = 10; // max(10, 0, 5)
 
@@ -60,7 +60,8 @@ impl Next<(f64, f64, f64, f64)> for CDLRICKSHAWMAN {
             && lower_shadow(curr.open, curr.low, curr.close) > self.shadow_long.val(0)
             && upper_shadow(curr.open, curr.high, curr.close) > self.shadow_long.val(0)
             && curr.open.min(curr.close) <= mid + near_avg
-            && curr.open.max(curr.close) >= mid - near_avg) as i32 * 100;
+            && curr.open.max(curr.close) >= mid - near_avg) as i32
+            * 100;
 
         out as f64
     }
@@ -69,5 +70,9 @@ impl Next<(f64, f64, f64, f64)> for CDLRICKSHAWMAN {
 #[cfg(test)]
 mod tests {
     use super::*;
-    crate::test_pattern_parity!(test_cdlrickshawman_parity, CDLRICKSHAWMAN, talib_rs::pattern::cdl_rickshawman);
+    crate::test_pattern_parity!(
+        test_cdlrickshawman_parity,
+        CDLRICKSHAWMAN,
+        talib_rs::pattern::cdl_rickshawman
+    );
 }

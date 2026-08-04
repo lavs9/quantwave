@@ -2,8 +2,8 @@
 //! (CDLPIERCING, CDLSEPARATINGLINES, CDLSHOOTINGSTAR, CDLTHRUSTING, CDLKICKING, CDLKICKINGBYLENGTH, CDLHIKKAKE, CDLHIKKAKEMOD, CDLSTICKSANDWICH, CDL2CROWS)
 //! Matches `talib_rs::pattern::*`.
 
-use crate::traits::Next;
 use crate::indicators::patterns::candle_settings::*;
+use crate::traits::Next;
 
 // =============================================================================
 // CDLPIERCING
@@ -27,7 +27,9 @@ impl CDLPIERCING {
 }
 
 impl Default for CDLPIERCING {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Next<(f64, f64, f64, f64)> for CDLPIERCING {
@@ -38,7 +40,9 @@ impl Next<(f64, f64, f64, f64)> for CDLPIERCING {
         self.body_long.push(open, high, low, close);
 
         let lookback = BODY_LONG.avg_period + 1;
-        if self.bars_seen <= lookback { return 0.0; }
+        if self.bars_seen <= lookback {
+            return 0.0;
+        }
 
         let b1 = self.window.bar(1);
         let b0 = self.window.bar(0);
@@ -81,7 +85,9 @@ impl CDLSEPARATINGLINES {
 }
 
 impl Default for CDLSEPARATINGLINES {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Next<(f64, f64, f64, f64)> for CDLSEPARATINGLINES {
@@ -93,8 +99,14 @@ impl Next<(f64, f64, f64, f64)> for CDLSEPARATINGLINES {
         self.body_long.push(open, high, low, close);
         self.equal.push(open, high, low, close);
 
-        let lookback = SHADOW_VERY_SHORT.avg_period.max(BODY_LONG.avg_period).max(EQUAL.avg_period) + 1;
-        if self.bars_seen <= lookback { return 0.0; }
+        let lookback = SHADOW_VERY_SHORT
+            .avg_period
+            .max(BODY_LONG.avg_period)
+            .max(EQUAL.avg_period)
+            + 1;
+        if self.bars_seen <= lookback {
+            return 0.0;
+        }
 
         let b1 = self.window.bar(1);
         let b0 = self.window.bar(0);
@@ -106,10 +118,20 @@ impl Next<(f64, f64, f64, f64)> for CDLSEPARATINGLINES {
             && (b0.open - b1.open).abs() <= self.equal.val(1)
             && real_body(b0.open, b0.close) > self.body_long.val(0);
 
-        let bull = base && color_curr == 1 && lower_shadow(b0.open, b0.low, b0.close) < self.shadow_vs.val(0);
-        let bear = base && color_curr == -1 && upper_shadow(b0.open, b0.high, b0.close) < self.shadow_vs.val(0);
+        let bull = base
+            && color_curr == 1
+            && lower_shadow(b0.open, b0.low, b0.close) < self.shadow_vs.val(0);
+        let bear = base
+            && color_curr == -1
+            && upper_shadow(b0.open, b0.high, b0.close) < self.shadow_vs.val(0);
 
-        if bull { 100.0 } else if bear { -100.0 } else { 0.0 }
+        if bull {
+            100.0
+        } else if bear {
+            -100.0
+        } else {
+            0.0
+        }
     }
 }
 
@@ -139,7 +161,9 @@ impl CDLSHOOTINGSTAR {
 }
 
 impl Default for CDLSHOOTINGSTAR {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Next<(f64, f64, f64, f64)> for CDLSHOOTINGSTAR {
@@ -151,8 +175,11 @@ impl Next<(f64, f64, f64, f64)> for CDLSHOOTINGSTAR {
         self.shadow_long.push(open, high, low, close);
         self.shadow_vs.push(open, high, low, close);
 
-        let lookback = BODY_SHORT.avg_period.max(SHADOW_LONG.avg_period).max(SHADOW_VERY_SHORT.avg_period) + 1;
-        if self.bars_seen <= lookback { return 0.0; }
+        // SHADOW_LONG.avg_period is 0 and cannot raise the max.
+        let lookback = BODY_SHORT.avg_period.max(SHADOW_VERY_SHORT.avg_period) + 1;
+        if self.bars_seen <= lookback {
+            return 0.0;
+        }
 
         let b1 = self.window.bar(1);
         let b0 = self.window.bar(0);
@@ -192,7 +219,9 @@ impl CDLTHRUSTING {
 }
 
 impl Default for CDLTHRUSTING {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Next<(f64, f64, f64, f64)> for CDLTHRUSTING {
@@ -204,7 +233,9 @@ impl Next<(f64, f64, f64, f64)> for CDLTHRUSTING {
         self.body_long.push(open, high, low, close);
 
         let lookback = EQUAL.avg_period.max(BODY_LONG.avg_period) + 1;
-        if self.bars_seen <= lookback { return 0.0; }
+        if self.bars_seen <= lookback {
+            return 0.0;
+        }
 
         let b1 = self.window.bar(1);
         let b0 = self.window.bar(0);
@@ -244,7 +275,9 @@ impl CDLKICKING {
 }
 
 impl Default for CDLKICKING {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Next<(f64, f64, f64, f64)> for CDLKICKING {
@@ -256,7 +289,9 @@ impl Next<(f64, f64, f64, f64)> for CDLKICKING {
         self.body_long.push(open, high, low, close);
 
         let lookback = SHADOW_VERY_SHORT.avg_period.max(BODY_LONG.avg_period) + 1;
-        if self.bars_seen <= lookback { return 0.0; }
+        if self.bars_seen <= lookback {
+            return 0.0;
+        }
 
         let b1 = self.window.bar(1);
         let b0 = self.window.bar(0);
@@ -274,7 +309,13 @@ impl Next<(f64, f64, f64, f64)> for CDLKICKING {
         {
             let bull = color_prev == -1 && color_curr == 1 && b0.open > b1.open;
             let bear = color_prev == 1 && color_curr == -1 && b0.open < b1.open;
-            if bull { 100.0 } else if bear { -100.0 } else { 0.0 }
+            if bull {
+                100.0
+            } else if bear {
+                -100.0
+            } else {
+                0.0
+            }
         } else {
             0.0
         }
@@ -305,7 +346,9 @@ impl CDLKICKINGBYLENGTH {
 }
 
 impl Default for CDLKICKINGBYLENGTH {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Next<(f64, f64, f64, f64)> for CDLKICKINGBYLENGTH {
@@ -317,7 +360,9 @@ impl Next<(f64, f64, f64, f64)> for CDLKICKINGBYLENGTH {
         self.body_long.push(open, high, low, close);
 
         let lookback = SHADOW_VERY_SHORT.avg_period.max(BODY_LONG.avg_period) + 1;
-        if self.bars_seen <= lookback { return 0.0; }
+        if self.bars_seen <= lookback {
+            return 0.0;
+        }
 
         let b1 = self.window.bar(1);
         let b0 = self.window.bar(0);
@@ -337,7 +382,7 @@ impl Next<(f64, f64, f64, f64)> for CDLKICKINGBYLENGTH {
                 || (color_prev == 1 && color_curr == -1 && b0.open < b1.open);
             let curr_longer = real_body(b0.open, b0.close) >= real_body(b1.open, b1.close);
             let color = if curr_longer { color_curr } else { color_prev };
-            
+
             if has_gap { (color as f64) * 100.0 } else { 0.0 }
         } else {
             0.0
@@ -353,93 +398,96 @@ impl Next<(f64, f64, f64, f64)> for CDLKICKINGBYLENGTH {
 pub struct CDLHIKKAKE {
     bars_seen: usize,
     window: CandleWindow,
-    pattern_bars_ago: Option<usize>,
+    /// Bars elapsed since the setup bar; `None` once confirmed or expired.
+    pattern_age: Option<usize>,
     pattern_result: i32,
+    /// High/low of the inside bar (`pattern_idx - 1` in the batch reference),
+    /// captured at setup so no backwards indexing is needed while streaming.
+    ref_high: f64,
+    ref_low: f64,
 }
 
 impl CDLHIKKAKE {
     pub fn new() -> Self {
         Self {
             bars_seen: 0,
-            window: CandleWindow::new(5),
-            pattern_bars_ago: None,
+            window: CandleWindow::new(3),
+            pattern_age: None,
             pattern_result: 0,
+            ref_high: 0.0,
+            ref_low: 0.0,
         }
+    }
+
+    /// Breakout confirmation against the stored inside-bar levels.
+    fn confirm(&mut self, close: f64) -> f64 {
+        if let Some(age) = self.pattern_age
+            && (1..=3).contains(&age)
+        {
+            {
+                if self.pattern_result > 0 && close > self.ref_high {
+                    self.pattern_age = None;
+                    return (self.pattern_result + 100) as f64;
+                } else if self.pattern_result < 0 && close < self.ref_low {
+                    self.pattern_age = None;
+                    return (self.pattern_result - 100) as f64;
+                }
+            }
+        }
+        0.0
     }
 }
 
 impl Default for CDLHIKKAKE {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Next<(f64, f64, f64, f64)> for CDLHIKKAKE {
     type Output = f64;
+
     fn next(&mut self, (open, high, low, close): (f64, f64, f64, f64)) -> Self::Output {
+        const LOOKBACK: usize = 5;
         self.bars_seen += 1;
         self.window.push(open, high, low, close);
 
-        if let Some(ago) = self.pattern_bars_ago.as_mut() {
-            *ago += 1;
-            if *ago > 4 { // older than 3 bars relative to the breakout bar
-                self.pattern_bars_ago = None;
-            }
+        if let Some(age) = self.pattern_age {
+            self.pattern_age = Some(age + 1);
         }
 
-        let lookback = 5;
-        // Warmup: we still process bars to find the pattern inside the warmup
-        let mut out = 0.0;
-        
-        if self.window.len() >= 3 {
-            let b0 = self.window.bar(0);
-            let b1 = self.window.bar(1);
-            let b2 = self.window.bar(2);
-
-            if b1.high < b2.high && b1.low > b2.low {
-                if b0.high < b1.high && b0.low < b1.low {
-                    self.pattern_result = 100;
-                    self.pattern_bars_ago = Some(0);
-                    out = self.pattern_result as f64;
-                } else if b0.high > b1.high && b0.low > b1.low {
-                    self.pattern_result = -100;
-                    self.pattern_bars_ago = Some(0);
-                    out = self.pattern_result as f64;
-                } else {
-                    // check confirmation
-                    if let Some(ago) = self.pattern_bars_ago {
-                        if ago > 0 && ago <= 3 { // ago=0 was just updated, but here ago>0
-                            let pattern_idx_bar = self.window.bar(ago);
-                            let pattern_prev_bar = self.window.bar(ago + 1); // this is the inside bar
-                            // wait, TA-Lib checks `close[i] > high[pattern_idx - 1]`
-                            // pattern_idx is the breakout bar. pattern_idx - 1 is the inside bar.
-                            // so ago is breakout bar. ago+1 is inside bar.
-                            if self.pattern_result > 0 && b0.close > pattern_prev_bar.high {
-                                out = (self.pattern_result + 100) as f64;
-                                self.pattern_bars_ago = None;
-                            } else if self.pattern_result < 0 && b0.close < pattern_prev_bar.low {
-                                out = (self.pattern_result - 100) as f64;
-                                self.pattern_bars_ago = None;
-                            }
-                        }
-                    }
-                }
-            } else {
-                // check confirmation
-                if let Some(ago) = self.pattern_bars_ago {
-                    if ago > 0 && ago <= 3 {
-                        let pattern_prev_bar = self.window.bar(ago + 1);
-                        if self.pattern_result > 0 && b0.close > pattern_prev_bar.high {
-                            out = (self.pattern_result + 100) as f64;
-                            self.pattern_bars_ago = None;
-                        } else if self.pattern_result < 0 && b0.close < pattern_prev_bar.low {
-                            out = (self.pattern_result - 100) as f64;
-                            self.pattern_bars_ago = None;
-                        }
-                    }
-                }
-            }
+        if self.window.len() < 3 {
+            return 0.0;
         }
 
-        if self.bars_seen <= lookback { 0.0 } else { out }
+        let b0 = self.window.bar(0);
+        let b1 = self.window.bar(1);
+        let b2 = self.window.bar(2);
+
+        // The batch reference pre-scans bars before `start`: it updates the setup
+        // state but never emits and never runs confirmation during that pre-scan.
+        let emitting = self.bars_seen > LOOKBACK;
+
+        let inside = b1.high < b2.high && b1.low > b2.low;
+        if inside && b0.high < b1.high && b0.low < b1.low {
+            self.pattern_result = 100;
+            self.pattern_age = Some(0);
+            self.ref_high = b1.high;
+            self.ref_low = b1.low;
+            return if emitting { 100.0 } else { 0.0 };
+        }
+        if inside && b0.high > b1.high && b0.low > b1.low {
+            self.pattern_result = -100;
+            self.pattern_age = Some(0);
+            self.ref_high = b1.high;
+            self.ref_low = b1.low;
+            return if emitting { -100.0 } else { 0.0 };
+        }
+
+        if !emitting {
+            return 0.0;
+        }
+        self.confirm(b0.close)
     }
 }
 
@@ -451,85 +499,91 @@ impl Next<(f64, f64, f64, f64)> for CDLHIKKAKE {
 pub struct CDLHIKKAKEMOD {
     bars_seen: usize,
     window: CandleWindow,
-    near: RollingCandleAvg,
-    pattern_bars_ago: Option<usize>,
+    near_avg: RollingCandleAvg,
+    /// Bars elapsed since the setup bar; `None` once confirmed or expired.
+    pattern_age: Option<usize>,
     pattern_result: i32,
+    ref_high: f64,
+    ref_low: f64,
 }
 
 impl CDLHIKKAKEMOD {
     pub fn new() -> Self {
         Self {
             bars_seen: 0,
-            window: CandleWindow::new(6),
-            near: RollingCandleAvg::new(NEAR),
-            pattern_bars_ago: None,
+            window: CandleWindow::new(4),
+            near_avg: RollingCandleAvg::new(NEAR),
+            pattern_age: None,
             pattern_result: 0,
+            ref_high: 0.0,
+            ref_low: 0.0,
         }
     }
 }
 
 impl Default for CDLHIKKAKEMOD {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Next<(f64, f64, f64, f64)> for CDLHIKKAKEMOD {
     type Output = f64;
+
     fn next(&mut self, (open, high, low, close): (f64, f64, f64, f64)) -> Self::Output {
         self.bars_seen += 1;
         self.window.push(open, high, low, close);
-        self.near.push(open, high, low, close);
+        self.near_avg.push(open, high, low, close);
 
-        if let Some(ago) = self.pattern_bars_ago.as_mut() {
-            *ago += 1;
-            if *ago > 4 {
-                self.pattern_bars_ago = None;
+        if let Some(age) = self.pattern_age {
+            self.pattern_age = Some(age + 1);
+        }
+
+        // C TA-Lib: lookback = max(1, NEAR.avg_period) + 5
+        let lookback = 1usize.max(NEAR.avg_period) + 5;
+        if self.bars_seen <= lookback {
+            return 0.0;
+        }
+
+        let b0 = self.window.bar(0);
+        let b1 = self.window.bar(1);
+        let b2 = self.window.bar(2);
+        let b3 = self.window.bar(3);
+
+        // Two nested inside bars, then a breakout.
+        if b1.high < b2.high && b1.low > b2.low && b2.high < b3.high && b2.low > b3.low {
+            let near_avg = self.near_avg.val(2);
+            if b0.high < b1.high && b0.low < b1.low && b2.close <= b2.low + near_avg {
+                self.pattern_result = 100;
+                self.pattern_age = Some(0);
+                self.ref_high = b1.high;
+                self.ref_low = b1.low;
+            } else if b0.high > b1.high && b0.low > b1.low && b2.close >= b2.high - near_avg {
+                self.pattern_result = -100;
+                self.pattern_age = Some(0);
+                self.ref_high = b1.high;
+                self.ref_low = b1.low;
             }
         }
 
-        let lookback = 1_usize.max(NEAR.avg_period) + 5;
-        let mut out = 0.0;
-
-        // Pattern requires 4 bars minimum: b3, b2, b1, b0
-        if self.window.len() >= 4 {
-            let b0 = self.window.bar(0);
-            let b1 = self.window.bar(1);
-            let b2 = self.window.bar(2);
-            let b3 = self.window.bar(3);
-
-            if b1.high < b2.high && b1.low > b2.low && b2.high < b3.high && b2.low > b3.low {
-                let near_avg = self.near.val(2);
-                if b0.high < b1.high && b0.low < b1.low && b2.close <= b2.low + near_avg {
-                    self.pattern_result = 100;
-                    self.pattern_bars_ago = Some(0);
-                    out = self.pattern_result as f64;
-                } else if b0.high > b1.high && b0.low > b1.low && b2.close >= b2.high - near_avg {
-                    self.pattern_result = -100;
-                    self.pattern_bars_ago = Some(0);
-                    out = self.pattern_result as f64;
+        // Confirmation — unlike CDLHIKKAKE this can fire on the setup bar itself,
+        // and the setup alone never emits.
+        if let Some(age) = self.pattern_age
+            && age <= 3
+        {
+            {
+                if self.pattern_result > 0 && b0.close > self.ref_high {
+                    self.pattern_age = None;
+                    return (self.pattern_result + 100) as f64;
+                } else if self.pattern_result < 0 && b0.close < self.ref_low {
+                    self.pattern_age = None;
+                    return (self.pattern_result - 100) as f64;
                 }
             }
         }
-
-        if out == 0.0 {
-            if let Some(ago) = self.pattern_bars_ago {
-                if ago > 0 && ago <= 3 {
-                    let pattern_prev_bar = self.window.bar(ago + 1);
-                    let b0 = self.window.bar(0);
-                    if self.pattern_result > 0 && b0.close > pattern_prev_bar.high {
-                        out = (self.pattern_result + 100) as f64;
-                        self.pattern_bars_ago = None;
-                    } else if self.pattern_result < 0 && b0.close < pattern_prev_bar.low {
-                        out = (self.pattern_result - 100) as f64;
-                        self.pattern_bars_ago = None;
-                    }
-                }
-            }
-        }
-
-        if self.bars_seen <= lookback { 0.0 } else { out }
+        0.0
     }
 }
-
 
 // =============================================================================
 // CDLSTICKSANDWICH
@@ -553,7 +607,9 @@ impl CDLSTICKSANDWICH {
 }
 
 impl Default for CDLSTICKSANDWICH {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Next<(f64, f64, f64, f64)> for CDLSTICKSANDWICH {
@@ -564,7 +620,9 @@ impl Next<(f64, f64, f64, f64)> for CDLSTICKSANDWICH {
         self.equal.push(open, high, low, close);
 
         let lookback = EQUAL.avg_period + 2;
-        if self.bars_seen <= lookback { return 0.0; }
+        if self.bars_seen <= lookback {
+            return 0.0;
+        }
 
         let b2 = self.window.bar(2);
         let b1 = self.window.bar(1);
@@ -602,7 +660,9 @@ impl CDL2CROWS {
 }
 
 impl Default for CDL2CROWS {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Next<(f64, f64, f64, f64)> for CDL2CROWS {
@@ -613,7 +673,9 @@ impl Next<(f64, f64, f64, f64)> for CDL2CROWS {
         self.body_long.push(open, high, low, close);
 
         let lookback = BODY_LONG.avg_period + 2;
-        if self.bars_seen <= lookback { return 0.0; }
+        if self.bars_seen <= lookback {
+            return 0.0;
+        }
 
         let b2 = self.window.bar(2);
         let b1 = self.window.bar(1);
@@ -636,14 +698,42 @@ mod tests {
     use super::*;
     use crate::test_pattern_parity;
 
-    test_pattern_parity!(test_cdlpiercing, CDLPIERCING, talib_rs::pattern::cdl_piercing);
-    test_pattern_parity!(test_cdlseparatinglines, CDLSEPARATINGLINES, talib_rs::pattern::cdl_separatinglines);
-    test_pattern_parity!(test_cdlshootingstar, CDLSHOOTINGSTAR, talib_rs::pattern::cdl_shootingstar);
-    test_pattern_parity!(test_cdlthrusting, CDLTHRUSTING, talib_rs::pattern::cdl_thrusting);
+    test_pattern_parity!(
+        test_cdlpiercing,
+        CDLPIERCING,
+        talib_rs::pattern::cdl_piercing
+    );
+    test_pattern_parity!(
+        test_cdlseparatinglines,
+        CDLSEPARATINGLINES,
+        talib_rs::pattern::cdl_separatinglines
+    );
+    test_pattern_parity!(
+        test_cdlshootingstar,
+        CDLSHOOTINGSTAR,
+        talib_rs::pattern::cdl_shootingstar
+    );
+    test_pattern_parity!(
+        test_cdlthrusting,
+        CDLTHRUSTING,
+        talib_rs::pattern::cdl_thrusting
+    );
     test_pattern_parity!(test_cdlkicking, CDLKICKING, talib_rs::pattern::cdl_kicking);
-    test_pattern_parity!(test_cdlkickingbylength, CDLKICKINGBYLENGTH, talib_rs::pattern::cdl_kickingbylength);
+    test_pattern_parity!(
+        test_cdlkickingbylength,
+        CDLKICKINGBYLENGTH,
+        talib_rs::pattern::cdl_kickingbylength
+    );
     test_pattern_parity!(test_cdlhikkake, CDLHIKKAKE, talib_rs::pattern::cdl_hikkake);
-    test_pattern_parity!(test_cdlhikkakemod, CDLHIKKAKEMOD, talib_rs::pattern::cdl_hikkakemod);
-    test_pattern_parity!(test_cdlsticksandwich, CDLSTICKSANDWICH, talib_rs::pattern::cdl_sticksandwich);
+    test_pattern_parity!(
+        test_cdlhikkakemod,
+        CDLHIKKAKEMOD,
+        talib_rs::pattern::cdl_hikkakemod
+    );
+    test_pattern_parity!(
+        test_cdlsticksandwich,
+        CDLSTICKSANDWICH,
+        talib_rs::pattern::cdl_sticksandwich
+    );
     test_pattern_parity!(test_cdl2crows, CDL2CROWS, talib_rs::pattern::cdl_2crows);
 }

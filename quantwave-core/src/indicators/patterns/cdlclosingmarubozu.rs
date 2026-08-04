@@ -1,11 +1,11 @@
 //! Native O(1) streaming CDLCLOSINGMARUBOZU (matches `talib_rs::pattern::cdl_closingmarubozu`).
 //! Source: TA-Lib
 
-use crate::traits::Next;
 use crate::indicators::patterns::candle_settings::{
-    CandleWindow, RollingCandleAvg, BODY_LONG, SHADOW_VERY_SHORT,
-    real_body, upper_shadow, lower_shadow, candle_color
+    BODY_LONG, CandleWindow, RollingCandleAvg, SHADOW_VERY_SHORT, candle_color, lower_shadow,
+    real_body, upper_shadow,
 };
+use crate::traits::Next;
 
 const LOOKBACK: usize = 10; // max(10, 10)
 
@@ -65,5 +65,9 @@ impl Next<(f64, f64, f64, f64)> for CDLCLOSINGMARUBOZU {
 #[cfg(test)]
 mod tests {
     use super::*;
-    crate::test_pattern_parity!(test_cdlclosingmarubozu_parity, CDLCLOSINGMARUBOZU, talib_rs::pattern::cdl_closingmarubozu);
+    crate::test_pattern_parity!(
+        test_cdlclosingmarubozu_parity,
+        CDLCLOSINGMARUBOZU,
+        talib_rs::pattern::cdl_closingmarubozu
+    );
 }

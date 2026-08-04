@@ -1,9 +1,11 @@
 pub use crate::indicators::incremental::cdl_doji::CDLDOJI;
+use crate::indicators::metadata::IndicatorMetadata;
 pub use crate::indicators::patterns::cdl3linestrike::CDL3LINESTRIKE;
-pub use crate::indicators::patterns::cdlhammer::CDLHAMMER;
+pub use crate::indicators::patterns::cdlbelthold::CDLBELTHOLD;
 pub use crate::indicators::patterns::cdlclosingmarubozu::CDLCLOSINGMARUBOZU;
 pub use crate::indicators::patterns::cdldragonflydoji::CDLDRAGONFLYDOJI;
 pub use crate::indicators::patterns::cdlgravestonedoji::CDLGRAVESTONEDOJI;
+pub use crate::indicators::patterns::cdlhammer::CDLHAMMER;
 pub use crate::indicators::patterns::cdlhighwave::CDLHIGHWAVE;
 pub use crate::indicators::patterns::cdllongleggeddoji::CDLLONGLEGGEDDOJI;
 pub use crate::indicators::patterns::cdllongline::CDLLONGLINE;
@@ -12,8 +14,6 @@ pub use crate::indicators::patterns::cdlrickshawman::CDLRICKSHAWMAN;
 pub use crate::indicators::patterns::cdlshortline::CDLSHORTLINE;
 pub use crate::indicators::patterns::cdlspinningtop::CDLSPINNINGTOP;
 pub use crate::indicators::patterns::cdltakuri::CDLTAKURI;
-pub use crate::indicators::patterns::cdlbelthold::CDLBELTHOLD;
-use crate::indicators::metadata::IndicatorMetadata;
 #[allow(unused_imports)]
 use crate::traits::Next;
 
@@ -299,14 +299,9 @@ impl Default for CDLXSIDEGAP3METHODS {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::traits::Next;
     use proptest::prelude::*;
 
-    proptest! {
-
-
-    }
+    proptest! {}
 }
 
 pub const CDLDOJI_METADATA: IndicatorMetadata = IndicatorMetadata {

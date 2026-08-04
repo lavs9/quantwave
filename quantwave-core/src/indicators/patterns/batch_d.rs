@@ -40,14 +40,32 @@ impl Next<(f64, f64, f64, f64)> for CDL3BLACKCROWS {
             return 0.0;
         }
 
-        if candle_color(self.window.bar(2).open, self.window.bar(2).close) == -1 && candle_color(self.window.bar(1).open, self.window.bar(1).close) == -1 && candle_color(self.window.bar(0).open, self.window.bar(0).close) == -1
-            && self.window.bar(1).close < self.window.bar(2).close && self.window.bar(0).close < self.window.bar(1).close
+        if candle_color(self.window.bar(2).open, self.window.bar(2).close) == -1
+            && candle_color(self.window.bar(1).open, self.window.bar(1).close) == -1
+            && candle_color(self.window.bar(0).open, self.window.bar(0).close) == -1
+            && self.window.bar(1).close < self.window.bar(2).close
+            && self.window.bar(0).close < self.window.bar(1).close
             && self.window.bar(2).open <= self.window.bar(3).open.max(self.window.bar(3).close)
-            && self.window.bar(1).open <= self.window.bar(2).open && self.window.bar(1).open >= self.window.bar(2).close
-            && self.window.bar(0).open <= self.window.bar(1).open && self.window.bar(0).open >= self.window.bar(1).close
-            && lower_shadow(self.window.bar(2).open, self.window.bar(2).low, self.window.bar(2).close) < self.shadow_very_short_avg.val(2)
-            && lower_shadow(self.window.bar(1).open, self.window.bar(1).low, self.window.bar(1).close) < self.shadow_very_short_avg.val(1)
-            && lower_shadow(self.window.bar(0).open, self.window.bar(0).low, self.window.bar(0).close) < self.shadow_very_short_avg.val(0) {
+            && self.window.bar(1).open <= self.window.bar(2).open
+            && self.window.bar(1).open >= self.window.bar(2).close
+            && self.window.bar(0).open <= self.window.bar(1).open
+            && self.window.bar(0).open >= self.window.bar(1).close
+            && lower_shadow(
+                self.window.bar(2).open,
+                self.window.bar(2).low,
+                self.window.bar(2).close,
+            ) < self.shadow_very_short_avg.val(2)
+            && lower_shadow(
+                self.window.bar(1).open,
+                self.window.bar(1).low,
+                self.window.bar(1).close,
+            ) < self.shadow_very_short_avg.val(1)
+            && lower_shadow(
+                self.window.bar(0).open,
+                self.window.bar(0).low,
+                self.window.bar(0).close,
+            ) < self.shadow_very_short_avg.val(0)
+        {
             return -100.0;
         }
         0.0
@@ -94,11 +112,23 @@ impl Next<(f64, f64, f64, f64)> for CDL3INSIDE {
             return 0.0;
         }
 
-        if real_body(self.window.bar(2).open, self.window.bar(2).close) > self.body_long_avg.val(2) && real_body(self.window.bar(1).open, self.window.bar(1).close) <= self.body_short_avg.val(1)
-            && self.window.bar(1).open.max(self.window.bar(1).close) < self.window.bar(2).open.max(self.window.bar(2).close) && self.window.bar(1).open.min(self.window.bar(1).close) > self.window.bar(2).open.min(self.window.bar(2).close) {
-            if candle_color(self.window.bar(2).open, self.window.bar(2).close) == 1 && candle_color(self.window.bar(0).open, self.window.bar(0).close) == -1 && self.window.bar(0).close < self.window.bar(2).open {
+        if real_body(self.window.bar(2).open, self.window.bar(2).close) > self.body_long_avg.val(2)
+            && real_body(self.window.bar(1).open, self.window.bar(1).close)
+                <= self.body_short_avg.val(1)
+            && self.window.bar(1).open.max(self.window.bar(1).close)
+                < self.window.bar(2).open.max(self.window.bar(2).close)
+            && self.window.bar(1).open.min(self.window.bar(1).close)
+                > self.window.bar(2).open.min(self.window.bar(2).close)
+        {
+            if candle_color(self.window.bar(2).open, self.window.bar(2).close) == 1
+                && candle_color(self.window.bar(0).open, self.window.bar(0).close) == -1
+                && self.window.bar(0).close < self.window.bar(2).open
+            {
                 return -100.0;
-            } else if candle_color(self.window.bar(2).open, self.window.bar(2).close) == -1 && candle_color(self.window.bar(0).open, self.window.bar(0).close) == 1 && self.window.bar(0).close > self.window.bar(2).open {
+            } else if candle_color(self.window.bar(2).open, self.window.bar(2).close) == -1
+                && candle_color(self.window.bar(0).open, self.window.bar(0).close) == 1
+                && self.window.bar(0).close > self.window.bar(2).open
+            {
                 return 100.0;
             }
         }
@@ -140,10 +170,22 @@ impl Next<(f64, f64, f64, f64)> for CDL3OUTSIDE {
             return 0.0;
         }
 
-        let bull = candle_color(self.window.bar(2).open, self.window.bar(2).close) == -1 && candle_color(self.window.bar(1).open, self.window.bar(1).close) == 1 && self.window.bar(1).close >= self.window.bar(2).open && self.window.bar(1).open <= self.window.bar(2).close && self.window.bar(0).close > self.window.bar(1).close;
-        let bear = candle_color(self.window.bar(2).open, self.window.bar(2).close) == 1 && candle_color(self.window.bar(1).open, self.window.bar(1).close) == -1 && self.window.bar(1).open >= self.window.bar(2).close && self.window.bar(1).close <= self.window.bar(2).open && self.window.bar(0).close < self.window.bar(1).close;
-        if bull { return 100.0; }
-        if bear { return -100.0; }
+        let bull = candle_color(self.window.bar(2).open, self.window.bar(2).close) == -1
+            && candle_color(self.window.bar(1).open, self.window.bar(1).close) == 1
+            && self.window.bar(1).close >= self.window.bar(2).open
+            && self.window.bar(1).open <= self.window.bar(2).close
+            && self.window.bar(0).close > self.window.bar(1).close;
+        let bear = candle_color(self.window.bar(2).open, self.window.bar(2).close) == 1
+            && candle_color(self.window.bar(1).open, self.window.bar(1).close) == -1
+            && self.window.bar(1).open >= self.window.bar(2).close
+            && self.window.bar(1).close <= self.window.bar(2).open
+            && self.window.bar(0).close < self.window.bar(1).close;
+        if bull {
+            return 100.0;
+        }
+        if bear {
+            return -100.0;
+        }
         0.0
     }
 }
@@ -184,14 +226,36 @@ impl Next<(f64, f64, f64, f64)> for CDL3STARSINSOUTH {
         self.body_long_avg.push(open, high, low, close);
         self.shadow_long_avg.push(open, high, low, close);
 
-        if self.bars_seen <= BODY_LONG.avg_period.max(SHADOW_LONG.avg_period) + 2 {
+        // SHADOW_LONG.avg_period is 0 and cannot raise the max.
+        if self.bars_seen <= BODY_LONG.avg_period + 2 {
             return 0.0;
         }
 
-        if candle_color(self.window.bar(2).open, self.window.bar(2).close) == -1 && candle_color(self.window.bar(1).open, self.window.bar(1).close) == -1 && candle_color(self.window.bar(0).open, self.window.bar(0).close) == -1
-            && real_body(self.window.bar(2).open, self.window.bar(2).close) > self.body_long_avg.val(2) && lower_shadow(self.window.bar(2).open, self.window.bar(2).low, self.window.bar(2).close) > self.shadow_long_avg.val(2)
-            && self.window.bar(1).open.min(self.window.bar(1).close) > self.window.bar(2).open.min(self.window.bar(2).close) && self.window.bar(1).open.max(self.window.bar(1).close) < self.window.bar(2).open.max(self.window.bar(2).close) && self.window.bar(1).low < self.window.bar(2).low
-            && self.window.bar(0).open.min(self.window.bar(0).close) > self.window.bar(1).open.min(self.window.bar(1).close) && self.window.bar(0).open.max(self.window.bar(0).close) < self.window.bar(1).open.max(self.window.bar(1).close) && lower_shadow(self.window.bar(0).open, self.window.bar(0).low, self.window.bar(0).close) == 0.0 {
+        if candle_color(self.window.bar(2).open, self.window.bar(2).close) == -1
+            && candle_color(self.window.bar(1).open, self.window.bar(1).close) == -1
+            && candle_color(self.window.bar(0).open, self.window.bar(0).close) == -1
+            && real_body(self.window.bar(2).open, self.window.bar(2).close)
+                > self.body_long_avg.val(2)
+            && lower_shadow(
+                self.window.bar(2).open,
+                self.window.bar(2).low,
+                self.window.bar(2).close,
+            ) > self.shadow_long_avg.val(2)
+            && self.window.bar(1).open.min(self.window.bar(1).close)
+                > self.window.bar(2).open.min(self.window.bar(2).close)
+            && self.window.bar(1).open.max(self.window.bar(1).close)
+                < self.window.bar(2).open.max(self.window.bar(2).close)
+            && self.window.bar(1).low < self.window.bar(2).low
+            && self.window.bar(0).open.min(self.window.bar(0).close)
+                > self.window.bar(1).open.min(self.window.bar(1).close)
+            && self.window.bar(0).open.max(self.window.bar(0).close)
+                < self.window.bar(1).open.max(self.window.bar(1).close)
+            && lower_shadow(
+                self.window.bar(0).open,
+                self.window.bar(0).low,
+                self.window.bar(0).close,
+            ) == 0.0
+        {
             return 100.0;
         }
         0.0
@@ -205,6 +269,8 @@ pub struct CDL3WHITESOLDIERS {
     bars_seen: usize,
     window: CandleWindow,
     near_avg: RollingCandleAvg,
+    far_avg: RollingCandleAvg,
+    body_short_avg: RollingCandleAvg,
     shadow_very_short_avg: RollingCandleAvg,
 }
 
@@ -214,6 +280,8 @@ impl CDL3WHITESOLDIERS {
             bars_seen: 0,
             window: CandleWindow::new(4),
             near_avg: RollingCandleAvg::new(NEAR),
+            far_avg: RollingCandleAvg::new(FAR),
+            body_short_avg: RollingCandleAvg::new(BODY_SHORT),
             shadow_very_short_avg: RollingCandleAvg::new(SHADOW_VERY_SHORT),
         }
     }
@@ -232,17 +300,45 @@ impl Next<(f64, f64, f64, f64)> for CDL3WHITESOLDIERS {
         self.bars_seen += 1;
         self.window.push(open, high, low, close);
         self.near_avg.push(open, high, low, close);
+        self.far_avg.push(open, high, low, close);
+        self.body_short_avg.push(open, high, low, close);
         self.shadow_very_short_avg.push(open, high, low, close);
 
-        if self.bars_seen <= SHADOW_VERY_SHORT.avg_period.max(NEAR.avg_period) + 3 {
+        // Oracle lookback: max(SVS, BODY_SHORT, FAR, NEAR) + 2
+        let lookback = SHADOW_VERY_SHORT
+            .avg_period
+            .max(BODY_SHORT.avg_period)
+            .max(FAR.avg_period)
+            .max(NEAR.avg_period)
+            + 2;
+        if self.bars_seen <= lookback {
             return 0.0;
         }
 
-        if candle_color(self.window.bar(2).open, self.window.bar(2).close) == 1 && candle_color(self.window.bar(1).open, self.window.bar(1).close) == 1 && candle_color(self.window.bar(0).open, self.window.bar(0).close) == 1
-            && self.window.bar(1).close > self.window.bar(2).close && self.window.bar(0).close > self.window.bar(1).close
-            && upper_shadow(self.window.bar(2).open, self.window.bar(2).high, self.window.bar(2).close) < self.shadow_very_short_avg.val(2) && upper_shadow(self.window.bar(1).open, self.window.bar(1).high, self.window.bar(1).close) < self.shadow_very_short_avg.val(1) && upper_shadow(self.window.bar(0).open, self.window.bar(0).high, self.window.bar(0).close) < self.shadow_very_short_avg.val(0)
-            && self.window.bar(1).open > self.window.bar(2).open && self.window.bar(1).open <= self.window.bar(2).close + self.near_avg.val(1)
-            && self.window.bar(0).open > self.window.bar(1).open && self.window.bar(0).open <= self.window.bar(1).close + self.near_avg.val(0) {
+        let b2 = self.window.bar(2);
+        let b1 = self.window.bar(1);
+        let b0 = self.window.bar(0);
+
+        if candle_color(b2.open, b2.close) == 1
+            && candle_color(b1.open, b1.close) == 1
+            && candle_color(b0.open, b0.close) == 1
+            && b1.close > b2.close
+            && b0.close > b1.close
+            // Short upper shadows
+            && upper_shadow(b2.open, b2.high, b2.close) < self.shadow_very_short_avg.val(2)
+            && upper_shadow(b1.open, b1.high, b1.close) < self.shadow_very_short_avg.val(1)
+            && upper_shadow(b0.open, b0.high, b0.close) < self.shadow_very_short_avg.val(0)
+            // Opens within or near the previous body
+            && b1.open > b2.open
+            && b1.open <= b2.close + self.near_avg.val(1)
+            && b0.open > b1.open
+            && b0.open <= b1.close + self.near_avg.val(0)
+            // Bodies not far shorter than the prior one
+            && real_body(b1.open, b1.close) > real_body(b2.open, b2.close) - self.far_avg.val(1)
+            && real_body(b0.open, b0.close) > real_body(b1.open, b1.close) - self.far_avg.val(0)
+            // Last body not short
+            && real_body(b0.open, b0.close) > self.body_short_avg.val(0)
+        {
             return 100.0;
         }
         0.0
@@ -288,16 +384,45 @@ impl Next<(f64, f64, f64, f64)> for CDLABANDONEDBABY {
         self.body_long_avg.push(open, high, low, close);
         self.body_short_avg.push(open, high, low, close);
 
-        if self.bars_seen <= BODY_DOJI.avg_period.max(BODY_LONG.avg_period).max(BODY_SHORT.avg_period) + 2 {
+        if self.bars_seen
+            <= BODY_DOJI
+                .avg_period
+                .max(BODY_LONG.avg_period)
+                .max(BODY_SHORT.avg_period)
+                + 2
+        {
             return 0.0;
         }
 
         let penetration = 0.3;
-        let base = real_body(self.window.bar(2).open, self.window.bar(2).close) > self.body_long_avg.val(2) && real_body(self.window.bar(1).open, self.window.bar(1).close) <= self.body_doji_avg.val(1) && real_body(self.window.bar(0).open, self.window.bar(0).close) > self.body_short_avg.val(0);
-        let bull = base && candle_color(self.window.bar(2).open, self.window.bar(2).close) == -1 && candle_color(self.window.bar(0).open, self.window.bar(0).close) == 1 && self.window.bar(1).high < self.window.bar(2).low && self.window.bar(0).low > self.window.bar(1).high && self.window.bar(0).close > self.window.bar(2).close + real_body(self.window.bar(2).open, self.window.bar(2).close) * penetration;
-        let bear = base && candle_color(self.window.bar(2).open, self.window.bar(2).close) == 1 && candle_color(self.window.bar(0).open, self.window.bar(0).close) == -1 && self.window.bar(1).low > self.window.bar(2).high && self.window.bar(0).high < self.window.bar(1).low && self.window.bar(0).close < self.window.bar(2).close - real_body(self.window.bar(2).open, self.window.bar(2).close) * penetration;
-        if bull { return 100.0; }
-        if bear { return -100.0; }
+        let base = real_body(self.window.bar(2).open, self.window.bar(2).close)
+            > self.body_long_avg.val(2)
+            && real_body(self.window.bar(1).open, self.window.bar(1).close)
+                <= self.body_doji_avg.val(1)
+            && real_body(self.window.bar(0).open, self.window.bar(0).close)
+                > self.body_short_avg.val(0);
+        let bull = base
+            && candle_color(self.window.bar(2).open, self.window.bar(2).close) == -1
+            && candle_color(self.window.bar(0).open, self.window.bar(0).close) == 1
+            && self.window.bar(1).high < self.window.bar(2).low
+            && self.window.bar(0).low > self.window.bar(1).high
+            && self.window.bar(0).close
+                > self.window.bar(2).close
+                    + real_body(self.window.bar(2).open, self.window.bar(2).close) * penetration;
+        let bear = base
+            && candle_color(self.window.bar(2).open, self.window.bar(2).close) == 1
+            && candle_color(self.window.bar(0).open, self.window.bar(0).close) == -1
+            && self.window.bar(1).low > self.window.bar(2).high
+            && self.window.bar(0).high < self.window.bar(1).low
+            && self.window.bar(0).close
+                < self.window.bar(2).close
+                    - real_body(self.window.bar(2).open, self.window.bar(2).close) * penetration;
+        if bull {
+            return 100.0;
+        }
+        if bear {
+            return -100.0;
+        }
         0.0
     }
 }
@@ -311,6 +436,8 @@ pub struct CDLADVANCEBLOCK {
     far_avg: RollingCandleAvg,
     near_avg: RollingCandleAvg,
     shadow_long_avg: RollingCandleAvg,
+    shadow_short_avg: RollingCandleAvg,
+    body_long_avg: RollingCandleAvg,
 }
 
 impl CDLADVANCEBLOCK {
@@ -321,6 +448,8 @@ impl CDLADVANCEBLOCK {
             far_avg: RollingCandleAvg::new(FAR),
             near_avg: RollingCandleAvg::new(NEAR),
             shadow_long_avg: RollingCandleAvg::new(SHADOW_LONG),
+            shadow_short_avg: RollingCandleAvg::new(SHADOW_SHORT),
+            body_long_avg: RollingCandleAvg::new(BODY_LONG),
         }
     }
 }
@@ -340,29 +469,54 @@ impl Next<(f64, f64, f64, f64)> for CDLADVANCEBLOCK {
         self.far_avg.push(open, high, low, close);
         self.near_avg.push(open, high, low, close);
         self.shadow_long_avg.push(open, high, low, close);
+        self.shadow_short_avg.push(open, high, low, close);
+        self.body_long_avg.push(open, high, low, close);
 
-        if self.bars_seen <= SHADOW_LONG.avg_period.max(NEAR.avg_period).max(FAR.avg_period) + 2 {
+        // Oracle lookback: max(SHADOW_LONG, SHADOW_SHORT, FAR, NEAR, BODY_LONG) + 2
+        // SHADOW_LONG.avg_period is 0, so it cannot raise the max.
+        let lookback = SHADOW_SHORT
+            .avg_period
+            .max(FAR.avg_period)
+            .max(NEAR.avg_period)
+            .max(BODY_LONG.avg_period)
+            + 2;
+        if self.bars_seen <= lookback {
             return 0.0;
         }
 
-        let _base = candle_color(self.window.bar(2).open, self.window.bar(2).close) == 1 && candle_color(self.window.bar(1).open, self.window.bar(1).close) == 1 && candle_color(self.window.bar(0).open, self.window.bar(0).close) == 1
-            && self.window.bar(1).close > self.window.bar(2).close && self.window.bar(0).close > self.window.bar(1).close
-            && self.window.bar(1).open > self.window.bar(2).open && self.window.bar(1).open <= self.window.bar(2).close + self.near_avg.val(1)
-            && self.window.bar(0).open > self.window.bar(1).open && self.window.bar(0).open <= self.window.bar(1).close + self.near_avg.val(0)
-            && real_body(self.window.bar(2).open, self.window.bar(2).close) > self.shadow_long_avg.val(2) * 0.0 // not used directly this way
-            ;
-        // The original logic checks short shadow and long body using near, far and shadow averages:
-        let weakness = candle_color(self.window.bar(2).open, self.window.bar(2).close) == 1 && candle_color(self.window.bar(1).open, self.window.bar(1).close) == 1 && candle_color(self.window.bar(0).open, self.window.bar(0).close) == 1
-            && self.window.bar(1).close > self.window.bar(2).close && self.window.bar(0).close > self.window.bar(1).close
-            && self.window.bar(1).open > self.window.bar(2).open && self.window.bar(1).open <= self.window.bar(2).close + self.near_avg.val(1)
-            && self.window.bar(0).open > self.window.bar(1).open && self.window.bar(0).open <= self.window.bar(1).close + self.near_avg.val(0)
-            && (
-                (real_body(self.window.bar(1).open, self.window.bar(1).close) < real_body(self.window.bar(2).open, self.window.bar(2).close) - self.far_avg.val(1) && real_body(self.window.bar(0).open, self.window.bar(0).close) < real_body(self.window.bar(1).open, self.window.bar(1).close) + self.near_avg.val(0))
-                || (real_body(self.window.bar(0).open, self.window.bar(0).close) < real_body(self.window.bar(1).open, self.window.bar(1).close) && real_body(self.window.bar(1).open, self.window.bar(1).close) < real_body(self.window.bar(2).open, self.window.bar(2).close) && (upper_shadow(self.window.bar(0).open, self.window.bar(0).high, self.window.bar(0).close) > self.shadow_long_avg.val(0) || upper_shadow(self.window.bar(1).open, self.window.bar(1).high, self.window.bar(1).close) > self.shadow_long_avg.val(1)))
-                || (real_body(self.window.bar(0).open, self.window.bar(0).close) < real_body(self.window.bar(1).open, self.window.bar(1).close) - self.far_avg.val(0))
-            );
-        if weakness { return -100.0; }
-        0.0
+        let b2 = self.window.bar(2);
+        let b1 = self.window.bar(1);
+        let b0 = self.window.bar(0);
+
+        let rb2 = real_body(b2.open, b2.close);
+        let rb1 = real_body(b1.open, b1.close);
+        let rb0 = real_body(b0.open, b0.close);
+
+        // Three white candles with rising closes, opens within/near the prior body,
+        // first candle long-bodied with a short upper shadow.
+        let base = candle_color(b2.open, b2.close) == 1
+            && candle_color(b1.open, b1.close) == 1
+            && candle_color(b0.open, b0.close) == 1
+            && b1.close > b2.close
+            && b0.close > b1.close
+            && b1.open > b2.open
+            && b1.open <= b2.close + self.near_avg.val(1)
+            && b0.open > b1.open
+            && b0.open <= b1.close + self.near_avg.val(0)
+            && rb2 > self.body_long_avg.val(2)
+            && upper_shadow(b2.open, b2.high, b2.close) < self.shadow_short_avg.val(2);
+
+        // Weakness: bodies shrinking and/or upper shadows lengthening.
+        let weakness = base
+            && ((rb1 < rb2 - self.far_avg.val(1) && rb0 < rb1 + self.near_avg.val(0))
+                || (rb0 < rb1
+                    && rb1 < rb2
+                    && (upper_shadow(b0.open, b0.high, b0.close) > self.shadow_long_avg.val(0)
+                        || upper_shadow(b1.open, b1.high, b1.close)
+                            > self.shadow_long_avg.val(1)))
+                || (rb0 < rb1 - self.far_avg.val(0)));
+
+        if weakness { -100.0 } else { 0.0 }
     }
 }
 
@@ -405,15 +559,31 @@ impl Next<(f64, f64, f64, f64)> for CDLEVENINGDOJISTAR {
         self.body_long_avg.push(open, high, low, close);
         self.body_short_avg.push(open, high, low, close);
 
-        if self.bars_seen <= BODY_DOJI.avg_period.max(BODY_LONG.avg_period).max(BODY_SHORT.avg_period) + 2 {
+        if self.bars_seen
+            <= BODY_DOJI
+                .avg_period
+                .max(BODY_LONG.avg_period)
+                .max(BODY_SHORT.avg_period)
+                + 2
+        {
             return 0.0;
         }
 
         let penetration = 0.3;
-        if candle_color(self.window.bar(2).open, self.window.bar(2).close) == 1 && real_body(self.window.bar(2).open, self.window.bar(2).close) > self.body_long_avg.val(2)
-            && real_body(self.window.bar(1).open, self.window.bar(1).close) <= self.body_doji_avg.val(1) && (self.window.bar(1).open.min(self.window.bar(1).close) > self.window.bar(2).open.max(self.window.bar(2).close))
-            && candle_color(self.window.bar(0).open, self.window.bar(0).close) == -1 && real_body(self.window.bar(0).open, self.window.bar(0).close) > self.body_short_avg.val(0)
-            && self.window.bar(0).close < self.window.bar(2).close - real_body(self.window.bar(2).open, self.window.bar(2).close) * penetration {
+        if candle_color(self.window.bar(2).open, self.window.bar(2).close) == 1
+            && real_body(self.window.bar(2).open, self.window.bar(2).close)
+                > self.body_long_avg.val(2)
+            && real_body(self.window.bar(1).open, self.window.bar(1).close)
+                <= self.body_doji_avg.val(1)
+            && (self.window.bar(1).open.min(self.window.bar(1).close)
+                > self.window.bar(2).open.max(self.window.bar(2).close))
+            && candle_color(self.window.bar(0).open, self.window.bar(0).close) == -1
+            && real_body(self.window.bar(0).open, self.window.bar(0).close)
+                > self.body_short_avg.val(0)
+            && self.window.bar(0).close
+                < self.window.bar(2).close
+                    - real_body(self.window.bar(2).open, self.window.bar(2).close) * penetration
+        {
             return -100.0;
         }
         0.0
@@ -461,10 +631,20 @@ impl Next<(f64, f64, f64, f64)> for CDLEVENINGSTAR {
         }
 
         let penetration = 0.3;
-        if candle_color(self.window.bar(2).open, self.window.bar(2).close) == 1 && real_body(self.window.bar(2).open, self.window.bar(2).close) > self.body_long_avg.val(2)
-            && real_body(self.window.bar(1).open, self.window.bar(1).close) <= self.body_short_avg.val(1) && (self.window.bar(1).open.min(self.window.bar(1).close) > self.window.bar(2).open.max(self.window.bar(2).close))
-            && candle_color(self.window.bar(0).open, self.window.bar(0).close) == -1 && real_body(self.window.bar(0).open, self.window.bar(0).close) > self.body_short_avg.val(0)
-            && self.window.bar(0).close < self.window.bar(2).close - real_body(self.window.bar(2).open, self.window.bar(2).close) * penetration {
+        if candle_color(self.window.bar(2).open, self.window.bar(2).close) == 1
+            && real_body(self.window.bar(2).open, self.window.bar(2).close)
+                > self.body_long_avg.val(2)
+            && real_body(self.window.bar(1).open, self.window.bar(1).close)
+                <= self.body_short_avg.val(1)
+            && (self.window.bar(1).open.min(self.window.bar(1).close)
+                > self.window.bar(2).open.max(self.window.bar(2).close))
+            && candle_color(self.window.bar(0).open, self.window.bar(0).close) == -1
+            && real_body(self.window.bar(0).open, self.window.bar(0).close)
+                > self.body_short_avg.val(0)
+            && self.window.bar(0).close
+                < self.window.bar(2).close
+                    - real_body(self.window.bar(2).open, self.window.bar(2).close) * penetration
+        {
             return -100.0;
         }
         0.0
@@ -510,15 +690,31 @@ impl Next<(f64, f64, f64, f64)> for CDLMORNINGDOJISTAR {
         self.body_long_avg.push(open, high, low, close);
         self.body_short_avg.push(open, high, low, close);
 
-        if self.bars_seen <= BODY_DOJI.avg_period.max(BODY_LONG.avg_period).max(BODY_SHORT.avg_period) + 2 {
+        if self.bars_seen
+            <= BODY_DOJI
+                .avg_period
+                .max(BODY_LONG.avg_period)
+                .max(BODY_SHORT.avg_period)
+                + 2
+        {
             return 0.0;
         }
 
         let penetration = 0.3;
-        if candle_color(self.window.bar(2).open, self.window.bar(2).close) == -1 && real_body(self.window.bar(2).open, self.window.bar(2).close) > self.body_long_avg.val(2)
-            && real_body(self.window.bar(1).open, self.window.bar(1).close) <= self.body_doji_avg.val(1) && (self.window.bar(1).open.max(self.window.bar(1).close) < self.window.bar(2).open.min(self.window.bar(2).close))
-            && candle_color(self.window.bar(0).open, self.window.bar(0).close) == 1 && real_body(self.window.bar(0).open, self.window.bar(0).close) > self.body_short_avg.val(0)
-            && self.window.bar(0).close > self.window.bar(2).close + real_body(self.window.bar(2).open, self.window.bar(2).close) * penetration {
+        if candle_color(self.window.bar(2).open, self.window.bar(2).close) == -1
+            && real_body(self.window.bar(2).open, self.window.bar(2).close)
+                > self.body_long_avg.val(2)
+            && real_body(self.window.bar(1).open, self.window.bar(1).close)
+                <= self.body_doji_avg.val(1)
+            && (self.window.bar(1).open.max(self.window.bar(1).close)
+                < self.window.bar(2).open.min(self.window.bar(2).close))
+            && candle_color(self.window.bar(0).open, self.window.bar(0).close) == 1
+            && real_body(self.window.bar(0).open, self.window.bar(0).close)
+                > self.body_short_avg.val(0)
+            && self.window.bar(0).close
+                > self.window.bar(2).close
+                    + real_body(self.window.bar(2).open, self.window.bar(2).close) * penetration
+        {
             return 100.0;
         }
         0.0
@@ -566,10 +762,20 @@ impl Next<(f64, f64, f64, f64)> for CDLMORNINGSTAR {
         }
 
         let penetration = 0.3;
-        if candle_color(self.window.bar(2).open, self.window.bar(2).close) == -1 && real_body(self.window.bar(2).open, self.window.bar(2).close) > self.body_long_avg.val(2)
-            && real_body(self.window.bar(1).open, self.window.bar(1).close) <= self.body_short_avg.val(1) && (self.window.bar(1).open.max(self.window.bar(1).close) < self.window.bar(2).open.min(self.window.bar(2).close))
-            && candle_color(self.window.bar(0).open, self.window.bar(0).close) == 1 && real_body(self.window.bar(0).open, self.window.bar(0).close) > self.body_short_avg.val(0)
-            && self.window.bar(0).close > self.window.bar(2).close + real_body(self.window.bar(2).open, self.window.bar(2).close) * penetration {
+        if candle_color(self.window.bar(2).open, self.window.bar(2).close) == -1
+            && real_body(self.window.bar(2).open, self.window.bar(2).close)
+                > self.body_long_avg.val(2)
+            && real_body(self.window.bar(1).open, self.window.bar(1).close)
+                <= self.body_short_avg.val(1)
+            && (self.window.bar(1).open.max(self.window.bar(1).close)
+                < self.window.bar(2).open.min(self.window.bar(2).close))
+            && candle_color(self.window.bar(0).open, self.window.bar(0).close) == 1
+            && real_body(self.window.bar(0).open, self.window.bar(0).close)
+                > self.body_short_avg.val(0)
+            && self.window.bar(0).close
+                > self.window.bar(2).close
+                    + real_body(self.window.bar(2).open, self.window.bar(2).close) * penetration
+        {
             return 100.0;
         }
         0.0
@@ -579,15 +785,59 @@ impl Next<(f64, f64, f64, f64)> for CDLMORNINGSTAR {
 #[cfg(test)]
 mod tests {
     use super::*;
-    crate::test_pattern_parity!(test_cdl3blackcrows_parity, CDL3BLACKCROWS, talib_rs::pattern::cdl_3blackcrows);
-    crate::test_pattern_parity!(test_cdl3inside_parity, CDL3INSIDE, talib_rs::pattern::cdl_3inside);
-    crate::test_pattern_parity!(test_cdl3outside_parity, CDL3OUTSIDE, talib_rs::pattern::cdl_3outside);
-    crate::test_pattern_parity!(test_cdl3starsinsouth_parity, CDL3STARSINSOUTH, talib_rs::pattern::cdl_3starsinsouth);
-    crate::test_pattern_parity!(test_cdl3whitesoldiers_parity, CDL3WHITESOLDIERS, talib_rs::pattern::cdl_3whitesoldiers);
-    crate::test_pattern_parity!(test_cdlabandonedbaby_parity, CDLABANDONEDBABY, talib_rs::pattern::cdl_abandonedbaby);
-    crate::test_pattern_parity!(test_cdladvanceblock_parity, CDLADVANCEBLOCK, talib_rs::pattern::cdl_advanceblock);
-    crate::test_pattern_parity!(test_cdleveningdojistar_parity, CDLEVENINGDOJISTAR, talib_rs::pattern::cdl_eveningdojistar);
-    crate::test_pattern_parity!(test_cdleveningstar_parity, CDLEVENINGSTAR, talib_rs::pattern::cdl_eveningstar);
-    crate::test_pattern_parity!(test_cdlmorningdojistar_parity, CDLMORNINGDOJISTAR, talib_rs::pattern::cdl_morningdojistar);
-    crate::test_pattern_parity!(test_cdlmorningstar_parity, CDLMORNINGSTAR, talib_rs::pattern::cdl_morningstar);
+    crate::test_pattern_parity!(
+        test_cdl3blackcrows_parity,
+        CDL3BLACKCROWS,
+        talib_rs::pattern::cdl_3blackcrows
+    );
+    crate::test_pattern_parity!(
+        test_cdl3inside_parity,
+        CDL3INSIDE,
+        talib_rs::pattern::cdl_3inside
+    );
+    crate::test_pattern_parity!(
+        test_cdl3outside_parity,
+        CDL3OUTSIDE,
+        talib_rs::pattern::cdl_3outside
+    );
+    crate::test_pattern_parity!(
+        test_cdl3starsinsouth_parity,
+        CDL3STARSINSOUTH,
+        talib_rs::pattern::cdl_3starsinsouth
+    );
+    crate::test_pattern_parity!(
+        test_cdl3whitesoldiers_parity,
+        CDL3WHITESOLDIERS,
+        talib_rs::pattern::cdl_3whitesoldiers
+    );
+    crate::test_pattern_parity!(
+        test_cdlabandonedbaby_parity,
+        CDLABANDONEDBABY,
+        talib_rs::pattern::cdl_abandonedbaby
+    );
+    crate::test_pattern_parity!(
+        test_cdladvanceblock_parity,
+        CDLADVANCEBLOCK,
+        talib_rs::pattern::cdl_advanceblock
+    );
+    crate::test_pattern_parity!(
+        test_cdleveningdojistar_parity,
+        CDLEVENINGDOJISTAR,
+        talib_rs::pattern::cdl_eveningdojistar
+    );
+    crate::test_pattern_parity!(
+        test_cdleveningstar_parity,
+        CDLEVENINGSTAR,
+        talib_rs::pattern::cdl_eveningstar
+    );
+    crate::test_pattern_parity!(
+        test_cdlmorningdojistar_parity,
+        CDLMORNINGDOJISTAR,
+        talib_rs::pattern::cdl_morningdojistar
+    );
+    crate::test_pattern_parity!(
+        test_cdlmorningstar_parity,
+        CDLMORNINGSTAR,
+        talib_rs::pattern::cdl_morningstar
+    );
 }
