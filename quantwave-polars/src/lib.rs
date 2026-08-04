@@ -329,9 +329,9 @@ impl<'a> QuantWaveNamespace<'a> {
         close: &str,
         fastk: usize,
         slowk: usize,
-        slowk_matype: talib::MaType,
+        slowk_matype: MaType,
         slowd: usize,
-        slowd_matype: talib::MaType,
+        slowd_matype: MaType,
     ) -> LazyFrame {
         let high_str = high.to_string();
         let low_str = low.to_string();
@@ -802,7 +802,7 @@ impl<'a> QuantWaveNamespace<'a> {
         period: usize,
         nbdevup: f64,
         nbdevdn: f64,
-        matype: talib::MaType,
+        matype: MaType,
     ) -> LazyFrame {
         let name_str = name.to_string();
         self.0.clone().with_columns([col(&name_str)
@@ -847,11 +847,11 @@ impl<'a> QuantWaveNamespace<'a> {
         self,
         name: &str,
         fastperiod: usize,
-        fastmatype: talib::MaType,
+        fastmatype: MaType,
         slowperiod: usize,
-        slowmatype: talib::MaType,
+        slowmatype: MaType,
         signalperiod: usize,
-        signalmatype: talib::MaType,
+        signalmatype: MaType,
     ) -> LazyFrame {
         let name_str = name.to_string();
         self.0.clone().with_columns([col(&name_str)
@@ -944,7 +944,7 @@ impl<'a> QuantWaveNamespace<'a> {
         close: &str,
         fastk_period: usize,
         fastd_period: usize,
-        fastd_matype: talib::MaType,
+        fastd_matype: MaType,
     ) -> LazyFrame {
         let high_str = high.to_string();
         let low_str = low.to_string();
@@ -997,7 +997,7 @@ impl<'a> QuantWaveNamespace<'a> {
         timeperiod: usize,
         fastk_period: usize,
         fastd_period: usize,
-        fastd_matype: talib::MaType,
+        fastd_matype: MaType,
     ) -> LazyFrame {
         let name_str = name.to_string();
         self.0.clone().with_columns([col(&name_str)
@@ -1039,7 +1039,7 @@ impl<'a> QuantWaveNamespace<'a> {
         name: &str,
         fastperiod: usize,
         slowperiod: usize,
-        matype: talib::MaType,
+        matype: MaType,
     ) -> LazyFrame {
         let name_str = name.to_string();
         self.0.clone().with_columns([col(&name_str)
@@ -1064,7 +1064,7 @@ impl<'a> QuantWaveNamespace<'a> {
         name: &str,
         fastperiod: usize,
         slowperiod: usize,
-        matype: talib::MaType,
+        matype: MaType,
     ) -> LazyFrame {
         let name_str = name.to_string();
         self.0.clone().with_columns([col(&name_str)
@@ -1328,7 +1328,7 @@ impl<'a> QuantWaveNamespace<'a> {
         in2: &str,
         minperiod: usize,
         maxperiod: usize,
-        matype: talib::MaType,
+        matype: MaType,
     ) -> LazyFrame {
         let in1_str = in1.to_string();
         let in2_str = in2.to_string();

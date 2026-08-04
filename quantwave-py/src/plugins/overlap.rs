@@ -2,11 +2,11 @@ use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
 use serde::Deserialize;
 
+use quantwave_core::MaType;
 use quantwave_core::indicators::incremental::dema::DEMA;
 use quantwave_core::indicators::incremental::macd_ext::{MACDEXT, MACDFIX};
 use quantwave_core::indicators::incremental::overlap_ta::{KAMA, MIDPOINT, MIDPRICE, T3, TRIMA};
 use quantwave_core::traits::Next;
-use talib_rs::MaType;
 
 #[derive(Deserialize)]
 struct SinglePeriodKwargs {
@@ -145,18 +145,7 @@ pub fn macd_ext_output(_: &[Field]) -> PolarsResult<Field> {
 }
 
 fn u8_to_matype(matype: u8) -> MaType {
-    match matype {
-        0 => MaType::Sma,
-        1 => MaType::Ema,
-        2 => MaType::Wma,
-        3 => MaType::Dema,
-        4 => MaType::Tema,
-        5 => MaType::Trima,
-        6 => MaType::Kama,
-        7 => MaType::Mama,
-        8 => MaType::T3,
-        _ => MaType::Sma,
-    }
+    MaType::from_u8_or_sma(matype)
 }
 
 #[polars_expr(output_type_func=macd_ext_output)]

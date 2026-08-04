@@ -2,6 +2,16 @@ use proptest::prelude::*;
 use quantwave_core::traits::Next;
 use quantwave_core::*;
 
+/// talib-rs is a dev-dependency parity oracle. The `From<MaType>` bridge inside
+/// quantwave-core is `#[cfg(test)]`-only and therefore invisible here, so cross
+/// over via the stable TA-Lib integer code instead.
+fn oracle_matype(m: MaType) -> talib_rs::MaType {
+    match talib_rs::MaType::try_from(m.to_i32()) {
+        Ok(t) => t,
+        Err(_) => unreachable!("MaType discriminants match TA-Lib's"),
+    }
+}
+
 proptest! {
 
         #[test]
@@ -9,14 +19,14 @@ proptest! {
             let len = input.len();
             if len == 0 { return Ok(()); }
             let fastperiod = 12;
-            let fastmatype = talib_rs::MaType::Sma;
+            let fastmatype = MaType::Sma;
             let slowperiod = 26;
-            let slowmatype = talib_rs::MaType::Sma;
+            let slowmatype = MaType::Sma;
             let signalperiod = 9;
-            let signalmatype = talib_rs::MaType::Sma;
+            let signalmatype = MaType::Sma;
             let mut indicator = MACDEXT::new(fastperiod, fastmatype, slowperiod, slowmatype, signalperiod, signalmatype);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next(input[i])).collect();
-            let (b1, b2, b3) = talib_rs::momentum::macd_ext(&input, fastperiod, fastmatype, slowperiod, slowmatype, signalperiod, signalmatype).unwrap_or_else(|_| (vec![f64::NAN; len], vec![f64::NAN; len], vec![f64::NAN; len]));
+            let (b1, b2, b3) = talib_rs::momentum::macd_ext(&input, fastperiod, oracle_matype(fastmatype), slowperiod, oracle_matype(slowmatype), signalperiod, oracle_matype(signalmatype)).unwrap_or_else(|_| (vec![f64::NAN; len], vec![f64::NAN; len], vec![f64::NAN; len]));
 
             for (i, (s1, s2, s3)) in streaming_results.into_iter().enumerate() {
                 if s1.is_nan() {
@@ -84,10 +94,10 @@ proptest! {
             if len == 0 { return Ok(()); }
             let fastk_period = 5;
             let fastd_period = 3;
-            let fastd_matype = talib_rs::MaType::Sma;
+            let fastd_matype = MaType::Sma;
             let mut indicator = STOCHF::new(fastk_period, fastd_period, fastd_matype);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next((in1[i], in2[i], in3[i]))).collect();
-            let (b1, b2) = talib_rs::momentum::stochf(&in1, &in2, &in3, fastk_period, fastd_period, fastd_matype).unwrap_or_else(|_| (vec![f64::NAN; len], vec![f64::NAN; len]));
+            let (b1, b2) = talib_rs::momentum::stochf(&in1, &in2, &in3, fastk_period, fastd_period, oracle_matype(fastd_matype)).unwrap_or_else(|_| (vec![f64::NAN; len], vec![f64::NAN; len]));
 
             for (i, (s1, s2)) in streaming_results.into_iter().enumerate() {
                 if s1.is_nan() {
@@ -111,10 +121,10 @@ proptest! {
             let timeperiod = 14;
             let fastk_period = 5;
             let fastd_period = 3;
-            let fastd_matype = talib_rs::MaType::Sma;
+            let fastd_matype = MaType::Sma;
             let mut indicator = STOCHRSI::new(timeperiod, fastk_period, fastd_period, fastd_matype);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next(input[i])).collect();
-            let (b1, b2) = talib_rs::momentum::stochrsi(&input, timeperiod, fastk_period, fastd_period, fastd_matype).unwrap_or_else(|_| (vec![f64::NAN; len], vec![f64::NAN; len]));
+            let (b1, b2) = talib_rs::momentum::stochrsi(&input, timeperiod, fastk_period, fastd_period, oracle_matype(fastd_matype)).unwrap_or_else(|_| (vec![f64::NAN; len], vec![f64::NAN; len]));
 
             for (i, (s1, s2)) in streaming_results.into_iter().enumerate() {
                 if s1.is_nan() {
@@ -137,10 +147,10 @@ proptest! {
             if len == 0 { return Ok(()); }
             let fastperiod = 12;
             let slowperiod = 26;
-            let matype = talib_rs::MaType::Sma;
+            let matype = MaType::Sma;
             let mut indicator = APO::new(fastperiod, slowperiod, matype);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next(input[i])).collect();
-            let b_res = talib_rs::momentum::apo(&input, fastperiod, slowperiod, matype).unwrap_or_else(|_| vec![f64::NAN; len]);
+            let b_res = talib_rs::momentum::apo(&input, fastperiod, slowperiod, oracle_matype(matype)).unwrap_or_else(|_| vec![f64::NAN; len]);
 
             for (i, s_res) in streaming_results.into_iter().enumerate() {
                 if s_res.is_nan() {
@@ -158,10 +168,10 @@ proptest! {
             if len == 0 { return Ok(()); }
             let fastperiod = 12;
             let slowperiod = 26;
-            let matype = talib_rs::MaType::Sma;
+            let matype = MaType::Sma;
             let mut indicator = PPO::new(fastperiod, slowperiod, matype);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next(input[i])).collect();
-            let b_res = talib_rs::momentum::ppo(&input, fastperiod, slowperiod, matype).unwrap_or_else(|_| vec![f64::NAN; len]);
+            let b_res = talib_rs::momentum::ppo(&input, fastperiod, slowperiod, oracle_matype(matype)).unwrap_or_else(|_| vec![f64::NAN; len]);
 
             for (i, s_res) in streaming_results.into_iter().enumerate() {
                 if s_res.is_nan() {
@@ -394,10 +404,10 @@ proptest! {
             if len == 0 { return Ok(()); }
             let minperiod = 2;
             let maxperiod = 30;
-            let matype = talib_rs::MaType::Sma;
+            let matype = MaType::Sma;
             let mut indicator = MAVP::new(minperiod, maxperiod, matype);
             let streaming_results: Vec<_> = (0..len).map(|i| indicator.next((in1[i], in2[i]))).collect();
-            let b_res = talib_rs::overlap::mavp(&in1, &in2, minperiod, maxperiod, matype).unwrap_or_else(|_| vec![f64::NAN; len]);
+            let b_res = talib_rs::overlap::mavp(&in1, &in2, minperiod, maxperiod, oracle_matype(matype)).unwrap_or_else(|_| vec![f64::NAN; len]);
 
             for (i, s_res) in streaming_results.into_iter().enumerate() {
                 if s_res.is_nan() {

@@ -13,12 +13,12 @@ use pyo3::prelude::*;
 use pyo3_polars::derive::polars_expr;
 use serde::Deserialize;
 
+use quantwave_core::MaType;
 use quantwave_core::indicators::incremental::bbands::BBANDS;
 use quantwave_core::indicators::incremental::macd::MACD;
 use quantwave_core::indicators::incremental::rsi::RSI;
 use quantwave_core::indicators::smoothing::{EMA, SMA};
 use quantwave_core::traits::Next;
-use talib_rs::MaType;
 
 #[derive(Deserialize)]
 struct SmaKwargs {
@@ -180,18 +180,7 @@ fn bbands(inputs: &[Series], kwargs: BbandsKwargs) -> PolarsResult<Series> {
     let s = &inputs[0];
     let s_f64 = s.f64()?;
 
-    let ma_type = match kwargs.matype {
-        0 => MaType::Sma,
-        1 => MaType::Ema,
-        2 => MaType::Wma,
-        3 => MaType::Dema,
-        4 => MaType::Tema,
-        5 => MaType::Trima,
-        6 => MaType::Kama,
-        7 => MaType::Mama,
-        8 => MaType::T3,
-        _ => MaType::Sma,
-    };
+    let ma_type = MaType::from_u8_or_sma(kwargs.matype);
 
     let mut indicator = BBANDS::new(kwargs.timeperiod, kwargs.nbdevup, kwargs.nbdevdn, ma_type);
 

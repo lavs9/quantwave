@@ -1,9 +1,14 @@
 //! Native O(1) MAVP — variable-period SMA per bar (TA-Lib parity).
 
+use crate::indicators::ma_type::MaType;
 use crate::traits::Next;
-use talib_rs::MaType;
 
-/// Moving average with variable period — matches `talib_rs::overlap::mavp` (SMA path).
+/// Moving average with variable period — matches `talib_rs::overlap::mavp`.
+///
+/// `matype` is retained for API compatibility but does not change the result:
+/// the batch implementation also always uses SMA ("变周期场景下无法高效使用其他
+/// MA" — a variable window makes the recursive MA families ill-defined), so
+/// honouring it here would *break* batch↔streaming parity rather than fix it.
 #[derive(Debug, Clone)]
 #[allow(non_camel_case_types)]
 pub struct MAVP {
@@ -79,7 +84,7 @@ mod tests {
             let streaming: Vec<f64> = (0..len)
                 .map(|i| mavp.next((in1[i], in2[i])))
                 .collect();
-            let batch = talib_rs::overlap::mavp(&in1, &in2, minperiod, maxperiod, matype)
+            let batch = talib_rs::overlap::mavp(&in1, &in2, minperiod, maxperiod, matype.into())
                 .unwrap_or_else(|_| vec![f64::NAN; len]);
             for (s, b) in streaming.iter().zip(batch.iter()) {
                 if s.is_nan() {

@@ -26,6 +26,8 @@ pub mod stoch;
 pub mod ta_atr;
 pub mod talib_ema;
 pub mod talib_sma;
+pub mod talib_tema;
+pub mod talib_wma;
 pub mod trange;
 pub mod trix;
 pub mod ultosc;

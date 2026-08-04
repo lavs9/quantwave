@@ -71,6 +71,7 @@ pub mod kinematic_kalman;
 pub mod laguerre_filter;
 pub mod laguerre_oscillator;
 pub mod laguerre_rsi;
+pub mod ma_type;
 pub mod mad;
 pub mod madh;
 pub mod mama;

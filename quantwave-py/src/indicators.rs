@@ -719,9 +719,9 @@ pub fn stoch(
     let mut it = STOCH::new(
         fastk as usize,
         slowk as usize,
-        quantwave_core::talib::MaType::Sma,
+        quantwave_core::MaType::Sma,
         slowd as usize,
-        quantwave_core::talib::MaType::Sma,
+        quantwave_core::MaType::Sma,
     );
     high.iter()
         .zip(low.iter())
@@ -744,9 +744,9 @@ impl Stoch {
             inner: Mutex::new(STOCH::new(
                 fastk as usize,
                 slowk as usize,
-                quantwave_core::talib::MaType::Sma,
+                quantwave_core::MaType::Sma,
                 slowd as usize,
-                quantwave_core::talib::MaType::Sma,
+                quantwave_core::MaType::Sma,
             )),
         }
     }

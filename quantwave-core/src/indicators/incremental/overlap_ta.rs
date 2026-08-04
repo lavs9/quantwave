@@ -3,6 +3,7 @@
 use crate::indicators::incremental::rolling::{MAX, MIN};
 use crate::indicators::incremental::talib_ema::TalibEma;
 use crate::indicators::incremental::talib_sma::TalibSma;
+use crate::indicators::incremental::utils::RingBuffer;
 use crate::traits::Next;
 
 #[inline]
@@ -115,13 +116,20 @@ impl Next<(f64, f64)> for MIDPRICE {
 }
 
 /// Kaufman Adaptive Moving Average (TA-Lib `overlap::kama`).
+///
+/// Only the last `timeperiod + 1` samples are ever read, so that is all that is
+/// retained — a full `history: Vec<f64>` here was an unbounded leak in
+/// long-running streams (and KAMA is reachable from `MaStream`/`BBANDS`).
+/// The arithmetic is unchanged, including the summation order.
 #[derive(Debug, Clone)]
 #[allow(non_camel_case_types)]
 pub struct KAMA {
     pub timeperiod: usize,
     fast_sc: f64,
     slow_sc: f64,
-    history: Vec<f64>,
+    /// Trailing `timeperiod + 1` inputs, oldest first.
+    window: RingBuffer<f64>,
+    bars_seen: usize,
     prev_kama: f64,
 }
 
@@ -131,7 +139,8 @@ impl KAMA {
             timeperiod,
             fast_sc: 2.0 / (2.0 + 1.0),
             slow_sc: 2.0 / (30.0 + 1.0),
-            history: Vec::new(),
+            window: RingBuffer::with_capacity(timeperiod + 1),
+            bars_seen: 0,
             prev_kama: 0.0,
         }
     }
@@ -141,26 +150,31 @@ impl Next<f64> for KAMA {
     type Output = f64;
 
     fn next(&mut self, input: f64) -> Self::Output {
-        self.history.push(input);
         let p = self.timeperiod;
-        let n = self.history.len();
+        if p == 0 {
+            return f64::NAN;
+        }
+        if self.window.len() == p + 1 {
+            let _ = self.window.pop_front();
+        }
+        self.window.push_back(input);
+        self.bars_seen += 1;
+        let n = self.bars_seen;
 
         if n <= p {
             return f64::NAN;
         }
+        // From here the window always holds exactly p + 1 values: index p is
+        // today, index 0 is `today - p`.
         if n == p + 1 {
-            self.prev_kama = self.history[p - 1];
+            self.prev_kama = self.window[p - 1];
         }
 
-        let today = n - 1;
-        let trailing = today - p;
         let mut sum_roc1 = 0.0;
         for i in 1..=p {
-            let idx_cur = today - i + 1;
-            let idx_prev = today - i;
-            sum_roc1 += (self.history[idx_cur] - self.history[idx_prev]).abs();
+            sum_roc1 += (self.window[p - i + 1] - self.window[p - i]).abs();
         }
-        let sum_roc2 = (self.history[today] - self.history[trailing]).abs();
+        let sum_roc2 = (self.window[p] - self.window[0]).abs();
         let er = if sum_roc1 != 0.0 {
             sum_roc2 / sum_roc1
         } else {

@@ -109,10 +109,10 @@ mod tests {
             let period = 10;
             let nbdevup = 2.0;
             let nbdevdn = 2.0;
-            let matype = talib_rs::MaType::Sma;
+            let matype = crate::indicators::ma_type::MaType::Sma;
             let mut bbands = BBANDS::new(period, nbdevup, nbdevdn, matype);
             let streaming_results: Vec<(f64, f64, f64)> = input.iter().map(|&x| bbands.next(x)).collect();
-            let (b_upper, b_middle, b_lower) = talib_rs::overlap::bbands(&input, period, nbdevup, nbdevdn, matype).unwrap_or_else(|_| {
+            let (b_upper, b_middle, b_lower) = talib_rs::overlap::bbands(&input, period, nbdevup, nbdevdn, matype.into()).unwrap_or_else(|_| {
                 (vec![f64::NAN; input.len()], vec![f64::NAN; input.len()], vec![f64::NAN; input.len()])
             });
 
