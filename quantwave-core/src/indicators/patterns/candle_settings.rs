@@ -14,17 +14,61 @@ pub struct CandleSetting {
     pub factor: f64,
 }
 
-pub const BODY_LONG: CandleSetting = CandleSetting { range_type: RangeType::RealBody, avg_period: 10, factor: 1.0 };
-pub const BODY_VERY_LONG: CandleSetting = CandleSetting { range_type: RangeType::RealBody, avg_period: 10, factor: 3.0 };
-pub const BODY_SHORT: CandleSetting = CandleSetting { range_type: RangeType::RealBody, avg_period: 10, factor: 1.0 };
-pub const BODY_DOJI: CandleSetting = CandleSetting { range_type: RangeType::HighLow, avg_period: 10, factor: 0.1 };
-pub const SHADOW_LONG: CandleSetting = CandleSetting { range_type: RangeType::RealBody, avg_period: 0, factor: 1.0 };
-pub const SHADOW_VERY_LONG: CandleSetting = CandleSetting { range_type: RangeType::RealBody, avg_period: 0, factor: 2.0 };
-pub const SHADOW_SHORT: CandleSetting = CandleSetting { range_type: RangeType::Shadows, avg_period: 10, factor: 1.0 };
-pub const SHADOW_VERY_SHORT: CandleSetting = CandleSetting { range_type: RangeType::HighLow, avg_period: 10, factor: 0.1 };
-pub const NEAR: CandleSetting = CandleSetting { range_type: RangeType::HighLow, avg_period: 5, factor: 0.2 };
-pub const FAR: CandleSetting = CandleSetting { range_type: RangeType::HighLow, avg_period: 5, factor: 0.6 };
-pub const EQUAL: CandleSetting = CandleSetting { range_type: RangeType::HighLow, avg_period: 5, factor: 0.05 };
+pub const BODY_LONG: CandleSetting = CandleSetting {
+    range_type: RangeType::RealBody,
+    avg_period: 10,
+    factor: 1.0,
+};
+pub const BODY_VERY_LONG: CandleSetting = CandleSetting {
+    range_type: RangeType::RealBody,
+    avg_period: 10,
+    factor: 3.0,
+};
+pub const BODY_SHORT: CandleSetting = CandleSetting {
+    range_type: RangeType::RealBody,
+    avg_period: 10,
+    factor: 1.0,
+};
+pub const BODY_DOJI: CandleSetting = CandleSetting {
+    range_type: RangeType::HighLow,
+    avg_period: 10,
+    factor: 0.1,
+};
+pub const SHADOW_LONG: CandleSetting = CandleSetting {
+    range_type: RangeType::RealBody,
+    avg_period: 0,
+    factor: 1.0,
+};
+pub const SHADOW_VERY_LONG: CandleSetting = CandleSetting {
+    range_type: RangeType::RealBody,
+    avg_period: 0,
+    factor: 2.0,
+};
+pub const SHADOW_SHORT: CandleSetting = CandleSetting {
+    range_type: RangeType::Shadows,
+    avg_period: 10,
+    factor: 1.0,
+};
+pub const SHADOW_VERY_SHORT: CandleSetting = CandleSetting {
+    range_type: RangeType::HighLow,
+    avg_period: 10,
+    factor: 0.1,
+};
+pub const NEAR: CandleSetting = CandleSetting {
+    range_type: RangeType::HighLow,
+    avg_period: 5,
+    factor: 0.2,
+};
+pub const FAR: CandleSetting = CandleSetting {
+    range_type: RangeType::HighLow,
+    avg_period: 5,
+    factor: 0.6,
+};
+pub const EQUAL: CandleSetting = CandleSetting {
+    range_type: RangeType::HighLow,
+    avg_period: 5,
+    factor: 0.05,
+};
 
 #[inline(always)]
 pub fn real_body(open: f64, close: f64) -> f64 {
@@ -56,7 +100,14 @@ pub fn candle_range(setting: CandleSetting, open: f64, high: f64, low: f64, clos
 }
 
 #[inline(always)]
-pub fn candle_average(setting: CandleSetting, sum: f64, open: f64, high: f64, low: f64, close: f64) -> f64 {
+pub fn candle_average(
+    setting: CandleSetting,
+    sum: f64,
+    open: f64,
+    high: f64,
+    low: f64,
+    close: f64,
+) -> f64 {
     let divisor = match setting.range_type {
         RangeType::Shadows => 2.0,
         _ => 1.0,
@@ -68,7 +119,7 @@ pub fn candle_average(setting: CandleSetting, sum: f64, open: f64, high: f64, lo
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Candle {
     pub open: f64,
     pub high: f64,
@@ -95,19 +146,36 @@ impl CandleWindow {
         if self.window.len() == self.capacity {
             self.window.pop_front();
         }
-        self.window.push_back(Candle { open, high, low, close });
+        self.window.push_back(Candle {
+            open,
+            high,
+            low,
+            close,
+        });
     }
 
     /// Access bars backwards: 0 is current, 1 is previous, etc.
+    ///
+    /// Total by construction: callers gate on `len()` before indexing, and an
+    /// out-of-range index yields a zeroed candle rather than panicking (the
+    /// workspace forbids panics in core).
     #[inline(always)]
-    pub fn bar(&self, idx: usize) -> &Candle {
+    pub fn bar(&self, idx: usize) -> Candle {
         let len = self.window.len();
-        self.window.get(len - 1 - idx).expect("bar index out of bounds")
+        if idx >= len {
+            return Candle::default();
+        }
+        self.window.get(len - 1 - idx).copied().unwrap_or_default()
     }
-    
+
     #[inline(always)]
     pub fn len(&self) -> usize {
         self.window.len()
+    }
+
+    #[inline(always)]
+    pub fn is_empty(&self) -> bool {
+        self.window.is_empty()
     }
 }
 
@@ -123,7 +191,11 @@ impl RollingCandleAvg {
     pub fn new(setting: CandleSetting) -> Self {
         Self {
             setting,
-            range_window: RingBuffer::with_capacity(if setting.avg_period > 0 { setting.avg_period } else { 1 }),
+            range_window: RingBuffer::with_capacity(if setting.avg_period > 0 {
+                setting.avg_period
+            } else {
+                1
+            }),
             sum: 0.0,
             val_window: RingBuffer::with_capacity(15), // Covers max lookback of 14 + current
         }
@@ -148,10 +220,10 @@ impl RollingCandleAvg {
         // Update the sum using the current bar's range, so it's ready for the NEXT bar
         let cr = candle_range(self.setting, open, high, low, close);
         if self.setting.avg_period > 0 {
-            if self.range_window.len() == self.setting.avg_period {
-                if let Some(old) = self.range_window.pop_front() {
-                    self.sum -= old;
-                }
+            if self.range_window.len() == self.setting.avg_period
+                && let Some(old) = self.range_window.pop_front()
+            {
+                self.sum -= old;
             }
             self.range_window.push_back(cr);
             self.sum += cr;
@@ -164,6 +236,9 @@ impl RollingCandleAvg {
     #[inline(always)]
     pub fn val(&self, idx: usize) -> f64 {
         let len = self.val_window.len();
-        *self.val_window.get(len - 1 - idx).expect("val index out of bounds")
+        if idx >= len {
+            return 0.0;
+        }
+        self.val_window.get(len - 1 - idx).copied().unwrap_or(0.0)
     }
 }

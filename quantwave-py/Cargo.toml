@@ -18,7 +18,6 @@ crate-type = ["cdylib"]
 [dependencies]
 quantwave-core = { workspace = true }
 quantwave-backtest = { workspace = true }
-talib-rs = { workspace = true }
 nalgebra = { workspace = true }
 chrono = { workspace = true }
 

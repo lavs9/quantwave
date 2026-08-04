@@ -1,7 +1,7 @@
 //! Native O(1) streaming CDLDOJI (matches `talib_rs::pattern::cdl_doji`).
 
+use crate::indicators::patterns::candle_settings::{BODY_DOJI, RollingCandleAvg};
 use crate::traits::Next;
-use crate::indicators::patterns::candle_settings::{RollingCandleAvg, BODY_DOJI};
 
 const LOOKBACK: usize = 10;
 
@@ -40,7 +40,7 @@ impl Next<(f64, f64, f64, f64)> for CDLDOJI {
 
         let body = (close - open).abs();
         let thresh = self.hl_avg.val(0);
-        
+
         100.0_f64.copysign(thresh - body).max(0.0)
     }
 }

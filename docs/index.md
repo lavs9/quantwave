@@ -40,7 +40,7 @@ QuantWave is built as a Rust workspace with a single source of mathematical trut
 <div class="qw-card" markdown="1">
 
 ### Indicators
-221 Rust-native indicators with metadata, gold-standard tests, and full docs. Classic TA, Ehlers DSP, candlestick patterns, price action, and fractional differencing.
+221 Rust-native indicators with metadata, gold-standard tests, and full docs. Classic TA, Ehlers DSP, candlestick patterns, price action, and fractional differencing. All 221 are QuantWave's own Rust — no C TA-Lib, no third-party TA crate at runtime.
 
 [Browse catalog →](guides/indicators/native/)
 
