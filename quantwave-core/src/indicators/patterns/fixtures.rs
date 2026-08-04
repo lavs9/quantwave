@@ -263,13 +263,45 @@ fixture!(
 );
 
 fixture!(
-    /// Long black with a long lower shadow, then two shrinking black bodies,
-    /// the last with no lower shadow.
+    /// Long black with a long lower shadow, then a smaller black inside it, then
+    /// a short black whose *range* sits inside the 2nd bar's range.
+    ///
+    /// The 3rd candle is where implementations diverge. The oracle asks for a
+    /// short body, two short shadows, and `low`/`high` inside the 2nd bar's
+    /// low/high. A plausible misreading instead requires the 3rd *body* to sit
+    /// inside the 2nd *body* and the lower shadow to be exactly zero. Two blocks
+    /// separate the readings:
+    ///
+    /// 1. **Oracle fires, body-containment reading does not.** The 3rd body pokes
+    ///    just above the 2nd body while its range stays inside the 2nd range, and
+    ///    its lower shadow is small but non-zero.
+    /// 2. **Oracle stays silent, body-containment reading fires.** The 3rd bar is
+    ///    contained body-wise with a zero lower shadow, but its upper shadow
+    ///    exceeds the `SHADOW_VERY_SHORT` average (0.28 > 0.246) — a test the
+    ///    misreading omits entirely.
+    ///
+    /// Ten re-priming bars separate the blocks so the `avg_period = 10` settings
+    /// (`BODY_LONG`, `BODY_SHORT`, `SHADOW_VERY_SHORT`) are back to table values.
     three_stars_in_south,
     [
-        (101.0, 101.1, 96.0, 99.0),   // body 2, lower shadow 3
-        (100.5, 100.6, 95.5, 99.5),   // inside the body, lower low
-        (100.2, 100.3, 99.8, 99.8),   // inside, lower shadow 0
+        // 1. Oracle +100; body-containment reading reads 0.
+        (101.0, 101.1, 96.0, 99.0),     // body 2, lower shadow 3
+        (100.5, 100.6, 95.5, 99.5),     // inside the body, lower low
+        (100.55, 100.58, 100.3, 100.4), // range inside, but body tops the 2nd body
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        // 2. Oracle 0 (upper shadow too long); body-containment reading reads +100.
+        (101.0, 101.1, 96.0, 99.0),  // body 2, lower shadow 3
+        (100.5, 100.6, 95.5, 99.5),  // inside the body, lower low
+        (100.3, 100.58, 99.6, 99.6), // body inside, lower shadow 0, upper shadow 0.28
     ]
 );
 
@@ -325,14 +357,47 @@ fixture!(
 
 fixture!(
     /// Two side-by-side white bodies of near-equal size and near-equal open,
-    /// gapping up over the (white) priming bar.
+    /// gapping away from the priming bar — once down, once up, plus a negative
+    /// case that isolates the `EQUAL` test.
     ///
     /// The alternating priming run matters here: with a single repeated priming
     /// bar, two consecutive identical white candles already satisfy the oracle's
     /// "equal opens, equal bodies" test and it fires on the priming run itself.
+    ///
+    /// Each block is chosen to fail under a *different* reading of the pattern,
+    /// so a regression cannot pass by satisfying only one of them:
+    ///
+    /// 1. **Downside gap, both candles white → `-100`.** The sign comes solely
+    ///    from the gap direction; both candles stay white either way. An
+    ///    implementation that keys the sign off candle colour (black pair for
+    ///    the bearish case) or off the colour of the pre-gap bar reads `0` here.
+    /// 2. **Upside gap with opens further apart than `EQUAL` → `0`.** The bodies
+    ///    are identical and the opens still rise into the previous body, so any
+    ///    implementation lacking the `EQUAL` accumulator fires `+100`.
+    /// 3. **Upside gap with near-equal opens → `+100`.** The plain positive case.
+    ///
+    /// Blocks are separated by five re-priming bars so `NEAR`/`EQUAL`
+    /// (`avg_period = 5`) are back to their table values before the next block.
     gapsidesidewhite,
     prime: [PRIME, PRIME_SHIFTED],
     [
+        // 1. Downside gap under the priming body; both white -> oracle -100.
+        (98.0, 99.2, 97.8, 99.0),     // gaps down below the priming body, body 1.00
+        (98.05, 99.25, 97.85, 99.05), // opens within EQUAL (0.05 < 0.09), body 1.00
+        PRIME,
+        PRIME_SHIFTED,
+        PRIME,
+        PRIME_SHIFTED,
+        PRIME,
+        // 2. Upside gap, near-equal bodies, opens 0.5 apart -> EQUAL fails -> 0.
+        (102.0, 103.2, 101.8, 103.0), // gaps up over the priming body, body 1.00
+        (102.5, 103.7, 102.3, 103.5), // open 0.5 above (> EQUAL 0.09), body 1.00
+        PRIME,
+        PRIME_SHIFTED,
+        PRIME,
+        PRIME_SHIFTED,
+        PRIME,
+        // 3. Upside gap with near-equal opens -> oracle +100.
         (102.0, 103.2, 101.8, 103.0),   // gaps up over the priming body, body 1.00
         (102.05, 103.3, 101.95, 103.1), // opens within EQUAL, body 1.05
     ]
@@ -406,28 +471,83 @@ fixture!(
     /// Two marubozu blacks across a gap, a black with a long lower shadow, then
     /// a black engulfing it.
     ///
-    /// Both the 2nd->1st and the 3rd->2nd real bodies gap down: the native
-    /// implementation tests the former and the oracle the latter, so the fixture
-    /// satisfies both.
+    /// Two blocks, each firing `+100` on the oracle while breaking a *different*
+    /// misreading of the pattern:
+    ///
+    /// 1. **The gap is between the 3rd and 2nd bars only.** The 2nd bar's body
+    ///    deliberately overlaps the 1st bar's, so there is no 2nd->1st gap.
+    ///    An implementation testing that pair instead reads `0`.
+    /// 2. **The first two bars have small but non-zero shadows, and the 3rd bar's
+    ///    lower shadow is short.** The oracle only asks that the marubozu shadows
+    ///    be *shorter than* the `SHADOW_VERY_SHORT` average, and says nothing
+    ///    about the 3rd bar's lower shadow. An implementation demanding exactly
+    ///    zero shadows, or a *long* lower shadow on the 3rd bar, reads `0`.
+    ///
+    /// The blocks are separated by ten re-priming bars so `SHADOW_VERY_SHORT`
+    /// (`avg_period = 10`) is back to 0.18 before the second block.
     concealbabyswall,
     [
-        (101.0, 101.0, 100.0, 100.0), // black marubozu
-        (99.5, 99.5, 99.0, 99.0),     // black marubozu, gaps down
-        (98.9, 99.2, 98.4, 98.8),     // gaps down again, lower shadow 0.4, high > 99.0
-        (99.3, 99.4, 97.9, 98.0),     // opens >= its high, closes <= its low
+        // 1. Gap between the 3rd and 2nd bars; 2nd and 1st bodies overlap.
+        (101.0, 101.0, 100.0, 100.0), // black marubozu, body [100.0, 101.0]
+        (100.5, 100.5, 99.8, 99.8),   // black marubozu, body overlaps -> NO gap here
+        (99.5, 100.0, 98.6, 99.0),    // gaps down under 99.8, high 100.0 > close 99.8
+        (100.2, 100.3, 98.3, 98.4),   // opens >= 100.0, closes <= 98.6
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        // 2. Non-zero (but short) marubozu shadows; short lower shadow on the 3rd.
+        (101.0, 101.05, 99.95, 100.0), // black, both shadows 0.05 < 0.18
+        (100.5, 100.55, 99.75, 99.8),  // black, both shadows 0.05 < SVS
+        (99.5, 100.0, 98.95, 99.0),    // gaps down under 99.8, lower shadow 0.05 (short)
+        (100.2, 100.3, 98.8, 98.9),    // opens >= 100.0, closes <= 98.95
     ]
 );
 
 fixture!(
-    /// Long black, a gapped-down black, two more lower blacks, then a long
-    /// white closing inside the gap.
+    /// Long black, a gapped-down black, two more lower blacks, then a white
+    /// closing back inside the gap.
+    ///
+    /// Two blocks pin down the parts of the pattern that are easy to misread:
+    ///
+    /// 1. **The closing candle's body is short.** The oracle constrains only the
+    ///    *first* candle's body length; an implementation that also demands a
+    ///    long body on the closing candle reads `0` here.
+    /// 2. **The 3rd candle's high rises above the 2nd's while its close still
+    ///    falls.** The oracle tracks the descent with `high`/`low`, so it reads
+    ///    `0`; an implementation tracking it with `close` reads `+100`.
+    ///
+    /// Ten re-priming bars separate the blocks so `BODY_LONG` is back to 1.0.
     breakaway,
     [
+        // 1. Oracle +100; a long-body test on the closing candle would read 0.
         (101.0, 101.2, 96.8, 97.0),
         (96.0, 96.2, 95.3, 95.5),
         (95.4, 95.5, 94.8, 95.0),
         (94.9, 95.0, 94.3, 94.5),
-        (94.6, 96.7, 94.4, 96.5), // 96 < close < 97
+        (96.2, 96.5, 96.1, 96.4), // 96.0 < close < 97.0, body only 0.2
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        PRIME,
+        // 2. Oracle 0 (3rd candle's high rises); a close-based reading gives +100.
+        (101.0, 101.2, 96.8, 97.0),
+        (96.0, 96.2, 95.3, 95.5),
+        (95.4, 96.5, 94.8, 95.0), // high 96.5 > 96.2, but close still falls
+        (94.9, 95.0, 94.3, 94.5),
+        (94.6, 96.7, 94.4, 96.5),
     ]
 );
 

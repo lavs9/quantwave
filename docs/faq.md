@@ -87,6 +87,8 @@ The `[polars]` extra installs Polars. The core wheel (indicators, metadata, stre
 
 **221** registered native indicators (metadata-driven catalog), including classics, Ehlers DSP, candlestick patterns, price action (Market Structure, geometric patterns, S/R), regimes, and ML feature tools. Count is validated in CI against the Rust metadata registry.
 
+"Native" is literal: every one of the 221 — including all 61 candlestick patterns — is implemented in QuantWave's own Rust and runs as an O(1) streaming `Next<T>`. Nothing delegates to C TA-Lib or to a third-party TA crate at runtime. `talib-rs` remains a **dev-dependency only**, used as the parity oracle in tests and as the benchmark baseline.
+
 → [Full catalog](../guides/indicators/native/) · [Gallery](guides/indicators/gallery.md)
 
 ## How do I find a specific indicator?

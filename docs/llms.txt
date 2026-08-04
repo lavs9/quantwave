@@ -54,6 +54,7 @@ MkDocs Rust guides (concepts, not full rustdoc mirror):
 ## Key facts
 
 - **221** registered native indicators (metadata-driven catalog)
+- All 221 are QuantWave's own Rust — including all 61 candlestick patterns. No C TA-Lib and no third-party TA crate in the shipped dependency graph; `talib-rs` is a dev-dependency used as the test parity oracle and benchmark baseline
 - Backtest ships **inside** the Python wheel (`quantwave._backtest`, `LazyFrame.bt`); install `pip install "quantwave[polars]"`
 - One mathematical path: Rust `Next<T>` powers streaming, Polars plugins, and batch columns
 - Verify locally: `./scripts/quantwave_verify.sh`

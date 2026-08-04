@@ -5,7 +5,7 @@ build-backend = "maturin"
 [project]
 name = "quantwave"
 dynamic = ["version"]
-description = "221-indicator Polars-native quant library: Rust core, .ta/.bt namespaces, streaming parity, Ehlers DSP, backtest engine"
+description = "221-indicator Polars-native quant library: all-native Rust core (no C TA-Lib), .ta/.bt namespaces, streaming parity, Ehlers DSP, backtest engine"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "Mayank Lavania" }]

@@ -17,7 +17,7 @@ fn real_body_gap_down(window: &CandleWindow, i: usize, j: usize) -> bool {
     window.bar(i).open.max(window.bar(i).close) < window.bar(j).open.min(window.bar(j).close)
 }
 
-const CDLGAPSIDESIDEWHITE_LOOKBACK: usize = 5 + 2; // NEAR(5) + 2
+const CDLGAPSIDESIDEWHITE_LOOKBACK: usize = 5 + 2; // max(NEAR(5), EQUAL(5)) + 2
 
 #[derive(Debug, Clone)]
 #[allow(non_camel_case_types)]
@@ -25,6 +25,7 @@ pub struct CDLGAPSIDESIDEWHITE {
     bars_seen: usize,
     window: CandleWindow,
     near_avg: RollingCandleAvg,
+    equal_avg: RollingCandleAvg,
 }
 impl CDLGAPSIDESIDEWHITE {
     pub fn new() -> Self {
@@ -32,6 +33,7 @@ impl CDLGAPSIDESIDEWHITE {
             bars_seen: 0,
             window: CandleWindow::new(3),
             near_avg: RollingCandleAvg::new(NEAR),
+            equal_avg: RollingCandleAvg::new(EQUAL),
         }
     }
 }
@@ -46,37 +48,30 @@ impl Next<(f64, f64, f64, f64)> for CDLGAPSIDESIDEWHITE {
         self.bars_seen += 1;
         self.window.push(open, high, low, close);
         self.near_avg.push(open, high, low, close);
+        self.equal_avg.push(open, high, low, close);
 
         if self.bars_seen <= CDLGAPSIDESIDEWHITE_LOOKBACK {
             return 0.0;
         }
 
-        let c1 = candle_color(self.window.bar(1).open, self.window.bar(1).close);
-        let c0 = candle_color(self.window.bar(0).open, self.window.bar(0).close);
+        // Both candles are white, have near-equal real bodies, and open at
+        // near-equal levels. The direction comes solely from which way the
+        // *first* of the pair gapped away from the bar before it.
+        let base = candle_color(self.window.bar(1).open, self.window.bar(1).close) == 1
+            && candle_color(self.window.bar(0).open, self.window.bar(0).close) == 1
+            && (real_body(self.window.bar(1).open, self.window.bar(1).close)
+                - real_body(self.window.bar(0).open, self.window.bar(0).close))
+            .abs()
+                < self.near_avg.val(1)
+            && (self.window.bar(1).open - self.window.bar(0).open).abs() < self.equal_avg.val(1);
 
-        let near_same = (real_body(self.window.bar(1).open, self.window.bar(1).close)
-            - real_body(self.window.bar(0).open, self.window.bar(0).close))
-        .abs()
-            < self.near_avg.val(1);
+        let bull = base && real_body_gap_up(&self.window, 1, 2);
+        let bear = base && real_body_gap_down(&self.window, 1, 2);
 
-        let bull = real_body_gap_up(&self.window, 1, 2)
-            && c1 == 1
-            && c0 == 1
-            && self.window.bar(0).open < self.window.bar(1).close
-            && self.window.bar(0).open > self.window.bar(1).open
-            && self.window.bar(0).close > self.window.bar(1).close
-            && near_same;
-
-        let bear = real_body_gap_down(&self.window, 1, 2)
-            && c1 == -1
-            && c0 == -1
-            && self.window.bar(0).open > self.window.bar(1).close
-            && self.window.bar(0).open < self.window.bar(1).open
-            && self.window.bar(0).close < self.window.bar(1).close
-            && near_same;
-
-        if bull || bear {
-            (candle_color(self.window.bar(2).open, self.window.bar(2).close) * 100) as f64
+        if bull {
+            100.0
+        } else if bear {
+            -100.0
         } else {
             0.0
         }
@@ -494,7 +489,6 @@ pub struct CDLBREAKAWAY {
     bars_seen: usize,
     window: CandleWindow,
     body_long: RollingCandleAvg,
-    body_short: RollingCandleAvg,
 }
 impl CDLBREAKAWAY {
     pub fn new() -> Self {
@@ -502,7 +496,6 @@ impl CDLBREAKAWAY {
             bars_seen: 0,
             window: CandleWindow::new(5),
             body_long: RollingCandleAvg::new(BODY_LONG),
-            body_short: RollingCandleAvg::new(BODY_SHORT),
         }
     }
 }
@@ -517,41 +510,47 @@ impl Next<(f64, f64, f64, f64)> for CDLBREAKAWAY {
         self.bars_seen += 1;
         self.window.push(open, high, low, close);
         self.body_long.push(open, high, low, close);
-        self.body_short.push(open, high, low, close);
 
         if self.bars_seen <= CDLBREAKAWAY_LOOKBACK {
             return 0.0;
         }
 
         let c4 = candle_color(self.window.bar(4).open, self.window.bar(4).close);
+        let c3 = candle_color(self.window.bar(3).open, self.window.bar(3).close);
+        let c1 = candle_color(self.window.bar(1).open, self.window.bar(1).close);
         let c0 = candle_color(self.window.bar(0).open, self.window.bar(0).close);
 
-        if real_body(self.window.bar(4).open, self.window.bar(4).close) > self.body_long.val(4)
-            && real_body(self.window.bar(0).open, self.window.bar(0).close) > self.body_long.val(0)
-        {
-            let bull = c4 == -1
-                && candle_color(self.window.bar(3).open, self.window.bar(3).close) == -1
-                && real_body_gap_down(&self.window, 3, 4)
-                && candle_color(self.window.bar(2).open, self.window.bar(2).close) == -1
-                && self.window.bar(2).close < self.window.bar(3).close
-                && candle_color(self.window.bar(1).open, self.window.bar(1).close) == -1
-                && self.window.bar(1).close < self.window.bar(2).close
-                && c0 == 1
-                && self.window.bar(0).close > self.window.bar(3).open.max(self.window.bar(3).close)
-                && self.window.bar(0).close < self.window.bar(4).open.min(self.window.bar(4).close);
+        // A long 1st candle, three candles continuing the move (the 2nd gapping
+        // away on its real body), then a reversal candle of the opposite colour
+        // closing back inside the gap. The 4th candle's colour is not tested.
+        let base = real_body(self.window.bar(4).open, self.window.bar(4).close)
+            > self.body_long.val(4)
+            && c4 == c3
+            && c3 == c1
+            && c1 == -c0;
 
-            let bear = c4 == 1
-                && candle_color(self.window.bar(3).open, self.window.bar(3).close) == 1
-                && real_body_gap_up(&self.window, 3, 4)
-                && candle_color(self.window.bar(2).open, self.window.bar(2).close) == 1
-                && self.window.bar(2).close > self.window.bar(3).close
-                && candle_color(self.window.bar(1).open, self.window.bar(1).close) == 1
-                && self.window.bar(1).close > self.window.bar(2).close
-                && c0 == -1
-                && self.window.bar(0).close < self.window.bar(3).open.min(self.window.bar(3).close)
-                && self.window.bar(0).close > self.window.bar(4).open.max(self.window.bar(4).close);
+        let bear_first = base
+            && c4 == -1
+            && real_body_gap_down(&self.window, 3, 4)
+            && self.window.bar(2).high < self.window.bar(3).high
+            && self.window.bar(2).low < self.window.bar(3).low
+            && self.window.bar(1).high < self.window.bar(2).high
+            && self.window.bar(1).low < self.window.bar(2).low
+            && self.window.bar(0).close > self.window.bar(3).open
+            && self.window.bar(0).close < self.window.bar(4).close;
 
-            (bull as i32 * 100 - bear as i32 * 100) as f64
+        let bull_first = base
+            && c4 == 1
+            && real_body_gap_up(&self.window, 3, 4)
+            && self.window.bar(2).high > self.window.bar(3).high
+            && self.window.bar(2).low > self.window.bar(3).low
+            && self.window.bar(1).high > self.window.bar(2).high
+            && self.window.bar(1).low > self.window.bar(2).low
+            && self.window.bar(0).close < self.window.bar(3).open
+            && self.window.bar(0).close > self.window.bar(4).close;
+
+        if bear_first || bull_first {
+            (c0 * 100) as f64
         } else {
             0.0
         }
@@ -592,39 +591,38 @@ impl Next<(f64, f64, f64, f64)> for CDLCONCEALBABYSWALL {
             return 0.0;
         }
 
+        // Four black candles; the first two are marubozu (both shadows shorter
+        // than the SHADOW_VERY_SHORT average), the third gaps down on its real
+        // body from the *second* and pokes back into it, and the fourth engulfs
+        // the third including its shadows.
         let cond = candle_color(self.window.bar(3).open, self.window.bar(3).close) == -1
             && candle_color(self.window.bar(2).open, self.window.bar(2).close) == -1
             && candle_color(self.window.bar(1).open, self.window.bar(1).close) == -1
             && candle_color(self.window.bar(0).open, self.window.bar(0).close) == -1
-            && lower_shadow(
-                self.window.bar(3).open,
-                self.window.bar(3).low,
-                self.window.bar(3).close,
-            ) == 0.0
             && upper_shadow(
                 self.window.bar(3).open,
                 self.window.bar(3).high,
                 self.window.bar(3).close,
-            ) == 0.0
+            ) < self.shadow_vs.val(3)
             && lower_shadow(
-                self.window.bar(2).open,
-                self.window.bar(2).low,
-                self.window.bar(2).close,
-            ) == 0.0
+                self.window.bar(3).open,
+                self.window.bar(3).low,
+                self.window.bar(3).close,
+            ) < self.shadow_vs.val(3)
             && upper_shadow(
                 self.window.bar(2).open,
                 self.window.bar(2).high,
                 self.window.bar(2).close,
-            ) == 0.0
-            && real_body_gap_down(&self.window, 2, 3)
+            ) < self.shadow_vs.val(2)
             && lower_shadow(
-                self.window.bar(1).open,
-                self.window.bar(1).low,
-                self.window.bar(1).close,
-            ) > self.shadow_vs.val(1)
+                self.window.bar(2).open,
+                self.window.bar(2).low,
+                self.window.bar(2).close,
+            ) < self.shadow_vs.val(2)
+            && real_body_gap_down(&self.window, 1, 2)
             && self.window.bar(1).high > self.window.bar(2).close
-            && self.window.bar(0).open > self.window.bar(1).high
-            && self.window.bar(0).close < self.window.bar(1).low;
+            && self.window.bar(0).open >= self.window.bar(1).high
+            && self.window.bar(0).close <= self.window.bar(1).low;
 
         if cond { 100.0 } else { 0.0 }
     }

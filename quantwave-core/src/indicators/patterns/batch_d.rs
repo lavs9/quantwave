@@ -198,6 +198,8 @@ pub struct CDL3STARSINSOUTH {
     window: CandleWindow,
     body_long_avg: RollingCandleAvg,
     shadow_long_avg: RollingCandleAvg,
+    body_short_avg: RollingCandleAvg,
+    shadow_vs_avg: RollingCandleAvg,
 }
 
 impl CDL3STARSINSOUTH {
@@ -207,6 +209,8 @@ impl CDL3STARSINSOUTH {
             window: CandleWindow::new(3),
             body_long_avg: RollingCandleAvg::new(BODY_LONG),
             shadow_long_avg: RollingCandleAvg::new(SHADOW_LONG),
+            body_short_avg: RollingCandleAvg::new(BODY_SHORT),
+            shadow_vs_avg: RollingCandleAvg::new(SHADOW_VERY_SHORT),
         }
     }
 }
@@ -225,7 +229,10 @@ impl Next<(f64, f64, f64, f64)> for CDL3STARSINSOUTH {
         self.window.push(open, high, low, close);
         self.body_long_avg.push(open, high, low, close);
         self.shadow_long_avg.push(open, high, low, close);
+        self.body_short_avg.push(open, high, low, close);
+        self.shadow_vs_avg.push(open, high, low, close);
 
+        // BODY_LONG, BODY_SHORT and SHADOW_VERY_SHORT all use avg_period 10;
         // SHADOW_LONG.avg_period is 0 and cannot raise the max.
         if self.bars_seen <= BODY_LONG.avg_period + 2 {
             return 0.0;
@@ -246,15 +253,21 @@ impl Next<(f64, f64, f64, f64)> for CDL3STARSINSOUTH {
             && self.window.bar(1).open.max(self.window.bar(1).close)
                 < self.window.bar(2).open.max(self.window.bar(2).close)
             && self.window.bar(1).low < self.window.bar(2).low
-            && self.window.bar(0).open.min(self.window.bar(0).close)
-                > self.window.bar(1).open.min(self.window.bar(1).close)
-            && self.window.bar(0).open.max(self.window.bar(0).close)
-                < self.window.bar(1).open.max(self.window.bar(1).close)
+            // 3rd: short body, both shadows short, range inside the 2nd's range
+            && real_body(self.window.bar(0).open, self.window.bar(0).close)
+                < self.body_short_avg.val(0)
+            && upper_shadow(
+                self.window.bar(0).open,
+                self.window.bar(0).high,
+                self.window.bar(0).close,
+            ) < self.shadow_vs_avg.val(0)
             && lower_shadow(
                 self.window.bar(0).open,
                 self.window.bar(0).low,
                 self.window.bar(0).close,
-            ) == 0.0
+            ) < self.shadow_vs_avg.val(0)
+            && self.window.bar(0).low > self.window.bar(1).low
+            && self.window.bar(0).high < self.window.bar(1).high
         {
             return 100.0;
         }

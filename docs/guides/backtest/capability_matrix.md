@@ -2,6 +2,8 @@
 
 QuantWave ships a **Polars-native, clean-room backtest engine** (`quantwave-backtest`) with Python `.bt` namespace ergonomics. It is **vectorbt-inspired** research UX on top of QuantWave's **batch ↔ streaming parity** moat.
 
+"Clean-room" now describes the whole stack, not just the engine: the 221 indicators the engine consumes are QuantWave's own Rust as well, including all 61 candlestick patterns. No C TA-Lib and no third-party TA crate ships with the wheel — `talib-rs` is a dev-dependency retained purely as the test parity oracle and benchmark baseline.
+
 ## Executive summary
 
 **What it is:**

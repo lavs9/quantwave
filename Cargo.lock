@@ -1998,7 +1998,6 @@ dependencies = [
  "quantwave-core",
  "serde",
  "serde_json",
- "talib-rs",
 ]
 
 [[package]]

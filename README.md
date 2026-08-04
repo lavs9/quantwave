@@ -42,7 +42,7 @@ It delivers **institutional-grade Rust performance** through zero-copy Polars ex
 
 QuantWave is no longer early-stage. It ships with production-ready depth across several domains:
 
-- 221 Native Indicators** with gold-standard validation and extensive Ehlers DSP coverage
+- **221 Native Indicators** with gold-standard validation and extensive Ehlers DSP coverage — all 221 are implemented in QuantWave's own Rust, including all 61 candlestick patterns. No C TA-Lib, and no third-party TA crate in the shipped dependency graph; `talib-rs` is a test-only parity oracle.
 - **Full Regime Detection Suite** (HMM, GMM, PELT, clustering, conditioned risk metrics)
 - **Execution-Aware Backtest Engine** — first-class order types (market/limit/stop/stop-limit + bracket/OCO), risk overlays (vol-target, inverse-vol, position-limit), portfolio rebalance policies, walk-forward optimization (grid + Bayesian TPE), Monte Carlo, and benchmark-relative reporting (alpha/beta/Calmar/VaR/CVaR) — all via the `.bt` Polars namespace
 - **Complete Options India Stack** — Black-Scholes Greeks, IV solvers, chain analytics (Max Pain, PCR, GEX, OI Zones), and NSE utilities, all exposed as native Polars expressions

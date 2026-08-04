@@ -20,7 +20,6 @@ default = []
 test_utils = []
 
 [dependencies]
-talib-rs = { workspace = true }
 thiserror = { workspace = true }
 approx = { workspace = true }
 chrono = { workspace = true }
@@ -33,6 +32,9 @@ nalgebra = { workspace = true }
 statrs = { workspace = true }
 
 [dev-dependencies]
+# Parity oracle for the test suite and baseline for `benches/talib_comparison`.
+# Not a runtime dependency: every shipped indicator is native.
+talib-rs = { workspace = true }
 proptest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
