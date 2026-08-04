@@ -696,12 +696,14 @@ impl Next<(f64, f64, f64, f64)> for CDL2CROWS {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::indicators::patterns::fixtures as fx;
     use crate::test_pattern_parity;
 
     test_pattern_parity!(
         test_cdlpiercing,
         CDLPIERCING,
-        talib_rs::pattern::cdl_piercing
+        talib_rs::pattern::cdl_piercing,
+        fx::piercing
     );
     test_pattern_parity!(
         test_cdlseparatinglines,
@@ -711,29 +713,44 @@ mod tests {
     test_pattern_parity!(
         test_cdlshootingstar,
         CDLSHOOTINGSTAR,
-        talib_rs::pattern::cdl_shootingstar
+        talib_rs::pattern::cdl_shootingstar,
+        fx::shootingstar
     );
     test_pattern_parity!(
         test_cdlthrusting,
         CDLTHRUSTING,
-        talib_rs::pattern::cdl_thrusting
+        talib_rs::pattern::cdl_thrusting,
+        fx::thrusting
     );
-    test_pattern_parity!(test_cdlkicking, CDLKICKING, talib_rs::pattern::cdl_kicking);
+    test_pattern_parity!(
+        test_cdlkicking,
+        CDLKICKING,
+        talib_rs::pattern::cdl_kicking,
+        fx::kicking
+    );
     test_pattern_parity!(
         test_cdlkickingbylength,
         CDLKICKINGBYLENGTH,
-        talib_rs::pattern::cdl_kickingbylength
+        talib_rs::pattern::cdl_kickingbylength,
+        fx::kickingbylength
     );
     test_pattern_parity!(test_cdlhikkake, CDLHIKKAKE, talib_rs::pattern::cdl_hikkake);
     test_pattern_parity!(
         test_cdlhikkakemod,
         CDLHIKKAKEMOD,
-        talib_rs::pattern::cdl_hikkakemod
+        talib_rs::pattern::cdl_hikkakemod,
+        fx::hikkakemod
     );
     test_pattern_parity!(
         test_cdlsticksandwich,
         CDLSTICKSANDWICH,
-        talib_rs::pattern::cdl_sticksandwich
+        talib_rs::pattern::cdl_sticksandwich,
+        fx::sticksandwich
     );
-    test_pattern_parity!(test_cdl2crows, CDL2CROWS, talib_rs::pattern::cdl_2crows);
+    test_pattern_parity!(
+        test_cdl2crows,
+        CDL2CROWS,
+        talib_rs::pattern::cdl_2crows,
+        fx::two_crows
+    );
 }

@@ -785,15 +785,19 @@ impl Next<(f64, f64, f64, f64)> for CDLMORNINGSTAR {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::indicators::patterns::fixtures as fx;
+
     crate::test_pattern_parity!(
         test_cdl3blackcrows_parity,
         CDL3BLACKCROWS,
-        talib_rs::pattern::cdl_3blackcrows
+        talib_rs::pattern::cdl_3blackcrows,
+        fx::three_black_crows
     );
     crate::test_pattern_parity!(
         test_cdl3inside_parity,
         CDL3INSIDE,
-        talib_rs::pattern::cdl_3inside
+        talib_rs::pattern::cdl_3inside,
+        fx::three_inside
     );
     crate::test_pattern_parity!(
         test_cdl3outside_parity,
@@ -803,7 +807,8 @@ mod tests {
     crate::test_pattern_parity!(
         test_cdl3starsinsouth_parity,
         CDL3STARSINSOUTH,
-        talib_rs::pattern::cdl_3starsinsouth
+        talib_rs::pattern::cdl_3starsinsouth,
+        fx::three_stars_in_south
     );
     crate::test_pattern_parity!(
         test_cdl3whitesoldiers_parity,
@@ -813,7 +818,8 @@ mod tests {
     crate::test_pattern_parity!(
         test_cdlabandonedbaby_parity,
         CDLABANDONEDBABY,
-        talib_rs::pattern::cdl_abandonedbaby
+        talib_rs::pattern::cdl_abandonedbaby,
+        fx::abandonedbaby
     );
     crate::test_pattern_parity!(
         test_cdladvanceblock_parity,
@@ -823,21 +829,25 @@ mod tests {
     crate::test_pattern_parity!(
         test_cdleveningdojistar_parity,
         CDLEVENINGDOJISTAR,
-        talib_rs::pattern::cdl_eveningdojistar
+        talib_rs::pattern::cdl_eveningdojistar,
+        fx::eveningdojistar
     );
     crate::test_pattern_parity!(
         test_cdleveningstar_parity,
         CDLEVENINGSTAR,
-        talib_rs::pattern::cdl_eveningstar
+        talib_rs::pattern::cdl_eveningstar,
+        fx::eveningstar
     );
     crate::test_pattern_parity!(
         test_cdlmorningdojistar_parity,
         CDLMORNINGDOJISTAR,
-        talib_rs::pattern::cdl_morningdojistar
+        talib_rs::pattern::cdl_morningdojistar,
+        fx::morningdojistar
     );
     crate::test_pattern_parity!(
         test_cdlmorningstar_parity,
         CDLMORNINGSTAR,
-        talib_rs::pattern::cdl_morningstar
+        talib_rs::pattern::cdl_morningstar,
+        fx::morningstar
     );
 }
