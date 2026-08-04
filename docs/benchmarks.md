@@ -81,7 +81,7 @@ Source: `per_tick_instrumented` — real per-tick instrumentation, not batch ms 
 ## Methodology
 
 - **Data:** deterministic synthetic OHLCV from `benchmarks/data.py` (fixed seed, committed generator).
-- **Rust:** `cargo run -p quantwave-core --release --bin benchmark_export` + Criterion benches (`cargo bench -p quantwave-core --bench indicator_throughput`).
+- **Rust:** `cargo run -p quantwave-core --release --bin benchmark_export` + Criterion benches (`cargo bench -p quantwave-core --bench indicator_throughput`). The head-to-head against the `talib-rs` oracle lives in `cargo bench -p quantwave-core --bench talib_comparison` (a bench, not a bin, so `talib-rs` stays out of the shipped dependency graph).
 - **Python:** `benchmarks/python_comparisons.py` — correctness pre-check on 1k rows, then `time.perf_counter` timings.
 - **Docs:** `scripts/render_benchmarks.py` renders this page from `benchmarks/results/latest.json` only.
 - **CI:** `scripts/check_benchmark_claims.py` fails on orphan performance numbers in README/docs.
