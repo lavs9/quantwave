@@ -725,10 +725,48 @@ mod tests {
         talib_rs::pattern::cdl_kickingbylength
     );
     test_pattern_parity!(test_cdlhikkake, CDLHIKKAKE, talib_rs::pattern::cdl_hikkake);
+    // The talib-rs oracle's NEAR rolling sum for this pattern is arithmetically
+    // incoherent, so exact parity is impossible; the native implementation is the
+    // correct one. Evidence (all reproducible on the harness' 200k walk):
+    //
+    //  * talib-rs seeds `near_sum` over bars [lookback-3-P, lookback-4] (the window
+    //    for bar `lookback-3`) but consumes it as the average for bar `i-2`
+    //    = `lookback-2`, then updates it with `+= cr(i-2) - cr(i-2-P)`. Seed and
+    //    update disagree, so the window is never repaired. Simulating the index set
+    //    (P = NEAR.avg_period = 5, lookback = 10) gives, at i = 1510,
+    //    {2, 1503, 1504, 1505, 1506, 1507} — SIX terms still divided by five, and
+    //    bar 2 is pinned in the sum forever. The correct window is {1503..1507}.
+    //    Every other averaged pattern in talib-rs (e.g. cdl_homingpigeon) uses the
+    //    contiguous "P bars strictly before the target bar" convention that
+    //    `RollingCandleAvg` implements, which is why the other 58 patterns match.
+    //  * An independent from-scratch model of C TA-Lib semantics (contiguous NEAR
+    //    window ending at bar i-3, used for bar i-2) reproduces the native output
+    //    EXACTLY — 0 mismatches over 200,000 bars — and differs from the oracle at
+    //    4 bars. A one-bar-shifted variant matches neither. So native == C TA-Lib.
+    //  * talib-rs also drops C's `else` between the setup block and the
+    //    confirmation block, i.e. it lets a setup confirm on its own bar. That is
+    //    provably a no-op here: a bullish setup requires high[i] < high[i-1] and
+    //    confirmation requires close[i] > high[i-1] >= high[i] >= close[i]
+    //    (contradiction); the bearish case is symmetric. Native keeps the same
+    //    shape and is unaffected.
+    //
+    // Measured divergence: 4 bars / 200,000 on the deterministic walk, and never
+    // more than 1 per run over 40,000 random walks of length <= 200. Bound of 8
+    // gives 2x headroom while staying well below the oracle's 20 non-zero signals,
+    // so silencing or over-firing the pattern still fails the test.
     test_pattern_parity!(
         test_cdlhikkakemod,
         CDLHIKKAKEMOD,
-        talib_rs::pattern::cdl_hikkakemod
+        talib_rs::pattern::cdl_hikkakemod,
+        |_, _, _, _| {},
+        oracle_exempt = "talib-rs's cdl_hikkakemod NEAR rolling sum is non-contiguous: it \
+                         seeds the window one bar early and then updates it with a rule that \
+                         does not match the seed, leaving 6 terms divided by 5 with one \
+                         ancient bar pinned in the sum forever. An independent model of C \
+                         TA-Lib semantics matches the native implementation exactly (0/200,000) \
+                         and the oracle at only 4 bars.",
+        max_mismatches = 8,
+        reference_mismatches = 4
     );
     test_pattern_parity!(
         test_cdlsticksandwich,
