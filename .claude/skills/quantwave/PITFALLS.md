@@ -72,33 +72,25 @@ signals** than the original. If you need ddof=1, rescale it yourself.
 
 ---
 
-## 5. `ta_*` plugins take `(high, low, close)` — the opposite order to `.ta.atr`
+## 5. `atr` means different things on different surfaces
 
-This is the sharpest footgun in the library, because the wrong call **returns a
-plausible number and never raises.**
+> **Historical note.** Before this was fixed, the `ta_`-prefixed plugins took
+> `(high, low, close)` positionally with generated `in2`/`in3` parameter names, so
+> the receiver had to be **high** while the sibling `.ta.atr` takes **close**.
+> Writing the call the obvious way silently permuted the inputs and returned a
+> plausible wrong number. **That is fixed** — `ta_atr`, `ta_natr` and `ta_trange`
+> now take close in the receiver and are named `(high, low)`, matching their
+> siblings. If you are on an older release, check the argument order.
 
-`.ta.atr` puts close in `self`: `pl.col("close").ta.atr("high", "low")`.
-The `ta_`-prefixed plugins do **not**. Their generated signature is
-`ta_atr(self, in2, in3)` — untyped, unnamed positional slots passed straight through
-as `[self, in2, in3]` — and the underlying TA-Lib function expects `(high, low, close)`.
-
-So `self` must be **high**, not close:
+Both of these are now correct and agree:
 
 ```python
-# CORRECT — TA-Lib argument order (high, low, close)
-pl.col("high").ta.ta_atr("low", "close", timeperiod=14)   # 1.384819
-
-# SILENTLY WRONG — mirrors .ta.atr, permutes the inputs, no error
-pl.col("close").ta.ta_atr("high", "low", timeperiod=14)   # 1.252823
+pl.col("close").ta.atr("high", "low", timeperiod=14)      # 1.384819
+pl.col("close").ta.ta_atr("high", "low", timeperiod=14)   # 1.384819
 ```
 
-Verified against a hand-computed Wilder RMA of 1.384819 on the same series. The wrong
-call is off by ~10% here; the size of the error depends entirely on your data, so it
-will not look obviously broken.
-
-**Assume every multi-input `ta_*` plugin has this shape**, not just `ta_atr` — the
-signatures are generated, so `ta_natr` and friends are the same. Before using one,
-check the argument order against TA-Lib's own signature.
+The live trap is not argument order — it is that **the same slug means different
+math on different surfaces**.
 
 ### What `atr` actually is on each surface
 

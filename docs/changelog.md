@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **BREAKING (Polars plugin surface): `ta_atr`, `ta_natr` and `ta_trange` now take `close` in the receiver, matching their non-prefixed siblings** (`quantwave-sww3`).
+
+    These were generated with opaque positional parameters — `ta_atr(self, in2, in3)` — and forwarded as `[self, in2, in3]` to a plugin that consumes `(high, low, close)`. The receiver therefore had to be **high**, while the sibling `.ta.atr` takes **close**. Writing the call the way its sibling reads permuted the inputs and returned a plausible wrong number with **no error**: on a 200-bar random walk, `1.252823` against a hand-computed Wilder RMA of `1.384819` — roughly 10% off, and data-dependent, so it never looked obviously broken. All three arguments are equal-length `f64` columns, so nothing could raise.
+
+    This bit hardest exactly where it mattered least tolerably: you reach for a `ta_`-prefixed function specifically when you want TA-Lib-identical values, usually to reconcile against a chart.
+
+    ```python
+    # before — receiver had to be high
+    pl.col("high").ta.ta_atr("low", "close", timeperiod=14)
+    # now — same shape as .ta.atr
+    pl.col("close").ta.ta_atr("high", "low", timeperiod=14)
+    ```
+
+    Parameters are now named `high` / `low` rather than `in2` / `in3`, so a mis-ordered call is visible at the call site and keyword arguments work. `ta_beta` and `ta_correl` already matched their siblings' shape and are unchanged apart from `in2` becoming `other`. The generator (`scripts/gen_pyo3_plugins_py.py`) was fixed, not just its output, so regenerating cannot reintroduce this. Regression cover lives in `tests/python/test_ta_prefixed_arg_order.py`, anchored to independently computed reference values rather than to current behaviour.
+
 - **All 60 remaining candlestick patterns ported to native Rust — `talib-rs` has left the shipped dependency graph.** The `native_cdl!` macro pushed every bar onto a 32-bar window and re-ran the full `talib_rs::pattern::*` **batch** function per bar, discarding all but the last value. All 60 are now O(1) streaming `Next<T>` implementations under `quantwave_core::indicators::patterns`, joining `CDLDOJI` and the 14 already-native single-bar patterns for **61 native candlestick patterns**.
 
     `talib-rs` moved from `[dependencies]` to `[dev-dependencies]` in `quantwave-core`, and the unused declaration was dropped from `quantwave-py`. It is retained solely as the `#[cfg(test)]` parity oracle and the `benches/talib_comparison` baseline, both of which stay. **The "221 native indicators" claim is now literally true** — nothing in the shipped wheel or crate delegates to C TA-Lib or to a third-party TA crate. Struct names are unchanged (`CDLHAMMER`, `CDL2CROWS`, …), so this is not a breaking change for any caller.

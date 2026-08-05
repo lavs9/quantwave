@@ -133,15 +133,17 @@ class Checker(ast.NodeVisitor):
 
         if method.startswith("ta_") and ".ta." in f".{chain}" and len(node.args) >= 2:
             base = _receiver_column(node.func)
-            # Only flag when we can actually read the receiver column and it is
-            # not `high` — otherwise we would fire on correct calls.
-            if base is not None and base != "high":
+            # These now take close in the receiver, matching their non-prefixed
+            # siblings. `high` in the receiver is the OLD, pre-fix order — on a
+            # current release that silently permutes the inputs.
+            if base == "high":
                 self.add(
                     node,
                     "PITFALLS §5",
-                    f"`{method}` expects TA-Lib order (high, low, close), but the receiver column is '{base}'.",
-                    f'Write pl.col("high").ta.{method}("low", "close", ...). Putting close in the receiver '
-                    "silently permutes the inputs and returns a wrong number with no error.",
+                    f"`{method}` takes close in the receiver; 'high' is the old pre-fix order.",
+                    f'Write pl.col("close").ta.{method}("high", "low", ...) — same shape as its '
+                    "non-prefixed sibling. The old order permutes the inputs and returns a wrong "
+                    "number with no error.",
                 )
 
         if method == "stddev" and ".ta." in f".{chain}":

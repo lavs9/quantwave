@@ -42,32 +42,38 @@ for m in patterns.get("math_operator_1_in_1_out_period", []):
 
 for m in patterns.get("math_operator_2_in_1_out", []):
     py_code += f"""
-    def {m}(self, in2: Union[str, pl.Expr]) -> pl.Expr:
-        if isinstance(in2, str): in2 = pl.col(in2)
-        return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="{m}", is_elementwise=False)
+    def {m}(self, other: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(other, str): other = pl.col(other)
+        return register_plugin_function(args=[self._expr, other], plugin_path=Path(__file__).parent, function_name="{m}", is_elementwise=False)
 """
 
 for m in patterns.get("math_operator_2_in_1_out_period", []):
     py_code += f"""
-    def {m}(self, in2: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
-        if isinstance(in2, str): in2 = pl.col(in2)
-        return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="{m}", is_elementwise=False, kwargs={{"timeperiod": timeperiod}})
+    def {m}(self, other: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
+        if isinstance(other, str): other = pl.col(other)
+        return register_plugin_function(args=[self._expr, other], plugin_path=Path(__file__).parent, function_name="{m}", is_elementwise=False, kwargs={{"timeperiod": timeperiod}})
 """
 
+# The underlying TA-Lib plugin consumes (high, low, close) positionally. The
+# receiver is CLOSE so these read the same way as their non-prefixed siblings
+# (e.g. pl.col("close").ta.atr("high", "low")); the args list restores the
+# order the Rust side expects. Naming the params high/low — rather than the
+# generated in2/in3 — is what makes a mis-ordered call visible at the call site.
 for m in patterns.get("ta_3_in_1_out_default", []):
     py_code += f"""
-    def {m}(self, in2: Union[str, pl.Expr], in3: Union[str, pl.Expr]) -> pl.Expr:
-        if isinstance(in2, str): in2 = pl.col(in2)
-        if isinstance(in3, str): in3 = pl.col(in3)
-        return register_plugin_function(args=[self._expr, in2, in3], plugin_path=Path(__file__).parent, function_name="{m}", is_elementwise=False)
+    def {m}(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr]) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        return register_plugin_function(args=[high, low, self._expr], plugin_path=Path(__file__).parent, function_name="{m}", is_elementwise=False)
 """
 
+# See the note above: receiver is CLOSE, args restore (high, low, close).
 for m in patterns.get("ta_3_in_1_out_period", []):
     py_code += f"""
-    def {m}(self, in2: Union[str, pl.Expr], in3: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
-        if isinstance(in2, str): in2 = pl.col(in2)
-        if isinstance(in3, str): in3 = pl.col(in3)
-        return register_plugin_function(args=[self._expr, in2, in3], plugin_path=Path(__file__).parent, function_name="{m}", is_elementwise=False, kwargs={{"timeperiod": timeperiod}})
+    def {m}(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        return register_plugin_function(args=[high, low, self._expr], plugin_path=Path(__file__).parent, function_name="{m}", is_elementwise=False, kwargs={{"timeperiod": timeperiod}})
 """
 
 for m in patterns.get("ta_4_in_1_out_default", []):

@@ -141,8 +141,10 @@ def test_polars_atr_plugin_and_talib_shim_are_wilder(ohlc):
     plugin = df.select(
         pl.col("close").ta.atr("high", "low", timeperiod=period).alias("v")
     )["v"][-1]
+    # ta_atr now takes close in the receiver, matching its sibling above
+    # (quantwave-sww3); it previously required high in the receiver.
     wilder = df.select(
-        pl.col("high").ta.ta_atr("low", "close", timeperiod=period).alias("v")
+        pl.col("close").ta.ta_atr("high", "low", timeperiod=period).alias("v")
     )["v"][-1]
     assert plugin == pytest.approx(wilder, rel=1e-12)
 

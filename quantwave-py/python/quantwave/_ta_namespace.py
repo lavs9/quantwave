@@ -1051,7 +1051,7 @@ Boundary Conditions & Error Behavior:
         if isinstance(in2, str): in2 = pl.col(in2)
         return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="sub", is_elementwise=False)
 
-    def ta_beta(self, in2: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
+    def ta_beta(self, other: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
         
         """
 Boundary Conditions & Error Behavior:
@@ -1059,10 +1059,10 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-        if isinstance(in2, str): in2 = pl.col(in2)
-        return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="ta_beta", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        if isinstance(other, str): other = pl.col(other)
+        return register_plugin_function(args=[self._expr, other], plugin_path=Path(__file__).parent, function_name="ta_beta", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
-    def ta_correl(self, in2: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
+    def ta_correl(self, other: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
         
         """
 Boundary Conditions & Error Behavior:
@@ -1070,10 +1070,10 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-        if isinstance(in2, str): in2 = pl.col(in2)
-        return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="ta_correl", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        if isinstance(other, str): other = pl.col(other)
+        return register_plugin_function(args=[self._expr, other], plugin_path=Path(__file__).parent, function_name="ta_correl", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
-    def ta_trange(self, in2: Union[str, pl.Expr], in3: Union[str, pl.Expr]) -> pl.Expr:
+    def ta_trange(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr]) -> pl.Expr:
         
         """
 Boundary Conditions & Error Behavior:
@@ -1081,11 +1081,11 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-        if isinstance(in2, str): in2 = pl.col(in2)
-        if isinstance(in3, str): in3 = pl.col(in3)
-        return register_plugin_function(args=[self._expr, in2, in3], plugin_path=Path(__file__).parent, function_name="ta_trange", is_elementwise=False)
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        return register_plugin_function(args=[high, low, self._expr], plugin_path=Path(__file__).parent, function_name="ta_trange", is_elementwise=False)
 
-    def ta_atr(self, in2: Union[str, pl.Expr], in3: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
+    def ta_atr(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
         
         """
 Boundary Conditions & Error Behavior:
@@ -1093,11 +1093,11 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-        if isinstance(in2, str): in2 = pl.col(in2)
-        if isinstance(in3, str): in3 = pl.col(in3)
-        return register_plugin_function(args=[self._expr, in2, in3], plugin_path=Path(__file__).parent, function_name="ta_atr", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        return register_plugin_function(args=[high, low, self._expr], plugin_path=Path(__file__).parent, function_name="ta_atr", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
-    def ta_natr(self, in2: Union[str, pl.Expr], in3: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
+    def ta_natr(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
         
         """
 Boundary Conditions & Error Behavior:
@@ -1105,9 +1105,9 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-        if isinstance(in2, str): in2 = pl.col(in2)
-        if isinstance(in3, str): in3 = pl.col(in3)
-        return register_plugin_function(args=[self._expr, in2, in3], plugin_path=Path(__file__).parent, function_name="ta_natr", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        if isinstance(high, str): high = pl.col(high)
+        if isinstance(low, str): low = pl.col(low)
+        return register_plugin_function(args=[high, low, self._expr], plugin_path=Path(__file__).parent, function_name="ta_natr", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def bop(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
         
