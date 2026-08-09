@@ -19,6 +19,88 @@ pub struct TestCase {
     pub expected: Vec<Option<f64>>,
 }
 
+// =============================================================================
+// NUMERICAL-PRECISION HELPERS (quantwave-qkft)
+// =============================================================================
+
+/// Neumaier-compensated summation — accurate to ~1 ulp regardless of ordering.
+pub fn compensated_sum(xs: impl Iterator<Item = f64>) -> f64 {
+    let mut s = 0.0f64;
+    let mut c = 0.0f64;
+    for x in xs {
+        let t = s + x;
+        if s.abs() >= x.abs() {
+            c += (s - t) + x;
+        } else {
+            c += (x - t) + s;
+        }
+        s = t;
+    }
+    s + c
+}
+
+/// High-precision two-pass population standard deviation. Used as the oracle
+/// for stddev-derived indicators; far tighter than either the old one-pass
+/// accumulator or the new shifted-data one, so it can arbitrate between them.
+pub fn reference_stddev(window: &[f64]) -> f64 {
+    let n = window.len() as f64;
+    let mean = compensated_sum(window.iter().copied()) / n;
+    let var = compensated_sum(window.iter().map(|&x| (x - mean) * (x - mean))) / n;
+    var.max(0.0).sqrt()
+}
+
+/// High-precision population mean of a window.
+pub fn reference_mean(window: &[f64]) -> f64 {
+    compensated_sum(window.iter().copied()) / window.len() as f64
+}
+
+/// Deterministic log-price series: `ln(P)` in the 1..9 band, slowly varying,
+/// with per-bar moves ~1e-4. This is the input shape that exposed the one-pass
+/// variance cancellation in quantwave-qkft. No RNG, so tests never flake.
+pub fn log_price_series(n: usize) -> Vec<f64> {
+    let mut out = Vec::with_capacity(n);
+    let mut p: f64 = 2980.0;
+    for i in 0..n {
+        let i_f = i as f64;
+        let bump = (i_f * 0.7).sin() * 0.35 + (i_f * 0.13).cos() * 0.2;
+        p += bump;
+        out.push(p.ln());
+    }
+    out
+}
+
+/// Assert that driving an indicator over the whole series in one go (the
+/// "batch" path, which is literally what the Polars plugins do) is
+/// **bit-identical** to driving a resumed instance chunk by chunk (the
+/// "streaming" path). Any data-dependent or non-deterministic internal state —
+/// e.g. a variance accumulator that refreshed on an error heuristic instead of
+/// on bar index — would break this.
+pub fn assert_bitwise_batch_streaming_parity<I, F>(input: &[f64], make: F)
+where
+    I: Next<f64, Output = f64>,
+    F: Fn() -> I,
+{
+    let mut batch = make();
+    let batch_out: Vec<f64> = input.iter().map(|&x| batch.next(x)).collect();
+
+    for chunk in [1usize, 7, 13, 64] {
+        let mut streaming = make();
+        let mut streaming_out = Vec::with_capacity(input.len());
+        for part in input.chunks(chunk) {
+            for &x in part {
+                streaming_out.push(streaming.next(x));
+            }
+        }
+        for (i, (b, s)) in batch_out.iter().zip(streaming_out.iter()).enumerate() {
+            assert_eq!(
+                b.to_bits(),
+                s.to_bits(),
+                "batch/streaming divergence at bar {i} (chunk {chunk}): {b} vs {s}"
+            );
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 pub struct TestCaseVec {
     pub input: Vec<f64>,

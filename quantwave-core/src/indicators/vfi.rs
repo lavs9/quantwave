@@ -169,6 +169,44 @@ mod tests {
         }
     }
 
+    /// quantwave-qkft blast radius: VFI feeds log-returns through
+    /// `StandardDeviation`. After swapping in the stable accumulator, batch and
+    /// chunked-streaming must remain bit-identical.
+    #[test]
+    fn vfi_batch_streaming_bitwise_parity() {
+        let bars: Vec<(f64, f64, f64, f64)> = (0..500)
+            .map(|i| {
+                let c = 2980.0 + (i as f64 * 0.31).sin() * 40.0;
+                (
+                    c + 2.0,
+                    c - 2.0,
+                    c,
+                    1000.0 + (i as f64 * 0.07).cos() * 250.0,
+                )
+            })
+            .collect();
+
+        let mut batch = Vfi::new(130, 0.2, 2.5, 3);
+        let batch_out: Vec<f64> = bars.iter().map(|&b| batch.next(b)).collect();
+
+        for chunk in [1usize, 7, 64] {
+            let mut streaming = Vfi::new(130, 0.2, 2.5, 3);
+            let mut out = Vec::with_capacity(bars.len());
+            for part in bars.chunks(chunk) {
+                for &b in part {
+                    out.push(streaming.next(b));
+                }
+            }
+            for (i, (b, s)) in batch_out.iter().zip(out.iter()).enumerate() {
+                assert_eq!(
+                    b.to_bits(),
+                    s.to_bits(),
+                    "bar {i} chunk {chunk}: {b} vs {s}"
+                );
+            }
+        }
+    }
+
     proptest! {
         #[test]
         fn test_vfi_parity(

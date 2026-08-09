@@ -1,3 +1,4 @@
+use crate::indicators::incremental::rolling_variance::RollingVariance;
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 use crate::utils::RingBuffer as VecDeque;
@@ -43,21 +44,23 @@ impl From<usize> for TaTSF {
 }
 
 /// Standard Deviation (Population)
+///
+/// Backed by [`RollingVariance`], a shifted-data accumulator with a
+/// deterministic periodic exact refresh. The previous `E[X²] - E[X]²` form lost
+/// ~1e-6 relative precision on slowly-varying series such as log-price
+/// (quantwave-qkft); this one stays at reference precision while remaining
+/// O(1) amortised per bar, so batch and streaming stay bit-identical.
 #[derive(Debug, Clone)]
 pub struct StandardDeviation {
     period: usize,
-    window: VecDeque<f64>,
-    sum: f64,
-    sum_sq: f64,
+    acc: RollingVariance,
 }
 
 impl StandardDeviation {
     pub fn new(period: usize) -> Self {
         Self {
             period,
-            window: VecDeque::with_capacity(period),
-            sum: 0.0,
-            sum_sq: 0.0,
+            acc: RollingVariance::new(period),
         }
     }
 }
@@ -72,23 +75,14 @@ impl Next<f64> for StandardDeviation {
     type Output = f64;
 
     fn next(&mut self, input: f64) -> Self::Output {
-        self.window.push_back(input);
-        self.sum += input;
-        self.sum_sq += input * input;
-
-        if self.window.len() > self.period
-            && let Some(oldest) = self.window.pop_front()
-        {
-            self.sum -= oldest;
-            self.sum_sq -= oldest * oldest;
+        if self.period == 0 {
+            // Preserved from the original: a zero period yields no window.
+            return f64::NAN;
         }
-
-        let n = self.window.len() as f64;
-        let mean = self.sum / n;
-        let variance = (self.sum_sq / n) - (mean * mean);
-
-        // Handle floating point precision issues
-        variance.max(0.0).sqrt()
+        self.acc.push(input);
+        // Population stddev over the partial-or-full window, matching the
+        // original "emit from bar 0" warmup convention.
+        self.acc.stddev()
     }
 }
 
@@ -216,6 +210,65 @@ mod tests {
         lr2.next(7.0);
         let res2 = lr2.next(9.0);
         approx::assert_relative_eq!(res2, 9.0);
+    }
+
+    use crate::test_utils::{
+        assert_bitwise_batch_streaming_parity, log_price_series, reference_stddev,
+    };
+
+    /// quantwave-qkft: `StandardDeviation` on log-price must agree with a
+    /// compensated two-pass reference well inside the strict 1e-7 gate that the
+    /// old one-pass accumulator failed (~1e-6 relative).
+    #[test]
+    fn stddev_matches_two_pass_reference_on_log_price() {
+        let period = 20;
+        let data = log_price_series(600);
+        let mut sd = StandardDeviation::new(period);
+        let mut worst: f64 = 0.0;
+        for (i, &x) in data.iter().enumerate() {
+            let got = sd.next(x);
+            if i + 1 < period {
+                continue; // partial-window warmup
+            }
+            let reference = reference_stddev(&data[i + 1 - period..=i]);
+            assert!(reference > 0.0);
+            worst = worst.max(((got - reference) / reference).abs());
+        }
+        assert!(
+            worst < 1e-7,
+            "StandardDeviation vs two-pass reference on log-price: {worst:e} (gate 1e-7)"
+        );
+        assert!(worst < 1e-12, "expected ~1e-15 precision, got {worst:e}");
+    }
+
+    /// Warmup bars (partial windows) must also be at reference precision.
+    #[test]
+    fn stddev_partial_window_matches_reference() {
+        let period = 20;
+        let data = log_price_series(30);
+        let mut sd = StandardDeviation::new(period);
+        for (i, &x) in data.iter().enumerate() {
+            let got = sd.next(x);
+            let lo = (i + 1).saturating_sub(period);
+            let reference = reference_stddev(&data[lo..=i]);
+            if reference > 0.0 {
+                approx::assert_relative_eq!(got, reference, max_relative = 1e-12);
+            } else {
+                assert_eq!(got, 0.0);
+            }
+        }
+    }
+
+    #[test]
+    fn stddev_batch_streaming_bitwise_parity() {
+        assert_bitwise_batch_streaming_parity(&log_price_series(500), || {
+            StandardDeviation::new(20)
+        });
+        let prices: Vec<f64> = (0..500)
+            .map(|i| 2980.0 + (i as f64 * 0.31).sin() * 40.0)
+            .collect();
+        assert_bitwise_batch_streaming_parity(&prices, || StandardDeviation::new(30));
+        assert_bitwise_batch_streaming_parity(&prices, || LinearRegression::new(14));
     }
 
     use proptest::prelude::*;

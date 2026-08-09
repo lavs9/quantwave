@@ -1,7 +1,10 @@
 //! Native Bollinger Bands — TA-Lib parity, incremental for every `matype`.
 //!
 //! Both paths are streaming and bounded-memory:
-//! * `MaType::Sma` — O(1) per bar via a sliding `sum` / `sum_sq`.
+//! * `MaType::Sma` — O(1) amortised per bar via [`RollingVariance`], a
+//!   shifted-data accumulator with a deterministic periodic exact refresh. It
+//!   replaced a `sum` / `sum_sq` pair whose `E[X²] - E[X]²` evaluation lost
+//!   ~1e-6 relative precision on slowly-varying inputs (quantwave-qkft).
 //! * every other `MaType` — the middle band comes from [`MaStream`], and the
 //!   deviation is a two-pass sum of squared deviations over a rolling window of
 //!   `timeperiod` inputs (O(timeperiod) per bar), exactly as the batch
@@ -12,7 +15,7 @@
 //! per series plus an unbounded memory leak in long-running streams.
 
 use crate::indicators::incremental::ma_stream::MaStream;
-use crate::indicators::incremental::utils::RingBuffer;
+use crate::indicators::incremental::rolling_variance::RollingVariance;
 use crate::indicators::ma_type::MaType;
 use crate::traits::Next;
 
@@ -26,11 +29,10 @@ pub struct BBANDS {
     pub nbdevup: f64,
     pub nbdevdn: f64,
     pub matype: MaType,
-    /// Rolling window of the last `timeperiod` inputs (both paths).
-    window: RingBuffer<f64>,
-    // --- SMA fast path ---
-    sum: f64,
-    sum_sq: f64,
+    /// Rolling window of the last `timeperiod` inputs (both paths). Carries the
+    /// stable mean/variance accumulator used by the SMA fast path; the non-SMA
+    /// path only reads back the window contents.
+    window: RollingVariance,
     // --- non-SMA path ---
     ma: Option<MaStream>,
     bars_seen: usize,
@@ -43,36 +45,19 @@ impl BBANDS {
             nbdevup,
             nbdevdn,
             matype,
-            window: RingBuffer::with_capacity(timeperiod.max(1)),
-            sum: 0.0,
-            sum_sq: 0.0,
+            window: RollingVariance::new(timeperiod),
             ma: (matype != MaType::Sma).then(|| MaStream::new(timeperiod, matype)),
             bars_seen: 0,
         }
     }
 
     #[inline]
-    fn bands_from_sums(&self) -> (f64, f64, f64) {
-        let n = self.timeperiod as f64;
-        let inv_n = 1.0 / n;
-        let ma_val = self.sum * inv_n;
-        let variance = self.sum_sq * inv_n - ma_val * ma_val;
-        let stddev = variance.max(0.0).sqrt();
+    fn bands_from_window(&self) -> (f64, f64, f64) {
+        let ma_val = self.window.mean();
+        let stddev = self.window.stddev();
         let upper = ma_val + self.nbdevup * stddev;
         let lower = ma_val - self.nbdevdn * stddev;
         (upper, ma_val, lower)
-    }
-
-    /// Push onto the rolling window, evicting the oldest value once full.
-    #[inline]
-    fn push_window(&mut self, input: f64) -> Option<f64> {
-        let evicted = if self.window.len() == self.timeperiod {
-            self.window.pop_front()
-        } else {
-            None
-        };
-        self.window.push_back(input);
-        evicted
     }
 
     fn next_sma(&mut self, input: f64) -> (f64, f64, f64) {
@@ -81,18 +66,11 @@ impl BBANDS {
             return NAN_TRIPLE;
         }
 
-        if let Some(old) = self.push_window(input) {
-            self.sum -= old;
-            self.sum_sq -= old * old;
-        }
-        self.sum += input;
-        self.sum_sq += input * input;
-
-        if self.window.len() < tp {
+        if !self.window.push(input) {
             return NAN_TRIPLE;
         }
 
-        self.bands_from_sums()
+        self.bands_from_window()
     }
 
     fn next_non_sma(&mut self, input: f64) -> (f64, f64, f64) {
@@ -103,7 +81,7 @@ impl BBANDS {
         let i = self.bars_seen;
         self.bars_seen += 1;
 
-        self.push_window(input);
+        self.window.push(input);
         let ma_val = match self.ma {
             Some(ref mut ma) => ma.next(input),
             None => return NAN_TRIPLE,
@@ -220,6 +198,73 @@ mod tests {
             let streaming: Vec<(f64, f64, f64)> =
                 input.iter().map(|&x| bbands.next(x)).collect();
             assert_parity(&streaming, &batch_bbands(&input, period, 2.0, 2.5, matype));
+        }
+    }
+
+    // ---- quantwave-qkft ----------------------------------------------------
+
+    /// BBANDS is the headline consumer of the stddev accumulator. On log-price
+    /// the SMA path's band half-width must track a compensated two-pass
+    /// reference to well inside the strict 1e-7 gate.
+    #[test]
+    fn sma_bands_match_two_pass_reference_on_log_price() {
+        use crate::test_utils::{log_price_series, reference_mean, reference_stddev};
+        let period = 20;
+        let nbdev = 2.0;
+        let data = log_price_series(600);
+        let mut bbands = BBANDS::new(period, nbdev, nbdev, MaType::Sma);
+        let mut worst_mid: f64 = 0.0;
+        let mut worst_half: f64 = 0.0;
+        for (i, &x) in data.iter().enumerate() {
+            let (upper, middle, lower) = bbands.next(x);
+            if middle.is_nan() {
+                continue;
+            }
+            let window = &data[i + 1 - period..=i];
+            let ref_mid = reference_mean(window);
+            let ref_half = nbdev * reference_stddev(window);
+            assert!(ref_half > 0.0);
+            worst_mid = worst_mid.max(((middle - ref_mid) / ref_mid).abs());
+            // Compare the half-width, not the band level: `upper` is
+            // dominated by the ~8.0 middle band and would hide the error.
+            worst_half = worst_half.max((((upper - lower) / 2.0 - ref_half) / ref_half).abs());
+        }
+        assert!(
+            worst_half < 1e-7,
+            "BBANDS half-width vs reference on log-price: {worst_half:e} (gate 1e-7)"
+        );
+        // Noise floor here is the *test's* extraction, not the accumulator:
+        // recovering a ~1e-4 half-width by differencing two bands sitting at
+        // level ~8 costs ~eps * 8 / 1e-4 ≈ 1e-11 relative. The accumulator
+        // itself is at ~1e-15 (see rolling_variance's own tests).
+        assert!(worst_half < 1e-10, "expected ~1e-11, got {worst_half:e}");
+        assert!(worst_mid < 1e-12, "middle band drift {worst_mid:e}");
+    }
+
+    /// Bit-identical batch vs chunked streaming, for every `matype`.
+    #[test]
+    fn batch_streaming_bitwise_parity_all_matypes() {
+        use crate::test_utils::log_price_series;
+        let data = log_price_series(400);
+        for &matype in MaType::ALL.iter() {
+            let mut batch = BBANDS::new(10, 2.0, 2.5, matype);
+            let batch_out: Vec<_> = data.iter().map(|&x| batch.next(x)).collect();
+            for chunk in [1usize, 7, 64] {
+                let mut streaming = BBANDS::new(10, 2.0, 2.5, matype);
+                let mut out = Vec::with_capacity(data.len());
+                for part in data.chunks(chunk) {
+                    for &x in part {
+                        out.push(streaming.next(x));
+                    }
+                }
+                for (i, (b, s)) in batch_out.iter().zip(out.iter()).enumerate() {
+                    assert_eq!(
+                        (b.0.to_bits(), b.1.to_bits(), b.2.to_bits()),
+                        (s.0.to_bits(), s.1.to_bits(), s.2.to_bits()),
+                        "{matype:?} bar {i} chunk {chunk}: {b:?} vs {s:?}"
+                    );
+                }
+            }
         }
     }
 

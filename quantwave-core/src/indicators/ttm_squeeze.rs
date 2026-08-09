@@ -114,6 +114,37 @@ mod tests {
         data.into_iter().map(|x| ttm.next(x).0).collect()
     }
 
+    /// quantwave-qkft blast radius: TTM Squeeze's Bollinger leg is a
+    /// `StandardDeviation`. Batch and chunked-streaming must stay bit-identical
+    /// for both the histogram and the boolean squeeze flag (which is a
+    /// threshold comparison and therefore the more brittle of the two).
+    #[test]
+    fn ttm_batch_streaming_bitwise_parity() {
+        let bars: Vec<(f64, f64, f64)> = (0..500)
+            .map(|i| {
+                let c = 2980.0 + (i as f64 * 0.31).sin() * 40.0;
+                (c + 6.0, c - 6.0, c)
+            })
+            .collect();
+
+        let mut batch = TTMSqueeze::new(20, 2.0, 1.5);
+        let batch_out: Vec<(f64, bool)> = bars.iter().map(|&b| batch.next(b)).collect();
+
+        for chunk in [1usize, 7, 64] {
+            let mut streaming = TTMSqueeze::new(20, 2.0, 1.5);
+            let mut out = Vec::with_capacity(bars.len());
+            for part in bars.chunks(chunk) {
+                for &b in part {
+                    out.push(streaming.next(b));
+                }
+            }
+            for (i, (b, s)) in batch_out.iter().zip(out.iter()).enumerate() {
+                assert_eq!(b.0.to_bits(), s.0.to_bits(), "hist bar {i} chunk {chunk}");
+                assert_eq!(b.1, s.1, "squeeze bar {i} chunk {chunk}");
+            }
+        }
+    }
+
     proptest! {
         #[test]
         fn test_ttm_parity(input in prop::collection::vec((0.0..100.0, 0.0..100.0, 0.0..100.0), 1..100)) {

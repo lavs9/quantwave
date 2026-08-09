@@ -18,6 +18,7 @@ pub mod mom;
 pub mod overlap_ta;
 pub mod price_transform;
 pub mod rolling;
+pub mod rolling_variance;
 pub mod rsi;
 pub mod sar;
 pub mod simple;
