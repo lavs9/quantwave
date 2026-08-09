@@ -397,6 +397,34 @@ mod tests {
         assert_eq!(calls, 3);
     }
 
+    /// The in-fold TPE optimizer must be NaN-safe for the same reason the grid
+    /// optimizer is (quantwave-s3iu / quantwave-gz7d): an undefined objective —
+    /// a variant with no losing trade, no downside, or no drawdown — must never
+    /// be selected. `NaN > best_score` is false, so it is skipped; `inf` would
+    /// have won.
+    #[test]
+    fn test_tpe_select_from_pool_never_selects_a_nan_objective() {
+        // Every point scores NaN except index 3, which scores a modest 0.5.
+        let points: Vec<Vec<f64>> = (0..8).map(|i| vec![i as f64 / 7.0]).collect();
+        let config = TpeConfig::new(8, 7);
+        let (best_idx, best_score, _) =
+            tpe_select_from_pool(&points, &config, |i| if i == 3 { 0.5 } else { f64::NAN });
+        assert_eq!(best_idx, 3, "the only defined objective must win");
+        assert!((best_score - 0.5).abs() < 1e-12);
+    }
+
+    /// All-undefined pool: no winner, and the fallback matches the grid path
+    /// (index 0 with `-inf`) rather than silently blessing a NaN variant.
+    #[test]
+    fn test_tpe_select_from_pool_all_nan_falls_back_to_neg_infinity() {
+        let points: Vec<Vec<f64>> = (0..5).map(|i| vec![i as f64 / 4.0]).collect();
+        let config = TpeConfig::new(5, 11);
+        let (best_idx, best_score, history) = tpe_select_from_pool(&points, &config, |_| f64::NAN);
+        assert_eq!(best_idx, 0);
+        assert_eq!(best_score, f64::NEG_INFINITY);
+        assert_eq!(history.len(), 5);
+    }
+
     #[test]
     fn test_tpe_select_from_pool_empty_pool_is_safe() {
         let points: Vec<Vec<f64>> = Vec::new();

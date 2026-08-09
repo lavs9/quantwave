@@ -54,7 +54,9 @@ never gain or lose keys:
 `profit_factor`, `num_trades`, `avg_trade_pnl`, `final_equity`
 
 All return-like values are **fractions**. `max_drawdown_pct` is a **positive** fraction.
-`profit_factor` and `sortino_ratio` can be `inf`.
+Ratios are `NaN` — never `inf` — when their denominator is empty: `profit_factor`
+(no losing trades), `sortino_ratio` (no downside), `sharpe_ratio` (zero dispersion,
+non-zero mean), and `calmar_ratio` (no drawdown). Test with `math.isnan()`.
 
 Additive, opt-in surfaces (they do not change `.metrics()`):
 

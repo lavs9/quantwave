@@ -236,6 +236,35 @@ fn normalized_param_points(
         .collect()
 }
 
+/// Pick the argmax of an in-fold objective column, skipping nulls and any value
+/// that is not a usable measurement.
+///
+/// The selection is deliberately **NaN-safe** (quantwave-s3iu / quantwave-gz7d).
+/// Ratio metrics report `f64::NAN` when their denominator is empty — no losing
+/// trades, no downside deviation, no drawdown. `NaN > best_val` is always false
+/// and `NaN.is_finite()` is false, so an undefined variant can never be selected;
+/// it is skipped exactly like a null. This is the whole reason the module returns
+/// `NaN` instead of `inf`: `inf > best_val` is *true*, so a degenerate variant
+/// that simply never lost would beat every real one and be carried into the OOS
+/// fold.
+///
+/// When every candidate is null/NaN there is no defensible winner: index 0 is
+/// returned with `f64::NEG_INFINITY` as the objective value, which flows into the
+/// fold's `train_metric` column and makes the degenerate fold visible downstream.
+fn select_best_objective(values: impl Iterator<Item = Option<f64>>) -> (usize, f64) {
+    let mut best_idx = 0;
+    let mut best_val = f64::NEG_INFINITY;
+    for (i, val) in values.enumerate() {
+        if let Some(v) = val
+            && (v > best_val || (best_val == f64::NEG_INFINITY && v.is_finite()))
+        {
+            best_val = v;
+            best_idx = i;
+        }
+    }
+    (best_idx, best_val)
+}
+
 /// Run walk-forward optimization: sweep on train fold, pick best by objective, backtest OOS.
 ///
 /// Always uses the grid (exhaustive) in-fold optimizer — thin wrapper around
@@ -337,17 +366,7 @@ pub fn run_walk_forward_optimize_with(
                     .f64()
                     .map_err(|e| BacktestError::InvalidInput(e.to_string()))?;
 
-                let mut best_idx = 0;
-                let mut best_val = f64::NEG_INFINITY;
-                for (i, val) in obj_series.into_iter().enumerate() {
-                    if let Some(v) = val
-                        && (v > best_val || (best_val == f64::NEG_INFINITY && v.is_finite()))
-                    {
-                        best_val = v;
-                        best_idx = i;
-                    }
-                }
-                (best_idx, best_val)
+                select_best_objective(obj_series.into_iter())
             }
             InFoldOptimizer::Tpe(tpe_config) => {
                 let points = normalized_param_points(variants, &param_keys);
@@ -835,5 +854,60 @@ mod tests {
         .unwrap_err()
         .to_string();
         assert!(err.contains("not_a_real_metric"));
+    }
+
+    // --- In-fold objective selection is NaN-safe (quantwave-s3iu / quantwave-gz7d) ---
+
+    #[test]
+    fn objective_selection_picks_the_finite_maximum() {
+        let (idx, val) = select_best_objective([Some(0.1), Some(0.9), Some(0.4)].into_iter());
+        assert_eq!(idx, 1);
+        assert!((val - 0.9).abs() < 1e-12);
+    }
+
+    /// An undefined (NaN) objective must never win — it is skipped like a null.
+    /// This is the property that makes the NaN convention safe for optimizers:
+    /// with `inf` the degenerate variant at index 1 would be selected instead.
+    #[test]
+    fn objective_selection_skips_nan_variants() {
+        let (idx, val) = select_best_objective([Some(0.3), Some(f64::NAN), Some(0.5)].into_iter());
+        assert_eq!(
+            idx, 2,
+            "the real maximum must win, not the undefined variant"
+        );
+        assert!((val - 0.5).abs() < 1e-12);
+    }
+
+    /// The contrast case, asserted so the regression is explicit: `inf` *does*
+    /// win a `>` comparison. This is why calmar_ratio no longer returns it.
+    #[test]
+    fn objective_selection_would_have_been_hijacked_by_inf() {
+        let (idx, _) =
+            select_best_objective([Some(0.3), Some(f64::INFINITY), Some(0.5)].into_iter());
+        assert_eq!(idx, 1, "documents the hazard the NaN convention removes");
+    }
+
+    #[test]
+    fn objective_selection_skips_nulls_and_nan_alike() {
+        let (idx, val) =
+            select_best_objective([None, Some(f64::NAN), Some(-2.0), None].into_iter());
+        assert_eq!(idx, 2);
+        assert!((val + 2.0).abs() < 1e-12);
+    }
+
+    /// Every candidate undefined: no defensible winner, so index 0 with a
+    /// `-inf` objective, which surfaces as the fold's `train_metric`.
+    #[test]
+    fn objective_selection_all_nan_falls_back_to_first_with_neg_infinity() {
+        let (idx, val) = select_best_objective([Some(f64::NAN), Some(f64::NAN)].into_iter());
+        assert_eq!(idx, 0);
+        assert_eq!(val, f64::NEG_INFINITY);
+    }
+
+    #[test]
+    fn objective_selection_accepts_negative_maxima() {
+        let (idx, val) = select_best_objective([Some(-5.0), Some(-1.0)].into_iter());
+        assert_eq!(idx, 1);
+        assert!((val + 1.0).abs() < 1e-12);
     }
 }

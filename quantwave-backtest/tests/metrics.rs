@@ -309,6 +309,83 @@ fn test_backtest_with_report_returns_report() {
     );
 }
 
+/// A single winning trade on a monotonically rising series: no losing trade, no
+/// negative bar return, no drawdown. Every undefined-denominator branch fires at
+/// once (quantwave-gz7d).
+fn make_zero_drawdown_single_win_result() -> BacktestResult {
+    let n = 8;
+    let ts: Vec<i64> = (0..n).map(|i| 1_700_005_000 + i as i64).collect();
+    // Strictly rising closes → a long position's equity never draws down.
+    let closes: Vec<f64> = (0..n).map(|i| 100.0 + i as f64).collect();
+    let mut signals = vec![1.0; n];
+    signals[0] = 0.0;
+    signals[n - 1] = 0.0;
+
+    let df = DataFrame::new(vec![
+        Column::new("timestamp".into(), ts),
+        Column::new("close".into(), closes),
+        Column::new("signal".into(), signals),
+    ])
+    .unwrap();
+
+    // Zero costs: a commission would print a one-tick drawdown at entry and the
+    // "no drawdown" precondition would not hold.
+    let config = BacktestConfig {
+        execution_model: ExecutionModel::Simple(CostModel {
+            commission_bps: 0.0,
+            slippage_bps: 0.0,
+            initial_cash: 100_000.0,
+        }),
+        signal_col: "signal".to_string(),
+        ..Default::default()
+    };
+
+    BacktestEngine::new(config)
+        .run(df.lazy())
+        .expect("single-win run should succeed")
+}
+
+/// quantwave-gz7d: the whole ratio bundle must agree on the *same* condition.
+///
+/// Before this fix, one run reported `sortino_ratio = NaN`, `profit_factor = NaN`
+/// and `calmar_ratio = inf` — two conventions for "denominator is empty". This
+/// asserts the bundle, not just calmar, so a future divergence is caught here.
+#[test]
+fn test_zero_drawdown_run_reports_nan_not_inf_across_the_bundle() {
+    let result = make_zero_drawdown_single_win_result();
+    let m = PerformanceMetrics::from_result(&result);
+
+    assert_eq!(result.trades.height(), 1, "precondition: one closed trade");
+    assert_relative_eq!(m.max_drawdown_pct, 0.0, epsilon = 1e-12);
+    assert!(m.cagr > 0.0, "precondition: positive CAGR, got {}", m.cagr);
+
+    assert!(
+        m.calmar_ratio.is_nan(),
+        "calmar_ratio should be NaN (undefined), got {}",
+        m.calmar_ratio
+    );
+    assert!(
+        m.profit_factor.is_nan(),
+        "profit_factor should be NaN, got {}",
+        m.profit_factor
+    );
+    assert!(
+        m.sortino_ratio.is_nan(),
+        "sortino_ratio should be NaN, got {}",
+        m.sortino_ratio
+    );
+
+    // No metric anywhere in the bundle may be infinite — `inf` reads as a
+    // measurement and wins `>` comparisons in optimizer selection loops.
+    for (name, value) in m
+        .row_iter()
+        .chain([("calmar_ratio", m.calmar_ratio), ("var_95", m.var_95)])
+        .chain([("cvar_95", m.cvar_95)])
+    {
+        assert!(!value.is_infinite(), "{name} must not be inf, got {value}");
+    }
+}
+
 /// 20-bar flip strategy (zero costs): win +6 then loss -8.
 fn make_gold_standard_flip_result() -> BacktestResult {
     let n = 20;

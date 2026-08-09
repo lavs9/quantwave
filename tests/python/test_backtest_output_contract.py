@@ -178,3 +178,52 @@ def test_diagnostics_is_additive_not_on_metrics():
     assert "diagnostics" in result.extended_metrics()
 
 
+# --- quantwave-gz7d: calmar joins the NaN convention; the bundle must agree ---
+
+def test_calmar_ratio_is_nan_not_inf_on_a_zero_drawdown_run():
+    """A run that never drew down has an empty Calmar denominator.
+
+    ``inf`` reads as an unboundedly good strategy and wins ``>`` comparisons in
+    optimizer selection loops; ``NaN`` reads as "undefined" and is skipped.
+    """
+    df = _single_win_trade_df()
+    result = df.lazy().bt.backtest_with_report(commission_bps=0.0, slippage_bps=0.0)
+    ext = result.extended_metrics()
+
+    assert ext["max_drawdown_pct"] == pytest.approx(0.0, abs=1e-12), (
+        "precondition: the repro run must have no drawdown"
+    )
+    calmar = ext["calmar_ratio"]
+    assert math.isnan(calmar), f"calmar_ratio should be NaN, got {calmar}"
+    assert not math.isinf(calmar), "calmar_ratio must not be inf"
+
+def test_undefined_ratio_convention_is_consistent_across_the_bundle():
+    """One condition ("the denominator is empty"), one answer — everywhere.
+
+    Before quantwave-gz7d this same run reported NaN for sortino_ratio and
+    profit_factor but inf for calmar_ratio: two conventions in one bundle.
+    """
+    df = _single_win_trade_df()
+    result = df.lazy().bt.backtest_with_report(commission_bps=0.0, slippage_bps=0.0)
+    ext = result.extended_metrics()
+
+    for key in ("sortino_ratio", "profit_factor", "calmar_ratio"):
+        assert math.isnan(ext[key]), f"{key} should be NaN, got {ext[key]}"
+
+    # And nothing anywhere in the extended bundle may be infinite.
+    for key, value in ext.items():
+        if isinstance(value, float):
+            assert not math.isinf(value), f"{key} must not be inf, got {value}"
+
+def test_finite_ratios_are_unaffected_when_a_drawdown_exists():
+    """The NaN convention only fires on an empty denominator."""
+    df = _loss_trade_df()
+    result = df.lazy().bt.backtest_with_report(commission_bps=0.0, slippage_bps=0.0)
+    ext = result.extended_metrics()
+
+    assert ext["max_drawdown_pct"] > 0.0
+    calmar = ext["calmar_ratio"]
+    assert not math.isnan(calmar), "calmar must stay defined when drawdown exists"
+    assert math.isfinite(calmar)
+
+
