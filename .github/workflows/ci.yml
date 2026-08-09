@@ -101,6 +101,9 @@ jobs:
           cargo nextest run -p quantwave-core
           cargo nextest run -p quantwave-polars
           cargo nextest run -p quantwave-backtest
+          # nextest does not run doctests, so the documented examples -- including
+          # the crate-level quick start -- were never compiled by CI.
+          cargo test --doc -p quantwave-core -p quantwave-polars -p quantwave-backtest
 
   python-gold-parity:
     name: Python gold parity (${{ matrix.os }})

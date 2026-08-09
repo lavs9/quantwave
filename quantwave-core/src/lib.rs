@@ -7,7 +7,7 @@
 //! ## Quick start (streaming)
 //!
 //! ```rust
-//! use quantwave_core::indicators::RSI;
+//! use quantwave_core::indicators::incremental::rsi::RSI;
 //! use quantwave_core::traits::Next;
 //!
 //! let mut rsi = RSI::new(14);

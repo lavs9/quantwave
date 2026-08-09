@@ -10,7 +10,7 @@
 //! use polars::prelude::*;
 //! use quantwave_polars::QuantWaveExt;
 //!
-//! # fn demo(df: LazyFrame) -> PolarsResult<LazyFrame> {
+//! # fn demo(df: LazyFrame) -> LazyFrame {
 //! df.ta().rsi("close", 14)
 //! # }
 //! ```
