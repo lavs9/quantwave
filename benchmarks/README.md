@@ -10,6 +10,16 @@ Reproducible performance measurements for docs and CI. Results land in `results/
 
 ## Running locally
 
+Dependencies (`harness.py` checks these at startup and exits with an install
+hint if any is missing):
+
+```bash
+pip install polars pandas pyarrow numpy psutil
+```
+
+`pyarrow` is not optional — the memory benchmark compares against a genuine
+pandas frame via polars `.to_pandas()`, which delegates to pyarrow.
+
 ```bash
 # Full suite (1M rows) + render docs
 python benchmarks/harness.py

@@ -30,7 +30,9 @@ jobs:
           python-version: "3.12"
 
       - name: Install Python benchmark deps
-        run: pip install polars pandas numpy psutil maturin wheel
+        # pyarrow is required: the memory benchmark calls polars .to_pandas(),
+        # which delegates to pyarrow (an optional polars dependency).
+        run: pip install polars pandas pyarrow numpy psutil maturin wheel
 
       - name: Build and install quantwave wheel
         run: |
