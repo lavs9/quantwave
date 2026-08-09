@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import platform
 import sys
@@ -19,6 +20,41 @@ from benchmarks.data import OhlcvConfig, frame_hash, generate_ohlcv  # noqa: E40
 RESULTS_DIR = Path(__file__).resolve().parent / "results"
 RESULTS_JSON = RESULTS_DIR / "latest.json"
 HARNESS_VERSION = 2
+
+# (import name, pip name, why the harness needs it, needed even for --dry-run).
+# Checked up front so a missing dependency fails immediately instead of
+# half-way through a 1M-row run.
+REQUIRED_MODULES: tuple[tuple[str, str, str, bool], ...] = (
+    ("polars", "polars", "the frames under test", True),
+    ("numpy", "numpy", "array conversion for the comparison timings", True),
+    ("pandas", "pandas", "the pandas side of the memory-footprint comparison", False),
+    (
+        "pyarrow",
+        "pyarrow",
+        "the pandas conversion in the memory benchmark (polars .to_pandas() "
+        "delegates to pyarrow)",
+        False,
+    ),
+)
+
+
+def check_dependencies(dry_run: bool = False) -> None:
+    """Fail fast with an actionable message if a harness dependency is missing."""
+    missing = [
+        (mod, pkg, why)
+        for mod, pkg, why, needed_for_dry_run in REQUIRED_MODULES
+        if (needed_for_dry_run or not dry_run)
+        and importlib.util.find_spec(mod) is None
+    ]
+    if not missing:
+        return
+
+    lines = ["benchmarks/harness.py is missing required dependencies:"]
+    lines += [f"  - {mod} — needed for {why}" for mod, _pkg, why in missing]
+    lines.append("")
+    lines.append("Install them with:")
+    lines.append("    pip install " + " ".join(pkg for _mod, pkg, _why in missing))
+    raise SystemExit("\n".join(lines))
 
 
 def hardware_info() -> dict[str, str]:
@@ -76,6 +112,8 @@ def main() -> int:
     parser.add_argument("--skip-python", action="store_true", help="Skip Python comparisons")
     parser.add_argument("--skip-rust", action="store_true", help="Skip Rust benchmarks")
     args = parser.parse_args()
+
+    check_dependencies(dry_run=args.dry_run)
 
     rows = 100_000 if args.quick else 1_000_000
     cfg = OhlcvConfig(rows=rows)
