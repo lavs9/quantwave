@@ -225,7 +225,7 @@ class Checker(ast.NodeVisitor):
                 node,
                 "PITFALLS §2",
                 f"`{key}` read without checking `num_trades`.",
-                "These go to inf on a single trade. Report num_trades alongside; below ~30 trades the ratio is noise.",
+                "These come back NaN when their denominator is empty (single trade, no losses, no drawdown). Report num_trades alongside; below ~30 trades the ratio is noise.",
             )
         self.generic_visit(node)
 

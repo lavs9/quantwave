@@ -4,7 +4,7 @@
     QuantWave backtest metrics are typed as `PerformanceMetrics` and `BacktestStats` objects (with dict-like access for backward compatibility).
     - All return-like values are **fractions**, not percents (e.g. `0.05` = 5%).
     - `max_drawdown_pct` is a **positive fraction** (e.g. `0.10` = 10% decline).
-    - `sortino_ratio` / `profit_factor` are **`NaN` when undefined** (no downside / no losing trades) — test with `math.isnan()`, not `==`.
+    - Ratios are **`NaN` when undefined** — `sortino_ratio` (no downside), `profit_factor` (no losing trades), `calmar_ratio` (no drawdown), `sharpe_ratio` (zero dispersion with a non-zero mean). Never `inf`. Test with `math.isnan()`, not `==`.
     - Ratio metrics mean nothing below **30 trades**. Check `.diagnostics()`.
     - DataFrames have stable schemas: `entry_ts` and `exit_ts` are epoch seconds; sides are `1` (long) and `-1` (short).
 
@@ -18,7 +18,7 @@ When you call `.metrics()` on a `BacktestReport` (or dictionary result), it retu
 |-----|------------|--------------|
 | `total_return` | final/initial − 1 | fraction |
 | `cagr` | annualized return | fraction |
-| `sharpe_ratio` | annualized, risk-free = 0 | ratio |
+| `sharpe_ratio` | annualized, risk-free = 0 | ratio (**`NaN` if the return series has zero dispersion but a non-zero mean** — undefined) |
 | `sortino_ratio` | annualized downside | ratio (**`NaN` if no negative returns** — undefined) |
 | `max_drawdown_pct` | peak-to-trough decline | **positive fraction** (0.10 = 10% drawdown) |
 | `win_rate` | winners / closed trades | fraction (0–1) |
@@ -33,11 +33,21 @@ When you call `.metrics()` on a `BacktestReport` (or dictionary result), it retu
 
 ### Undefined ratios are `NaN`, not `inf`
 
-`sortino_ratio` and `profit_factor` divide by a downside quantity. When that
-denominator is **empty** — no negative bar returns, or no losing trades — the
-ratio is not "infinitely good", it is **undefined**. QuantWave returns `NaN` for
-these cases rather than `inf`, because `inf` reads like a measurement and `NaN`
-reads like the absence of one.
+Every ratio QuantWave reports divides by a risk-like quantity. When that
+denominator is **empty** — no negative bar returns, no losing trades, no
+drawdown — the ratio is not "infinitely good", it is **undefined**. QuantWave
+returns `NaN` for these cases rather than `inf`, because `inf` reads like a
+measurement and `NaN` reads like the absence of one.
+
+**The convention is uniform across the whole bundle** — one condition, one
+answer. A single run never mixes `NaN` and `inf` for the same situation:
+
+| Metric | Undefined when | Value |
+|---|---|---|
+| `profit_factor` | no losing trades | `NaN` |
+| `sortino_ratio` | no negative returns, or zero downside deviation | `NaN` |
+| `sharpe_ratio` | zero return dispersion with a non-zero mean | `NaN` |
+| `calmar_ratio` (extended) | zero max drawdown with positive CAGR | `NaN` |
 
 Consequences for your code:
 
@@ -46,12 +56,24 @@ Consequences for your code:
 - `NaN` propagates through arithmetic. If you rank or sort strategies on
   `profit_factor`, filter the undefined ones out first; otherwise comparisons
   against `NaN` are all `False` and the ordering is not what you expect.
-- `0.0` still means "no activity at all" (no trades, or all trades exactly flat),
-  which is distinct from "undefined".
+- `0.0` still means "no activity at all" (no trades, all trades exactly flat, or
+  a genuinely flat equity curve), which is distinct from "undefined".
 
-Other surfaces keep their own conventions: `calmar_ratio` (an extended metric)
-still returns `inf` for zero drawdown with positive CAGR, and `sharpe_ratio`
-returns `0.0` when the return series has no variance.
+!!! note "Why this matters for optimizers"
+    Walk-forward and sweep selection pick the argmax of an objective metric with
+    a `v > best_val` comparison. `inf > anything` is `True`, so a degenerate
+    variant that simply never lost — one trade, no drawdown — would win the fold
+    and be carried into the out-of-sample window. `NaN > anything` is `False`, so
+    an undefined variant is skipped exactly like a null. If every candidate is
+    undefined, the fold reports `-inf` as its `train_metric`, which is visible
+    rather than silently plausible.
+
+Two surfaces stay outside the convention, deliberately:
+
+- `var_95` / `cvar_95` are quantiles, not ratios — no denominator to be empty.
+  They are `0.0` on an empty return series.
+- `benchmark` is `None` (not a `NaN`-filled dict) when alpha/beta are undefined —
+  fewer than 2 aligned observations, or a zero-variance benchmark.
 
 ### Ratio metrics are unreliable below 30 trades
 
@@ -87,7 +109,7 @@ if diag["low_sample_size"]:
 | `low_sample_size` | `True` when `num_trades < min_trades_for_reliable_ratios` |
 | `num_trades` | closed trade count the diagnostics were derived from |
 | `min_trades_for_reliable_ratios` | the threshold (30) |
-| `undefined_metrics` | list of contract metric names that came back `NaN` |
+| `undefined_metrics` | list of the **10 contract** metric names that came back `NaN` (extended metrics like `calmar_ratio` are not scanned — read them directly) |
 | `warnings` | human-readable strings; **empty list means nothing looked suspect** |
 
 The same dict is also available as the `diagnostics` key of
@@ -106,7 +128,7 @@ The same dict is also available as the `diagnostics` key of
 
     | Key | Definition | Units / Sign |
     |-----|------------|--------------|
-    | `calmar_ratio` | `cagr / max_drawdown_pct` | ratio (`inf` if no drawdown and positive CAGR) |
+    | `calmar_ratio` | `cagr / max_drawdown_pct` | ratio (**`NaN` if no drawdown and positive CAGR** — undefined; `0.0` if no drawdown and non-positive CAGR) |
     | `var_95` | Historical 95% Value-at-Risk on per-bar returns | **positive fraction** (loss magnitude) |
     | `cvar_95` | Historical 95% Conditional VaR (Expected Shortfall) | **positive fraction** (loss magnitude) |
     | `diagnostics` | Thin-sample / undefined-metric warnings (see above) | dict |

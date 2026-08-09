@@ -42,8 +42,9 @@ report = df.lazy().bt.backtest_with_report(signal="signal", size_multiplier_col=
 
 ## 2. Trusting `.metrics()` on an unsized or single-trade backtest
 
-`sharpe_ratio`, `sortino_ratio`, and `profit_factor` return `inf` freely — one winning
-trade with no losses gives `profit_factor=inf`, `sortino=inf`, `win_rate=1.0`.
+Undefined ratios come back as `NaN`, never `inf` — one winning trade with no losses
+gives `profit_factor=nan`, `sortino_ratio=nan`, `calmar_ratio=nan`, `win_rate=1.0`.
+Test with `math.isnan()`; `NaN == NaN` is `False`, so an equality check lies.
 
 **Never report a metric without `num_trades` next to it.** Below ~30 closed trades, the
 ratios are noise. Check `report.metrics()["num_trades"]` first, every time.

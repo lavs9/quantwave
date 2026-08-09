@@ -15,11 +15,24 @@
 //! - **Win rate / profit factor / avg trade PnL**: aggregated from trade blotter
 //!   `pnl_net` column (clean-room).
 //!
-//! ## Undefined-ratio convention (quantwave-s3iu)
-//! `sortino_ratio` and `profit_factor` return `f64::NAN` — not `f64::INFINITY` —
-//! when their denominator is empty (no negative returns / no losing trades). An
-//! empty denominator means the ratio is undefined, not unboundedly good. Compare
-//! with `.is_nan()`; `NaN == NaN` is false.
+//! ## Undefined-ratio convention (quantwave-s3iu, extended in quantwave-gz7d)
+//! Every ratio in this module returns `f64::NAN` — not `f64::INFINITY`, and not
+//! `0.0` — when its denominator is empty or vanishes while the numerator does
+//! not. An empty denominator means the ratio is undefined, not unboundedly good.
+//! Compare with `.is_nan()`; `NaN == NaN` is false.
+//!
+//! The convention applies uniformly across the bundle, so a single run never
+//! reports two different answers to the same condition:
+//!
+//! | Metric | Undefined when | Value |
+//! |---|---|---|
+//! | `profit_factor` | no losing trades | `NaN` |
+//! | `sortino_ratio` | no negative returns / zero downside deviation | `NaN` |
+//! | `sharpe_ratio` | zero return dispersion with a non-zero mean | `NaN` |
+//! | `calmar_ratio` | zero max drawdown with positive CAGR | `NaN` |
+//!
+//! `0.0` is reserved for "no activity at all" (no trades, no equity curve, or a
+//! genuinely flat run where numerator and denominator are both zero).
 //!
 //! Ratio metrics are also statistically meaningless on thin samples. See
 //! [`MIN_TRADES_FOR_RELIABLE_RATIOS`] and [`PerformanceMetrics::diagnostics`] for
@@ -104,7 +117,8 @@ pub struct PerformanceMetrics {
     // Not part of `column_names()`/`values()`/`row_iter()` so existing sweep,
     // walk-forward, and Python `.metrics()` contracts are unaffected.
     /// `CAGR / max_drawdown_pct` (0.0 when drawdown is ~0 with non-positive CAGR;
-    /// `f64::INFINITY` when drawdown is ~0 with positive CAGR).
+    /// `f64::NAN` — undefined — when drawdown is ~0 with positive CAGR,
+    /// quantwave-gz7d).
     pub calmar_ratio: f64,
     /// Historical 95% Value-at-Risk on per-bar returns, positive fraction (loss magnitude).
     pub var_95: f64,
@@ -542,12 +556,19 @@ const TRADING_DAYS_PER_YEAR: f64 = 252.0;
 
 /// Calmar ratio: `CAGR / max_drawdown_pct`.
 ///
-/// `max_drawdown_pct` is a positive fraction (0.0 = no drawdown). When there is
-/// effectively no drawdown, returns `0.0` for non-positive CAGR or `f64::INFINITY`
-/// for positive CAGR (mirrors the Sortino "no downside" convention above).
+/// `max_drawdown_pct` is a positive fraction (0.0 = no drawdown). With **no
+/// drawdown** the denominator is empty and the ratio is undefined, so a positive
+/// CAGR yields `f64::NAN` rather than `f64::INFINITY` (quantwave-gz7d, extending
+/// the quantwave-s3iu convention to the extended metrics). A run that never drew
+/// down has not demonstrated infinite return-per-unit-of-pain — it has produced
+/// no pain sample to divide by, which is usually a short or degenerate run.
+/// Callers must test with `.is_nan()`, not `==`.
+///
+/// Non-positive CAGR with no drawdown stays `0.0`: numerator and denominator are
+/// both empty, which is the no-activity case, not an undefined ratio.
 fn compute_calmar(cagr: f64, max_drawdown_pct: f64) -> f64 {
     if max_drawdown_pct <= f64::EPSILON {
-        return if cagr > 0.0 { f64::INFINITY } else { 0.0 };
+        return if cagr > 0.0 { f64::NAN } else { 0.0 };
     }
     cagr / max_drawdown_pct
 }
@@ -627,6 +648,19 @@ fn compute_benchmark_metrics(
 }
 
 /// Sharpe ratio: √252 × mean(returns) / std(returns), risk-free = 0.
+///
+/// When the return series has **zero dispersion** the denominator vanishes. Two
+/// different situations hide behind that (quantwave-gz7d):
+///
+/// - mean is also ~0 — the equity curve is flat, nothing happened. `0.0`, the
+///   no-activity convention used throughout this module.
+/// - mean is non-zero — every bar returned exactly the same non-zero amount, so
+///   the ratio is `x/0` and mathematically undefined. `f64::NAN`, matching the
+///   `sortino_ratio` zero-downside-deviation branch below rather than silently
+///   reporting `0.0` (a *bad* Sharpe) for a run with no measurable risk.
+///
+/// A series shorter than 2 observations has no dispersion to estimate at all and
+/// stays `0.0`.
 fn compute_sharpe(returns: &[f64]) -> f64 {
     if returns.len() < 2 {
         return 0.0;
@@ -642,7 +676,11 @@ fn compute_sharpe(returns: &[f64]) -> f64 {
         / (returns.len() - 1) as f64;
     let std = variance.sqrt();
     if std <= f64::EPSILON {
-        return 0.0;
+        return if mean.abs() > f64::EPSILON {
+            f64::NAN
+        } else {
+            0.0
+        };
     }
     (mean / std) * TRADING_DAYS_PER_YEAR.sqrt()
 }
@@ -767,9 +805,14 @@ mod additive_metrics_tests {
         assert!((compute_calmar(0.20, 0.10) - 2.0).abs() < 1e-12);
     }
 
+    /// quantwave-gz7d: zero drawdown is an empty denominator, so Calmar is
+    /// undefined (`NaN`) — not `inf`, which reads as an unboundedly good result
+    /// and can win a `v > best_val` optimizer comparison.
     #[test]
-    fn calmar_ratio_zero_drawdown_positive_cagr_is_infinite() {
-        assert_eq!(compute_calmar(0.05, 0.0), f64::INFINITY);
+    fn calmar_ratio_zero_drawdown_positive_cagr_is_nan() {
+        let c = compute_calmar(0.05, 0.0);
+        assert!(c.is_nan(), "expected NaN, got {c}");
+        assert!(!c.is_infinite(), "must not be inf");
     }
 
     #[test]
@@ -948,6 +991,67 @@ mod undefined_ratio_and_diagnostics_tests {
         assert!(d.low_sample_size);
         assert_eq!(d.undefined_metrics, vec!["profit_factor", "sortino_ratio"]);
         assert_eq!(d.warnings.len(), 2, "warnings = {:?}", d.warnings);
+    }
+
+    /// quantwave-gz7d: calmar joined the NaN convention. Zero drawdown with a
+    /// positive CAGR is an empty denominator, exactly like "no losing trades".
+    #[test]
+    fn calmar_is_nan_when_there_is_no_drawdown() {
+        let c = compute_calmar(0.05, 0.0);
+        assert!(c.is_nan(), "expected NaN, got {c}");
+        assert!(!c.is_infinite(), "must not be inf");
+    }
+
+    #[test]
+    fn calmar_is_zero_when_neither_return_nor_drawdown() {
+        assert_eq!(compute_calmar(0.0, 0.0), 0.0);
+        assert_eq!(compute_calmar(-0.05, 0.0), 0.0);
+    }
+
+    #[test]
+    fn calmar_is_finite_ratio_when_drawdown_exists() {
+        assert!((compute_calmar(0.20, 0.10) - 2.0).abs() < 1e-12);
+    }
+
+    /// quantwave-gz7d: a perfectly constant non-zero return series has zero
+    /// dispersion, so Sharpe is `x/0` — undefined, not the `0.0` it used to
+    /// report (which reads as a *bad* Sharpe for a run with no measurable risk).
+    #[test]
+    fn sharpe_is_nan_when_dispersion_is_zero_and_mean_is_not() {
+        let s = compute_sharpe(&[0.01, 0.01, 0.01, 0.01]);
+        assert!(s.is_nan(), "expected NaN, got {s}");
+        assert!(!s.is_infinite(), "must not be inf");
+    }
+
+    #[test]
+    fn sharpe_is_zero_for_a_genuinely_flat_series() {
+        assert_eq!(compute_sharpe(&[0.0, 0.0, 0.0]), 0.0);
+        assert_eq!(compute_sharpe(&[]), 0.0);
+        assert_eq!(compute_sharpe(&[0.01]), 0.0);
+    }
+
+    #[test]
+    fn sharpe_is_finite_when_returns_vary() {
+        assert!(compute_sharpe(&[0.01, -0.02, 0.015, -0.005]).is_finite());
+    }
+
+    /// The quantwave-gz7d reproduction: one condition ("the denominator is
+    /// empty"), one answer across the whole bundle. Before the fix this run
+    /// reported NaN for sortino/profit_factor and `inf` for calmar.
+    #[test]
+    fn zero_drawdown_bundle_agrees_on_the_nan_convention() {
+        let profit_factor = compute_profit_factor(2.0, 0.0);
+        let sortino_ratio = compute_sortino(&[0.01, 0.02, 0.0]);
+        let calmar_ratio = compute_calmar(0.05, 0.0);
+
+        for (name, v) in [
+            ("profit_factor", profit_factor),
+            ("sortino_ratio", sortino_ratio),
+            ("calmar_ratio", calmar_ratio),
+        ] {
+            assert!(v.is_nan(), "{name} should be NaN, got {v}");
+            assert!(!v.is_infinite(), "{name} must not be inf");
+        }
     }
 
     /// `.metrics()` must stay exactly 10 keys — diagnostics live elsewhere.
