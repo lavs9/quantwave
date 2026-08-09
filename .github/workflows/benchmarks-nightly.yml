@@ -57,7 +57,19 @@ jobs:
             echo "No benchmark changes to commit"
           else
             git commit -m "chore(benchmarks): nightly harness results [skip ci]"
-            git push
+            # The harness takes several minutes, so main can move underneath us.
+            # A bare push then fails with "! [rejected] (fetch first)" and loses
+            # the whole run's results. Rebase and retry instead; the two files we
+            # touch are generated, so a rebase can never conflict meaningfully.
+            for attempt in 1 2 3; do
+              if git push; then
+                exit 0
+              fi
+              echo "push rejected (attempt $attempt) -- rebasing onto origin/main"
+              git pull --rebase --autostash origin main
+            done
+            echo "::error::could not push benchmark results after 3 attempts"
+            exit 1
           fi
 
   criterion-smoke:
