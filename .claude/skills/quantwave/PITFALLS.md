@@ -82,6 +82,14 @@ signals** than the original. If you need ddof=1, rescale it yourself.
 > now take close in the receiver and are named `(high, low)`, matching their
 > siblings. If you are on an older release, check the argument order.
 
+> **Historical note (defaults).** The `ta_*` signatures were also generated with a
+> blanket `timeperiod=14`, so `.ta.ta_correl(other)` used 14 where TA-Lib and
+> `.ta.correl(other)` use **30**, and `.ta.ta_beta(other)` used 14 where TA-Lib and
+> `.ta.beta(other)` use **5**. The formulas always agreed at equal periods; only the
+> default diverged, silently. **That is fixed** — every `ta_*` default is now
+> TA-Lib's own per-function default. On an older release, pass `timeperiod`
+> explicitly rather than relying on the default.
+
 Both of these are now correct and agree:
 
 ```python

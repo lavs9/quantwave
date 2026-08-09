@@ -1051,7 +1051,7 @@ Boundary Conditions & Error Behavior:
         if isinstance(in2, str): in2 = pl.col(in2)
         return register_plugin_function(args=[self._expr, in2], plugin_path=Path(__file__).parent, function_name="sub", is_elementwise=False)
 
-    def ta_beta(self, other: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
+    def ta_beta(self, other: Union[str, pl.Expr], timeperiod: int = 5) -> pl.Expr:
         
         """
 Boundary Conditions & Error Behavior:
@@ -1062,7 +1062,7 @@ Boundary Conditions & Error Behavior:
         if isinstance(other, str): other = pl.col(other)
         return register_plugin_function(args=[self._expr, other], plugin_path=Path(__file__).parent, function_name="ta_beta", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
-    def ta_correl(self, other: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
+    def ta_correl(self, other: Union[str, pl.Expr], timeperiod: int = 30) -> pl.Expr:
         
         """
 Boundary Conditions & Error Behavior:

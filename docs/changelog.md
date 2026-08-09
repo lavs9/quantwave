@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **BREAKING (Polars plugin surface): `ta_beta` now defaults to `timeperiod=5` and `ta_correl` to `timeperiod=30`, matching TA-Lib and their non-prefixed siblings** (`quantwave-0h4o`).
+
+    The `ta_*` signatures were generated with a single blanket `timeperiod=14`. TA-Lib does not use one uniform default — `BETA` is **5** and `CORREL` is **30**, while the `LINEARREG` family, `TSF`, `ATR` and `NATR` are 14 — so `.ta.ta_correl(other)` silently computed a 14-bar correlation where `.ta.correl(other)` and TA-Lib compute a 30-bar one, and `.ta.ta_beta(other)` a 14-bar beta where both others use 5. The formulas were always correct and the twins are bit-identical at equal periods; only the default diverged. That put the divergence on exactly the wrong surface: the `ta_` prefix exists to promise TA-Lib fidelity.
+
+    ```python
+    # before — 14 bars, disagreeing with .ta.correl on the same data
+    pl.col("a").ta.ta_correl("b")
+    # now — 30 bars, TA-Lib's own default; agrees with .ta.correl("b")
+    pl.col("a").ta.ta_correl("b")
+    ```
+
+    **This changes results for anyone who relied on the old bare-call default.** Pass `timeperiod=14` explicitly to keep the previous numbers. The classic-array shim inherits its defaults from these signatures, so `quantwave.talib.TABETA` / `TACORREL` change with them and now agree with `BETA` / `CORREL`.
+
+    Audited the full `ta_*` set: `ta_atr`, `ta_natr`, `ta_linearreg`, `ta_linearreg_angle`, `ta_linearreg_intercept`, `ta_linearreg_slope` and `ta_tsf` were already at TA-Lib's 14 and are unchanged; `ta_trange` takes no period. Only `ta_beta` and `ta_correl` moved. The non-prefixed `max`, `min`, `sum`, `maxindex`, `minindex` and `wma` keep quantwave's house default of 14 even though TA-Lib uses 30 for those — they are quantwave's own surface, not a fidelity promise, and this is now recorded deliberately rather than falling out of a blanket default.
+
+    Fixed in the generator (`scripts/gen_pyo3_plugins_py.py`), not just its output: a per-function default table drives the emitted signatures, and a period-taking plugin missing from that table makes the generator **fail** rather than invent a uniform value. Regression cover lives in `tests/python/test_ta_prefixed_defaults.py`, anchored to a Pearson correlation and a TA-Lib BETA accumulation written out longhand in the test, plus guards that a bare call no longer returns the old 14-bar value.
+
 - **BREAKING (Polars plugin surface): `ta_atr`, `ta_natr` and `ta_trange` now take `close` in the receiver, matching their non-prefixed siblings** (`quantwave-sww3`).
 
     These were generated with opaque positional parameters — `ta_atr(self, in2, in3)` — and forwarded as `[self, in2, in3]` to a plugin that consumes `(high, low, close)`. The receiver therefore had to be **high**, while the sibling `.ta.atr` takes **close**. Writing the call the way its sibling reads permuted the inputs and returned a plausible wrong number with **no error**: on a 200-bar random walk, `1.252823` against a hand-computed Wilder RMA of `1.384819` — roughly 10% off, and data-dependent, so it never looked obviously broken. All three arguments are equal-length `f64` columns, so nothing could raise.
