@@ -258,15 +258,38 @@ def test_feature_names_selects_a_numeric_matrix():
     assert selected.to_numpy().dtype != object
 
 
-def test_excluded_struct_columns_are_reported_and_still_present():
+def test_excluded_columns_are_reported_and_still_present():
     """Dropping them from feature_names must not hide them or delete them."""
     df = _base_df(rows=400)
     features_df, feature_names, metadata = extract(df, feature_sets=FEATURE_SETS)
 
     excluded = metadata["excluded_features"]
-    assert excluded, "expected the geometric-pattern Struct columns to be excluded"
-    for name, dtype in excluded.items():
+    assert excluded, "expected the Struct and event-sparse columns to be excluded"
+    for name, reason in excluded.items():
         assert name not in feature_names, f"{name} was excluded but still in feature_names"
-        # Still available on the frame for callers who want to unnest it.
+        # Still available on the frame for callers who want to unnest or impute it.
         assert name in features_df.columns, f"{name} was dropped from features_df entirely"
-        assert dtype.startswith("Struct"), f"unexpected exclusion {name}: {dtype}"
+        assert reason.strip(), f"{name} excluded with no stated reason"
+
+    assert "market_structure_flip_price" in excluded, "the event-sparse column must be excluded"
+
+
+def test_feature_matrix_is_nan_free_after_warmup_trim():
+    """The core promise: trim the warmup and the matrix is dense and fittable.
+
+    Regression cover for quantwave-3vin. This is what the sklearn smoke test
+    was trying to check before an object-dtype comparison raised first.
+    """
+    df = _base_df(rows=900)
+    features_df, feature_names, metadata = extract(df, feature_sets=FEATURE_SETS)
+
+    warmup = max(
+        info["warmup"] for info in metadata.values() if isinstance(info, dict) and "warmup" in info
+    )
+    trimmed = features_df.slice(warmup, features_df.height - warmup)
+    x = trimmed.select(feature_names).to_numpy()
+
+    assert x.dtype != object
+    bad = (x != x).any(axis=0)
+    offenders = [feature_names[i] for i in range(len(feature_names)) if bad[i]]
+    assert not offenders, f"NaN past warmup in: {offenders}"

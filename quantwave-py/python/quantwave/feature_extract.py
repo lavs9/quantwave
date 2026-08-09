@@ -67,6 +67,20 @@ _ROLLING_WINDOWS: Tuple[int, ...] = (5, 10, 20, 50)
 
 _KNOWN_FEATURE_SETS: Tuple[str, ...] = ("ta_core", "ehlers", "regimes", "rolling_stats")
 
+# Event-scoped columns: they carry a value only on the bars where the event fired
+# and are NaN everywhere else, long past warmup. ~97% NaN in practice. They are
+# real outputs, just not *dense* features, so they are held back from
+# ``feature_names`` the same way Struct columns are.
+#
+# This is a declared list rather than a NaN-fraction threshold on purpose. A
+# threshold would make ``feature_names`` depend on the sample you happened to
+# pass, so the same call could return a different feature set -- and a different
+# model input width -- between training and serving. Membership here must be a
+# property of the indicator, not of the data.
+_EVENT_SPARSE_FEATURES: Dict[str, str] = {
+    "market_structure_flip_price": "event-sparse: price only on confirmed flip bars, NaN otherwise",
+}
+
 _DEFAULT_FEATURE_SETS: Tuple[str, ...] = _KNOWN_FEATURE_SETS
 
 
@@ -226,13 +240,14 @@ def extract(
           order the feature sets were requested (and, within a set, the
           order that set's columns were produced). Only columns usable as
           model features appear here: ``df.select(feature_names).to_numpy()``
-          is guaranteed to be a numeric matrix. Struct-valued columns are
+          is guaranteed to be a dense numeric matrix, free of NaN once the
+          warmup rows are trimmed. Struct-valued and event-sparse columns are
           excluded (see ``metadata["excluded_features"]``); they remain in
-          ``features_df`` and can be unnested by the caller.
+          ``features_df`` for callers who want to unnest or impute them.
         - ``metadata``: ``{feature_set_name: {"feature_names": [...],
           "warmup": int}, ...}`` for each requested feature set, plus
           ``"warmup"`` (the max across sets), ``"by"``, ``"horizon"``,
-          ``"n_rows"``, and ``"excluded_features"`` (a ``{column: dtype}``
+          ``"n_rows"``, and ``"excluded_features"`` (a ``{column: reason}``
           map of columns held back from ``feature_names``). ``warmup`` is the number of leading rows (per set)
           that contain a null/NaN in at least one of that set's columns —
           i.e. the number of rows a caller should trim before training.
@@ -293,14 +308,17 @@ def extract(
     # that: a single Struct column forces numpy to fall back to dtype=object for the
     # WHOLE matrix, so every other column loses its numeric-ness too and even a NaN
     # check raises. They stay in `features_df` -- callers who want them can unnest
-    # them -- but they are not model features (quantwave-3vin).
+    # them -- but they are not model features.
     dtypes = dict(zip(result.columns, result.dtypes))
     excluded: Dict[str, str] = {}
 
     def _is_model_feature(name: str) -> bool:
         dtype = dtypes.get(name)
         if dtype is not None and isinstance(dtype, pl.Struct):
-            excluded[name] = str(dtype)
+            excluded[name] = f"nested dtype {dtype}"
+            return False
+        if name in _EVENT_SPARSE_FEATURES:
+            excluded[name] = _EVENT_SPARSE_FEATURES[name]
             return False
         return True
 
