@@ -1,5 +1,6 @@
 //! Native O(1) TA-Lib statistics: STDDEV, VAR, LINEARREG family, BETA, CORREL, TSF.
 
+use crate::indicators::incremental::rolling_variance::RollingVariance;
 use crate::traits::Next;
 use crate::utils::RingBuffer;
 
@@ -26,39 +27,26 @@ fn linreg_coeffs(ys: &[f64]) -> (f64, f64) {
     (slope, intercept)
 }
 
+/// Fixed-length sliding window with a numerically stable variance accumulator
+/// (see [`RollingVariance`] — quantwave-qkft).
 #[derive(Debug, Clone)]
 struct RollingWindow {
-    period: usize,
-    buf: RingBuffer<f64>,
-    sum: f64,
-    sum_sq: f64,
+    acc: RollingVariance,
 }
 
 impl RollingWindow {
     fn new(period: usize) -> Self {
         Self {
-            period,
-            buf: RingBuffer::with_capacity(period),
-            sum: 0.0,
-            sum_sq: 0.0,
+            acc: RollingVariance::new(period),
         }
     }
 
     fn push(&mut self, v: f64) -> bool {
-        if self.buf.len() >= self.period
-            && let Some(old) = self.buf.pop_front()
-        {
-            self.sum -= old;
-            self.sum_sq -= old * old;
-        }
-        self.buf.push_back(v);
-        self.sum += v;
-        self.sum_sq += v * v;
-        self.buf.len() >= self.period
+        self.acc.push(v)
     }
 
     fn values(&self) -> Vec<f64> {
-        self.buf.iter().cloned().collect()
+        self.acc.values()
     }
 }
 
@@ -87,10 +75,7 @@ impl Next<f64> for TaSTDDEV {
         if !self.inner.push(input) {
             return f64::NAN;
         }
-        let n = self.timeperiod as f64;
-        let mean = self.inner.sum / n;
-        let var = (self.inner.sum_sq / n - mean * mean).max(0.0);
-        var.sqrt() * self.nbdev
+        self.inner.acc.stddev() * self.nbdev
     }
 }
 
@@ -119,9 +104,10 @@ impl Next<f64> for TaVAR {
         if !self.inner.push(input) {
             return f64::NAN;
         }
-        let n = self.timeperiod as f64;
-        let mean = self.inner.sum / n;
-        (self.inner.sum_sq / n - mean * mean).max(0.0)
+        // NOTE: `nbdev` is deliberately unused here — TA-Lib's VAR ignores it
+        // too, and the batch oracle agrees. Behaviour preserved from before the
+        // quantwave-qkft accumulator swap.
+        self.inner.acc.variance()
     }
 }
 
@@ -456,7 +442,85 @@ impl Next<(f64, f64)> for TaBETA {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{
+        assert_bitwise_batch_streaming_parity, log_price_series, reference_stddev,
+    };
     use proptest::prelude::*;
+
+    // ---- quantwave-qkft: numerical stability of the stddev accumulator ------
+
+    /// The failing case from quantwave-qkft: on log-price the one-pass
+    /// `E[X²] - E[X]²` form disagreed with a two-pass reference by ~1e-6
+    /// relative, blowing a strict 1e-7 parity gate. TaSTDDEV must now clear it
+    /// by orders of magnitude.
+    #[test]
+    fn ta_stddev_matches_two_pass_reference_on_log_price() {
+        let period = 20;
+        let data = log_price_series(600);
+        let mut ind = TaSTDDEV::new(period, 1.0);
+        let mut worst: f64 = 0.0;
+        for (i, &x) in data.iter().enumerate() {
+            let got = ind.next(x);
+            if got.is_nan() {
+                continue;
+            }
+            let reference = reference_stddev(&data[i + 1 - period..=i]);
+            assert!(reference > 0.0);
+            worst = worst.max(((got - reference) / reference).abs());
+        }
+        assert!(
+            worst < 1e-7,
+            "TaSTDDEV vs two-pass reference on log-price: {worst:e} (gate 1e-7)"
+        );
+        // Not just inside the gate — at reference precision.
+        assert!(worst < 1e-12, "expected ~1e-15 precision, got {worst:e}");
+    }
+
+    #[test]
+    fn ta_var_matches_two_pass_reference_on_log_price() {
+        let period = 20;
+        let data = log_price_series(600);
+        let mut ind = TaVAR::new(period, 1.0);
+        let mut worst: f64 = 0.0;
+        for (i, &x) in data.iter().enumerate() {
+            let got = ind.next(x);
+            if got.is_nan() {
+                continue;
+            }
+            let s = reference_stddev(&data[i + 1 - period..=i]);
+            let reference = s * s;
+            assert!(reference > 0.0);
+            worst = worst.max(((got - reference) / reference).abs());
+        }
+        assert!(worst < 1e-12, "TaVAR vs reference on log-price: {worst:e}");
+    }
+
+    /// Batch and streaming must stay bit-identical: the accumulator's periodic
+    /// exact refresh is driven by bar index only, never by data or by how the
+    /// series was chunked.
+    #[test]
+    fn ta_stddev_batch_streaming_bitwise_parity() {
+        let data = log_price_series(500);
+        assert_bitwise_batch_streaming_parity(&data, || TaSTDDEV::new(20, 2.0));
+        assert_bitwise_batch_streaming_parity(&data, || TaVAR::new(14, 1.0));
+        let prices: Vec<f64> = (0..500)
+            .map(|i| 2980.0 + (i as f64 * 0.31).sin() * 40.0)
+            .collect();
+        assert_bitwise_batch_streaming_parity(&prices, || TaSTDDEV::new(20, 2.0));
+        assert_bitwise_batch_streaming_parity(&prices, || TaVAR::new(14, 1.0));
+    }
+
+    /// The LINEARREG family shares the same rolling window; make sure swapping
+    /// the accumulator underneath did not disturb it.
+    #[test]
+    fn linreg_family_batch_streaming_bitwise_parity() {
+        let data = log_price_series(400);
+        assert_bitwise_batch_streaming_parity(&data, || TaLINEARREG::new(14));
+        assert_bitwise_batch_streaming_parity(&data, || TaLINEARREG_SLOPE::new(14));
+        assert_bitwise_batch_streaming_parity(&data, || TaLINEARREG_INTERCEPT::new(14));
+        assert_bitwise_batch_streaming_parity(&data, || TaLINEARREG_ANGLE::new(14));
+        assert_bitwise_batch_streaming_parity(&data, || TaTSF::new(14));
+    }
 
     proptest! {
         #[test]
