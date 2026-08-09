@@ -224,11 +224,16 @@ def extract(
           column.
         - ``feature_names``: the list of added feature column names, in the
           order the feature sets were requested (and, within a set, the
-          order that set's columns were produced).
+          order that set's columns were produced). Only columns usable as
+          model features appear here: ``df.select(feature_names).to_numpy()``
+          is guaranteed to be a numeric matrix. Struct-valued columns are
+          excluded (see ``metadata["excluded_features"]``); they remain in
+          ``features_df`` and can be unnested by the caller.
         - ``metadata``: ``{feature_set_name: {"feature_names": [...],
           "warmup": int}, ...}`` for each requested feature set, plus
-          ``"warmup"`` (the max across sets), ``"by"``, ``"horizon"``, and
-          ``"n_rows"``. ``warmup`` is the number of leading rows (per set)
+          ``"warmup"`` (the max across sets), ``"by"``, ``"horizon"``,
+          ``"n_rows"``, and ``"excluded_features"`` (a ``{column: dtype}``
+          map of columns held back from ``feature_names``). ``warmup`` is the number of leading rows (per set)
           that contain a null/NaN in at least one of that set's columns —
           i.e. the number of rows a caller should trim before training.
 
@@ -283,6 +288,24 @@ def extract(
     )
     result = result.sort(idx_col).drop(idx_col)
 
+    # `feature_names` is a promise that `df.select(feature_names).to_numpy()` is a
+    # numeric matrix. Struct-valued columns (the geometric-pattern detectors) break
+    # that: a single Struct column forces numpy to fall back to dtype=object for the
+    # WHOLE matrix, so every other column loses its numeric-ness too and even a NaN
+    # check raises. They stay in `features_df` -- callers who want them can unnest
+    # them -- but they are not model features (quantwave-3vin).
+    dtypes = dict(zip(result.columns, result.dtypes))
+    excluded: Dict[str, str] = {}
+
+    def _is_model_feature(name: str) -> bool:
+        dtype = dtypes.get(name)
+        if dtype is not None and isinstance(dtype, pl.Struct):
+            excluded[name] = str(dtype)
+            return False
+        return True
+
+    names_by_set = {fs: [n for n in names_by_set[fs] if _is_model_feature(n)] for fs in requested}
+
     feature_names: List[str] = []
     for fs in requested:
         feature_names.extend(names_by_set[fs])
@@ -290,6 +313,7 @@ def extract(
     metadata: Dict[str, Any] = {
         fs: {"feature_names": names_by_set[fs], "warmup": warmup_by_set[fs]} for fs in requested
     }
+    metadata["excluded_features"] = excluded
     metadata["warmup"] = max(warmup_by_set.values()) if warmup_by_set else 0
     metadata["by"] = by
     metadata["horizon"] = horizon

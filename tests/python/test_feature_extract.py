@@ -119,10 +119,15 @@ def test_feature_names_exactly_equals_added_columns():
     df = _base_df()
     before_cols = set(df.columns)
 
-    features_df, feature_names, _ = extract(df, feature_sets=FEATURE_SETS)
+    features_df, feature_names, metadata = extract(df, feature_sets=FEATURE_SETS)
 
     added_cols = set(features_df.columns) - before_cols
-    assert set(feature_names) == added_cols
+    # Every added column is accounted for, but Struct columns are reported under
+    # excluded_features rather than feature_names -- they are not model features
+    # (quantwave-3vin). Nothing may be silently dropped from either.
+    excluded = set(metadata["excluded_features"])
+    assert set(feature_names) | excluded == added_cols
+    assert not (set(feature_names) & excluded), "a column is both a feature and excluded"
     assert len(feature_names) == len(set(feature_names)), "duplicate feature names"
 
 
@@ -209,8 +214,59 @@ def test_integration_smoke_sklearn_fit():
     x = trimmed.select(feature_names).to_numpy()
     y = trimmed["close"].to_numpy()
 
-    assert not bool((x != x).any()), "NaNs remain in feature matrix after warmup trim"
+    # Check this BEFORE any elementwise maths. A single Struct column in the
+    # selection makes numpy fall back to dtype=object for the whole matrix, and
+    # then `x != x` below raises an opaque "truth value is ambiguous" ValueError
+    # that says nothing about the real cause (quantwave-3vin).
+    assert x.dtype != object, (
+        "feature matrix is dtype=object, not numeric -- some column in "
+        f"feature_names is non-numeric. metadata['excluded_features']="
+        f"{metadata.get('excluded_features')}"
+    )
+
+    bad = (x != x).any(axis=0)
+    offenders = [feature_names[i] for i in range(len(feature_names)) if bad[i]]
+    assert not offenders, (
+        f"NaNs remain in feature matrix after warmup trim: {offenders}. "
+        "If a column is NaN well past its warmup it is an event/sparse column, "
+        "not a warmup artefact, and cannot be a dense model feature as-is."
+    )
 
     model = LinearRegression()
     model.fit(x, y)
     assert model.coef_.shape[0] == len(feature_names)
+
+
+def test_feature_names_selects_a_numeric_matrix():
+    """`feature_names` promises a model-ready numeric matrix -- pin that.
+
+    Regression cover for quantwave-3vin, where `geometric_patterns_flag` and
+    `geometric_patterns_hs` (Struct columns) were listed as features.
+    """
+    df = _base_df(rows=400)
+    features_df, feature_names, metadata = extract(df, feature_sets=FEATURE_SETS)
+
+    selected = features_df.select(feature_names)
+    # Boolean is fine -- numpy widens it to a numeric dtype. Nested dtypes are not:
+    # one of them forces dtype=object across the whole matrix.
+    nested = [
+        (n, str(d))
+        for n, d in zip(selected.columns, selected.dtypes)
+        if not (d.is_numeric() or d == pl.Boolean)
+    ]
+    assert not nested, f"non-numeric columns in feature_names: {nested}"
+    assert selected.to_numpy().dtype != object
+
+
+def test_excluded_struct_columns_are_reported_and_still_present():
+    """Dropping them from feature_names must not hide them or delete them."""
+    df = _base_df(rows=400)
+    features_df, feature_names, metadata = extract(df, feature_sets=FEATURE_SETS)
+
+    excluded = metadata["excluded_features"]
+    assert excluded, "expected the geometric-pattern Struct columns to be excluded"
+    for name, dtype in excluded.items():
+        assert name not in feature_names, f"{name} was excluded but still in feature_names"
+        # Still available on the frame for callers who want to unnest it.
+        assert name in features_df.columns, f"{name} was dropped from features_df entirely"
+        assert dtype.startswith("Struct"), f"unexpected exclusion {name}: {dtype}"
