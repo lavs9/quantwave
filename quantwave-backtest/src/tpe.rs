@@ -22,7 +22,7 @@
 //! Grid search remains the default optimizer everywhere in this crate; TPE is strictly
 //! opt-in.
 
-use rand::Rng;
+use rand::RngExt;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 
