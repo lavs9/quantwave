@@ -57,15 +57,24 @@ jobs:
             echo "No benchmark changes to commit"
           else
             git commit -m "chore(benchmarks): nightly harness results [skip ci]"
-            # The harness takes several minutes, so main can move underneath us.
-            # A bare push then fails with "! [rejected] (fetch first)" and loses
-            # the whole run's results. Rebase and retry instead; the two files we
-            # touch are generated, so a rebase can never conflict meaningfully.
+            # Pushing straight to main requires github-actions[bot] to be a
+            # bypass actor on the "main protect" ruleset, which otherwise
+            # rejects this with GH013 ("Changes must be made through a pull
+            # request" + a required status check that [skip ci] guarantees will
+            # never report). That bypass is repo configuration, not something
+            # this workflow can arrange -- if these pushes start failing with
+            # GH013 again, check the ruleset before touching anything here.
+            #
+            # The retry below is for a DIFFERENT failure: the harness takes
+            # several minutes, so main can genuinely move underneath us and a
+            # bare push loses the whole run's results to "! [rejected] (fetch
+            # first)". The two files we touch are generated, so a rebase can
+            # never conflict meaningfully.
             for attempt in 1 2 3; do
               if git push; then
                 exit 0
               fi
-              echo "push rejected (attempt $attempt) -- rebasing onto origin/main"
+              echo "push failed (attempt $attempt) -- rebasing onto origin/main"
               git pull --rebase --autostash origin main
             done
             echo "::error::could not push benchmark results after 3 attempts"
