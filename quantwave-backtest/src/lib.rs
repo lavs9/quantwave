@@ -1950,7 +1950,7 @@ mod tests {
     use super::*;
     use approx::assert_relative_eq;
     // use polars::prelude::*;
-    use rand::Rng;
+    use rand::RngExt;
     // Core types needed for ug9t parity strategy (regime + feature + rich PA)
     use quantwave_core::features::CyberCycleFeatureExtractor;
     use quantwave_core::regimes::MarketRegime;
