@@ -3,10 +3,10 @@
 QuantWave publishes **only measured numbers** from the reproducible harness in `benchmarks/`. No hand-written throughput claims.
 
 <!-- bench:meta:start -->
-**Last harness run:** 2026-07-08T07:38:14.970046+00:00
+**Last harness run:** 2026-08-12T04:34:59.109501+00:00
 **Harness version:** 2
-**Dataset:** 100,000 rows, seed `1364656129`
-**Host CPU:** arm · **RAM:** 24.0 GB · **OS:** Darwin 25.5.0
+**Dataset:** 1,000,000 rows, seed `1364656129`
+**Host CPU:** x86_64 · **RAM:** 15.6 GB · **OS:** Linux 6.17.0-1022-azure
 
 Regenerate: `python benchmarks/harness.py && python scripts/render_benchmarks.py`
 <!-- bench:meta:end -->
@@ -14,21 +14,21 @@ Regenerate: `python benchmarks/harness.py && python scripts/render_benchmarks.py
 ## Memory Usage
 
 <!-- bench:memory:start -->
-Measured on **100,000** synthetic OHLCV rows (+ symbol column where noted).
+Measured on **1,000,000** synthetic OHLCV rows (+ symbol column where noted).
 
 ### OHLCV + Symbol
 
 | Framework | Memory Usage | Footprint |
 |-----------|----------------|-----------|
-| **QuantWave (Polars)** | **4.48 MB** | **1.0x** |
-| Pandas | 9.16 MB | 2.04x |
+| **QuantWave (Polars)** | **44.82 MB** | **1.0x** |
+| Pandas | 52.45 MB | 1.17x |
 
 ### High-cardinality strings (Symbol column only)
 
 | Framework | Memory | Footprint |
 |-----------|--------|-----------|
-| **QuantWave (Polars)** | **0.67 MB** | **1.0x** |
-| Pandas | 5.34 MB | 8.0x |
+| **QuantWave (Polars)** | **6.68 MB** | **1.0x** |
+| Pandas | 14.31 MB | 2.14x |
 <!-- bench:memory:end -->
 
 ## Speed & Throughput
@@ -36,14 +36,14 @@ Measured on **100,000** synthetic OHLCV rows (+ symbol column where noted).
 <!-- bench:throughput:start -->
 ### Rust streaming throughput
 
-- **Rows:** 100,000
+- **Rows:** 1,000,000
 - **Source:** `quantwave-core/benchmark_export`
 
 | Indicator | Mode | Time (ms) |
 |-----------|------|-----------|
-| SMA (20) | streaming | 0.2305 |
+| SMA (20) | streaming | 5.3005 |
 | RSI (14) | streaming | 0.0000 |
-| SuperTrend (10,3) | streaming | 0.3457 |
+| SuperTrend (10,3) | streaming | 7.0151 |
 
 > Criterion HTML reports: `cargo bench -p quantwave-core --bench indicator_throughput` (100,000 rows per case).
 <!-- bench:throughput:end -->
@@ -51,18 +51,18 @@ Measured on **100,000** synthetic OHLCV rows (+ symbol column where noted).
 ## Python Comparisons
 
 <!-- bench:comparisons:start -->
-### SMA batch throughput (SMA(20), 100000 rows)
+### SMA batch throughput (SMA(20), 1000000 rows)
 
 Correctness pre-check on 1k rows passed before timing.
 
 | Library | Time (ms) |
 |---------|-----------|
-| QuantWave (.ta) | 0.4340 |
-| Polars rolling_mean | 0.8796 |
-| Pandas rolling | 0.4815 |
+| QuantWave (.ta) | 9.0211 |
+| Polars rolling_mean | 8.8490 |
+| Pandas rolling | 15.9358 |
 | TA-Lib | _not installed_ |
 
-**Library versions:** numpy 1.26.4, pandas 2.2.3, pandas_ta not_installed, polars 1.40.1, quantwave 0.6.0, talib not_installed
+**Library versions:** numpy 2.5.2, pandas 3.0.5, pandas_ta not_installed, polars 1.43.2, quantwave 0.7.0, talib not_installed
 <!-- bench:comparisons:end -->
 
 ## Streaming Latency
@@ -74,8 +74,8 @@ Source: `per_tick_instrumented` — real per-tick instrumentation, not batch ms 
 
 | Indicator | Mean (ns) | P99 (ns) |
 |-----------|-----------|----------|
-| SMA (20) | 16.0 | 42.0 |
-| RSI (14) | 15.0 | 42.0 |
+| SMA (20) | 35.6 | 41.0 |
+| RSI (14) | 32.2 | 40.0 |
 <!-- bench:latency:end -->
 
 ## Methodology
