@@ -21,7 +21,16 @@ jobs:
     permissions:
       contents: write
     steps:
+      # Checked out over SSH with the "benchmarks-nightly (write)" deploy key so
+      # the results push at the end of this job authenticates as that key rather
+      # than as github-actions[bot]. The key is a bypass actor on the "main
+      # protect" ruleset; the bot is not, and cannot be -- GitHub only allows the
+      # Actions integration as a bypass actor on ORG-owned repos, and this repo
+      # is user-owned (see the push step below).
       - uses: actions/checkout@v7
+        with:
+          ssh-key: ${{ secrets.BENCHMARK_DEPLOY_KEY }}
+          persist-credentials: true
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -57,13 +66,20 @@ jobs:
             echo "No benchmark changes to commit"
           else
             git commit -m "chore(benchmarks): nightly harness results [skip ci]"
-            # Pushing straight to main requires github-actions[bot] to be a
-            # bypass actor on the "main protect" ruleset, which otherwise
-            # rejects this with GH013 ("Changes must be made through a pull
-            # request" + a required status check that [skip ci] guarantees will
-            # never report). That bypass is repo configuration, not something
-            # this workflow can arrange -- if these pushes start failing with
-            # GH013 again, check the ruleset before touching anything here.
+            # This pushes straight to a protected branch. It works only because
+            # the checkout above used the "benchmarks-nightly (write)" deploy
+            # key, which is registered as an "always" bypass actor on the "main
+            # protect" ruleset. Without it the push is rejected outright:
+            #   GH013: - Changes must be made through a pull request.
+            #          - Required status check "Doc & metadata sanity" is expected.
+            # (and [skip ci] below guarantees that check can never report, so the
+            # PR route would deadlock rather than merge).
+            #
+            # If these pushes start failing with GH013 again, the cause is the
+            # ruleset or the deploy key -- check those before touching anything
+            # in this file. Note github-actions[bot] CANNOT be granted the same
+            # bypass: GitHub only accepts the Actions integration as a bypass
+            # actor on org-owned repos, and this repo is user-owned.
             #
             # The retry below is for a DIFFERENT failure: the harness takes
             # several minutes, so main can genuinely move underneath us and a
