@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Benchmark synthetic data is now reproducible across numpy versions; published benchmark numbers are reset** (`quantwave-5yjg`).
+
+    `benchmarks/data.py` drew from `np.random.default_rng`, whose `Generator` streams NumPy explicitly reserves the right to change between feature releases (NEP 19 freezes only the legacy `RandomState`). The same seed therefore produced different data on different numpy builds — confirmed here as numpy 1.26.4 and 2.4.6 yielding different digests from an identical config. Since `dataset.frame_hash` in `benchmarks/results/latest.json` exists precisely to prove two runs measured the same data, it could not do its job, and the nightly committed a spurious diff to `main` whenever CI's pip resolution shifted.
+
+    Values now come from SplitMix64 implemented in explicit `uint64` arithmetic inside `benchmarks/data.py`, depending on no library RNG. It is counter-based, so row `i` is a pure function of `(seed, column, i)` — a 100k smoke run is a true prefix of the 1M nightly run. `frame_hash` also folds in column name, dtype and length and normalises to little-endian, so a reordered or retyped frame can no longer collide with the original.
+
+    **This changes the synthetic dataset**, so benchmark figures produced before this release are not comparable with those after it. `tests/python/test_benchmark_harness.py` now pins the generator with golden digests; if they ever fail, the data stream moved and the baseline must be reset deliberately rather than re-blessed.
+
 ### Changed
 - **BREAKING (Polars plugin surface): `ta_beta` now defaults to `timeperiod=5` and `ta_correl` to `timeperiod=30`, matching TA-Lib and their non-prefixed siblings** (`quantwave-0h4o`).
 
