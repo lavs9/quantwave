@@ -3,7 +3,7 @@
 QuantWave publishes **only measured numbers** from the reproducible harness in `benchmarks/`. No hand-written throughput claims.
 
 <!-- bench:meta:start -->
-**Last harness run:** 2026-08-16T06:42:57.244661+00:00
+**Last harness run:** 2026-08-23T06:43:55.313593+00:00
 **Harness version:** 2
 **Dataset:** 1,000,000 rows, seed `1364656129`
 **Host CPU:** x86_64 · **RAM:** 15.6 GB · **OS:** Linux 6.17.0-1022-azure
@@ -41,9 +41,9 @@ Measured on **1,000,000** synthetic OHLCV rows (+ symbol column where noted).
 
 | Indicator | Mode | Time (ms) |
 |-----------|------|-----------|
-| SMA (20) | streaming | 4.7355 |
+| SMA (20) | streaming | 4.7182 |
 | RSI (14) | streaming | 0.0000 |
-| SuperTrend (10,3) | streaming | 7.1361 |
+| SuperTrend (10,3) | streaming | 7.0584 |
 
 > Criterion HTML reports: `cargo bench -p quantwave-core --bench indicator_throughput` (100,000 rows per case).
 <!-- bench:throughput:end -->
@@ -57,9 +57,9 @@ Correctness pre-check on 1k rows passed before timing.
 
 | Library | Time (ms) |
 |---------|-----------|
-| QuantWave (.ta) | 8.0542 |
-| Polars rolling_mean | 9.1369 |
-| Pandas rolling | 11.7613 |
+| QuantWave (.ta) | 8.2814 |
+| Polars rolling_mean | 9.0600 |
+| Pandas rolling | 10.9111 |
 | TA-Lib | _not installed_ |
 
 **Library versions:** numpy 2.5.2, pandas 3.0.5, pandas_ta not_installed, polars 1.43.2, quantwave 0.7.0, talib not_installed
@@ -74,8 +74,8 @@ Source: `per_tick_instrumented` — real per-tick instrumentation, not batch ms 
 
 | Indicator | Mean (ns) | P99 (ns) |
 |-----------|-----------|----------|
-| SMA (20) | 30.9 | 40.0 |
-| RSI (14) | 28.8 | 31.0 |
+| SMA (20) | 32.1 | 41.0 |
+| RSI (14) | 28.7 | 31.0 |
 <!-- bench:latency:end -->
 
 ## Methodology
