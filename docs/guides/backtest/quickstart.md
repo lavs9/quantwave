@@ -63,7 +63,139 @@ metrics = report.metrics()
 
 ---
 
-## 4. Trim indicator warmup before you backtest
+## 4. Signal conventions: get `signal_type` right
+
+!!! danger "This is the single most important thing to get right in a portfolio backtest"
+
+    A signal column's magnitude means something different depending on
+    `signal_type`. Pick the wrong one and the backtest still runs, still
+    produces trades, and still prints a plausible-looking (but silently
+    wrong) report.
+
+`signal_type` is a `.bt.portfolio_backtest()` parameter — it only applies to
+shared-capital, multi-symbol runs (see "`shared_capital` vs
+`independent_books`" below). It controls how a signal's *magnitude* becomes
+a position size:
+
+| `signal_type` | Magnitude means | Example: `signal = 0.25` |
+|----------------|------------------|---------------------------|
+| `"weight"` (**default**) | Fraction of **total equity**, independent per symbol — not normalized against other active symbols. Caller is responsible for keeping the sum of active weights sane. Matches zipline `order_target_percent` / backtrader `PercentSizer` / QuantConnect `SetHoldings` / vectorbt `targetpercent`. | Deploy 25% of equity into this symbol. |
+| `"target_pct"` | A weight normalized across all symbols with a non-zero signal **this bar**: `\|signal_i\| / Σ\|signal\|`. | Deploy `25% / (sum of all active \|signal\| this bar)` of equity. |
+| `"shares"` (opt-in, pre-9wji.1 behavior) | A **literal share count**. | Buy 0.25 shares — rounds to 0. |
+
+`"shares"` is the footgun this section exists to warn you off of. A boolean
+`0/1` entry signal — the most natural way to write "I'm in this name" or
+"I'm out" — is a **share count** under `"shares"`, not a position size. On a
+$1,000,000 book, a `1.0` signal buys **one share**, not "all-in." The
+backtest doesn't error; it just quietly returns close to 0% because almost
+none of the book's capital was ever deployed, and that number never
+compounds with equity as the book grows.
+
+```python
+import polars as pl
+import quantwave  # registers .bt
+
+df = pl.DataFrame({
+    "timestamp": [0, 0, 0, 1, 1, 1, 2, 2, 2],
+    "symbol":    ["AAA", "BBB", "CCC"] * 3,
+    "close":     [100.0, 50.0, 20.0, 101.0, 50.5, 20.2, 102.0, 51.0, 20.4],
+    # Boolean "am I in this name" signal, one column, three symbols.
+    "signal":    [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+})
+
+# BEFORE (footgun): signal_type="shares" — buys ~1 share per name on a
+# $1,000,000 book, deploys almost none of the capital, ~0% return.
+report_shares = (
+    df.lazy()
+    .bt.portfolio_backtest(
+        signal="signal", symbol_col="symbol",
+        initial_cash=1_000_000.0, signal_type="shares",
+    )
+)
+
+# AFTER (default): same boolean shape, but signal values *are* the target
+# weight. [0, 0.25, 0.25] deploys 25% of equity into each active name —
+# 75% total, 25% held back in cash.
+df_weighted = df.with_columns(
+    (pl.col("signal") * 0.25).alias("signal")
+)
+report_weight = (
+    df_weighted.lazy()
+    .bt.portfolio_backtest(
+        signal="signal", symbol_col="symbol",
+        initial_cash=1_000_000.0,  # signal_type="weight" is the default
+    )
+)
+```
+
+The takeaway: decide up front whether your signal column is meant to carry
+*share counts* or *position weights*, and set `signal_type` to match. When
+in doubt, `"weight"` is almost always what you want for equity-fraction
+sizing, and it's the default as of quantwave-9wji.1 (2026-09-08) — the
+default used to be `"shares"`, so a backtest re-run after upgrading without
+passing `signal_type="shares"` explicitly will produce very different
+(usually much bigger, and much more correct) numbers.
+
+### Position sizing on top of `signal_type`: `size_multiplier_col`
+
+`size_multiplier_col` (available on `backtest()`, `backtest_with_report()`,
+and `portfolio_backtest()`) names an optional `f64` column that multiplies
+the raw signal value *before* `signal_type` is applied — e.g. a
+normalized "conviction" score, a regime probability, or an ATR-derived pole
+height. A `size_multiplier` of `0.5` on a `signal_type="weight"` row of
+`0.25` deploys `0.125` (12.5%) of equity instead of `0.25` (25%); on a
+`signal_type="shares"` row of `10` it buys 5 shares instead of 10. It has
+no interaction with `entry_filter_col` other than ordering: a `False` entry
+filter forces exposure to `0.0` regardless of what the multiplier says.
+
+---
+
+## 5. `shared_capital` vs `independent_books`: one cash pool or one per symbol
+
+`portfolio_mode` (a `.bt.portfolio_backtest()` parameter) decides how
+capital is shared across symbols in a multi-symbol run:
+
+- `"shared_capital"` (`portfolio_backtest()`'s default) — **one cash pool**
+  for the whole run. Opening a position in `AAA` competes for the same
+  capital as opening a position in `BBB`; `signal_type` and
+  `portfolio_allocator` govern how that shared pool is split. This is what
+  you want for "one book, many names" — the realistic shape of most
+  portfolio strategies.
+- `"independent_books"` (the historical default, still the default for the
+  lower-level `.bt.backtest()` family) — each symbol gets its **own**
+  `initial_cash`, run as if it were a separate backtest. There's no
+  competition for capital between symbols; a large position in `AAA`
+  doesn't reduce what `BBB` can buy. Useful when you genuinely want
+  per-symbol P&L in isolation rather than a single blended equity curve.
+
+```python
+df.lazy().bt.portfolio_backtest(
+    signal="signal", symbol_col="symbol",
+    portfolio_mode="shared_capital",     # one pool (default for portfolio_backtest)
+    portfolio_allocator="equal_weight",  # equity / N active symbols
+)
+```
+
+---
+
+## 6. Sort your input before you backtest
+
+Every `.bt` method that touches a `symbol_col` validates that rows are
+sorted ascending by `(timestamp, symbol)` — timestamp first, then symbol
+within a tied timestamp — and raises if they aren't:
+
+```
+Data must be sorted by timestamp (and symbol for multi-symbol runs)
+```
+
+Build multi-symbol frames with `df.sort(["timestamp", "symbol"])` (or
+however your data pipeline already guarantees that order) before calling
+`.bt.portfolio_backtest()` or any other `.bt` method with `symbol_col` set.
+A single-symbol frame only needs to be sorted by `timestamp_col`.
+
+---
+
+## 7. Trim indicator warmup before you backtest
 
 !!! danger "Warmup is `NaN`, not `null` — `drop_nulls()` will not remove it"
 
@@ -119,7 +251,7 @@ for the full convention and the accepted `trim_warmup` spec forms.
 
 ---
 
-## 5. When your trades actually fill
+## 8. When your trades actually fill
 
 By default QuantWave fills a signal observed on bar `t` at bar **`t+1`**'s close
 (`execution_delay="next_bar"`). This is deliberate. Your signal is almost
@@ -155,7 +287,7 @@ and that gap is pure look-ahead.
 
 ---
 
-## 6. What you get back
+## 9. What you get back
 
 | Output | Contents |
 |--------|----------|
@@ -167,7 +299,7 @@ Full key list: see [Capability Matrix](capability_matrix.md#python-bt-api-surfac
 
 ---
 
-## 7. Next steps
+## 10. Next steps
 
 | Goal | Go to |
 |------|-------|

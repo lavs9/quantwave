@@ -56,11 +56,22 @@ report = (
         portfolio_mode="shared_capital",
         portfolio_allocator="equal_weight",
         initial_cash=100_000.0,
+        # signal_type="weight" is the default: `signal` values are a
+        # fraction of total equity per symbol (e.g. 0.1 = 10%), not a
+        # share count. See the quickstart's signal-conventions section
+        # before changing this — it's the most common footgun here.
     )
 )
 ```
 
-See [Portfolio Shared Capital](../../examples/notebooks/portfolio_shared_capital_backtest.md) for a full walkthrough.
+`df` must be sorted ascending by `(timestamp, symbol)` before this call, or
+`portfolio_backtest()` raises `Data must be sorted by timestamp (and symbol
+for multi-symbol runs)`.
+
+See [Backtest Quickstart](quickstart.md) for the full `signal_type` /
+`size_multiplier_col` / `portfolio_mode` walkthrough, and
+[Portfolio Shared Capital](../../examples/notebooks/portfolio_shared_capital_backtest.md)
+for a full runnable notebook.
 
 ## Quickstart path
 
