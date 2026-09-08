@@ -85,6 +85,7 @@ def _config_from_kwargs(
     touched_exit: bool = False,
     portfolio_mode: str = "independent_books",
     portfolio_allocator: str = "equal_weight",
+    signal_type: str = "weight",
     risk_model: dict | None = None,
     rebalance_policy: dict | None = None,
 ) -> BacktestConfig:
@@ -107,6 +108,7 @@ def _config_from_kwargs(
         touched_exit=touched_exit,
         portfolio_mode=portfolio_mode,
         portfolio_allocator=portfolio_allocator,
+        signal_type=signal_type,
         risk_model=risk_model,
         rebalance_policy=rebalance_policy,
     )
@@ -351,11 +353,30 @@ class BtLazyNamespace:
         trailing_stop_pct: float | None = None,
         portfolio_mode: str = "shared_capital",
         portfolio_allocator: str = "equal_weight",
+        signal_type: str = "weight",
         rebalance_policy: dict | None = None,
     ):
         """Shared-capital multi-symbol backtest.
 
         Args:
+            signal_type: How signal magnitude is interpreted when sizing a
+                new entry (quantwave-9wji.1). ``"weight"`` (default) — a
+                fraction of total equity independent per symbol, e.g. 0.1 =
+                10% of equity in that symbol (not normalized against peers;
+                caller keeps the sum of active weights sane). Matches
+                zipline ``order_target_percent`` / backtrader
+                ``PercentSizer`` / QuantConnect ``SetHoldings`` / vectorbt
+                ``targetpercent`` convention. ``"target_pct"`` — a weight
+                normalized across all symbols with a non-zero signal this
+                bar (today's ``portfolio_allocator="signal_weighted"``
+                budget math, without a clamp). ``"shares"`` — signal
+                magnitude as a literal share count, the pre-quantwave-9wji.1
+                behavior: this silently clamps equity-based position sizing
+                down to ~1 share for a boolean (0/1) signal, so a large book
+                will not deploy its capital. The default changed from
+                ``"shares"`` to ``"weight"`` in quantwave-9wji.1 (breaking
+                change, explicitly decided 2026-09-08) — pass
+                ``signal_type="shares"`` to keep the old behavior.
             rebalance_policy: Optional dict gating when signal-driven
                 entries/exits/flips are re-evaluated, e.g.
                 ``{"calendar": {"every_n_bars": 5}}``,
@@ -382,6 +403,7 @@ class BtLazyNamespace:
             trailing_stop_pct=trailing_stop_pct,
             portfolio_mode=portfolio_mode,
             portfolio_allocator=portfolio_allocator,
+            signal_type=signal_type,
             rebalance_policy=rebalance_policy,
         )
         df = self._ldf.collect()

@@ -13,6 +13,7 @@ use approx::assert_relative_eq;
 use polars::prelude::*;
 use quantwave_backtest::{
     BacktestConfig, BacktestEngine, CostModel, ExecutionModel, PortfolioAllocator, PortfolioMode,
+    SignalType,
 };
 
 fn shared_capital_config(signal_col: &str) -> BacktestConfig {
@@ -26,6 +27,10 @@ fn shared_capital_config(signal_col: &str) -> BacktestConfig {
         symbol_col: Some("symbol".to_string()),
         portfolio_mode: PortfolioMode::SharedCapital,
         portfolio_allocator: PortfolioAllocator::EqualWeight,
+        // Pin legacy shares-as-units semantics: this file's assertions were
+        // written against that behavior (quantwave-9wji.1 changed the
+        // config-level default to `TargetPct`).
+        signal_type: SignalType::Shares,
         ..Default::default()
     }
 }
@@ -269,6 +274,7 @@ fn test_signal_weighted_allocator_splits_by_signal_strength() {
         signal_col: "signal".to_string(),
         symbol_col: Some("symbol".to_string()),
         portfolio_mode: PortfolioMode::SharedCapital,
+        signal_type: SignalType::Shares,
         ..Default::default()
     };
     let equal_cfg = BacktestConfig {

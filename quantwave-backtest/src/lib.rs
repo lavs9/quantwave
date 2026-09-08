@@ -110,7 +110,7 @@ pub use orders::{
 };
 use polars::prelude::*;
 pub use portfolio::{
-    PortfolioAllocator, PortfolioBar, PortfolioMode, RebalancePolicy,
+    PortfolioAllocator, PortfolioBar, PortfolioMode, RebalancePolicy, SignalType,
     run_shared_capital_streaming_simulation,
 };
 #[allow(unused_imports)]
@@ -418,6 +418,12 @@ pub struct BacktestConfig {
     pub portfolio_mode: PortfolioMode,
     /// Budget split when opening positions in `SharedCapital` mode.
     pub portfolio_allocator: PortfolioAllocator,
+    /// How a raw signal's magnitude is interpreted when sizing a new entry
+    /// in `SharedCapital` mode (quantwave-9wji.1). Default `Weight` (see
+    /// `SignalType` doc comment for why): pass `SignalType::Shares` for the
+    /// pre-quantwave-9wji.1 behavior of treating signal magnitude as a
+    /// literal share count. Ignored under `PortfolioMode::IndependentBooks`.
+    pub signal_type: portfolio::SignalType,
     /// Optional risk overlay(s) (vol_target / inverse_vol / position_limit /
     /// pre_trade) applied to target exposure each bar, in both batch and
     /// streaming paths, at a single shared point (quantwave-pvmr). `None`
@@ -451,6 +457,7 @@ impl Default for BacktestConfig {
             position_sizer: None,
             portfolio_mode: PortfolioMode::default(),
             portfolio_allocator: PortfolioAllocator::default(),
+            signal_type: portfolio::SignalType::default(),
             risk_model: None,
             rebalance_policy: None,
         }
@@ -979,6 +986,7 @@ impl BacktestEngine {
             self.config.execution_delay,
             &self.config.stop_config,
             self.config.portfolio_allocator,
+            self.config.signal_type,
             self.config.rebalance_policy,
         );
 

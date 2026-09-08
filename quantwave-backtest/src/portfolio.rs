@@ -114,9 +114,40 @@ struct SymbolBook {
     trade_id: u32,
 }
 
+/// How the magnitude of a raw signal is interpreted when sizing a new entry
+/// (quantwave-9wji.1). Threaded alongside `PortfolioAllocator` /
+/// `RebalancePolicy` as a first-class `BacktestConfig` option.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum SignalType {
+    /// Signal magnitude is a literal share count (today's only behavior).
+    Shares,
+    /// Signal magnitude is a fraction of TOTAL portfolio equity, independent
+    /// per symbol (not normalized against other active symbols) — matches
+    /// zipline `order_target_percent`, backtrader `PercentSizer`,
+    /// QuantConnect `SetHoldings`, vectorbt `targetpercent` convention.
+    /// e.g. 0.1 = 10% of equity in this symbol; caller is responsible for
+    /// keeping the sum of active weights sane.
+    ///
+    /// Chosen as the enum's `#[default]` per the resolved project decision
+    /// (quantwave-9wji.1, 2026-09-08): correct-by-default, equity-fraction
+    /// sizing that matches the independent-per-symbol convention used by
+    /// zipline/backtrader/QuantConnect/vectorbt, over silently preserving
+    /// the old share-count clamp. `TargetPct` (normalized across active
+    /// symbols) is the gentler-failure-mode alternative but was not the
+    /// decision made — pick it explicitly if that's the semantics you want.
+    #[default]
+    Weight,
+    /// Signal magnitude is a weight normalized across all symbols with a
+    /// non-zero desired signal this bar (`|signal_i| / Σ|signal|`) — i.e.
+    /// today's `PortfolioAllocator::SignalWeighted` budget math, but without
+    /// the share-count clamp.
+    TargetPct,
+}
+
 /// Allocate signed units for a new entry given portfolio equity and peer intents.
 fn allocate_entry_units(
     allocator: PortfolioAllocator,
+    signal_type: SignalType,
     raw_desired: f64,
     price: f64,
     equity: f64,
@@ -127,23 +158,43 @@ fn allocate_entry_units(
         return 0.0;
     }
     let sign = if raw_desired > 0.0 { 1.0 } else { -1.0 };
-    let budget = match allocator {
-        PortfolioAllocator::EqualWeight => {
-            let n = peer_intents.len().max(1) as f64;
-            equity / n
+    match signal_type {
+        SignalType::Shares => {
+            let budget = match allocator {
+                PortfolioAllocator::EqualWeight => {
+                    let n = peer_intents.len().max(1) as f64;
+                    equity / n
+                }
+                PortfolioAllocator::SignalWeighted => {
+                    let total: f64 = peer_intents.iter().map(|(w, _)| w).sum();
+                    if total <= f64::EPSILON {
+                        equity / peer_intents.len().max(1) as f64
+                    } else {
+                        equity * (my_weight / total)
+                    }
+                }
+            };
+            let units_from_budget = budget / price;
+            let cap = raw_desired.abs();
+            sign * units_from_budget.min(cap)
         }
-        PortfolioAllocator::SignalWeighted => {
+        SignalType::Weight => {
+            // Per-symbol fraction of total equity; ignores `allocator` and
+            // peer intents entirely (not normalized against peers).
+            let budget = equity * raw_desired.abs();
+            sign * (budget / price)
+        }
+        SignalType::TargetPct => {
+            // `PortfolioAllocator::SignalWeighted` budget math, uncapped.
             let total: f64 = peer_intents.iter().map(|(w, _)| w).sum();
-            if total <= f64::EPSILON {
+            let budget = if total <= f64::EPSILON {
                 equity / peer_intents.len().max(1) as f64
             } else {
                 equity * (my_weight / total)
-            }
+            };
+            sign * (budget / price)
         }
-    };
-    let units_from_budget = budget / price;
-    let cap = raw_desired.abs();
-    sign * units_from_budget.min(cap)
+    }
 }
 
 /// Hypothetical mark-to-market weight (`notional / equity`, signed) a symbol
@@ -156,6 +207,7 @@ fn allocate_entry_units(
 /// and streaming in lockstep.
 fn hypothetical_target_weight(
     allocator: PortfolioAllocator,
+    signal_type: SignalType,
     desired_map: &HashMap<String, f64>,
     sym: &str,
     price: f64,
@@ -169,24 +221,53 @@ fn hypothetical_target_weight(
         return 0.0;
     }
     let sign = if desired > 0.0 { 1.0 } else { -1.0 };
-    let active: Vec<f64> = desired_map
-        .values()
-        .filter(|v| **v != 0.0)
-        .map(|v| v.abs())
+    // `desired_map` is a `HashMap`; sort by symbol first so the float-sum
+    // below is order-deterministic (same reasoning as the `entry_peers` sort
+    // in `simulate_shared_capital`).
+    let mut active_syms: Vec<&String> = desired_map
+        .iter()
+        .filter(|(_, v)| **v != 0.0)
+        .map(|(k, _)| k)
         .collect();
-    let budget = match allocator {
-        PortfolioAllocator::EqualWeight => equity / active.len().max(1) as f64,
-        PortfolioAllocator::SignalWeighted => {
+    active_syms.sort();
+    let active: Vec<f64> = active_syms
+        .into_iter()
+        .map(|k| desired_map[k].abs())
+        .collect();
+    // Mirrors `allocate_entry_units`'s per-`signal_type` budget math (same
+    // fix, quantwave-9wji.1) so hypothetical weights used for
+    // `Drift`/`Turnover` rebalance decisions never disagree with what
+    // `allocate_entry_units` would actually execute.
+    match signal_type {
+        SignalType::Shares => {
+            let budget = match allocator {
+                PortfolioAllocator::EqualWeight => equity / active.len().max(1) as f64,
+                PortfolioAllocator::SignalWeighted => {
+                    let total: f64 = active.iter().sum();
+                    if total <= f64::EPSILON {
+                        equity / active.len().max(1) as f64
+                    } else {
+                        equity * (desired.abs() / total)
+                    }
+                }
+            };
+            let units = (budget / price).min(desired.abs());
+            sign * units * price / equity
+        }
+        SignalType::Weight => {
+            let budget = equity * desired.abs();
+            sign * (budget / equity)
+        }
+        SignalType::TargetPct => {
             let total: f64 = active.iter().sum();
-            if total <= f64::EPSILON {
+            let budget = if total <= f64::EPSILON {
                 equity / active.len().max(1) as f64
             } else {
                 equity * (desired.abs() / total)
-            }
+            };
+            sign * (budget / equity)
         }
-    };
-    let units = (budget / price).min(desired.abs());
-    sign * units * price / equity
+    }
 }
 
 /// Decide whether this bar re-evaluates target weights (signal-driven
@@ -199,6 +280,7 @@ fn hypothetical_target_weight(
 fn should_rebalance(
     policy: Option<RebalancePolicy>,
     allocator: PortfolioAllocator,
+    signal_type: SignalType,
     bar_index: usize,
     books: &HashMap<String, SymbolBook>,
     prices: &HashMap<String, f64>,
@@ -233,7 +315,7 @@ fn should_rebalance(
                     .map(|b| b.exposure * price / eq)
                     .unwrap_or(0.0);
                 let target_weight =
-                    hypothetical_target_weight(allocator, desired_map, sym, price, eq);
+                    hypothetical_target_weight(allocator, signal_type, desired_map, sym, price, eq);
                 (target_weight - current_weight).abs() > threshold
             })
         }
@@ -253,7 +335,7 @@ fn should_rebalance(
                     .map(|b| b.exposure * price / eq)
                     .unwrap_or(0.0);
                 let target_weight =
-                    hypothetical_target_weight(allocator, desired_map, sym, price, eq);
+                    hypothetical_target_weight(allocator, signal_type, desired_map, sym, price, eq);
                 turnover += (target_weight - current_weight).abs();
             }
             turnover >= min_turnover
@@ -266,8 +348,20 @@ fn mark_to_market_equity(
     books: &HashMap<String, SymbolBook>,
     prices: &HashMap<String, f64>,
 ) -> f64 {
+    // `books` is a `HashMap`, so iterating it directly sums floats in a
+    // run-to-run-random order (float addition is not associative), which
+    // silently produced ULP-level nondeterminism in equity — and thus in
+    // every equity-derived budget/metric — between two otherwise-identical
+    // runs. Sort by symbol first so summation order is deterministic
+    // (surfaced by quantwave-9wji.1's new `SignalType::TargetPct`/`Weight`
+    // paths, which read equity every entry instead of only the two
+    // `PortfolioAllocator` cases that happened to avoid summing per-symbol
+    // floats).
+    let mut syms: Vec<&String> = books.keys().collect();
+    syms.sort();
     let mut eq = cash;
-    for (sym, book) in books {
+    for sym in syms {
+        let book = &books[sym];
         if book.exposure != 0.0
             && let Some(&px) = prices.get(sym)
         {
@@ -285,6 +379,7 @@ pub(crate) fn simulate_shared_capital(
     _delay: ExecutionDelay,
     stops: &StopConfig,
     allocator: PortfolioAllocator,
+    signal_type: SignalType,
     rebalance_policy: Option<RebalancePolicy>,
 ) -> (
     Vec<Trade>,
@@ -451,6 +546,7 @@ pub(crate) fn simulate_shared_capital(
         let do_rebalance = should_rebalance(
             rebalance_policy,
             allocator,
+            signal_type,
             bar_index,
             &books,
             &prices,
@@ -473,6 +569,12 @@ pub(crate) fn simulate_shared_capital(
                     entry_peers.push((sym.clone(), desired.abs(), prices[sym]));
                 }
             }
+            // `desired_map` is a `HashMap`, so its iteration order (and thus
+            // the float-summation order for `SignalWeighted`/`TargetPct`
+            // budgets below) is otherwise nondeterministic run-to-run. Sort
+            // by symbol so two backtests over the same data always sum in
+            // the same order and produce byte-identical results.
+            entry_peers.sort_by(|a, b| a.0.cmp(&b.0));
 
             // Execute signals per symbol (deterministic symbol order)
             let mut syms: Vec<&String> = desired_map.keys().collect();
@@ -534,8 +636,15 @@ pub(crate) fn simulate_shared_capital(
                     let peers: Vec<(f64, f64)> =
                         entry_peers.iter().map(|(_, w, p)| (*w, *p)).collect();
                     let my_weight = desired_raw.abs();
-                    let allocated =
-                        allocate_entry_units(allocator, desired_raw, close, eq, &peers, my_weight);
+                    let allocated = allocate_entry_units(
+                        allocator,
+                        signal_type,
+                        desired_raw,
+                        close,
+                        eq,
+                        &peers,
+                        my_weight,
+                    );
                     if allocated != 0.0 {
                         trade_id += 1;
                         *book = open_position(&mut cash, trade_id, allocated, ts, close, meta);
@@ -568,12 +677,18 @@ pub(crate) fn simulate_shared_capital(
                     close: bar.close,
                 });
         }
+        let mut position_syms: Vec<&String> = books.keys().collect();
+        position_syms.sort();
+        let total_position: f64 = position_syms
+            .into_iter()
+            .map(|s| books[s].position_value())
+            .sum();
         portfolio_curve.push(EquityPoint {
             ts,
             symbol: None,
             equity: total_eq,
             cash,
-            position: books.values().map(|b| b.position_value()).sum(),
+            position: total_position,
             close: 0.0,
         });
     }
@@ -758,6 +873,7 @@ where
     apply_group_execution_delay(&mut groups, delay);
     let stops = &config.stop_config;
     let allocator = config.portfolio_allocator;
+    let signal_type = config.signal_type;
     let rebalance_policy = config.rebalance_policy;
 
     let (trades, per_symbol_equity, portfolio_eq) = simulate_shared_capital(
@@ -767,6 +883,7 @@ where
         delay,
         stops,
         allocator,
+        signal_type,
         rebalance_policy,
     );
 
@@ -812,6 +929,7 @@ mod rebalance_policy_tests {
             assert!(should_rebalance(
                 None,
                 PortfolioAllocator::EqualWeight,
+                SignalType::Shares,
                 bar,
                 &HashMap::new(),
                 &HashMap::new(),
@@ -831,6 +949,7 @@ mod rebalance_policy_tests {
             let got = should_rebalance(
                 policy,
                 PortfolioAllocator::EqualWeight,
+                SignalType::Shares,
                 bar,
                 &HashMap::new(),
                 &HashMap::new(),
@@ -851,6 +970,7 @@ mod rebalance_policy_tests {
                 assert!(should_rebalance(
                     policy,
                     PortfolioAllocator::EqualWeight,
+                    SignalType::Shares,
                     bar,
                     &HashMap::new(),
                     &HashMap::new(),
@@ -871,6 +991,7 @@ mod rebalance_policy_tests {
         assert!(should_rebalance(
             policy,
             PortfolioAllocator::EqualWeight,
+            SignalType::Shares,
             0,
             &HashMap::new(),
             &HashMap::new(),
@@ -885,6 +1006,7 @@ mod rebalance_policy_tests {
         assert!(!should_rebalance(
             policy,
             PortfolioAllocator::EqualWeight,
+            SignalType::Shares,
             1,
             &HashMap::new(),
             &HashMap::new(),
@@ -899,6 +1021,7 @@ mod rebalance_policy_tests {
         assert!(should_rebalance(
             policy,
             PortfolioAllocator::EqualWeight,
+            SignalType::Shares,
             2,
             &HashMap::new(),
             &HashMap::new(),
@@ -915,6 +1038,7 @@ mod rebalance_policy_tests {
         assert!(should_rebalance(
             policy,
             PortfolioAllocator::EqualWeight,
+            SignalType::Shares,
             3,
             &HashMap::new(),
             &HashMap::new(),
@@ -946,6 +1070,7 @@ mod rebalance_policy_tests {
         assert!(should_rebalance(
             policy_tight,
             PortfolioAllocator::EqualWeight,
+            SignalType::Shares,
             5,
             &books,
             &prices,
@@ -957,6 +1082,7 @@ mod rebalance_policy_tests {
         assert!(!should_rebalance(
             policy_loose,
             PortfolioAllocator::EqualWeight,
+            SignalType::Shares,
             5,
             &books,
             &prices,
@@ -983,6 +1109,7 @@ mod rebalance_policy_tests {
         assert!(!should_rebalance(
             policy,
             PortfolioAllocator::EqualWeight,
+            SignalType::Shares,
             5,
             &books,
             &prices,
@@ -1013,6 +1140,7 @@ mod rebalance_policy_tests {
         assert!(!should_rebalance(
             high_budget,
             PortfolioAllocator::EqualWeight,
+            SignalType::Shares,
             5,
             &books,
             &prices,
@@ -1024,6 +1152,7 @@ mod rebalance_policy_tests {
         assert!(should_rebalance(
             low_budget,
             PortfolioAllocator::EqualWeight,
+            SignalType::Shares,
             5,
             &books,
             &prices,
@@ -1032,5 +1161,156 @@ mod rebalance_policy_tests {
             &None,
             10_000.0,
         ));
+    }
+}
+
+#[cfg(test)]
+mod signal_type_tests {
+    //! Direct unit tests for `allocate_entry_units` under each `SignalType`
+    //! (quantwave-9wji.1): `Shares` keeps the pre-fix clamp-to-literal-units
+    //! behavior; `Weight` and `TargetPct` size off equity with no clamp.
+    use super::*;
+    use approx::assert_relative_eq;
+
+    #[test]
+    fn shares_mode_clamps_boolean_signal_to_one_unit() {
+        // A $1,000,000 book with a boolean (0/1) signal should, under the
+        // legacy `Shares` interpretation, buy exactly 1 share — the bug this
+        // issue documents, preserved as explicit, opt-in behavior.
+        let units = allocate_entry_units(
+            PortfolioAllocator::EqualWeight,
+            SignalType::Shares,
+            1.0,
+            100.0,
+            1_000_000.0,
+            &[(1.0, 100.0)],
+            1.0,
+        );
+        assert_relative_eq!(units, 1.0, epsilon = 1e-9);
+    }
+
+    #[test]
+    fn weight_mode_deploys_full_equity_fraction_for_boolean_signal() {
+        // Single symbol, boolean signal of 1.0 under `Weight` mode should
+        // deploy the full equity fraction (100% of equity / price), not 1
+        // share.
+        let equity = 1_000_000.0;
+        let price = 100.0;
+        let units = allocate_entry_units(
+            PortfolioAllocator::EqualWeight,
+            SignalType::Weight,
+            1.0,
+            price,
+            equity,
+            &[(1.0, price)],
+            1.0,
+        );
+        assert_relative_eq!(units, equity / price, epsilon = 1e-9);
+
+        // A fractional weight (10%) should deploy exactly that fraction.
+        let units_10pct = allocate_entry_units(
+            PortfolioAllocator::EqualWeight,
+            SignalType::Weight,
+            0.1,
+            price,
+            equity,
+            &[(0.1, price)],
+            0.1,
+        );
+        assert_relative_eq!(units_10pct, equity * 0.1 / price, epsilon = 1e-9);
+    }
+
+    #[test]
+    fn target_pct_mode_splits_equity_proportionally_across_active_symbols() {
+        // Multi-symbol, equal-magnitude signals under `TargetPct` should
+        // split equity proportionally (equal split here) across the active
+        // symbols, summing to ~100% of equity deployed — not clamped to the
+        // raw signal count.
+        let equity = 300_000.0;
+        let price = 100.0;
+        let peers: Vec<(f64, f64)> = vec![(1.0, price), (1.0, price), (1.0, price)];
+        let mut total_notional = 0.0;
+        for _ in 0..3 {
+            let units = allocate_entry_units(
+                PortfolioAllocator::SignalWeighted,
+                SignalType::TargetPct,
+                1.0,
+                price,
+                equity,
+                &peers,
+                1.0,
+            );
+            // Each symbol gets an equal 1/3 share of equity.
+            assert_relative_eq!(units, (equity / 3.0) / price, epsilon = 1e-9);
+            total_notional += units * price;
+        }
+        assert_relative_eq!(total_notional, equity, epsilon = 1e-6);
+    }
+
+    #[test]
+    fn target_pct_mode_weights_by_signal_magnitude() {
+        // Unequal signal magnitudes (1.0 vs 3.0) should split equity 1:3,
+        // uncapped by the raw signal-as-shares clamp.
+        let equity = 100_000.0;
+        let price = 100.0;
+        let peers: Vec<(f64, f64)> = vec![(1.0, price), (3.0, price)];
+
+        let units_a = allocate_entry_units(
+            PortfolioAllocator::SignalWeighted,
+            SignalType::TargetPct,
+            1.0,
+            price,
+            equity,
+            &peers,
+            1.0,
+        );
+        let units_b = allocate_entry_units(
+            PortfolioAllocator::SignalWeighted,
+            SignalType::TargetPct,
+            3.0,
+            price,
+            equity,
+            &peers,
+            3.0,
+        );
+
+        assert_relative_eq!(units_a, (equity * 0.25) / price, epsilon = 1e-9);
+        assert_relative_eq!(units_b, (equity * 0.75) / price, epsilon = 1e-9);
+    }
+
+    #[test]
+    fn hypothetical_target_weight_matches_allocate_entry_units_for_weight_and_target_pct() {
+        // `hypothetical_target_weight` (used only for Drift/Turnover
+        // rebalance-trigger decisions) must agree with what
+        // `allocate_entry_units` would actually execute, for every
+        // `SignalType` — not just `Shares`.
+        let equity = 500_000.0;
+        let price = 50.0;
+        let mut desired = HashMap::new();
+        desired.insert("AAA".to_string(), 0.4);
+        desired.insert("BBB".to_string(), 0.4);
+
+        for signal_type in [SignalType::Weight, SignalType::TargetPct] {
+            let peers: Vec<(f64, f64)> = vec![(0.4, price), (0.4, price)];
+            let executed_units = allocate_entry_units(
+                PortfolioAllocator::SignalWeighted,
+                signal_type,
+                0.4,
+                price,
+                equity,
+                &peers,
+                0.4,
+            );
+            let executed_weight = executed_units * price / equity;
+            let hypothetical = hypothetical_target_weight(
+                PortfolioAllocator::SignalWeighted,
+                signal_type,
+                &desired,
+                "AAA",
+                price,
+                equity,
+            );
+            assert_relative_eq!(hypothetical, executed_weight, epsilon = 1e-9);
+        }
     }
 }

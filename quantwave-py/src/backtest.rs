@@ -17,8 +17,8 @@ use quantwave_backtest::{
     BacktestConfig, BacktestEngine, BacktestError, BacktestReport, BacktestResult,
     BenchmarkMetrics, CostModel, ExecutionDelay, ExecutionModel, InFoldOptimizer, MonteCarloConfig,
     MonteCarloPathSummary, MonteCarloReturnConfig, MonteCarloSummary, Order, OrderType,
-    PerformanceMetrics, PortfolioAllocator, PortfolioMode, RebalancePolicy, Side, StopConfig,
-    StopEvaluationMode, SweepVariant, TearsheetOptions, TpeConfig, WalkForwardConfig,
+    PerformanceMetrics, PortfolioAllocator, PortfolioMode, RebalancePolicy, Side, SignalType,
+    StopConfig, StopEvaluationMode, SweepVariant, TearsheetOptions, TpeConfig, WalkForwardConfig,
     monte_carlo_return_paths, monte_carlo_trade_bootstrap, render_tearsheet_html,
     run_order_simulation, run_walk_forward, run_walk_forward_optimize_with,
 };
@@ -50,6 +50,22 @@ fn parse_portfolio_allocator(s: &str) -> PyResult<PortfolioAllocator> {
         "signal_weighted" | "signalweighted" | "signal" => Ok(PortfolioAllocator::SignalWeighted),
         other => Err(PyValueError::new_err(format!(
             "portfolio_allocator must be 'equal_weight' or 'signal_weighted', got '{other}'"
+        ))),
+    }
+}
+
+/// Parse `signal_type` (quantwave-9wji.1). Default `"weight"` — a
+/// breaking change from the pre-quantwave-9wji.1 behavior, which always
+/// treated signal magnitude as a literal share count and silently clamped
+/// equity-based position sizing down to ~1 share. Pass `"shares"` to keep
+/// that legacy behavior.
+fn parse_signal_type(s: &str) -> PyResult<SignalType> {
+    match s.to_ascii_lowercase().as_str() {
+        "shares" => Ok(SignalType::Shares),
+        "weight" => Ok(SignalType::Weight),
+        "target_pct" | "targetpct" | "target" => Ok(SignalType::TargetPct),
+        other => Err(PyValueError::new_err(format!(
+            "signal_type must be 'shares', 'weight', or 'target_pct', got '{other}'"
         ))),
     }
 }
@@ -374,6 +390,22 @@ impl PyBacktestConfig {
     /// no same-bar look-ahead) or 'same_bar' (fill on the signal bar's own close).
     /// Only use 'same_bar' for close-auction execution or signals built purely from
     /// bar t-1 data; otherwise it is systematically optimistic (quantwave-zmjw).
+    ///
+    /// `signal_type` (only meaningful under `portfolio_mode="shared_capital"`,
+    /// quantwave-9wji.1) controls how signal magnitude is interpreted when
+    /// sizing a new entry: `'weight'` (default) treats it as a fraction of
+    /// total equity independent per symbol — e.g. 0.1 = 10% of equity in
+    /// that symbol, uncapped, caller keeps the sum of active weights sane
+    /// (matches zipline `order_target_percent` / backtrader `PercentSizer` /
+    /// QuantConnect `SetHoldings` / vectorbt `targetpercent`); `'target_pct'`
+    /// treats it as a weight normalized across all symbols with a non-zero
+    /// signal this bar (today's `SignalWeighted` allocator budget, uncapped);
+    /// `'shares'` is the pre-quantwave-9wji.1 behavior — signal magnitude as
+    /// a literal share count, which silently clamps equity-based sizing down
+    /// to ~1 share for a boolean (0/1) signal. The default changed from
+    /// `'shares'` to `'weight'` in quantwave-9wji.1 (breaking change,
+    /// explicitly decided 2026-09-08) — pass `signal_type="shares"`
+    /// explicitly to keep the old behavior.
     #[new]
     #[pyo3(signature = (
         signal_col = "signal",
@@ -394,6 +426,7 @@ impl PyBacktestConfig {
         touched_exit = false,
         portfolio_mode = "independent_books",
         portfolio_allocator = "equal_weight",
+        signal_type = "weight",
         risk_model = None,
         rebalance_policy = None,
     ))]
@@ -417,6 +450,7 @@ impl PyBacktestConfig {
         touched_exit: bool,
         portfolio_mode: &str,
         portfolio_allocator: &str,
+        signal_type: &str,
         risk_model: Option<Bound<'_, PyDict>>,
         rebalance_policy: Option<Bound<'_, PyDict>>,
     ) -> PyResult<Self> {
@@ -451,6 +485,7 @@ impl PyBacktestConfig {
                 },
                 portfolio_mode: parse_portfolio_mode(portfolio_mode)?,
                 portfolio_allocator: parse_portfolio_allocator(portfolio_allocator)?,
+                signal_type: parse_signal_type(signal_type)?,
                 risk_model,
                 rebalance_policy,
                 ..Default::default()
@@ -582,6 +617,27 @@ impl PyBacktestReport {
                 stats,
             },
         }
+    }
+
+    /// Polars DataFrame of executed trades (same shape as `BacktestResult.trades`).
+    #[getter]
+    fn trades(&self) -> PyDataFrame {
+        PyDataFrame(self.inner.result.trades.clone())
+    }
+
+    /// Polars DataFrame of the equity curve over time (same shape as
+    /// `BacktestResult.equity_curve`). Additive — mirrors the single-run
+    /// accessor for the report path (quantwave-hyee).
+    #[getter]
+    fn equity_curve(&self) -> PyDataFrame {
+        PyDataFrame(self.inner.result.equity_curve.clone())
+    }
+
+    /// Core summary statistics from the backtest (same contract as
+    /// `BacktestResult.stats()`). Additive — mirrors the single-run accessor
+    /// for the report path (quantwave-hyee).
+    fn stats<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        stats_to_dict(py, &self.inner.result.stats)
     }
 
     fn metrics<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {

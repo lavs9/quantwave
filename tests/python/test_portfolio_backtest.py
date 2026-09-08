@@ -47,6 +47,33 @@ def test_portfolio_backtest_differs_from_independent():
     )
     assert shared.metrics()["final_equity"] != independent.metrics()["final_equity"]
 
+def test_portfolio_backtest_report_stats_and_equity_curve_match_result():
+    """`.stats()`/`.equity_curve`/`.trades` on the portfolio report (quantwave-hyee):
+    additive accessors that must return the same data as `.result.stats()` /
+    `.result.equity_curve` / `.result.trades`, without needing to go through
+    `.result` first.
+    """
+    df = pl.DataFrame(
+        {
+            "timestamp": [1, 1, 2, 2, 3, 3],
+            "symbol": ["A", "B", "A", "B", "A", "B"],
+            "close": [100.0, 50.0, 101.0, 51.0, 102.0, 52.0],
+            "signal": [0.0, 0.0, 1.0, 1.0, 0.0, 0.0],
+        }
+    ).lazy()
+
+    report = df.bt.portfolio_backtest(
+        symbol_col="symbol",
+        commission_bps=0.0,
+        slippage_bps=0.0,
+        initial_cash=100_000.0,
+    )
+
+    # Previously these two raised AttributeError on the portfolio report.
+    assert report.stats() == report.result.stats()
+    assert report.equity_curve.equals(report.result.equity_curve)
+    assert report.trades.equals(report.result.trades)
+
 def test_portfolio_backtest_five_symbols_stress():
     df = pl.DataFrame(
         {

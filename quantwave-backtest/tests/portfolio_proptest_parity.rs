@@ -15,7 +15,7 @@ use polars::prelude::*;
 use proptest::prelude::*;
 use quantwave_backtest::{
     BacktestConfig, BacktestEngine, CostModel, ExecutionModel, PortfolioAllocator, PortfolioBar,
-    PortfolioMode, StrategySignal, run_shared_capital_streaming_simulation,
+    PortfolioMode, SignalType, StrategySignal, run_shared_capital_streaming_simulation,
 };
 use quantwave_core::traits::Next;
 
@@ -50,6 +50,11 @@ fn portfolio_config(allocator: PortfolioAllocator) -> BacktestConfig {
         symbol_col: Some("symbol".to_string()),
         portfolio_mode: PortfolioMode::SharedCapital,
         portfolio_allocator: allocator,
+        // Pin legacy shares-as-units semantics (quantwave-9wji.1 changed the
+        // config-level default to `TargetPct`); this file checks
+        // batch↔streaming parity, not absolute quantities, but pinning
+        // keeps behavior explicit and stable.
+        signal_type: SignalType::Shares,
         ..Default::default()
     }
 }
