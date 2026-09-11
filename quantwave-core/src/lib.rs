@@ -57,11 +57,11 @@ pub use indicators::hma::HMA;
 pub use indicators::ichimoku::IchimokuCloud;
 pub use indicators::kagi::{KagiBuilder, KagiLine, kagi_atr_batch, kagi_batch};
 pub use indicators::keltner::KeltnerChannels;
+pub use indicators::ma_type::{InvalidMaType, MaType};
 pub use indicators::market_structure::{
     Bias, FlipEvent, MarketStructure, MarketStructureState, PAEvent, PAEventKind, SwingPoint,
     extract_all_pa_events, extract_pa_events,
 };
-pub use indicators::ma_type::{InvalidMaType, MaType};
 pub use indicators::math::*;
 pub use indicators::momentum::*;
 pub use indicators::obvm::Obvm;

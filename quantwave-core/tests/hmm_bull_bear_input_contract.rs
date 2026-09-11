@@ -37,11 +37,13 @@ fn price_scale_input_would_otherwise_silently_decode_constant_bull() {
     for series in [
         (0..60).map(|i| 100.0 + i as f64 * 0.5).collect::<Vec<_>>(), // uptrend
         (0..60).map(|i| 100.0 - i as f64 * 0.3).collect::<Vec<_>>(), // downtrend
-        vec![4500.0, 4510.0, 4495.0, 4520.0, 4530.0, 4512.0, 4540.0, 4551.0]
-            .into_iter()
-            .cycle()
-            .take(60)
-            .collect::<Vec<_>>(), // realistic price index
+        vec![
+            4500.0, 4510.0, 4495.0, 4520.0, 4530.0, 4512.0, 4540.0, 4551.0,
+        ]
+        .into_iter()
+        .cycle()
+        .take(60)
+        .collect::<Vec<_>>(), // realistic price index
     ] {
         let mut hmm = HMM::bull_bear();
         let regimes: Vec<MarketRegime> = series.iter().map(|&x| hmm.next(x)).collect();
@@ -74,7 +76,10 @@ fn returns_scale_input_decodes_varying_bull_bear_without_degeneracy() {
         }
     }
 
-    assert_eq!(degenerate_count, 0, "a real returns series must never underflow");
+    assert_eq!(
+        degenerate_count, 0,
+        "a real returns series must never underflow"
+    );
     assert!(
         regimes.iter().any(|r| matches!(r, MarketRegime::Bear)),
         "expected at least one Bear bar during the sustained negative-return run, got {regimes:?}"

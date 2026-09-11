@@ -12,8 +12,8 @@
 use approx::assert_relative_eq;
 use polars::prelude::*;
 use quantwave_backtest::{
-    BacktestConfig, BacktestEngine, BacktestError, Bar, CostModel, ExecutionDelay,
-    ExecutionModel, apply_signal_modifiers, backtest_simple_bool_signal, run_streaming_simulation,
+    BacktestConfig, BacktestEngine, BacktestError, Bar, CostModel, ExecutionDelay, ExecutionModel,
+    apply_signal_modifiers, backtest_simple_bool_signal, run_streaming_simulation,
 };
 
 fn zero_cost_config() -> BacktestConfig {
@@ -366,7 +366,12 @@ fn test_size_multiplier_invalid_dtype_errors_clearly() {
         Column::new("signal".into(), vec![0.0, 1.0, 1.0, 0.0]),
         Column::new(
             "size_mult".into(),
-            vec!["a".to_string(), "b".to_string(), "c".to_string(), "d".to_string()],
+            vec![
+                "a".to_string(),
+                "b".to_string(),
+                "c".to_string(),
+                "d".to_string(),
+            ],
         ),
     ])
     .unwrap();
