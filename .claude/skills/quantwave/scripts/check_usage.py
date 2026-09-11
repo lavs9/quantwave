@@ -251,8 +251,10 @@ def check_source(source: str, path: str) -> list[Finding]:
             Finding(
                 line,
                 "PITFALLS §7",
-                "`hmm_bull_bear` batch-fits the whole series — look-ahead. Any backtest using it is fiction.",
-                "Post-hoc regime description only. Also: feed returns not price, and states are {1,2} with 2 = bear.",
+                "`hmm_bull_bear` needs a returns series, not raw price — on price-scale "
+                "input it now raises rather than silently decoding a constant Bull(1).",
+                "Feed returns (pct_change/rocp), not price. States are {1,2} with 2 = bear "
+                "(0 = no regime decided yet).",
             )
         )
 
@@ -284,7 +286,10 @@ def main(argv: list[str]) -> int:
         print("No known QuantWave anti-patterns found.")
         return 0
 
-    print(f"\n{total} finding(s). See PITFALLS.md — none of these raise at runtime.")
+    print(
+        f"\n{total} finding(s). See PITFALLS.md — most of these are silent at runtime "
+        "(a plausible wrong number, not an exception); check each entry."
+    )
     return 1
 
 

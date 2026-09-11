@@ -88,8 +88,17 @@ df = (
     .hmm_bull_bear("returns")
     .collect()
 )
-# Column: hmm_regime (1=Bull, 2=Bear, 0=other)
+# Column: hmm_regime (1=Bull, 2=Bear, 0=no regime decided yet)
 ```
+
+**Input contract — pass returns, not price.** `bull_bear()`'s Gaussian emission
+means/stds are hardcoded to daily-returns scale (`~0.001`/`~-0.002` mean,
+`~0.01`/`~0.02` std). Always compute the returns column first
+(`pl.col("close").pct_change()` / `.ta.rocp()`) and feed *that* in, not the raw
+`close` column.
+
+**State labels are `{1, 2}`, not `{0, 1}`.** `0` is reserved for "no regime
+decided yet" — Bull is `1`, Bear is `2`.
 
 ### Python (streaming)
 
@@ -98,7 +107,7 @@ import quantwave as qw
 
 hmm = qw.BullBearHMM.bull_bear()
 for ret in returns:
-    state = hmm.next(ret)
+    state = hmm.next(ret)  # 0=none yet, 1=Bull, 2=Bear
 ```
 
 ### Edge cases
@@ -107,6 +116,7 @@ for ret in returns:
 |-----------|----------|
 | Short series | Unstable state estimates; prefer ≥ 100 bars |
 | Zero variance returns | Emission collapse — watch for stuck states |
+| Price-scale input (not returns) | Both Gaussian emissions underflow to `0.0` every bar. The `.ta.hmm_bull_bear()` plugin detects this degenerate tie and raises a `ComputeError` ("input looks like price, not returns") instead of silently emitting a constant `1` (Bull) column. |
 
 ### Strategy pattern
 

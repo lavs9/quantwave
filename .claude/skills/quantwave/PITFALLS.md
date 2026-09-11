@@ -132,16 +132,20 @@ actually achieve.
 
 ---
 
-## 7. `hmm_bull_bear` batch-fits the whole series — do not backtest with it
+## 7. `hmm_bull_bear`'s contract is not what you would guess
 
-It fits over the entire input, so every bar's regime label is informed by the future.
-Any backtest using it is look-ahead-contaminated and the equity curve is fiction.
+Decoding itself is strictly causal — online Viterbi, one bar at a time, no batch
+fit, no look-ahead. (An earlier version of this note claimed it batch-fits the
+whole series; that was wrong and has been corrected.) The footguns are elsewhere:
 
-Also, its contract is not what you would guess:
-- feed it **returns, not price** — on price it degenerates to a constant `1`
-- states are `{1, 2}`, not `{0, 1}`, and `2` is empirically bear
-
-Use it for **post-hoc regime description only**.
+- **Feed it returns, not price.** The Gaussian emission means/stds
+  (`[0.001, -0.002]` / `[0.01, 0.02]`) are hardcoded to daily-returns scale. On
+  price-scale input both emissions underflow to `0.0` every bar, and — as of the
+  fix for this — the `.ta.hmm_bull_bear()` plugin now **raises** a
+  `ComputeError` ("input looks like price, not returns") instead of silently
+  decoding a constant `1` (Bull) forever. Before the fix this was silent.
+- **States are `{1, 2}`, not `{0, 1}`.** `0` is reserved (no regime decided
+  yet); `1` = Bull, `2` = Bear.
 
 Treat any batch-fitted regime/clustering output (GMM, PELT, k-means labels) with the same
 suspicion unless you have confirmed a causal/streaming fit path.

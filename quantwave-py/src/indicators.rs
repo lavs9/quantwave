@@ -1843,6 +1843,17 @@ pub fn griffiths_dominant_cycle_features(
 
 // name = "BullBearHmm" preserves the uniffi-era Python symbol (uniffi re-cased the
 // `HMM` capital-run via heck); keeps the generated _ta registry / metadata unchanged.
+//
+// Input contract: `next()` expects daily returns (e.g. pct_change/rocp), not raw
+// price — `CoreHMM::bull_bear()`'s Gaussian emissions are hardcoded to returns
+// scale. On price-scale input both emissions underflow and every call ties at
+// state 0 (Bull); see `quantwave_core::regimes::hmm::HMM::{bull_bear,
+// is_degenerate}` and the `hmm_bull_bear` polars plugin (custom_4.rs), which
+// rejects that case outright. This streaming `next()` returns a plain `i32`
+// (not a `PyResult`) to match this crate's existing streaming-class convention,
+// so on degenerate input it silently keeps returning `1` here — callers driving
+// this class directly with raw data should validate their input scale
+// themselves rather than relying on an exception.
 #[pyclass(name = "BullBearHmm")]
 pub struct BullBearHMM {
     inner: Mutex<CoreHMM>,
@@ -1857,6 +1868,10 @@ impl BullBearHMM {
             inner: Mutex::new(CoreHMM::bull_bear()),
         }
     }
+    /// Advance the HMM by one bar of **daily returns** (not price) and return the
+    /// decoded state: `0` = no regime decided yet (or non-finite input), `1` =
+    /// Bull, `2` = Bear. See the struct-level doc comment above for the
+    /// price-vs-returns input contract.
     pub fn next(&self, price: f64) -> i32 {
         if !price.is_finite() {
             return 0; // Steady sentinel

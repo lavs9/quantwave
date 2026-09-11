@@ -63,7 +63,7 @@ pre-commit hook directly.
 4. `stddev` is ddof=0; pandas `.std()` is ddof=1
 5. `ta_*` plugins take `(high, low, close)` — the receiver must be `high`, not `close`
 6. `execution_delay` defaults to the optimistic `"same_bar"`
-7. `hmm_bull_bear` batch-fits the series — look-ahead
+7. `hmm_bull_bear` needs returns, not price — raises on price-scale input; states are `{1,2}`, not `{0,1}`
 8. Multi-symbol frames must be sorted `["timestamp", "symbol"]`, in that order
 9. `drop_nulls()` does not remove warmup — warmup is `NaN`, not `null`
 10. Metrics are fractions, not percents; `max_drawdown_pct` is positive

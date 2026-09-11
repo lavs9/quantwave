@@ -26,10 +26,19 @@ Boundary Conditions & Error Behavior:
     def hmm_bull_bear(self) -> pl.Expr:
         """Classify market regime into Bull (1) or Bear (2) using a Hidden Markov Model.
 
+Input contract: pass daily returns (e.g. `pct_change()` / `.ta.rocp()`), not raw
+price. The model's Gaussian emission means/stds are hardcoded to returns scale
+(~0.001/-0.002 mean, ~0.01/0.02 std); on price-scale input both emissions
+underflow to 0.0 on every bar.
+
+Output labels are {0, 1, 2}, not {0, 1}: 0 = no regime decided yet, 1 = Bull,
+2 = Bear.
+
 Boundary Conditions & Error Behavior:
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
+- Price-scale input: raises a ComputeError ("input looks like price, not returns") instead of silently decoding as a constant Bull (1) column.
 """
         return register_plugin_function(
             args=[self._expr],

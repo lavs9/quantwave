@@ -43,22 +43,58 @@ fn regimes_next_state_prob(
     Ok(list_ca.into_series())
 }
 
+/// Classify market regime into Bull (`1`) or Bear (`2`) using a 2-state Gaussian
+/// HMM (`quantwave_core::regimes::hmm::HMM::bull_bear`), decoded online with
+/// Viterbi (strictly causal — one bar at a time, no batch fit, no look-ahead).
+///
+/// **Input contract: pass daily returns (e.g. `pct_change`/`rocp`), not raw
+/// price.** The model's emission means/stds are hardcoded to returns scale; on
+/// price-scale input every bar's Gaussian emissions underflow to `0.0` for both
+/// states, which used to silently decode as a constant `1` (Bull) forever. This
+/// function now detects that degenerate tie (see `HMM::is_degenerate`) and
+/// returns a `ComputeError` instead of emitting the bogus constant column.
+///
+/// **Output labels are `{0, 1, 2}`, not `{0, 1}`**: `0` = no regime decided yet /
+/// other, `1` = Bull, `2` = Bear.
 #[polars_expr(output_type=UInt32)]
 fn hmm_bull_bear(inputs: &[Series]) -> PolarsResult<Series> {
     let s = &inputs[0];
     let ca = s.f64()?;
     let mut hmm = quantwave_core::regimes::hmm::HMM::bull_bear();
     let mut values = Vec::with_capacity(s.len());
+    let mut degenerate_count = 0usize;
+    let mut valid_count = 0usize;
 
     for i in 0..s.len() {
         let val = ca.get(i).unwrap_or(f64::NAN);
+        if val.is_finite() {
+            valid_count += 1;
+        }
         let regime = hmm.next(val);
+        if hmm.is_degenerate() {
+            degenerate_count += 1;
+        }
         let out = match regime {
             quantwave_core::regimes::MarketRegime::Bull => 1u32,
             quantwave_core::regimes::MarketRegime::Bear => 2,
             _ => 0,
         };
         values.push(out);
+    }
+
+    // If a majority of bars produced a -inf/-inf emission tie, the input is not
+    // returns-scale (classically: raw price was passed instead of pct_change).
+    // A single extreme outlier bar (e.g. a crash-day return) can trip the
+    // degenerate check in isolation without making the whole series bogus, so
+    // this only rejects when the degeneracy is pervasive rather than on the
+    // first occurrence.
+    if valid_count > 0 && degenerate_count * 2 > valid_count {
+        polars_bail!(
+            ComputeError: "hmm_bull_bear: input looks like price, not returns — {degenerate_count} \
+            of {valid_count} bars underflowed both Gaussian emissions (bull_bear() assumes daily \
+            returns near zero: means=[0.001, -0.002], stds=[0.01, 0.02]). Pass a returns series \
+            (e.g. pl.col(\"close\").pct_change() / .ta.rocp()) instead of raw price."
+        );
     }
 
     Ok(Series::new("hmm_regime".into(), values))

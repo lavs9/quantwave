@@ -85,7 +85,8 @@ Use this when porting a strategy from research to live, not on every call.
 
 - **[PITFALLS.md](PITFALLS.md)** — how *not* to use QuantWave. Verified silent-wrongness
   cases: `roc` vs `rocp` (100×), `stddev` ddof=0 vs pandas ddof=1, `atr` vs `ta_atr`,
-  default 1-unit position sizing, `same_bar` fills, `hmm_bull_bear` look-ahead.
+  default 1-unit position sizing, `same_bar` fills, `hmm_bull_bear`'s
+  returns-not-price input contract.
 - **[BACKTEST.md](BACKTEST.md)** — `.bt` input requirements, sizing model, output
   contract (units, signs, schemas), and the order/portfolio APIs.
 - `scripts/check_usage.py` — static-lints a file for the known anti-patterns:

@@ -43,7 +43,22 @@ impl HMM {
         }
     }
 
-    /// Default 2-state HMM (Bull/Bear)
+    /// Default 2-state HMM (Bull/Bear).
+    ///
+    /// **Input contract: feed daily returns, not price.** The Gaussian emission
+    /// parameters below are hardcoded to the scale of daily fractional returns
+    /// (means near `0.001`/`-0.002`, stds near `0.01`/`0.02`). Feeding a raw price
+    /// series (e.g. `100.0`) makes `gaussian_pdf` underflow to `0.0` for *every*
+    /// state, which drives every `next()` call into a `-inf`/`-inf` tie that always
+    /// resolves to state `0` (Bull) — i.e. a silently constant output. The
+    /// `hmm_bull_bear` plugin wrapper (quantwave-py) calls [`Self::is_degenerate`]
+    /// after every [`Next::next`] to turn that case into an explicit error
+    /// instead of a silent wrong answer; callers driving the model directly
+    /// should do the same.
+    ///
+    /// **State labels are `{1, 2}`, not `{0, 1}`** at the plugin/FFI boundary —
+    /// `0` is reserved for "no regime yet" (`MarketRegime::Steady`), Bull maps to
+    /// `1`, Bear to `2`. See `hmm_bull_bear` (quantwave-py) and `MarketRegime`.
     pub fn bull_bear() -> Self {
         Self::new(
             vec![
@@ -62,6 +77,22 @@ impl HMM {
         let denom = (2.0 * std::f64::consts::PI * variance).sqrt();
         let exponent = -((x - mu).powi(2)) / (2.0 * variance);
         exponent.exp() / denom
+    }
+
+    /// Returns `true` when the most recent [`Next::next`] update produced a
+    /// `-inf` log-likelihood for *every* state, i.e. `gaussian_pdf` underflowed to
+    /// `0.0` for all states. This is the degenerate-input signature described on
+    /// [`Self::bull_bear`]: it means the observation is off the scale the
+    /// emission parameters were fit for (classically, raw price fed where daily
+    /// returns were expected), and `best_state` would otherwise silently stick at
+    /// index `0` forever. Callers that need to fail loudly instead of emitting a
+    /// constant regime should check this after every `next()` call.
+    pub fn is_degenerate(&self) -> bool {
+        self.initialized
+            && self
+                .last_delta
+                .iter()
+                .all(|d| d.is_infinite() && d.is_sign_negative())
     }
 
     /// Normalized state probabilities from Viterbi log-deltas (for soft regime features).
