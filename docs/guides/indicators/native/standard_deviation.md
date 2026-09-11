@@ -4,6 +4,27 @@
 
 Standard Deviation is a statistical measure of market volatility.
 
+!!! danger "`stddev` is population std (ddof=0) — pandas `.std()` defaults to sample std (ddof=1)"
+
+    QuantWave's `stddev` follows the TA-Lib convention: it divides by `N`, not `N-1`.
+    `pandas.Series.rolling(N).std()` divides by `N-1` unless you pass `ddof=0`. The two
+    differ by a factor of `sqrt(N / (N-1))`, which shrinks toward 1 as `N` grows but is
+    non-trivial at typical indicator windows:
+
+    | | Formula | Result on the same window |
+    |---|---|---|
+    | `qw stddev` (population, ddof=0) | \(\sqrt{\sum (x_i-\mu)^2 / N}\) | `1.9653244` |
+    | `pandas .std()` (sample, ddof=1) | \(\sqrt{\sum (x_i-\mu)^2 / (N-1)}\) | `2.0716338` |
+
+    If you cross-check a `stddev`-derived value (Bollinger-style bands, a z-score, a
+    volatility filter) against a pandas prototype, match the `ddof` first — the values
+    will not agree otherwise, and nothing raises to tell you why. Use
+    `.std(ddof=0)` on the pandas side, or accept the population convention and adjust
+    thresholds accordingly.
+
+    See also the [Agent Skill guide](../../agent-skill.md#why-this-exists), which covers
+    this and other silent-wrongness cases.
+
 ## Visual Example
 
 ![Standard Deviation — annotated preview mapping to core implementation](../../../assets/indicator-previews/standard_deviation.png)

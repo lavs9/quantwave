@@ -4,6 +4,28 @@
 
 A momentum-based technical indicator that measures the percentage change in price between the current price and the price n periods ago.
 
+!!! danger "`roc` is ×100 of `rocp` — mixing them up is a silent 100x error"
+
+    `roc(N)` and `rocp(N)` measure the same thing — the change from `N` bars ago — but
+    scale it differently, and both are valid TA-Lib functions, so nothing raises if you
+    reach for the wrong one:
+
+    | Function | Formula | Convention |
+    |---|---|---|
+    | `roc(N)` | `(price / price_N - 1) * 100` | **Percent** (TA-Lib convention) |
+    | `rocp(N)` | `price / price_N - 1` | **Plain ratio/fraction** |
+
+    Verified on the same window: `roc(10) = -0.830565` vs `rocp(10) = -0.008306` —
+    exactly 100x apart. `rocp` is only exposed through the TA-Lib-compatible surface
+    (`from quantwave import talib as ta; ta.ROCP(...)`), not as a native `.ta.` slug, so
+    it is easy to reach for `.ta.roc()` by habit and silently feed a value 100x too large
+    (or too small) into anything downstream — position sizing, a threshold comparison, a
+    feature column normalized elsewhere as a fraction. Check which convention the rest of
+    your pipeline expects before picking one.
+
+    See also the [Agent Skill guide](../../agent-skill.md#why-this-exists), which covers
+    this and other silent-wrongness cases.
+
 ## Visual Example
 
 ![Rate of Change (ROC) — annotated preview mapping to core implementation](../../../assets/indicator-previews/rate_of_change_roc.png)
