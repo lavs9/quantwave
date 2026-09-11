@@ -191,6 +191,34 @@ def test_bt_backtest_filter_and_multiplier():
     assert result.trades.height == 1
 
 
+def test_bt_backtest_size_multiplier_int64_accepted():
+    """size_multiplier_col as Int64 must be accepted (cast to Float64) and match
+    the equivalent Float64 column's result, not raise a low-level dtype error."""
+    base = {
+        "timestamp": [1, 2, 3, 4],
+        "close": [100.0, 100.0, 110.0, 110.0],
+        "signal": [0.0, 1.0, 1.0, 0.0],
+    }
+    float_df = pl.DataFrame({**base, "size_mult": [1.0, 2.0, 2.0, 1.0]})
+    int_df = pl.DataFrame({**base, "size_mult": [1, 2, 2, 1]})
+    assert int_df["size_mult"].dtype == pl.Int64
+
+    float_result = float_df.lazy().bt.backtest(
+        size_multiplier_col="size_mult",
+        commission_bps=0.0,
+        slippage_bps=0.0,
+    )
+    int_result = int_df.lazy().bt.backtest(
+        size_multiplier_col="size_mult",
+        commission_bps=0.0,
+        slippage_bps=0.0,
+    )
+    assert int_result.trades.height == float_result.trades.height == 1
+    assert int_result.trades["pnl_net"][0] == pytest.approx(
+        float_result.trades["pnl_net"][0]
+    )
+
+
 def test_bt_backtest_stop_loss_exits():
     """2% SL exits long when close breaches stop (signal may stay 1)."""
     df = pl.DataFrame(

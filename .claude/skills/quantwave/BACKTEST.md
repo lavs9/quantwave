@@ -13,7 +13,7 @@ Read [PITFALLS.md](PITFALLS.md) §1, §6 and §10 before trusting any output fro
 | `close_col` | Mark-to-market and fill price |
 | Warmup | Sliced off before the call (`drop_nulls()` will not do it — warmup is NaN) |
 | `high_col` / `low_col` | Required when `touched_exit=True` |
-| `size_multiplier_col` | Must be `Float64` — `Int64` is rejected |
+| `size_multiplier_col` | Numeric; `Float64` preferred, integer dtypes (`Int64`, `Int32`, `UInt*`, ...) are cast automatically. Non-numeric dtypes raise a named error |
 
 ## Choosing an entry point
 

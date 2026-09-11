@@ -12,8 +12,8 @@
 use approx::assert_relative_eq;
 use polars::prelude::*;
 use quantwave_backtest::{
-    BacktestConfig, BacktestEngine, Bar, CostModel, ExecutionDelay, ExecutionModel,
-    apply_signal_modifiers, backtest_simple_bool_signal, run_streaming_simulation,
+    BacktestConfig, BacktestEngine, BacktestError, Bar, CostModel, ExecutionDelay,
+    ExecutionModel, apply_signal_modifiers, backtest_simple_bool_signal, run_streaming_simulation,
 };
 
 fn zero_cost_config() -> BacktestConfig {
@@ -300,5 +300,89 @@ fn test_entry_filter_batch_streaming_parity() {
         let bv = *batch.stats.get(k).unwrap();
         let sv = *stream.stats.get(k).unwrap();
         assert_relative_eq!(bv, sv, epsilon = 1e-6, max_relative = 1e-6);
+    }
+}
+
+// quantwave-5ekj: size_multiplier_col (and other numeric-column loads sharing the
+// same extract_f64_column helper) must tolerate Int64 input via a Float64 cast
+// fallback, not reject it with a low-level dtype error.
+#[test]
+fn test_size_multiplier_int64_matches_float64() {
+    let ts: Vec<i64> = (0..4).map(|i| 1_700_020_500 + i).collect();
+    let closes = vec![100.0, 100.0, 110.0, 110.0];
+    let signals = vec![0.0, 1.0, 1.0, 0.0];
+
+    let float_df = DataFrame::new(vec![
+        Column::new("timestamp".into(), ts.clone()),
+        Column::new("close".into(), closes.clone()),
+        Column::new("signal".into(), signals.clone()),
+        Column::new("size_mult".into(), vec![1.0_f64, 2.0, 2.0, 1.0]),
+    ])
+    .unwrap();
+    let int_df = DataFrame::new(vec![
+        Column::new("timestamp".into(), ts),
+        Column::new("close".into(), closes),
+        Column::new("signal".into(), signals),
+        Column::new("size_mult".into(), vec![1_i64, 2, 2, 1]),
+    ])
+    .unwrap();
+
+    let mut config = zero_cost_config();
+    config.size_multiplier_col = Some("size_mult".to_string());
+
+    let float_result = BacktestEngine::new(config.clone())
+        .run(float_df.lazy())
+        .expect("float64 backtest run");
+    let int_result = BacktestEngine::new(config)
+        .run(int_df.lazy())
+        .expect("int64 size_multiplier_col should be accepted via cast fallback");
+
+    assert_eq!(float_result.trades.height(), int_result.trades.height());
+    let float_pnl = float_result
+        .trades
+        .column("pnl_net")
+        .unwrap()
+        .f64()
+        .unwrap()
+        .get(0)
+        .unwrap();
+    let int_pnl = int_result
+        .trades
+        .column("pnl_net")
+        .unwrap()
+        .f64()
+        .unwrap()
+        .get(0)
+        .unwrap();
+    assert_relative_eq!(float_pnl, int_pnl, epsilon = 1e-9);
+}
+
+#[test]
+fn test_size_multiplier_invalid_dtype_errors_clearly() {
+    let ts: Vec<i64> = (0..4).map(|i| 1_700_020_600 + i).collect();
+    let df = DataFrame::new(vec![
+        Column::new("timestamp".into(), ts),
+        Column::new("close".into(), vec![100.0, 100.0, 110.0, 110.0]),
+        Column::new("signal".into(), vec![0.0, 1.0, 1.0, 0.0]),
+        Column::new(
+            "size_mult".into(),
+            vec!["a".to_string(), "b".to_string(), "c".to_string(), "d".to_string()],
+        ),
+    ])
+    .unwrap();
+
+    let mut config = zero_cost_config();
+    config.size_multiplier_col = Some("size_mult".to_string());
+
+    let err = BacktestEngine::new(config)
+        .run(df.lazy())
+        .expect_err("String dtype must not be silently accepted");
+
+    match err {
+        BacktestError::InvalidDtype { col, expected, .. } => {
+            assert_eq!(col, "size_mult");
+            assert_eq!(expected, "Float64");
+        }
+        other => panic!("expected BacktestError::InvalidDtype, got {other:?}"),
     }
 }

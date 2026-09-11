@@ -1431,10 +1431,20 @@ fn extract_f64_column(col: Column, col_name: &str) -> Result<Vec<f64>, BacktestE
     if let Ok(ca) = col.f64() {
         return Ok(ca.into_iter().map(|opt| opt.unwrap_or(0.0)).collect());
     }
+    // Not natively Float64 (e.g. Int64/Int32/UInt* from a user-built frame). Try a
+    // lossless numeric cast before giving up. Use strict_cast (not cast): a plain
+    // cast silently turns un-parseable values (e.g. String -> Float64) into nulls,
+    // which would hide genuinely invalid input instead of erroring on it.
+    let orig_dtype = col.dtype().clone();
+    if let Ok(cast) = col.strict_cast(&DataType::Float64)
+        && let Ok(ca) = cast.f64()
+    {
+        return Ok(ca.into_iter().map(|opt| opt.unwrap_or(0.0)).collect());
+    }
     Err(BacktestError::InvalidDtype {
         col: col_name.to_string(),
         expected: "Float64".into(),
-        got: format!("{:?}", col.dtype()),
+        got: format!("{:?}", orig_dtype),
     })
 }
 
