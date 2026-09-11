@@ -7,7 +7,7 @@ QuantWave's primary credibility claim is **correctness**: one mathematical imple
 ## Coverage snapshot
 
 <!-- VALIDATION:STATS:START -->
-**Last updated:** 2026-09-11T03:57:12Z (UTC)
+**Last updated:** 2026-09-11T09:41:16Z (UTC)
 
 | Metric | Count | Source |
 |--------|------:|--------|
@@ -16,10 +16,10 @@ QuantWave's primary credibility claim is **correctness**: one mathematical imple
 | Gold-standard JSON fixtures (on disk) | **28** | `quantwave-core/tests/gold_standard/` |
 | Python streaming gold parity cases | **26** | `tests/python/gold_parity_registry.py` |
 | Python gold parity deferred (HMM) | 2 | regime fixtures — separate suite |
-| Rust `#[test]` functions (core) | 651 | `rg '#[test]' quantwave-core` |
+| Rust `#[test]` functions (core) | 654 | `rg '#[test]' quantwave-core` |
 | Rust `#[test]` functions (polars) | 46 | `rg '#[test]' quantwave-polars` |
-| Rust `#[test]` functions (backtest) | 207 | `rg '#[test]' quantwave-backtest` |
-| Rust tests (total, 3 crates) | **904** | sum of above |
+| Rust `#[test]` functions (backtest) | 209 | `rg '#[test]' quantwave-backtest` |
+| Rust tests (total, 3 crates) | **909** | sum of above |
 | `proptest!` blocks (core) | **163** | `rg 'proptest!\{' quantwave-core` |
 | `check_batch_streaming_parity` call sites | 4 | indicator modules |
 | TA-Lib parity test functions | 134 | `test_*_talib_parity.rs` |

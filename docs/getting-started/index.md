@@ -1,87 +1,178 @@
 # Getting Started
 
 !!! tip "Short answer"
-    Install `pip install "quantwave[polars]"`, run one `.ta` indicator on a Polars `LazyFrame`, then follow a path card below (batch, streaming, or backtest).
-
-Your first **10 minutes** with QuantWave — install, run one indicator, then pick where to go next.
+    Install `pip install "quantwave[polars]"`, then copy-paste the 5 commands
+    below — no external files needed, sample data is bundled. You'll have a
+    real RSI column printed to your terminal in under 5 minutes.
 
 !!! tip "Evaluating vs TA-Lib or pandas-ta?"
     Read [QuantWave vs alternatives](../comparison.md) first if you are comparing stacks.
 
-## The funnel
+## Zero to RSI in 5 commands
 
-```mermaid
-flowchart LR
-    A[Install] --> B[First indicator]
-    B --> C{Goal?}
-    C --> D[Polars batch research]
-    C --> E[Live streaming]
-    C --> F[Backtest a signal]
-    C --> G[ML features]
-    D --> H[Indicator catalog]
-    E --> H
-    F --> I[Backtest quickstart]
-    G --> J[ML features guide]
-```
+Every command below was run against a real `quantwave` install and the output
+blocks are pasted verbatim — copy-paste the whole thing and you should see
+the same numbers.
 
-## 1 — Install (2 min)
-
-=== "Python (recommended)"
+### 1. Install
 
 ```bash
 pip install "quantwave[polars]"
+```
+
+### 2. Verify the install
+
+```bash
 quantwave doctor
-quantwave list --category "Classic"
 ```
 
-→ [Python guide](python.md) — Polars `.ta`, streaming, TA-Lib migration, backtest hooks.
+```text
+quantwave 0.7.0
+  ✓ core extension (_quantwave)
+  ✓ metadata registry
+  ✓ streaming (RSI)
+  ✓ polars installed
+  ✓ backtest native (_backtest)
+  ✓ Polars .bt namespace
+  ✓ Polars expression plugins (pl.col().ta)
 
-=== "Rust"
-
-```toml
-[dependencies]
-quantwave-core = "0.1"
-quantwave-polars = "0.1"
+All checks passed.
 ```
 
-→ [Rust guide](rust.md) — `Next<T>` streaming and Polars `.ta()` in native crates.
+If any line shows `✗` instead of `✓`, jump to [Troubleshooting](#troubleshooting)
+before continuing — the rest of this walkthrough assumes a clean `doctor` run.
 
-## 2 — First indicator (3 min)
+### 3. Load data — no external file needed
 
-=== "Python"
+QuantWave ships a small, bundled, deterministic sample dataset
+(`quantwave.datasets.load_sample()`) so this tutorial needs **zero** network
+access and **zero** files of your own. It's synthetic (a NIFTY-like index
+plus two stock-like instruments, ~10 years of daily bars) — not real
+exchange data — but it exercises the exact same code path your own OHLCV
+Parquet file would.
 
 ```python
 import polars as pl
-import quantwave  # registers pl.col().ta
+from quantwave import datasets
 
-df = pl.DataFrame({
-    "high":  [101, 102, 103, 102, 104],
-    "low":   [99, 100, 101, 100, 102],
-    "close": [100, 101, 102, 101, 103],
-})
-
-out = (
-    df.lazy()
-    .with_columns(
-        pl.col("close").ta.rsi(timeperiod=14).alias("rsi"),
-        pl.col("close").ta.supertrend("high", "low", period=10, multiplier=3.0).alias("st"),
-    )
-    .collect()
-)
-print(out.tail())
+df = datasets.load_sample().filter(pl.col("symbol") == "NIFTY")
+print(df.shape)
+print(df.head())
 ```
 
-=== "Rust (streaming)"
-
-```rust
-use quantwave_core::indicators::supertrend::SuperTrend;
-use quantwave_core::Next;
-
-let mut st = SuperTrend::new(10, 3.0);
-let v = st.next((100.0, 105.0, 95.0, 102.0));
+```text
+(2520, 7)
+shape: (5, 7)
+┌────────────────┬──────────────┬──────────────┬──────────────┬──────────────┬────────────┬────────┐
+│ ts             ┆ open         ┆ high         ┆ low          ┆ close        ┆ volume     ┆ symbol │
+│ ---            ┆ ---          ┆ ---          ┆ ---          ┆ ---          ┆ ---        ┆ ---    │
+│ datetime[μs,   ┆ f64          ┆ f64          ┆ f64          ┆ f64          ┆ f64        ┆ str    │
+│ Asia/Kolkata]  ┆              ┆              ┆              ┆              ┆            ┆        │
+╞════════════════╪══════════════╪══════════════╪══════════════╪══════════════╪════════════╪════════╡
+│ 2015-01-01     ┆ 20078.36675  ┆ 20226.917751 ┆ 19948.022175 ┆ 20096.573176 ┆ 787001.0   ┆ NIFTY  │
+│ 09:15:00 IST   ┆              ┆              ┆              ┆              ┆            ┆        │
+│ 2015-01-02     ┆ 19817.560137 ┆ 20011.255661 ┆ 19616.134524 ┆ 19809.830047 ┆ 2.509591e6 ┆ NIFTY  │
+│ 09:15:00 IST   ┆              ┆              ┆              ┆              ┆            ┆        │
+│ 2015-01-03     ┆ 19969.396569 ┆ 20040.00522  ┆ 19897.539828 ┆ 19968.148478 ┆ 639508.0   ┆ NIFTY  │
+│ 09:15:00 IST   ┆              ┆              ┆              ┆              ┆            ┆        │
+│ 2015-01-04     ┆ 20024.939546 ┆ 20206.715656 ┆ 19657.051393 ┆ 19838.827503 ┆ 1.594052e6 ┆ NIFTY  │
+│ 09:15:00 IST   ┆              ┆              ┆              ┆              ┆            ┆        │
+│ 2015-01-05     ┆ 19578.928615 ┆ 19737.498442 ┆ 19407.807979 ┆ 19566.377805 ┆ 1.59632e6  ┆ NIFTY  │
+│ 09:15:00 IST   ┆              ┆              ┆              ┆              ┆            ┆        │
+└────────────────┴──────────────┴──────────────┴──────────────┴──────────────┴────────────┴────────┘
 ```
 
-## 3 — Pick your path
+Already have your own OHLCV data? `pl.read_parquet("ohlcv.parquet")` drops
+in wherever `datasets.load_sample()` is used below, as long as it has
+`open`/`high`/`low`/`close`/`volume` columns.
+
+### 4. Compute RSI
+
+```python
+import quantwave  # registers pl.col().ta and LazyFrame.bt
+
+df = df.lazy().with_columns(
+    pl.col("close").ta.rsi(timeperiod=14).alias("rsi"),
+).collect()
+
+print(df.select("ts", "close", "rsi").head())
+```
+
+```text
+shape: (5, 3)
+┌────────────────────────────┬──────────────┬─────┐
+│ ts                         ┆ close        ┆ rsi │
+│ ---                        ┆ ---          ┆ --- │
+│ datetime[μs, Asia/Kolkata] ┆ f64          ┆ f64 │
+╞════════════════════════════╪══════════════╪═════╡
+│ 2015-01-01 09:15:00 IST    ┆ 20096.573176 ┆ NaN │
+│ 2015-01-02 09:15:00 IST    ┆ 19809.830047 ┆ NaN │
+│ 2015-01-03 09:15:00 IST    ┆ 19968.148478 ┆ NaN │
+│ 2015-01-04 09:15:00 IST    ┆ 19838.827503 ┆ NaN │
+│ 2015-01-05 09:15:00 IST    ┆ 19566.377805 ┆ NaN │
+└────────────────────────────┴──────────────┴─────┘
+```
+
+Don't panic about the `NaN` — that's expected. RSI needs 14 bars of warmup
+before its first real value; see [Warmup and NaN semantics](python.md#warmup-and-nan-semantics)
+for why `NaN` (not `null`) is the convention and why it matters for backtests.
+
+### 5. See the real output
+
+```python
+print(df.select("ts", "close", "rsi").tail())
+```
+
+```text
+shape: (5, 3)
+┌────────────────────────────┬──────────────┬───────────┐
+│ ts                         ┆ close        ┆ rsi       │
+│ ---                        ┆ ---          ┆ ---       │
+│ datetime[μs, Asia/Kolkata] ┆ f64          ┆ f64       │
+╞════════════════════════════╪══════════════╪═══════════╡
+│ 2021-11-20 09:15:00 IST    ┆ 37635.8664   ┆ 47.160391 │
+│ 2021-11-21 09:15:00 IST    ┆ 37924.793503 ┆ 51.783841 │
+│ 2021-11-22 09:15:00 IST    ┆ 37514.078853 ┆ 45.666771 │
+│ 2021-11-23 09:15:00 IST    ┆ 37131.884029 ┆ 40.832963 │
+│ 2021-11-24 09:15:00 IST    ┆ 37075.538921 ┆ 40.158096 │
+└────────────────────────────┴──────────────┴───────────┘
+```
+
+That's it — a real, warmup-correct RSI column, computed on a Polars
+`LazyFrame`, from a clean install, with no external files. Everything past
+this point is about where to go **deeper**, not how to get started.
+
+## Troubleshooting
+
+Quick answers for the two failure modes people hit before they've even seen
+output. Full list (import errors, platform/wheel matrix, `doctor` output
+reference) lives in the [Python guide](python.md#troubleshooting).
+
+- **`quantwave doctor` shows a `✗`** — see [Interpreting `doctor` output](python.md#interpreting-doctor-output).
+- **`ImportError` / `ModuleNotFoundError: quantwave`** — see [Import failures](python.md#import-failures).
+- **`AttributeError: 'LazyFrame' object has no attribute 'ta'` / `'bt'`** — you
+  imported `polars` but never `import quantwave` (registration is a side
+  effect of the import — see step 4 above).
+
+## Now go deeper
+
+You've already run your first indicator. From here, pick where you want to
+go next:
+
+```mermaid
+flowchart LR
+    A[RSI computed ✓] --> B{Goal?}
+    B --> C[Polars batch research]
+    B --> D[Live streaming]
+    B --> E[Backtest a signal]
+    B --> F[ML features]
+    B --> G[Rust instead of Python]
+    C --> H[Indicator catalog]
+    D --> H
+    E --> I[Backtest quickstart]
+    F --> J[ML features guide]
+    G --> K[Rust guide]
+```
 
 <div class="qw-grid" markdown="1">
 
@@ -139,9 +230,24 @@ Hurst, frac-diff, `build_feature_matrix()`, regime gates.
 
 </div>
 
+<div class="qw-card" markdown="1">
+
+### Rust instead of Python
+`Next<T>` streaming and Polars `.ta()` in native crates.
+
+```toml
+[dependencies]
+quantwave-core = "0.1"
+quantwave-polars = "0.1"
+```
+
+[Rust guide](rust.md)
+
 </div>
 
-## 4 — Conventions worth knowing early
+</div>
+
+## Conventions worth knowing early
 
 | Topic | Where it lives |
 |-------|----------------|
