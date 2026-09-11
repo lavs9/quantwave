@@ -16,8 +16,8 @@ METADATA_FILE = ROOT / "metadata_export.json"
 REPLACEMENTS: list[tuple[Path, re.Pattern[str], str]] = [
     (
         ROOT / "README.md",
-        re.compile(r"(\*\*)?\d{2,3}(\*\*)?\s+[Nn]ative [Ii]ndicators"),
-        "{count} Native Indicators",
+        re.compile(r"(\*\*)?\d{2,3}\s+[Nn]ative [Ii]ndicators(\*\*)?"),
+        r"\g<1>{count} Native Indicators\g<2>",
     ),
     (
         ROOT / "mkdocs.yml",
