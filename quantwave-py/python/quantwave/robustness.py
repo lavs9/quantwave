@@ -945,7 +945,7 @@ def compute_tearsheet(
 ) -> TearsheetResult:
     """Compute the full robustness tearsheet result for a ``BacktestReport``
     (single-symbol or portfolio — both expose ``.equity_curve``, ``.trades``,
-    ``.stats()`` as of quantwave-hyee).
+    and ``.stats()``).
 
     Parameters
     ----------

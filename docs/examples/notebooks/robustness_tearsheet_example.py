@@ -1,4 +1,4 @@
-"""Robustness tearsheet example (quantwave-j2rl).
+"""Robustness tearsheet example.
 
 Plain runnable script (not a marimo notebook, unlike its neighbors in this
 directory) — its whole point is to produce an actual HTML file on disk so

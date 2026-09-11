@@ -131,7 +131,7 @@ report_weight = (
 The takeaway: decide up front whether your signal column is meant to carry
 *share counts* or *position weights*, and set `signal_type` to match. When
 in doubt, `"weight"` is almost always what you want for equity-fraction
-sizing, and it's the default as of quantwave-9wji.1 (2026-09-08) — the
+sizing, and it's the default as of 2026-09-08 — the
 default used to be `"shares"`, so a backtest re-run after upgrading without
 passing `signal_type="shares"` explicitly will produce very different
 (usually much bigger, and much more correct) numbers.

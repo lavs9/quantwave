@@ -360,7 +360,7 @@ class BtLazyNamespace:
 
         Args:
             signal_type: How signal magnitude is interpreted when sizing a
-                new entry (quantwave-9wji.1). ``"weight"`` (default) — a
+                new entry. ``"weight"`` (default) — a
                 fraction of total equity independent per symbol, e.g. 0.1 =
                 10% of equity in that symbol (not normalized against peers;
                 caller keeps the sum of active weights sane). Matches
@@ -370,11 +370,11 @@ class BtLazyNamespace:
                 normalized across all symbols with a non-zero signal this
                 bar (today's ``portfolio_allocator="signal_weighted"``
                 budget math, without a clamp). ``"shares"`` — signal
-                magnitude as a literal share count, the pre-quantwave-9wji.1
+                magnitude as a literal share count, the historical
                 behavior: this silently clamps equity-based position sizing
                 down to ~1 share for a boolean (0/1) signal, so a large book
                 will not deploy its capital. The default changed from
-                ``"shares"`` to ``"weight"`` in quantwave-9wji.1 (breaking
+                ``"shares"`` to ``"weight"`` (breaking
                 change, explicitly decided 2026-09-08) — pass
                 ``signal_type="shares"`` to keep the old behavior.
             rebalance_policy: Optional dict gating when signal-driven
