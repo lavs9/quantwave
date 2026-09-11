@@ -764,7 +764,7 @@ impl GeometricPatternScanner {
     }
 
     fn promote_pending_poles(&mut self) {
-        let mut pending: Vec<_> = self.pending_poles.drain(..).collect();
+        let mut pending: Vec<_> = std::mem::take(&mut self.pending_poles);
         pending.sort_by(|a, b| {
             let ia = self.evaluate_three_bar_move(a.0).map_or(0.0, |x| x.3);
             let ib = self.evaluate_three_bar_move(b.0).map_or(0.0, |x| x.3);
