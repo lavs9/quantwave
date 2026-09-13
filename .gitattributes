@@ -1,0 +1,15 @@
+# Keep GitHub's Linguist language stats honest for this repo.
+# Without these, historically-committed docs HTML/markdown inflates the
+# "HTML" percentage on the repo language bar relative to the actual Rust code.
+
+# MkDocs source content: markdown/html here is documentation, not shipped code.
+docs/** linguist-documentation
+
+# Rendered marimo notebook exports: generated HTML, not hand-written.
+# (Also under docs/**, but flagged explicitly since it's the clearest
+# generated-artifact case and callers may special-case linguist-generated.)
+docs/examples/notebooks/rendered/** linguist-generated
+
+# Third-party scanned magazine articles (Stocks & Commodities "Traders' Tips"),
+# saved as HTML for reference — vendored external content, not authored here.
+references/traderstipsreference/** linguist-vendored
