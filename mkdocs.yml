@@ -62,6 +62,9 @@ extra:
       link: https://github.com/lavs9/quantwave
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/quantwave/
+    - icon: fontawesome/solid/comments
+      link: https://github.com/lavs9/quantwave/discussions
+      name: GitHub Discussions
 
 nav:
   - Home: index.md

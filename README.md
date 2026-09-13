@@ -12,7 +12,7 @@
 
 **Python** `pip install quantwave` (or `pip install "quantwave[polars]"` for the Polars integration layer) **Rust** `cargo add quantwave`
 
-[📖 Documentation](https://lavs9.github.io/quantwave/) • [📦 PyPI](https://pypi.org/project/quantwave/) • [⭐ GitHub](https://github.com/lavs9/quantwave) • [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/lavs9/quantwave)
+[📖 Documentation](https://lavs9.github.io/quantwave/) • [📦 PyPI](https://pypi.org/project/quantwave/) • [⭐ GitHub](https://github.com/lavs9/quantwave) • [💬 Discussions](https://github.com/lavs9/quantwave/discussions) • [🤝 Contributing](CONTRIBUTING.md) • [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/lavs9/quantwave)
 
 **221 indicators • Polars-native • Streaming & batch parity • MIT licensed**
 
@@ -117,6 +117,12 @@ The same engine runs order-driven fills (`.bt.order_backtest`), risk overlays (`
 - [llms.txt](https://lavs9.github.io/quantwave/llms.txt) (AI crawler index)
 - [Latest Release Notes](https://github.com/lavs9/quantwave/releases/latest)
 - [Ask DeepWiki](https://deepwiki.com/lavs9/quantwave)
+
+## Community
+
+- [GitHub Discussions](https://github.com/lavs9/quantwave/discussions) — questions, ideas, show-and-tell
+- [Contributing Guide](CONTRIBUTING.md) — dev setup, the indicator-addition checklist, commit conventions
+- [Issue Tracker](https://github.com/lavs9/quantwave/issues) — bugs, parity mismatches, feature requests
 
 ---
 

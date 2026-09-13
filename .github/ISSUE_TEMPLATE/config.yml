@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & discussion
+    url: https://github.com/lavs9/quantwave/discussions
+    about: Ask usage questions, propose ideas, or discuss QuantWave before filing an issue.
+  - name: Contributing guide
+    url: https://github.com/lavs9/quantwave/blob/main/CONTRIBUTING.md
+    about: How to set up the dev environment, add an indicator, and submit a PR.

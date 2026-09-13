@@ -2,6 +2,13 @@
 
 First off, thank you for considering contributing to QuantWave! It's people like you who make it such a great tool.
 
+**Questions or ideas before you write code?** Use [GitHub Discussions](https://github.com/lavs9/quantwave/discussions)
+rather than opening an issue — issues are for concrete bugs (including numeric
+parity mismatches) and feature requests. See the GitHub-surfaced
+[`CONTRIBUTING.md`](https://github.com/lavs9/quantwave/blob/main/CONTRIBUTING.md)
+at the repo root for the full indicator-addition checklist and commit conventions;
+this page covers local dev setup in more depth.
+
 ## Development Workflow
 
 ### Prerequisites
