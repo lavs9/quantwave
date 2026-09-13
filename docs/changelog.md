@@ -4,14 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### Fixed
-- **Benchmark synthetic data is now reproducible across numpy versions; published benchmark numbers are reset** (`quantwave-5yjg`).
-
-    `benchmarks/data.py` drew from `np.random.default_rng`, whose `Generator` streams NumPy explicitly reserves the right to change between feature releases (NEP 19 freezes only the legacy `RandomState`). The same seed therefore produced different data on different numpy builds — confirmed here as numpy 1.26.4 and 2.4.6 yielding different digests from an identical config. Since `dataset.frame_hash` in `benchmarks/results/latest.json` exists precisely to prove two runs measured the same data, it could not do its job, and the nightly committed a spurious diff to `main` whenever CI's pip resolution shifted.
-
-    Values now come from SplitMix64 implemented in explicit `uint64` arithmetic inside `benchmarks/data.py`, depending on no library RNG. It is counter-based, so row `i` is a pure function of `(seed, column, i)` — a 100k smoke run is a true prefix of the 1M nightly run. `frame_hash` also folds in column name, dtype and length and normalises to little-endian, so a reordered or retyped frame can no longer collide with the original.
-
-    **This changes the synthetic dataset**, so benchmark figures produced before this release are not comparable with those after it. `tests/python/test_benchmark_harness.py` now pins the generator with golden digests; if they ever fail, the data stream moved and the baseline must be reset deliberately rather than re-blessed.
+### Added
+- Batch↔streaming parity proptests **parameterised over every `MaType`** for `MaStream`, `BBANDS`, `APO`, `PPO` and `MACDEXT`, plus SMA/EMA/WMA/TRIMA coverage for `STOCH` / `STOCHF`. The pre-existing suite only ever constructed `MaType::Sma`, which is precisely why both bugs above survived unnoticed.
+- TA-Lib-parity streaming `TalibWma`, `TalibTema` and `TalibMama` (the last reusing the existing incremental Hilbert engine), each with its own parity proptest. The general-purpose `WMA`, `TEMA` and `MAMA` use different seeding and do not reproduce TA-Lib's values.
+- **`qw.trim_warmup()` / `qw.warmup_rows()`** (`quantwave-4rsq`). Indicator warmup is emitted as `NaN`, never `null`, so `drop_nulls()` / `dropna()` is a **silent no-op** on it and warmup rows flow into backtests and feature matrices unnoticed. `qw.trim_warmup(frame, *specs, extra=0, strict=True)` slices off the **maximum** warmup across every named indicator, keeping columns with different warmups row-aligned (unlike `drop_nans()`, which trims per column set). Accepts `"rsi"`, `("rsi", {"period": 21})`, `{"rsi": {...}, "ema": {...}}`, or an explicit `int` bar count, and works on `DataFrame` / `LazyFrame` / `Series`, including `df.pipe(qw.trim_warmup, "rsi")`. Unknown indicator names raise by default rather than silently trimming nothing.
+- **`.bt` warmup warning** (`quantwave-4rsq`). `backtest`, `backtest_with_report`, `backtest_metrics`, `portfolio_backtest`, `walk_forward`, `monte_carlo` and `order_backtest` now emit a `quantwave.WarmupWarning` when the `signal` or `close` column they receive starts with `NaN`/`null` rows. It is a warning, not an error — existing code keeps working — and is silenceable with `warnings.filterwarnings("ignore", category=qw.WarmupWarning)`.
+- NaN-vs-null semantics documented prominently in the Python getting-started guide, the backtest quickstart, and the FAQ.
+- `test_registry_native_symbols_resolve_against_build` — asserts every declared native symbol exists in the compiled module. The prior test only checked a name was *present*, never that it *resolved*, so `native_batch: "super_trend"` passed cleanly. Plus a regression test that multi-word slugs bind as batch functions, not classes.
 
 ### Changed
 - **BREAKING (Polars plugin surface): `ta_beta` now defaults to `timeperiod=5` and `ta_correl` to `timeperiod=30`, matching TA-Lib and their non-prefixed siblings** (`quantwave-0h4o`).
@@ -80,6 +79,13 @@ All notable changes to this project will be documented in this file.
     `"same_bar"` remains fully supported and is the correct choice when it genuinely describes your execution: you trade the closing auction, or your signal is built purely from data through bar `t-1` so bar `t`'s close is not an input. Otherwise, prefer the new default.
 
 ### Fixed
+- **Benchmark synthetic data is now reproducible across numpy versions; published benchmark numbers are reset** (`quantwave-5yjg`).
+
+    `benchmarks/data.py` drew from `np.random.default_rng`, whose `Generator` streams NumPy explicitly reserves the right to change between feature releases (NEP 19 freezes only the legacy `RandomState`). The same seed therefore produced different data on different numpy builds — confirmed here as numpy 1.26.4 and 2.4.6 yielding different digests from an identical config. Since `dataset.frame_hash` in `benchmarks/results/latest.json` exists precisely to prove two runs measured the same data, it could not do its job, and the nightly committed a spurious diff to `main` whenever CI's pip resolution shifted.
+
+    Values now come from SplitMix64 implemented in explicit `uint64` arithmetic inside `benchmarks/data.py`, depending on no library RNG. It is counter-based, so row `i` is a pure function of `(seed, column, i)` — a 100k smoke run is a true prefix of the 1M nightly run. `frame_hash` also folds in column name, dtype and length and normalises to little-endian, so a reordered or retyped frame can no longer collide with the original.
+
+    **This changes the synthetic dataset**, so benchmark figures produced before this release are not comparable with those after it. `tests/python/test_benchmark_harness.py` now pins the generator with golden digests; if they ever fail, the data stream moved and the baseline must be reset deliberately rather than re-blessed.
 - **`calmar_ratio` returned `inf` on a zero-drawdown run while the rest of the bundle returned `NaN`** (`quantwave-gz7d`). `quantwave-s3iu` moved `sortino_ratio` and `profit_factor` to `NaN` for an empty denominator but left `calmar_ratio = cagr / max_drawdown_pct` out of scope, so a single-trade run reported **two different conventions for the same condition** — `extended_metrics()` gave `sortino_ratio=nan`, `profit_factor=nan`, `calmar_ratio=inf`. Calmar now returns `NaN` when `max_drawdown_pct` is zero with positive CAGR (and still `0.0` when CAGR is non-positive, the no-activity case).
 
     This is not cosmetic. Walk-forward and sweep selection pick the argmax with a `v > best_val` comparison: `inf > anything` is `True`, so a degenerate variant that simply never lost would win the in-fold optimisation and be carried into the out-of-sample window, whereas `NaN > anything` is `False` and the undefined variant is skipped like a null. The grid selector is now the extracted, unit-tested `select_best_objective`, and both it and the TPE pool selector have explicit NaN-safety tests (including the all-undefined fallback: index 0 with `-inf` as the fold's `train_metric`).
@@ -105,14 +111,6 @@ All notable changes to this project will be documented in this file.
 - **68 indicators silently resolved to a streaming class instead of their batch function** (`quantwave-84cu`). The generated TA registry introduced in 0.7.0 derived native batch symbol names with `pascal_to_snake()` (`SuperTrend` → `super_trend`), but the `export_*!` macros emit `pub fn [<$name:lower>]` (`SuperTrend` → `supertrend`). Every multi-word name missed; the 44 single-word ones (`rsi`, `sma`, `atr`) passed only because `pascal_to_snake("Rsi") == "rsi"`. `_resolve_ta_binding` treated the miss as a fallback and returned `native_streaming`, so `qw.supertrend` was a **class** while `qw.rsi` was a function — with no error or warning. `qw.supertrend(period=10, multiplier=3.0, high=…, low=…, close=…)` again returns `list[SuperTrendResult]` as it did in 0.6; callers need no changes.
 - `_resolve_ta_binding` now raises `ImportError` when an entry declares a `native_batch` symbol the build does not export, rather than silently substituting the streaming class (whose calling convention differs). A `native_batch` of `None` still falls through to streaming/polars as before.
 - Corrected stale hand-written aliases in `scripts/api_slug_aliases.json`: `fm_demodulator`, `fourier_series_model`, `my_rsi`, `precision_trend_analysis` named non-existent snake_cased symbols; `linreg`, `oc2`, `true_range` declared batch exports that do not exist and now fall through to their polars methods; `sr_monitor` declared `SrInteractionMonitor`, a class never exported to Python.
-
-### Added
-- Batch↔streaming parity proptests **parameterised over every `MaType`** for `MaStream`, `BBANDS`, `APO`, `PPO` and `MACDEXT`, plus SMA/EMA/WMA/TRIMA coverage for `STOCH` / `STOCHF`. The pre-existing suite only ever constructed `MaType::Sma`, which is precisely why both bugs above survived unnoticed.
-- TA-Lib-parity streaming `TalibWma`, `TalibTema` and `TalibMama` (the last reusing the existing incremental Hilbert engine), each with its own parity proptest. The general-purpose `WMA`, `TEMA` and `MAMA` use different seeding and do not reproduce TA-Lib's values.
-- **`qw.trim_warmup()` / `qw.warmup_rows()`** (`quantwave-4rsq`). Indicator warmup is emitted as `NaN`, never `null`, so `drop_nulls()` / `dropna()` is a **silent no-op** on it and warmup rows flow into backtests and feature matrices unnoticed. `qw.trim_warmup(frame, *specs, extra=0, strict=True)` slices off the **maximum** warmup across every named indicator, keeping columns with different warmups row-aligned (unlike `drop_nans()`, which trims per column set). Accepts `"rsi"`, `("rsi", {"period": 21})`, `{"rsi": {...}, "ema": {...}}`, or an explicit `int` bar count, and works on `DataFrame` / `LazyFrame` / `Series`, including `df.pipe(qw.trim_warmup, "rsi")`. Unknown indicator names raise by default rather than silently trimming nothing.
-- **`.bt` warmup warning** (`quantwave-4rsq`). `backtest`, `backtest_with_report`, `backtest_metrics`, `portfolio_backtest`, `walk_forward`, `monte_carlo` and `order_backtest` now emit a `quantwave.WarmupWarning` when the `signal` or `close` column they receive starts with `NaN`/`null` rows. It is a warning, not an error — existing code keeps working — and is silenceable with `warnings.filterwarnings("ignore", category=qw.WarmupWarning)`.
-- NaN-vs-null semantics documented prominently in the Python getting-started guide, the backtest quickstart, and the FAQ.
-- `test_registry_native_symbols_resolve_against_build` — asserts every declared native symbol exists in the compiled module. The prior test only checked a name was *present*, never that it *resolved*, so `native_batch: "super_trend"` passed cleanly. Plus a regression test that multi-word slugs bind as batch functions, not classes.
 
 ## [0.7.0] - 2026-07-13
 
@@ -153,7 +151,7 @@ All notable changes to this project will be documented in this file.
 
 ## [0.5.2] - 2026-05-31
 
-### Added (Python DX improvements)
+### Added
 - **Discovery API**: `quantwave.indicators()` and `quantwave.is_indicator(name)`.
 - **Rich Metadata**: `quantwave.metadata(name)` returning `IndicatorMeta` with params, data inputs, outputs, warmup_bars, category, etc.
 - **Streaming lookup**: `quantwave.streaming_class(name)`.
@@ -163,17 +161,12 @@ All notable changes to this project will be documented in this file.
 - **Public exception base**: `quantwave.QuantwaveError`.
 - **`__version__`** properly exposed.
 - Linux arm64 (aarch64) wheels are now built and published.
+- **Official documentation standards published**: `docs/DOCUMENTATION_STANDARDS.md` (v1.0, 2026-05-31 IST) under task quantwave-d2hk / epic p1k6. Defines the mandatory enforceable template for all 223+ indicator pages: required sections (Visual Example, full batch+streaming+Polars Usage Examples, Edge Cases & Limitations, Sources), type-specific guidance (classic scalar / patterns / rich struct / Ehlers), good-vs-bad examples, tone/visual/cross-link rules, and a 4-phase rollout. Updated `contributing.md` (new indicator docs step) and appended the full decision record + rationale (diagnosis of thin stubs vs. PA notebook quality) to `DOCUMENTATION_DECISIONS.md`; minor alignments in `gallery.md`. Foundation for all future indicator documentation work and the planned xtask generator.
+- **Candle standards proof batch** (p1k6 child, 2026-05-31 IST): 8 worst-duplication candlestick pages (doji.md + gravestone/dragonfly variants, harami.md + harami_cross, three_black_crows.md + three_white_soldiers.md, abandoned_baby.md) + engulfing.md enhancement fully rewritten to DOCUMENTATION_STANDARDS.md (mandatory visuals, 3-surface code, edges, authoritative TA-Lib+core sources, no Nison boilerplate). `docs/gen_candle_previews.py` extended (portable + 8+ generators); 11 professional PNGs produced in `assets/candlestick-previews/`. Proves the template and generators scale for the Phase 1 rollout.
+- **Ehlers DSP Phase 1 batch 2** (p1k6, 2026-05-31 IST): 5 high-value thin Ehlers DSP pages (ehlers_filter.md, reflex.md, ehlers_stochastic.md, ehlers_loops.md, ultimatesmoother.md) rewritten to full Ehlers/scalar STANDARDS conformance. Extended `gen_indicator_previews.py` (portable, pure-numpy core ports for the 5, CLI, professional DSP styling); 5 new PNG visuals generated with 2026-05-31 IST captions mapping directly to core `.rs` `Next` logic.
 
 ### Changed
 - Release workflow no longer hard-gates on docs build (docs issues can be fixed independently).
-
-### Documentation
-- **Official Standards Published**: Created `docs/DOCUMENTATION_STANDARDS.md` (v1.0, 2026-05-31 IST) under task quantwave-d2hk / epic p1k6. Defines mandatory enforceable template for all 223+ indicator pages: required sections (Visual Example, full batch+streaming+Polars Usage Examples, Edge Cases & Limitations, Sources), type-specific guidance (classic scalar / patterns / rich struct / Ehlers), good-vs-bad examples, tone/visual/cross-link rules, and 4-phase rollout. 
-- Updated `contributing.md` (new indicator docs step) and appended full decision record + rationale (diagnosis of thin stubs vs. PA notebook quality) to `DOCUMENTATION_DECISIONS.md`.
-- Minor alignments in `gallery.md`.
-- This is the foundation for all future indicator documentation work and the planned xtask generator. See `DOCUMENTATION_STANDARDS.md` for the complete template and checklist.
-- **Candle Standards Proof batch (p1k6 child, 2026-05-31 IST)**: 8 worst-duplication candlestick pages (doji.md + gravestone/dragonfly variants, harami.md + harami_cross, three_black_crows.md + three_white_soldiers.md, abandoned_baby.md) + engulfing.md enhancement fully rewritten to DOCUMENTATION_STANDARDS.md (mandatory visuals, 3-surface code, edges, authoritative TA-Lib+core sources, no Nison boilerplate). `docs/gen_candle_previews.py` extended (portable + 8+ generators); 11 professional PNGs produced in `assets/candlestick-previews/`. Cross-refs + full decision record in DOCUMENTATION_DECISIONS.md. Proves template + gens scale for Phase 1 rollout. See decisions file for files touched and bd tracking attempt details.
-- **Ehlers DSP Phase 1 batch 2 (p1k6, 2026-05-31 IST)**: 5 high-value thin Ehlers DSP pages (ehlers_filter.md, reflex.md, ehlers_stochastic.md, ehlers_loops.md, ultimatesmoother.md) rewritten to full Ehlers/scalar STANDARDS conformance. Extended `gen_indicator_previews.py` (portable, pure-numpy core ports for the 5, CLI, professional DSP styling); 5 new PNG visuals generated with 2026-05-31 IST captions mapping directly to core .rs Next logic. 3-surface examples, Edge Cases, authoritative sources (exact core paths + Ehlers papers). Cross-refs + detailed decision record appended. Worktree clean for merge. See DOCUMENTATION_DECISIONS.md for complete list of files + checklist confirmation.
 
 ## [0.5.1] - 2026-05-31
 
@@ -186,7 +179,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - 0.5.1 is the first complete, trustworthy release of the Backtest Engine v0.2 features (including `quantwave-backtest` crate on crates.io) plus the full Polars + Python package set.
 
-## [0.5.0] - 2026-05-30
+## [0.5.0] - 2026-05-31
 
 ### Added
 - **Backtest Engine v0.2** (major milestone):

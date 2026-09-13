@@ -1,6 +1,10 @@
 # Release — push a version tag (v*)
 #
 # Pipeline:
+#   0. changelog gate    — docs/changelog.md must already have `## [X.Y.Z] - date`
+#                          for the pushed tag with [Unreleased] empty; see
+#                          scripts/release_changelog.py --apply (run + commit
+#                          *before* tagging — this workflow only verifies it).
 #   1. publish-rust      — crates.io (core → backtest/plugins → polars → quantwave)
 #   2. build-python-*    — wheels (linux x64/arm, macOS, windows)
 #   3. verify-python-wheel — import + RSI smoke on 3.9/3.11/3.12/3.13
@@ -25,6 +29,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Changelog must be released (not [Unreleased])
+        run: python3 scripts/release_changelog.py --check
 
       - uses: dtolnay/rust-toolchain@stable
 

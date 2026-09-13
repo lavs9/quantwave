@@ -15,7 +15,7 @@ changes ──┬──► sanity (always)
 
 | Job | What it runs | When |
 |-----|----------------|------|
-| **Doc & metadata sanity** | metadata/doc/benchmark/hygiene drift checks | Always (~1 min) |
+| **Doc & metadata sanity** | metadata/doc/benchmark/hygiene drift checks, `scripts/check_changelog.py` (Keep a Changelog structure + tag-date match) | Always (~1 min) |
 | **Rust quality gate** | `cargo fmt --check`, `cargo clippy -D warnings`, `cargo nextest` (core/polars/backtest) | `**/*.rs`, `Cargo.*` changed, or manual dispatch |
 | **Python gold parity** | 25+ streaming indicators vs `gold_standard/*.json` | `tests/python`, `quantwave-py`, gold fixtures changed |
 | **Deploy docs** | mkdocs → GitHub Pages | `main` push only, after sanity |
@@ -31,9 +31,13 @@ changes ──┬──► sanity (always)
 publish-rust ──► build-python-wheels (matrix) ──► verify-python-wheel ──► publish-python (PyPI)
 ```
 
+Before tagging: run `python3 scripts/release_changelog.py --apply X.Y.Z`, commit
+`docs/changelog.md` (moves `[Unreleased]` content under a new `[X.Y.Z] - date`
+heading), then push the `vX.Y.Z` tag.
+
 | Job | What |
 |-----|------|
-| **Publish Rust crates** | `scripts/publish_crates.sh` — core → backtest → polars → quantwave (idempotent) |
+| **Publish Rust crates** | Gated first by `scripts/release_changelog.py --check` (fails if the changelog wasn't promoted before tagging), then `scripts/publish_crates.sh` — core → backtest → polars → quantwave (idempotent) |
 | **Python wheels** | Unified wheel via `maturin build --manifest-path quantwave-py/Cargo.toml` (core + backtest + plugins) on linux x64, linux arm64, macOS, Windows |
 | **Verify wheel** | Import + RSI smoke on Python 3.9 / 3.11 / 3.12 / 3.13 |
 | **Publish Python** | `pypa/gh-action-pypi-publish` via PyPI OIDC trusted publisher (no API token) |
