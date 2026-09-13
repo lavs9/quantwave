@@ -39,6 +39,7 @@ thiserror = "2.0"
 chrono = { version = "0.4", features = ["serde"] }
 nalgebra = { version = "0.35", features = ["serde-serialize"] }
 statrs = "0.19"
+anyhow = "1.0.102"
 quantwave-core = { path = "quantwave-core", version = "0.7.0" }
 quantwave-polars = { path = "quantwave-polars", version = "0.7.0" }
 quantwave-backtest = { path = "quantwave-backtest", version = "0.7.0" }
