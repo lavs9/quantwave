@@ -60,6 +60,10 @@ impl Next<f64> for MAMA {
     type Output = (f64, f64);
 
     fn next(&mut self, price: f64) -> Self::Output {
+        if price.is_nan() {
+            return (f64::NAN, f64::NAN);
+        }
+
         self.count += 1;
 
         self.price_history.pop_back();
@@ -213,6 +217,52 @@ mod tests {
                 approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-6);
                 approx::assert_relative_eq!(s.1, b.1, epsilon = 1e-6);
             }
+        }
+    }
+
+    #[test]
+    fn test_mama_single_injected_nan_does_not_panic() {
+        // Reproduces quantwave-j3e1: a single NaN mid-series used to poison
+        // self.period_prev, which later caused `.clamp(min, max)` to panic
+        // once min/max both became NaN.
+        let mut mama = MAMA::new(0.5, 0.05);
+        let n = 150;
+        let mut outputs = Vec::with_capacity(n);
+
+        for i in 0..n {
+            let price = if i == 100 {
+                f64::NAN
+            } else {
+                100.0 + 5.0 * (i as f64 * 0.2).sin()
+            };
+            outputs.push(mama.next(price));
+        }
+
+        // The injected bar itself must report NaN, not panic.
+        assert!(outputs[100].0.is_nan());
+        assert!(outputs[100].1.is_nan());
+
+        // Output should resume to finite values shortly after the bad bar.
+        // Internal state (price_history, period_prev, etc.) is completely
+        // untouched by the NaN bar, so recovery is essentially immediate;
+        // allow a small margin for any residual recursive smoothing.
+        let recovery_bar =
+            (101..=105).find(|&i| outputs[i].0.is_finite() && outputs[i].1.is_finite());
+        assert!(
+            recovery_bar.is_some(),
+            "MAMA/FAMA did not return finite output within 5 bars of the injected NaN"
+        );
+
+        // All bars after recovery must remain finite (no lingering NaN propagation).
+        for i in recovery_bar.unwrap()..n {
+            assert!(
+                outputs[i].0.is_finite(),
+                "mama went non-finite again at bar {i}"
+            );
+            assert!(
+                outputs[i].1.is_finite(),
+                "fama went non-finite again at bar {i}"
+            );
         }
     }
 }
