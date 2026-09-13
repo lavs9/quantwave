@@ -1,15 +1,156 @@
 {
   "_comment": "Python-specific fields not in Rust IndicatorMetadata. Keys override/extend Rust codegen slugs.",
-  "rsi": {
+  "ad": {
     "data_inputs": [
+      "high",
+      "low",
+      "close",
+      "volume"
+    ]
+  },
+  "adosc": {
+    "data_inputs": [
+      "high",
+      "low",
+      "close",
+      "volume"
+    ]
+  },
+  "adx": {
+    "data_inputs": [
+      "high",
+      "low",
       "close"
+    ]
+  },
+  "am_detector": {
+    "data_inputs": [
+      "close",
+      "open"
+    ]
+  },
+  "aroon": {
+    "data_inputs": [
+      "high",
+      "low"
+    ]
+  },
+  "atr": {
+    "data_inputs": [
+      "high",
+      "low",
+      "close"
+    ]
+  },
+  "atr_ts": {
+    "data_inputs": [
+      "high",
+      "low",
+      "close"
+    ]
+  },
+  "cci": {
+    "data_inputs": [
+      "high",
+      "low",
+      "close"
+    ]
+  },
+  "choppiness_index": {
+    "data_inputs": [
+      "high",
+      "low",
+      "close"
+    ]
+  },
+  "dmh": {
+    "data_inputs": [
+      "high",
+      "low"
+    ]
+  },
+  "donchian": {
+    "data_inputs": [
+      "high",
+      "low"
+    ]
+  },
+  "ehlers_loops": {
+    "data_inputs": [
+      "price",
+      "volume"
+    ]
+  },
+  "fm_demodulator": {
+    "data_inputs": [
+      "close",
+      "open"
+    ]
+  },
+  "fractals": {
+    "data_inputs": [
+      "high",
+      "low"
+    ]
+  },
+  "frama": {
+    "data_inputs": [
+      "high",
+      "low",
+      "close"
+    ]
+  },
+  "gap_momentum": {
+    "outputs": [
+      "gap_ratio",
+      "gap_signal"
+    ]
+  },
+  "geometric_patterns": {
+    "data_inputs": [
+      "high",
+      "low"
     ],
     "outputs": [
-      "rsi"
+      "flag",
+      "hs"
     ],
-    "warmup_bars": 14,
+    "warmup_bars": 0,
     "required_params": [
-      "period"
+      "swing_strength"
+    ]
+  },
+  "heikin_ashi": {
+    "data_inputs": [
+      "open",
+      "high",
+      "low",
+      "close"
+    ]
+  },
+  "ht_phasor": {
+    "outputs": [
+      "in_phase",
+      "quadrature"
+    ]
+  },
+  "ht_sine": {
+    "outputs": [
+      "sine",
+      "leadsine"
+    ]
+  },
+  "ichimoku": {
+    "data_inputs": [
+      "high",
+      "low"
+    ]
+  },
+  "keltner": {
+    "data_inputs": [
+      "high",
+      "low",
+      "close"
     ]
   },
   "macd": {
@@ -28,33 +169,84 @@
       "signal": 9
     }
   },
-  "supertrend": {
-    "data_inputs": [
-      "high",
-      "low",
-      "close"
-    ],
+  "mama": {
     "outputs": [
-      "supertrend",
-      "direction"
-    ],
-    "required_params": [
-      "period",
-      "multiplier"
+      "mama",
+      "fama"
     ]
   },
-  "geometric_patterns": {
+  "market_structure": {
     "data_inputs": [
       "high",
       "low"
     ],
     "outputs": [
-      "flag",
-      "hs"
+      "bias",
+      "last_high_price",
+      "last_high_bar",
+      "last_low_price",
+      "last_low_bar",
+      "has_flip",
+      "flip_bearish",
+      "flip_price",
+      "flip_bar",
+      "flip_strength",
+      "swing_depth",
+      "bar_index"
     ],
     "warmup_bars": 0,
     "required_params": [
       "swing_strength"
+    ],
+    "_note": "These 12 flat names are correct for the .ta()/LazyFrame batch API -- verified against the polars_expr struct built in quantwave-py/src/plugins/custom_6.rs::market_structure_output (12 named Struct fields: bias, last_high_price, last_high_bar, last_low_price, last_low_bar, has_flip, flip_bearish, flip_price, flip_bar, flip_strength, swing_depth, bar_index) and confirmed by tests/python/test_abstract_api.py::test_output_names_arity_matches_actual_ta_output (expects arity 12, not 6). This is a SEPARATE code path from the streaming class (quantwave.streaming_class('market_structure')): its .next() returns MarketStructureStateResult (quantwave-py/src/indicators.rs), which has only 6 top-level attrs (bias, last_swing_high, last_swing_low, current_flip, swing_depth_used, bar_index) -- last_swing_high/last_swing_low are Option<SwingPointResult> (bar/price/is_high) and current_flip is Option<FlipEventResult> (is_bearish/price/bar/structure_strength), all nested sub-objects with no flat equivalent. Batch (.ta()) and streaming (streaming_class()) market_structure therefore expose genuinely different output shapes -- a real API-parity gap, not a metadata bug, and out of scope for this fix; only the .ta() shape belongs in this `outputs` field since that's what `_batch_capable()`/output-arity tests check."
+  },
+  "my_rsi": {
+    "data_inputs": [
+      "close",
+      "open"
+    ]
+  },
+  "obv": {
+    "data_inputs": [
+      "price",
+      "volume"
+    ]
+  },
+  "oc_price_rsi": {
+    "data_inputs": [
+      "close",
+      "open"
+    ]
+  },
+  "pairs_rotation": {
+    "data_inputs": [
+      "close",
+      "open"
+    ]
+  },
+  "pivot_points": {
+    "data_inputs": [
+      "high",
+      "low",
+      "close"
+    ]
+  },
+  "rsi": {
+    "data_inputs": [
+      "close"
+    ],
+    "outputs": [
+      "rsi"
+    ],
+    "warmup_bars": 14,
+    "required_params": [
+      "period"
+    ]
+  },
+  "sar": {
+    "data_inputs": [
+      "high",
+      "low"
     ]
   },
   "sr_interaction_monitor": {
@@ -82,64 +274,87 @@
       "approach_zone"
     ]
   },
-  "market_structure": {
+  "stoch": {
     "data_inputs": [
       "high",
-      "low"
+      "low",
+      "close"
     ],
     "outputs": [
-      "bias",
-      "last_high_price",
-      "last_high_bar",
-      "last_low_price",
-      "last_low_bar",
-      "has_flip",
-      "flip_bearish",
-      "flip_price",
-      "flip_bar",
-      "flip_strength",
-      "swing_depth",
-      "bar_index"
+      "k",
+      "d"
+    ]
+  },
+  "supertrend": {
+    "data_inputs": [
+      "high",
+      "low",
+      "close"
     ],
-    "warmup_bars": 0,
+    "outputs": [
+      "value",
+      "direction"
+    ],
     "required_params": [
-      "swing_strength"
-    ]
-  },
-  "gap_momentum": {
-    "outputs": [
-      "gap_ratio",
-      "gap_signal"
-    ]
-  },
-  "ht_phasor": {
-    "outputs": [
-      "inphase",
-      "quadrature"
-    ]
-  },
-  "ht_sine": {
-    "outputs": [
-      "sine",
-      "leadsine"
-    ]
-  },
-  "mama": {
-    "outputs": [
-      "mama",
-      "fama"
+      "period",
+      "multiplier"
     ]
   },
   "ttm_squeeze": {
     "outputs": [
-      "histogram",
-      "is_squeezed"
+      "value",
+      "direction"
+    ],
+    "data_inputs": [
+      "high",
+      "low",
+      "close"
+    ],
+    "_note": "PyO3 binding reuses the generic SuperTrendResult{value,direction} wrapper; direction is an int (0/1) cast from a bool, not the semantic is_squeezed flag name."
+  },
+  "ultimate_channel": {
+    "data_inputs": [
+      "high",
+      "low",
+      "close"
+    ]
+  },
+  "volume_profile": {
+    "data_inputs": [
+      "price",
+      "volume"
+    ]
+  },
+  "vortex": {
+    "data_inputs": [
+      "high",
+      "low",
+      "close"
+    ]
+  },
+  "vwap": {
+    "data_inputs": [
+      "price",
+      "volume",
+      "anchor"
     ]
   },
   "wavetrend": {
     "outputs": [
       "wt1",
       "wt2"
+    ],
+    "data_inputs": [
+      "high",
+      "low",
+      "close"
+    ]
+  },
+  "willr": {
+    "data_inputs": [
+      "high",
+      "low",
+      "close"
     ]
   }
 }

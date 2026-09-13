@@ -60,12 +60,24 @@ def normalize_param(name: str) -> str:
 
 
 def parse_int_default(val: str) -> Any:
+    # Rust's Debug/Display output for bool defaults is the literal strings
+    # "true"/"false" -- check these first since float("true") would just
+    # raise anyway, but being explicit documents intent.
+    if val == "true":
+        return True
+    if val == "false":
+        return False
     try:
-        if "." in val:
-            return float(val)
-        return int(val)
+        f = float(val)
     except ValueError:
+        # Not a bool, not numeric (e.g. an enum variant name like
+        # "BandPass" or "Gaussian") -- pass through unchanged.
         return val
+    # Scientific notation (e.g. "1e-5") has no literal "." but is still a
+    # float, not an int -- check for "e"/"E" too, not just ".".
+    if "." not in val and "e" not in val.lower():
+        return int(f)
+    return f
 
 
 def warmup_from_params(params: list[dict], overlay: dict | None) -> int | None:
