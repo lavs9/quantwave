@@ -72,7 +72,7 @@ def scan() -> list[tuple[str, int, str]]:
         for path in sorted(root.rglob("*")):
             if not path.is_file():
                 continue
-            if path.suffix not in {".py", ".pyi", ".md", ".rs", ".txt", ".json"}:
+            if path.suffix not in {".py", ".pyi", ".md", ".rs", ".txt", ".json", ".html"}:
                 continue
             if _allowed(path):
                 continue
