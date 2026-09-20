@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-09-20
+
+### Fixed
+- **`quantwave.datasets` (`load_sample()` / `synthetic()`) required `numpy` at import time, but `numpy` was never a declared dependency of the `polars` / `all` extras.** A fresh `pip install "quantwave[polars]"` without numpy already present elsewhere in the environment failed to import `quantwave.datasets` at all — reproducing the exact symptom of GH issue #44 (`datasets` "not found") even after 0.8.0 added the module. Found by reproducing the reported bug's exact repro steps in a clean virtualenv installed straight from PyPI's published 0.8.0 wheel, immediately after that release went live. `numpy>=1.24` is now declared alongside `polars` in both extras.
+
 ## [0.8.0] - 2026-09-20
 
 ### Added
