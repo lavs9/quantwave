@@ -1,0 +1,145 @@
+/* QuantWave docs landing page */
+
+.qw-hero {
+  margin: -0.5rem -0.5rem 2.5rem;
+  padding: 3.5rem 2rem 3rem;
+  border-radius: 0 0 1.25rem 1.25rem;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(99, 102, 241, 0.35), transparent),
+    linear-gradient(160deg, rgba(30, 27, 75, 0.92) 0%, rgba(15, 23, 42, 0.96) 55%, rgba(2, 6, 23, 1) 100%);
+  color: #e2e8f0;
+  text-align: center;
+}
+
+[data-md-color-scheme="default"] .qw-hero {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(99, 102, 241, 0.22), transparent),
+    linear-gradient(160deg, #eef2ff 0%, #f8fafc 55%, #ffffff 100%);
+  color: #0f172a;
+}
+
+.qw-hero h1 {
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0 0 0.75rem;
+  line-height: 1.1;
+}
+
+.qw-hero .qw-tagline {
+  font-size: clamp(1.05rem, 2.2vw, 1.35rem);
+  max-width: 42rem;
+  margin: 0 auto 1.75rem;
+  opacity: 0.92;
+  line-height: 1.55;
+}
+
+.qw-hero .md-button {
+  margin: 0.25rem 0.35rem;
+}
+
+.qw-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 1rem;
+  margin: 2rem 0 2.5rem;
+}
+
+.qw-stat {
+  padding: 1.25rem 1rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+  text-align: center;
+}
+
+[data-md-color-scheme="default"] .qw-stat {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.qw-stat strong {
+  display: block;
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--md-primary-fg-color, #6366f1);
+  line-height: 1.1;
+}
+
+.qw-stat span {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+}
+
+.qw-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1.25rem;
+  margin: 1.5rem 0 2rem;
+}
+
+.qw-card {
+  padding: 1.35rem 1.25rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(255, 255, 255, 0.03);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+[data-md-color-scheme="default"] .qw-card {
+  background: #fff;
+  border-color: #e2e8f0;
+}
+
+.qw-card:hover {
+  border-color: var(--md-primary-fg-color, #6366f1);
+  transform: translateY(-2px);
+}
+
+.qw-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.qw-card p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  opacity: 0.88;
+}
+
+.qw-code-band {
+  margin: 2rem 0;
+  border-radius: 0.85rem;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.qw-compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.qw-compare th,
+.qw-compare td {
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  text-align: left;
+}
+
+.qw-compare th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+.qw-compare tr:last-child td {
+  font-weight: 600;
+}
