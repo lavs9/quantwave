@@ -26,7 +26,7 @@ quantwave doctor
 ```
 
 ```text
-quantwave 0.7.0
+quantwave 0.8.0
   ✓ core extension (_quantwave)
   ✓ metadata registry
   ✓ streaming (RSI)
@@ -368,7 +368,7 @@ print(qw.__version__)
 
 ```text
 parity ok
-0.7.0
+0.8.0
 ```
 
 `qw.__version__` is exposed via `importlib.metadata`.

@@ -241,7 +241,7 @@ a *plausible* wrong positional argument may not.
 |---|---|
 | Live order routing / broker execution | Not shipped (Nautilus bridge deferred) |
 | Wide-format matrix portfolio optimization | Out of scope |
-| Equity-fraction `signal_type` sizing | Not shipped as of 0.7.0 |
+| Equity-fraction `signal_type` sizing | Shipped in 0.8.0 as the new `signal_type="weight"` default — see the [Backtest Quickstart](../../../docs/guides/backtest/quickstart.md#4-signal-conventions-get-signal_type-right) |
 | Intra-trade position resizing | Risk overlays size **at entry only** |
 
 Pyramiding does not exist in `order_backtest`: the model is flat-or-single-position, a

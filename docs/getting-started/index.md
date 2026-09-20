@@ -27,7 +27,7 @@ quantwave doctor
 ```
 
 ```text
-quantwave 0.7.0
+quantwave 0.8.0
   ✓ core extension (_quantwave)
   ✓ metadata registry
   ✓ streaming (RSI)
