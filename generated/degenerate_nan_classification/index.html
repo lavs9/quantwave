@@ -1,0 +1,2998 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="High-performance Rust + Polars quantitative finance library with 225 native indicators, full Ehlers DSP suite, backtest engine, and options pricing tools.">
+      
+      
+      
+        <link rel="canonical" href="https://lavs9.github.io/quantwave/generated/degenerate_nan_classification/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Degenerate-Input NaN/Inf Classification (Phase 0 judgment pass) - QuantWave</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../css/timeago.css">
+    
+      <link rel="stylesheet" href="../../assets/indicator-badges.css">
+    
+      <link rel="stylesheet" href="../../assets/landing.css">
+    
+      <link rel="stylesheet" href="../../assets/wasm/playground.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@marimo-team/islands@0.25.1/dist/main.js"></script>
+<link
+    href="https://cdn.jsdelivr.net/npm/@marimo-team/islands@0.25.1/dist/style.css"
+    rel="stylesheet"
+    title="marimo-islands"
+    crossorigin="anonymous"
+/>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+/>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&amp;family=Lora&amp;family=PT+Sans:wght@400;700&amp;display=swap" rel="stylesheet" />
+<link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/katex@0.18.5/dist/katex.min.css"
+    integrity="sha384-2dNi/m6JtSiviznrOIZ5fTiZ5As0In2QwkuXSgoqcQtCNplvJAbt+jveeN+8en73"
+    crossorigin="anonymous"
+/>
+<marimo-filename hidden></marimo-filename>
+</head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#degenerate-input-naninf-classification-phase-0-judgment-pass" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="QuantWave" class="md-header__button md-logo" aria-label="QuantWave" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m3 14 .5.07L8.07 9.5a1.95 1.95 0 0 1 .52-1.91c.78-.79 2.04-.79 2.82 0 .53.52.7 1.26.52 1.91l2.57 2.57.5-.07c.18 0 .35 0 .5.07l3.57-3.57C19 8.35 19 8.18 19 8a2 2 0 0 1 2-2 2 2 0 0 1 2 2 2 2 0 0 1-2 2c-.18 0-.35 0-.5-.07l-3.57 3.57c.07.15.07.32.07.5a2 2 0 0 1-2 2 2 2 0 0 1-2-2l.07-.5-2.57-2.57c-.32.07-.68.07-1 0L4.93 15.5 5 16a2 2 0 0 1-2 2 2 2 0 0 1-2-2 2 2 0 0 1 2-2"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            QuantWave
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Degenerate-Input NaN/Inf Classification (Phase 0 judgment pass)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/lavs9/quantwave" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lavs9/quantwave
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/rust/" class="md-tabs__link">
+          
+  
+  
+  Rust
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/indicators/" class="md-tabs__link">
+          
+  
+  
+  Indicators
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/backtest/" class="md-tabs__link">
+          
+  
+  
+  Backtest
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../examples/batch-streaming/" class="md-tabs__link">
+          
+  
+  
+  Examples
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/agent-skill/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="QuantWave" class="md-nav__button md-logo" aria-label="QuantWave" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m3 14 .5.07L8.07 9.5a1.95 1.95 0 0 1 .52-1.91c.78-.79 2.04-.79 2.82 0 .53.52.7 1.26.52 1.91l2.57 2.57.5-.07c.18 0 .35 0 .5.07l3.57-3.57C19 8.35 19 8.18 19 8a2 2 0 0 1 2-2 2 2 0 0 1 2 2 2 2 0 0 1-2 2c-.18 0-.35 0-.5-.07l-3.57 3.57c.07.15.07.32.07.5a2 2 0 0 1-2 2 2 2 0 0 1-2-2l.07-.5-2.57-2.57c-.32.07-.68.07-1 0L4.93 15.5 5 16a2 2 0 0 1-2 2 2 2 0 0 1-2-2 2 2 0 0 1 2-2"/></svg>
+
+    </a>
+    QuantWave
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/lavs9/quantwave" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    lavs9/quantwave
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/rust/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rust
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rust
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Rust
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/rust/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/rust/crate-map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Crate Map
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/rust/next-trait/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Next<T> Pattern
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/rust/backtest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backtest Engine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Indicators
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Indicators
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/indicators/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/indicators/gallery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gallery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/indicators/native/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Full Catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/indicators/bars_and_patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bar Types & Patterns
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/wasm-playground/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Live Playground (WASM)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/indicators/ehlers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ehlers DSP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/indicators/regimes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Regime Detection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/ml_features/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ML Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/plugin_vs_ta/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plugin vs .ta
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/options_india/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Options India
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/talib_migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TA-Lib Migration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backtest
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Backtest
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/backtest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/backtest/quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/backtest/output-contract/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Output Contract
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/backtest/capability_matrix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capability Matrix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/backtest/tear_sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tear Sheets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/batch-streaming/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Batch & Streaming
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/notebooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Notebooks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/agent-skill/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent Skill
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../benchmarks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../comparison/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Comparison
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_7_8" id="__nav_7_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releases
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Releases
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/0.8.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.8.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/0.7.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.7.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/0.6.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.6.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releases/0.5.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.5.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#harness-artifacts-found-during-this-pass-read-before-the-per-indicator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Harness artifacts found during this pass (read before the per-indicator
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guard-implemented-this-pass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guard implemented this pass
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Guard implemented this pass">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sma-classic-bucket-a-implemented" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sma (Classic) — bucket (a), IMPLEMENTED
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rsi-classic-bucket-a-already-implemented-no-change-needed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rsi (Classic) — bucket (a), ALREADY IMPLEMENTED (no change needed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#per-indicator-classification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-indicator classification
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Per-indicator classification">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#classic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classic
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ehlers-dsp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ehlers DSP
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ml-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ML Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rocket-science" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rocket Science
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#modern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modern
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary-counts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary counts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deliverable-3-bucket-b-caller-mistake-follow-up-worth-raising-as-an-error" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deliverable 3 — bucket (b) caller-mistake follow-up worth raising as an error
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/lavs9/quantwave/edit/main/docs/generated/degenerate_nan_classification.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="degenerate-input-naninf-classification-phase-0-judgment-pass">Degenerate-Input NaN/Inf Classification (Phase 0 judgment pass)</h1>
+<p>Classifies the 90 (indicator, scenario, output_field) finding-groups from
+<code>docs/generated/degenerate_nan_audit.json</code> (produced by
+<code>scripts/audit_degenerate_nan.py</code>) into the 3-pattern menu from the design
+notes of <code>quantwave-1jqv</code>:</p>
+<ul>
+<li><strong>(a) GUARDABLE-WITH-DOMAIN-DEFAULT</strong> — genuine singularity, sensible
+  domain-correct answer exists.</li>
+<li><strong>(b) GENUINE SINGULARITY, NO SENSIBLE DEFAULT</strong> — mathematically
+  undefined for this input, no domain convention to fall back on. Noted as
+  either "document and leave alone" (pattern 3) or "should raise instead"
+  (pattern 2, caller mistake).</li>
+<li><strong>(c) UNREACHABLE IN PRACTICE</strong> — the scenario cannot arise from real
+  OHLCV data reaching this code path, or is an artifact of the fuzz
+  harness's own construction, not a real production concern.</li>
+</ul>
+<p><code>mama</code>'s single finding is a Rust panic, already spun out as its own P1
+(<code>quantwave-j3e1</code>) per the issue notes; it is out of scope here and untouched.</p>
+<h2 id="harness-artifacts-found-during-this-pass-read-before-the-per-indicator">Harness artifacts found during this pass (read before the per-indicator</h2>
+<p>tables below — they explain a large fraction of the 90)</p>
+<ol>
+<li>
+<p><strong><code>minimal_length</code> scenario mislabels in-warmup NaN as "post-warmup".</strong>
+   The harness builds a series of length <code>n = max(warmup, 1)</code> and then
+   forces <code>eff_warmup = 0</code> for this one scenario (<code>audit_degenerate_nan.py</code>
+   line ~431), so every bar an indicator is <em>legitimately</em> still warming up
+   on gets flagged as a "post-warmup" finding. This is not a math bug in any
+   of the affected indicators — confirmed by reading their warmup logic
+   directly (e.g. <code>rsi.rs</code>'s <code>warmup_changes &lt; period</code> gate, <code>dmi.rs</code>'s
+   <code>bar &lt; period</code> gate). Every <code>minimal_length</code> finding below is bucket (c).</p>
+</li>
+<li>
+<p><strong>Several <code>constant_price</code>/<code>flat_then_spike</code>/<code>all_zero</code> findings are
+   warmup-<em>metadata</em> mismatches, not degenerate math.</strong> For <code>dema</code>, <code>macd</code>,
+   <code>t3</code>, <code>sar</code>, <code>stoch</code>, <code>ht_dcphase</code>, <code>ht_sine</code>, <code>ht_trendmode</code>, the
+   <code>(first_bad_index, bars_bad_post_warmup)</code> pair is byte-for-byte identical
+   across <code>constant_price</code> (flat forever), <code>flat_then_spike</code> (flat + one
+   real spike), and <code>all_zero</code> (different numeric scale entirely) — three
+   scenarios with genuinely different data shapes. A real division-by-zero
+   singularity would differ across them; identical results across
+   differently-shaped data is the signature of the harness's <em>warmup guess</em>
+   (from <code>_metadata_generated.py</code> / <code>build_kwargs</code>) being shorter than the
+   indicator's <em>true</em> internal warmup (e.g. <code>DEMA</code>'s true warmup is
+   <code>2*(period-1)</code> from chaining two <code>TalibEma</code> lookbacks, confirmed by
+   reading <code>incremental/dema.rs</code> and <code>incremental/talib_ema.rs</code>). This ties
+   directly to the separately-tracked <code>quantwave-lt3t</code> metadata-reliability
+   bug. Bucket (c).</p>
+</li>
+<li>
+<p><strong><code>frac_diff</code>'s findings are a harness scale artifact.</strong> <code>FracDiff::new(d=0.4,
+   threshold=1e-5)</code> (the audit's bespoke constructor) produces a weight
+   vector of length <strong>1458</strong> (verified by running <code>frac_diff_weights(0.4,
+   1e-5)</code> directly) — far longer than the harness's fixed <code>N=250</code>-bar test
+   series. The window never fills within the test length, so every scenario
+   shows NaN for the entire 250 bars. This is not reachable in real usage at
+   this <code>(d, threshold)</code> pair with any series <code>&gt;=1458</code> bars, and <code>frac_diff.rs</code>
+   already has the correct guards (<code>input.is_nan()</code> early-return, warmup NaN
+   while <code>window.len() &lt; w_len</code>). Bucket (c).</p>
+</li>
+</ol>
+<h2 id="guard-implemented-this-pass">Guard implemented this pass</h2>
+<h3 id="sma-classic-bucket-a-implemented"><code>sma</code> (Classic) — bucket (a), IMPLEMENTED</h3>
+<ul>
+<li><strong>Scenario</strong>: <code>nan_passthrough</code>. <strong>File</strong>: <code>quantwave-core/src/indicators/smoothing.rs</code>, <code>SMA::next</code>.</li>
+<li><strong>Before</strong>: a single NaN sample entering the rolling sum via <code>sum += input</code>
+  poisoned <code>sum</code> forever, because <code>sum -= oldest</code> when the NaN aged out of
+  the window still computes <code>NaN - NaN = NaN</code><em> — the running sum, and every
+  bar's output, stayed NaN for the rest of the series (250-bar test:
+  <code>bars_bad_post_warmup=150</code>, <code>recovered_before_series_end=False</code>).
+  </em>(more precisely: once the sum is NaN, every subsequent <code>+=</code>/<code>-=</code> keeps it NaN
+  regardless of what ages in or out)*.</li>
+<li><strong>Domain-correct value</strong>: SMA is genuinely undefined <em>while</em> the bad
+  sample is inside the window (correctly NaN) but becomes well-defined again
+  the instant the bad sample ages out — the window itself, at that point,
+  contains only clean numbers, so the "default" here isn't a guess, it's
+  the literal true value of <code>sum(window) / period</code>. This is the same
+  reasoning already applied to <code>WMA</code> in the very same file, which recomputes
+  its weighted sum from the window on every call and therefore never has
+  this bug.</li>
+<li><strong>Fix</strong>: after the incremental update, if <code>sum.is_nan() || sum.is_infinite()</code>,
+  recompute <code>sum</code> directly from the window (<code>self.window.iter().sum()</code>).
+  Zero cost on the clean-data path (branch never taken); O(period) only in
+  the already-degenerate case.</li>
+<li><strong>Test</strong>: <code>test_sma_self_heals_after_nan_ages_out_of_window</code> in the same
+  file — asserts NaN while the bad sample is in a period-3 window, and a
+  correct recovered value (<code>5.0</code> for window <code>[4,5,6]</code>) once it ages out.</li>
+<li><strong>Verification</strong>: fresh <code>python3 scripts/audit_degenerate_nan.py</code> run
+  (after <code>maturin develop --release</code>) shows <code>sma</code>'s <code>nan_passthrough</code> finding
+  changed from <code>bars_bad_post_warmup=150, recovered=False</code> to
+  <code>bars_bad_post_warmup=14, recovered=True</code> (heals in exactly one
+  <code>period=14</code> window cycle, as expected).</li>
+<li><strong>Confidence</strong>: high. This is the exact bug the issue names by name
+  ("plain <code>sma</code>... because rolling-sum implementations do <code>sum -= oldest_value</code>").</li>
+</ul>
+<h3 id="rsi-classic-bucket-a-already-implemented-no-change-needed"><code>rsi</code> (Classic) — bucket (a), ALREADY IMPLEMENTED (no change needed)</h3>
+<ul>
+<li><strong>Scenario</strong>: n/a (not itself a current finding for this reason — checked
+  because it's the issue's own canonical example).</li>
+<li><strong>File</strong>: <code>quantwave-core/src/indicators/incremental/rsi.rs</code>, <code>rsi_from_avgs</code>.</li>
+<li>Already contains exactly the guard the issue describes: <code>if avg_loss ==
+  0.0 { 100.0 } else { ... }</code>, matching TA-Lib's <code>ta_RSI.c</code> exact-zero test
+  and RSI's well-known asymptotic value. No action needed — confirmed
+  present, not re-implemented.</li>
+<li>RSI <em>does</em> still have a separate, real <code>nan_passthrough</code> finding (see
+  below) — that is a different bug (Wilder-average poisoning), not the
+  avg-loss-zero singularity, and is classified separately in bucket (b).</li>
+</ul>
+<h2 id="per-indicator-classification">Per-indicator classification</h2>
+<p>Grouped by category. Multiple scenarios/fields on one indicator sharing a
+classification and reasoning are collapsed into one entry.</p>
+<h3 id="classic">Classic</h3>
+<table>
+<thead>
+<tr>
+<th>Indicator</th>
+<th>Scenario(s)</th>
+<th>Bucket</th>
+<th>Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ad</code></td>
+<td>nan_passthrough</td>
+<td>(b), document</td>
+<td><code>ad.rs</code>'s accumulation/distribution line is an unbounded running total since dataset start with no reset primitive (unlike <code>vwap</code>'s <code>anchor</code> flag). A NaN tick poisons the cumulative sum forever by the same <code>+=</code>-propagation math as any running sum with no window to age out of. There is no domain-correct "restart value" for a running total — recommend documenting NaN-until-restart behavior; a real fix (adding a reset/anchor concept) is a larger design change than a guard, left as follow-up.</td>
+</tr>
+<tr>
+<td><code>adosc</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>adosc</code></td>
+<td>nan_passthrough</td>
+<td>(b), document</td>
+<td>AD-oscillator = EMA(AD,fast) − EMA(AD,slow); inherits <code>ad</code>'s unbounded-accumulator poisoning plus EMA's infinite-memory recursion on top. Same reasoning as <code>ad</code>/<code>ema</code>.</td>
+</tr>
+<tr>
+<td><code>adx</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>adx</code></td>
+<td>constant_price, flat_then_spike, all_zero</td>
+<td>(b), <strong>real bug, worth a follow-up fix (not implemented)</strong></td>
+<td>Read <code>incremental/dmi.rs</code>'s <code>DmiCore::step</code>. On a zero-true-range period (flat OHLC), <code>sum_tr</code> never exceeds <code>0.0</code>, so <code>step</code> returns <code>None</code> for every bar and <code>ADX::next</code>'s seeding logic (<code>self.dx_values.push(dx)</code> / <code>adx_ready=true</code>) never executes — <strong>even after real volatility resumes</strong> (as in <code>flat_then_spike</code>, where recovery never happens by end-of-series despite a real price spike at bar 200). This is a genuine implementation defect (permanent seed failure), not a math singularity with a clean default — a limit-locked stock, a pegged FX pair, or a thin holiday session can produce a real zero-true-range stretch. Fixing it means reworking <code>DmiCore</code>'s seed/reseed state machine (also touches <code>DX</code>/<code>PLUS_DI</code>/<code>MINUS_DI</code>/<code>ADXR</code>), which is nontrivial and risks behavior changes without a dedicated test pass — left as a documented, higher-priority follow-up rather than rushed here.</td>
+</tr>
+<tr>
+<td><code>adx</code></td>
+<td>zero_range_ohlc, nan_passthrough (<code>value</code>/<code>dx</code>)</td>
+<td>(c), harness/incidental</td>
+<td>These <em>look</em> like recovery but it's via a floating-point quirk, not a guard: once <code>sum_tr</code> is poisoned, <code>pdi</code>/<code>mdi</code> become NaN, <code>sum_di = pdi+mdi</code> is NaN, and the comparison <code>sum_di &gt; 0.0</code> is <em>false</em> for NaN (IEEE-754), silently falling to the <code>else { 0.0 }</code> branch and handing <code>dx=0.0</code> (a real number) back into the <code>ADX</code> Wilder average, which then decays the contamination out over one <code>period</code>. Not a deliberate fix; noted for awareness only, no action taken.</td>
+</tr>
+<tr>
+<td><code>alligator</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>alligator</code></td>
+<td>nan_passthrough (lips/jaw/teeth)</td>
+<td>(b), document</td>
+<td><code>alligator.rs</code>'s <code>SmmaOffset</code> keeps <code>prev_smma: Option&lt;f64&gt;</code> — a Wilder-style recursive average with the exact same infinite-memory poisoning shape as EMA. The <code>history</code> <code>VecDeque</code> used for the offset/shift is a buffer of <em>already-computed</em> (and now poisoned) SMMA values, not raw inputs, so it cannot self-heal the way <code>SMA</code>'s window-of-raw-inputs can.</td>
+</tr>
+<tr>
+<td><code>alma</code></td>
+<td>nan_passthrough</td>
+<td>(a), already correct</td>
+<td>ALMA is a fixed-window weighted average over raw inputs; NaN is correctly undefined only while inside the window (<code>bars_bad=9</code>, recovers). No change needed.</td>
+</tr>
+<tr>
+<td><code>aroon</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>cci</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>dema</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>dema</code></td>
+<td>constant_price, flat_then_spike, all_zero, nan_passthrough</td>
+<td>(c)</td>
+<td>Harness artifact #2 (warmup-metadata mismatch). Confirmed by reading <code>incremental/dema.rs</code>: <code>DEMA</code> chains two <code>TalibEma</code> stages; <code>TalibEma::next</code> explicitly early-returns <code>f64::NAN</code> on <code>input.is_nan()</code> <strong>without touching its internal <code>value</code> state</strong>, so a NaN input bar is skipped cleanly rather than poisoning the EMA — the "recovery" seen here is really the double-EMA warmup catching back up, not NaN-recovery logic.</td>
+</tr>
+<tr>
+<td><code>heikin_ashi</code></td>
+<td>nan_passthrough <code>close</code></td>
+<td>(a), already correct</td>
+<td><code>HA_Close = (O+H+L+C)/4</code> is a plain per-bar average of that bar's own OHLC; recovers in 1 bar once the bad input bar passes, as expected.</td>
+</tr>
+<tr>
+<td><code>heikin_ashi</code></td>
+<td>nan_passthrough <code>open</code></td>
+<td>(b), document</td>
+<td><code>heikin_ashi.rs</code>: <code>HA_Open = (prev_HA_Open + prev_HA_Close)/2</code> is <em>defined</em> recursively on its own prior output — this is the textbook Heikin-Ashi formula, not an implementation choice. Once <code>HA_Close</code> goes NaN for one bar, <code>HA_Open</code> is undefined forever after by the formula's own definition. No alternate "domain-correct" value exists without redefining Heikin-Ashi; recommend documenting, not guarding.</td>
+</tr>
+<tr>
+<td><code>hma</code></td>
+<td>nan_passthrough</td>
+<td>(a), already correct</td>
+<td>Hull MA composes fixed WMA windows over raw inputs; self-heals (<code>bars_bad=16</code>). No change needed.</td>
+</tr>
+<tr>
+<td><code>kama</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>kama</code></td>
+<td>nan_passthrough</td>
+<td>(b), document</td>
+<td><code>kama.rs</code> keeps <code>prev_kama: Option&lt;f64&gt;</code> fed back into <code>kama = prev + sc*(input-prev)</code> every bar — same infinite-memory recursive shape as EMA. Genuinely undefined forever after a bad tick; no window to recover from.</td>
+</tr>
+<tr>
+<td><code>keltner</code></td>
+<td>nan_passthrough (upper/middle/lower)</td>
+<td>(b), document</td>
+<td><code>keltner.rs</code>'s middle band is <code>smoothing::EMA</code> on typical price, and the bands add/subtract an ATR that is itself EMA-based — both infinite-memory recursions. Same class as <code>ema</code>/<code>kama</code>.</td>
+</tr>
+<tr>
+<td><code>macd</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>macd</code></td>
+<td>constant_price, flat_then_spike, all_zero, nan_passthrough (macd/signal/histogram)</td>
+<td>(c)</td>
+<td>Harness artifact #2 (warmup-metadata mismatch): identical <code>(26,7,True)</code> across all three differently-shaped scenarios. <code>incremental/macd.rs</code>'s true warmup is <code>out_start = sp-1+signalperiod-1</code> (33 for defaults 12/26/9), longer than the harness's guessed <code>26</code>. Note: <code>MACD::update_emas</code> (unlike <code>TalibEma</code>) does <em>not</em> gate on <code>input.is_nan()</code>, so a genuine mid-stream bad tick (not exercised distinctly by this scenario, since it collapses into the same warmup-mismatch signature) would poison <code>slow_ema</code>/<code>fast_ema</code> permanently — flagged as a latent instance of the same systemic <code>nan_passthrough</code> risk as <code>ema</code>, worth folding into any future fix for that class, but not separately actionable from this audit's data.</td>
+</tr>
+<tr>
+<td><code>mom</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>mom</code></td>
+<td>nan_passthrough</td>
+<td>(a), already correct</td>
+<td><code>mom = close[t] - close[t-n]</code>: a bad tick only contaminates the single output that directly subtracts it; recovers in 1 bar by construction. No change needed.</td>
+</tr>
+<tr>
+<td><code>pivot_points</code></td>
+<td>nan_passthrough (p/r1/r2/s1/s2)</td>
+<td>(a), already correct</td>
+<td>Classic pivots are recomputed from the <em>previous</em> bar's H/L/C only (no running state); recovers in 1 bar. No change needed.</td>
+</tr>
+<tr>
+<td><code>roc</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>roc</code></td>
+<td>nan_passthrough</td>
+<td>(a), already correct</td>
+<td>Same shape as <code>mom</code> (percentage version); recovers in 1 bar. No change needed.</td>
+</tr>
+<tr>
+<td><code>rsi</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>rsi</code></td>
+<td>nan_passthrough</td>
+<td>(b), document</td>
+<td>Separate from the (already-guarded) avg-loss-zero singularity. <code>incremental/rsi.rs</code>'s Wilder average <code>avg_gain = (avg_gain*(period-1)+gain)/period</code> is a geometric-decay recursion with infinite memory (same shape as EMA, no fixed window to age out of) — a NaN <code>change</code> poisons <code>avg_gain</code>/<code>avg_loss</code> permanently. Genuine singularity from bad input, not a caller-mistake in the zero-length-window sense; recommend documenting, same systemic class as <code>ema</code>/<code>kama</code>.</td>
+</tr>
+<tr>
+<td><code>sar</code></td>
+<td>constant_price, flat_then_spike, all_zero, minimal_length, nan_passthrough, zero_range_ohlc</td>
+<td>(c)</td>
+<td>All six scenarios show identical <code>(0,1,True)</code> — SAR only ever flags a single bar bad regardless of input shape, which is the harness's own PSAR seed-bar convention (SAR needs one prior bar to establish trend direction before it can produce a value), not a data-dependent singularity.</td>
+</tr>
+<tr>
+<td><code>stoch</code></td>
+<td>constant_price, flat_then_spike, all_zero, zero_range_ohlc, nan_passthrough</td>
+<td>(c)</td>
+<td>Harness artifact #2 (warmup-metadata mismatch) — identical <code>(5,3,True)</code> across all shape scenarios including the genuinely-varying <code>zero_range_ohlc</code>.</td>
+</tr>
+<tr>
+<td><code>stoch</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>t3</code></td>
+<td>constant_price, flat_then_spike, all_zero, nan_passthrough</td>
+<td>(c)</td>
+<td>Harness artifact #2 — identical <code>(5,19,True)</code> across differently-shaped scenarios; T3's real warmup (6 cascaded EMA stages) exceeds the harness's guess.</td>
+</tr>
+<tr>
+<td><code>t3</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>tema</code></td>
+<td>nan_passthrough</td>
+<td>(b), document</td>
+<td>Triple EMA — same infinite-memory chain reasoning as <code>ema</code>/<code>dema</code>, but (unlike <code>DEMA</code>'s <code>TalibEma</code>-based implementation) <code>tema.rs</code>'s own EMA stages do not gate on NaN input, so it does not get <code>DEMA</code>'s incidental self-heal. Genuine poisoning, recommend documenting.</td>
+</tr>
+<tr>
+<td><code>ttm_squeeze</code></td>
+<td>nan_passthrough</td>
+<td>(b), document</td>
+<td>Composite of Bollinger Bands (<code>SMA</code>-based, would now self-heal after this pass's fix) and Keltner Channels (EMA-based, does not). The EMA half dominates the failure mode; net effect is still infinite-memory poisoning. Document, same class.</td>
+</tr>
+<tr>
+<td><code>vwap</code></td>
+<td>nan_passthrough</td>
+<td>(a), already correct (harness didn't exercise the design's own reset)</td>
+<td><code>vwap.rs</code>'s <code>AnchoredVWAP</code> accumulates <code>cumulative_tp_v</code>/<code>cumulative_v</code> since the last <code>anchor=true</code> bar — genuinely unbounded memory <em>between</em> anchors, so a NaN tick poisons the VWAP for the rest of the current session, exactly as expected. But the audit's <code>_fill()</code> helper always sets <code>'anchor': [False]*n</code> (never exercises a reset), so the harness cannot observe VWAP's actual, already-correct recovery mechanism: the next <code>anchor=true</code> bar unconditionally resets both accumulators (<code>self.cumulative_tp_v = price*volume</code>), clearing any NaN contamination immediately. No code change needed; worth noting in the harness's own follow-up that <code>applicable_scenarios</code> should also test a mid-series NaN-then-anchor sequence for indicators with an <code>anchor</code> input, to distinguish this from indicators (<code>ad</code>) that have no such reset at all.</td>
+</tr>
+<tr>
+<td><code>willr</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>willr</code></td>
+<td>nan_passthrough</td>
+<td>(a), already correct</td>
+<td>Fixed lookback extremum over a window of raw inputs; recovers in 1 bar as the bad tick ages out of the max/min window. No change needed.</td>
+</tr>
+<tr>
+<td><code>wma</code></td>
+<td>nan_passthrough</td>
+<td>(a), already correct</td>
+<td><code>smoothing::WMA</code> already recomputes its weighted sum from the window on every call (the exact pattern this pass added to <code>SMA</code>); self-heals after <code>period=14</code> bars. No change needed — this is the reference implementation <code>SMA</code>'s fix now matches.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ehlers-dsp">Ehlers DSP</h3>
+<p>All entries below whose only finding is <code>nan_passthrough</code> with
+<code>recovered_before_series_end=False</code> share one root cause, verified by
+reading representative source files directly (<code>bandpass.rs</code>, <code>super_smoother.rs</code>,
+<code>high_pass.rs</code>, and cross-checked structurally via <code>grep</code> for persistent
+<code>_prev</code>/<code>history[N]</code> scalar state across the remaining files in this list):
+these are second-order (or higher) <strong>recursive IIR difference-equation
+filters</strong> in the Ehlers "Cybernetic Analysis for Stocks and Futures" design
+tradition — e.g. <code>SuperSmoother</code>'s <code>res = c1*(input+price_prev)/2 +
+c2*ss_history[0] + c3*ss_history[1]</code>, <code>BandPass</code>'s <code>bp =
+0.5*(1-alpha)*(input-price_prev2) + beta*(1+alpha)*bp_history[0] -
+alpha*bp_history[1]</code>. These carry <strong>infinite memory by design</strong> (that's
+what makes them IIR filters, as opposed to the FIR/window-based <code>SMA</code>/<code>WMA</code>
+this pass fixed) — a NaN sample entering <code>self.*_history[]</code> or
+<code>self.price_prev*</code> propagates through every subsequent recursive step
+exactly like <code>EMA</code>, with no finite window to age it out of. This is <strong>bucket
+(b)</strong>, genuine singularity from bad input, no domain-correct substitute
+value exists (there's no equivalent of "RSI=100" for "what should a 2-pole
+Butterworth filter output when its own last two outputs are NaN"); the
+systemic, correct fix is an input-sanitization decision at the streaming
+<code>.next()</code> boundary (skip-and-hold or reject NaN before it ever reaches
+indicator state), which is explicitly out of scope for a per-indicator
+guard pass and is the same "worth a bigger follow-up" note the issue itself
+flags for <code>sma</code>/<code>ema</code>-class poisoning.</p>
+<p>Applies to (all: scenario <code>nan_passthrough</code>, bucket (b), document/follow-up
+as above): <code>bandpass</code>, <code>butterworth2</code>, <code>butterworth3</code>, <code>channel_cycle</code> (trigger+value),
+<code>classic_laguerre</code>, <code>continuation_index</code>, <code>cyber_cycle</code> (trigger+value),
+<code>cybernetic_oscillator</code>, <code>cycle_trend_analytics</code> (trend+cycle), <code>dsma</code>,
+<code>emd</code> (trend), <code>fisher_high_pass</code>, <code>fm_demodulator</code>, <code>fourier_series_model</code>,
+<code>frama</code>, <code>gaussian_filter</code>, <code>generalized_laguerre</code>, <code>griffiths_predictor</code>,
+<code>high_pass</code>, <code>homodyne_discriminator</code>, <code>kalman_filter</code> (Kalman gain/state
+update is itself a recursive estimator — same class), <code>laguerre_filter</code>,
+<code>laguerre_oscillator</code>, <code>laguerre_rsi</code>, <code>mad</code>, <code>mesa_stochastic</code>,
+<code>one_euro_filter</code>, <code>recursive_median</code>, <code>recursive_median_oscillator</code>,
+<code>reversion_index</code> (roc+trend), <code>roofing_filter</code>, <code>simple_predictor</code>,
+<code>super_smoother</code>, <code>swiss_army_knife</code>, <code>ultimate_bands</code> (upper/middle/lower),
+<code>ultimate_channel</code> (center/upper/lower), <code>ultimate_smoother</code>,
+<code>universal_oscillator</code>, <code>voss_predictor</code> (filt+voss), <code>wavetrend</code> (wt1+wt2),
+<code>zero_lag</code> (trigger+value).</p>
+<p>Two indicators in this category have a window buffer <em>containing
+already-recursively-computed values</em> rather than raw inputs (<code>my_rsi.rs</code>,
+<code>mesa_stochastic.rs</code>, <code>dsma.rs</code>, etc. hold <code>VecDeque</code>s of filtered output,
+not price) — confirmed this does <strong>not</strong> grant the <code>SMA</code>-style self-heal,
+because the buffered values themselves are permanently NaN once the
+upstream recursive stage is poisoned; still bucket (b), no distinct action.</p>
+<p>Remaining Ehlers DSP entries with different, non-<code>nan_passthrough</code>-only
+signatures:</p>
+<table>
+<thead>
+<tr>
+<th>Indicator</th>
+<th>Scenario(s)</th>
+<th>Bucket</th>
+<th>Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cg</code></td>
+<td>nan_passthrough</td>
+<td>(a), already correct</td>
+<td>Center-of-gravity is a fixed-window weighted average over raw inputs (FIR, not IIR); self-heals in 10 bars. No change needed.</td>
+</tr>
+<tr>
+<td><code>ehlers_filter</code></td>
+<td>nan_passthrough</td>
+<td>(a), already correct</td>
+<td>Self-heals in 29 bars — fixed-window design; no change needed.</td>
+</tr>
+<tr>
+<td><code>ehlers_stochastic</code></td>
+<td>nan_passthrough</td>
+<td>(a), already correct</td>
+<td>Self-heals in 18 bars; no change needed.</td>
+</tr>
+<tr>
+<td><code>fisher</code></td>
+<td>nan_passthrough</td>
+<td>(a), already correct</td>
+<td>Self-heals in 1 bar — the Fisher transform here is applied to a windowed min/max normalization of raw price, not chained onto its own prior output. No change needed.</td>
+</tr>
+<tr>
+<td><code>hamming_filter</code>, <code>hann_filter</code>, <code>triangle_filter</code></td>
+<td>nan_passthrough</td>
+<td>(a), already correct</td>
+<td>FIR window filters (explicit tapered-weight sums over a fixed window of raw inputs, analogous to <code>WMA</code>); self-heal in ~20 bars each. No change needed.</td>
+</tr>
+<tr>
+<td><code>ht_dcperiod</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>ht_dcperiod</code></td>
+<td>nan_passthrough</td>
+<td>(b), document</td>
+<td>Hilbert-transform-based dominant cycle period; the Hilbert transformer and its smoothing stages are IIR-recursive over many bars. Same class as the bulk list above.</td>
+</tr>
+<tr>
+<td><code>ht_dcphase</code></td>
+<td>constant_price, flat_then_spike, all_zero, minimal_length, nan_passthrough</td>
+<td>(c)</td>
+<td>Harness artifact #2 — identical <code>(50,13,True)</code> across all shape scenarios (real internal Hilbert-transform warmup exceeds harness guess).</td>
+</tr>
+<tr>
+<td><code>ht_phasor</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>ht_phasor</code></td>
+<td>nan_passthrough (in_phase/quadrature)</td>
+<td>(b), document</td>
+<td>Hilbert transformer's in-phase/quadrature components are IIR-recursive (unlike <code>phasor</code>/<code>sine_wave</code>'s simpler construction below); genuinely poisoned, no fixed window.</td>
+</tr>
+<tr>
+<td><code>ht_sine</code></td>
+<td>constant_price, flat_then_spike, all_zero, minimal_length, nan_passthrough (sine/leadsine)</td>
+<td>(c)</td>
+<td>Harness artifact #2/#1 — identical values across shape scenarios, same Hilbert-transform warmup mismatch as <code>ht_dcphase</code>.</td>
+</tr>
+<tr>
+<td><code>ht_trendmode</code></td>
+<td>constant_price, flat_then_spike, all_zero, minimal_length, nan_passthrough</td>
+<td>(c)</td>
+<td>Same as <code>ht_dcphase</code>/<code>ht_sine</code>.</td>
+</tr>
+<tr>
+<td><code>hurst_exponent</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>hurst_exponent</code></td>
+<td>nan_passthrough</td>
+<td>(a), already correct</td>
+<td>Rolling R/S-statistic over a long fixed window of raw inputs; self-heals once the window fully cycles (<code>bars_bad=100</code>, consistent with a ~100-bar analysis window). No change needed.</td>
+</tr>
+<tr>
+<td><code>inverse_fisher</code></td>
+<td>nan_passthrough</td>
+<td>(a), already correct</td>
+<td>Self-heals in 1 bar (point-wise transform of an already-windowed input); no change needed.</td>
+</tr>
+<tr>
+<td><code>my_rsi</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>my_rsi</code></td>
+<td>nan_passthrough</td>
+<td>(b), document</td>
+<td>Wilder-style RSI variant — infinite-memory recursive average, same reasoning as <code>rsi</code>.</td>
+</tr>
+<tr>
+<td><code>oc_price_rsi</code></td>
+<td>minimal_length</td>
+<td>(c)</td>
+<td>Harness artifact #1.</td>
+</tr>
+<tr>
+<td><code>oc_price_rsi</code></td>
+<td>nan_passthrough</td>
+<td>(b), document</td>
+<td>Same as <code>my_rsi</code>.</td>
+</tr>
+<tr>
+<td><code>projected_moving_average</code></td>
+<td>nan_passthrough (predict/pma)</td>
+<td>(a), already correct</td>
+<td>Self-heals in 20-22 bars; linear-regression-style projection over a fixed window of raw inputs. No change needed.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ml-features">ML Features</h3>
+<table>
+<thead>
+<tr>
+<th>Indicator</th>
+<th>Scenario(s)</th>
+<th>Bucket</th>
+<th>Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>frac_diff</code></td>
+<td>all scenarios (constant_price, flat_then_spike, all_zero, minimal_length, nan_passthrough)</td>
+<td>(c)</td>
+<td>Harness scale artifact #3 above — window (1458 weights at <code>d=0.4, threshold=1e-5</code>) never fills within the harness's fixed 250-bar series. <code>frac_diff.rs</code> already has correct guards (<code>input.is_nan()</code> early return, warmup-NaN while filling). Not reachable in real usage with a series <code>&gt;=1458</code> bars at this parameter pair; would need re-testing with a longer series or larger threshold to say anything about real degenerate-math exposure, which this audit run cannot currently do.</td>
+</tr>
+<tr>
+<td><code>hurst_exponent</code></td>
+<td>see Ehlers DSP table above (metadata categorizes it Ehlers DSP in this build, but conceptually ML Features)</td>
+<td>—</td>
+<td>See above.</td>
+</tr>
+<tr>
+<td><code>kalman_filter</code></td>
+<td>nan_passthrough</td>
+<td>(b), document</td>
+<td>Kalman filter state/covariance update is a textbook recursive estimator (infinite memory by design — that's the whole point of a Kalman filter over a fixed window); a NaN observation poisons the state estimate forever with no windowed fallback. Same systemic class as the Ehlers DSP IIR filters.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="rocket-science">Rocket Science</h3>
+<table>
+<thead>
+<tr>
+<th>Indicator</th>
+<th>Scenario(s)</th>
+<th>Bucket</th>
+<th>Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>homodyne_discriminator</code></td>
+<td>nan_passthrough</td>
+<td>(b), document</td>
+<td>Homodyne discriminator (Hilbert-transform-based cycle measurement) is IIR-recursive; same class as <code>ht_dcperiod</code>/<code>ht_phasor</code>.</td>
+</tr>
+<tr>
+<td><code>phasor</code></td>
+<td>nan_passthrough (in_phase/quadrature)</td>
+<td>(a), already correct</td>
+<td>Self-heals in 3 bars — simpler, more locally-windowed construction than <code>ht_phasor</code>'s full Hilbert transformer (confirmed by the much shorter recovery time: 3 bars vs. permanent for <code>ht_phasor</code>). No change needed.</td>
+</tr>
+<tr>
+<td><code>sine_wave</code></td>
+<td>nan_passthrough (in_phase/quadrature)</td>
+<td>(a), already correct</td>
+<td>Same as <code>phasor</code>; self-heals in 3 bars. No change needed.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="modern">Modern</h3>
+<table>
+<thead>
+<tr>
+<th>Indicator</th>
+<th>Scenario(s)</th>
+<th>Bucket</th>
+<th>Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>stc</code></td>
+<td>nan_passthrough</td>
+<td>(b), document</td>
+<td>Schaff Trend Cycle is a stochastic-of-MACD-of-EMA construction; inherits EMA's infinite-memory poisoning at its base. Same systemic class.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="summary-counts">Summary counts</h2>
+<ul>
+<li><strong>Total finding-groups classified</strong>: 195 (across 90 indicators; <code>mama</code>'s
+  panic finding excluded as an already-tracked separate P1, <code>quantwave-j3e1</code>).</li>
+<li><strong>Bucket (a) — guardable / already domain-correct</strong>: majority of these are
+  "already correct, no code change needed" (self-healing FIR/fixed-window
+  or per-bar-recomputed designs: <code>alma</code>, <code>hma</code>, <code>wma</code>, <code>mom</code>, <code>roc</code>, <code>willr</code>,
+  <code>pivot_points</code>, <code>heikin_ashi.close</code>, <code>vwap</code>, <code>cg</code>, <code>ehlers_filter</code>,
+  <code>ehlers_stochastic</code>, <code>fisher</code>, <code>hamming_filter</code>, <code>hann_filter</code>,
+  <code>triangle_filter</code>, <code>hurst_exponent</code>, <code>inverse_fisher</code>,
+  <code>projected_moving_average</code>, <code>phasor</code>, <code>sine_wave</code>, plus the pre-existing
+  <code>rsi</code> avg-loss-zero guard). One indicator — <strong><code>sma</code></strong> — got an actual new
+  guard implemented this pass. Roughly 22-23 finding-groups land here.</li>
+<li><strong>Bucket (b) — genuine singularity, no sensible default</strong>: the large
+  majority of the remaining findings (the entire Ehlers DSP recursive/IIR
+  filter family, <code>ema</code>/<code>kama</code>/<code>keltner</code>/<code>rsi</code>(nan_passthrough)/<code>tema</code>/
+  <code>ttm_squeeze</code>/<code>stc</code>/<code>kalman_filter</code>/<code>homodyne_discriminator</code>/<code>ad</code>/<code>adosc</code>/
+  <code>alligator</code>/<code>heikin_ashi.open</code>/<code>my_rsi</code>/<code>oc_price_rsi</code>, plus <code>adx</code>'s
+  zero-true-range permanent-stall defect). All documented as "NaN is
+  genuinely undefined here, no per-indicator guard exists" with the
+  systemic follow-up (input sanitization at the streaming boundary,
+  explicitly out of scope for this pass) noted once rather than repeated 50
+  times. Roughly 60-65 finding-groups land here. None implemented as
+  raise-on-caller-mistake changes in this pass (see Deliverable 3 below).</li>
+<li><strong>Bucket (c) — unreachable / harness artifact</strong>: <code>minimal_length</code>
+  mislabeling (harness artifact #1, ~20 indicators), warmup-metadata
+  mismatches (harness artifact #2: <code>dema</code>, <code>macd</code>, <code>t3</code>, <code>sar</code>, <code>stoch</code>,
+  <code>ht_dcphase</code>, <code>ht_sine</code>, <code>ht_trendmode</code>), and <code>frac_diff</code>'s scale artifact
+  (#3). Roughly 45-50 finding-groups land here.</li>
+</ul>
+<p>(Exact per-finding bucket is in the tables above; the ranges here reflect
+that several indicators have multiple scenario/field rows that were
+collapsed into one classification line.)</p>
+<h2 id="deliverable-3-bucket-b-caller-mistake-follow-up-worth-raising-as-an-error">Deliverable 3 — bucket (b) caller-mistake follow-up worth raising as an error</h2>
+<p>None of the bucket (b) findings in this set are "caller passed a
+structurally invalid construction argument" (e.g. a zero-length window)
+in the way the issue's pattern-2 example describes — the audit's
+<code>could_not_instantiate</code> list (95 indicators, tracked separately) is where
+that kind of bad-constructor-argument problem actually shows up, not here.
+Every finding in this set is instead "a normally-valid indicator received
+one bad <em>data</em> sample mid-stream" (<code>nan_passthrough</code>) or "a normally-valid
+indicator saw a real market condition (flat/zero-range prices) it can't
+recover from" (<code>adx</code>). The natural fix for the former is systemic input
+validation at the streaming <code>.next()</code> boundary (reject or skip-and-hold a
+NaN observation before it reaches any indicator's internal state) rather
+than 50+ per-indicator raises — this is exactly the "bigger, separate
+design decision" the task instructions call out, and is left as a
+documented follow-up, not implemented here. <code>adx</code>'s permanent-seed-failure
+is a genuine implementation defect worth its own follow-up ticket
+(reseed <code>DmiCore</code> after a zero-true-range stretch ends), also not
+implemented here per the conservatism instruction.</p>
+<h2 id="verification">Verification</h2>
+<ul>
+<li><code>cargo test -p quantwave-core smoothing::</code> — 4 passed (including new
+  <code>test_sma_self_heals_after_nan_ages_out_of_window</code>).</li>
+<li><code>cargo test -p quantwave-core</code> (full suite) — 898 passed, 0 regressions.</li>
+<li><code>./scripts/rustfmt_check.sh</code> — clean for <code>quantwave-core</code> (unrelated,
+  pre-existing diffs in <code>quantwave-py/src/indicators.rs</code> and metadata
+  scripts belong to concurrent work-in-progress from another agent on this
+  issue's parallel "readiness as default" half, not touched here).</li>
+<li><code>cargo clippy -p quantwave-core -p quantwave-polars -p quantwave-backtest --all-targets -- -D warnings</code> — no issues found.</li>
+<li>Rebuilt the Python extension (<code>maturin develop --release --manifest-path
+  quantwave-py/Cargo.toml</code>, then verified the interpreter's installed
+  <code>_lib.abi3.so</code> actually reflected the new build — the default <code>maturin
+  develop</code> from the wrong working directory silently no-ops the copy step
+  if <code>pyenv</code>'s active interpreter's site-packages differs from the
+  in-tree <code>quantwave-py/python/quantwave/</code> path; had to <code>cp
+  target/release/libquantwave_py.dylib</code> directly into the active
+  interpreter's <code>site-packages/quantwave/_lib.abi3.so</code> to get a real
+  rebuild picked up) and re-ran <code>scripts/audit_degenerate_nan.py</code> against a
+  copy in <code>/tmp</code> (never overwrote the committed
+  <code>docs/generated/degenerate_nan_audit.json</code>). Before/after for the
+  implemented guard:</li>
+<li><code>sma</code> / <code>nan_passthrough</code> / <code>value</code>: before
+    <code>bars_bad_post_warmup=150, recovered_before_series_end=false</code>; after
+    <code>bars_bad_post_warmup=14, recovered_before_series_end=true</code>.</li>
+<li>Total finding count moved from 195 (90 indicators) to 196 (91
+    indicators) in the fresh run — this is <strong>not</strong> from the <code>sma</code> fix (which
+    only changed severity, not presence/absence, since the transient NaN
+    while the bad tick sits in-window is itself the correct value and is
+    still technically "a finding" by the harness's field-level criteria).
+    It's because the fresh run's <code>mama</code> no longer panics
+    (<code>total_that_raised_exceptions</code> dropped from 1 to 0) and instead
+    surfaces as a normal two-field finding — this appears to be unrelated,
+    concurrent work on <code>quantwave-j3e1</code> (the separately-tracked mama panic)
+    landing in the same working tree during this session; not something
+    this pass touched or takes credit for.</li>
+</ul>
+
+
+
+
+
+
+
+  
+    
+  
+  
+    
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-timeago" title="October 4, 2026 08:13:02 UTC"><span class="timeago" datetime="2026-10-04T08:13:02+00:00" locale="en"></span></span><span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_date" title="October 4, 2026 08:13:02 UTC">2026-10-04</span>
+  </span>
+
+    
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Created">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-timeago" title="October 4, 2026 08:13:02 UTC"><span class="timeago" datetime="2026-10-04T08:13:02+00:00" locale="en"></span></span><span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_date" title="October 4, 2026 08:13:02 UTC">2026-10-04</span>
+  </span>
+
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/lavs9/quantwave" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://pypi.org/project/quantwave/" target="_blank" rel="noopener" title="pypi.org" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6M286.2 444.7a20.4 20.4 0 1 1 0-40.7 20.4 20.4 0 1 1 0 40.7M167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4m-6.6-183.4a20.4 20.4 0 1 1 0 40.8 20.4 20.4 0 1 1 0-40.8"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://github.com/lavs9/quantwave/discussions" target="_blank" rel="noopener" title="GitHub Discussions" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M384 144c0 97.2-86 176-192 176-26.7 0-52.1-5-75.2-14l-81.6 43.2c-9.3 4.9-20.7 3.2-28.2-4.2s-9.2-18.9-4.2-28.2l35.6-67.2C14.3 220.2 0 183.6 0 144 0 46.8 86-32 192-32s192 78.8 192 176m0 368c-94.1 0-172.4-62.1-188.8-144 120-1.5 224.3-86.9 235.8-202.7 83.3 19.2 145 88.3 145 170.7 0 39.6-14.3 76.2-38.4 105.6l35.6 67.2c4.9 9.3 3.2 20.7-4.2 28.2s-18.9 9.2-28.2 4.2L459.2 498c-23.1 9-48.5 14-75.2 14"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.tabs.link", "content.code.copy", "content.action.edit", "navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "navigation.path", "search.suggest", "search.highlight", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../js/timeago.min.js"></script>
+      
+        <script src="../../js/timeago_mkdocs_material.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="../../assets/wasm/playground.js" type="module"></script>
+      
+    
+  </body>
+</html>
