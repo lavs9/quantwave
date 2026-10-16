@@ -16,6 +16,12 @@ pub struct GapMomentum {
     dn_gaps: VecDeque<f64>,
     total_up_gaps: f64,
     total_dn_gaps: f64,
+    /// Non-zero gaps currently in the window. When a count hits 0 the matching
+    /// running total is reset to exactly 0.0, so add/subtract round-off can
+    /// never leave a residue (quantwave-nkwp: flat bars after movement gave
+    /// `100 * residue / residue` instead of the formula's `DnGaps = 0 -> 1`).
+    nonzero_up: usize,
+    nonzero_dn: usize,
     sma: SMA,
     prev_close: Option<f64>,
 }
@@ -28,6 +34,8 @@ impl GapMomentum {
             dn_gaps: VecDeque::with_capacity(period),
             total_up_gaps: 0.0,
             total_dn_gaps: 0.0,
+            nonzero_up: 0,
+            nonzero_dn: 0,
             sma: SMA::new(signal_period),
             prev_close: None,
         }
@@ -51,14 +59,24 @@ impl Next<(f64, f64)> for GapMomentum {
         self.dn_gaps.push_back(dn_gap);
         self.total_up_gaps += up_gap;
         self.total_dn_gaps += dn_gap;
+        self.nonzero_up += usize::from(up_gap != 0.0);
+        self.nonzero_dn += usize::from(dn_gap != 0.0);
 
         if self.up_gaps.len() > self.period {
             if let Some(old_up) = self.up_gaps.pop_front() {
                 self.total_up_gaps -= old_up;
+                self.nonzero_up -= usize::from(old_up != 0.0);
             }
             if let Some(old_dn) = self.dn_gaps.pop_front() {
                 self.total_dn_gaps -= old_dn;
+                self.nonzero_dn -= usize::from(old_dn != 0.0);
             }
+        }
+        if self.nonzero_up == 0 {
+            self.total_up_gaps = 0.0;
+        }
+        if self.nonzero_dn == 0 {
+            self.total_dn_gaps = 0.0;
         }
 
         let gap_ratio = if self.total_dn_gaps == 0.0 {
@@ -134,6 +152,67 @@ mod tests {
 
         let (gr, _) = gm.next((10.0, 10.0)); // gap = 10 - 11 = -1. total_up=1, total_dn=1 -> 100.0
         assert_eq!(gr, 100.0);
+    }
+
+    /// Exact-window batch reference (Kaufman, S&C Jan 2024): sums recomputed per bar.
+    fn batch_reference(
+        inputs: &[(f64, f64)],
+        period: usize,
+        signal_period: usize,
+    ) -> Vec<(f64, f64)> {
+        let mut gaps = Vec::with_capacity(inputs.len());
+        let mut prev_close = None;
+        for &(open, close) in inputs {
+            gaps.push(prev_close.map(|pc| open - pc).unwrap_or(0.0));
+            prev_close = Some(close);
+        }
+        let mut sma = SMA::new(signal_period);
+        (0..inputs.len())
+            .map(|i| {
+                let window = &gaps[i.saturating_sub(period - 1)..=i];
+                let up: f64 = window.iter().filter(|&&g| g > 0.0).sum();
+                let dn: f64 = window.iter().filter(|&&g| g < 0.0).map(|&g| -g).sum();
+                let ratio = if dn == 0.0 { 1.0 } else { 100.0 * up / dn };
+                (ratio, sma.next(ratio))
+            })
+            .collect()
+    }
+
+    /// quantwave-nkwp: all-flat input has no gaps, so GapRatio is exactly 1.
+    #[test]
+    fn test_gap_momentum_flat_input_is_one() {
+        let mut gm = GapMomentum::new(20, 10);
+        for _ in 0..100 {
+            assert_eq!(gm.next((10.0, 10.0)), (1.0, 1.0));
+        }
+    }
+
+    /// quantwave-nkwp: once every gap has left the window after movement,
+    /// DnGaps is exactly 0 and GapRatio must be exactly 1, not
+    /// `100 * residue / residue` from running-sum cancellation.
+    #[test]
+    fn test_gap_momentum_flat_after_movement() {
+        let (period, signal_period) = (20, 10);
+        // Movement with awkward decimal gaps (cancellation-prone), then flat bars.
+        let mut inputs: Vec<(f64, f64)> = (0..40)
+            .map(|i| {
+                let x = 10.0 + ((i * 7919) % 97) as f64 * 0.1037;
+                (x + 0.0131 * (i % 5) as f64, x)
+            })
+            .collect();
+        let last = inputs[inputs.len() - 1].1;
+        inputs.extend(std::iter::repeat_n((last, last), 60));
+
+        let mut gm = GapMomentum::new(period, signal_period);
+        let streaming: Vec<(f64, f64)> = inputs.iter().map(|&b| gm.next(b)).collect();
+        let batch = batch_reference(&inputs, period, signal_period);
+        for (i, (s, b)) in streaming.iter().zip(&batch).enumerate() {
+            approx::assert_relative_eq!(s.0, b.0, max_relative = 1e-9);
+            approx::assert_relative_eq!(s.1, b.1, max_relative = 1e-9);
+            if i >= 40 + period {
+                assert_eq!(s.0, 1.0, "bar {i}: flat window must give GapRatio 1");
+            }
+        }
     }
 
     proptest! {
