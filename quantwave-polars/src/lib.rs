@@ -4424,6 +4424,88 @@ impl<'a> QuantWaveNamespace<'a> {
 mod tests {
     use super::*;
 
+    /// quantwave-ygg6: zero-true-range stretch (flat bars, then moving bars).
+    /// Batch (Polars) must equal streaming (`Next`) for the whole DMI family,
+    /// including the zero-TR bars, which must be 0 rather than NaN.
+    #[test]
+    fn test_polars_dmi_zero_tr_batch_matches_streaming() -> PolarsResult<()> {
+        let n = 14;
+        let moving = |i: usize| {
+            let c = 10.0 + (i as f64 * 0.7).sin() * 3.0 + i as f64 * 0.1;
+            (c + 1.0, c - 1.0, c)
+        };
+        for flat in [60usize, n + 5, 0] {
+            let bars: Vec<(f64, f64, f64)> = (0..flat)
+                .map(|_| (10.0, 10.0, 10.0))
+                .chain((0..80).map(moving))
+                .collect();
+            let df = df![
+                "high" => bars.iter().map(|b| b.0).collect::<Vec<_>>(),
+                "low" => bars.iter().map(|b| b.1).collect::<Vec<_>>(),
+                "close" => bars.iter().map(|b| b.2).collect::<Vec<_>>()
+            ]?;
+            fn stream<I: Next<(f64, f64, f64), Output = f64>>(
+                mut ind: I,
+                bars: &[(f64, f64, f64)],
+            ) -> Vec<f64> {
+                bars.iter().map(|b| ind.next(*b)).collect()
+            }
+            let cases: Vec<(&str, LazyFrame, Vec<f64>)> = vec![
+                (
+                    "adx",
+                    df.clone().lazy().ta().adx("high", "low", "close", n),
+                    stream(ADX::new(n), &bars),
+                ),
+                (
+                    "adxr",
+                    df.clone().lazy().ta().adxr("high", "low", "close", n),
+                    stream(ADXR::new(n), &bars),
+                ),
+                (
+                    "dx",
+                    df.clone().lazy().ta().dx("high", "low", "close", n),
+                    stream(DX::new(n), &bars),
+                ),
+                (
+                    "plus_di",
+                    df.clone().lazy().ta().plus_di("high", "low", "close", n),
+                    stream(PLUS_DI::new(n), &bars),
+                ),
+                (
+                    "minus_di",
+                    df.clone().lazy().ta().minus_di("high", "low", "close", n),
+                    stream(MINUS_DI::new(n), &bars),
+                ),
+            ];
+            for (name, lf, want) in cases {
+                let out = lf.collect()?;
+                let got: Vec<Option<f64>> = out.column(name)?.f64()?.into_iter().collect();
+                assert_eq!(got.len(), want.len());
+                for (i, (g, w)) in got.iter().zip(&want).enumerate() {
+                    let g = g.unwrap_or(f64::NAN);
+                    if w.is_nan() {
+                        assert!(g.is_nan(), "flat={flat} {name}[{i}]: expected NaN, got {g}");
+                    } else {
+                        assert_eq!(g, *w, "flat={flat} {name}[{i}]");
+                    }
+                }
+                if flat == 60 {
+                    assert!(
+                        want.last().unwrap().is_finite(),
+                        "{name} must recover after zero-TR stretch"
+                    );
+                    if name != "adxr" {
+                        assert_eq!(
+                            want[30], 0.0,
+                            "{name}[30] on a zero-TR bar must be 0, not NaN"
+                        );
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
     #[test]
     fn test_polars_heikin_ashi() -> PolarsResult<()> {
         let df = df![

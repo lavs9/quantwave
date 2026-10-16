@@ -50,7 +50,9 @@ impl DmiCore {
         (tr, pdm, mdm)
     }
 
-    /// Advance one bar; returns `Some((pdi, mdi, dx))` once DI values are defined.
+    /// Advance one bar; returns `Some((pdi, mdi, dx))` from bar `timeperiod` on.
+    ///
+    /// Zero smoothed TR yields `+DI = -DI = 0`; a zero `+DI + -DI` yields `DX = 0`.
     fn step(&mut self, high: f64, low: f64, close: f64) -> Option<(f64, f64, f64)> {
         let period = self.timeperiod;
         if period < 1 {
@@ -85,11 +87,17 @@ impl DmiCore {
         self.sum_pdm = self.sum_pdm - self.sum_pdm / self.period_f + pdm;
         self.sum_mdm = self.sum_mdm - self.sum_mdm / self.period_f + mdm;
 
-        if self.sum_tr <= 0.0 {
-            return None;
-        }
-        let pdi = 100.0 * self.sum_pdm / self.sum_tr;
-        let mdi = 100.0 * self.sum_mdm / self.sum_tr;
+        // Zero smoothed true range (e.g. a flat / limit-locked stretch):
+        // +DI = -DI = 0 rather than undefined, so ADX seeding is never skipped
+        // (quantwave-ygg6).
+        let (pdi, mdi) = if self.sum_tr <= 0.0 {
+            (0.0, 0.0)
+        } else {
+            (
+                100.0 * self.sum_pdm / self.sum_tr,
+                100.0 * self.sum_mdm / self.sum_tr,
+            )
+        };
         let sum_di = pdi + mdi;
         let dx = if sum_di > 0.0 {
             100.0 * (pdi - mdi).abs() / sum_di
@@ -381,3 +389,7 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "dmi_zero_tr_tests.rs"]
+pub(crate) mod zero_tr_tests;
