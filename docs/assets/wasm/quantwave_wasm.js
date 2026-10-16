@@ -1,4 +1,200 @@
-/* @ts-self-types="./quantwave_wasm.d.ts" */
+/**
+ * Streaming Ehlers CyberCycle, callable bar-by-bar from JS.
+ */
+export class CyberCycle {
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        CyberCycleFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_cybercycle_free(ptr, 0);
+    }
+    /**
+     * @param {number} length
+     */
+    constructor(length) {
+        const ret = wasm.cybercycle_new(length);
+        this.__wbg_ptr = ret;
+        CyberCycleFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+    /**
+     * Feed one price; returns `[cycle, trigger]`.
+     * @param {number} price
+     * @returns {Float64Array}
+     */
+    next(price) {
+        const ret = wasm.cybercycle_next(this.__wbg_ptr, price);
+        var v1 = getArrayF64FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 8, 8);
+        return v1;
+    }
+}
+if (Symbol.dispose) CyberCycle.prototype[Symbol.dispose] = CyberCycle.prototype.free;
+
+/**
+ * Streaming EMA, callable bar-by-bar from JS.
+ */
+export class Ema {
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        EmaFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_ema_free(ptr, 0);
+    }
+    /**
+     * @param {number} period
+     */
+    constructor(period) {
+        const ret = wasm.ema_new(period);
+        this.__wbg_ptr = ret;
+        EmaFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+    /**
+     * Feed one value; returns the current EMA.
+     * @param {number} value
+     * @returns {number}
+     */
+    next(value) {
+        const ret = wasm.ema_next(this.__wbg_ptr, value);
+        return ret;
+    }
+}
+if (Symbol.dispose) Ema.prototype[Symbol.dispose] = Ema.prototype.free;
+
+/**
+ * Streaming harmonic pattern scanner (AB=CD, 5-0, Gartley family).
+ */
+export class HarmonicScanner {
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        HarmonicScannerFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_harmonicscanner_free(ptr, 0);
+    }
+    /**
+     * `swing_strength` pivot confirmation bars on each side.
+     * @param {number} swing_strength
+     */
+    constructor(swing_strength) {
+        const ret = wasm.harmonicscanner_new(swing_strength);
+        this.__wbg_ptr = ret;
+        HarmonicScannerFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+    /**
+     * Feed one `(high, low)` bar; returns newly completed patterns flattened,
+     * [`HARMONIC_STRIDE`] values each: `kind, is_bull, x_bar, x_price, a_bar,
+     * a_price, b_bar, b_price, c_bar, c_price, d_bar, d_price, score, prz_low,
+     * prz_high` (`x_*` is NaN when the pattern has no X point).
+     * @param {number} high
+     * @param {number} low
+     * @returns {Float64Array}
+     */
+    next(high, low) {
+        const ret = wasm.harmonicscanner_next(this.__wbg_ptr, high, low);
+        var v1 = getArrayF64FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 8, 8);
+        return v1;
+    }
+    /**
+     * Fields per pattern in the flattened output of [`HarmonicScanner::next`].
+     * @returns {number}
+     */
+    static stride() {
+        const ret = wasm.harmonicscanner_stride();
+        return ret >>> 0;
+    }
+}
+if (Symbol.dispose) HarmonicScanner.prototype[Symbol.dispose] = HarmonicScanner.prototype.free;
+
+/**
+ * Streaming Kagi line builder.
+ */
+export class Kagi {
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        KagiFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_kagi_free(ptr, 0);
+    }
+    /**
+     * @param {number} reversal
+     */
+    constructor(reversal) {
+        const ret = wasm.kagi_new(reversal);
+        this.__wbg_ptr = ret;
+        KagiFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+    /**
+     * Feed one price; returns `[open, close, direction, thickness]` when the
+     * price completes a Kagi line, else an empty array.
+     * @param {number} price
+     * @returns {Float64Array}
+     */
+    next(price) {
+        const ret = wasm.kagi_next(this.__wbg_ptr, price);
+        var v1 = getArrayF64FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 8, 8);
+        return v1;
+    }
+}
+if (Symbol.dispose) Kagi.prototype[Symbol.dispose] = Kagi.prototype.free;
+
+/**
+ * Streaming Renko brick builder.
+ */
+export class Renko {
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        RenkoFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_renko_free(ptr, 0);
+    }
+    /**
+     * @param {number} box_size
+     */
+    constructor(box_size) {
+        const ret = wasm.renko_new(box_size);
+        this.__wbg_ptr = ret;
+        RenkoFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+    /**
+     * Feed one close; returns the bricks it completed, flattened as
+     * `[open, close, direction, open, close, direction, ...]` (may be empty).
+     * @param {number} close
+     * @returns {Float64Array}
+     */
+    next(close) {
+        const ret = wasm.renko_next(this.__wbg_ptr, close);
+        var v1 = getArrayF64FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 8, 8);
+        return v1;
+    }
+}
+if (Symbol.dispose) Renko.prototype[Symbol.dispose] = Renko.prototype.free;
 
 /**
  * Streaming RSI, callable bar-by-bar from JS.
@@ -77,6 +273,24 @@ export class SuperTrend {
     }
 }
 if (Symbol.dispose) SuperTrend.prototype[Symbol.dispose] = SuperTrend.prototype.free;
+
+/**
+ * Name of a harmonic pattern kind code returned by [`HarmonicScanner::next`].
+ * @param {number} code
+ * @returns {string}
+ */
+export function harmonicKindName(code) {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.harmonicKindName(code);
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+}
 function __wbg_get_imports() {
     const import0 = {
         __proto__: null,
@@ -99,6 +313,21 @@ function __wbg_get_imports() {
     };
 }
 
+const CyberCycleFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_cybercycle_free(ptr, 1));
+const EmaFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_ema_free(ptr, 1));
+const HarmonicScannerFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_harmonicscanner_free(ptr, 1));
+const KagiFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_kagi_free(ptr, 1));
+const RenkoFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_renko_free(ptr, 1));
 const RsiFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_rsi_free(ptr, 1));

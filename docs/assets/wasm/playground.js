@@ -1,7 +1,8 @@
 // quantwave-wasm live playground (bead quantwave-stb8).
 //
-// Runs quantwave-core's streaming SuperTrend + RSI *in the browser* over sample
-// OHLC data, recomputing live as you drag the sliders. Same Rust engine, same
+// Runs quantwave-core's streaming SuperTrend, EMA, RSI, Ehlers CyberCycle,
+// Renko/Kagi bar builders and the harmonic pattern scanner *in the browser*
+// over sample OHLC data, recomputing live as you drag the sliders. Same Rust engine, same
 // numbers as the native/Python paths — no server, no Python.
 //
 // Loaded site-wide via mkdocs `extra_javascript` (type: module); it no-ops on
@@ -53,6 +54,11 @@ function colors() {
     stDown: "#c62828",
     rsi: css.getPropertyValue("--md-accent-fg-color").trim() || "#5c6bc0",
     band: "rgba(128,128,128,0.35)",
+    ema: "#f9a825",
+    cycle: "#00897b",
+    trigger: "#8e24aa",
+    harmBull: "rgba(38,166,154,0.9)",
+    harmBear: "rgba(239,83,80,0.9)",
   };
 }
 
@@ -75,6 +81,67 @@ function computeRsi(period) {
     return Number.isFinite(v) ? v : null;
   });
   r.free();
+  return out;
+}
+
+function computeEma(period) {
+  const e = new wasm.Ema(period);
+  const out = BARS.map((b) => {
+    const v = e.next(b.close);
+    return Number.isFinite(v) ? v : null;
+  });
+  e.free();
+  return out;
+}
+
+function computeCyberCycle(length) {
+  const cc = new wasm.CyberCycle(length);
+  const out = BARS.map((b) => {
+    const [cycle, trigger] = cc.next((b.high + b.low) / 2);
+    return Number.isFinite(cycle) ? { cycle, trigger } : null;
+  });
+  cc.free();
+  return out;
+}
+
+// Bar builders return completed bricks/lines; flatten to {open, close, dir}.
+function computeRenko(box) {
+  const r = new wasm.Renko(box);
+  const out = [];
+  for (const b of BARS) {
+    const f = r.next(b.close);
+    for (let i = 0; i < f.length; i += 3) out.push({ open: f[i], close: f[i + 1], dir: f[i + 2] });
+  }
+  r.free();
+  return out;
+}
+
+function computeKagi(reversal) {
+  const k = new wasm.Kagi(reversal);
+  const out = [];
+  for (const b of BARS) {
+    const f = k.next(b.close);
+    if (f.length) out.push({ open: f[0], close: f[1], dir: f[2], thick: f[3] });
+  }
+  k.free();
+  return out;
+}
+
+function computeHarmonics(swing) {
+  const h = new wasm.HarmonicScanner(swing);
+  const stride = wasm.HarmonicScanner.stride();
+  const out = [];
+  for (const b of BARS) {
+    const f = h.next(b.high, b.low);
+    for (let i = 0; i < f.length; i += stride) {
+      const pts = [];
+      // Scanner bars are 1-based; chart indices are 0-based.
+      if (Number.isFinite(f[i + 2])) pts.push([f[i + 2] - 1, f[i + 3]]);
+      for (let j = 4; j <= 10; j += 2) pts.push([f[i + j] - 1, f[i + j + 1]]);
+      out.push({ kind: wasm.harmonicKindName(f[i]), bull: f[i + 1] === 1, pts, score: f[i + 12] });
+    }
+  }
+  h.free();
   return out;
 }
 
@@ -103,7 +170,7 @@ function priceScale(pad, h) {
   return (p) => pad + (h - 2 * pad) * (1 - (p - lo) / (hi - lo));
 }
 
-function drawMain(cv, st) {
+function drawMain(cv, st, ema, harmonics) {
   const c = colors();
   const { ctx, w, h } = fitCanvas(cv, 360);
   ctx.clearRect(0, 0, w, h);
@@ -158,6 +225,122 @@ function drawMain(cv, st) {
     }
     prev = s;
   }
+
+  // EMA overlay
+  drawLine(ctx, ema, x, y, c.ema, 1.4);
+
+  // Harmonic patterns: connect the pivots and label the kind at D.
+  ctx.font = "11px sans-serif";
+  for (const p of harmonics) {
+    const col = p.bull ? c.harmBull : c.harmBear;
+    ctx.strokeStyle = col;
+    ctx.fillStyle = col;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([5, 3]);
+    ctx.beginPath();
+    p.pts.forEach(([bi, pr], k) => (k ? ctx.lineTo(x(bi), y(pr)) : ctx.moveTo(x(bi), y(pr))));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    for (const [bi, pr] of p.pts) {
+      ctx.beginPath();
+      ctx.arc(x(bi), y(pr), 2.5, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+    const [dbi, dpr] = p.pts[p.pts.length - 1];
+    ctx.fillText(`${p.kind} ${p.bull ? "▲" : "▼"} ${(p.score * 100).toFixed(0)}%`, x(dbi) + 4, y(dpr) + (p.bull ? 14 : -6));
+  }
+}
+
+function drawLine(ctx, values, x, y, color, width) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.beginPath();
+  let started = false;
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    if (v == null) continue;
+    if (!started) {
+      ctx.moveTo(x(i), y(v));
+      started = true;
+    } else {
+      ctx.lineTo(x(i), y(v));
+    }
+  }
+  ctx.stroke();
+}
+
+function drawCycle(cv, cyc) {
+  const c = colors();
+  const { ctx, w, h } = fitCanvas(cv, 120);
+  ctx.clearRect(0, 0, w, h);
+  const pad = 12;
+  const n = cyc.length;
+  let m = 1e-9;
+  // Skip the filter's warmup transient when scaling and drawing.
+  const warm = Math.min(n, 30);
+  cyc = cyc.map((v, i) => (i < warm ? null : v));
+  for (const v of cyc) if (v) m = Math.max(m, Math.abs(v.cycle), Math.abs(v.trigger));
+  const step = (w - 2 * pad) / n;
+  const x = (i) => pad + step * (i + 0.5);
+  const y = (v) => h / 2 - ((h / 2 - pad) * v) / m;
+  ctx.strokeStyle = c.band;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(pad, h / 2);
+  ctx.lineTo(w - pad, h / 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  drawLine(ctx, cyc.map((v) => (v ? v.cycle : null)), x, y, c.cycle, 1.6);
+  drawLine(ctx, cyc.map((v) => (v ? v.trigger : null)), x, y, c.trigger, 1.1);
+}
+
+// Renko bricks / Kagi lines are drawn in their own time-independent space.
+function drawBricks(cv, bricks, kind) {
+  const c = colors();
+  const { ctx, w, h } = fitCanvas(cv, 200);
+  ctx.clearRect(0, 0, w, h);
+  const pad = 12;
+  if (!bricks.length) {
+    ctx.fillStyle = c.text;
+    ctx.fillText("No completed " + kind + " yet — lower the size.", pad, h / 2);
+    return;
+  }
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (const b of bricks) {
+    lo = Math.min(lo, b.open, b.close);
+    hi = Math.max(hi, b.open, b.close);
+  }
+  const span = hi - lo || 1;
+  const y = (p) => pad + (h - 2 * pad) * (1 - (p - lo) / span);
+  const step = (w - 2 * pad) / bricks.length;
+  if (kind === "bricks") {
+    bricks.forEach((b, i) => {
+      ctx.fillStyle = b.dir > 0 ? c.up : c.down;
+      const top = y(Math.max(b.open, b.close));
+      const bot = y(Math.min(b.open, b.close));
+      ctx.fillRect(pad + i * step + 0.5, top, Math.max(1, step - 1), Math.max(1, bot - top));
+    });
+  } else {
+    // Kagi: vertical line per segment, horizontal shoulder/waist joins; thick=yang.
+    let px = null;
+    bricks.forEach((b, i) => {
+      const xx = pad + (i + 0.5) * step;
+      // thickness: +1 yang (thick, green), -1 yin (thin, red), 0 not yet set.
+      ctx.strokeStyle = b.thick > 0 ? c.up : b.thick < 0 ? c.down : c.band;
+      ctx.lineWidth = b.thick > 0 ? 3.5 : 1.4;
+      ctx.beginPath();
+      if (px !== null) {
+        ctx.moveTo(px, y(b.open));
+        ctx.lineTo(xx, y(b.open));
+      } else {
+        ctx.moveTo(xx, y(b.open));
+      }
+      ctx.lineTo(xx, y(b.close));
+      ctx.stroke();
+      px = xx;
+    });
+  }
 }
 
 function drawRsi(cv, rsi) {
@@ -209,15 +392,37 @@ function el(id) {
   return document.getElementById(id);
 }
 
+const SLIDERS = {
+  "qw-st-period": (v) => v,
+  "qw-st-mult": (v) => v.toFixed(1),
+  "qw-ema-period": (v) => v,
+  "qw-rsi-period": (v) => v,
+  "qw-cc-length": (v) => v,
+  "qw-harm-swing": (v) => v,
+  "qw-renko-box": (v) => v.toFixed(1),
+  "qw-kagi-rev": (v) => v.toFixed(1),
+};
+
 function render() {
-  const stPeriod = +el("qw-st-period").value;
-  const stMult = +el("qw-st-mult").value;
-  const rsiPeriod = +el("qw-rsi-period").value;
-  el("qw-st-period-val").textContent = stPeriod;
-  el("qw-st-mult-val").textContent = stMult.toFixed(1);
-  el("qw-rsi-period-val").textContent = rsiPeriod;
-  drawMain(el("qw-main"), computeSuperTrend(stPeriod, stMult));
-  drawRsi(el("qw-rsi"), computeRsi(rsiPeriod));
+  const v = {};
+  for (const [id, fmt] of Object.entries(SLIDERS)) {
+    v[id] = +el(id).value;
+    el(id + "-val").textContent = fmt(v[id]);
+  }
+  const harmonics = computeHarmonics(v["qw-harm-swing"]);
+  drawMain(
+    el("qw-main"),
+    computeSuperTrend(v["qw-st-period"], v["qw-st-mult"]),
+    computeEma(v["qw-ema-period"]),
+    harmonics,
+  );
+  el("qw-harm-count").textContent = harmonics.length
+    ? harmonics.map((p) => `${p.kind} ${p.bull ? "▲" : "▼"}`).join(" · ")
+    : "none at this swing strength";
+  drawRsi(el("qw-rsi"), computeRsi(v["qw-rsi-period"]));
+  drawCycle(el("qw-cycle"), computeCyberCycle(v["qw-cc-length"]));
+  drawBricks(el("qw-renko"), computeRenko(v["qw-renko-box"]), "bricks");
+  drawBricks(el("qw-kagi"), computeKagi(v["qw-kagi-rev"]), "lines");
 }
 
 async function main() {
@@ -236,7 +441,7 @@ async function main() {
   }
   status.textContent =
     "✅ quantwave-core running in your browser via WebAssembly — drag the sliders.";
-  for (const id of ["qw-st-period", "qw-st-mult", "qw-rsi-period"]) {
+  for (const id of Object.keys(SLIDERS)) {
     el(id).addEventListener("input", render);
   }
   if (!resizeBound) {
