@@ -15,6 +15,93 @@ fn bits(v: &[f64]) -> String {
     format!("[{}]", items.join(","))
 }
 
+/// The reviewer probe's LCG random walk (same as the shim unit tests).
+fn random_walk(seed: u64, n: usize) -> Vec<(f64, f64)> {
+    let mut state = seed * 7919;
+    let mut next = || {
+        state = state
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
+        ((state >> 11) as f64) / ((1u64 << 53) as f64)
+    };
+    let mut p = 100.0;
+    (0..n)
+        .map(|_| {
+            p *= 1.0 + (next() - 0.5) * 0.03;
+            let w = p * 0.004 * (1.0 + next());
+            (p + w, p - w)
+        })
+        .collect()
+}
+
+/// Harmonic series: (name, swing_strength, high/low bars). Three random walks
+/// that together hit every kind in both directions, plus a monotonic no-match.
+/// (name, swing_strength, high/low bars).
+type HarmonicSeries = (String, usize, Vec<(f64, f64)>);
+
+fn harmonic_series() -> Vec<HarmonicSeries> {
+    let mut out: Vec<HarmonicSeries> = [(6u64, 1usize), (4, 3), (5, 2)]
+        .iter()
+        .map(|&(seed, ss)| {
+            (
+                format!("randwalk_seed{seed}_ss{ss}"),
+                ss,
+                random_walk(seed, 3000),
+            )
+        })
+        .collect();
+    let mono = (0..500)
+        .map(|i| {
+            let p = 100.0 + 0.1 * i as f64;
+            (p + 0.5, p - 0.5)
+        })
+        .collect();
+    out.push(("no_match_monotonic".to_string(), 2, mono));
+    out
+}
+
+/// Each pattern as `{"kind": as_str(), "bull": bool, "f": [14 hex fields]}`,
+/// built from the core struct independently of the wasm `encode_pattern`.
+fn harmonic_json() -> String {
+    let mut series = vec![];
+    for (name, ss, bars) in harmonic_series() {
+        let mut sc = HarmonicPatternScanner::new(ss);
+        let mut pats = vec![];
+        for &(h, l) in &bars {
+            for p in sc.next((h, l)) {
+                let f = [
+                    p.x_bar.map_or(f64::NAN, |b| b as f64),
+                    p.x_price.unwrap_or(f64::NAN),
+                    p.a_bar as f64,
+                    p.a_price,
+                    p.b_bar as f64,
+                    p.b_price,
+                    p.c_bar as f64,
+                    p.c_price,
+                    p.d_bar as f64,
+                    p.d_price,
+                    p.score,
+                    p.prz_low,
+                    p.prz_high,
+                ];
+                pats.push(format!(
+                    "{{\"kind\":\"{}\",\"bull\":{},\"f\":{}}}",
+                    p.kind.as_str(),
+                    p.is_bull,
+                    bits(&f)
+                ));
+            }
+        }
+        let flat: Vec<f64> = bars.iter().flat_map(|&(h, l)| [h, l]).collect();
+        series.push(format!(
+            "{{\"name\":\"{name}\",\"ss\":{ss},\"bars\":{},\"patterns\":[{}]}}",
+            bits(&flat),
+            pats.join(",")
+        ));
+    }
+    format!("[{}]", series.join(","))
+}
+
 fn main() {
     // Deterministic OHLC: two sines + drift (pattern-rich, with flat-ish stretches).
     let n = 400;
@@ -60,7 +147,7 @@ fn main() {
     }
     let flat: Vec<f64> = bars.iter().flat_map(|&(h, l, c)| [h, l, c]).collect();
     println!(
-        "{{\"bars\":{},\"supertrend\":{},\"rsi\":{},\"ema\":{},\"cyber_cycle\":{},\"renko\":{},\"kagi\":{},\"harmonic_d_bar_price_score\":{},\"harmonic_count\":{}}}",
+        "{{\"bars\":{},\"supertrend\":{},\"rsi\":{},\"ema\":{},\"cyber_cycle\":{},\"renko\":{},\"kagi\":{},\"harmonic_d_bar_price_score\":{},\"harmonic_count\":{},\"harmonic_series\":{}}}",
         bits(&flat),
         bits(&o_st),
         bits(&o_rsi),
@@ -69,6 +156,7 @@ fn main() {
         bits(&o_renko),
         bits(&o_kagi),
         bits(&o_harm),
-        n_patterns
+        n_patterns,
+        harmonic_json()
     );
 }

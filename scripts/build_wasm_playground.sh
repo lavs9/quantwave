@@ -13,9 +13,9 @@ TARGET=web
 OUT=docs/assets/wasm
 if [[ "${1:-}" == "--node" ]]; then
   TARGET=nodejs
-  OUT=target/wasm-node
+  OUT="${CARGO_TARGET_DIR:-target}"/wasm-node
 fi
 cargo build -p quantwave-wasm --target wasm32-unknown-unknown --release
 wasm-bindgen --target "$TARGET" --no-typescript --out-dir "$OUT" \
-  target/wasm32-unknown-unknown/release/quantwave_wasm.wasm
+  "${CARGO_TARGET_DIR:-target}"/wasm32-unknown-unknown/release/quantwave_wasm.wasm
 ls -l "$OUT"/quantwave_wasm_bg.wasm

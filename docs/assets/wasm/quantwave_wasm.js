@@ -275,7 +275,9 @@ export class SuperTrend {
 if (Symbol.dispose) SuperTrend.prototype[Symbol.dispose] = SuperTrend.prototype.free;
 
 /**
- * Name of a harmonic pattern kind code returned by [`HarmonicScanner::next`].
+ * Name of a harmonic pattern kind code returned by [`HarmonicScanner::next`]
+ * (the `HarmonicKind::as_str` value). Any code that is not a known kind index,
+ * including NaN, negative or fractional values, returns `"unknown"`.
  * @param {number} code
  * @returns {string}
  */

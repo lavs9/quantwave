@@ -53,6 +53,49 @@ for (const [name, got] of Object.entries(out)) {
 const countOk = harmonicCount === fx.harmonic_count && harmonicCount > 0;
 console.log(`${countOk ? "PASS" : "FAIL"} harmonic patterns: ${harmonicCount} (core ${fx.harmonic_count}) kinds=${[...kinds].join(",")}`);
 if (!countOk) failures++;
+// ---- Harmonic scanner: every field, every kind & direction, 0-based bars ----
+const KINDS = ["abcd", "alternate_abcd", "5-0", "gartley", "bat", "butterfly", "crab", "alternate_bat"];
+const seen = new Set();
+for (const s of fx.harmonic_series) {
+  const hl = s.bars.map(fromHex);
+  const sc = new qw.HarmonicScanner(s.ss);
+  const got = [];
+  for (let i = 0; i < hl.length; i += 2) {
+    const f = sc.next(hl[i], hl[i + 1]);
+    for (let j = 0; j < f.length; j += stride) got.push(Array.from(f.slice(j, j + stride)));
+  }
+  sc.free();
+  let ok = got.length === s.patterns.length;
+  if (s.name.startsWith("no_match")) ok = ok && got.length === 0;
+  for (let k = 0; ok && k < got.length; k++) {
+    const g = got[k], w = s.patterns[k];
+    const kind = qw.harmonicKindName(g[0]);
+    const fieldsOk = g.slice(2).map(toHex).join() === w.f.join();
+    const bullOk = (g[1] === 1) === w.bull && (g[1] === 0 || g[1] === 1);
+    // AB=CD family has no X point.
+    const xOk = !kind.includes("abcd") || (Number.isNaN(g[2]) && Number.isNaN(g[3]));
+    // Pin 0-based bar indices: each pivot price is high or low of bars[bar].
+    let baseOk = true;
+    for (let j = 4; j <= 10; j += 2) {
+      const bar = g[j], price = g[j + 1];
+      if (!(hl[2 * bar] === price || hl[2 * bar + 1] === price)) baseOk = false;
+    }
+    if (kind !== w.kind || !fieldsOk || !bullOk || !xOk || !baseOk) {
+      ok = false;
+      console.log("MISMATCH", s.name, k, { kind, want: w.kind, fieldsOk, bullOk, xOk, baseOk });
+    }
+    seen.add(`${w.kind}/${w.bull ? "bull" : "bear"}`);
+  }
+  console.log(`${ok ? "PASS" : "FAIL"} harmonic ${s.name}: core=${s.patterns.length} wasm=${got.length}`);
+  if (!ok) failures++;
+}
+const missing = KINDS.flatMap((k) => ["bull", "bear"].map((d) => `${k}/${d}`)).filter((k) => !seen.has(k));
+console.log(`${missing.length ? "FAIL" : "PASS"} harmonic kind/direction coverage: ${seen.size}/16${missing.length ? " missing " + missing.join(",") : ""}`);
+if (missing.length) failures++;
+const unknownOk = qw.harmonicKindName(NaN) === "unknown" && qw.harmonicKindName(-1) === "unknown" && qw.harmonicKindName(1.5) === "unknown";
+console.log(`${unknownOk ? "PASS" : "FAIL"} harmonicKindName(NaN/-1/1.5) === "unknown"`);
+if (!unknownOk) failures++;
+
 if (failures) {
   console.error(`${failures} parity failure(s)`);
   process.exit(1);

@@ -135,9 +135,9 @@ function computeHarmonics(swing) {
     const f = h.next(b.high, b.low);
     for (let i = 0; i < f.length; i += stride) {
       const pts = [];
-      // Scanner bars are 1-based; chart indices are 0-based.
-      if (Number.isFinite(f[i + 2])) pts.push([f[i + 2] - 1, f[i + 3]]);
-      for (let j = 4; j <= 10; j += 2) pts.push([f[i + j] - 1, f[i + j + 1]]);
+      // Scanner bar indices are 0-based, same as the chart (BARS) index.
+      if (Number.isFinite(f[i + 2])) pts.push([f[i + 2], f[i + 3]]);
+      for (let j = 4; j <= 10; j += 2) pts.push([f[i + j], f[i + j + 1]]);
       out.push({ kind: wasm.harmonicKindName(f[i]), bull: f[i + 1] === 1, pts, score: f[i + 12] });
     }
   }

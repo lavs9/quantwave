@@ -213,13 +213,18 @@ fn encode_pattern(p: &HarmonicPattern) -> [f64; HARMONIC_STRIDE] {
     ]
 }
 
-/// Name of a harmonic pattern kind code returned by [`HarmonicScanner::next`].
+/// Name of a harmonic pattern kind code returned by [`HarmonicScanner::next`]
+/// (the `HarmonicKind::as_str` value). Any code that is not a known kind index,
+/// including NaN, negative or fractional values, returns `"unknown"`.
 #[wasm_bindgen(js_name = harmonicKindName)]
-pub fn harmonic_kind_name(code: usize) -> String {
-    HARMONIC_KINDS
-        .get(code)
-        .map_or("unknown", |k| k.as_str())
-        .to_string()
+pub fn harmonic_kind_name(code: f64) -> String {
+    let known = code.is_finite() && code >= 0.0 && code.fract() == 0.0;
+    let kind = if known {
+        HARMONIC_KINDS.get(code as usize)
+    } else {
+        None
+    };
+    kind.map_or("unknown", |k| k.as_str()).to_string()
 }
 
 /// Streaming harmonic pattern scanner (AB=CD, 5-0, Gartley family).
@@ -332,25 +337,137 @@ mod tests {
         }
     }
 
+    /// The probe's LCG random walk (multiplicative steps, high/low band).
+    pub(crate) fn random_walk(seed: u64, n: usize) -> Vec<(f64, f64)> {
+        let mut state = seed * 7919;
+        let mut next = || {
+            state = state
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            ((state >> 11) as f64) / ((1u64 << 53) as f64)
+        };
+        let mut p = 100.0;
+        (0..n)
+            .map(|_| {
+                p *= 1.0 + (next() - 0.5) * 0.03;
+                let w = p * 0.004 * (1.0 + next());
+                (p + w, p - w)
+            })
+            .collect()
+    }
+
+    /// (seed, swing_strength) series that together produce every harmonic
+    /// kind in both directions.
+    const HARMONIC_SERIES: [(u64, usize); 3] = [(6, 1), (4, 3), (5, 2)];
+
+    /// Expected 15-field encoding built straight from the core struct, with the
+    /// kind taken by *name* (`HarmonicKind::as_str`), independent of `encode_pattern`.
+    fn expected_fields(p: &HarmonicPattern) -> (&'static str, [f64; 14]) {
+        (
+            p.kind.as_str(),
+            [
+                if p.is_bull { 1.0 } else { 0.0 },
+                p.x_bar.map_or(f64::NAN, |b| b as f64),
+                p.x_price.unwrap_or(f64::NAN),
+                p.a_bar as f64,
+                p.a_price,
+                p.b_bar as f64,
+                p.b_price,
+                p.c_bar as f64,
+                p.c_price,
+                p.d_bar as f64,
+                p.d_price,
+                p.score,
+                p.prz_low,
+                p.prz_high,
+            ],
+        )
+    }
+
     #[test]
-    fn harmonic_shim_matches_core_and_finds_patterns() {
-        let mut shim = HarmonicScanner::new(2);
-        let mut core = CoreHarmonic::new(2);
-        let mut found = 0;
-        for i in 0..400 {
-            let t = i as f64;
-            let mid = 100.0 + 10.0 * (t / 9.0).sin() + 4.0 * (t / 3.7).sin();
-            let (h, l) = (mid + 0.6, mid - 0.6);
-            let want: Vec<f64> = core.next((h, l)).iter().flat_map(encode_pattern).collect();
-            let got = shim.next(h, l);
-            assert_eq!(got.len(), want.len());
-            for (g, w) in got.iter().zip(&want) {
-                assert_eq!(g.to_bits(), w.to_bits());
+    fn harmonic_shim_all_fields_and_kinds_match_core() {
+        use std::collections::BTreeSet;
+        let mut seen = BTreeSet::new();
+        for (seed, ss) in HARMONIC_SERIES {
+            let bars = random_walk(seed, 3000);
+            let mut shim = HarmonicScanner::new(ss);
+            let mut core = CoreHarmonic::new(ss);
+            for &(h, l) in &bars {
+                let want = core.next((h, l));
+                let got = shim.next(h, l);
+                assert_eq!(got.len(), want.len() * HARMONIC_STRIDE);
+                for (k, p) in want.iter().enumerate() {
+                    let g = &got[k * HARMONIC_STRIDE..(k + 1) * HARMONIC_STRIDE];
+                    let (kind, fields) = expected_fields(p);
+                    assert_eq!(harmonic_kind_name(g[0]), kind, "seed {seed} ss {ss}");
+                    for (j, (gv, wv)) in g[1..].iter().zip(fields.iter()).enumerate() {
+                        assert_eq!(gv.to_bits(), wv.to_bits(), "{kind} field {}", j + 1);
+                    }
+                    if matches!(p.kind, HarmonicKind::AbCd | HarmonicKind::AlternateAbCd) {
+                        assert!(
+                            g[2].is_nan() && g[3].is_nan(),
+                            "{kind} must have no X point"
+                        );
+                    }
+                    seen.insert((kind, p.is_bull));
+                }
             }
-            found += got.len() / HARMONIC_STRIDE;
         }
-        assert!(found > 0, "fixture should produce at least one pattern");
-        assert_eq!(harmonic_kind_name(3), "gartley");
-        assert_eq!(harmonic_kind_name(99), "unknown");
+        let kinds = [
+            "abcd",
+            "alternate_abcd",
+            "5-0",
+            "gartley",
+            "bat",
+            "butterfly",
+            "crab",
+            "alternate_bat",
+        ];
+        for k in kinds {
+            for bull in [true, false] {
+                assert!(
+                    seen.contains(&(k, bull)),
+                    "missing fixture for {k} bull={bull}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn harmonic_bar_indices_are_zero_based() {
+        let bars = random_walk(6, 3000);
+        let mut shim = HarmonicScanner::new(1);
+        let mut checked = 0;
+        for &(h, l) in &bars {
+            let got = shim.next(h, l);
+            for p in got.chunks(HARMONIC_STRIDE) {
+                // Every pivot price is the high or low of bars[bar], 0-based.
+                for j in [4, 6, 8, 10] {
+                    let (bar, price) = (p[j] as usize, p[j + 1]);
+                    assert!(bars[bar].0 == price || bars[bar].1 == price);
+                }
+                checked += 1;
+            }
+        }
+        assert!(checked > 0);
+    }
+
+    #[test]
+    fn harmonic_no_match_series_is_empty() {
+        let mut shim = HarmonicScanner::new(2);
+        for i in 0..500 {
+            let p = 100.0 + 0.1 * i as f64; // monotonic: no swings, no patterns
+            assert!(shim.next(p + 0.5, p - 0.5).is_empty());
+        }
+    }
+
+    #[test]
+    fn harmonic_kind_name_rejects_non_codes() {
+        assert_eq!(harmonic_kind_name(0.0), "abcd");
+        assert_eq!(harmonic_kind_name(3.0), "gartley");
+        assert_eq!(harmonic_kind_name(7.0), "alternate_bat");
+        for bad in [f64::NAN, -1.0, 1.5, 8.0, f64::INFINITY] {
+            assert_eq!(harmonic_kind_name(bad), "unknown", "{bad}");
+        }
     }
 }

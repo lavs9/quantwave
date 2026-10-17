@@ -5,5 +5,5 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 ./scripts/build_wasm_playground.sh --node
-cargo run -q -p quantwave-wasm --example parity_fixture > target/wasm-node/fixture.json
-node quantwave-wasm/tests-node/parity.mjs target/wasm-node
+cargo run -q -p quantwave-wasm --example parity_fixture > "${CARGO_TARGET_DIR:-target}"/wasm-node/fixture.json
+node quantwave-wasm/tests-node/parity.mjs "${CARGO_TARGET_DIR:-target}"/wasm-node
