@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantitative Strategy Robustness Tearsheet</title>
+<style>
+  :root {
+    --bg-main: #0f172a;
+    --bg-card: #1e293b;
+    --bg-subtle: #334155;
+    --border-color: #475569;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --accent-blue: #38bdf8;
+    --accent-emerald: #34d399;
+    --accent-rose: #fb7185;
+    --accent-amber: #fbbf24;
+    --accent-purple: #c084fc;
+  }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    padding: 24px;
+    line-height: 1.45;
+  }
+  .tearsheet-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  /* Header section */
+  .header-card {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .strategy-meta h1 {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-main);
+  }
+  .strategy-meta .subtitle {
+    color: var(--accent-blue);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 4px;
+  }
+  .status-badges {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .badge {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .badge-pass {
+    background-color: rgba(52, 211, 153, 0.15);
+    color: var(--accent-emerald);
+    border: 1px solid rgba(52, 211, 153, 0.3);
+  }
+  .badge-info {
+    background-color: rgba(56, 189, 248, 0.15);
+    color: var(--accent-blue);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+  }
+
+  /* Specification Grid */
+  .specs-bar {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 16px 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+  }
+  .spec-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .spec-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .spec-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+  }
+
+  /* KPI Summary Banner */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+  }
+  .kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .kpi-title {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .kpi-val {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 4px 0;
+    color: var(--text-main);
+  }
+  .kpi-sub {
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .text-emerald { color: var(--accent-emerald); }
+  .text-rose { color: var(--accent-rose); }
+  .text-blue { color: var(--accent-blue); }
+  .text-amber { color: var(--accent-amber); }
+
+  /* Section Title */
+  .section-title {
+    font-size: 15px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent-blue);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background-color: var(--border-color);
+  }
+
+  /* Tables */
+  .card-table-wrapper {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+  }
+  th {
+    background-color: #1a2333;
+    color: var(--text-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  td {
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(71, 85, 105, 0.4);
+    color: var(--text-main);
+  }
+  tr:last-child td {
+    border-bottom: none;
+  }
+  tr:hover td {
+    background-color: rgba(51, 65, 85, 0.3);
+  }
+  .metric-category-row {
+    background-color: rgba(15, 23, 42, 0.7);
+    font-weight: 700;
+    color: var(--accent-blue);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .metric-category-row td {
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .text-right {
+    text-align: right;
+  }
+  .text-center {
+    text-align: center;
+  }
+  .bold {
+    font-weight: 600;
+  }
+  .tag-pass {
+    background: rgba(52, 211, 153, 0.15);
+    color: var(--accent-emerald);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 11px;
+  }
+  .tag-warn {
+    background: rgba(251, 191, 36, 0.15);
+    color: var(--accent-amber);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 11px;
+  }
+
+  /* Grid Layout for Robustness & Drawdowns */
+  .two-column-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    .two-column-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* SVG Visualizations */
+  .chart-box {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .chart-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .chart-legend {
+    display: flex;
+    gap: 14px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .legend-line {
+    width: 14px;
+    height: 3px;
+    border-radius: 2px;
+  }
+
+  /* Monthly Heatmap */
+  .heatmap-table th, .heatmap-table td {
+    padding: 6px 8px;
+    font-size: 11px;
+    text-align: center;
+  }
+  .heat-pos-3 { background: rgba(52, 211, 153, 0.45); color: #fff; }
+  .heat-pos-2 { background: rgba(52, 211, 153, 0.30); color: #fff; }
+  .heat-pos-1 { background: rgba(52, 211, 153, 0.15); color: var(--accent-emerald); }
+  .heat-neg-1 { background: rgba(251, 113, 133, 0.15); color: var(--accent-rose); }
+  .heat-neg-2 { background: rgba(251, 113, 133, 0.30); color: #fff; }
+  .heat-neg-3 { background: rgba(251, 113, 133, 0.45); color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="tearsheet-container">
+
+  <!-- Header -->
+  <div class="header-card">
+    <div class="strategy-meta">
+      <h1>MOM-TREND-ALPHA (v2.1)</h1>
+      <div class="subtitle">Multi-Factor Robustness Tearsheet &bull; Quantitative Strategy Audit</div>
+    </div>
+    <div class="status-badges">
+      <span class="badge badge-info">Benchmark: SPY</span>
+      <span class="badge badge-pass">&#10003; Robustness Certified (DSR 0.94)</span>
+    </div>
+  </div>
+
+  <!-- Specifications Bar -->
+  <div class="specs-bar">
+    <div class="spec-item">
+      <span class="spec-label">Universe</span>
+      <span class="spec-value">S&P 500 (Liquid Top 200)</span>
+    </div>
+    <div class="spec-item">
+      <span class="spec-label">In-Sample (IS)</span>
+      <span class="spec-value">2014-01-01 &ndash; 2021-12-31</span>
+    </div>
+    <div class="spec-item">
+      <span class="spec-label">Out-of-Sample (OOS)</span>
+      <span class="spec-value">2022-01-01 &ndash; 2026-06-30</span>
+    </div>
+    <div class="spec-item">
+      <span class="spec-label">Execution Model</span>
+      <span class="spec-value">Next-Day Market Open (MOC/MOO)</span>
+    </div>
+    <div class="spec-item">
+      <span class="spec-label">Frictions</span>
+      <span class="spec-value">$0.005/sh + 5.0 bps Slippage</span>
+    </div>
+    <div class="spec-item">
+      <span class="spec-label">Starting Capital</span>
+      <span class="spec-value">$1,000,000 (1.0x Leverage)</span>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-title">Full Period CAGR</div>
+      <div class="kpi-val text-emerald">+20.2%</div>
+      <div class="kpi-sub text-muted">Benchmark: +12.1%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Sharpe Ratio (OOS)</div>
+      <div class="kpi-val text-blue">1.09</div>
+      <div class="kpi-sub text-emerald">IS Sharpe: 1.41 (-22.7%)</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Max Drawdown</div>
+      <div class="kpi-val text-rose">-15.9%</div>
+      <div class="kpi-sub text-muted">Benchmark MDD: -33.9%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Calmar Ratio</div>
+      <div class="kpi-val text-emerald">1.54</div>
+      <div class="kpi-sub text-muted">CAGR / |MDD|</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Deflated Sharpe (DSR)</div>
+      <div class="kpi-val text-emerald">0.94</div>
+      <div class="kpi-sub text-emerald">Threshold &ge; 0.90 (Passed)</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-title">Slippage Tolerance</div>
+      <div class="kpi-val text-amber">18.5 bps</div>
+      <div class="kpi-sub text-muted">Breakeven Threshold (3.7x)</div>
+    </div>
+  </div>
+
+  <!-- Primary Cumulative Return Chart SVG -->
+  <div class="chart-box">
+    <div class="chart-title">
+      <span>Cumulative Performance (Log Scale) &bull; Net of Frictions</span>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-line" style="background: #38bdf8;"></div> Strategy (IS)</div>
+        <div class="legend-item"><div class="legend-line" style="background: #34d399;"></div> Strategy (OOS)</div>
+        <div class="legend-item"><div class="legend-line" style="background: #94a3b8; stroke-dasharray: 2;"></div> SPY Benchmark</div>
+      </div>
+    </div>
+    <!-- Vector Curve Graph -->
+    <svg viewBox="0 0 1000 240" style="width: 100%; height: 210px; overflow: visible;">
+      <!-- Grid lines -->
+      <line x1="60" y1="20" x2="960" y2="20" stroke="#334155" stroke-width="0.7" stroke-dasharray="3,3" />
+      <line x1="60" y1="75" x2="960" y2="75" stroke="#334155" stroke-width="0.7" stroke-dasharray="3,3" />
+      <line x1="60" y1="130" x2="960" y2="130" stroke="#334155" stroke-width="0.7" stroke-dasharray="3,3" />
+      <line x1="60" y1="185" x2="960" y2="185" stroke="#334155" stroke-width="0.7" />
+
+      <!-- Vertical OOS Boundary -->
+      <line x1="680" y1="15" x2="680" y2="190" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="4,4" />
+      <text x="685" y="32" fill="#fbbf24" font-size="11" font-weight="600">OOS Split (2022)</text>
+
+      <!-- Y Axis Labels -->
+      <text x="50" y="24" fill="#64748b" font-size="10" text-anchor="end">$8.0M</text>
+      <text x="50" y="79" fill="#64748b" font-size="10" text-anchor="end">$4.0M</text>
+      <text x="50" y="134" fill="#64748b" font-size="10" text-anchor="end">$2.0M</text>
+      <text x="50" y="189" fill="#64748b" font-size="10" text-anchor="end">$1.0M</text>
+
+      <!-- X Axis Labels -->
+      <text x="60" y="205" fill="#64748b" font-size="10">2014</text>
+      <text x="215" y="205" fill="#64748b" font-size="10">2016</text>
+      <text x="370" y="205" fill="#64748b" font-size="10">2018</text>
+      <text x="525" y="205" fill="#64748b" font-size="10">2020</text>
+      <text x="680" y="205" fill="#64748b" font-size="10">2022</text>
+      <text x="820" y="205" fill="#64748b" font-size="10">2024</text>
+      <text x="960" y="205" fill="#64748b" font-size="10" text-anchor="end">2026</text>
+
+      <!-- Benchmark SPY Line -->
+      <path d="M 60,185 Q 180,165 280,150 T 450,135 T 525,148 T 680,95 T 820,110 T 960,98" 
+            fill="none" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="4,3" opacity="0.8" />
+
+      <!-- Strategy IS Curve -->
+      <path d="M 60,185 Q 160,155 240,140 T 360,110 T 480,90 T 525,85 T 600,62 T 680,48" 
+            fill="none" stroke="#38bdf8" stroke-width="2.6" />
+
+      <!-- Strategy OOS Curve -->
+      <path d="M 680,48 Q 740,65 790,52 T 870,36 T 960,24" 
+            fill="none" stroke="#34d399" stroke-width="2.6" />
+    </svg>
+  </div>
+
+  <!-- Performance & Risk Detailed Table -->
+  <div class="card-table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Metric Classification</th>
+          <th class="text-right">In-Sample (IS)</th>
+          <th class="text-right">Out-of-Sample (OOS)</th>
+          <th class="text-right">Full Track</th>
+          <th class="text-right">Benchmark (SPY)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Returns -->
+        <tr class="metric-category-row"><td colspan="5">Return Metrics</td></tr>
+        <tr>
+          <td>CAGR (Compound Annual Growth Rate)</td>
+          <td class="text-right bold text-emerald">21.4%</td>
+          <td class="text-right bold text-emerald">17.8%</td>
+          <td class="text-right bold text-emerald">20.2%</td>
+          <td class="text-right">12.1%</td>
+        </tr>
+        <tr>
+          <td>Cumulative Total Return</td>
+          <td class="text-right">321.6%</td>
+          <td class="text-right">108.4%</td>
+          <td class="text-right">778.7%</td>
+          <td class="text-right">315.2%</td>
+        </tr>
+        <tr>
+          <td>Annualized Volatility (&sigma;)</td>
+          <td class="text-right">13.8%</td>
+          <td class="text-right">14.5%</td>
+          <td class="text-right">14.0%</td>
+          <td class="text-right">16.9%</td>
+        </tr>
+        <tr>
+          <td>Benchmark Alpha / Beta (&alpha; / &beta;)</td>
+          <td class="text-right">0.09 / 0.42</td>
+          <td class="text-right">0.07 / 0.46</td>
+          <td class="text-right">0.08 / 0.43</td>
+          <td class="text-right">0.00 / 1.00</td>
+        </tr>
+
+        <!-- Risk-Adjusted -->
+        <tr class="metric-category-row"><td colspan="5">Risk-Adjusted Ratios</td></tr>
+        <tr>
+          <td>Sharpe Ratio (Risk Free = 2.0%)</td>
+          <td class="text-right bold">1.41</td>
+          <td class="text-right bold text-blue">1.09</td>
+          <td class="text-right bold">1.30</td>
+          <td class="text-right">0.60</td>
+        </tr>
+        <tr>
+          <td>Sortino Ratio (Downside Risk Only)</td>
+          <td class="text-right">2.15</td>
+          <td class="text-right">1.62</td>
+          <td class="text-right">1.98</td>
+          <td class="text-right">0.85</td>
+        </tr>
+        <tr>
+          <td>Calmar Ratio (CAGR / Max DD)</td>
+          <td class="text-right">1.74</td>
+          <td class="text-right">1.12</td>
+          <td class="text-right">1.54</td>
+          <td class="text-right">0.36</td>
+        </tr>
+        <tr>
+          <td>Omega Ratio (&theta; = 0%)</td>
+          <td class="text-right">1.31</td>
+          <td class="text-right">1.22</td>
+          <td class="text-right">1.28</td>
+          <td class="text-right">1.12</td>
+        </tr>
+
+        <!-- Drawdown & Tails -->
+        <tr class="metric-category-row"><td colspan="5">Drawdown &amp; Tail Risk</td></tr>
+        <tr>
+          <td>Maximum Drawdown (Peak to Trough)</td>
+          <td class="text-right bold text-rose">-12.3%</td>
+          <td class="text-right bold text-rose">-15.9%</td>
+          <td class="text-right bold text-rose">-15.9%</td>
+          <td class="text-right text-rose">-33.9%</td>
+        </tr>
+        <tr>
+          <td>Longest Drawdown Duration</td>
+          <td class="text-right">142 Days</td>
+          <td class="text-right">218 Days</td>
+          <td class="text-right">218 Days</td>
+          <td class="text-right">408 Days</td>
+        </tr>
+        <tr>
+          <td>Value at Risk (Daily VaR 95% / 99%)</td>
+          <td class="text-right">-1.1% / -1.9%</td>
+          <td class="text-right">-1.3% / -2.2%</td>
+          <td class="text-right">-1.2% / -2.0%</td>
+          <td class="text-right">-1.7% / -3.1%</td>
+        </tr>
+        <tr>
+          <td>Expected Shortfall (CVaR 95%)</td>
+          <td class="text-right">-1.8%</td>
+          <td class="text-right">-2.1%</td>
+          <td class="text-right">-1.9%</td>
+          <td class="text-right">-2.8%</td>
+        </tr>
+        <tr>
+          <td>Skewness / Kurtosis</td>
+          <td class="text-right">+0.22 / 1.41</td>
+          <td class="text-right">-0.05 / 2.10</td>
+          <td class="text-right">+0.12 / 1.65</td>
+          <td class="text-right">-0.58 / 4.12</td>
+        </tr>
+
+        <!-- Trade Stats -->
+        <tr class="metric-category-row"><td colspan="5">Trade Execution &amp; Efficiency</td></tr>
+        <tr>
+          <td>Win Rate (% of closed round-trips)</td>
+          <td class="text-right">56.4%</td>
+          <td class="text-right">52.8%</td>
+          <td class="text-right">55.2%</td>
+          <td class="text-right">53.6% (Daily)</td>
+        </tr>
+        <tr>
+          <td>Profit Factor (Gross Gain / Gross Loss)</td>
+          <td class="text-right">1.78</td>
+          <td class="text-right">1.49</td>
+          <td class="text-right">1.68</td>
+          <td class="text-right">1.18</td>
+        </tr>
+        <tr>
+          <td>Payoff Ratio (Avg Win / Avg Loss)</td>
+          <td class="text-right">1.38</td>
+          <td class="text-right">1.33</td>
+          <td class="text-right">1.36</td>
+          <td class="text-right">1.02</td>
+        </tr>
+        <tr>
+          <td>Expectancy (E) per Trade</td>
+          <td class="text-right bold">0.34 R</td>
+          <td class="text-right bold">0.23 R</td>
+          <td class="text-right bold">0.30 R</td>
+          <td class="text-right">&mdash;</td>
+        </tr>
+        <tr>
+          <td>Max Consecutive Losses</td>
+          <td class="text-right">5</td>
+          <td class="text-right">7</td>
+          <td class="text-right">7</td>
+          <td class="text-right">&mdash;</td>
+        </tr>
+        <tr>
+          <td>Annual Portfolio Turnover</td>
+          <td class="text-right">420%</td>
+          <td class="text-right">445%</td>
+          <td class="text-right">428%</td>
+          <td class="text-right">12%</td>
+        </tr>
+        <tr>
+          <td>Market Exposure (% Time Invested)</td>
+          <td class="text-right">68.2%</td>
+          <td class="text-right">71.4%</td>
+          <td class="text-right">69.3%</td>
+          <td class="text-right">100.0%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Two Column: Robustness Audit & Top Drawdowns -->
+  <div class="two-column-grid">
+    <!-- ML4Trading Robustness Audit -->
+    <div class="card-table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Robustness Test (ML4Trading Standards)</th>
+            <th>Value</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="bold">IS &rarr; OOS Sharpe Degradation</div>
+              <div style="font-size: 11px; color: var(--text-muted);">&Delta; Sharpe &lt; 30% acceptable</div>
+            </td>
+            <td>-22.7%</td>
+            <td><span class="tag-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="bold">Deflated Sharpe Ratio (DSR)</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Adjusted for 85 trials &amp; non-normality</div>
+            </td>
+            <td>0.94</td>
+            <td><span class="tag-pass">PASS (&gt;0.90)</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="bold">Probabilistic Sharpe Ratio (PSR)</div>
+              <div style="font-size: 11px; color: var(--text-muted);">P(Sharpe &gt; 0) with track length</div>
+            </td>
+            <td>98.2%</td>
+            <td><span class="tag-pass">PASS (&gt;95%)</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="bold">Monte Carlo 95th %ile MDD</div>
+              <div style="font-size: 11px; color: var(--text-muted);">10,000 reshuffled trade sequences</div>
+            </td>
+            <td>-19.4%</td>
+            <td><span class="tag-pass">PASS (&lt;25%)</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="bold">Slippage Breakeven Capacity</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Friction level where Sharpe drops to 0</div>
+            </td>
+            <td>18.5 bps</td>
+            <td><span class="tag-pass">3.7x Headroom</span></td>
+          </tr>
+          <tr>
+            <td>
+              <div class="bold">Fama-French 5 Residual Alpha</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Net of Mkt, SMB, HML, RMW, CMA</div>
+            </td>
+            <td>+6.8% (t=2.7)</td>
+            <td><span class="tag-pass">PASS (t &gt; 2.0)</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Top 5 Drawdowns Breakdown -->
+    <div class="card-table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Top Drawdowns</th>
+            <th>Depth</th>
+            <th>Duration</th>
+            <th>Peak &rarr; Valley &rarr; Rec</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="bold">#1 (OOS)</td>
+            <td class="text-rose bold">-15.9%</td>
+            <td>218 Days</td>
+            <td style="font-size: 11px; color: var(--text-muted);">Jan 22 &rarr; Jun 22 &rarr; Oct 22</td>
+          </tr>
+          <tr>
+            <td class="bold">#2 (IS)</td>
+            <td class="text-rose bold">-12.3%</td>
+            <td>113 Days</td>
+            <td style="font-size: 11px; color: var(--text-muted);">Feb 20 &rarr; Mar 20 &rarr; Jun 20</td>
+          </tr>
+          <tr>
+            <td class="bold">#3 (IS)</td>
+            <td class="text-rose bold">-11.1%</td>
+            <td>146 Days</td>
+            <td style="font-size: 11px; color: var(--text-muted);">Sep 18 &rarr; Dec 18 &rarr; Feb 19</td>
+          </tr>
+          <tr>
+            <td class="bold">#4 (IS)</td>
+            <td class="text-rose bold">-8.4%</td>
+            <td>95 Days</td>
+            <td style="font-size: 11px; color: var(--text-muted);">Aug 15 &rarr; Sep 15 &rarr; Nov 15</td>
+          </tr>
+          <tr>
+            <td class="bold">#5 (OOS)</td>
+            <td class="text-rose bold">-7.2%</td>
+            <td>143 Days</td>
+            <td style="font-size: 11px; color: var(--text-muted);">Jul 23 &rarr; Oct 23 &rarr; Dec 23</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Monthly Returns Heatmap -->
+  <div class="card-table-wrapper">
+    <table class="heatmap-table">
+      <thead>
+        <tr>
+          <th>Year</th>
+          <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th>
+          <th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
+          <th>Annual</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="bold">2026 (OOS)</td>
+          <td class="heat-pos-2">+2.4%</td><td class="heat-pos-1">+1.1%</td><td class="heat-neg-1">-0.8%</td><td class="heat-pos-3">+3.2%</td><td class="heat-pos-2">+2.1%</td><td class="heat-pos-1">+1.0%</td>
+          <td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td>
+          <td class="bold text-emerald">+9.3%</td>
+        </tr>
+        <tr>
+          <td class="bold">2025 (OOS)</td>
+          <td class="heat-pos-2">+2.1%</td><td class="heat-neg-1">-1.2%</td><td class="heat-pos-3">+3.8%</td><td class="heat-pos-1">+0.9%</td><td class="heat-pos-2">+2.4%</td><td class="heat-neg-2">-2.6%</td>
+          <td class="heat-pos-3">+4.1%</td><td class="heat-pos-1">+1.3%</td><td class="heat-neg-1">-0.5%</td><td class="heat-pos-2">+2.7%</td><td class="heat-pos-3">+3.5%</td><td class="heat-pos-1">+1.8%</td>
+          <td class="bold text-emerald">+20.4%</td>
+        </tr>
+        <tr>
+          <td class="bold">2024 (OOS)</td>
+          <td class="heat-pos-1">+1.4%</td><td class="heat-pos-2">+2.8%</td><td class="heat-pos-2">+2.0%</td><td class="heat-neg-2">-2.9%</td><td class="heat-pos-3">+3.6%</td><td class="heat-pos-1">+1.2%</td>
+          <td class="heat-pos-2">+2.5%</td><td class="heat-neg-1">-1.1%</td><td class="heat-pos-2">+1.9%</td><td class="heat-neg-1">-0.8%</td><td class="heat-pos-3">+4.2%</td><td class="heat-pos-2">+2.1%</td>
+          <td class="bold text-emerald">+17.8%</td>
+        </tr>
+        <tr>
+          <td class="bold">2023 (OOS)</td>
+          <td class="heat-pos-3">+3.9%</td><td class="heat-neg-1">-1.4%</td><td class="heat-pos-2">+2.2%</td><td class="heat-pos-1">+1.0%</td><td class="heat-neg-1">-0.7%</td><td class="heat-pos-3">+3.5%</td>
+          <td class="heat-pos-2">+2.7%</td><td class="heat-neg-2">-2.4%</td><td class="heat-neg-2">-3.1%</td><td class="heat-neg-1">-1.6%</td><td class="heat-pos-3">+4.8%</td><td class="heat-pos-3">+3.9%</td>
+          <td class="bold text-emerald">+13.4%</td>
+        </tr>
+        <tr>
+          <td class="bold">2022 (OOS)</td>
+          <td class="heat-neg-2">-3.2%</td><td class="heat-pos-1">+0.8%</td><td class="heat-pos-2">+2.4%</td><td class="heat-neg-3">-4.5%</td><td class="heat-pos-1">+1.2%</td><td class="heat-neg-3">-5.1%</td>
+          <td class="heat-pos-3">+4.6%</td><td class="heat-neg-1">-1.8%</td><td class="heat-neg-2">-2.9%</td><td class="heat-pos-3">+5.2%</td><td class="heat-pos-3">+4.1%</td><td class="heat-pos-1">+1.1%</td>
+          <td class="bold text-emerald">+0.8%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+</body>
+</html>
