@@ -6,6 +6,11 @@
 import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+// The playground's own DOM-free pivot-to-chart mapping (docs/assets/wasm/harmonic_map.js).
+const here = path.dirname(fileURLToPath(import.meta.url));
+const { harmonicPoints } = await import(path.join(here, "../../docs/assets/wasm/harmonic_map.js"));
 
 const dir = path.resolve(process.argv[2] || "target/wasm-node");
 const require = createRequire(import.meta.url);
@@ -56,6 +61,8 @@ if (!countOk) failures++;
 // ---- Harmonic scanner: every field, every kind & direction, 0-based bars ----
 const KINDS = ["abcd", "alternate_abcd", "5-0", "gartley", "bat", "butterfly", "crab", "alternate_bat"];
 const seen = new Set();
+let xPinned = 0;
+let mappedPoints = 0;
 for (const s of fx.harmonic_series) {
   const hl = s.bars.map(fromHex);
   const sc = new qw.HarmonicScanner(s.ss);
@@ -80,15 +87,28 @@ for (const s of fx.harmonic_series) {
       const bar = g[j], price = g[j + 1];
       if (!(hl[2 * bar] === price || hl[2 * bar + 1] === price)) baseOk = false;
     }
-    if (kind !== w.kind || !fieldsOk || !bullOk || !xOk || !baseOk) {
+    // The playground mapping: every mapped point (X when present, then A..D)
+    // must sit on the high or low of the chart bar it is drawn at.
+    const pts = harmonicPoints(g, 0);
+    const wantPts = Number.isNaN(g[2]) ? 4 : 5;
+    let mapOk = pts.length === wantPts;
+    for (const [bar, price] of pts) {
+      if (!(Number.isInteger(bar) && (hl[2 * bar] === price || hl[2 * bar + 1] === price))) mapOk = false;
+    }
+    if (!Number.isNaN(g[2])) xPinned++;
+    mappedPoints += pts.length;
+    if (kind !== w.kind || !fieldsOk || !bullOk || !xOk || !baseOk || !mapOk) {
       ok = false;
-      console.log("MISMATCH", s.name, k, { kind, want: w.kind, fieldsOk, bullOk, xOk, baseOk });
+      console.log("MISMATCH", s.name, k, { kind, want: w.kind, fieldsOk, bullOk, xOk, baseOk, mapOk });
     }
     seen.add(`${w.kind}/${w.bull ? "bull" : "bear"}`);
   }
   console.log(`${ok ? "PASS" : "FAIL"} harmonic ${s.name}: core=${s.patterns.length} wasm=${got.length}`);
   if (!ok) failures++;
 }
+const mapCoverOk = xPinned > 0 && mappedPoints > 0;
+console.log(`${mapCoverOk ? "PASS" : "FAIL"} playground harmonicPoints mapping: ${mappedPoints} points on bar high/low (${xPinned} patterns with X)`);
+if (!mapCoverOk) failures++;
 const missing = KINDS.flatMap((k) => ["bull", "bear"].map((d) => `${k}/${d}`)).filter((k) => !seen.has(k));
 console.log(`${missing.length ? "FAIL" : "PASS"} harmonic kind/direction coverage: ${seen.size}/16${missing.length ? " missing " + missing.join(",") : ""}`);
 if (missing.length) failures++;

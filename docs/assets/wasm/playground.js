@@ -8,6 +8,8 @@
 // Loaded site-wide via mkdocs `extra_javascript` (type: module); it no-ops on
 // every page that has no #qw-playground, and lazy-loads the wasm only here.
 
+import { harmonicPoints } from "./harmonic_map.js";
+
 // Populated on first use by a dynamic import of the wasm-bindgen glue.
 let wasm = null;
 let resizeBound = false;
@@ -134,10 +136,7 @@ function computeHarmonics(swing) {
   for (const b of BARS) {
     const f = h.next(b.high, b.low);
     for (let i = 0; i < f.length; i += stride) {
-      const pts = [];
-      // Scanner bar indices are 0-based, same as the chart (BARS) index.
-      if (Number.isFinite(f[i + 2])) pts.push([f[i + 2], f[i + 3]]);
-      for (let j = 4; j <= 10; j += 2) pts.push([f[i + j], f[i + j + 1]]);
+      const pts = harmonicPoints(f, i);
       out.push({ kind: wasm.harmonicKindName(f[i]), bull: f[i + 1] === 1, pts, score: f[i + 12] });
     }
   }
