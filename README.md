@@ -28,7 +28,7 @@ Most quantitative libraries force an uncomfortable compromise.
 
 **QuantWave removes the tradeoff.**
 
-It runs a **Rust core** behind zero-copy Polars expressions, while offering a first-class, productive experience in both Python and Rust. Every indicator is built on a single mathematical source of truth — the `Next<T>` trait — and batch (Polars) and real-time streaming outputs are **property-tested to agree**: 219 of 225 indicators have a streaming-vs-batch proptest (most use a `1e-6` tolerance), and the rest are listed with reasons in [`quantwave-core/tests/parity_exemptions.toml`](quantwave-core/tests/parity_exemptions.toml). See [Validation](https://lavs9.github.io/quantwave/validation/).
+It runs a **Rust core** behind zero-copy Polars expressions, while offering a first-class, productive experience in both Python and Rust. Every indicator is built on a single mathematical source of truth — the `Next<T>` trait — and batch (Polars) and real-time streaming outputs are **property-tested to agree**: 219 of 225 indicators have a streaming-vs-batch proptest, with tolerances ranging from exact match to `1e-5` (most are `1e-10` or exact), and 7 reviewed exemptions (6 indicators without a proptest, plus `wma`, which has one) are listed in [`quantwave-core/tests/parity_exemptions.toml`](quantwave-core/tests/parity_exemptions.toml). See [Validation](https://lavs9.github.io/quantwave/validation/).
 
 ### How We Compare
 
@@ -59,7 +59,7 @@ QuantWave is no longer early-stage. It ships with production-ready depth across 
 
 ## Real-World Performance
 
-- **Memory footprint** on 1,000,000 synthetic rows (harness in `benchmarks/`, results in `benchmarks/results/latest.json`): Pandas uses **1.17×** the memory of the Polars frame for OHLCV + symbol, and **2.14×** for the high-cardinality symbol column alone
+- **Memory footprint** on 1,000,000 synthetic rows (harness in `benchmarks/`, results in `benchmarks/results/latest.json`): Pandas uses **1.17×** the memory of the Polars frame for OHLCV + symbol, and **2.14×** for the symbol string column alone (1,000 distinct symbols)
 - **Speed & latency**: published only from the reproducible harness in `benchmarks/`; earlier unmeasured throughput figures have been removed
 
 → [Full benchmarks & methodology](https://lavs9.github.io/quantwave/benchmarks/)
