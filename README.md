@@ -8,7 +8,7 @@
 [![CI](https://github.com/lavs9/quantwave/actions/workflows/ci.yml/badge.svg)](https://github.com/lavs9/quantwave/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/lavs9/quantwave/blob/main/LICENSE)
 
-225 Native Indicators · Full Ehlers DSP suite · Regime Detection · Backtest engine · Bit-identical streaming & batch
+225 Native Indicators · Full Ehlers DSP suite · Regime Detection · Backtest engine · Property-tested streaming & batch parity
 
 **Python** `pip install quantwave` (or `pip install "quantwave[polars]"` for the Polars integration layer) **Rust** `cargo add quantwave`
 
@@ -22,13 +22,13 @@
 
 Most quantitative libraries force an uncomfortable compromise.
 
-**Python-first libraries** (pandas-ta, TA-Lib Python wrappers, etc.) are convenient but fall apart on large datasets, recursive indicators, or live streaming — often becoming 10-100x slower than native code.
+**Python-first libraries** (pandas-ta, TA-Lib Python wrappers, etc.) are convenient but fall apart on large datasets, recursive indicators, or live streaming — and per-bar Python loops are far slower than native code.
 
 **Pure Rust libraries** are fast, but they rarely integrate cleanly with modern Polars-based research pipelines and lack the breadth of advanced techniques (Ehlers DSP, regime detection, full Options India analytics).
 
 **QuantWave removes the tradeoff.**
 
-It delivers **institutional-grade Rust performance** through zero-copy Polars expressions, while offering a first-class, productive experience in both Python and Rust. Every indicator is built on a single mathematical source of truth — the `Next<T>` trait — guaranteeing that batch results (Polars) and real-time streaming results are **bit-identical**.
+It runs a **Rust core** behind zero-copy Polars expressions, while offering a first-class, productive experience in both Python and Rust. Every indicator is built on a single mathematical source of truth — the `Next<T>` trait — and batch (Polars) and real-time streaming outputs are **property-tested to agree**: 219 of 225 indicators have a streaming-vs-batch proptest (most use a `1e-6` tolerance), and the rest are listed with reasons in [`quantwave-core/tests/parity_exemptions.toml`](quantwave-core/tests/parity_exemptions.toml). See [Validation](https://lavs9.github.io/quantwave/validation/).
 
 ### How We Compare
 
@@ -36,7 +36,7 @@ It delivers **institutional-grade Rust performance** through zero-copy Polars ex
 |---------------------------|---------------------|---------------|------------------|--------------------------------------|
 | pandas-ta / TA-Lib (Python) | Poor–Average       | Partial      | Rare             | Limited                              |
 | Other Rust TA crates      | Excellent           | Poor         | Rare             | Limited                              |
-| **QuantWave**             | **Excellent**       | **Native**   | **Guaranteed**   | **Strong**                           |
+| **QuantWave**             | **Excellent**       | **Native**   | **Property-tested** | **Strong**                           |
 
 ## What We’ve Built
 
@@ -53,13 +53,13 @@ QuantWave is no longer early-stage. It ships with production-ready depth across 
 
 - **Performance** — Rust core with zero-copy Polars expressions
 - **Correctness** — Validated against gold-standard reference vectors
-- **Parity** — Bit-identical results between batch and streaming
+- **Parity** — Streaming and batch outputs property-tested to agree (219/225 indicators; exemptions in `parity_exemptions.toml`)
 - **Breadth** — Classic indicators + advanced Ehlers DSP + regime detection + Options India
 - **Developer Experience** — Clean Python API (`from quantwave import ta`) and idiomatic Rust
 
 ## Real-World Performance
 
-- **Memory footprint** on realistic multi-ticker data: **2–5× lower** than Pandas (measured — see benchmarks)
+- **Memory footprint** on 1,000,000 synthetic rows (harness in `benchmarks/`, results in `benchmarks/results/latest.json`): Pandas uses **1.17×** the memory of the Polars frame for OHLCV + symbol, and **2.14×** for the high-cardinality symbol column alone
 - **Speed & latency**: published only from the reproducible harness in `benchmarks/`; earlier unmeasured throughput figures have been removed
 
 → [Full benchmarks & methodology](https://lavs9.github.io/quantwave/benchmarks/)
@@ -99,7 +99,7 @@ print(report.extended_metrics())             # Calmar, VaR-95, CVaR-95
 report.save_html("tearsheet.html")           # self-contained tear sheet
 ```
 
-The same engine runs order-driven fills (`.bt.order_backtest`), risk overlays (`risk_model=`), and multi-symbol portfolios (`.bt.portfolio_backtest`) — with batch results guaranteed bit-identical to streaming.
+The same engine runs order-driven fills (`.bt.order_backtest`), risk overlays (`risk_model=`), and multi-symbol portfolios (`.bt.portfolio_backtest`) — with batch↔streaming parity covered by tests in `quantwave-backtest/tests/`.
 
 [More examples → Documentation](https://lavs9.github.io/quantwave/examples/batch-streaming/)
 
