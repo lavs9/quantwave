@@ -78,9 +78,56 @@ pub struct StopExit {
     pub exit_price: f64,
 }
 
+/// Direction of an open position or stop evaluation context.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PositionSide {
+    Long,
+    Short,
+}
+
+impl PositionSide {
+    pub const fn is_long(self) -> bool {
+        matches!(self, Self::Long)
+    }
+
+    pub const fn is_short(self) -> bool {
+        matches!(self, Self::Short)
+    }
+}
+
+impl From<bool> for PositionSide {
+    fn from(is_long: bool) -> Self {
+        if is_long { Self::Long } else { Self::Short }
+    }
+}
+
+impl From<PositionSide> for bool {
+    fn from(side: PositionSide) -> Self {
+        side.is_long()
+    }
+}
+
+impl From<crate::orders::Side> for PositionSide {
+    fn from(side: crate::orders::Side) -> Self {
+        match side {
+            crate::orders::Side::Buy => Self::Long,
+            crate::orders::Side::Sell => Self::Short,
+        }
+    }
+}
+
+impl From<PositionSide> for crate::orders::Side {
+    fn from(side: PositionSide) -> Self {
+        match side {
+            PositionSide::Long => Self::Buy,
+            PositionSide::Short => Self::Sell,
+        }
+    }
+}
+
 /// Initial trailing level at position entry.
-pub fn trailing_level_at_entry(entry_price: f64, is_long: bool, trail_pct: f64) -> f64 {
-    if is_long {
+pub fn trailing_level_at_entry(entry_price: f64, side: PositionSide, trail_pct: f64) -> f64 {
+    if side.is_long() {
         entry_price * (1.0 - trail_pct)
     } else {
         entry_price * (1.0 + trail_pct)
@@ -91,12 +138,13 @@ pub fn trailing_level_at_entry(entry_price: f64, is_long: bool, trail_pct: f64) 
 pub fn ratchet_trailing(
     stop_config: &StopConfig,
     bar: OhlcBar,
-    is_long: bool,
+    side: PositionSide,
     state: &mut StopPositionState,
 ) {
     let Some(trail_pct) = stop_config.trailing_stop_pct else {
         return;
     };
+    let is_long = side.is_long();
     let ratchet_px = match stop_config.stop_evaluation {
         StopEvaluationMode::CloseOnly => bar.close,
         StopEvaluationMode::OhlcTouched => {
@@ -126,7 +174,7 @@ pub fn ratchet_trailing(
 pub fn evaluate_stops(
     stop_config: &StopConfig,
     bar: OhlcBar,
-    is_long: bool,
+    side: PositionSide,
     entry_price: f64,
     state: &mut StopPositionState,
 ) -> Option<StopExit> {
@@ -134,14 +182,14 @@ pub fn evaluate_stops(
         return None;
     }
 
-    ratchet_trailing(stop_config, bar, is_long, state);
+    ratchet_trailing(stop_config, bar, side, state);
 
     let close = bar.close;
     let high = bar.high_px();
     let low = bar.low_px();
     let mode = stop_config.stop_evaluation;
 
-    if is_long {
+    if side.is_long() {
         evaluate_stops_long(stop_config, mode, close, high, low, entry_price, state)
     } else {
         evaluate_stops_short(stop_config, mode, close, high, low, entry_price, state)
@@ -312,7 +360,7 @@ mod tests {
             high: Some(100.0),
             low: Some(96.0),
         };
-        let exit = evaluate_stops(&cfg, bar, true, 100.0, &mut state).unwrap();
+        let exit = evaluate_stops(&cfg, bar, PositionSide::Long, 100.0, &mut state).unwrap();
         assert_eq!(exit.kind, StopExitKind::StopLoss);
         assert!((exit.exit_price - 98.0).abs() < 1e-9);
     }
@@ -330,6 +378,6 @@ mod tests {
             high: Some(100.0),
             low: Some(96.0),
         };
-        assert!(evaluate_stops(&cfg, bar, true, 100.0, &mut state).is_none());
+        assert!(evaluate_stops(&cfg, bar, PositionSide::Long, 100.0, &mut state).is_none());
     }
 }

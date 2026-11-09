@@ -43,7 +43,7 @@ pub use indicators::atr_ts::ATRTrailingStop;
 pub use indicators::autotune::AutoTuneFilter;
 pub use indicators::cycle::*;
 pub use indicators::donchian::DonchianChannels;
-pub use indicators::exp_dev_bands::ExpDevBands;
+pub use indicators::exp_dev_bands::{ExpDevBands, ExpDevBaseline};
 pub use indicators::frac_diff::FracDiff;
 pub use indicators::fractals::BillWilliamsFractals;
 pub use indicators::gap_momentum::GapMomentum;
@@ -109,6 +109,7 @@ pub use indicators::vwap::AnchoredVWAP;
 pub use indicators::wavetrend::WaveTrend;
 pub use streaming::{StreamingReadiness, TrackedNext, track, warmup_from_params};
 pub use traits::{IndicatorConfig, Next, SmoothingAlgorithm};
+pub use options_india::OptionType;
 
 // NOTE: `pub use talib_rs as talib;` was removed — talib-rs is a parity oracle
 // used from `#[cfg(test)]` and `benches/`, never from the shipped library

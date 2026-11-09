@@ -27,9 +27,9 @@ mod optimizers;
 mod projection;
 
 pub use covariance::{ewma_cov, ledoit_wolf_cov, sample_cov};
-pub use hrp::hrp;
+pub use hrp::{HrpInputKind, hrp};
 pub use optimizers::{max_sharpe, min_variance, risk_parity};
-pub use projection::apply_bounds_and_budget;
+pub use projection::{PortfolioConstraint, apply_bounds_and_budget};
 
 use thiserror::Error;
 
@@ -180,7 +180,7 @@ mod parity_tests {
     fn hrp_from_cov_matches_numpy_v1() {
         let r = toy_returns();
         let cov = sample_cov(&r).unwrap();
-        let w = hrp(&cov, None, true).unwrap();
+        let w = hrp(&cov, None, HrpInputKind::Covariance).unwrap();
         let expected = [0.32939214692886076, 0.35832698650221917, 0.3122808665689201];
         for i in 0..3 {
             assert_relative_eq!(w[i], expected[i], epsilon = 1e-8);
@@ -190,7 +190,7 @@ mod parity_tests {
     #[test]
     fn hrp_from_returns_matches_numpy_v1() {
         let r = toy_returns();
-        let w = hrp(&r, None, false).unwrap();
+        let w = hrp(&r, None, HrpInputKind::Returns).unwrap();
         let expected = [0.32939214692886076, 0.35832698650221917, 0.3122808665689201];
         for i in 0..3 {
             assert_relative_eq!(w[i], expected[i], epsilon = 1e-8);
@@ -200,7 +200,7 @@ mod parity_tests {
     #[test]
     fn hrp4_matches_numpy_v1() {
         let cov = cov4();
-        let w = hrp(&cov, None, true).unwrap();
+        let w = hrp(&cov, None, HrpInputKind::Covariance).unwrap();
         let expected = [
             0.18967334035827263,
             0.15173867228661872,

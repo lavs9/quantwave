@@ -2,7 +2,7 @@
 //! risk parity (Spinu).
 
 use super::covariance::check_cov;
-use super::projection::apply_bounds_and_budget;
+use super::projection::{PortfolioConstraint, apply_bounds_and_budget};
 use super::{Bounds, PortfolioError, PortfolioResult};
 use nalgebra::{DMatrix, DVector};
 
@@ -64,7 +64,7 @@ pub fn min_variance(
         return Err(PortfolioError::MinVarianceDegenerate);
     }
     let w = raw / total;
-    apply_bounds_and_budget(&w, bounds, true)
+    apply_bounds_and_budget(&w, bounds, PortfolioConstraint::LongOnly)
 }
 
 /// Maximum-Sharpe (tangency) portfolio weights.
@@ -90,7 +90,7 @@ pub fn max_sharpe(
         return Err(PortfolioError::MaxSharpeDegenerate);
     }
     let w = raw / total;
-    apply_bounds_and_budget(&w, bounds, true)
+    apply_bounds_and_budget(&w, bounds, PortfolioConstraint::LongOnly)
 }
 
 /// Equal risk-contribution ("risk parity") portfolio weights.
@@ -140,7 +140,7 @@ pub fn risk_parity(
         return Err(PortfolioError::RiskParityDidNotConverge);
     }
     let w = &y / y.sum();
-    apply_bounds_and_budget(&w, bounds, true)
+    apply_bounds_and_budget(&w, bounds, PortfolioConstraint::LongOnly)
 }
 
 #[cfg(test)]

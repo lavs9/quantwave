@@ -2,6 +2,43 @@
 
 use super::{Bounds, PortfolioError, PortfolioResult};
 use nalgebra::DVector;
+use serde::{Deserialize, Serialize};
+
+/// Directional constraint applied to portfolio weights during projection.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum PortfolioConstraint {
+    /// Long-only weights (non-negative lower bound of 0.0).
+    #[default]
+    LongOnly,
+    /// Long-short weights (unbounded negative lower bound of -inf).
+    LongShort,
+}
+
+impl PortfolioConstraint {
+    pub const fn is_long_only(self) -> bool {
+        matches!(self, Self::LongOnly)
+    }
+
+    pub const fn is_long_short(self) -> bool {
+        matches!(self, Self::LongShort)
+    }
+}
+
+impl From<bool> for PortfolioConstraint {
+    fn from(long_only: bool) -> Self {
+        if long_only {
+            Self::LongOnly
+        } else {
+            Self::LongShort
+        }
+    }
+}
+
+impl From<PortfolioConstraint> for bool {
+    fn from(constraint: PortfolioConstraint) -> Self {
+        constraint.is_long_only()
+    }
+}
 
 /// Project raw weights onto the box-constrained, budget=1 feasible set.
 ///
@@ -20,13 +57,13 @@ use nalgebra::DVector;
 pub fn apply_bounds_and_budget(
     w: &DVector<f64>,
     bounds: Option<&[Bounds]>,
-    long_only: bool,
+    constraint: PortfolioConstraint,
 ) -> PortfolioResult<DVector<f64>> {
     let n = w.len();
 
     let (lo, hi): (DVector<f64>, DVector<f64>) = match bounds {
         None => {
-            let lo = if long_only {
+            let lo = if constraint.is_long_only() {
                 DVector::zeros(n)
             } else {
                 DVector::from_element(n, f64::NEG_INFINITY)
@@ -98,7 +135,7 @@ mod tests {
     #[test]
     fn unconstrained_long_only_sums_to_one() {
         let w = DVector::from_vec(vec![0.5, 0.3, 0.2]);
-        let out = apply_bounds_and_budget(&w, None, true).unwrap();
+        let out = apply_bounds_and_budget(&w, None, PortfolioConstraint::LongOnly).unwrap();
         assert!((out.sum() - 1.0).abs() < 1e-9);
         assert!(out.iter().all(|v| *v >= 0.0));
     }
@@ -106,7 +143,7 @@ mod tests {
     #[test]
     fn negative_weight_clipped_to_zero_and_redistributed() {
         let w = DVector::from_vec(vec![-0.1, 0.6, 0.5]);
-        let out = apply_bounds_and_budget(&w, None, true).unwrap();
+        let out = apply_bounds_and_budget(&w, None, PortfolioConstraint::LongOnly).unwrap();
         assert!((out.sum() - 1.0).abs() < 1e-9);
         assert!(out.iter().all(|v| *v >= -1e-9));
     }
@@ -115,7 +152,8 @@ mod tests {
     fn infeasible_upper_bounds_error() {
         let w = DVector::from_vec(vec![0.5, 0.5]);
         let bounds = vec![(0.0, 0.3), (0.0, 0.3)];
-        let err = apply_bounds_and_budget(&w, Some(&bounds), true).unwrap_err();
+        let err =
+            apply_bounds_and_budget(&w, Some(&bounds), PortfolioConstraint::LongOnly).unwrap_err();
         assert_eq!(err, PortfolioError::BoundsUpperSumTooLow);
     }
 }

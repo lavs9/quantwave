@@ -14,10 +14,47 @@
 //! needed to match the v1's behavior (see task report).
 
 use super::covariance::{check_cov, check_returns_matrix};
-use super::projection::apply_bounds_and_budget;
+use super::projection::{PortfolioConstraint, apply_bounds_and_budget};
 use super::{Bounds, PortfolioError, PortfolioResult};
 use nalgebra::DMatrix;
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
+
+/// Interpretation of the input matrix passed to [`hrp`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum HrpInputKind {
+    /// A `(T, N)` returns matrix (sample covariance is computed internally).
+    #[default]
+    Returns,
+    /// A precomputed `(N, N)` covariance matrix.
+    Covariance,
+}
+
+impl HrpInputKind {
+    pub const fn is_covariance(self) -> bool {
+        matches!(self, Self::Covariance)
+    }
+
+    pub const fn is_returns(self) -> bool {
+        matches!(self, Self::Returns)
+    }
+}
+
+impl From<bool> for HrpInputKind {
+    fn from(is_cov: bool) -> Self {
+        if is_cov {
+            Self::Covariance
+        } else {
+            Self::Returns
+        }
+    }
+}
+
+impl From<HrpInputKind> for bool {
+    fn from(kind: HrpInputKind) -> Self {
+        kind.is_covariance()
+    }
+}
 
 fn corr_from_cov(cov: &DMatrix<f64>) -> DMatrix<f64> {
     let n = cov.nrows();
@@ -200,27 +237,34 @@ fn hrp_bisection(cov: &DMatrix<f64>, sorted_idx: &[usize]) -> Vec<f64> {
 
 /// Hierarchical Risk Parity (Lopez de Prado) portfolio weights.
 ///
-/// `returns_or_cov` is either a `(T, N)` returns matrix (`is_cov = false`,
+/// `returns_or_cov` is either a `(T, N)` returns matrix (`input_kind = HrpInputKind::Returns`,
 /// sample covariance is computed internally) or a precomputed `(N, N)`
-/// covariance matrix (`is_cov = true`). `bounds` are optional per-asset
+/// covariance matrix (`input_kind = HrpInputKind::Covariance`). `bounds` are optional per-asset
 /// `(low, high)` bounds applied to the final weights via capped-simplex
 /// projection. Direct port of `hrp` in the Python v1.
 pub fn hrp(
     returns_or_cov: &DMatrix<f64>,
     bounds: Option<&[Bounds]>,
-    is_cov: bool,
+    input_kind: HrpInputKind,
 ) -> PortfolioResult<nalgebra::DVector<f64>> {
-    let cov = if is_cov {
-        check_cov(returns_or_cov)?;
-        returns_or_cov.clone()
-    } else {
-        check_returns_matrix(returns_or_cov)?;
-        super::sample_cov(returns_or_cov)?
+    let cov = match input_kind {
+        HrpInputKind::Covariance => {
+            check_cov(returns_or_cov)?;
+            returns_or_cov.clone()
+        }
+        HrpInputKind::Returns => {
+            check_returns_matrix(returns_or_cov)?;
+            super::sample_cov(returns_or_cov)?
+        }
     };
 
     let n = cov.nrows();
     if n == 1 {
-        return apply_bounds_and_budget(&nalgebra::DVector::from_element(1, 1.0), bounds, true);
+        return apply_bounds_and_budget(
+            &nalgebra::DVector::from_element(1, 1.0),
+            bounds,
+            PortfolioConstraint::LongOnly,
+        );
     }
 
     let corr = corr_from_cov(&cov);
@@ -248,7 +292,7 @@ pub fn hrp(
         return Err(PortfolioError::HrpDegenerate);
     }
     let w = nalgebra::DVector::from_vec(w.iter().map(|v| v / total).collect());
-    apply_bounds_and_budget(&w, bounds, true)
+    apply_bounds_and_budget(&w, bounds, PortfolioConstraint::LongOnly)
 }
 
 #[cfg(test)]
@@ -259,7 +303,7 @@ mod tests {
     #[test]
     fn hrp_single_asset_is_full_weight() {
         let cov = DMatrix::from_row_slice(1, 1, &[0.04]);
-        let w = hrp(&cov, None, true).unwrap();
+        let w = hrp(&cov, None, HrpInputKind::Covariance).unwrap();
         assert_eq!(w.len(), 1);
         assert!((w[0] - 1.0).abs() < 1e-12);
     }
@@ -275,7 +319,7 @@ mod tests {
                 0.001, 0.015, 0.03,
             ],
         );
-        let w = hrp(&cov, None, true).unwrap();
+        let w = hrp(&cov, None, HrpInputKind::Covariance).unwrap();
         assert!((w.sum() - 1.0).abs() < 1e-9);
         assert!(w.iter().all(|v| *v >= -1e-9));
     }
@@ -291,8 +335,8 @@ mod tests {
             ],
         );
         let cov = super::super::sample_cov(&returns).unwrap();
-        let w_from_returns = hrp(&returns, None, false).unwrap();
-        let w_from_cov = hrp(&cov, None, true).unwrap();
+        let w_from_returns = hrp(&returns, None, HrpInputKind::Returns).unwrap();
+        let w_from_cov = hrp(&cov, None, HrpInputKind::Covariance).unwrap();
         for i in 0..3 {
             assert!((w_from_returns[i] - w_from_cov[i]).abs() < 1e-9);
         }
@@ -305,7 +349,7 @@ mod tests {
         // sum to 1 and be strictly positive.
         let cov =
             DMatrix::<f64>::from_diagonal(&DVector::from_row_slice(&[0.01, 0.02, 0.03, 0.04]));
-        let w = hrp(&cov, None, true).unwrap();
+        let w = hrp(&cov, None, HrpInputKind::Covariance).unwrap();
         assert!((w.sum() - 1.0).abs() < 1e-9);
         assert!(w.iter().all(|v| *v > 0.0));
     }

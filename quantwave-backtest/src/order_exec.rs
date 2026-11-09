@@ -28,7 +28,7 @@
 //! Deferred to later slices: partial fills, pyramiding/averaging, and the
 //! streaming Python order entry point. Costs/slippage reuse [`ExecutionModel`].
 
-use crate::orders::{Bracket, ExecBar, Order, Side, fill_order, resolve_bracket};
+use crate::orders::{Bracket, ExecBar, Order, PositionSide, Side, fill_order, resolve_bracket};
 use crate::{EquityPoint, ExecutionModel, Trade};
 use chrono::{DateTime, Utc};
 
@@ -134,7 +134,12 @@ impl<'a> OrderSim<'a> {
         // this bar's new orders. Pure function of the bar → parity-safe.
         let bracket_exit = self.open.as_ref().and_then(|t| {
             t.bracket.and_then(|br| {
-                resolve_bracket(t.side == 1, br.take_profit, br.stop_loss, bar).map(|(_leg, px)| px)
+                let side = if t.side == 1 {
+                    PositionSide::Long
+                } else {
+                    PositionSide::Short
+                };
+                resolve_bracket(side, br.take_profit, br.stop_loss, bar).map(|(_leg, px)| px)
             })
         });
         if let Some(px) = bracket_exit {

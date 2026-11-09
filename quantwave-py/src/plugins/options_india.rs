@@ -43,9 +43,9 @@ fn map4(inputs: &[Series], f: impl Fn(f64, f64, f64, f64) -> f64) -> PolarsResul
 #[polars_expr(output_type = Float64)]
 fn options_bs_delta(inputs: &[Series], kwargs: SpotCallKwargs) -> PolarsResult<Series> {
     let spot = kwargs.spot;
-    let is_call = kwargs.is_call;
+    let opt_type = options_india::OptionType::from(kwargs.is_call);
     map4(inputs, |k, sigma, r, t| {
-        options_india::bs_delta(spot, k, r, t, sigma, is_call)
+        options_india::bs_delta(spot, k, r, t, sigma, opt_type)
     })
 }
 
@@ -71,9 +71,9 @@ fn options_bs_vega(inputs: &[Series], kwargs: SpotKwargs) -> PolarsResult<Series
 #[polars_expr(output_type = Float64)]
 fn options_bs_theta(inputs: &[Series], kwargs: SpotCallKwargs) -> PolarsResult<Series> {
     let spot = kwargs.spot;
-    let is_call = kwargs.is_call;
+    let opt_type = options_india::OptionType::from(kwargs.is_call);
     map4(inputs, |k, sigma, r, t| {
-        options_india::bs_theta(spot, k, r, t, sigma, is_call)
+        options_india::bs_theta(spot, k, r, t, sigma, opt_type)
     })
 }
 
@@ -81,9 +81,9 @@ fn options_bs_theta(inputs: &[Series], kwargs: SpotCallKwargs) -> PolarsResult<S
 #[polars_expr(output_type = Float64)]
 fn options_bs_rho(inputs: &[Series], kwargs: SpotCallKwargs) -> PolarsResult<Series> {
     let spot = kwargs.spot;
-    let is_call = kwargs.is_call;
+    let opt_type = options_india::OptionType::from(kwargs.is_call);
     map4(inputs, |k, sigma, r, t| {
-        options_india::bs_rho(spot, k, r, t, sigma, is_call)
+        options_india::bs_rho(spot, k, r, t, sigma, opt_type)
     })
 }
 

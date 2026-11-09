@@ -127,7 +127,7 @@ fn hrp(
     is_cov: bool,
 ) -> PyResult<Vec<f64>> {
     let m = matrix_from_rows(&returns_or_cov)?;
-    let w = portfolio::hrp(&m, bounds.as_deref(), is_cov).map_err(map_err)?;
+    let w = portfolio::hrp(&m, bounds.as_deref(), is_cov.into()).map_err(map_err)?;
     Ok(vector_to_vec(&w))
 }
 

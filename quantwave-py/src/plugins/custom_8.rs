@@ -105,7 +105,7 @@ pub fn exp_dev_bands_output(_: &[Field]) -> PolarsResult<Field> {
 #[polars_expr(output_type_func=exp_dev_bands_output)]
 fn exp_dev_bands(inputs: &[Series], kwargs: ExpDevBandsKwargs) -> PolarsResult<Series> {
     let s = inputs[0].f64()?;
-    let mut indicator = ExpDevBands::new(kwargs.period, kwargs.multiplier, kwargs.use_sma);
+    let mut indicator = ExpDevBands::new(kwargs.period, kwargs.multiplier, kwargs.use_sma.into());
     let mut upper_vals = Vec::with_capacity(s.len());
     let mut mid_vals = Vec::with_capacity(s.len());
     let mut lower_vals = Vec::with_capacity(s.len());

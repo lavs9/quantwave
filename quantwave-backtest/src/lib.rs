@@ -117,7 +117,7 @@ pub use portfolio::{
 use quantwave_core::traits::Next; // Re-exported for future streaming parity work (used in hybrid mode later per quantwave-ug9t)
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-pub use stops::{StopConfig, StopEvaluationMode};
+pub use stops::{PositionSide, StopConfig, StopEvaluationMode};
 pub use sweep::{SweepVariant, run_param_sweep, single_param_variants};
 pub use tearsheet::{TearsheetOptions, render_tearsheet_html};
 use thiserror::Error;
@@ -1547,7 +1547,9 @@ fn run_simulation(
     stop_config: &StopConfig,
     risk_model: &Option<risk::RiskModel>,
 ) -> (Vec<Trade>, Vec<EquityPoint>) {
-    use stops::{OhlcBar, StopPositionState, evaluate_stops, trailing_level_at_entry};
+    use stops::{
+        OhlcBar, PositionSide, StopPositionState, evaluate_stops, trailing_level_at_entry,
+    };
     let mut cash = match exec {
         ExecutionModel::Simple(cm) => cm.initial_cash,
         ExecutionModel::HighFidelity { .. } => 100_000.0,
@@ -1633,9 +1635,10 @@ fn run_simulation(
         }
         let new_tid = tid + 1;
         let exposure = if is_long { qty } else { -qty };
+        let pos_side = PositionSide::from(is_long);
         let trail = stop_config
             .trailing_stop_pct
-            .map(|pct| trailing_level_at_entry(fill_price, is_long, pct));
+            .map(|pct| trailing_level_at_entry(fill_price, pos_side, pct));
         (
             new_tid,
             exposure,
@@ -1669,9 +1672,10 @@ fn run_simulation(
         // Stop / target checks while in position (before signal-driven entry).
         if current_exposure != 0.0 && stop_config.has_stops() {
             let is_long = current_exposure > 0.0;
+            let pos_side = PositionSide::from(is_long);
             let qty = current_exposure.abs();
             if let Some(stop_exit) =
-                evaluate_stops(stop_config, ohlc, is_long, entry_price, &mut stop_state)
+                evaluate_stops(stop_config, ohlc, pos_side, entry_price, &mut stop_state)
                 && let Some(ets) = entry_ts.take()
             {
                 let side = if is_long { 1 } else { -1 };

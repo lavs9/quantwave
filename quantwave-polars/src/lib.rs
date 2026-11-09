@@ -2300,15 +2300,16 @@ impl<'a> QuantWaveNamespace<'a> {
         name: &str,
         period: usize,
         multiplier: f64,
-        use_sma: bool,
+        baseline: impl Into<quantwave_core::ExpDevBaseline>,
     ) -> LazyFrame {
+        let baseline = baseline.into();
         let name_str = name.to_string();
         self.0.clone().with_columns([col(&name_str)
             .map(
                 move |s| {
                     let ca = s.f64()?;
                     let mut indicator =
-                        quantwave_core::ExpDevBands::new(period, multiplier, use_sma);
+                        quantwave_core::ExpDevBands::new(period, multiplier, baseline);
                     let mut upper_vals = Vec::with_capacity(s.len());
                     let mut mid_vals = Vec::with_capacity(s.len());
                     let mut lower_vals = Vec::with_capacity(s.len());
@@ -4980,7 +4981,11 @@ mod tests {
     #[test]
     fn test_polars_exp_dev_bands() -> PolarsResult<()> {
         let df = df!["p" => [10.0, 11.0, 12.0, 11.0, 10.0]]?;
-        let out = df.lazy().ta().exp_dev_bands("p", 10, 2.0, true).collect()?;
+        let out = df
+            .lazy()
+            .ta()
+            .exp_dev_bands("p", 10, 2.0, quantwave_core::ExpDevBaseline::Sma)
+            .collect()?;
         let data = out.column("exp_dev_bands_data")?.struct_()?;
         assert!(data.field_by_name("upper")?.f64()?.get(4).is_some());
         Ok(())

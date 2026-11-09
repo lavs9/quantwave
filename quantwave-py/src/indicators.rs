@@ -1593,7 +1593,7 @@ pub fn bs_put_price(s: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {
 }
 #[pyfunction]
 pub fn bs_delta(s: f64, k: f64, r: f64, t: f64, sigma: f64, is_call: bool) -> f64 {
-    options_india::bs_delta(s, k, r, t, sigma, is_call)
+    options_india::bs_delta(s, k, r, t, sigma, options_india::OptionType::from(is_call))
 }
 #[pyfunction]
 pub fn bs_gamma(s: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {
@@ -1601,7 +1601,7 @@ pub fn bs_gamma(s: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {
 }
 #[pyfunction]
 pub fn bs_theta(s: f64, k: f64, r: f64, t: f64, sigma: f64, is_call: bool) -> f64 {
-    options_india::bs_theta(s, k, r, t, sigma, is_call)
+    options_india::bs_theta(s, k, r, t, sigma, options_india::OptionType::from(is_call))
 }
 #[pyfunction]
 pub fn bs_vega(s: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {
@@ -1609,7 +1609,7 @@ pub fn bs_vega(s: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {
 }
 #[pyfunction]
 pub fn bs_rho(s: f64, k: f64, r: f64, t: f64, sigma: f64, is_call: bool) -> f64 {
-    options_india::bs_rho(s, k, r, t, sigma, is_call)
+    options_india::bs_rho(s, k, r, t, sigma, options_india::OptionType::from(is_call))
 }
 #[pyfunction]
 pub fn implied_vol(

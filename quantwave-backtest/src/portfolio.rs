@@ -462,8 +462,11 @@ pub(crate) fn simulate_shared_capital(
         let exposure = if is_long { qty } else { -qty };
         let mut stop_state = stops::StopPositionState::default();
         if let Some(pct) = stops.trailing_stop_pct {
-            stop_state.trailing_stop_level =
-                Some(stops::trailing_level_at_entry(fill_price, is_long, pct));
+            stop_state.trailing_stop_level = Some(stops::trailing_level_at_entry(
+                fill_price,
+                stops::PositionSide::from(is_long),
+                pct,
+            ));
         }
         SymbolBook {
             exposure,
@@ -496,14 +499,19 @@ pub(crate) fn simulate_shared_capital(
                 continue;
             }
             let is_long = book.exposure > 0.0;
+            let pos_side = stops::PositionSide::from(is_long);
             let ohlc = stops::OhlcBar {
                 close,
                 high: bar.high,
                 low: bar.low,
             };
-            if let Some(stop_exit) =
-                stops::evaluate_stops(stops, ohlc, is_long, book.entry_price, &mut book.stop_state)
-            {
+            if let Some(stop_exit) = stops::evaluate_stops(
+                stops,
+                ohlc,
+                pos_side,
+                book.entry_price,
+                &mut book.stop_state,
+            ) {
                 let snapshot = book.clone();
                 record_exit(&mut cash, sym, &snapshot, ts, stop_exit.exit_price);
                 *book = SymbolBook {

@@ -14,6 +14,8 @@
 
 use serde::{Deserialize, Serialize};
 
+pub use crate::stops::PositionSide;
+
 /// Order direction.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Side {
@@ -244,8 +246,13 @@ pub enum ExitLeg {
 /// an open position against one bar. Uses the **pessimistic** convention: on a
 /// same-bar double-touch the **stop-loss** is assumed to fire first — identical
 /// to `crate::stops::evaluate_stops`. Returns `(leg, exit_price)` or `None`.
-pub fn resolve_bracket(is_long: bool, tp: f64, sl: f64, bar: ExecBar) -> Option<(ExitLeg, f64)> {
-    if is_long {
+pub fn resolve_bracket(
+    side: PositionSide,
+    tp: f64,
+    sl: f64,
+    bar: ExecBar,
+) -> Option<(ExitLeg, f64)> {
+    if side.is_long() {
         if bar.low <= sl {
             Some((ExitLeg::StopLoss, sl))
         } else if bar.high >= tp {
@@ -402,14 +409,26 @@ mod tests {
     #[test]
     fn bracket_pessimistic_stop_before_target_on_double_touch() {
         // long: bar touches BOTH tp (110) and sl (94) → SL wins (pessimistic).
-        let (leg, px) = resolve_bracket(true, 110.0, 94.0, bar(100.0, 111.0, 93.0, 105.0)).unwrap();
+        let (leg, px) = resolve_bracket(
+            PositionSide::Long,
+            110.0,
+            94.0,
+            bar(100.0, 111.0, 93.0, 105.0),
+        )
+        .unwrap();
         assert_eq!(leg, ExitLeg::StopLoss);
         assert_eq!(px, 94.0);
     }
 
     #[test]
     fn bracket_take_profit_only() {
-        let (leg, px) = resolve_bracket(true, 110.0, 94.0, bar(100.0, 111.0, 99.0, 108.0)).unwrap();
+        let (leg, px) = resolve_bracket(
+            PositionSide::Long,
+            110.0,
+            94.0,
+            bar(100.0, 111.0, 99.0, 108.0),
+        )
+        .unwrap();
         assert_eq!(leg, ExitLeg::TakeProfit);
         assert_eq!(px, 110.0);
     }
@@ -417,9 +436,23 @@ mod tests {
     #[test]
     fn bracket_short_mirrors_and_none_when_untouched() {
         // short: SL above (106) touched → stop.
-        let (leg, _) = resolve_bracket(false, 90.0, 106.0, bar(100.0, 107.0, 95.0, 101.0)).unwrap();
+        let (leg, _) = resolve_bracket(
+            PositionSide::Short,
+            90.0,
+            106.0,
+            bar(100.0, 107.0, 95.0, 101.0),
+        )
+        .unwrap();
         assert_eq!(leg, ExitLeg::StopLoss);
         // neither level touched → rests.
-        assert!(resolve_bracket(true, 110.0, 90.0, bar(100.0, 105.0, 95.0, 101.0)).is_none());
+        assert!(
+            resolve_bracket(
+                PositionSide::Long,
+                110.0,
+                90.0,
+                bar(100.0, 105.0, 95.0, 101.0)
+            )
+            .is_none()
+        );
     }
 }

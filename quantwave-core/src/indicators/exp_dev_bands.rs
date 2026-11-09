@@ -1,6 +1,7 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::smoothing::{EMA, SMA};
 use crate::traits::Next;
+use serde::{Deserialize, Serialize};
 
 pub const METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Exponential Deviation Bands",
@@ -20,9 +21,9 @@ pub const METADATA: IndicatorMetadata = IndicatorMetadata {
             description: "Multiplier for the exponential deviation.",
         },
         ParamDef {
-            name: "use_sma",
-            default: "false",
-            description: "Whether to use SMA (true) or EMA (false) as the base moving average.",
+            name: "baseline",
+            default: "ema",
+            description: "Base moving average: ExpDevBaseline::Ema or ExpDevBaseline::Sma.",
         },
     ],
     formula_source: "Technical Analysis of Stocks & Commodities, July 2019",
@@ -38,6 +39,36 @@ Lower = BaseMA - ExpDev \times multiplier
     gold_standard_file: "exp_dev_bands_20_2.json",
     category: "Classic",
 };
+
+/// Base moving average algorithm for Exponential Deviation Bands.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum ExpDevBaseline {
+    #[default]
+    Ema,
+    Sma,
+}
+
+impl ExpDevBaseline {
+    pub const fn is_sma(self) -> bool {
+        matches!(self, Self::Sma)
+    }
+
+    pub const fn is_ema(self) -> bool {
+        matches!(self, Self::Ema)
+    }
+}
+
+impl From<bool> for ExpDevBaseline {
+    fn from(use_sma: bool) -> Self {
+        if use_sma { Self::Sma } else { Self::Ema }
+    }
+}
+
+impl From<ExpDevBaseline> for bool {
+    fn from(b: ExpDevBaseline) -> Self {
+        b.is_sma()
+    }
+}
 
 #[derive(Debug, Clone)]
 enum BaseMA {
@@ -64,11 +95,10 @@ pub struct ExpDevBands {
 }
 
 impl ExpDevBands {
-    pub fn new(period: usize, multiplier: f64, use_sma: bool) -> Self {
-        let base_ma = if use_sma {
-            BaseMA::SMA(SMA::new(period))
-        } else {
-            BaseMA::EMA(EMA::new(period))
+    pub fn new(period: usize, multiplier: f64, baseline: ExpDevBaseline) -> Self {
+        let base_ma = match baseline {
+            ExpDevBaseline::Sma => BaseMA::SMA(SMA::new(period)),
+            ExpDevBaseline::Ema => BaseMA::EMA(EMA::new(period)),
         };
 
         Self {
@@ -101,7 +131,7 @@ mod tests {
 
     #[test]
     fn test_exp_dev_bands_basic() {
-        let mut edb = ExpDevBands::new(20, 2.0, true);
+        let mut edb = ExpDevBands::new(20, 2.0, ExpDevBaseline::Sma);
         let price = 100.0;
         let (upper, basis, lower) = edb.next(price);
 
@@ -132,9 +162,9 @@ mod tests {
         data: &[f64],
         period: usize,
         multiplier: f64,
-        use_sma: bool,
+        baseline: ExpDevBaseline,
     ) -> Vec<(f64, f64, f64)> {
-        let mut edb = ExpDevBands::new(period, multiplier, use_sma);
+        let mut edb = ExpDevBands::new(period, multiplier, baseline);
         data.iter().map(|&x| edb.next(x)).collect()
     }
 
@@ -143,11 +173,11 @@ mod tests {
         fn test_exp_dev_bands_parity(input in prop::collection::vec(0.1..100.0, 1..100)) {
             let period = 20;
             let multiplier = 2.0;
-            let use_sma = false;
+            let baseline = ExpDevBaseline::Ema;
 
-            let mut edb = ExpDevBands::new(period, multiplier, use_sma);
+            let mut edb = ExpDevBands::new(period, multiplier, baseline);
             let streaming_results: Vec<(f64, f64, f64)> = input.iter().map(|&x| edb.next(x)).collect();
-            let batch_results = exp_dev_bands_batch(&input, period, multiplier, use_sma);
+            let batch_results = exp_dev_bands_batch(&input, period, multiplier, baseline);
 
             for (s, b) in streaming_results.iter().zip(batch_results.iter()) {
                 approx::assert_relative_eq!(s.0, b.0, epsilon = 1e-6);
