@@ -286,7 +286,7 @@ fn should_rebalance(
     prices: &HashMap<String, f64>,
     desired_map: &HashMap<String, f64>,
     raw_signal_map: &HashMap<String, f64>,
-    last_rebalance_signal: &Option<HashMap<String, f64>>,
+    last_rebalance_signal: Option<&HashMap<String, f64>>,
     eq: f64,
 ) -> bool {
     match policy {
@@ -375,7 +375,7 @@ fn mark_to_market_equity(
 pub(crate) fn simulate_shared_capital(
     groups: &[TimestampGroup],
     exec: &ExecutionModel,
-    sizer: &Option<InitialRiskPositionSizer>,
+    sizer: Option<&InitialRiskPositionSizer>,
     _delay: ExecutionDelay,
     stops: &StopConfig,
     allocator: PortfolioAllocator,
@@ -533,7 +533,7 @@ pub(crate) fn simulate_shared_capital(
             let raw = apply_signal_modifiers(bar.raw_signal, None, None);
             let sized = if let Some(s) = sizer {
                 let eq = mark_to_market_equity(cash, &books, &prices);
-                s.compute_sized_exposure(raw, &bar.meta, bar.close, eq)
+                s.compute_sized_exposure(raw, bar.meta.as_ref(), bar.close, eq)
             } else {
                 raw
             };
@@ -560,7 +560,7 @@ pub(crate) fn simulate_shared_capital(
             &prices,
             &desired_map,
             &raw_signal_map,
-            &last_rebalance_signal,
+            last_rebalance_signal.as_ref(),
             eq,
         );
 
@@ -869,7 +869,7 @@ where
         .collect();
 
     let exec = &config.execution_model;
-    let sizer = &config.position_sizer;
+    let sizer = config.position_sizer.as_ref();
     let delay = config.execution_delay;
 
     // Apply the execution delay per timestamp group, exactly as the batch path
@@ -943,7 +943,7 @@ mod rebalance_policy_tests {
                 &HashMap::new(),
                 &HashMap::new(),
                 &HashMap::new(),
-                &None,
+                None,
                 100_000.0,
             ));
         }
@@ -963,7 +963,7 @@ mod rebalance_policy_tests {
                 &HashMap::new(),
                 &HashMap::new(),
                 &HashMap::new(),
-                &None,
+                None,
                 100_000.0,
             );
             assert_eq!(got, *want, "bar {bar}: expected {want}, got {got}");
@@ -984,7 +984,7 @@ mod rebalance_policy_tests {
                     &HashMap::new(),
                     &HashMap::new(),
                     &HashMap::new(),
-                    &None,
+                    None,
                     100_000.0,
                 ));
             }
@@ -1005,7 +1005,7 @@ mod rebalance_policy_tests {
             &HashMap::new(),
             &HashMap::new(),
             &sig_a,
-            &None,
+            None,
             100_000.0,
         ));
 
@@ -1020,7 +1020,7 @@ mod rebalance_policy_tests {
             &HashMap::new(),
             &HashMap::new(),
             &sig_a,
-            &last,
+            last.as_ref(),
             100_000.0,
         ));
 
@@ -1035,7 +1035,7 @@ mod rebalance_policy_tests {
             &HashMap::new(),
             &HashMap::new(),
             &sig_b,
-            &last,
+            last.as_ref(),
             100_000.0,
         ));
 
@@ -1052,7 +1052,7 @@ mod rebalance_policy_tests {
             &HashMap::new(),
             &HashMap::new(),
             &sig_c,
-            &last,
+            last.as_ref(),
             100_000.0,
         ));
     }
@@ -1084,7 +1084,7 @@ mod rebalance_policy_tests {
             &prices,
             &desired,
             &HashMap::new(),
-            &None,
+            None,
             10_000.0,
         ));
         assert!(!should_rebalance(
@@ -1096,7 +1096,7 @@ mod rebalance_policy_tests {
             &prices,
             &desired,
             &HashMap::new(),
-            &None,
+            None,
             10_000.0,
         ));
     }
@@ -1123,7 +1123,7 @@ mod rebalance_policy_tests {
             &prices,
             &desired,
             &HashMap::new(),
-            &None,
+            None,
             10_000.0,
         ));
     }
@@ -1154,7 +1154,7 @@ mod rebalance_policy_tests {
             &prices,
             &desired,
             &HashMap::new(),
-            &None,
+            None,
             10_000.0,
         ));
         assert!(should_rebalance(
@@ -1166,7 +1166,7 @@ mod rebalance_policy_tests {
             &prices,
             &desired,
             &HashMap::new(),
-            &None,
+            None,
             10_000.0,
         ));
     }

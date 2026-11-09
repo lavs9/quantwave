@@ -47,7 +47,7 @@ use crate::traits::Next;
 use std::collections::HashMap;
 
 /// Source of a monitored S/R level.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum LevelSource {
     /// Auto-generated from a swing point produced by the internal MarketStructure (Part 21).
     AutoSwing {
@@ -299,7 +299,7 @@ impl SRInteractionMonitor {
     pub fn levels_snapshot(&self) -> Vec<(u32, f64, String, bool, LevelSource)> {
         self.levels
             .iter()
-            .map(|(&id, l)| (id, l.price, l.label.clone(), l.is_support, l.source.clone()))
+            .map(|(&id, l)| (id, l.price, l.label.clone(), l.is_support, l.source))
             .collect()
     }
 
@@ -350,7 +350,7 @@ impl SRInteractionMonitor {
                 },
                 bars_since_creation: (current_bar.saturating_sub(level.creation_bar)) as u32,
                 distance_at_event: signed_distance,
-                source: level.source.clone(),
+                source: level.source,
             });
             level.approached = true;
             level.last_interaction_bar = current_bar;
@@ -377,7 +377,7 @@ impl SRInteractionMonitor {
                     },
                     bars_since_creation: (current_bar.saturating_sub(level.creation_bar)) as u32,
                     distance_at_event: signed_distance,
-                    source: level.source.clone(),
+                    source: level.source,
                 });
                 level.touched = true;
                 // reset breakout state on fresh touch (per MQ)
@@ -413,7 +413,7 @@ impl SRInteractionMonitor {
                 },
                 bars_since_creation: (current_bar.saturating_sub(level.creation_bar)) as u32,
                 distance_at_event: signed_distance,
-                source: level.source.clone(),
+                source: level.source,
             });
             level.breakout_happened = true;
             level.breakout_direction = direction;
@@ -440,7 +440,7 @@ impl SRInteractionMonitor {
                 },
                 bars_since_creation: (current_bar.saturating_sub(level.creation_bar)) as u32,
                 distance_at_event: signed_distance,
-                source: level.source.clone(),
+                source: level.source,
             });
             level.last_interaction_bar = current_bar;
             // Note: we do not clear "touched" here to allow potential later breakout observation
@@ -462,7 +462,7 @@ impl SRInteractionMonitor {
                 },
                 bars_since_creation: (current_bar.saturating_sub(level.creation_bar)) as u32,
                 distance_at_event: signed_distance,
-                source: level.source.clone(),
+                source: level.source,
             });
             level.breakout_happened = false; // re-arm potential future breakout per MQ pattern
             level.last_interaction_bar = current_bar;
@@ -534,11 +534,10 @@ impl SRInteractionMonitor {
             return;
         }
 
-        let candidates: Vec<SwingPoint> =
-            vec![state.last_swing_high.clone(), state.last_swing_low.clone()]
-                .into_iter()
-                .flatten()
-                .collect();
+        let candidates: Vec<SwingPoint> = vec![state.last_swing_high, state.last_swing_low]
+            .into_iter()
+            .flatten()
+            .collect();
 
         for sp in candidates {
             let too_close = self

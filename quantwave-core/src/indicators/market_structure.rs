@@ -43,14 +43,14 @@ pub enum Bias {
     Neutral,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct SwingPoint {
     pub bar: usize,
     pub price: f64,
     pub is_high: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct FlipEvent {
     pub is_bearish: bool,
     pub price: f64,
@@ -135,7 +135,7 @@ impl PAEvent {
         let strength = (flip.structure_strength as f64 / 5.0).min(2.0);
         Self {
             bar,
-            kind: PAEventKind::MarketStructureFlip(flip.clone()),
+            kind: PAEventKind::MarketStructureFlip(flip),
             strength,
             size_atr: None,
             confidence: 1.0,
@@ -147,7 +147,7 @@ impl PAEvent {
     pub fn from_flag(flag: crate::indicators::geometric_patterns::FlagPattern, bar: usize) -> Self {
         Self {
             bar,
-            kind: PAEventKind::GeometricFlag(flag.clone()),
+            kind: PAEventKind::GeometricFlag(flag),
             strength: flag.pole_strength.min(3.0),
             size_atr: Some(flag.pole_length_atr),
             confidence: if flag.breakout_confirmed { 1.0 } else { 0.5 },
@@ -163,7 +163,7 @@ impl PAEvent {
     pub fn from_hs(hs: crate::indicators::geometric_patterns::HsPattern, bar: usize) -> Self {
         Self {
             bar,
-            kind: PAEventKind::GeometricHs(hs.clone()),
+            kind: PAEventKind::GeometricHs(hs),
             strength: (hs.score / 100.0).min(1.0),
             size_atr: Some(hs.height_atr),
             confidence: if hs.breakout_confirmed {
@@ -181,14 +181,17 @@ impl PAEvent {
     }
 
     pub fn from_sr_interaction(sr: crate::indicators::sr_monitor::SRInteraction) -> Self {
+        let bar = sr.bar;
+        let strength = sr.strength;
+        let distance = sr.distance_at_event;
         Self {
-            bar: sr.bar,
-            kind: PAEventKind::SrInteraction(sr.clone()),
-            strength: sr.strength,
+            bar,
+            kind: PAEventKind::SrInteraction(sr),
+            strength,
             size_atr: None,
             confidence: 0.9,
             regime_at_event: None,
-            feature_values: vec![("distance".into(), sr.distance_at_event)],
+            feature_values: vec![("distance".into(), distance)],
         }
     }
 }
@@ -201,11 +204,8 @@ impl PAEvent {
 /// their own rich fields (now Serialize) or future expansion of PAEventKind.
 pub fn extract_pa_events(state: &MarketStructureState) -> Vec<PAEvent> {
     let mut events = Vec::new();
-    if let Some(flip) = &state.current_flip {
-        events.push(PAEvent::from_market_structure_flip(
-            flip.clone(),
-            state.bar_index,
-        ));
+    if let Some(flip) = state.current_flip {
+        events.push(PAEvent::from_market_structure_flip(flip, state.bar_index));
     }
     events
 }
@@ -221,12 +221,12 @@ pub fn extract_all_pa_events(
     if let Some(f) = flag
         && f.breakout_confirmed
     {
-        events.push(PAEvent::from_flag(f.clone(), state.bar_index));
+        events.push(PAEvent::from_flag(*f, state.bar_index));
     }
     if let Some(h) = hs
         && h.breakout_confirmed
     {
-        events.push(PAEvent::from_hs(h.clone(), state.bar_index));
+        events.push(PAEvent::from_hs(*h, state.bar_index));
     }
     for sr in sr_interactions {
         events.push(PAEvent::from_sr_interaction(sr.clone()));
@@ -329,8 +329,8 @@ impl MarketStructure {
                     if self.bull_structure_count >= 2 {
                         self.bias = Bias::Bullish;
                     }
-                    self.prev_high = self.last_high.clone();
-                    self.last_high = Some(candidate.clone());
+                    self.prev_high = self.last_high;
+                    self.last_high = Some(candidate);
                 } else if candidate.price < last.price {
                     // LH
                     if self.bias == Bias::Bullish && self.bull_structure_count >= 2 {
@@ -345,12 +345,12 @@ impl MarketStructure {
                         self.bear_structure_count = 1;
                     } else {
                         // just record, no flip yet (no bias or weak)
-                        self.prev_high = self.last_high.clone();
-                        self.last_high = Some(candidate.clone());
+                        self.prev_high = self.last_high;
+                        self.last_high = Some(candidate);
                     }
                 }
             } else {
-                self.last_high = Some(candidate.clone());
+                self.last_high = Some(candidate);
             }
         } else {
             // new swing low
@@ -364,8 +364,8 @@ impl MarketStructure {
                     if self.bear_structure_count >= 2 {
                         self.bias = Bias::Bearish;
                     }
-                    self.prev_low = self.last_low.clone();
-                    self.last_low = Some(candidate.clone());
+                    self.prev_low = self.last_low;
+                    self.last_low = Some(candidate);
                 } else if candidate.price > last.price {
                     // HL
                     if self.bias == Bias::Bearish && self.bear_structure_count >= 2 {
@@ -379,12 +379,12 @@ impl MarketStructure {
                         self.bias = Bias::Bullish;
                         self.bull_structure_count = 1;
                     } else {
-                        self.prev_low = self.last_low.clone();
-                        self.last_low = Some(candidate.clone());
+                        self.prev_low = self.last_low;
+                        self.last_low = Some(candidate);
                     }
                 }
             } else {
-                self.last_low = Some(candidate.clone());
+                self.last_low = Some(candidate);
             }
         }
 
@@ -447,8 +447,8 @@ impl Next<(f64, f64)> for MarketStructure {
 
         MarketStructureState {
             bias: self.bias,
-            last_swing_high: self.last_high.clone(),
-            last_swing_low: self.last_low.clone(),
+            last_swing_high: self.last_high,
+            last_swing_low: self.last_low,
             current_flip,
             swing_depth_used: depth,
             bar_index: self.bar_index,
@@ -808,7 +808,7 @@ mod tests {
         for i in 0..highs.len() {
             let state = ms.next((highs[i], lows[i]));
             if state.current_flip.is_some() {
-                last_flip = state.current_flip.clone();
+                last_flip = state.current_flip;
             }
             if i > 6 {
                 // after some bars we should have bullish bias

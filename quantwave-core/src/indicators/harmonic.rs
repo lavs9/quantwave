@@ -328,7 +328,7 @@ impl HarmonicPatternScanner {
                 }
             }
         }
-        self.swings.push(sp.clone());
+        self.swings.push(*sp);
         if self.swings.len() > 64 {
             self.swings.drain(0..16);
         }
@@ -591,11 +591,11 @@ impl HarmonicPatternScanner {
         let n = self.swings.len();
         if n >= 5 {
             let (x, a, b, c, d) = (
-                self.swings[n - 5].clone(),
-                self.swings[n - 4].clone(),
-                self.swings[n - 3].clone(),
-                self.swings[n - 2].clone(),
-                self.swings[n - 1].clone(),
+                self.swings[n - 5],
+                self.swings[n - 4],
+                self.swings[n - 3],
+                self.swings[n - 2],
+                self.swings[n - 1],
             );
             if let Some(p) = self.classify_5_0(&x, &a, &b, &c, &d)
                 && let Some(p) = self.emit(p)
@@ -610,10 +610,10 @@ impl HarmonicPatternScanner {
         }
         if n >= 4 {
             let (a, b, c, d) = (
-                self.swings[n - 4].clone(),
-                self.swings[n - 3].clone(),
-                self.swings[n - 2].clone(),
-                self.swings[n - 1].clone(),
+                self.swings[n - 4],
+                self.swings[n - 3],
+                self.swings[n - 2],
+                self.swings[n - 1],
             );
             if let Some(p) = self.classify_abcd(&a, &b, &c, &d)
                 && let Some(p) = self.emit(p)
@@ -637,13 +637,13 @@ impl Next<(f64, f64)> for HarmonicPatternScanner {
         let state = self.ms.next((high, low));
         // Ingest a pivot only when newly confirmed (its bar changed since last
         // seen), so each pivot enters the sequence once, in confirmation order.
-        if let Some(sh) = state.last_swing_high.clone()
+        if let Some(sh) = state.last_swing_high
             && self.last_high_bar != Some(sh.bar)
         {
             self.last_high_bar = Some(sh.bar);
             self.ingest_swing(&sh);
         }
-        if let Some(sl) = state.last_swing_low.clone()
+        if let Some(sl) = state.last_swing_low
             && self.last_low_bar != Some(sl.bar)
         {
             self.last_low_bar = Some(sl.bar);

@@ -51,7 +51,7 @@ pub const GEOMETRIC_PATTERNS_METADATA: IndicatorMetadata = IndicatorMetadata {
 };
 
 /// Rich output for a detected Flag pattern (continuation).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct FlagPattern {
     pub id: u32,
     pub is_bull: bool,
@@ -71,7 +71,7 @@ pub struct FlagPattern {
 }
 
 /// Rich output for a detected Head & Shoulders (or inverse) pattern.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct HsPattern {
     pub id: u32,
     pub is_bearish: bool,
@@ -227,7 +227,7 @@ impl GeometricPatternScanner {
                 return;
             }
         }
-        self.recent_swings.push(sp.clone());
+        self.recent_swings.push(*sp);
         if self.recent_swings.len() > 80 {
             self.recent_swings.drain(0..20);
         }
@@ -658,7 +658,7 @@ impl GeometricPatternScanner {
             };
 
             if confirmed {
-                let mut pat = ah.pattern.clone();
+                let mut pat = ah.pattern;
                 pat.breakout_confirmed = true;
                 pat.breakout_bar = Some(bar);
                 pat.breakout_price = Some(close);

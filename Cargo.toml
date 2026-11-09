@@ -64,6 +64,8 @@ unsafe_code = "forbid"
 panic = "deny"
 unwrap_used = "warn"
 expect_used = "warn"
+ref_option_ref = "warn"
+derive_partial_eq_without_eq = "warn"
 # Chebyshev / Ehlers coefficient tables need full literals (options_india, DSP filters).
 excessive_precision = "allow"
 approx_constant = "allow"

@@ -153,8 +153,8 @@ pub enum BacktestError {
     UnsortedData,
 }
 
-fn require_symbol_col(symbol_col: &Option<String>) -> Result<&str, BacktestError> {
-    symbol_col.as_deref().ok_or_else(|| {
+fn require_symbol_col(symbol_col: Option<&str>) -> Result<&str, BacktestError> {
+    symbol_col.ok_or_else(|| {
         BacktestError::InvalidInput("symbol_col required for multi-symbol backtest".into())
     })
 }
@@ -341,7 +341,7 @@ impl InitialRiskPositionSizer {
     pub fn compute_sized_exposure(
         &self,
         raw_exposure: f64,
-        meta: &Option<HashMap<String, f64>>,
+        meta: Option<&HashMap<String, f64>>,
         price: f64,
         equity: f64,
     ) -> f64 {
@@ -770,7 +770,7 @@ impl BacktestEngine {
     }
 
     fn run_metrics_multi_symbol(&self, df: DataFrame) -> Result<PerformanceMetrics, BacktestError> {
-        let sym_col = require_symbol_col(&self.config.symbol_col)?;
+        let sym_col = require_symbol_col(self.config.symbol_col.as_deref())?;
 
         if df.column(sym_col).is_err() {
             return Err(BacktestError::MissingColumn {
@@ -843,7 +843,7 @@ impl BacktestEngine {
     }
 
     fn run_multi_symbol(&self, df: DataFrame) -> Result<BacktestResult, BacktestError> {
-        let sym_col = require_symbol_col(&self.config.symbol_col)?;
+        let sym_col = require_symbol_col(self.config.symbol_col.as_deref())?;
 
         if df.column(sym_col).is_err() {
             return Err(BacktestError::MissingColumn {
@@ -914,7 +914,7 @@ impl BacktestEngine {
         &self,
         df: DataFrame,
     ) -> Result<BacktestResult, BacktestError> {
-        let sym_col = require_symbol_col(&self.config.symbol_col)?;
+        let sym_col = require_symbol_col(self.config.symbol_col.as_deref())?;
 
         let ts_series = df.column(&self.config.timestamp_col)?.clone();
         let timestamps = self.extract_timestamps(&ts_series, &self.config.timestamp_col)?;
@@ -982,7 +982,7 @@ impl BacktestEngine {
         let (trades, per_symbol_equity, portfolio_eq) = portfolio::simulate_shared_capital(
             &groups,
             &self.config.execution_model,
-            &self.config.position_sizer,
+            self.config.position_sizer.as_ref(),
             self.config.execution_delay,
             &self.config.stop_config,
             self.config.portfolio_allocator,
@@ -1124,10 +1124,10 @@ impl BacktestEngine {
             lows.as_deref(),
             |i| (effective_signals[i], effective_metas[i].clone()),
             exec,
-            sizer,
+            sizer.as_ref(),
             delay,
             stops,
-            risk_model,
+            risk_model.as_ref(),
         );
 
         if let Some(sym) = symbol {
@@ -1542,10 +1542,10 @@ fn run_simulation(
     lows: Option<&[f64]>,
     mut next_signal: impl FnMut(usize) -> (f64, Option<HashMap<String, f64>>),
     exec: &ExecutionModel,
-    sizer: &Option<InitialRiskPositionSizer>,
+    sizer: Option<&InitialRiskPositionSizer>,
     execution_delay: ExecutionDelay,
     stop_config: &StopConfig,
-    risk_model: &Option<risk::RiskModel>,
+    risk_model: Option<&risk::RiskModel>,
 ) -> (Vec<Trade>, Vec<EquityPoint>) {
     use stops::{
         OhlcBar, PositionSide, StopPositionState, evaluate_stops, trailing_level_at_entry,
@@ -1705,7 +1705,7 @@ fn run_simulation(
         // Apply rich sizer if configured (n1yc.1) using current equity for % calc
         let current_equity = cash + current_exposure * close;
         let sized_exposure = if let Some(s) = sizer {
-            s.compute_sized_exposure(raw_exposure, &meta, close, current_equity)
+            s.compute_sized_exposure(raw_exposure, meta.as_ref(), close, current_equity)
         } else {
             raw_exposure
         };
@@ -1878,10 +1878,10 @@ where
             (sig.exposure, sig.metadata.clone())
         },
         exec,
-        sizer,
+        sizer.as_ref(),
         delay,
         stops,
-        risk_model,
+        risk_model.as_ref(),
     );
 
     // Build Polars (same as batch)
@@ -2426,7 +2426,7 @@ mod integration_example_between_epics {
             exposure: 1.0,
             metadata: Some(meta),
         };
-        let sized = sizer.compute_sized_exposure(1.0, &sig.metadata, 100.0, 1_000_000.0);
+        let sized = sizer.compute_sized_exposure(1.0, sig.metadata.as_ref(), 100.0, 1_000_000.0);
         // target_pct ~ 0.01 / (0.01/2) = 2.0 but capped at 0.5 -> 0.5 * equity / price = 5000 units? Wait calc:
         // frac = 0.01 / 2.0 = 0.005; target_pct = 0.01 / 0.005 = 2.0 -> min(0.5) = 0.5; target_units = 0.5 * 1e6 / 100 = 5000
         assert!((sized - 5000.0).abs() < 1.0);
@@ -2438,7 +2438,7 @@ mod integration_example_between_epics {
             exposure: 1.0,
             metadata: Some(meta2),
         };
-        let sized2 = sizer.compute_sized_exposure(1.0, &sig2.metadata, 100.0, 1_000_000.0);
+        let sized2 = sizer.compute_sized_exposure(1.0, sig2.metadata.as_ref(), 100.0, 1_000_000.0);
         // 0.01 / 0.02 = 0.5; 0.5 * 1e6 /100 = 5000
         assert!((sized2 - 5000.0).abs() < 1.0);
 
@@ -2447,7 +2447,8 @@ mod integration_example_between_epics {
             exposure: 123.0,
             metadata: None,
         };
-        let sized3 = sizer.compute_sized_exposure(123.0, &sig3.metadata, 100.0, 1_000_000.0);
+        let sized3 =
+            sizer.compute_sized_exposure(123.0, sig3.metadata.as_ref(), 100.0, 1_000_000.0);
         assert!((sized3 - 123.0).abs() < 1e-9);
     }
 }

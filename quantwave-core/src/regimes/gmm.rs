@@ -54,7 +54,7 @@ pub struct GmmFitResult {
     pub converged: bool,
 }
 
-#[derive(Debug, thiserror::Error, PartialEq)]
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum GmmError {
     #[error("invalid GMM parameters: {0}")]
     InvalidParams(String),

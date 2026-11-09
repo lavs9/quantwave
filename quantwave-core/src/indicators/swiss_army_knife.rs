@@ -2,7 +2,7 @@ use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::traits::Next;
 
 /// Swiss Army Knife Mode
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SwissArmyKnifeMode {
     EMA,
     SMA,

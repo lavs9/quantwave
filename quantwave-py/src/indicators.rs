@@ -490,7 +490,7 @@ pub struct StraddleResult {
 }
 
 #[pyclass(eq, eq_int)]
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum SwissMode {
     EMA,
     SMA,

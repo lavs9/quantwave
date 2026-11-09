@@ -10,7 +10,7 @@ use rand::rngs::StdRng;
 use serde::{Deserialize, Serialize};
 
 /// Bootstrap simulation settings.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MonteCarloConfig {
     pub n_simulations: usize,
     pub seed: u64,
@@ -37,7 +37,7 @@ pub struct MonteCarloSummary {
     pub n_trades_sampled: usize,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MonteCarloReturnConfig {
     pub n_simulations: usize,
     pub seed: u64,
