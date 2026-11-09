@@ -1,7 +1,6 @@
 use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
 use quantwave_core::traits::Next;
-use quantwave_core::*;
 use serde::Deserialize;
 
 #[derive(Deserialize)]

@@ -597,7 +597,7 @@ fn bop(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -622,7 +622,7 @@ fn cdl_2crows(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -647,7 +647,7 @@ fn cdl_3blackcrows(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -672,7 +672,7 @@ fn cdl_3inside(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -697,7 +697,7 @@ fn cdl_3linestrike(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -722,7 +722,7 @@ fn cdl_3outside(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -747,7 +747,7 @@ fn cdl_3starsinsouth(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -772,7 +772,7 @@ fn cdl_3whitesoldiers(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -797,7 +797,7 @@ fn cdl_abandonedbaby(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -822,7 +822,7 @@ fn cdl_advanceblock(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -847,7 +847,7 @@ fn cdl_belthold(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -872,7 +872,7 @@ fn cdl_breakaway(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -897,7 +897,7 @@ fn cdl_closingmarubozu(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -922,7 +922,7 @@ fn cdl_concealbabyswall(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -947,7 +947,7 @@ fn cdl_counterattack(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -972,7 +972,7 @@ fn cdl_darkcloudcover(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -997,7 +997,7 @@ fn cdl_doji(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1022,7 +1022,7 @@ fn cdl_dojistar(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1047,7 +1047,7 @@ fn cdl_dragonflydoji(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1072,7 +1072,7 @@ fn cdl_engulfing(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1097,7 +1097,7 @@ fn cdl_eveningdojistar(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1122,7 +1122,7 @@ fn cdl_eveningstar(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1147,7 +1147,7 @@ fn cdl_gapsidesidewhite(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1172,7 +1172,7 @@ fn cdl_gravestonedoji(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1197,7 +1197,7 @@ fn cdl_hammer(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1222,7 +1222,7 @@ fn cdl_hangingman(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1247,7 +1247,7 @@ fn cdl_harami(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1272,7 +1272,7 @@ fn cdl_haramicross(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1297,7 +1297,7 @@ fn cdl_highwave(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1322,7 +1322,7 @@ fn cdl_hikkake(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1347,7 +1347,7 @@ fn cdl_hikkakemod(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1372,7 +1372,7 @@ fn cdl_homingpigeon(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1397,7 +1397,7 @@ fn cdl_identical3crows(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1422,7 +1422,7 @@ fn cdl_inneck(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1447,7 +1447,7 @@ fn cdl_invertedhammer(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1472,7 +1472,7 @@ fn cdl_kicking(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1497,7 +1497,7 @@ fn cdl_kickingbylength(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1522,7 +1522,7 @@ fn cdl_ladderbottom(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1547,7 +1547,7 @@ fn cdl_longleggeddoji(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1572,7 +1572,7 @@ fn cdl_longline(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1597,7 +1597,7 @@ fn cdl_marubozu(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1622,7 +1622,7 @@ fn cdl_matchinglow(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1647,7 +1647,7 @@ fn cdl_mathold(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1672,7 +1672,7 @@ fn cdl_morningdojistar(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1697,7 +1697,7 @@ fn cdl_morningstar(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1722,7 +1722,7 @@ fn cdl_onneck(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1747,7 +1747,7 @@ fn cdl_piercing(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1772,7 +1772,7 @@ fn cdl_rickshawman(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1797,7 +1797,7 @@ fn cdl_risefall3methods(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1822,7 +1822,7 @@ fn cdl_separatinglines(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1847,7 +1847,7 @@ fn cdl_shootingstar(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1872,7 +1872,7 @@ fn cdl_shortline(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1897,7 +1897,7 @@ fn cdl_spinningtop(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1922,7 +1922,7 @@ fn cdl_stalledpattern(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1947,7 +1947,7 @@ fn cdl_sticksandwich(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1972,7 +1972,7 @@ fn cdl_takuri(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -1997,7 +1997,7 @@ fn cdl_tasukigap(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -2022,7 +2022,7 @@ fn cdl_thrusting(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -2047,7 +2047,7 @@ fn cdl_tristar(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -2072,7 +2072,7 @@ fn cdl_unique3river(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -2097,7 +2097,7 @@ fn cdl_upsidegap2crows(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,
@@ -2122,7 +2122,7 @@ fn cdl_xsidegap3methods(inputs: &[Series]) -> PolarsResult<Series> {
             (Some(o_), Some(h_), Some(l_), Some(c_))
                 if !o_.is_nan() && !h_.is_nan() && !l_.is_nan() && !c_.is_nan() =>
             {
-                Some(indicator.next((o_, h_, l_, c_)) as f64)
+                Some(indicator.next((o_, h_, l_, c_)))
             }
             (Some(_), Some(_), Some(_), Some(_)) => Some(f64::NAN),
             _ => None,

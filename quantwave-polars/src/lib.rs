@@ -2,7 +2,7 @@
 //!
 //! Polars integration for [QuantWave](https://lavs9.github.io/quantwave/): the
 //! [`QuantWaveExt::ta()`](QuantWaveExt::ta) namespace on [`LazyFrame`] for **218**
-//! vectorized indicators, plus [`bt`](bt) for backtest helpers.
+//! vectorized indicators, plus [`bt`] for backtest helpers.
 //!
 //! ## Quick start
 //!
@@ -3090,7 +3090,7 @@ impl<'a> QuantWaveNamespace<'a> {
     ///
     /// Matches project patterns (see fractals, supertrend, features.rs cyber_cycle).
     ///
-    /// Sources: market_structure.rs (MQL5 Part 21 https://www.mql5.com/en/articles/17891 + 66/69 lessons).
+    /// Sources: market_structure.rs (MQL5 Part 21 <https://www.mql5.com/en/articles/17891> + 66/69 lessons).
     pub fn market_structure(self, high: &str, low: &str, swing_strength: usize) -> LazyFrame {
         let high_str = high.to_string();
         let low_str = low.to_string();
@@ -3662,7 +3662,7 @@ impl<'a> QuantWaveNamespace<'a> {
     ///
     /// Returns struct column `hmm_fit_data` with:
     /// - `hmm_fit_state` (UInt32): global Viterbi state index (0-based)
-    /// - `hmm_fit_smooth_probs` (List[Float64]): smoothed state probabilities per bar
+    /// - `hmm_fit_smooth_probs` (`List[Float64]`): smoothed state probabilities per bar
     ///
     /// Set `fit_lambdas` to enable lambda (ecld) emissions with per-state λ MLE (ldhmm parity).
     ///

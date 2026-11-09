@@ -25,7 +25,7 @@
 //! 8. .ta.features.ehlers_autocorrelation(length, num_lags) -> Struct {dominant_lag, max_correlation}
 //!
 //! All are lazy (exprs built with with_columns + map UDFs; execution deferred to collect).
-//! All delegate directly to the Next<T> wrappers in quantwave-core (zero lookahead by construction).
+//! All delegate directly to the `Next<T>` wrappers in quantwave-core (zero lookahead by construction).
 //! No build_matrix yet (per instructions; kept minimal).
 //!
 //! Sources recorded (per AGENTS.md + 4ps spec):

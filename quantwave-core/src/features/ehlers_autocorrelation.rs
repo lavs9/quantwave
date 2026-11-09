@@ -3,7 +3,7 @@
 //! Wraps the lag correlation vector. For ML, we expose the full vector (or top lags)
 //! plus a "dominant lag" summary – excellent cycle feature.
 //!
-//! Source: quantwave-core/src/indicators/ehlers_autocorrelation.rs (returns Vec<f64> correlations)
+//! Source: quantwave-core/src/indicators/ehlers_autocorrelation.rs (returns `Vec<f64>` correlations)
 
 use crate::indicators::ehlers_autocorrelation::EhlersAutocorrelation;
 use crate::traits::Next;

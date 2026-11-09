@@ -3,7 +3,7 @@
 //!
 //! Harmonic patterns are Fibonacci-ratio-constrained price structures. This
 //! module builds them on the shared swing foundation ([`MarketStructure`],
-//! Part 21) exactly like [`GeometricPatternScanner`]: confirmed swing pivots are
+//! Part 21) exactly like [`crate::indicators::geometric_patterns::GeometricPatternScanner`]: confirmed swing pivots are
 //! collected into an alternating sequence, and the most recent 4 (AB=CD) or 5
 //! (5-0 and the XABCD patterns) pivots are tested against the pattern's ratio
 //! gates. A pattern is emitted only once its completion pivot `D` is a
@@ -27,7 +27,7 @@
 //!   the reciprocal AB=CD): Carney, *Harmonic Trading: Volume Two* (2010),
 //!   Ch. 3 "New Harmonic Patterns", pp. 78–79 / harmonictrader.com "5-0".
 //! - XABCD reversal patterns, distinguished by D's retracement/extension of the
-//!   XA leg (see [`XABCD_SPECS`]): Gartley (D 0.786), Bat (D 0.886), Butterfly
+//!   XA leg (see `XABCD_SPECS`): Gartley (D 0.786), Bat (D 0.886), Butterfly
 //!   (D 1.27), Crab (D 1.618) — *Volume One* Ch. 5–8 — and Alternate Bat
 //!   (D 1.13) — *Volume Two* Ch. 3.
 //!

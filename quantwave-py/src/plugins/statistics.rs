@@ -184,13 +184,7 @@ struct PeriodKwargs {
 
 fn map_f64(inputs: &[Series], mut step: impl FnMut(f64) -> f64) -> PolarsResult<Series> {
     let s = inputs[0].f64()?;
-    let out: Float64Chunked = s
-        .into_iter()
-        .map(|opt_v| match opt_v {
-            Some(v) => Some(step(v)),
-            None => None,
-        })
-        .collect();
+    let out: Float64Chunked = s.into_iter().map(|opt_v| opt_v.map(&mut step)).collect();
     Ok(out.into_series())
 }
 

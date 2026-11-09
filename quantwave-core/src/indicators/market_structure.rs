@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// Port of the core adaptive swing + bias/flip state machine from MQL5
 /// "Price Action Analysis Toolkit Development (Part 21): Market Structure Flip Detector"
-/// by lynnchris (https://www.mql5.com/en/articles/17891).
+/// by lynnchris (<https://www.mql5.com/en/articles/17891>).
 ///
 /// Source persisted: references/MQL5/lynnchris/implemented/Part21/Flip_Detector.mq5
 ///
@@ -89,13 +89,13 @@ pub struct MarketStructureState {
 ///   so no changes to MarketStructure / GeometricPatternScanner Next impls required.
 ///
 /// Sources (recorded):
-/// - MQL5 Part 21: https://www.mql5.com/en/articles/17891 (Flip_Detector.mq5) — foundation swings + confirmed BOS only after bias.
-/// - Part 66: https://www.mql5.com/en/articles/22194 (HS_Indicator.mq5) — Pattern {height, score, signalBar, ...} + ComputePatternScore.
-/// - Part 69: https://www.mql5.com/en/articles/22503 (Flag_Pattern_Detector.mq5) — ActiveFlag/DrawnFlag {poleLength, pullbacks, pushes, retrace, ...} + RecordDrawnFlag / DoAlert.
+/// - MQL5 Part 21: <https://www.mql5.com/en/articles/17891> (Flip_Detector.mq5) — foundation swings + confirmed BOS only after bias.
+/// - Part 66: <https://www.mql5.com/en/articles/22194> (HS_Indicator.mq5) — Pattern {height, score, signalBar, ...} + ComputePatternScore.
+/// - Part 69: <https://www.mql5.com/en/articles/22503> (Flag_Pattern_Detector.mq5) — ActiveFlag/DrawnFlag {poleLength, pullbacks, pushes, retrace, ...} + RecordDrawnFlag / DoAlert.
 /// - Closed research: quantwave-wtz (catalog), quantwave-bfg (H&S), quantwave-r46a (Flags), quantwave-iuzv (market_structure impl).
 /// - Cross: cu03 epic, 06sz (rich backtester signals).
 ///
-/// Use `extract_pa_events` adapter (or the From-style constructors) to obtain Vec<PAEvent>.
+/// Use `extract_pa_events` adapter (or the From-style constructors) to obtain `Vec<PAEvent>`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum PAEventKind {
     /// Confirmed Break of Structure (BOS) flip from MarketStructure (bias-established only, per Part 21 rule).
@@ -123,7 +123,7 @@ pub struct PAEvent {
     /// Regime label or identifier present at the moment the event fired (populated by caller joining regime indicators; slot for 4ps/regime work).
     pub regime_at_event: Option<String>,
     /// Bag of feature values captured at event time for ML models / confluence scoring.
-    /// Vec of (name, value) pairs keeps it simple + serializable + easily convertible to Polars List<Struct> downstream.
+    /// Vec of (name, value) pairs keeps it simple + serializable + easily convertible to Polars `List<Struct>` downstream.
     /// Example: vec![("rsi_14".to_string(), 62.5), ("ehlers_cycle".to_string(), 0.87)]
     pub feature_values: Vec<(String, f64)>,
 }
@@ -197,7 +197,7 @@ impl PAEvent {
 /// Primary adapter — keeps the state machines (Next<(f64,f64)> -> State) 100% untouched.
 /// Used by Polars layer and backtester to obtain clean machine-readable event stream with rich meta.
 ///
-/// For Geometric: after scanner.next(), wrap the returned Option<FlagPattern>/HsPattern using
+/// For Geometric: after scanner.next(), wrap the returned `Option<FlagPattern>`/HsPattern using
 /// their own rich fields (now Serialize) or future expansion of PAEventKind.
 pub fn extract_pa_events(state: &MarketStructureState) -> Vec<PAEvent> {
     let mut events = Vec::new();
@@ -473,7 +473,7 @@ fn finite_or_nan(v: f64) -> f64 {
 /// ATR is Wilder (`TaATR`) of length `atr_period`, recomputed every bar against
 /// the stored gap. Source of the inequalities and the default `size_k = 0.5`,
 /// `atr_period = 20`: Build Alpha `CustomIndicators.xml` (Bergstrom,
-/// https://www.buildalpha.com/backtest-ict-and-smc/). The article prose says
+/// <https://www.buildalpha.com/backtest-ict-and-smc/>). The article prose says
 /// ATR(14); the file says 20.
 #[derive(Debug, Clone)]
 pub struct PriceImbalance {

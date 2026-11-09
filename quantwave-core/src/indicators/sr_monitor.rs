@@ -5,7 +5,7 @@
 //! Swing + MarketStructure foundation (Part 21 / quantwave-iuzv).
 //!
 //! Sources (recorded verbatim per project rules):
-//! - Primary: https://www.mql5.com/en/articles/21961
+//! - Primary: <https://www.mql5.com/en/articles/21961>
 //!   "Price Action Analysis Toolkit Development (Part 67): Automating Support and Resistance Monitoring in MQL5"
 //!   by Christian Benjamin (lynnchris). Published ~2026-04-30.
 //! - Archived authoritative source: references/MQL5/lynnchris/implemented/Part67/SupportResistanceMonitor.mq5

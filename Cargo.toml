@@ -74,3 +74,5 @@ needless_range_loop = "allow"
 type_complexity = "allow"
 # Indicator files place #[cfg(test)] mod tests before late impl blocks.
 items_after_test_module = "allow"
+# Float threshold checks (bars/renko/kagi) use !(x > 0.0) to reject both <= 0.0 and NaN.
+neg_cmp_op_on_partial_ord = "allow"

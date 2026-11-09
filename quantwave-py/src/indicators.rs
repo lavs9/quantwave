@@ -1,3 +1,4 @@
+use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
 use quantwave_core::indicators::alligator::Alligator as CoreAlligator;
@@ -178,6 +179,13 @@ use quantwave_core::regimes::hmm_forecast::{
 
 use paste::paste;
 use std::sync::Mutex;
+
+#[inline]
+fn lock_inner<T>(mutex: &Mutex<T>) -> PyResult<std::sync::MutexGuard<'_, T>> {
+    mutex
+        .lock()
+        .map_err(|_| PyRuntimeError::new_err("mutex lock poisoned"))
+}
 // --- Records ---
 
 #[pyclass(get_all)]
@@ -527,7 +535,10 @@ macro_rules! export_1_in_1_out {
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
                 #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, input: f64) -> f64 { self.inner.lock().unwrap().next(input) }
+                pub fn next(&self, input: f64) -> PyResult<f64> {
+                    let mut guard = self.inner.lock().map_err(|_| PyRuntimeError::new_err("mutex lock poisoned"))?;
+                    Ok(guard.next(input))
+                }
             }
         }
     }
@@ -548,7 +559,7 @@ macro_rules! export_1_in_record_out {
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
                 #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, input: f64) -> $result_type { let $res_var = self.inner.lock().unwrap().next(input); $body }
+                pub fn next(&self, input: f64) -> PyResult<$result_type> { let $res_var = lock_inner(&self.inner)?.next(input); Ok($body) }
             }
         }
     }
@@ -569,7 +580,7 @@ macro_rules! export_1_in_vec_out {
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
                 #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, input: f64) -> Vec<f64> { self.inner.lock().unwrap().next(input) }
+                pub fn next(&self, input: f64) -> PyResult<Vec<f64>> { Ok(lock_inner(&self.inner)?.next(input)) }
             }
         }
     }
@@ -590,7 +601,7 @@ macro_rules! export_ohlc_in_1_out {
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
                 #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, high: f64, low: f64, close: f64) -> f64 { self.inner.lock().unwrap().next((high, low, close)) }
+                pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<f64> { Ok(lock_inner(&self.inner)?.next((high, low, close))) }
             }
         }
     }
@@ -611,7 +622,7 @@ macro_rules! export_ohlc_in_record_out {
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
                 #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, high: f64, low: f64, close: f64) -> $result_type { let $res_var = self.inner.lock().unwrap().next((high, low, close)); $body }
+                pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<$result_type> { let $res_var = lock_inner(&self.inner)?.next((high, low, close)); Ok($body) }
             }
         }
     }
@@ -632,7 +643,7 @@ macro_rules! export_hl_in_1_out {
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
                 #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, high: f64, low: f64) -> f64 { self.inner.lock().unwrap().next((high, low)) }
+                pub fn next(&self, high: f64, low: f64) -> PyResult<f64> { Ok(lock_inner(&self.inner)?.next((high, low))) }
             }
         }
     }
@@ -653,7 +664,7 @@ macro_rules! export_hl_in_record_out {
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
                 #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, high: f64, low: f64) -> $result_type { let $res_var = self.inner.lock().unwrap().next((high, low)); $body }
+                pub fn next(&self, high: f64, low: f64) -> PyResult<$result_type> { let $res_var = lock_inner(&self.inner)?.next((high, low)); Ok($body) }
             }
         }
     }
@@ -674,7 +685,7 @@ macro_rules! export_co_in_1_out {
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
                 #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, close: f64, open: f64) -> f64 { self.inner.lock().unwrap().next((close, open)) }
+                pub fn next(&self, close: f64, open: f64) -> PyResult<f64> { Ok(lock_inner(&self.inner)?.next((close, open))) }
             }
         }
     }
@@ -695,7 +706,7 @@ macro_rules! export_co_in_record_out {
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
                 #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, close: f64, open: f64) -> $result_type { let $res_var = self.inner.lock().unwrap().next((close, open)); $body }
+                pub fn next(&self, close: f64, open: f64) -> PyResult<$result_type> { let $res_var = lock_inner(&self.inner)?.next((close, open)); Ok($body) }
             }
         }
     }
@@ -716,7 +727,7 @@ macro_rules! export_pv_in_1_out {
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
                 #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, price: f64, volume: f64) -> f64 { self.inner.lock().unwrap().next((price, volume)) }
+                pub fn next(&self, price: f64, volume: f64) -> PyResult<f64> { Ok(lock_inner(&self.inner)?.next((price, volume))) }
             }
         }
     }
@@ -737,7 +748,7 @@ macro_rules! export_pv_in_record_out {
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
                 #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, price: f64, volume: f64) -> $result_type { let $res_var = self.inner.lock().unwrap().next((price, volume)); $body }
+                pub fn next(&self, price: f64, volume: f64) -> PyResult<$result_type> { let $res_var = lock_inner(&self.inner)?.next((price, volume)); Ok($body) }
             }
         }
     }
@@ -758,7 +769,7 @@ macro_rules! export_ohlc4_in_1_out {
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
                 #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, open: f64, high: f64, low: f64, close: f64) -> f64 { self.inner.lock().unwrap().next((open, high, low, close)) }
+                pub fn next(&self, open: f64, high: f64, low: f64, close: f64) -> PyResult<f64> { Ok(lock_inner(&self.inner)?.next((open, high, low, close))) }
             }
         }
     }
@@ -779,7 +790,7 @@ macro_rules! export_hlcv_in_1_out {
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
                 #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, high: f64, low: f64, close: f64, volume: f64) -> f64 { self.inner.lock().unwrap().next((high, low, close, volume)) }
+                pub fn next(&self, high: f64, low: f64, close: f64, volume: f64) -> PyResult<f64> { Ok(lock_inner(&self.inner)?.next((high, low, close, volume))) }
             }
         }
     }
@@ -840,9 +851,9 @@ impl Stoch {
             )),
         }
     }
-    pub fn next(&self, high: f64, low: f64, close: f64) -> StochResult {
-        let (k, d) = self.inner.lock().unwrap().next((high, low, close));
-        StochResult { k, d }
+    pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<StochResult> {
+        let (k, d) = lock_inner(&self.inner)?.next((high, low, close));
+        Ok(StochResult { k, d })
     }
 }
 
@@ -895,14 +906,14 @@ impl Ichimoku {
             )),
         }
     }
-    pub fn next(&self, high: f64, low: f64) -> IchimokuResult {
-        let (t, k, sa, sb) = self.inner.lock().unwrap().next((high, low));
-        IchimokuResult {
+    pub fn next(&self, high: f64, low: f64) -> PyResult<IchimokuResult> {
+        let (t, k, sa, sb) = lock_inner(&self.inner)?.next((high, low));
+        Ok(IchimokuResult {
             tenkan: t,
             kijun: k,
             senkou_a: sa,
             senkou_b: sb,
-        }
+        })
     }
 }
 
@@ -967,13 +978,13 @@ impl Donchian {
             inner: Mutex::new(CoreDonchian::new(period as usize)),
         }
     }
-    pub fn next(&self, high: f64, low: f64) -> DonchianResult {
-        let (u, m, lo) = self.inner.lock().unwrap().next((high, low));
-        DonchianResult {
+    pub fn next(&self, high: f64, low: f64) -> PyResult<DonchianResult> {
+        let (u, m, lo) = lock_inner(&self.inner)?.next((high, low));
+        Ok(DonchianResult {
             upper: u,
             middle: m,
             lower: lo,
-        }
+        })
     }
 }
 
@@ -1044,14 +1055,14 @@ impl HeikinAshi {
             inner: Mutex::new(CoreHeikinAshi::new()),
         }
     }
-    pub fn next(&self, open: f64, high: f64, low: f64, close: f64) -> HeikinAshiResult {
-        let (ho, hh, hl, hc) = self.inner.lock().unwrap().next((open, high, low, close));
-        HeikinAshiResult {
+    pub fn next(&self, open: f64, high: f64, low: f64, close: f64) -> PyResult<HeikinAshiResult> {
+        let (ho, hh, hl, hc) = lock_inner(&self.inner)?.next((open, high, low, close));
+        Ok(HeikinAshiResult {
             open: ho,
             high: hh,
             low: hl,
             close: hc,
-        }
+        })
     }
 }
 
@@ -1100,13 +1111,13 @@ impl Keltner {
             )),
         }
     }
-    pub fn next(&self, high: f64, low: f64, close: f64) -> KeltnerResult {
-        let (u, m, lo) = self.inner.lock().unwrap().next((high, low, close));
-        KeltnerResult {
+    pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<KeltnerResult> {
+        let (u, m, lo) = lock_inner(&self.inner)?.next((high, low, close));
+        Ok(KeltnerResult {
             upper: u,
             middle: m,
             lower: lo,
-        }
+        })
     }
 }
 
@@ -1158,15 +1169,15 @@ impl PivotPoints {
             inner: Mutex::new(CorePivotPoints::new()),
         }
     }
-    pub fn next(&self, high: f64, low: f64, close: f64) -> PivotPointsResult {
-        let r = self.inner.lock().unwrap().next((high, low, close));
-        PivotPointsResult {
+    pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<PivotPointsResult> {
+        let r = lock_inner(&self.inner)?.next((high, low, close));
+        Ok(PivotPointsResult {
             p: r.0,
             r1: r.1,
             s1: r.2,
             r2: r.3,
             s2: r.4,
-        }
+        })
     }
 }
 
@@ -1203,8 +1214,8 @@ impl SwissArmyKnife {
             inner: Mutex::new(CoreSwissArmyKnife::new(mode.into(), period as usize, delta)),
         }
     }
-    pub fn next(&self, input: f64) -> f64 {
-        self.inner.lock().unwrap().next(input)
+    pub fn next(&self, input: f64) -> PyResult<f64> {
+        Ok(lock_inner(&self.inner)?.next(input))
     }
 }
 
@@ -1228,11 +1239,12 @@ impl RobustnessEvaluator {
             inner: Mutex::new(CoreRobustnessEvaluator::new()),
         }
     }
-    pub fn add_test_result(&self, net_profit: f64) {
-        self.inner.lock().unwrap().add_test_result(net_profit);
+    pub fn add_test_result(&self, net_profit: f64) -> PyResult<()> {
+        lock_inner(&self.inner)?.add_test_result(net_profit);
+        Ok(())
     }
-    pub fn calculate_score(&self) -> f64 {
-        self.inner.lock().unwrap().calculate_score()
+    pub fn calculate_score(&self) -> PyResult<f64> {
+        Ok(lock_inner(&self.inner)?.calculate_score())
     }
 }
 
@@ -1265,13 +1277,13 @@ impl UltimateBands {
             inner: Mutex::new(CoreUltimateBands::new(length as usize, num_sds)),
         }
     }
-    pub fn next(&self, input: f64) -> UltimateBandsResult {
-        let (u, m, lo) = self.inner.lock().unwrap().next(input);
-        UltimateBandsResult {
+    pub fn next(&self, input: f64) -> PyResult<UltimateBandsResult> {
+        let (u, m, lo) = lock_inner(&self.inner)?.next(input);
+        Ok(UltimateBandsResult {
             upper: u,
             middle: m,
             lower: lo,
-        }
+        })
     }
 }
 
@@ -1314,13 +1326,13 @@ impl UltimateChannel {
             )),
         }
     }
-    pub fn next(&self, high: f64, low: f64, close: f64) -> UltimateChannelResult {
-        let (u, ce, lo) = self.inner.lock().unwrap().next((high, low, close));
-        UltimateChannelResult {
+    pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<UltimateChannelResult> {
+        let (u, ce, lo) = lock_inner(&self.inner)?.next((high, low, close));
+        Ok(UltimateChannelResult {
             upper: u,
             center: ce,
             lower: lo,
-        }
+        })
     }
 }
 
@@ -1349,8 +1361,8 @@ impl Ad {
             inner: Mutex::new(CoreAD::new()),
         }
     }
-    pub fn next(&self, high: f64, low: f64, close: f64, volume: f64) -> f64 {
-        self.inner.lock().unwrap().next((high, low, close, volume))
+    pub fn next(&self, high: f64, low: f64, close: f64, volume: f64) -> PyResult<f64> {
+        Ok(lock_inner(&self.inner)?.next((high, low, close, volume)))
     }
 }
 
@@ -1383,8 +1395,8 @@ impl Adosc {
             inner: Mutex::new(CoreADOSC::new(fast as usize, slow as usize)),
         }
     }
-    pub fn next(&self, high: f64, low: f64, close: f64, volume: f64) -> f64 {
-        self.inner.lock().unwrap().next((high, low, close, volume))
+    pub fn next(&self, high: f64, low: f64, close: f64, volume: f64) -> PyResult<f64> {
+        Ok(lock_inner(&self.inner)?.next((high, low, close, volume)))
     }
 }
 
@@ -1413,8 +1425,8 @@ impl AnchoredVwap {
             inner: Mutex::new(CoreAnchoredVWAP::new()),
         }
     }
-    pub fn next(&self, price: f64, volume: f64, anchor: bool) -> f64 {
-        self.inner.lock().unwrap().next((price, volume, anchor))
+    pub fn next(&self, price: f64, volume: f64, anchor: bool) -> PyResult<f64> {
+        Ok(lock_inner(&self.inner)?.next((price, volume, anchor)))
     }
 }
 
@@ -1459,12 +1471,12 @@ impl CycleTrendAnalytics {
             )),
         }
     }
-    pub fn next(&self, input: f64) -> CycleTrendAnalyticsResult {
-        let r = self.inner.lock().unwrap().next(input);
-        CycleTrendAnalyticsResult {
+    pub fn next(&self, input: f64) -> PyResult<CycleTrendAnalyticsResult> {
+        let r = lock_inner(&self.inner)?.next(input);
+        Ok(CycleTrendAnalyticsResult {
             cycle: r[0],
             trend: r[1],
-        }
+        })
     }
 }
 
@@ -1542,13 +1554,13 @@ impl VolumeProfile {
             inner: Mutex::new(CoreVolumeProfile::new(period as usize, bins as usize)),
         }
     }
-    pub fn next(&self, price: f64, volume: f64) -> VolumeProfileResult {
-        let poc = self.inner.lock().unwrap().next((price, volume));
-        VolumeProfileResult {
+    pub fn next(&self, price: f64, volume: f64) -> PyResult<VolumeProfileResult> {
+        let poc = lock_inner(&self.inner)?.next((price, volume));
+        Ok(VolumeProfileResult {
             poc,
             vah: 0.0,
             val: 0.0,
-        }
+        })
     }
 }
 
@@ -1740,14 +1752,14 @@ impl CyberCycleFeatureExtractor {
             inner: Mutex::new(CoreCyberCycleFE::new(length as usize)),
         }
     }
-    pub fn next(&self, input: f64) -> CyberCycleFeaturesResult {
-        let f = self.inner.lock().unwrap().next(input);
-        CyberCycleFeaturesResult {
+    pub fn next(&self, input: f64) -> PyResult<CyberCycleFeaturesResult> {
+        let f = lock_inner(&self.inner)?.next(input);
+        Ok(CyberCycleFeaturesResult {
             cycle: f.cycle,
             trigger: f.trigger,
             cycle_momentum: f.cycle_momentum,
             trigger_signal: f.trigger_signal,
-        }
+        })
     }
 }
 #[pyfunction]
@@ -1787,12 +1799,12 @@ impl HurstFeatureExtractor {
             inner: Mutex::new(CoreHurstFE::new(period as usize)),
         }
     }
-    pub fn next(&self, input: f64) -> HurstFeaturesResult {
-        let f = self.inner.lock().unwrap().next(input);
-        HurstFeaturesResult {
+    pub fn next(&self, input: f64) -> PyResult<HurstFeaturesResult> {
+        let f = lock_inner(&self.inner)?.next(input);
+        Ok(HurstFeaturesResult {
             persistence: f.persistence,
             regime_label: f.regime_label.unwrap_or(-99) as i32,
-        }
+        })
     }
 }
 #[pyfunction]
@@ -1829,12 +1841,12 @@ impl InstantaneousTrendlineFeatureExtractor {
             inner: Mutex::new(CoreITFE::new()),
         }
     }
-    pub fn next(&self, input: f64) -> InstantaneousTrendlineFeaturesResult {
-        let f = self.inner.lock().unwrap().next(input);
-        InstantaneousTrendlineFeaturesResult {
+    pub fn next(&self, input: f64) -> PyResult<InstantaneousTrendlineFeaturesResult> {
+        let f = lock_inner(&self.inner)?.next(input);
+        Ok(InstantaneousTrendlineFeaturesResult {
             trend: f.trend,
             strength: f.strength,
-        }
+        })
     }
 }
 #[pyfunction]
@@ -1872,11 +1884,11 @@ impl TrendflexFeatureExtractor {
             inner: Mutex::new(CoreTrendflexFE::new(length as usize)),
         }
     }
-    pub fn next(&self, input: f64) -> TrendflexFeaturesResult {
-        let f = self.inner.lock().unwrap().next(input);
-        TrendflexFeaturesResult {
+    pub fn next(&self, input: f64) -> PyResult<TrendflexFeaturesResult> {
+        let f = lock_inner(&self.inner)?.next(input);
+        Ok(TrendflexFeaturesResult {
             trendflex: f.trendflex,
-        }
+        })
     }
 }
 #[pyfunction]
@@ -1919,11 +1931,11 @@ impl GriffithsDominantCycleFeatureExtractor {
             )),
         }
     }
-    pub fn next(&self, input: f64) -> GriffithsDominantCycleFeaturesResult {
-        let f = self.inner.lock().unwrap().next(input);
-        GriffithsDominantCycleFeaturesResult {
+    pub fn next(&self, input: f64) -> PyResult<GriffithsDominantCycleFeaturesResult> {
+        let f = lock_inner(&self.inner)?.next(input);
+        Ok(GriffithsDominantCycleFeaturesResult {
             dominant_cycle: f.dominant_cycle,
-        }
+        })
     }
 }
 #[pyfunction]
@@ -1976,18 +1988,18 @@ impl BullBearHMM {
     /// decoded state: `0` = no regime decided yet (or non-finite input), `1` =
     /// Bull, `2` = Bear. See the struct-level doc comment above for the
     /// price-vs-returns input contract.
-    pub fn next(&self, price: f64) -> i32 {
+    pub fn next(&self, price: f64) -> PyResult<i32> {
         if !price.is_finite() {
-            return 0; // Steady sentinel
+            return Ok(0); // Steady sentinel
         }
-        let regime = self.inner.lock().unwrap().next(price);
-        match regime {
+        let regime = lock_inner(&self.inner)?.next(price);
+        Ok(match regime {
             MarketRegime::Bull => 1,
             MarketRegime::Bear => 2,
             MarketRegime::Crisis => 3,
             MarketRegime::Steady => 0,
             MarketRegime::Cluster(c) => 4 + (c as i32),
-        }
+        })
     }
 }
 
@@ -2060,8 +2072,15 @@ fn gaussian_hmm_params_to_py(p: &CoreGaussianHmmParams) -> GaussianHmmParamsPy {
     }
 }
 
-fn core_params_from_py(params: &GaussianHmmParamsPy) -> CoreGaussianHmmParams {
+fn core_params_from_py(params: &GaussianHmmParamsPy) -> PyResult<CoreGaussianHmmParams> {
     let m = params.n_states as usize;
+    if params.gamma_flat.len() != m * m {
+        return Err(PyValueError::new_err(format!(
+            "gamma_flat length {} does not match n_states^2 ({})",
+            params.gamma_flat.len(),
+            m * m
+        )));
+    }
     let mut gamma = vec![vec![0.0; m]; m];
     for i in 0..m {
         for j in 0..m {
@@ -2080,7 +2099,7 @@ fn core_params_from_py(params: &GaussianHmmParamsPy) -> CoreGaussianHmmParams {
         params.stds.clone(),
         lambdas,
     )
-    .expect("invalid HMM params")
+    .map_err(|e| PyValueError::new_err(e.to_string()))
 }
 
 #[pyfunction]
@@ -2089,8 +2108,13 @@ pub fn fit_gaussian_hmm(
     n_states: u32,
     max_iter: u32,
     fit_lambdas: bool,
-) -> GaussianHmmFitResultPy {
+) -> PyResult<GaussianHmmFitResultPy> {
     let obs: Vec<f64> = observations.into_iter().filter(|v| v.is_finite()).collect();
+    if obs.is_empty() {
+        return Err(PyValueError::new_err(
+            "cannot fit HMM on empty or all-non-finite observations",
+        ));
+    }
     let m = n_states.max(2) as usize;
     let config = CoreGaussianHmmFitConfig {
         n_states: m,
@@ -2103,8 +2127,11 @@ pub fn fit_gaussian_hmm(
         fit_lambdas,
         ..Default::default()
     };
-    let fit = core_fit_em(&obs, &config).expect("gaussian HMM EM fit failed");
-    let decode = fit.params.decode(&obs).expect("gaussian HMM decode failed");
+    let fit = core_fit_em(&obs, &config).map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let decode = fit
+        .params
+        .decode(&obs)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
     let t_len = obs.len();
     let mut smooth_flat = Vec::with_capacity(m * t_len);
     for t in 0..t_len {
@@ -2112,7 +2139,7 @@ pub fn fit_gaussian_hmm(
             smooth_flat.push(decode.smooth_probs[st][t]);
         }
     }
-    GaussianHmmFitResultPy {
+    Ok(GaussianHmmFitResultPy {
         params: gaussian_hmm_params_to_py(&fit.params),
         log_likelihood: fit.log_likelihood,
         aic: fit.aic,
@@ -2121,7 +2148,7 @@ pub fn fit_gaussian_hmm(
         viterbi_path: decode.viterbi_path.iter().map(|&s| s as u32).collect(),
         smooth_probs_flat: smooth_flat,
         n_observations: t_len as u32,
-    }
+    })
 }
 
 #[pyclass(get_all)]
@@ -2140,14 +2167,16 @@ pub struct GaussianHmmDiagnosticsPy {
 pub fn gaussian_hmm_diagnostics(
     params: GaussianHmmParamsPy,
     observations: Vec<f64>,
-) -> GaussianHmmDiagnosticsPy {
+) -> PyResult<GaussianHmmDiagnosticsPy> {
     let obs: Vec<f64> = observations.into_iter().filter(|v| v.is_finite()).collect();
-    let core_params = core_params_from_py(&params);
-    let decode = core_params.decode(&obs).expect("hmm decode failed");
+    let core_params = core_params_from_py(&params)?;
+    let decode = core_params
+        .decode(&obs)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
     let diag = core_params
         .diagnostics(&decode, &obs)
-        .expect("hmm diagnostics failed");
-    GaussianHmmDiagnosticsPy {
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    Ok(GaussianHmmDiagnosticsPy {
         pseudo_residuals: diag.pseudo_residuals,
         decode_weighted_means: diag.decode_stats.iter().map(|r| r.weighted_mean).collect(),
         decode_weighted_vols: diag.decode_stats.iter().map(|r| r.weighted_vol).collect(),
@@ -2159,7 +2188,7 @@ pub fn gaussian_hmm_diagnostics(
         forecast_state_h1: diag.forecast_state_h1,
         forecast_vol_h1: diag.forecast_vol_h1,
         forecast_mean_h1: diag.forecast_mean_h1,
-    }
+    })
 }
 
 #[pyfunction]
@@ -2167,10 +2196,10 @@ pub fn gaussian_hmm_forecast_vol(
     params: GaussianHmmParamsPy,
     current_state_probs: Vec<f64>,
     horizon: u32,
-) -> f64 {
-    let core_params = core_params_from_py(&params);
+) -> PyResult<f64> {
+    let core_params = core_params_from_py(&params)?;
     core_forecast_volatility(&core_params, &current_state_probs, horizon.max(1) as usize)
-        .expect("forecast vol failed")
+        .map_err(|e| PyValueError::new_err(e.to_string()))
 }
 
 #[pyfunction]
@@ -2178,10 +2207,10 @@ pub fn gaussian_hmm_forecast_state(
     params: GaussianHmmParamsPy,
     current_state_probs: Vec<f64>,
     horizon: u32,
-) -> Vec<f64> {
-    let core_params = core_params_from_py(&params);
+) -> PyResult<Vec<f64>> {
+    let core_params = core_params_from_py(&params)?;
     core_forecast_state(&core_params, &current_state_probs, horizon.max(1) as usize)
-        .expect("forecast state failed")
+        .map_err(|e| PyValueError::new_err(e.to_string()))
 }
 
 #[pyclass]
@@ -2192,22 +2221,22 @@ pub struct GaussianHmmFilterPy {
 impl GaussianHmmFilterPy {
     // Named alternate constructor (see BullBearHMM::bull_bear): classmethod, not #[new].
     #[staticmethod]
-    pub fn from_params(params: GaussianHmmParamsPy) -> Self {
-        let core_params = core_params_from_py(&params);
-        Self {
+    pub fn from_params(params: GaussianHmmParamsPy) -> PyResult<Self> {
+        let core_params = core_params_from_py(&params)?;
+        Ok(Self {
             inner: Mutex::new(core_params.filter()),
-        }
+        })
     }
 
-    pub fn next(&self, observation: f64) -> Vec<f64> {
+    pub fn next(&self, observation: f64) -> PyResult<Vec<f64>> {
         if !observation.is_finite() {
             return self.state_probabilities();
         }
-        self.inner.lock().unwrap().next(observation)
+        Ok(lock_inner(&self.inner)?.next(observation))
     }
 
-    pub fn state_probabilities(&self) -> Vec<f64> {
-        self.inner.lock().unwrap().state_probabilities()
+    pub fn state_probabilities(&self) -> PyResult<Vec<f64>> {
+        Ok(lock_inner(&self.inner)?.state_probabilities())
     }
 }
 
@@ -2268,10 +2297,10 @@ impl MarketStructure {
             inner: Mutex::new(CoreMS::new(swing_strength as usize)),
         }
     }
-    pub fn next(&self, high: f64, low: f64) -> MarketStructureStateResult {
-        let mut guard = self.inner.lock().unwrap();
+    pub fn next(&self, high: f64, low: f64) -> PyResult<MarketStructureStateResult> {
+        let mut guard = lock_inner(&self.inner)?;
         let state = guard.next((high, low));
-        MarketStructureStateResult {
+        Ok(MarketStructureStateResult {
             bias: match state.bias {
                 CoreBias::Neutral => 0,
                 CoreBias::Bullish => 1,
@@ -2295,7 +2324,7 @@ impl MarketStructure {
             }),
             swing_depth_used: state.swing_depth_used as u32,
             bar_index: state.bar_index as u64,
-        }
+        })
     }
 }
 
@@ -2311,8 +2340,8 @@ impl GeometricPatternScanner {
             inner: Mutex::new(CoreGeo::new(swing_strength as usize)),
         }
     }
-    pub fn next(&self, high: f64, low: f64) -> GeometricNextResult {
-        let mut guard = self.inner.lock().unwrap();
+    pub fn next(&self, high: f64, low: f64) -> PyResult<GeometricNextResult> {
+        let mut guard = lock_inner(&self.inner)?;
         let (state, flag, hs) = guard.next((high, low));
         let ms_res = MarketStructureStateResult {
             bias: match state.bias {
@@ -2359,11 +2388,11 @@ impl GeometricPatternScanner {
             score: h.score,
             breakout_confirmed: h.breakout_confirmed,
         });
-        GeometricNextResult {
+        Ok(GeometricNextResult {
             market_structure: ms_res,
             flag: flag_res,
             hs: hs_res,
-        }
+        })
     }
 }
 
@@ -2455,8 +2484,10 @@ impl PriceImbalance {
             inner: Mutex::new(CoreImbalance::new(atr_period as usize, size_k)),
         }
     }
-    pub fn next(&self, high: f64, low: f64, close: f64) -> PriceImbalanceResult {
-        imbalance_result(self.inner.lock().unwrap().next((high, low, close)))
+    pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<PriceImbalanceResult> {
+        Ok(imbalance_result(
+            lock_inner(&self.inner)?.next((high, low, close)),
+        ))
     }
 }
 
@@ -2530,8 +2561,10 @@ impl ExtremeReclaim {
             )),
         }
     }
-    pub fn next(&self, high: f64, low: f64, close: f64) -> ExtremeReclaimResult {
-        reclaim_result(self.inner.lock().unwrap().next((high, low, close)))
+    pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<ExtremeReclaimResult> {
+        Ok(reclaim_result(
+            lock_inner(&self.inner)?.next((high, low, close)),
+        ))
     }
 }
 
@@ -2564,8 +2597,8 @@ impl PercentRank {
             inner: Mutex::new(CorePercentRank::new(period as usize)),
         }
     }
-    pub fn next(&self, value: f64) -> f64 {
-        self.inner.lock().unwrap().next(value)
+    pub fn next(&self, value: f64) -> PyResult<f64> {
+        Ok(lock_inner(&self.inner)?.next(value))
     }
 }
 
@@ -2587,8 +2620,8 @@ impl Zscore {
             inner: Mutex::new(CoreZscore::new(period as usize)),
         }
     }
-    pub fn next(&self, value: f64) -> f64 {
-        self.inner.lock().unwrap().next(value)
+    pub fn next(&self, value: f64) -> PyResult<f64> {
+        Ok(lock_inner(&self.inner)?.next(value))
     }
 }
 
@@ -2660,8 +2693,8 @@ impl Apo {
             )),
         }
     }
-    pub fn next(&self, input: f64) -> f64 {
-        self.inner.lock().unwrap().next(input)
+    pub fn next(&self, input: f64) -> PyResult<f64> {
+        Ok(lock_inner(&self.inner)?.next(input))
     }
 }
 
@@ -2690,8 +2723,8 @@ impl Ppo {
             )),
         }
     }
-    pub fn next(&self, input: f64) -> f64 {
-        self.inner.lock().unwrap().next(input)
+    pub fn next(&self, input: f64) -> PyResult<f64> {
+        Ok(lock_inner(&self.inner)?.next(input))
     }
 }
 
@@ -2718,8 +2751,8 @@ impl Correl {
             inner: Mutex::new(CoreCorrel::new(timeperiod as usize)),
         }
     }
-    pub fn next(&self, real0: f64, real1: f64) -> f64 {
-        self.inner.lock().unwrap().next((real0, real1))
+    pub fn next(&self, real0: f64, real1: f64) -> PyResult<f64> {
+        Ok(lock_inner(&self.inner)?.next((real0, real1)))
     }
 }
 
@@ -2744,8 +2777,8 @@ impl Beta {
             inner: Mutex::new(CoreBeta::new(timeperiod as usize)),
         }
     }
-    pub fn next(&self, real0: f64, real1: f64) -> f64 {
-        self.inner.lock().unwrap().next((real0, real1))
+    pub fn next(&self, real0: f64, real1: f64) -> PyResult<f64> {
+        Ok(lock_inner(&self.inner)?.next((real0, real1)))
     }
 }
 
@@ -2791,12 +2824,12 @@ impl GapMomentum {
             )),
         }
     }
-    pub fn next(&self, open: f64, close: f64) -> GapMomentumResult {
-        let res = self.inner.lock().unwrap().next((open, close));
-        GapMomentumResult {
+    pub fn next(&self, open: f64, close: f64) -> PyResult<GapMomentumResult> {
+        let res = lock_inner(&self.inner)?.next((open, close));
+        Ok(GapMomentumResult {
             gap_ratio: res.0,
             gap_signal: res.1,
-        }
+        })
     }
 }
 

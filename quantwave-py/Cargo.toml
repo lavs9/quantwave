@@ -11,6 +11,9 @@ readme = "../README.md"
 categories.workspace = true
 keywords.workspace = true
 
+[lints]
+workspace = true
+
 [lib]
 name = "quantwave_py"
 crate-type = ["cdylib"]

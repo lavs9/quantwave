@@ -9,7 +9,6 @@ pub mod volatility;
 pub mod volume;
 
 use polars::prelude::*;
-use pyo3::prelude::*;
 use pyo3_polars::derive::polars_expr;
 use serde::Deserialize;
 
@@ -146,7 +145,7 @@ fn macd(inputs: &[Series], kwargs: MacdKwargs) -> PolarsResult<Series> {
     let ca_signal = Float64Chunked::new("signal".into(), signal_vec);
     let ca_hist = Float64Chunked::new("hist".into(), hist_vec);
 
-    let series_vec = vec![
+    let series_vec = [
         ca_macd.into_series(),
         ca_signal.into_series(),
         ca_hist.into_series(),
@@ -213,7 +212,7 @@ fn bbands(inputs: &[Series], kwargs: BbandsKwargs) -> PolarsResult<Series> {
     let ca_middle = Float64Chunked::new("middle".into(), middle_vec);
     let ca_lower = Float64Chunked::new("lower".into(), lower_vec);
 
-    let series_vec = vec![
+    let series_vec = [
         ca_upper.into_series(),
         ca_middle.into_series(),
         ca_lower.into_series(),

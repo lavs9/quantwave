@@ -157,6 +157,7 @@ fn donchian_channels(inputs: &[Series], kwargs: PeriodKwargs) -> PolarsResult<Se
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct GmmKwargs {
     k: usize,
 }
@@ -167,12 +168,8 @@ pub fn gmm_output(_: &[Field]) -> PolarsResult<Field> {
 
 #[polars_expr(output_type_func=gmm_output)]
 fn gmm(inputs: &[Series], kwargs: GmmKwargs) -> PolarsResult<Series> {
+    let _ = kwargs;
     let n_rows = inputs[0].len();
-
-    let mut values = Vec::with_capacity(n_rows);
-    for _ in 0..n_rows {
-        values.push(0u32);
-    }
-
+    let values = vec![0u32; n_rows];
     Ok(Series::new("gmm_regime".into(), values))
 }

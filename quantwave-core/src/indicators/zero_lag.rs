@@ -5,7 +5,7 @@ use crate::traits::Next;
 /// ZeroLag Indicator
 ///
 /// Based on John Ehlers' "Zero Lag (well, almost)"
-/// The indicator acknowledgement that the EMA filter has an error term: Error = Price - EMA[1].
+/// The indicator acknowledgement that the EMA filter has an error term: `Error = Price - EMA[1]`.
 /// It introduces this error term into the equation in addition to the value of the new data sample,
 /// and applies a gain term to minimize the lag.
 #[derive(Debug, Clone)]

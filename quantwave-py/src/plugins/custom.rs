@@ -49,7 +49,7 @@ fn supertrend(inputs: &[Series], kwargs: SupertrendKwargs) -> PolarsResult<Serie
     let ca_st = Float64Chunked::new("supertrend".into(), st_vec);
     let ca_dir = Float64Chunked::new("direction".into(), dir_vec);
 
-    let series_vec = vec![ca_st.into_series(), ca_dir.into_series()];
+    let series_vec = [ca_st.into_series(), ca_dir.into_series()];
     let out = StructChunked::from_series("supertrend".into(), high.len(), series_vec.iter())?;
 
     Ok(out.into_series())

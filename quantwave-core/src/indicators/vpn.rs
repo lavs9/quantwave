@@ -11,6 +11,7 @@ use crate::traits::Next;
 /// between -100 and 100.
 ///
 /// Formula:
+/// ```text
 /// TypicalPrice = (High + Low + Close) / 3
 /// MF = TypicalPrice - TypicalPrice[1]
 /// MC = 0.1 * ATR(Period)
@@ -20,6 +21,7 @@ use crate::traits::Next;
 /// VN = Sum(VMN, Period)
 /// MAV = Average(Volume, Period)
 /// VPN = (VP - VN) / (MAV * Period) * 100
+/// ```
 ///
 /// This implementation uses an UltimateSmoother for the final VPN value to minimize lag,
 /// as per QuantWave's preference for Ehlers-style smoothing.

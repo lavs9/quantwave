@@ -34,7 +34,7 @@
 //!   default (quantwave-lzzq).
 //! - Cross-sectional factor panel rank/long-short (sigc-inspired, cr6v.15).
 //! - `LiveBridge` trait for future Nautilus adapter (LGPL — cr6v.16).
-//! - Vectorized foundation now; streaming parity (Next<T> from quantwave-core)
+//! - Vectorized foundation now; streaming parity (`Next<T>` from quantwave-core)
 //!   and full rich PA/ML integration in sibling tasks (ug9t, 06sz).
 //! - All new code will eventually carry batch-vs-streaming proptests.
 //!
@@ -58,8 +58,8 @@
 //!   turning points (see artifacts/anticipating_turning_points*.txt); recorded here
 //!   per AGENTS "if no source validate".
 //!
-//! Universal Indicator / Next<T> relevance: The engine itself is vectorized
-//! (batch) for v0.1. Streaming simulation mode (feeding signals from Next<T>
+//! Universal Indicator / `Next<T>` relevance: The engine itself is vectorized
+//! (batch) for v0.1. Streaming simulation mode (feeding signals from `Next<T>`
 //! strategy state machines) + full parity proptests implemented in quantwave-ug9t.
 //! The crate re-exports core traits for future hybrid use.
 //!
@@ -106,7 +106,7 @@ pub use monte_carlo::{
 };
 pub use order_exec::{OrderSim, run_order_simulation};
 pub use orders::{
-    ExecBar, ExitLeg, Fill, FillKind, Order, OrderType, Side, fill_order, resolve_bracket,
+    Bracket, ExecBar, ExitLeg, Fill, FillKind, Order, OrderType, Side, fill_order, resolve_bracket,
 };
 use polars::prelude::*;
 pub use portfolio::{
@@ -491,7 +491,7 @@ pub struct Trade {
     /// rich PA (pole_height) or feature signals (was hardcoded 1.0 pre-ug9t).
     pub quantity: f64,
     /// Rich signal metadata at entry (e.g. pole_height from PA struct, regime,
-    /// cycle_momentum). Populated in streaming Next<T> path; batch scalar uses None.
+    /// cycle_momentum). Populated in streaming `Next<T>` path; batch scalar uses None.
     pub entry_metadata: Option<HashMap<String, f64>>,
 }
 
@@ -673,7 +673,7 @@ fn struct_field_bool(ca: &StructChunked, name: &str, i: usize) -> Option<bool> {
 /// in units for variable sizing support added in ug9t).
 ///
 /// Generalized from unit-size flips (1hr) to exposure-driven for feature/PA
-/// sizing parity verification. See `run_streaming_simulation` for Next<T> path.
+/// sizing parity verification. See `run_streaming_simulation` for `Next<T>` path.
 /// When `BacktestConfig.symbol_col` is set, runs independent per-symbol simulations
 /// and returns symbol-tagged trades plus per-symbol and portfolio equity curves.
 pub struct BacktestEngine {
@@ -1826,7 +1826,7 @@ fn run_simulation(
     (trades, equity_points)
 }
 
-/// Run simulation in streaming mode driven by a Next<T> signal generator.
+/// Run simulation in streaming mode driven by a `Next<T>` signal generator.
 /// The generator receives `&Bar` each step (price + ts) and returns `StrategySignal`
 /// (exposure for sizing + rich metadata e.g. pole_height).
 ///

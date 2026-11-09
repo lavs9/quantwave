@@ -79,7 +79,7 @@ fn ht_phasor(inputs: &[Series]) -> PolarsResult<Series> {
     let ca_inphase = Float64Chunked::new("inphase".into(), inphase_vec);
     let ca_quadrature = Float64Chunked::new("quadrature".into(), quadrature_vec);
 
-    let series_vec = vec![ca_inphase.into_series(), ca_quadrature.into_series()];
+    let series_vec = [ca_inphase.into_series(), ca_quadrature.into_series()];
     let out = StructChunked::from_series("ht_phasor".into(), s.len(), series_vec.iter())?;
 
     Ok(out.into_series())
@@ -124,7 +124,7 @@ fn ht_sine(inputs: &[Series]) -> PolarsResult<Series> {
     let ca_sine = Float64Chunked::new("sine".into(), sine_vec);
     let ca_leadsine = Float64Chunked::new("leadsine".into(), leadsine_vec);
 
-    let series_vec = vec![ca_sine.into_series(), ca_leadsine.into_series()];
+    let series_vec = [ca_sine.into_series(), ca_leadsine.into_series()];
     let out = StructChunked::from_series("ht_sine".into(), s.len(), series_vec.iter())?;
 
     Ok(out.into_series())

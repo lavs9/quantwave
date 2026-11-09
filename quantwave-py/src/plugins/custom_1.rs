@@ -1,7 +1,6 @@
 use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
 use quantwave_core::traits::Next;
-use quantwave_core::*;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -44,7 +43,7 @@ fn gap_momentum(inputs: &[Series], kwargs: GapMomentumKwargs) -> PolarsResult<Se
     let s_ratio = Series::new("gap_ratio".into(), ratio_vals);
     let s_signal = Series::new("gap_signal".into(), signal_vals);
 
-    let series_vec = vec![s_ratio, s_signal];
+    let series_vec = [s_ratio, s_signal];
     let struct_series =
         StructChunked::from_series("gap_momentum_result".into(), s_o.len(), series_vec.iter())?;
     Ok(struct_series.into_series())
@@ -167,7 +166,7 @@ fn heikin_ashi(inputs: &[Series]) -> PolarsResult<Series> {
     let l_series = Series::new("ha_low".into(), ha_lows);
     let c_series = Series::new("ha_close".into(), ha_closes);
 
-    let series_vec = vec![o_series, h_series, l_series, c_series];
+    let series_vec = [o_series, h_series, l_series, c_series];
     let out =
         StructChunked::from_series("heikin_ashi_output".into(), s_o.len(), series_vec.iter())?;
     Ok(out.into_series())

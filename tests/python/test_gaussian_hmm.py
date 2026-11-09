@@ -60,3 +60,22 @@ def test_gaussian_hmm_filter_streaming_probs_sum_to_one() -> None:
         probs = filt.next(x)
         assert len(probs) == 2
         assert sum(probs) == pytest.approx(1.0, abs=1e-9)
+
+
+def test_fit_gaussian_hmm_empty_raises_value_error() -> None:
+    with pytest.raises(ValueError, match="empty or all-non-finite"):
+        qw.fit_gaussian_hmm([], n_states=2, max_iter=40, fit_lambdas=False)
+
+
+def test_gaussian_hmm_filter_from_invalid_params_raises_value_error() -> None:
+    fit = qw.fit_gaussian_hmm(GENERIC_RETURNS, n_states=2, max_iter=40, fit_lambdas=False)
+    bad_params = qw.GaussianHmmParamsPy(
+        n_states=2,
+        delta=fit.params.delta,
+        gamma_flat=[0.5, 0.5],
+        means=fit.params.means,
+        stds=fit.params.stds,
+        lambdas=fit.params.lambdas,
+    )
+    with pytest.raises(ValueError, match="gamma_flat length"):
+        qw.GaussianHmmFilterPy.from_params(bad_params)

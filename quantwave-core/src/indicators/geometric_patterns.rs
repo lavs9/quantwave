@@ -4,8 +4,8 @@
 //! built on the shared Swing + MarketStructure foundation (Part 21).
 //!
 //! Sources:
-//! - Part 69: https://www.mql5.com/en/articles/22503 + Flag_Pattern_Detector.mq5
-//! - Part 66: https://www.mql5.com/en/articles/22194 + HS_Indicator.mq5
+//! - Part 69: <https://www.mql5.com/en/articles/22503> + Flag_Pattern_Detector.mq5
+//! - Part 66: <https://www.mql5.com/en/articles/22194> + HS_Indicator.mq5
 //! - Foundation: Part 21 + market_structure.rs
 
 use crate::indicators::market_structure::{MarketStructure, MarketStructureState, SwingPoint};

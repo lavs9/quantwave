@@ -23,9 +23,9 @@ fn map4(inputs: &[Series], f: impl Fn(f64, f64, f64, f64) -> f64) -> PolarsResul
     let d = inputs[3].f64()?;
     let out: Float64Chunked = a
         .into_iter()
-        .zip(b.into_iter())
-        .zip(c.into_iter())
-        .zip(d.into_iter())
+        .zip(b)
+        .zip(c)
+        .zip(d)
         .map(|(((av, bv), cv), dv)| match (av, bv, cv, dv) {
             (Some(a), Some(b), Some(c), Some(d))
                 if !a.is_nan() && !b.is_nan() && !c.is_nan() && !d.is_nan() =>

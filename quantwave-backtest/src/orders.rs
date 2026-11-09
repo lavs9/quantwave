@@ -243,7 +243,7 @@ pub enum ExitLeg {
 /// Resolve a bracket / OCO exit (a take-profit `tp` and stop-loss `sl` level) for
 /// an open position against one bar. Uses the **pessimistic** convention: on a
 /// same-bar double-touch the **stop-loss** is assumed to fire first — identical
-/// to [`crate::stops::evaluate_stops`]. Returns `(leg, exit_price)` or `None`.
+/// to `crate::stops::evaluate_stops`. Returns `(leg, exit_price)` or `None`.
 pub fn resolve_bracket(is_long: bool, tp: f64, sl: f64, bar: ExecBar) -> Option<(ExitLeg, f64)> {
     if is_long {
         if bar.low <= sl {

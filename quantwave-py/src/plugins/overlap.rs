@@ -190,7 +190,7 @@ fn macdext(inputs: &[Series], kwargs: MacdExtKwargs) -> PolarsResult<Series> {
     let ca_signal = Float64Chunked::new("signal".into(), signal_vec);
     let ca_hist = Float64Chunked::new("hist".into(), hist_vec);
 
-    let series_vec = vec![
+    let series_vec = [
         ca_macd.into_series(),
         ca_signal.into_series(),
         ca_hist.into_series(),
@@ -240,7 +240,7 @@ fn macdfix(inputs: &[Series], kwargs: MacdFixKwargs) -> PolarsResult<Series> {
     let ca_signal = Float64Chunked::new("signal".into(), signal_vec);
     let ca_hist = Float64Chunked::new("hist".into(), hist_vec);
 
-    let series_vec = vec![
+    let series_vec = [
         ca_macd.into_series(),
         ca_signal.into_series(),
         ca_hist.into_series(),

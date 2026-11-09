@@ -26,7 +26,7 @@ impl GarchParams {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct MSGarch {
     pub n_states: usize,
-    /// Transition probability matrix [from_state][to_state]
+    /// Transition probability matrix `[from_state][to_state]`
     pub a: Vec<Vec<f64>>,
     /// GARCH parameters for each state
     pub params: Vec<GarchParams>,

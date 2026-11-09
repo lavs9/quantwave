@@ -455,7 +455,7 @@ fn aroon(inputs: &[Series], kwargs: SinglePeriodKwargs) -> PolarsResult<Series> 
     let ca_down = Float64Chunked::new("down".into(), down_vec);
     let ca_up = Float64Chunked::new("up".into(), up_vec);
 
-    let series_vec = vec![ca_down.into_series(), ca_up.into_series()];
+    let series_vec = [ca_down.into_series(), ca_up.into_series()];
     let out = StructChunked::from_series("aroon".into(), high.len(), series_vec.iter())?;
     Ok(out.into_series())
 }
@@ -520,7 +520,7 @@ fn stoch(inputs: &[Series], kwargs: StochKwargs) -> PolarsResult<Series> {
     let ca_k = Float64Chunked::new("slowk".into(), slowk_vec);
     let ca_d = Float64Chunked::new("slowd".into(), slowd_vec);
 
-    let series_vec = vec![ca_k.into_series(), ca_d.into_series()];
+    let series_vec = [ca_k.into_series(), ca_d.into_series()];
     let out = StructChunked::from_series("stoch".into(), high.len(), series_vec.iter())?;
     Ok(out.into_series())
 }
@@ -576,7 +576,7 @@ fn stochf(inputs: &[Series], kwargs: StochfKwargs) -> PolarsResult<Series> {
     let ca_k = Float64Chunked::new("fastk".into(), fastk_vec);
     let ca_d = Float64Chunked::new("fastd".into(), fastd_vec);
 
-    let series_vec = vec![ca_k.into_series(), ca_d.into_series()];
+    let series_vec = [ca_k.into_series(), ca_d.into_series()];
     let out = StructChunked::from_series("stochf".into(), high.len(), series_vec.iter())?;
     Ok(out.into_series())
 }
@@ -636,7 +636,7 @@ fn stochrsi(inputs: &[Series], kwargs: StochrsiKwargs) -> PolarsResult<Series> {
     let ca_k = Float64Chunked::new("fastk".into(), fastk_vec);
     let ca_d = Float64Chunked::new("fastd".into(), fastd_vec);
 
-    let series_vec = vec![ca_k.into_series(), ca_d.into_series()];
+    let series_vec = [ca_k.into_series(), ca_d.into_series()];
     let out = StructChunked::from_series("stochrsi".into(), s.len(), series_vec.iter())?;
     Ok(out.into_series())
 }

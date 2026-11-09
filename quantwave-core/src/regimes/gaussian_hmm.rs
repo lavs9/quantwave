@@ -23,7 +23,7 @@ pub struct GaussianHmmParams {
     pub n_states: usize,
     /// Initial / stationary distribution δ (sums to 1).
     pub delta: Vec<f64>,
-    /// Transition matrix Γ[from][to].
+    /// Transition matrix `Γ[from][to]`.
     pub gamma: Vec<Vec<f64>>,
     /// Emission mean μ per state.
     pub means: Vec<f64>,
@@ -83,9 +83,9 @@ pub struct GaussianHmmFitResult {
 /// Batch decode output for a fixed parameter set.
 #[derive(Debug, Clone)]
 pub struct GaussianHmmDecode {
-    /// P(C_t = i | x^T) — local / smoothed state probabilities [state][time].
+    /// P(C_t = i | x^T) — local / smoothed state probabilities `[state][time]`.
     pub smooth_probs: Vec<Vec<f64>>,
-    /// Causal filter P(C_t = i | x_{1:t}) [state][time].
+    /// Causal filter P(C_t = i | x_{1:t}) `[state][time]`.
     pub forward_filter: Vec<Vec<f64>>,
     /// Global Viterbi path (0-indexed states).
     pub viterbi_path: Vec<usize>,
