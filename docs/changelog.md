@@ -4,10 +4,38 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-10
+
+### Changed
+- **BREAKING (Rust API): Replaced boolean parameter flags with expressive domain enums (`quantwave-wfmd`).**
+  - `ExpDevBands`: `ExpDevBaseline { Ema, Sma }` replaces `use_ema: bool`.
+  - `black_scholes`: `OptionType { Call, Put }` replaces `is_call: bool` across `price`, `d1`, `d2`, `delta`, `gamma`, `vega`, `theta`, and `rho`.
+  - `portfolio::hrp`: `HrpInputKind { Returns, Covariance }` replaces `is_cov: bool` in `hrp_weights`.
+  - `portfolio::projection`: `PortfolioConstraint { LongOnly, LongShort }` replaces `long_only: bool` in `optimize_projection`.
+  - `backtest::stops` & `backtest::orders`: `PositionSide { Long, Short }` replaces `is_short: bool` in `TrailingStop::new`, `TrailingStop::update`, and `OrderRequest`.
+  - Python bindings maintain full backward compatibility with boolean arguments while also accepting string enum literals.
+- **Idiomatic Rust API Improvements (`quantwave-j94q`).**
+  - Replaced `&Option<T>` parameters with `Option<&T>` / `Option<&str>` across backtest portfolio interfaces (`compute_sized_exposure`, `require_symbol_col`, `should_rebalance`).
+  - Derived `Eq` on discrete configuration, mode, and error types: `SwissArmyKnifeMode`, `GmmError`, `MonteCarloConfig`, `MonteCarloReturnConfig`, and `SwissMode`.
+  - Derived `Copy` on small plain-data types: `SwingPoint`, `FlipEvent`, `FlagPattern`, `HsPattern`, `LevelSource`, `MonteCarloConfig`, and `MonteCarloReturnConfig`.
+  - Eliminated redundant `.clone()` invocations across market structure pattern extractors and swing point detectors.
+  - Activated workspace clippy lints `ref_option_ref = "warn"` and `derive_partial_eq_without_eq = "warn"`.
+- **Quality & Panics.**
+  - Inherited workspace lints across all crates in the workspace.
+  - Replaced unhandled PyO3 `expect` / `unwrap` calls with idiomatic `PyErr` propagation.
+  - Resolved rustdoc warnings and broken links.
+
 ### Added
 - **`gextotal`** — sum of per-strike net gamma exposure for one option chain the caller passes in. Same formula as `gex_per_strike` (`ce_gex + pe_gex`). Empty chain is 0. Available as `quantwave.gextotal` and `quantwave.polars.options.gextotal`. QuantWave does not ship a gamma-exposure history.
-- **Price imbalance and extreme reclaim**, on the existing market-structure module. Price imbalance is the latest three-bar untraded range on each side. Extreme reclaim is a pierce of the prior N-bar high or low with the close back inside, sized against Wilder ATR. Break of structure remains the single MQL5 market-structure bias flip.
-- **Percent rank and rolling z-score** (`percent_rank`, `zscore`). Generic series normalizers, default window 252. They do not know whether the series is gamma exposure.
+- **Market Structure: Price Imbalance and Extreme Reclaim** (`quantwave_core::indicators::market_structure`). Price imbalance is the latest three-bar untraded range on each side. Extreme reclaim is a pierce of the prior N-bar high or low with the close back inside, sized against Wilder ATR. Break of structure remains the single MQL5 market-structure bias flip.
+- **Percent Rank & Rolling Z-Score** (`quantwave_core::indicators::series_norm`). Generic 252-bar rolling series normalizers (`percent_rank`, `zscore`).
+- **Warmup Trimming & Readiness Tracking** (`quantwave-backtest` & `quantwave-py`). Automatic warmup trimming enabled by default across backtest runners; added `track_readiness=True` on `streaming_class`.
+- **WebAssembly Playground MVP (`quantwave-wasm`).** Exported core streaming indicators (EMA, CyberCycle, Renko, Kagi, Harmonics) with JS/WASM bindings and Node.js parity fixtures (`quantwave-stb8`).
+
+### Fixed
+- **DMI / ADX Seeding (`quantwave-ygg6`).** Fixed an edge-case where a stretch of zero True Range bars disabled subsequent ADX seeding.
+- **SMA NaN Recovery.** Corrected moving average accumulator self-healing so that an SMA recovers its accurate rolling state after a transient NaN ages out of its window.
+- **Metadata and Stubs Alignment.** Closed indicator metadata gaps, synchronized Python `.pyi` stubs, and aligned option analytics with formula exports.
 
 ## [0.8.1] - 2026-09-20
 
