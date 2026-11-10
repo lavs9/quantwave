@@ -89,7 +89,7 @@ jobs:
   verify-python-wheel:
     name: Wheel smoke (${{ matrix.python-version }})
     needs: [build-python-wheels]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
