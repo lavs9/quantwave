@@ -1162,14 +1162,23 @@ impl SuperTrend {
 ///
 /// NOTE: This function computes ATR using an Exponential Moving Average (EMA) of true range.
 /// For Wilder's RMA smoothing (the TA-Lib and Pine Script convention), use `atr_wilder` or `ta_atr`.
+/// Average True Range (ATR) with Wilder RMA smoothing (default, TA-Lib standard) or EMA smoothing.
 ///
 /// Parameters:
 ///   period: Window period (must be >= 1).
 ///   high: High price series.
 ///   low: Low price series.
 ///   close: Close price series.
+///   smoothing: 'wilder' (default, TA-Lib standard) or 'ema'.
 #[pyfunction]
-pub fn atr(period: i64, high: Vec<f64>, low: Vec<f64>, close: Vec<f64>) -> PyResult<Vec<f64>> {
+#[pyo3(signature = (period, high, low, close, smoothing=None))]
+pub fn atr(
+    period: i64,
+    high: Vec<f64>,
+    low: Vec<f64>,
+    close: Vec<f64>,
+    smoothing: Option<&str>,
+) -> PyResult<Vec<f64>> {
     period.validate("period")?;
     if high.len() != low.len() || low.len() != close.len() {
         return Err(PyValueError::new_err(format!(
@@ -1179,34 +1188,76 @@ pub fn atr(period: i64, high: Vec<f64>, low: Vec<f64>, close: Vec<f64>) -> PyRes
             close.len()
         )));
     }
-    let mut indicator = CoreATR::new(period as usize);
-    Ok(high
-        .iter()
-        .zip(low.iter())
-        .zip(close.iter())
-        .map(|((&h, &l), &c)| indicator.next((h, l, c)))
-        .collect())
+    let is_ema = match smoothing {
+        None | Some("wilder") | Some("WILDER") | Some("rma") | Some("RMA") => false,
+        Some("ema") | Some("EMA") => true,
+        Some(other) => {
+            return Err(PyValueError::new_err(format!(
+                "unrecognized smoothing: expected 'wilder' or 'ema', got '{other}'"
+            )));
+        }
+    };
+    if is_ema {
+        let mut indicator = CoreATR::new(period as usize);
+        Ok(high
+            .iter()
+            .zip(low.iter())
+            .zip(close.iter())
+            .map(|((&h, &l), &c)| indicator.next((h, l, c)))
+            .collect())
+    } else {
+        let mut indicator = CoreTaATR::new(period as usize);
+        Ok(high
+            .iter()
+            .zip(low.iter())
+            .zip(close.iter())
+            .map(|((&h, &l), &c)| indicator.next((h, l, c)))
+            .collect())
+    }
 }
 
-#[doc = "Average True Range (ATR) with EMA smoothing.\n\nFor Wilder RMA smoothing, use AtrWilder or TaAtr."]
+enum AtrInner {
+    Wilder(CoreTaATR),
+    Ema(CoreATR),
+}
+
+#[doc = "Average True Range (ATR) streaming indicator with Wilder RMA smoothing (default) or EMA smoothing.\n\nParameters:\n  period: Window period (must be >= 1).\n  smoothing: 'wilder' (default, TA-Lib standard) or 'ema'."]
 #[pyclass]
 pub struct Atr {
-    inner: Mutex<CoreATR>,
+    inner: Mutex<AtrInner>,
 }
 
 #[pymethods]
 impl Atr {
     #[new]
-    pub fn new(period: i64) -> PyResult<Self> {
+    #[pyo3(signature = (period, smoothing=None))]
+    pub fn new(period: i64, smoothing: Option<&str>) -> PyResult<Self> {
         period.validate("period")?;
+        let is_ema = match smoothing {
+            None | Some("wilder") | Some("WILDER") | Some("rma") | Some("RMA") => false,
+            Some("ema") | Some("EMA") => true,
+            Some(other) => {
+                return Err(PyValueError::new_err(format!(
+                    "unrecognized smoothing: expected 'wilder' or 'ema', got '{other}'"
+                )));
+            }
+        };
+        let inner = if is_ema {
+            AtrInner::Ema(CoreATR::new(period as usize))
+        } else {
+            AtrInner::Wilder(CoreTaATR::new(period as usize))
+        };
         Ok(Self {
-            inner: Mutex::new(CoreATR::new(period as usize)),
+            inner: Mutex::new(inner),
         })
     }
 
     pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<f64> {
         let mut guard = lock_inner(&self.inner)?;
-        Ok(guard.next((high, low, close)))
+        match &mut *guard {
+            AtrInner::Wilder(ind) => Ok(ind.next((high, low, close))),
+            AtrInner::Ema(ind) => Ok(ind.next((high, low, close))),
+        }
     }
 }
 
@@ -1374,6 +1425,7 @@ export_1_in_1_out!(T3, CoreT3, (period: i64, v_factor: f64));
 export_hl_in_1_out!(Sar, SAR, (acceleration: f64, maximum: f64));
 export_1_in_1_out!(Mom, MOM, (period: i64));
 export_1_in_1_out!(Roc, ROC, (period: i64));
+export_1_in_1_out!(Rocp, ROCP, (period: i64));
 export_ohlc_in_1_out!(Willr, WILLR, (period: i64));
 export_1_in_1_out!(Dema, DEMA, (period: i64));
 export_1_in_1_out!(Tema, TEMA, (period: i64));
@@ -1465,7 +1517,50 @@ export_1_in_record_out!(
         lips: res.2
     }
 );
-export_1_in_1_out!(Alma, CoreALMA, (period: i64, offset: f64, sigma: f64));
+#[doc = "Arnaud Legoux Moving Average (ALMA).\n\nParameters:\n  period: Window period (must be >= 1).\n  offset: Gaussian peak offset in [0, 1] (typically 0.85).\n  sigma: Filter width (typically 6.0).\n  series: Input price series.\n  warmup: 'partial' (default) or 'nan'."]
+#[pyfunction]
+#[pyo3(signature = (period, offset, sigma, series, warmup=None))]
+pub fn alma(
+    period: i64,
+    offset: f64,
+    sigma: f64,
+    series: Vec<f64>,
+    warmup: Option<&str>,
+) -> PyResult<Vec<f64>> {
+    period.validate("period")?;
+    let policy = parse_warmup(warmup)?;
+    let mut indicator = CoreALMA::with_warmup(period as usize, offset, sigma, policy);
+    Ok(series.iter().map(|&x| indicator.next(x)).collect())
+}
+
+#[doc = "Arnaud Legoux Moving Average (ALMA) streaming indicator.\n\nParameters:\n  period: Window period (must be >= 1).\n  offset: Gaussian peak offset in [0, 1] (typically 0.85).\n  sigma: Filter width (typically 6.0).\n  warmup: 'partial' (default) or 'nan'."]
+#[pyclass]
+pub struct Alma {
+    inner: Mutex<CoreALMA>,
+}
+
+#[pymethods]
+impl Alma {
+    #[new]
+    #[pyo3(signature = (period, offset, sigma, warmup=None))]
+    pub fn new(period: i64, offset: f64, sigma: f64, warmup: Option<&str>) -> PyResult<Self> {
+        period.validate("period")?;
+        let policy = parse_warmup(warmup)?;
+        Ok(Self {
+            inner: Mutex::new(CoreALMA::with_warmup(
+                period as usize,
+                offset,
+                sigma,
+                policy,
+            )),
+        })
+    }
+
+    pub fn next(&self, input: f64) -> PyResult<f64> {
+        let mut guard = lock_inner(&self.inner)?;
+        Ok(guard.next(input))
+    }
+}
 export_ohlc_in_record_out!(AtrTs, CoreAtrTs, AtrTsResult, (period: i64, multiplier: f64), res, AtrTsResult { stop: res.0, direction: res.1 });
 export_1_in_1_out!(Butterworth2, CoreButterworth2, (period: i64));
 export_1_in_1_out!(Butterworth3, CoreButterworth3, (period: i64));
@@ -3721,6 +3816,8 @@ pub fn register(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(mom, m)?)?;
     m.add_class::<Roc>()?;
     m.add_function(wrap_pyfunction!(roc, m)?)?;
+    m.add_class::<Rocp>()?;
+    m.add_function(wrap_pyfunction!(rocp, m)?)?;
     m.add_class::<Willr>()?;
     m.add_function(wrap_pyfunction!(willr, m)?)?;
     m.add_class::<Dema>()?;

@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-11-11
+
+### Fixed
+- **ATR Plain vs. Polars Bit-for-Bit Parity (GH-61, `quantwave-fqwz`).**
+  - Plain `quantwave.atr` and Polars `pl.col().ta.atr` now both default to Wilder's RMA (alpha = 1/period, SMA seed after `period` bars), eliminating the previous discrepancy (2.22 vs 2.14 at bar 100).
+  - Both layers and `quantwave.Atr` streaming class now support `smoothing="wilder"` and `smoothing="ema"`.
+- **Moving Average Warmup Options in Polars `.ta` (GH-61, `quantwave-fqwz`).**
+  - Added `warmup="partial" | "nan"` to `pl.col().ta.sma`, `pl.col().ta.ema`, and `pl.col().ta.alma`, powered by `WarmupPolicy`.
+  - Added `warmup` argument to plain `quantwave.alma` and `quantwave.Alma`.
+- **Top-Level `rocp` Function and Streaming Class (GH-61, `quantwave-fqwz`).**
+  - Added `quantwave.rocp` and `quantwave.Rocp` streaming class returning fractional ratio returns `(p - p_prev) / p_prev`.
+  - Clarified documentation distinguishing `roc` (percentage, 100×) from `rocp` (decimal fraction, 1×).
+
+### Added
+- **Trading Halt & Data Hole Recovery Helper (Rule S14, GH-61, `quantwave-fqwz`).**
+  - Added `quantwave.apply_with_gap_reset(indicator_factory, *series_args, max_gap=5)` to restart stateful indicators (EMA, SuperTrend, ATR, etc.) after gaps of more than `max_gap` consecutive missing/NaN bars.
+
 ## [0.10.0] - 2026-11-11
 
 ### Added

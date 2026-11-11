@@ -755,6 +755,7 @@ _raw_max = globals().get("ta_max") or globals().get("max")
 _raw_min = globals().get("ta_min") or globals().get("min")
 _raw_sma = globals().get("sma")
 _raw_ema = globals().get("ema")
+_raw_rocp = globals().get("rocp")
 
 
 def sma(*args, **kwargs):
@@ -794,26 +795,32 @@ Accepts arguments in either order:
 
 
 def atr(*args, **kwargs):
-    """Average True Range (EMA-smoothed).
+    """Average True Range (Wilder RMA smoothed by default, or EMA).
 
 Accepts arguments in either order:
-  - atr(period, high, low, close)
-  - atr(high, low, close, period=14)
-  - atr(high=..., low=..., close=..., period=...)
+  - atr(period, high, low, close, smoothing="wilder")
+  - atr(high, low, close, period=14, smoothing="wilder")
+  - atr(high=..., low=..., close=..., period=..., smoothing="wilder")
 """
-    if len(args) == 4:
+    smoothing = kwargs.pop("smoothing", "wilder")
+    if len(args) == 5:
         if isinstance(args[0], (int, float)) and not hasattr(args[0], "__len__"):
-            return _raw_atr(int(args[0]), args[1], args[2], args[3])
+            return _raw_atr(int(args[0]), args[1], args[2], args[3], smoothing=args[4])
         if isinstance(args[3], (int, float)) and not hasattr(args[3], "__len__"):
-            return _raw_atr(int(args[3]), args[0], args[1], args[2])
+            return _raw_atr(int(args[3]), args[0], args[1], args[2], smoothing=args[4])
+    elif len(args) == 4:
+        if isinstance(args[0], (int, float)) and not hasattr(args[0], "__len__"):
+            return _raw_atr(int(args[0]), args[1], args[2], args[3], smoothing=smoothing)
+        if isinstance(args[3], (int, float)) and not hasattr(args[3], "__len__"):
+            return _raw_atr(int(args[3]), args[0], args[1], args[2], smoothing=smoothing)
     elif len(args) == 3:
-        period = kwargs.get("period", kwargs.get("timeperiod", 14))
-        return _raw_atr(int(period), args[0], args[1], args[2])
+        period = kwargs.pop("period", kwargs.pop("timeperiod", 14))
+        return _raw_atr(int(period), args[0], args[1], args[2], smoothing=smoothing)
     elif not args and kwargs:
-        period = kwargs.get("period", kwargs.get("timeperiod", 14))
-        return _raw_atr(int(period), kwargs["high"], kwargs["low"], kwargs["close"])
+        period = kwargs.pop("period", kwargs.pop("timeperiod", 14))
+        return _raw_atr(int(period), kwargs["high"], kwargs["low"], kwargs["close"], smoothing=smoothing)
     if _raw_atr is not None:
-        return _raw_atr(*args, **kwargs)
+        return _raw_atr(*args, smoothing=smoothing, **kwargs)
     raise RuntimeError("native atr function unavailable")
 
 
@@ -848,6 +855,88 @@ Accepts arguments in either order:
   - atr_wilder(high, low, close, timeperiod=14)
 """
     return ta_atr(*args, **kwargs)
+
+
+def rocp(*args, **kwargs):
+    """Rate of Change Percentage (as a decimal ratio: (p - p_prev) / p_prev).
+
+Unlike `roc` which returns percentage points (100 * (p - p_prev) / p_prev),
+`rocp` returns the fractional ratio (p - p_prev) / p_prev.
+
+Accepts arguments in either order:
+  - rocp(period, series)
+  - rocp(series, period=1)
+  - rocp(series, period)
+"""
+    if len(args) == 2:
+        if isinstance(args[0], (int, float)) and not hasattr(args[0], "__len__"):
+            return _raw_rocp(int(args[0]), args[1])
+        if hasattr(args[0], "__len__") and isinstance(args[1], (int, float)) and not hasattr(args[1], "__len__"):
+            return _raw_rocp(int(args[1]), args[0])
+    elif len(args) == 1:
+        period = kwargs.get("period", kwargs.get("timeperiod", 1))
+        return _raw_rocp(int(period), args[0])
+    elif not args and kwargs:
+        period = kwargs.get("period", kwargs.get("timeperiod", 1))
+        series = kwargs.get("series", kwargs.get("real", kwargs.get("close")))
+        if series is not None:
+            return _raw_rocp(int(period), series)
+    if _raw_rocp is not None:
+        return _raw_rocp(*args, **kwargs)
+    raise RuntimeError("native rocp function unavailable")
+
+
+def apply_with_gap_reset(indicator_factory, *series_args, max_gap: int = 5):
+    """Apply a streaming indicator across series, resetting internal state when a gap
+
+    (more than `max_gap` consecutive NaN/missing bars) occurs.
+
+    This ensures stateful indicators (EMA, SuperTrend, ATR, etc.) restart with a
+    fresh warmup after extended halts or data holes (rule S14).
+
+    Parameters:
+        indicator_factory: Callable returning an indicator instance with a `.next(*inputs)` method.
+        *series_args: One or more input price series (e.g. close, or high, low, close).
+        max_gap: Maximum allowed consecutive missing/NaN bars before resetting the indicator (default: 5).
+
+    Returns:
+        List of computed indicator outputs.
+    """
+    if not series_args:
+        raise ValueError("at least one series must be provided")
+    n = len(series_args[0])
+    for s in series_args[1:]:
+        if len(s) != n:
+            raise ValueError(f"input series lengths must match: {n} vs {len(s)}")
+
+    import math
+    indicator = indicator_factory()
+    out = []
+    consecutive_nans = 0
+    needs_reset = False
+
+    for i in range(n):
+        vals = [s[i] for s in series_args]
+        has_nan = any(v is None or (isinstance(v, (int, float)) and math.isnan(v)) for v in vals)
+
+        if has_nan:
+            consecutive_nans += 1
+            if consecutive_nans > max_gap:
+                needs_reset = True
+            try:
+                res = indicator.next(*(float("nan") if (v is None or (isinstance(v, (int, float)) and math.isnan(v))) else float(v) for v in vals))
+            except Exception:
+                res = float("nan")
+            out.append(res)
+        else:
+            if needs_reset:
+                indicator = indicator_factory()
+                needs_reset = False
+            consecutive_nans = 0
+            res = indicator.next(*(float(v) for v in vals))
+            out.append(res)
+
+    return out
 
 
 def max(*args, **kwargs):
@@ -995,4 +1084,7 @@ __all__ = [
     "cross_sectional_rank",
     "max",
     "min",
+    "rocp",
+    "Rocp",
+    "apply_with_gap_reset",
 ]

@@ -47,7 +47,7 @@ Boundary Conditions & Error Behavior:
             is_elementwise=False
         )
 
-    def alma(self, period: int, offset: float, sigma: float) -> pl.Expr:
+    def alma(self, period: int = 9, offset: float = 0.85, sigma: float = 6.0, warmup: str = "partial") -> pl.Expr:
         """Calculate the Arnaud Legoux Moving Average (ALMA).
 
 Boundary Conditions & Error Behavior:
@@ -60,7 +60,7 @@ Boundary Conditions & Error Behavior:
             plugin_path=Path(__file__).parent,
             function_name="alma",
             is_elementwise=False,
-            kwargs={"period": period, "offset": offset, "sigma": sigma}
+            kwargs={"period": period, "offset": offset, "sigma": sigma, "warmup": warmup}
         )
 
     def regimes_stability_score(self) -> pl.Expr:

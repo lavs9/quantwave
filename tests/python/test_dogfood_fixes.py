@@ -281,8 +281,8 @@ def test_gh60_atr_argument_order_flexibility():
     res1 = qw.atr(3, h, l, c)
     res2 = qw.atr(h, l, c, 3)
     res3 = qw.atr(h, l, c, period=3)
-    assert np.allclose(res1, res2)
-    assert np.allclose(res1, res3)
+    assert np.allclose(res1, res2, equal_nan=True)
+    assert np.allclose(res1, res3, equal_nan=True)
 
     ta_res1 = qw.ta_atr(3, h, l, c)
     ta_res2 = qw.ta_atr(h, l, c, 3)
@@ -328,3 +328,112 @@ def test_gh60_cross_sectional_rank():
     # Module-level sequence rank
     module_ranked = qw.cross_sectional_rank([10.0, 20.0, 30.0])
     assert np.allclose(module_ranked, [1 / 3, 2 / 3, 1.0])
+
+
+# ============================================================================
+# GH-61: ATR Parity, Warmup in Polars MAs, ROCP, Gap Reset Helper
+# ============================================================================
+
+@pytest.mark.skipif(pl is None, reason="polars not installed")
+def test_gh61_atr_plain_polars_parity():
+    rng = np.random.default_rng(1)
+    cc = 100 + np.cumsum(rng.normal(0, 1, 120))
+    hh = cc + rng.uniform(0, 2, 120)
+    ll = cc - rng.uniform(0, 2, 120)
+
+    # 1. Plain default is Wilder RMA
+    a1 = np.array(qw.atr(14, hh, ll, cc))
+    # 2. Polars default is Wilder RMA
+    df = pl.DataFrame({"h": hh, "l": ll, "c": cc})
+    a2 = df.select(pl.col("c").ta.atr(pl.col("h"), pl.col("l"), 14))["c"].to_numpy()
+
+    # Both must match bit-for-bit (GH-61 repro value: ~2.1427)
+    np.testing.assert_allclose(a1, a2, equal_nan=True)
+    assert abs(a1[100] - 2.1427) < 1e-3
+
+    # 3. Plain and Polars both support smoothing="ema" (GH-61 repro value: ~2.2230)
+    a1_ema = np.array(qw.atr(14, hh, ll, cc, smoothing="ema"))
+    a2_ema = df.select(
+        pl.col("c").ta.atr(pl.col("h"), pl.col("l"), 14, smoothing="ema")
+    )["c"].to_numpy()
+    np.testing.assert_allclose(a1_ema, a2_ema, equal_nan=True)
+    assert abs(a1_ema[100] - 2.2230) < 1e-3
+
+    # 4. Streaming class matches both
+    s_wilder = qw.Atr(14)
+    res_wilder = [s_wilder.next(h, l, c) for h, l, c in zip(hh, ll, cc)]
+    np.testing.assert_allclose(a1, res_wilder, equal_nan=True)
+
+    s_ema = qw.Atr(14, smoothing="ema")
+    res_ema = [s_ema.next(h, l, c) for h, l, c in zip(hh, ll, cc)]
+    np.testing.assert_allclose(a1_ema, res_ema, equal_nan=True)
+
+
+@pytest.mark.skipif(pl is None, reason="polars not installed")
+def test_gh61_polars_moving_averages_warmup():
+    df = pl.DataFrame({"x": [1.0, 2.0, 3.0, 4.0]})
+
+    # SMA
+    sma_nan = df.select(pl.col("x").ta.sma(3, warmup="nan"))["x"].to_list()
+    assert np.isnan(sma_nan[0]) and np.isnan(sma_nan[1])
+    assert abs(sma_nan[2] - 2.0) < 1e-9
+    assert abs(sma_nan[3] - 3.0) < 1e-9
+
+    sma_partial = df.select(pl.col("x").ta.sma(3, warmup="partial"))["x"].to_list()
+    assert abs(sma_partial[0] - 1.0) < 1e-9
+    assert abs(sma_partial[1] - 1.5) < 1e-9
+
+    # EMA
+    ema_nan = df.select(pl.col("x").ta.ema(3, warmup="nan"))["x"].to_list()
+    assert np.isnan(ema_nan[0]) and np.isnan(ema_nan[1])
+    assert not np.isnan(ema_nan[2])
+
+    ema_partial = df.select(pl.col("x").ta.ema(3, warmup="partial"))["x"].to_list()
+    assert abs(ema_partial[0] - 1.0) < 1e-9
+
+    # ALMA
+    alma_nan = df.select(pl.col("x").ta.alma(3, warmup="nan"))["x"].to_list()
+    assert np.isnan(alma_nan[0]) and np.isnan(alma_nan[1])
+    assert not np.isnan(alma_nan[2])
+
+    alma_partial = df.select(pl.col("x").ta.alma(3, warmup="partial"))["x"].to_list()
+    assert not np.isnan(alma_partial[0])
+
+
+def test_gh61_rocp():
+    # Plain rocp returns fractional ratio: (p - p_prev) / p_prev
+    res = qw.rocp(1, [1.0, 2.0])
+    assert np.isnan(res[0])
+    assert abs(res[1] - 1.0) < 1e-9  # 1.0 = +100%
+
+    # roc returns percent (100 * fraction)
+    roc_res = qw.roc(1, [1.0, 2.0])
+    assert np.isnan(roc_res[0])
+    assert abs(roc_res[1] - 100.0) < 1e-9
+
+    # Streaming Rocp
+    stream = qw.Rocp(1)
+    v0 = stream.next(1.0)
+    v1 = stream.next(2.0)
+    assert np.isnan(v0)
+    assert abs(v1 - 1.0) < 1e-9
+
+
+def test_gh61_apply_with_gap_reset():
+    # Create series with a 6-bar NaN gap (exceeds default max_gap=5)
+    data = [10.0, 11.0, 12.0, 13.0, 14.0] + [float("nan")] * 6 + [20.0, 21.0, 22.0]
+    out = qw.apply_with_gap_reset(lambda: qw.Sma(3, warmup="nan"), data, max_gap=5)
+
+    assert len(out) == len(data)
+    # Bars 0..4: normal warmup for period 3
+    assert np.isnan(out[0]) and np.isnan(out[1])
+    assert abs(out[2] - 11.0) < 1e-9
+    # Gap bars: all NaN
+    for i in range(5, 11):
+        assert np.isnan(out[i])
+    # Bar 11 (index 11, value 20.0): indicator was reset! Fresh warmup means NaN
+    assert np.isnan(out[11])
+    assert np.isnan(out[12])
+    # Bar 13 (index 13, value 22.0): 3 bars accumulated -> (20+21+22)/3 = 21.0
+    assert abs(out[13] - 21.0) < 1e-9
+

@@ -104,21 +104,36 @@ struct AlmaKwargs {
     period: usize,
     offset: f64,
     sigma: f64,
+    warmup: Option<String>,
 }
 
 #[polars_expr(output_type=Float64)]
 fn alma(inputs: &[Series], kwargs: AlmaKwargs) -> PolarsResult<Series> {
     let s = &inputs[0];
     let ca = s.f64()?;
-    let mut alma = quantwave_core::ALMA::new(kwargs.period, kwargs.offset, kwargs.sigma);
-    let mut values = Vec::with_capacity(s.len());
+    let warmup_policy = match kwargs.warmup.as_deref() {
+        Some("nan") | Some("NAN") => quantwave_core::indicators::smoothing::WarmupPolicy::Nan,
+        _ => quantwave_core::indicators::smoothing::WarmupPolicy::Partial,
+    };
+    let mut alma = quantwave_core::ALMA::with_warmup(
+        kwargs.period,
+        kwargs.offset,
+        kwargs.sigma,
+        warmup_policy,
+    );
 
-    for i in 0..s.len() {
-        let val = ca.get(i).unwrap_or(0.0);
-        values.push(alma.next(val));
-    }
+    let out: Float64Chunked = ca
+        .into_iter()
+        .map(|opt_v| match opt_v {
+            Some(v) => Some(alma.next(v)),
+            None => {
+                alma.next(f64::NAN);
+                None
+            }
+        })
+        .collect();
 
-    Ok(Series::new("alma".into(), values))
+    Ok(out.into_series())
 }
 
 #[polars_expr(output_type=Float64)]

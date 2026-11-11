@@ -22,14 +22,19 @@ use quantwave_core::traits::Next;
 #[derive(Deserialize)]
 struct SmaKwargs {
     period: usize,
+    warmup: Option<String>,
 }
 
 #[polars_expr(output_type=Float64)]
 fn sma(inputs: &[Series], kwargs: SmaKwargs) -> PolarsResult<Series> {
     let s = &inputs[0];
     let s_f64 = s.f64()?;
+    let warmup_policy = match kwargs.warmup.as_deref() {
+        Some("nan") | Some("NAN") => quantwave_core::indicators::smoothing::WarmupPolicy::Nan,
+        _ => quantwave_core::indicators::smoothing::WarmupPolicy::Partial,
+    };
 
-    let mut indicator = SMA::new(kwargs.period);
+    let mut indicator = SMA::with_warmup(kwargs.period, warmup_policy);
 
     let out: Float64Chunked = s_f64
         .into_iter()
@@ -48,14 +53,19 @@ fn sma(inputs: &[Series], kwargs: SmaKwargs) -> PolarsResult<Series> {
 #[derive(Deserialize)]
 struct EmaKwargs {
     period: usize,
+    warmup: Option<String>,
 }
 
 #[polars_expr(output_type=Float64)]
 fn ema(inputs: &[Series], kwargs: EmaKwargs) -> PolarsResult<Series> {
     let s = &inputs[0];
     let s_f64 = s.f64()?;
+    let warmup_policy = match kwargs.warmup.as_deref() {
+        Some("nan") | Some("NAN") => quantwave_core::indicators::smoothing::WarmupPolicy::Nan,
+        _ => quantwave_core::indicators::smoothing::WarmupPolicy::Partial,
+    };
 
-    let mut indicator = EMA::new(kwargs.period);
+    let mut indicator = EMA::with_warmup(kwargs.period, warmup_policy);
 
     let out: Float64Chunked = s_f64
         .into_iter()

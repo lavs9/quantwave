@@ -50,11 +50,12 @@ def test_atr_convention_is_discoverable():
     note = notes[0]
     assert note.aspect == "smoothing"
     assert "2/(period+1)" in note.convention
-    assert "Wilder" in note.differs_from
-    assert "ta_atr" in note.guidance
+    assert "Wilder" in note.convention
+    assert "EMA" in note.differs_from
+    assert "smoothing='ema'" in note.guidance
     # AGENTS.md: a source is recorded or its absence is stated -- never assumed.
     assert note.source.strip()
-    assert "NONE RECORDED" in note.source
+    assert "Wilder" in note.source
 
 
 def test_conventions_reachable_from_metadata_and_boundary_info():
@@ -89,12 +90,15 @@ def test_every_note_is_fully_populated():
 # --- the notes must describe reality ----------------------------------------
 
 
-def test_atr_streaming_class_is_ema_not_wilder(ohlc):
-    """The `Atr` class follows the documented EMA convention, not Wilder."""
+def test_atr_streaming_class_defaults_to_wilder_and_supports_ema(ohlc):
+    """The `Atr` class defaults to Wilder RMA, and supports smoothing='ema'."""
     high, low, close = ohlc
     period = 14
-    streaming = qw.Atr(period)
-    got = [streaming.next(h, l, c) for h, l, c in zip(high, low, close)][-1]
+    streaming_default = qw.Atr(period)
+    got_wilder = [streaming_default.next(h, l, c) for h, l, c in zip(high, low, close)][-1]
+
+    streaming_ema = qw.Atr(period, smoothing="ema")
+    got_ema = [streaming_ema.next(h, l, c) for h, l, c in zip(high, low, close)][-1]
 
     tr = np.maximum.reduce(
         [
@@ -105,32 +109,34 @@ def test_atr_streaming_class_is_ema_not_wilder(ohlc):
     )
     tr = np.concatenate([[high[0] - low[0]], tr])
 
-    def ewm(alpha, seed_first=True):
+    def ewm(alpha):
         out = tr[0]
         for x in tr[1:]:
             out = alpha * x + (1 - alpha) * out
         return out
 
     ema = ewm(2.0 / (period + 1))
-    assert got == pytest.approx(ema, rel=1e-9), "Atr is no longer the EMA variant"
+    assert got_ema == pytest.approx(ema, rel=1e-9), "Atr(smoothing='ema') should match EMA"
+    assert got_wilder != pytest.approx(ema, rel=1e-6), "Default Atr should be Wilder, not EMA"
 
-    wilder = ewm(1.0 / period)
-    assert got != pytest.approx(wilder, rel=1e-6), "Atr now matches Wilder -- update the note"
+    df = pl.DataFrame({"high": high, "low": low, "close": close})
+    polars_wilder = df.select(
+        pl.col("close").ta.atr("high", "low", timeperiod=period).alias("v")
+    )["v"][-1]
+    assert got_wilder == pytest.approx(polars_wilder, rel=1e-6), "Default Atr must match polars atr"
 
 
-def test_ta_atr_is_wilder_and_diverges_from_atr(ohlc):
-    """`ta_atr` is Wilder; the gap against `atr` is the thing the note warns about."""
+def test_ta_atr_matches_default_atr(ohlc):
+    """`ta_atr` and default `atr` both compute Wilder RMA."""
     high, low, close = ohlc
     period = 14
     df = pl.DataFrame({"high": high, "low": low, "close": close})
     wilder = df.select(
-        pl.col("high").ta.ta_atr("low", "close", timeperiod=period).alias("v")
+        pl.col("close").ta.atr("high", "low", timeperiod=period).alias("v")
     )["v"][-1]
 
-    streaming = qw.Atr(period)
-    ema = [streaming.next(h, l, c) for h, l, c in zip(high, low, close)][-1]
-
-    assert wilder != pytest.approx(ema, rel=1e-6)
+    plain_wilder = qw.atr(period, high, low, close)[-1]
+    assert plain_wilder == pytest.approx(wilder, rel=1e-6)
 
 
 def test_polars_atr_plugin_and_talib_shim_are_wilder(ohlc):

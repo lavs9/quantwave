@@ -32,7 +32,7 @@ class TaNamespace(
     def __init__(self, expr: pl.Expr):
         self._expr = expr
 
-    def sma(self, period: int) -> pl.Expr:
+    def sma(self, period: int = 30, warmup: str = "partial") -> pl.Expr:
         """Calculates the Simple Moving Average (SMA).
 
 Boundary Conditions & Error Behavior:
@@ -40,9 +40,9 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="sma", is_elementwise=False, kwargs={"period": period})
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="sma", is_elementwise=False, kwargs={"period": period, "warmup": warmup})
 
-    def ema(self, period: int) -> pl.Expr:
+    def ema(self, period: int = 30, warmup: str = "partial") -> pl.Expr:
         """Calculates the Exponential Moving Average (EMA).
 
 Boundary Conditions & Error Behavior:
@@ -50,7 +50,7 @@ Boundary Conditions & Error Behavior:
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
 - Negative Params: Negative period/length parameters will raise a ValueError.
 """
-        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ema", is_elementwise=False, kwargs={"period": period})
+        return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="ema", is_elementwise=False, kwargs={"period": period, "warmup": warmup})
 
     def rsi(self, timeperiod: int = 14) -> pl.Expr:
         """Calculates the Relative Strength Index (RSI).
@@ -396,7 +396,7 @@ Boundary Conditions & Error Behavior:
     # --------------------------------------------------------------------------------
     # Volatility
     # --------------------------------------------------------------------------------
-    def atr(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
+    def atr(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], timeperiod: int = 14, smoothing: str = "wilder") -> pl.Expr:
         """Average True Range (ATR). Note: self must be close.
 
 Boundary Conditions & Error Behavior:
@@ -406,7 +406,7 @@ Boundary Conditions & Error Behavior:
 """
         if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
-        return register_plugin_function(args=[self._expr, high, low], plugin_path=Path(__file__).parent, function_name="atr", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        return register_plugin_function(args=[self._expr, high, low], plugin_path=Path(__file__).parent, function_name="atr", is_elementwise=False, kwargs={"timeperiod": timeperiod, "smoothing": smoothing})
 
     def natr(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
         """Normalized Average True Range (NATR). Note: self must be close.

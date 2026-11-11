@@ -205,28 +205,19 @@ _CONVENTION_NOTES: Dict[str, Tuple[ConventionNote, ...]] = {
         ConventionNote(
             aspect="smoothing",
             convention=(
-                "Exponential moving average of true range, alpha = 2/(period+1), seeded "
-                "from the first bar's true range (high - low, no prior close) with no NaN "
-                "warmup. Applies to the `Atr` streaming class and the "
-                "`atr(period, high, low, close)` native batch function."
+                "Wilder's RMA (alpha = 1/period, SMA-seeded over the first `period` true "
+                "ranges, NaN during warmup) by default across all layers (`atr()`, `Atr` "
+                "streaming, and Polars `pl.col().ta.atr()`). Both layers support "
+                "`smoothing='ema'` for exponential smoothing (alpha = 2/(period+1))."
             ),
             differs_from=(
-                "Wilder's RMA (alpha = 1/period, SMA-seeded over the first `period` true "
-                "ranges, NaN during warmup) as used by TA-Lib, TradingView's Pine `ta.atr`, "
-                "and pandas `ewm(alpha=1/period, adjust=False)`. Also differs from a simple "
-                "rolling mean of true range."
+                "EMA-smoothed ATR variants (alpha = 2/(period+1)) without NaN warmup when "
+                "using default smoothing='wilder'."
             ),
-            source=(
-                "NONE RECORDED for the EMA-smoothed variant. This indicator's recorded "
-                "formula_source (Investopedia ATR) and its LaTeX formula both describe "
-                "Wilder's RMA, which is what `ta_atr` implements - not this one. Treated as "
-                "an undocumented divergence pending review."
-            ),
+            source="Wilder, J. W. (1978). New Concepts in Technical Trading Systems.",
             guidance=(
-                "For TA-Lib/TradingView-identical ATR use `ta_atr` (Rust `TaATR`, Polars "
-                "`.ta.ta_atr()` / `lf.ta().ta_atr()`). Note that the Polars plugin "
-                "`pl.col(close).ta.atr(high, low)` and `quantwave.talib.ATR` are ALREADY "
-                "Wilder - only the streaming class and native batch function are not."
+                "Default `atr()` matches TA-Lib and TradingView bit for bit across plain and "
+                "Polars APIs. Use `smoothing='ema'` if EMA smoothing is explicitly desired."
             ),
         ),
     ),
