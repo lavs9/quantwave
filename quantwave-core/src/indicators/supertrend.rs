@@ -95,7 +95,7 @@ pub const SUPERTREND_METADATA: IndicatorMetadata = IndicatorMetadata {
         ParamDef {
             name: "smoothing",
             default: "ema",
-            description: "ATR smoothing algorithm ('ema' or 'wilder')",
+            description: "ATR smoothing algorithm ('ema' default, or 'wilder'). Note: SuperTrend defaults to EMA, whereas standalone atr() defaults to Wilder.",
         },
     ],
     formula_source: "https://www.tradingview.com/script/7zF0a4f8-SuperTrend-by-Mobius/",
@@ -111,7 +111,12 @@ pub const SUPERTREND_METADATA: IndicatorMetadata = IndicatorMetadata {
     category: "Classic",
 };
 
-/// SuperTrend Indicator
+/// SuperTrend Indicator with configurable initial direction and ATR smoothing.
+///
+/// Note on smoothing:
+///   SuperTrend's internal ATR defaults to EMA smoothing (`SuperTrendAtrSmoothing::Ema`).
+///   In contrast, standalone `ATR` / `TaATR` defaults to Wilder's RMA.
+///   Use `with_options(..., SuperTrendAtrSmoothing::Wilder)` if Wilder RMA smoothing is desired.
 #[derive(Debug, Clone)]
 pub struct SuperTrend {
     atr: AtrBackend,

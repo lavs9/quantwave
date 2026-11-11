@@ -186,7 +186,7 @@ TR = \max(H - L, |H - C_{t-1}|, |L - C_{t-1}|)
 
 pub const ATR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Average True Range",
-    description: "ATR represents the average of true ranges over a specified period. CONVENTION: the `Atr` streaming class and the `atr(period, high, low, close)` batch function smooth true range with an EMA (alpha = 2/(period+1)), NOT Wilder's RMA. For TA-Lib/TradingView-identical ATR use `ta_atr`. See the Average True Range indicator guide for the full surface-by-surface breakdown.",
+    description: "ATR represents the average of true ranges over a specified period. Standalone `atr()` and `Atr` default to Wilder's RMA (alpha = 1/period, TA-Lib standard); an EMA-smoothed variant (alpha = 2/(period+1), matching SuperTrend's default) is selectable via `smoothing='ema'`.",
     usage: "Use as the foundational volatility module providing ATR, True Range, and related volatility measures used by higher-level indicators such as SuperTrend and Keltner Channels. Check `quantwave.conventions(\"atr\")` before reconciling values against TA-Lib, TradingView, or pandas.",
     keywords: &[
         "volatility",

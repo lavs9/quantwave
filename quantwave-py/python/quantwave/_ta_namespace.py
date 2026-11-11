@@ -93,6 +93,11 @@ Boundary Conditions & Error Behavior:
     ) -> pl.Expr:
         """Calculates SuperTrend. Returns a struct containing: supertrend, direction. Note: self must be close.
 
+Note on smoothing convention:
+  SuperTrend's internal ATR defaults to EMA smoothing (`smoothing="ema"`).
+  In contrast, standalone `atr` defaults to Wilder RMA (`smoothing="wilder"`).
+  Pass `smoothing="wilder"` to use Wilder's RMA in SuperTrend.
+
 Parameters:
 - period: ATR length (must be >= 1).
 - multiplier: ATR multiplier.
@@ -398,6 +403,11 @@ Boundary Conditions & Error Behavior:
     # --------------------------------------------------------------------------------
     def atr(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], timeperiod: int = 14, smoothing: str = "wilder") -> pl.Expr:
         """Average True Range (ATR). Note: self must be close.
+
+Note on smoothing convention:
+  Standalone `atr` defaults to Wilder RMA (`smoothing="wilder"`).
+  In contrast, `supertrend`'s internal ATR defaults to EMA smoothing (`smoothing="ema"`).
+  Pass `smoothing="ema"` if EMA-smoothed ATR is desired.
 
 Boundary Conditions & Error Behavior:
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.

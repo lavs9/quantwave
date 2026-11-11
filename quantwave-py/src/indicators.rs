@@ -1069,6 +1069,11 @@ fn parse_supertrend_options(
 
 /// SuperTrend Trend-Following Indicator.
 ///
+/// Note on smoothing convention:
+///   SuperTrend's internal ATR defaults to EMA smoothing (`smoothing="ema"`).
+///   In contrast, standalone `atr()` defaults to Wilder's RMA (`smoothing="wilder"`).
+///   Pass `smoothing="wilder"` to use Wilder's RMA inside SuperTrend.
+///
 /// Parameters:
 ///   period: ATR period (must be >= 1).
 ///   multiplier: ATR multiplier (e.g. 3.0).
@@ -1119,7 +1124,7 @@ pub fn supertrend(
         .collect())
 }
 
-#[doc = "SuperTrend streaming indicator.\n\nParameters:\n  period: ATR period (must be >= 1).\n  multiplier: ATR multiplier (e.g. 3.0).\n  initial_direction: 'up' (default), 'down', or 'from_close'.\n  smoothing: 'ema' (default) or 'wilder'."]
+#[doc = "SuperTrend streaming indicator.\n\nNote: SuperTrend defaults to EMA-smoothed ATR (`smoothing=\"ema\"`), whereas standalone `Atr` defaults to Wilder's RMA (`smoothing=\"wilder\"`).\n\nParameters:\n  period: ATR period (must be >= 1).\n  multiplier: ATR multiplier (e.g. 3.0).\n  initial_direction: 'up' (default), 'down', or 'from_close'.\n  smoothing: 'ema' (default) or 'wilder'."]
 #[pyclass]
 pub struct SuperTrend {
     inner: Mutex<CoreSuperTrend>,
@@ -1163,6 +1168,11 @@ impl SuperTrend {
 /// NOTE: This function computes ATR using an Exponential Moving Average (EMA) of true range.
 /// For Wilder's RMA smoothing (the TA-Lib and Pine Script convention), use `atr_wilder` or `ta_atr`.
 /// Average True Range (ATR) with Wilder RMA smoothing (default, TA-Lib standard) or EMA smoothing.
+///
+/// Note on smoothing convention:
+///   Standalone `atr()` defaults to Wilder's RMA (`smoothing="wilder"`).
+///   In contrast, `supertrend()`'s internal ATR defaults to EMA smoothing (`smoothing="ema"`).
+///   Pass `smoothing="ema"` if EMA smoothing of true range is desired.
 ///
 /// Parameters:
 ///   period: Window period (must be >= 1).
@@ -1221,7 +1231,7 @@ enum AtrInner {
     Ema(CoreATR),
 }
 
-#[doc = "Average True Range (ATR) streaming indicator with Wilder RMA smoothing (default) or EMA smoothing.\n\nParameters:\n  period: Window period (must be >= 1).\n  smoothing: 'wilder' (default, TA-Lib standard) or 'ema'."]
+#[doc = "Average True Range (ATR) streaming indicator with Wilder RMA smoothing (default) or EMA smoothing.\n\nNote: Standalone `Atr` defaults to Wilder's RMA (`smoothing=\"wilder\"`), whereas `SuperTrend` defaults to EMA-smoothed ATR (`smoothing=\"ema\"`).\n\nParameters:\n  period: Window period (must be >= 1).\n  smoothing: 'wilder' (default, TA-Lib standard) or 'ema'."]
 #[pyclass]
 pub struct Atr {
     inner: Mutex<AtrInner>,

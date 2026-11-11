@@ -797,6 +797,11 @@ Accepts arguments in either order:
 def atr(*args, **kwargs):
     """Average True Range (Wilder RMA smoothed by default, or EMA).
 
+Note on smoothing convention:
+  `atr` defaults to Wilder's RMA (alpha = 1/period, SMA-seeded after `period` bars).
+  In contrast, `supertrend`'s internal ATR defaults to EMA smoothing (`smoothing="ema"`).
+  Use `smoothing="ema"` on `atr` or `smoothing="wilder"` on `supertrend` to align them.
+
 Accepts arguments in either order:
   - atr(period, high, low, close, smoothing="wilder")
   - atr(high, low, close, period=14, smoothing="wilder")

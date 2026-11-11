@@ -437,3 +437,19 @@ def test_gh61_apply_with_gap_reset():
     # Bar 13 (index 13, value 22.0): 3 bars accumulated -> (20+21+22)/3 = 21.0
     assert abs(out[13] - 21.0) < 1e-9
 
+
+def test_gh61_smoothing_convention_docstrings():
+    # Document default smoothing differences so callers don't assume atr and supertrend agree
+    assert "Wilder" in qw.atr.__doc__
+    assert "supertrend" in qw.atr.__doc__
+    assert "EMA" in qw.supertrend.__doc__
+    assert "Wilder" in qw.supertrend.__doc__
+
+    if pl is not None:
+        from quantwave._ta_namespace import TaNamespace
+        assert "Wilder" in TaNamespace.atr.__doc__
+        assert "supertrend" in TaNamespace.atr.__doc__
+        assert "EMA" in TaNamespace.supertrend.__doc__
+        assert "Wilder" in TaNamespace.supertrend.__doc__
+
+
