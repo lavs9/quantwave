@@ -264,7 +264,7 @@
   {
     "slug": "atr",
     "name": "Average True Range",
-    "description": "ATR represents the average of true ranges over a specified period. Standalone `atr()` and `Atr` default to Wilder's RMA (alpha = 1/period, TA-Lib standard); an EMA-smoothed variant (alpha = 2/(period+1), matching SuperTrend's default) is selectable via `smoothing='ema'`.",
+    "description": "ATR represents the average of true ranges over a specified period. Standalone `atr()` and `Atr` default to Wilder's RMA (alpha = 1/period, TA-Lib standard); an EMA-smoothed variant (alpha = 2/(period+1), matching SuperTrend's default) is selectable via `smoothing='ema'`. Seeding defaults to TA-Lib standard (`seed='talib'`), with Wilder's 1978 textbook formula supported via `seed='wilder1978'` (`'classic'`).",
     "usage": "Use as the foundational volatility module providing ATR, True Range, and related volatility measures used by higher-level indicators such as SuperTrend and Keltner Channels. Check `quantwave.conventions(\"atr\")` before reconciling values against TA-Lib, TradingView, or pandas.",
     "category": "Classic",
     "keywords": [
@@ -279,6 +279,16 @@
         "name": "period",
         "default": "14",
         "description": "Smoothing period"
+      },
+      {
+        "name": "smoothing",
+        "default": "wilder",
+        "description": "Smoothing algorithm: 'wilder' (default, TA-Lib standard RMA) or 'ema'"
+      },
+      {
+        "name": "seed",
+        "default": "talib",
+        "description": "Seed/warmup convention: 'talib' (default, seeds at bar period from TR[1..period], period NaNs) or 'wilder1978'/'classic' (Wilder 1978 book formula, TR[0]=H-L, seeds at bar period-1 from TR[0..period-1], period-1 NaNs)"
       }
     ],
     "formula_source": "https://www.investopedia.com/terms/a/atr.asp (documents Wilder's RMA — implemented by `ta_atr`; no source recorded for the EMA-smoothed `Atr`)",

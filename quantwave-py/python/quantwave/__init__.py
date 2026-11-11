@@ -797,35 +797,49 @@ Accepts arguments in either order:
 def atr(*args, **kwargs):
     """Average True Range (Wilder RMA smoothed by default, or EMA).
 
-Note on smoothing convention:
-  `atr` defaults to Wilder's RMA (alpha = 1/period, SMA-seeded after `period` bars).
-  In contrast, `supertrend`'s internal ATR defaults to EMA smoothing (`smoothing="ema"`).
-  Use `smoothing="ema"` on `atr` or `smoothing="wilder"` on `supertrend` to align them.
+Note on smoothing and seed conventions:
+  - `atr` defaults to Wilder's RMA (`smoothing="wilder"`).
+  - Standalone `atr` defaults to the TA-Lib seed convention (`seed="talib"`): True Range
+    is undefined on bar 0 (no prior close), accumulates `period` valid TRs from bars 1..period,
+    and emits the first ATR at bar `period` (index `period`, so `period` leading NaNs).
+  - To use the classic Wilder (1978) textbook formula, pass `seed="wilder1978"` (or `seed="classic"`):
+    `TR[0] = High[0] - Low[0]`, seeds at bar `period - 1` (index `period - 1`) as the simple
+    mean of `TR[0..period-1]`, with subsequent bars recursing as `(ATR_prev * (period - 1) + TR) / period`.
+  - In contrast, `supertrend`'s internal ATR defaults to EMA smoothing (`smoothing="ema"`).
+  - Use `smoothing="ema"` on `atr` or `smoothing="wilder"` on `supertrend` to align them.
 
 Accepts arguments in either order:
-  - atr(period, high, low, close, smoothing="wilder")
-  - atr(high, low, close, period=14, smoothing="wilder")
-  - atr(high=..., low=..., close=..., period=..., smoothing="wilder")
+  - atr(period, high, low, close, smoothing="wilder", seed="talib")
+  - atr(high, low, close, period=14, smoothing="wilder", seed="talib")
+  - atr(high=..., low=..., close=..., period=..., smoothing="wilder", seed="talib")
 """
     smoothing = kwargs.pop("smoothing", "wilder")
+    seed = kwargs.pop("seed", None)
+    warmup = kwargs.pop("warmup", None)
+    pass_kwargs = {"smoothing": smoothing}
+    if seed is not None:
+        pass_kwargs["seed"] = seed
+    if warmup is not None:
+        pass_kwargs["warmup"] = warmup
+
     if len(args) == 5:
         if isinstance(args[0], (int, float)) and not hasattr(args[0], "__len__"):
-            return _raw_atr(int(args[0]), args[1], args[2], args[3], smoothing=args[4])
+            return _raw_atr(int(args[0]), args[1], args[2], args[3], smoothing=args[4], **pass_kwargs)
         if isinstance(args[3], (int, float)) and not hasattr(args[3], "__len__"):
-            return _raw_atr(int(args[3]), args[0], args[1], args[2], smoothing=args[4])
+            return _raw_atr(int(args[3]), args[0], args[1], args[2], smoothing=args[4], **pass_kwargs)
     elif len(args) == 4:
         if isinstance(args[0], (int, float)) and not hasattr(args[0], "__len__"):
-            return _raw_atr(int(args[0]), args[1], args[2], args[3], smoothing=smoothing)
+            return _raw_atr(int(args[0]), args[1], args[2], args[3], **pass_kwargs)
         if isinstance(args[3], (int, float)) and not hasattr(args[3], "__len__"):
-            return _raw_atr(int(args[3]), args[0], args[1], args[2], smoothing=smoothing)
+            return _raw_atr(int(args[3]), args[0], args[1], args[2], **pass_kwargs)
     elif len(args) == 3:
         period = kwargs.pop("period", kwargs.pop("timeperiod", 14))
-        return _raw_atr(int(period), args[0], args[1], args[2], smoothing=smoothing)
+        return _raw_atr(int(period), args[0], args[1], args[2], **pass_kwargs)
     elif not args and kwargs:
         period = kwargs.pop("period", kwargs.pop("timeperiod", 14))
-        return _raw_atr(int(period), kwargs["high"], kwargs["low"], kwargs["close"], smoothing=smoothing)
+        return _raw_atr(int(period), kwargs["high"], kwargs["low"], kwargs["close"], **pass_kwargs)
     if _raw_atr is not None:
-        return _raw_atr(*args, smoothing=smoothing, **kwargs)
+        return _raw_atr(*args, **pass_kwargs, **kwargs)
     raise RuntimeError("native atr function unavailable")
 
 
@@ -833,22 +847,27 @@ def ta_atr(*args, **kwargs):
     """Average True Range (Wilder RMA smoothing, TA-Lib standard).
 
 Accepts arguments in either order:
-  - ta_atr(timeperiod, high, low, close)
-  - ta_atr(high, low, close, timeperiod=14)
+  - ta_atr(timeperiod, high, low, close, seed="talib")
+  - ta_atr(high, low, close, timeperiod=14, seed="talib")
 """
+    seed = kwargs.pop("seed", None)
+    pass_kwargs = {}
+    if seed is not None:
+        pass_kwargs["seed"] = seed
+
     if len(args) == 4:
         if isinstance(args[0], (int, float)) and not hasattr(args[0], "__len__"):
-            return _raw_ta_atr(int(args[0]), args[1], args[2], args[3])
+            return _raw_ta_atr(int(args[0]), args[1], args[2], args[3], **pass_kwargs)
         if isinstance(args[3], (int, float)) and not hasattr(args[3], "__len__"):
-            return _raw_ta_atr(int(args[3]), args[0], args[1], args[2])
+            return _raw_ta_atr(int(args[3]), args[0], args[1], args[2], **pass_kwargs)
     elif len(args) == 3:
         period = kwargs.get("timeperiod", kwargs.get("period", 14))
-        return _raw_ta_atr(int(period), args[0], args[1], args[2])
+        return _raw_ta_atr(int(period), args[0], args[1], args[2], **pass_kwargs)
     elif not args and kwargs:
         period = kwargs.get("timeperiod", kwargs.get("period", 14))
-        return _raw_ta_atr(int(period), kwargs["high"], kwargs["low"], kwargs["close"])
+        return _raw_ta_atr(int(period), kwargs["high"], kwargs["low"], kwargs["close"], **pass_kwargs)
     if _raw_ta_atr is not None:
-        return _raw_ta_atr(*args, **kwargs)
+        return _raw_ta_atr(*args, **pass_kwargs, **kwargs)
     raise RuntimeError("native ta_atr function unavailable")
 
 

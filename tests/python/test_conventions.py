@@ -46,7 +46,7 @@ def test_conventions_empty_for_unambiguous_indicator():
 
 def test_atr_convention_is_discoverable():
     notes = qw.conventions("atr")
-    assert len(notes) == 1
+    assert len(notes) >= 1
     note = notes[0]
     assert note.aspect == "smoothing"
     assert "2/(period+1)" in note.convention
@@ -56,6 +56,11 @@ def test_atr_convention_is_discoverable():
     # AGENTS.md: a source is recorded or its absence is stated -- never assumed.
     assert note.source.strip()
     assert "Wilder" in note.source
+
+    seed_notes = [n for n in notes if n.aspect == "seed"]
+    assert len(seed_notes) == 1
+    assert "talib" in seed_notes[0].guidance
+    assert "wilder1978" in seed_notes[0].guidance
 
 
 def test_conventions_reachable_from_metadata_and_boundary_info():
@@ -187,6 +192,6 @@ def test_python_table_matches_rust_source_of_truth():
     body = text.split("pub const CONVENTION_NOTES", 1)[1].split("\n];", 1)[0]
     rust_slugs = re.findall(r'slug:\s*"([^"]+)"', body)
     assert rust_slugs, "could not parse CONVENTION_NOTES from conventions.rs"
-    assert sorted(rust_slugs) == qw.convention_slugs(), (
+    assert sorted(set(rust_slugs)) == qw.convention_slugs(), (
         "conventions.rs and _metadata.py::_CONVENTION_NOTES have drifted"
     )

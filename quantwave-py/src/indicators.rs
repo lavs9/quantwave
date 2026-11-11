@@ -54,7 +54,7 @@ use quantwave_core::indicators::hma::HMA as CoreHMA;
 use quantwave_core::indicators::homodyne_discriminator::HomodyneDiscriminator as CoreHomodyneDiscriminator;
 use quantwave_core::indicators::hurst::HurstExponent as CoreHurstExponent;
 use quantwave_core::indicators::ichimoku::IchimokuCloud as CoreIchimoku;
-use quantwave_core::indicators::incremental::ta_atr::TaATR as CoreTaATR;
+use quantwave_core::indicators::incremental::ta_atr::{AtrSeed, TaATR as CoreTaATR};
 use quantwave_core::indicators::instantaneous_trendline::InstantaneousTrendline as CoreInstantaneousTrendline;
 use quantwave_core::indicators::inverse_fisher::InverseFisherTransform as CoreInverseFisher;
 use quantwave_core::indicators::kalman::KalmanFilter as CoreKalmanFilter;
@@ -1177,17 +1177,86 @@ impl SuperTrend {
 /// Parameters:
 ///   period: Window period (must be >= 1).
 ///   high: High price series.
+pub fn parse_atr_options(
+    smoothing: Option<&str>,
+    seed: Option<&str>,
+    warmup: Option<&str>,
+) -> PyResult<(bool, AtrSeed, Option<WarmupPolicy>)> {
+    let is_ema = match smoothing {
+        None | Some("wilder") | Some("WILDER") | Some("rma") | Some("RMA") => false,
+        Some("ema") | Some("EMA") => true,
+        Some(other) => {
+            return Err(PyValueError::new_err(format!(
+                "unrecognized smoothing: expected 'wilder' or 'ema', got '{other}'"
+            )));
+        }
+    };
+
+    let seed_str = seed.or_else(|| {
+        warmup.filter(|&w| {
+            matches!(
+                w.to_ascii_lowercase().as_str(),
+                "talib"
+                    | "standard"
+                    | "ta_lib"
+                    | "ta-lib"
+                    | "classic"
+                    | "wilder1978"
+                    | "wilder_1978"
+                    | "wilder-1978"
+                    | "wilder"
+                    | "book"
+            )
+        })
+    });
+
+    let atr_seed = match seed_str {
+        None | Some("talib") | Some("standard") | Some("ta_lib") | Some("ta-lib") => AtrSeed::TaLib,
+        Some("wilder1978") | Some("wilder_1978") | Some("wilder-1978") | Some("classic")
+        | Some("wilder") | Some("book") => AtrSeed::Wilder1978,
+        Some(other) => {
+            return Err(PyValueError::new_err(format!(
+                "unrecognized seed: expected 'talib' or 'wilder1978'/'classic', got '{other}'"
+            )));
+        }
+    };
+
+    let warmup_policy = match warmup {
+        Some("partial") | Some("PARTIAL") => Some(WarmupPolicy::Partial),
+        Some("nan") | Some("NAN") => Some(WarmupPolicy::Nan),
+        _ => None,
+    };
+
+    Ok((is_ema, atr_seed, warmup_policy))
+}
+
+/// Average True Range (Wilder RMA smoothed by default, or EMA).
+///
+/// Note on smoothing and seed conventions:
+///   Standalone `atr` defaults to Wilder's RMA (`smoothing="wilder"`) with TA-Lib standard
+///   seeding (`seed="talib"`, emitting `period` leading NaNs and seeding at bar `period` from
+///   TR[1..period]). To use Wilder's 1978 book formula, pass `seed="wilder1978"` (or `'classic'`),
+///   which uses TR[0]=H[0]-L[0] and seeds at bar `period - 1` (emitting `period - 1` leading NaNs).
+///   In contrast, `supertrend` defaults to EMA-smoothed ATR (`smoothing="ema"`).
+///
+/// Parameters:
+///   period: Window period (must be >= 1).
+///   high: High price series.
 ///   low: Low price series.
 ///   close: Close price series.
 ///   smoothing: 'wilder' (default, TA-Lib standard) or 'ema'.
+///   seed: 'talib' (default) or 'wilder1978' / 'classic' (Wilder 1978 book formula).
+///   warmup: Alias for seed (Wilder) or warmup policy ('partial' / 'nan' for EMA).
 #[pyfunction]
-#[pyo3(signature = (period, high, low, close, smoothing=None))]
+#[pyo3(signature = (period, high, low, close, smoothing=None, seed=None, warmup=None))]
 pub fn atr(
     period: i64,
     high: Vec<f64>,
     low: Vec<f64>,
     close: Vec<f64>,
     smoothing: Option<&str>,
+    seed: Option<&str>,
+    warmup: Option<&str>,
 ) -> PyResult<Vec<f64>> {
     period.validate("period")?;
     if high.len() != low.len() || low.len() != close.len() {
@@ -1198,17 +1267,12 @@ pub fn atr(
             close.len()
         )));
     }
-    let is_ema = match smoothing {
-        None | Some("wilder") | Some("WILDER") | Some("rma") | Some("RMA") => false,
-        Some("ema") | Some("EMA") => true,
-        Some(other) => {
-            return Err(PyValueError::new_err(format!(
-                "unrecognized smoothing: expected 'wilder' or 'ema', got '{other}'"
-            )));
-        }
-    };
+    let (is_ema, atr_seed, warmup_policy) = parse_atr_options(smoothing, seed, warmup)?;
     if is_ema {
-        let mut indicator = CoreATR::new(period as usize);
+        let mut indicator = match warmup_policy {
+            Some(w) => CoreATR::with_warmup(period as usize, w),
+            None => CoreATR::new(period as usize),
+        };
         Ok(high
             .iter()
             .zip(low.iter())
@@ -1216,7 +1280,7 @@ pub fn atr(
             .map(|((&h, &l), &c)| indicator.next((h, l, c)))
             .collect())
     } else {
-        let mut indicator = CoreTaATR::new(period as usize);
+        let mut indicator = CoreTaATR::with_seed(period as usize, atr_seed);
         Ok(high
             .iter()
             .zip(low.iter())
@@ -1231,7 +1295,7 @@ enum AtrInner {
     Ema(CoreATR),
 }
 
-#[doc = "Average True Range (ATR) streaming indicator with Wilder RMA smoothing (default) or EMA smoothing.\n\nNote: Standalone `Atr` defaults to Wilder's RMA (`smoothing=\"wilder\"`), whereas `SuperTrend` defaults to EMA-smoothed ATR (`smoothing=\"ema\"`).\n\nParameters:\n  period: Window period (must be >= 1).\n  smoothing: 'wilder' (default, TA-Lib standard) or 'ema'."]
+#[doc = "Average True Range (ATR) streaming indicator with Wilder RMA smoothing (default) or EMA smoothing.\n\nNote: Standalone `Atr` defaults to Wilder's RMA (`smoothing=\"wilder\"`, `seed=\"talib\"`), whereas `SuperTrend` defaults to EMA-smoothed ATR (`smoothing=\"ema\"`).\n\nParameters:\n  period: Window period (must be >= 1).\n  smoothing: 'wilder' (default, TA-Lib standard) or 'ema'.\n  seed: 'talib' (default) or 'wilder1978' / 'classic'.\n  warmup: Alias for seed (Wilder) or 'partial' / 'nan' (EMA)."]
 #[pyclass]
 pub struct Atr {
     inner: Mutex<AtrInner>,
@@ -1240,22 +1304,23 @@ pub struct Atr {
 #[pymethods]
 impl Atr {
     #[new]
-    #[pyo3(signature = (period, smoothing=None))]
-    pub fn new(period: i64, smoothing: Option<&str>) -> PyResult<Self> {
+    #[pyo3(signature = (period, smoothing=None, seed=None, warmup=None))]
+    pub fn new(
+        period: i64,
+        smoothing: Option<&str>,
+        seed: Option<&str>,
+        warmup: Option<&str>,
+    ) -> PyResult<Self> {
         period.validate("period")?;
-        let is_ema = match smoothing {
-            None | Some("wilder") | Some("WILDER") | Some("rma") | Some("RMA") => false,
-            Some("ema") | Some("EMA") => true,
-            Some(other) => {
-                return Err(PyValueError::new_err(format!(
-                    "unrecognized smoothing: expected 'wilder' or 'ema', got '{other}'"
-                )));
-            }
-        };
+        let (is_ema, atr_seed, warmup_policy) = parse_atr_options(smoothing, seed, warmup)?;
         let inner = if is_ema {
-            AtrInner::Ema(CoreATR::new(period as usize))
+            let ind = match warmup_policy {
+                Some(w) => CoreATR::with_warmup(period as usize, w),
+                None => CoreATR::new(period as usize),
+            };
+            AtrInner::Ema(ind)
         } else {
-            AtrInner::Wilder(CoreTaATR::new(period as usize))
+            AtrInner::Wilder(CoreTaATR::with_seed(period as usize, atr_seed))
         };
         Ok(Self {
             inner: Mutex::new(inner),
@@ -1278,12 +1343,15 @@ impl Atr {
 ///   high: High price series.
 ///   low: Low price series.
 ///   close: Close price series.
+///   seed: 'talib' (default) or 'wilder1978' / 'classic'.
 #[pyfunction]
+#[pyo3(signature = (timeperiod, high, low, close, seed=None))]
 pub fn atr_wilder(
     timeperiod: i64,
     high: Vec<f64>,
     low: Vec<f64>,
     close: Vec<f64>,
+    seed: Option<&str>,
 ) -> PyResult<Vec<f64>> {
     timeperiod.validate("timeperiod")?;
     if high.len() != low.len() || low.len() != close.len() {
@@ -1294,7 +1362,8 @@ pub fn atr_wilder(
             close.len()
         )));
     }
-    let mut indicator = CoreTaATR::new(timeperiod as usize);
+    let (_, atr_seed, _) = parse_atr_options(None, seed, None)?;
+    let mut indicator = CoreTaATR::with_seed(timeperiod as usize, atr_seed);
     Ok(high
         .iter()
         .zip(low.iter())
@@ -1304,13 +1373,15 @@ pub fn atr_wilder(
 }
 
 #[pyfunction]
+#[pyo3(signature = (timeperiod, high, low, close, seed=None))]
 pub fn ta_atr(
     timeperiod: i64,
     high: Vec<f64>,
     low: Vec<f64>,
     close: Vec<f64>,
+    seed: Option<&str>,
 ) -> PyResult<Vec<f64>> {
-    atr_wilder(timeperiod, high, low, close)
+    atr_wilder(timeperiod, high, low, close, seed)
 }
 
 #[doc = "Average True Range (Wilder RMA smoothing, TA-Lib standard)."]
@@ -1322,10 +1393,12 @@ pub struct AtrWilder {
 #[pymethods]
 impl AtrWilder {
     #[new]
-    pub fn new(timeperiod: i64) -> PyResult<Self> {
+    #[pyo3(signature = (timeperiod, seed=None))]
+    pub fn new(timeperiod: i64, seed: Option<&str>) -> PyResult<Self> {
         timeperiod.validate("timeperiod")?;
+        let (_, atr_seed, _) = parse_atr_options(None, seed, None)?;
         Ok(Self {
-            inner: Mutex::new(CoreTaATR::new(timeperiod as usize)),
+            inner: Mutex::new(CoreTaATR::with_seed(timeperiod as usize, atr_seed)),
         })
     }
 
@@ -1344,10 +1417,12 @@ pub struct TaAtr {
 #[pymethods]
 impl TaAtr {
     #[new]
-    pub fn new(timeperiod: i64) -> PyResult<Self> {
+    #[pyo3(signature = (timeperiod, seed=None))]
+    pub fn new(timeperiod: i64, seed: Option<&str>) -> PyResult<Self> {
         timeperiod.validate("timeperiod")?;
+        let (_, atr_seed, _) = parse_atr_options(None, seed, None)?;
         Ok(Self {
-            inner: Mutex::new(CoreTaATR::new(timeperiod as usize)),
+            inner: Mutex::new(CoreTaATR::with_seed(timeperiod as usize, atr_seed)),
         })
     }
 

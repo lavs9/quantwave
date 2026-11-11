@@ -111,7 +111,7 @@ pub use indicators::tema::{TEMA, ZLEMA};
 pub use indicators::tradj_ema::TRAdjEMA;
 pub use indicators::ttm_squeeze::TTMSqueeze;
 pub use indicators::vfi::Vfi;
-pub use indicators::volatility::{ATR, TaATR, TaNATR, TaTRANGE, TrueRange};
+pub use indicators::volatility::{AtrSeed, ATR, TaATR, TaNATR, TaTRANGE, TrueRange};
 pub use indicators::volume::*;
 pub use indicators::volume_profile::{
     BarData, PriceBin, ValueAreaMethod, VolumeAllocationMethod, VolumeProfile, VolumeProfileState,

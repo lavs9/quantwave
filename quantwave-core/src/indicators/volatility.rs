@@ -1,9 +1,9 @@
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
-use crate::indicators::smoothing::EMA;
+use crate::indicators::smoothing::{EMA, WarmupPolicy};
 use crate::traits::Next;
 use serde::{Deserialize, Serialize};
 
-pub use crate::indicators::incremental::ta_atr::TaATR;
+pub use crate::indicators::incremental::ta_atr::{AtrSeed, TaATR};
 impl From<usize> for TaATR {
     fn from(p: usize) -> Self {
         Self::new(p)
@@ -78,6 +78,13 @@ impl ATR {
         Self {
             tr: TrueRange::default(),
             smoothing: EMA::new(period),
+        }
+    }
+
+    pub fn with_warmup(period: usize, warmup: WarmupPolicy) -> Self {
+        Self {
+            tr: TrueRange::default(),
+            smoothing: EMA::with_warmup(period, warmup),
         }
     }
 }
@@ -186,7 +193,7 @@ TR = \max(H - L, |H - C_{t-1}|, |L - C_{t-1}|)
 
 pub const ATR_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "Average True Range",
-    description: "ATR represents the average of true ranges over a specified period. Standalone `atr()` and `Atr` default to Wilder's RMA (alpha = 1/period, TA-Lib standard); an EMA-smoothed variant (alpha = 2/(period+1), matching SuperTrend's default) is selectable via `smoothing='ema'`.",
+    description: "ATR represents the average of true ranges over a specified period. Standalone `atr()` and `Atr` default to Wilder's RMA (alpha = 1/period, TA-Lib standard); an EMA-smoothed variant (alpha = 2/(period+1), matching SuperTrend's default) is selectable via `smoothing='ema'`. Seeding defaults to TA-Lib standard (`seed='talib'`), with Wilder's 1978 textbook formula supported via `seed='wilder1978'` (`'classic'`).",
     usage: "Use as the foundational volatility module providing ATR, True Range, and related volatility measures used by higher-level indicators such as SuperTrend and Keltner Channels. Check `quantwave.conventions(\"atr\")` before reconciling values against TA-Lib, TradingView, or pandas.",
     keywords: &[
         "volatility",
@@ -196,11 +203,23 @@ pub const ATR_METADATA: IndicatorMetadata = IndicatorMetadata {
         "convention-divergence",
     ],
     ehlers_summary: "Average True Range, developed by J. Welles Wilder in New Concepts in Technical Trading Systems (1978), measures the average of the true range over N bars. True Range accounts for overnight gaps by taking the maximum of: current high minus low, current high minus prior close, prior close minus current low. It remains the industry standard raw volatility measure.",
-    params: &[ParamDef {
-        name: "period",
-        default: "14",
-        description: "Smoothing period",
-    }],
+    params: &[
+        ParamDef {
+            name: "period",
+            default: "14",
+            description: "Smoothing period",
+        },
+        ParamDef {
+            name: "smoothing",
+            default: "wilder",
+            description: "Smoothing algorithm: 'wilder' (default, TA-Lib standard RMA) or 'ema'",
+        },
+        ParamDef {
+            name: "seed",
+            default: "talib",
+            description: "Seed/warmup convention: 'talib' (default, seeds at bar period from TR[1..period], period NaNs) or 'wilder1978'/'classic' (Wilder 1978 book formula, TR[0]=H-L, seeds at bar period-1 from TR[0..period-1], period-1 NaNs)",
+        },
+    ],
     // NOTE (quantwave-xnaf): this URL documents Wilder's RMA, which is what `ta_atr`
     // implements. No source has been established for the EMA-smoothed variant that
     // `Atr` / `atr()` actually compute; per AGENTS.md it is recorded as unsourced in

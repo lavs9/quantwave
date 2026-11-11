@@ -220,6 +220,25 @@ _CONVENTION_NOTES: Dict[str, Tuple[ConventionNote, ...]] = {
                 "Polars APIs. Use `smoothing='ema'` if EMA smoothing is explicitly desired."
             ),
         ),
+        ConventionNote(
+            aspect="seed",
+            convention=(
+                "Default Wilder RMA uses TA-Lib standard seeding: True Range is undefined on bar 0, "
+                "accumulating `period` valid TRs from bars 1..period, emitting first ATR at bar `period` "
+                "(period leading NaNs). An explicit `seed='wilder1978'` (or `'classic'`) option implements "
+                "Wilder's original 1978 textbook formula with TR[0]=H[0]-L[0] and seeds at bar `period-1` "
+                "(period-1 leading NaNs)."
+            ),
+            differs_from=(
+                "Classic 1978 textbook Wilder ATR seeds 1 bar earlier (at index period-1 vs period) "
+                "with TR[0]=H-L. The relative difference between seeds decays below 1e-9 by bar 400."
+            ),
+            source="Wilder, J. W. (1978). New Concepts in Technical Trading Systems; TA-Lib C implementation.",
+            guidance=(
+                "Use seed='talib' (default) to match TA-Lib and TradingView, or seed='wilder1978' ('classic') "
+                "to match the 1978 book formula."
+            ),
+        ),
     ),
     "atr_ts": (
         ConventionNote(

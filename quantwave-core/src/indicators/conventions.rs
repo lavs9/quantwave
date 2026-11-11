@@ -59,6 +59,20 @@ pub const CONVENTION_NOTES: &[ConventionNote] = &[
                    Polars APIs. Use `smoothing='ema'` if EMA smoothing is explicitly desired.",
     },
     ConventionNote {
+        slug: "atr",
+        aspect: "seed",
+        convention: "Default Wilder RMA uses TA-Lib standard seeding: True Range is undefined on bar 0, \
+                     accumulating `period` valid TRs from bars 1..period, emitting first ATR at bar `period` \
+                     (period leading NaNs). An explicit `seed='wilder1978'` (or `'classic'`) option implements \
+                     Wilder's original 1978 textbook formula with TR[0]=H[0]-L[0] and seeds at bar `period-1` \
+                     (period-1 leading NaNs).",
+        differs_from: "Classic 1978 textbook Wilder ATR seeds 1 bar earlier (at index period-1 vs period) \
+                       with TR[0]=H-L. The relative difference between seeds decays below 1e-9 by bar 400.",
+        source: "Wilder, J. W. (1978). New Concepts in Technical Trading Systems; TA-Lib C implementation.",
+        guidance: "Use seed='talib' (default) to match TA-Lib and TradingView, or seed='wilder1978' ('classic') \
+                   to match the 1978 book formula.",
+    },
+    ConventionNote {
         slug: "atr_ts",
         aspect: "smoothing",
         convention: "ATR trailing stop built on the EMA-smoothed `Atr` (alpha = 2/(period+1)).",
@@ -191,18 +205,14 @@ mod tests {
     fn atr_family_divergence_is_recorded() {
         // The ATR-composed indicators all inherit the EMA smoothing; if one of
         // them is ever switched to Wilder, this test forces the note to be updated.
-        for slug in [
-            "atr",
-            "atr_ts",
-            "keltner",
-            "supertrend",
-            "ttm_squeeze",
-            "vpn",
-        ] {
+        for slug in ["atr_ts", "keltner", "supertrend", "ttm_squeeze", "vpn"] {
             let notes = convention_notes(slug);
             assert_eq!(notes.len(), 1, "expected exactly one note for {slug}");
             assert_eq!(notes[0].aspect, "smoothing");
         }
+        let atr_notes = convention_notes("atr");
+        assert!(atr_notes.iter().any(|n| n.aspect == "smoothing"));
+        assert!(atr_notes.iter().any(|n| n.aspect == "seed"));
     }
 
     #[test]

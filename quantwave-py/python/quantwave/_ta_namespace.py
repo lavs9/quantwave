@@ -401,13 +401,25 @@ Boundary Conditions & Error Behavior:
     # --------------------------------------------------------------------------------
     # Volatility
     # --------------------------------------------------------------------------------
-    def atr(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], timeperiod: int = 14, smoothing: str = "wilder") -> pl.Expr:
+    def atr(
+        self,
+        high: Union[str, pl.Expr],
+        low: Union[str, pl.Expr],
+        timeperiod: int = 14,
+        smoothing: str = "wilder",
+        seed: Optional[str] = None,
+        warmup: Optional[str] = None,
+    ) -> pl.Expr:
         """Average True Range (ATR). Note: self must be close.
 
-Note on smoothing convention:
-  Standalone `atr` defaults to Wilder RMA (`smoothing="wilder"`).
-  In contrast, `supertrend`'s internal ATR defaults to EMA smoothing (`smoothing="ema"`).
-  Pass `smoothing="ema"` if EMA-smoothed ATR is desired.
+Note on smoothing and seed conventions:
+  - Standalone `atr` defaults to Wilder RMA (`smoothing="wilder"`).
+  - Standalone `atr` defaults to TA-Lib standard seeding (`seed="talib"`), which emits
+    `timeperiod` leading NaNs and seeds at bar `timeperiod` from TR[1..timeperiod].
+  - Pass `seed="wilder1978"` (or `seed="classic"`) for Wilder's 1978 book formula with
+    TR[0]=H[0]-L[0] and seeds at bar `timeperiod - 1` from TR[0..timeperiod-1].
+  - In contrast, `supertrend`'s internal ATR defaults to EMA smoothing (`smoothing="ema"`).
+  - Pass `smoothing="ema"` if EMA-smoothed ATR is desired.
 
 Boundary Conditions & Error Behavior:
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
@@ -416,7 +428,12 @@ Boundary Conditions & Error Behavior:
 """
         if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
-        return register_plugin_function(args=[self._expr, high, low], plugin_path=Path(__file__).parent, function_name="atr", is_elementwise=False, kwargs={"timeperiod": timeperiod, "smoothing": smoothing})
+        kw = {"timeperiod": timeperiod, "smoothing": smoothing}
+        if seed is not None:
+            kw["seed"] = seed
+        if warmup is not None:
+            kw["warmup"] = warmup
+        return register_plugin_function(args=[self._expr, high, low], plugin_path=Path(__file__).parent, function_name="atr", is_elementwise=False, kwargs=kw)
 
     def natr(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
         """Normalized Average True Range (NATR). Note: self must be close.

@@ -453,3 +453,59 @@ def test_gh61_smoothing_convention_docstrings():
         assert "Wilder" in TaNamespace.supertrend.__doc__
 
 
+def test_gh62_atr_seed_options_and_wilder1978_parity():
+    # 20-bar synthetic series
+    high = [10.0, 11.0, 12.0, 11.5, 12.5, 13.0, 12.8, 13.5, 14.0, 13.8, 14.2, 14.5, 14.1, 14.8, 15.0, 15.2, 15.1, 15.5, 15.8, 16.0]
+    low = [8.0, 9.0, 10.0, 9.5, 10.5, 11.0, 10.8, 11.5, 12.0, 11.8, 12.2, 12.5, 12.1, 12.8, 13.0, 13.2, 13.1, 13.5, 13.8, 14.0]
+    close = [9.0, 10.5, 11.0, 10.0, 12.0, 11.5, 12.5, 13.0, 12.5, 13.5, 13.0, 14.0, 13.5, 14.5, 14.0, 14.8, 14.2, 15.0, 14.5, 15.5]
+
+    # Classic Wilder 1978 hand formula:
+    # TR[0] = H[0] - L[0]
+    # ATR[13] = mean(TR[0:14])
+    # ATR[t] = (13 * ATR[t-1] + TR[t]) / 14
+    tr = [high[0] - low[0]]
+    for i in range(1, 20):
+        tr.append(max(high[i] - low[i], abs(high[i] - close[i-1]), abs(low[i] - close[i-1])))
+
+    atr_hand = [float("nan")] * 20
+    atr_hand[13] = sum(tr[0:14]) / 14.0
+    for i in range(14, 20):
+        atr_hand[i] = (13.0 * atr_hand[i-1] + tr[i]) / 14.0
+
+    # 1. Plain qw.atr seed='classic' / 'wilder1978'
+    atr_classic = qw.atr(high, low, close, period=14, seed="classic")
+    atr_w1978 = qw.atr(14, high, low, close, seed="wilder1978")
+    assert np.isnan(atr_classic[12])
+    assert not np.isnan(atr_classic[13])
+    assert np.allclose(atr_classic[13:], atr_hand[13:], rtol=1e-10)
+    assert np.allclose(atr_w1978[13:], atr_hand[13:], rtol=1e-10)
+
+    # 2. Warmup alias
+    atr_warmup_classic = qw.atr(high, low, close, period=14, warmup="classic")
+    assert np.allclose(atr_warmup_classic[13:], atr_hand[13:], rtol=1e-10)
+
+    # 3. Default seed='talib' has 14 NaNs, seeds at index 14
+    atr_talib = qw.atr(high, low, close, period=14)
+    assert np.isnan(atr_talib[13])
+    assert not np.isnan(atr_talib[14])
+
+    # 4. Polars parity
+    if pl is not None:
+        df = pl.DataFrame({"h": high, "l": low, "c": close})
+        polars_classic = df.select(
+            pl.col("c").ta.atr(pl.col("h"), pl.col("l"), timeperiod=14, seed="classic")
+        )["c"].to_list()
+        assert np.allclose(polars_classic[13:], atr_classic[13:], rtol=1e-10)
+
+    # 5. Streaming parity
+    stream_classic = qw.Atr(14, seed="classic")
+    stream_out = [stream_classic.next(h, l, c) for h, l, c in zip(high, low, close)]
+    assert np.allclose(stream_out[13:], atr_classic[13:], rtol=1e-10)
+
+    # 6. EMA warmup='nan' option
+    atr_ema_nan = qw.atr(high, low, close, period=14, smoothing="ema", warmup="nan")
+    assert np.isnan(atr_ema_nan[12])
+    assert not np.isnan(atr_ema_nan[13])
+
+
+
