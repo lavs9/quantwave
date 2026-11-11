@@ -101,7 +101,9 @@ class _Signature:
         for p in sig.parameters.values():
             if p.name == "self":
                 continue
-            if "str" in str(p.annotation):
+            if p.default is inspect.Parameter.empty and (
+                "str" in str(p.annotation) or "Expr" in str(p.annotation)
+            ):
                 extra.append(p.name)
             else:
                 numeric.append(p.name)

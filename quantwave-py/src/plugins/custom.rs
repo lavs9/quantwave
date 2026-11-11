@@ -1,6 +1,8 @@
 use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
-use quantwave_core::SuperTrend;
+use quantwave_core::indicators::supertrend::{
+    SuperTrend, SuperTrendAtrSmoothing, SuperTrendInitialDirection,
+};
 use quantwave_core::traits::Next;
 use serde::Deserialize;
 
@@ -8,6 +10,10 @@ use serde::Deserialize;
 struct SupertrendKwargs {
     period: usize,
     multiplier: f64,
+    #[serde(default)]
+    initial_direction: Option<String>,
+    #[serde(default)]
+    smoothing: Option<String>,
 }
 
 pub fn supertrend_output(_: &[Field]) -> PolarsResult<Field> {
@@ -26,7 +32,21 @@ fn supertrend(inputs: &[Series], kwargs: SupertrendKwargs) -> PolarsResult<Serie
     let low = inputs[1].f64()?;
     let close = inputs[2].f64()?;
 
-    let mut indicator = SuperTrend::new(kwargs.period, kwargs.multiplier);
+    let init_dir = match kwargs.initial_direction.as_deref() {
+        Some(s) => s
+            .parse::<SuperTrendInitialDirection>()
+            .map_err(|e| PolarsError::ComputeError(e.to_string().into()))?,
+        None => SuperTrendInitialDirection::Up,
+    };
+    let smoothing = match kwargs.smoothing.as_deref() {
+        Some(s) => s
+            .parse::<SuperTrendAtrSmoothing>()
+            .map_err(|e| PolarsError::ComputeError(e.to_string().into()))?,
+        None => SuperTrendAtrSmoothing::Ema,
+    };
+
+    let mut indicator =
+        SuperTrend::with_options(kwargs.period, kwargs.multiplier, init_dir, smoothing);
 
     let mut st_vec = Vec::with_capacity(high.len());
     let mut dir_vec = Vec::with_capacity(high.len());

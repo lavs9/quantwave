@@ -32,6 +32,9 @@ impl Next<(f64, f64, f64)> for TrueRange {
     type Output = f64;
 
     fn next(&mut self, (high, low, close): (f64, f64, f64)) -> Self::Output {
+        if high.is_nan() || low.is_nan() || close.is_nan() {
+            return f64::NAN;
+        }
         let tr = match self.prev_close {
             Some(pc) => {
                 let h_l = high - low;

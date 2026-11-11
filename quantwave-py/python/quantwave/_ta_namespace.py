@@ -1,7 +1,7 @@
 import polars as pl
 from polars.plugins import register_plugin_function
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 
 from .custom_0 import Custom0Extensions
 from .custom_1 import Custom1Extensions
@@ -82,8 +82,22 @@ Boundary Conditions & Error Behavior:
 """
         return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="bbands", is_elementwise=False, kwargs={"timeperiod": timeperiod, "nbdevup": nbdevup, "nbdevdn": nbdevdn, "matype": matype})
 
-    def supertrend(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], period: int = 10, multiplier: float = 3.0) -> pl.Expr:
+    def supertrend(
+        self,
+        high: Union[str, pl.Expr],
+        low: Union[str, pl.Expr],
+        period: int = 10,
+        multiplier: float = 3.0,
+        initial_direction: str = "up",
+        smoothing: str = "ema",
+    ) -> pl.Expr:
         """Calculates SuperTrend. Returns a struct containing: supertrend, direction. Note: self must be close.
+
+Parameters:
+- period: ATR length (must be >= 1).
+- multiplier: ATR multiplier.
+- initial_direction: "up" (default), "down" (breakout from listing / downtrend), or "from_close".
+- smoothing: "ema" (default) or "wilder" (RMA with SMA warmup, emits NaN until full window).
 
 Boundary Conditions & Error Behavior:
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
@@ -92,7 +106,13 @@ Boundary Conditions & Error Behavior:
 """
         if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
-        return register_plugin_function(args=[high, low, self._expr], plugin_path=Path(__file__).parent, function_name="supertrend", is_elementwise=False, kwargs={"period": period, "multiplier": multiplier})
+        kwargs = {
+            "period": period,
+            "multiplier": multiplier,
+            "initial_direction": initial_direction,
+            "smoothing": smoothing,
+        }
+        return register_plugin_function(args=[high, low, self._expr], plugin_path=Path(__file__).parent, function_name="supertrend", is_elementwise=False, kwargs=kwargs)
 
     # --------------------------------------------------------------------------------
     # Momentum & Trend
@@ -386,7 +406,7 @@ Boundary Conditions & Error Behavior:
 """
         if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
-        return register_plugin_function(args=[high, low, self._expr], plugin_path=Path(__file__).parent, function_name="atr", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        return register_plugin_function(args=[self._expr, high, low], plugin_path=Path(__file__).parent, function_name="atr", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def natr(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
         """Normalized Average True Range (NATR). Note: self must be close.
@@ -398,7 +418,7 @@ Boundary Conditions & Error Behavior:
 """
         if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
-        return register_plugin_function(args=[high, low, self._expr], plugin_path=Path(__file__).parent, function_name="natr", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        return register_plugin_function(args=[self._expr, high, low], plugin_path=Path(__file__).parent, function_name="natr", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def trange(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr]) -> pl.Expr:
         """True Range (TRANGE). Note: self must be close.
@@ -410,7 +430,7 @@ Boundary Conditions & Error Behavior:
 """
         if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
-        return register_plugin_function(args=[high, low, self._expr], plugin_path=Path(__file__).parent, function_name="trange", is_elementwise=False)
+        return register_plugin_function(args=[self._expr, high, low], plugin_path=Path(__file__).parent, function_name="trange", is_elementwise=False)
 
     # --------------------------------------------------------------------------------
     # Volume
@@ -663,6 +683,12 @@ Boundary Conditions & Error Behavior:
     def beta(self, other: Union[str, pl.Expr], timeperiod: int = 5) -> pl.Expr:
         """Beta (BETA).
 
+Receiver Convention:
+- self: The independent benchmark / market series (X, denominator).
+- other: The dependent asset / stock series (Y, numerator).
+Example: ``market.ta.beta(stock, 52)`` returns the stock's beta against the market.
+Matches TA-Lib's BETA(real0, real1) convention where real0=market and real1=stock.
+
 Boundary Conditions & Error Behavior:
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
@@ -670,6 +696,41 @@ Boundary Conditions & Error Behavior:
 """
         if isinstance(other, str): other = pl.col(other)
         return register_plugin_function(args=[self._expr, other], plugin_path=Path(__file__).parent, function_name="beta", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+
+    def cross_sectional_rank(
+        self,
+        group_by: Optional[Union[str, pl.Expr]] = None,
+        descending: bool = False,
+        percentile: bool = True,
+    ) -> pl.Expr:
+        """Cross-sectional rank (percentile of a value across symbols on one date/group).
+
+Unlike ``percent_rank`` (which is a rolling time-series rank of a single symbol
+over lookback bars), ``cross_sectional_rank`` ranks multiple symbols across a single
+timestamp or grouping factor.
+
+Parameters:
+- group_by: Column or Expr to group by (e.g. "date" or pl.col("date")). If None,
+  ranks across the entire expression length.
+- descending: If False (default), lowest value gets lowest rank (0.0). If True,
+  highest value gets lowest rank.
+- percentile: If True (default), normalizes ranks to (0.0, 1.0] as ``rank / count``.
+  If False, returns raw 1-based ranks [1, 2, ..., N].
+
+Example:
+    >>> df.with_columns(pl.col("beta").ta.cross_sectional_rank(group_by="date").alias("beta_rank"))
+"""
+        rank_expr = self._expr.rank(method="average", descending=descending)
+        if percentile:
+            res = rank_expr / self._expr.count()
+        else:
+            res = rank_expr
+
+        if group_by is not None:
+            if isinstance(group_by, str):
+                group_by = pl.col(group_by)
+            return res.over(group_by)
+        return res
 
     # --------------------------------------------------------------------------------
     # Hilbert Transform
@@ -887,8 +948,11 @@ Boundary Conditions & Error Behavior:
         return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="tanh", is_elementwise=False)
 
     def max(self, timeperiod: int = 14) -> pl.Expr:
-        
-        """
+        """Rolling Highest Value (MAX) over a specified period.
+
+Parameters:
+- timeperiod: Lookback window length in bars (default: 14).
+
 Boundary Conditions & Error Behavior:
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
@@ -897,8 +961,11 @@ Boundary Conditions & Error Behavior:
         return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="max", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def maxindex(self, timeperiod: int = 14) -> pl.Expr:
-        
-        """
+        """Index of Rolling Highest Value (MAXINDEX) over a specified period.
+
+Parameters:
+- timeperiod: Lookback window length in bars (default: 14).
+
 Boundary Conditions & Error Behavior:
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
@@ -907,8 +974,11 @@ Boundary Conditions & Error Behavior:
         return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="maxindex", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def min(self, timeperiod: int = 14) -> pl.Expr:
-        
-        """
+        """Rolling Lowest Value (MIN) over a specified period.
+
+Parameters:
+- timeperiod: Lookback window length in bars (default: 14).
+
 Boundary Conditions & Error Behavior:
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
@@ -917,8 +987,11 @@ Boundary Conditions & Error Behavior:
         return register_plugin_function(args=[self._expr], plugin_path=Path(__file__).parent, function_name="min", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def minindex(self, timeperiod: int = 14) -> pl.Expr:
-        
-        """
+        """Index of Rolling Lowest Value (MININDEX) over a specified period.
+
+Parameters:
+- timeperiod: Lookback window length in bars (default: 14).
+
 Boundary Conditions & Error Behavior:
 - Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
 - NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
@@ -1083,7 +1156,7 @@ Boundary Conditions & Error Behavior:
 """
         if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
-        return register_plugin_function(args=[high, low, self._expr], plugin_path=Path(__file__).parent, function_name="ta_trange", is_elementwise=False)
+        return register_plugin_function(args=[self._expr, high, low], plugin_path=Path(__file__).parent, function_name="ta_trange", is_elementwise=False)
 
     def ta_atr(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
         
@@ -1095,7 +1168,7 @@ Boundary Conditions & Error Behavior:
 """
         if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
-        return register_plugin_function(args=[high, low, self._expr], plugin_path=Path(__file__).parent, function_name="ta_atr", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        return register_plugin_function(args=[self._expr, high, low], plugin_path=Path(__file__).parent, function_name="ta_atr", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def ta_natr(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], timeperiod: int = 14) -> pl.Expr:
         
@@ -1107,7 +1180,7 @@ Boundary Conditions & Error Behavior:
 """
         if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
-        return register_plugin_function(args=[high, low, self._expr], plugin_path=Path(__file__).parent, function_name="ta_natr", is_elementwise=False, kwargs={"timeperiod": timeperiod})
+        return register_plugin_function(args=[self._expr, high, low], plugin_path=Path(__file__).parent, function_name="ta_natr", is_elementwise=False, kwargs={"timeperiod": timeperiod})
 
     def bop(self, high: Union[str, pl.Expr], low: Union[str, pl.Expr], close: Union[str, pl.Expr]) -> pl.Expr:
         

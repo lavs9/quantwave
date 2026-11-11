@@ -136,8 +136,8 @@
   {
     "slug": "alma",
     "name": "Arnaud Legoux Moving Average",
-    "description": "ALMA is designed to reduce lag while providing high smoothness.",
-    "usage": "Use as a low-latency moving average that reduces lag compared to EMA while controlling overshoot through the Gaussian offset parameter. Well-suited for momentum systems.",
+    "description": "ALMA is designed to reduce lag while providing high smoothness. During warmup (< period bars), partial-window Gaussian weights are normalized over available bars to emit finite values immediately from bar 0.",
+    "usage": "Use as a low-latency moving average that reduces lag compared to EMA while controlling overshoot through the Gaussian offset parameter. Well-suited for momentum systems. Supports WarmupPolicy (Partial default, or Nan).",
     "category": "Classic",
     "keywords": [
       "moving-average",
@@ -2451,6 +2451,11 @@
         "name": "period",
         "default": "14",
         "description": "Smoothing period"
+      },
+      {
+        "name": "warmup",
+        "default": "partial",
+        "description": "Warm-up behavior ('partial' or 'nan')"
       }
     ],
     "formula_source": "https://www.investopedia.com/terms/e/ema.asp",
@@ -5091,6 +5096,11 @@
         "name": "period",
         "default": "14",
         "description": "Smoothing period"
+      },
+      {
+        "name": "warmup",
+        "default": "partial",
+        "description": "Warm-up behavior ('partial' or 'nan')"
       }
     ],
     "formula_source": "https://www.investopedia.com/terms/s/sma.asp",
@@ -5306,6 +5316,16 @@
         "name": "multiplier",
         "default": "3.0",
         "description": "ATR multiplier"
+      },
+      {
+        "name": "initial_direction",
+        "default": "up",
+        "description": "Initial trend direction before reversal ('up', 'down', or 'from_close')"
+      },
+      {
+        "name": "smoothing",
+        "default": "ema",
+        "description": "ATR smoothing algorithm ('ema' or 'wilder')"
       }
     ],
     "formula_source": "https://www.tradingview.com/script/7zF0a4f8-SuperTrend-by-Mobius/",

@@ -38,6 +38,14 @@ pub struct ConventionNote {
 /// `quantwave/_metadata.py::_CONVENTION_NOTES`.
 pub const CONVENTION_NOTES: &[ConventionNote] = &[
     ConventionNote {
+        slug: "alma",
+        aspect: "warmup",
+        convention: "During the initial warmup window (< period bars), ALMA normalizes a partial slice of Gaussian weights over available bars, returning finite values immediately from bar 0.",
+        differs_from: "Implementations that emit NaN until the full period of bars has accumulated.",
+        source: "ProRealTime Arnaud Legoux Moving Average specification.",
+        guidance: "To match NaN-warmup implementations, use WarmupPolicy::Nan or mask the first period-1 bars.",
+    },
+    ConventionNote {
         slug: "atr",
         aspect: "smoothing",
         convention: "Exponential moving average of true range, alpha = 2/(period+1), \

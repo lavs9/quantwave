@@ -299,6 +299,15 @@ _CONVENTION_NOTES: Dict[str, Tuple[ConventionNote, ...]] = {
             guidance="Flip points can differ from a TradingView SuperTrend on the same inputs.",
         ),
     ),
+    "alma": (
+        ConventionNote(
+            aspect="warmup",
+            convention="During the initial warmup window (< period bars), ALMA normalizes a partial slice of Gaussian weights over available bars, returning finite values immediately from bar 0.",
+            differs_from="Implementations that emit NaN until the full period of bars has accumulated.",
+            source="ProRealTime Arnaud Legoux Moving Average specification.",
+            guidance="To match NaN-warmup implementations, use WarmupPolicy::Nan or mask the first period-1 bars.",
+        ),
+    ),
     "ttm_squeeze": (
         ConventionNote(
             aspect="smoothing",

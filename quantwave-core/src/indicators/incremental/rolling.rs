@@ -26,6 +26,9 @@ impl RollingMax {
         if self.window.len() < p {
             return f64::NAN;
         }
+        if self.window.iter().any(|x| x.is_nan()) {
+            return f64::NAN;
+        }
         let mut m = f64::NEG_INFINITY;
         for &x in self.window.iter() {
             if x > m {
@@ -80,6 +83,9 @@ impl RollingMin {
         }
         self.window.push_back(v);
         if self.window.len() < p {
+            return f64::NAN;
+        }
+        if self.window.iter().any(|x| x.is_nan()) {
             return f64::NAN;
         }
         let mut m = f64::INFINITY;

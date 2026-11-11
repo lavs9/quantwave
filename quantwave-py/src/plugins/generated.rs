@@ -528,12 +528,12 @@ fn ta_trange(inputs: &[Series]) -> PolarsResult<Series> {
         .into_iter()
         .zip(in2.into_iter())
         .zip(in3.into_iter())
-        .map(|((v1, v2), v3)| match (v1, v2, v3) {
-            (Some(a), Some(b), Some(c)) if !a.is_nan() && !b.is_nan() && !c.is_nan() => {
-                Some(indicator.next((a, b, c)))
+        .map(|((c, h), l)| match (c, h, l) {
+            (Some(cv), Some(hv), Some(lv)) => Some(indicator.next((hv, lv, cv))),
+            _ => {
+                indicator.next((f64::NAN, f64::NAN, f64::NAN));
+                None
             }
-            (Some(_), Some(_), Some(_)) => Some(f64::NAN),
-            _ => None,
         })
         .collect();
     Ok(out.into_series())
@@ -549,12 +549,12 @@ fn ta_atr(inputs: &[Series], kwargs: SinglePeriodKwargs) -> PolarsResult<Series>
         .into_iter()
         .zip(in2.into_iter())
         .zip(in3.into_iter())
-        .map(|((v1, v2), v3)| match (v1, v2, v3) {
-            (Some(a), Some(b), Some(c)) if !a.is_nan() && !b.is_nan() && !c.is_nan() => {
-                Some(indicator.next((a, b, c)))
+        .map(|((c, h), l)| match (c, h, l) {
+            (Some(cv), Some(hv), Some(lv)) => Some(indicator.next((hv, lv, cv))),
+            _ => {
+                indicator.next((f64::NAN, f64::NAN, f64::NAN));
+                None
             }
-            (Some(_), Some(_), Some(_)) => Some(f64::NAN),
-            _ => None,
         })
         .collect();
     Ok(out.into_series())
@@ -570,12 +570,12 @@ fn ta_natr(inputs: &[Series], kwargs: SinglePeriodKwargs) -> PolarsResult<Series
         .into_iter()
         .zip(in2.into_iter())
         .zip(in3.into_iter())
-        .map(|((v1, v2), v3)| match (v1, v2, v3) {
-            (Some(a), Some(b), Some(c)) if !a.is_nan() && !b.is_nan() && !c.is_nan() => {
-                Some(indicator.next((a, b, c)))
+        .map(|((c, h), l)| match (c, h, l) {
+            (Some(cv), Some(hv), Some(lv)) => Some(indicator.next((hv, lv, cv))),
+            _ => {
+                indicator.next((f64::NAN, f64::NAN, f64::NAN));
+                None
             }
-            (Some(_), Some(_), Some(_)) => Some(f64::NAN),
-            _ => None,
         })
         .collect();
     Ok(out.into_series())

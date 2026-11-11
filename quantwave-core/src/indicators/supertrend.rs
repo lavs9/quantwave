@@ -1,6 +1,74 @@
+use crate::indicators::incremental::ta_atr::TaATR;
 use crate::indicators::metadata::{IndicatorMetadata, ParamDef};
 use crate::indicators::volatility::ATR;
 use crate::traits::Next;
+use serde::{Deserialize, Serialize};
+
+/// Initial directional bias for SuperTrend before trend confirmation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum SuperTrendInitialDirection {
+    /// Assumes an uptrend from bar 0 (direction = 1, quantwave legacy default).
+    #[default]
+    Up,
+    /// Assumes a downtrend initially (direction = -1, TradingView convention).
+    /// The first close above the upper band represents an explicit flip to uptrend (e.g. IPO breakout).
+    Down,
+    /// Sets the initial direction from close vs bar midpoint `(high + low) / 2` on the first valid bar.
+    FromClose,
+}
+
+impl std::str::FromStr for SuperTrendInitialDirection {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_ascii_lowercase().as_str() {
+            "up" => Ok(Self::Up),
+            "down" => Ok(Self::Down),
+            "from_close" | "fromclose" => Ok(Self::FromClose),
+            other => Err(format!(
+                "unknown initial_direction: '{other}' (expected 'up', 'down', or 'from_close')"
+            )),
+        }
+    }
+}
+
+/// ATR smoothing algorithm used for SuperTrend volatility bands.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum SuperTrendAtrSmoothing {
+    /// Standard EMA smoothing (alpha = 2/(period+1), seeded from bar 0, quantwave legacy default).
+    #[default]
+    Ema,
+    /// Wilder's RMA smoothing (alpha = 1/period, seeded with SMA of first `period` true ranges,
+    /// emits NaN during warm-up, TA-Lib and TradingView Pine `ta.atr` convention).
+    Wilder,
+}
+
+impl std::str::FromStr for SuperTrendAtrSmoothing {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_ascii_lowercase().as_str() {
+            "ema" => Ok(Self::Ema),
+            "wilder" | "rma" => Ok(Self::Wilder),
+            other => Err(format!(
+                "unknown smoothing: '{other}' (expected 'ema' or 'wilder')"
+            )),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+enum AtrBackend {
+    Ema(ATR),
+    Wilder(TaATR),
+}
+
+impl AtrBackend {
+    fn next(&mut self, hlc: (f64, f64, f64)) -> f64 {
+        match self {
+            Self::Ema(atr) => atr.next(hlc),
+            Self::Wilder(ta_atr) => ta_atr.next(hlc),
+        }
+    }
+}
 
 pub const SUPERTREND_METADATA: IndicatorMetadata = IndicatorMetadata {
     name: "SuperTrend",
@@ -19,6 +87,16 @@ pub const SUPERTREND_METADATA: IndicatorMetadata = IndicatorMetadata {
             default: "3.0",
             description: "ATR multiplier",
         },
+        ParamDef {
+            name: "initial_direction",
+            default: "up",
+            description: "Initial trend direction before reversal ('up', 'down', or 'from_close')",
+        },
+        ParamDef {
+            name: "smoothing",
+            default: "ema",
+            description: "ATR smoothing algorithm ('ema' or 'wilder')",
+        },
     ],
     formula_source: "https://www.tradingview.com/script/7zF0a4f8-SuperTrend-by-Mobius/",
     formula_latex: r#"
@@ -36,23 +114,50 @@ pub const SUPERTREND_METADATA: IndicatorMetadata = IndicatorMetadata {
 /// SuperTrend Indicator
 #[derive(Debug, Clone)]
 pub struct SuperTrend {
-    atr: ATR,
+    atr: AtrBackend,
     multiplier: f64,
     prev_close: Option<f64>,
     prev_upper_band: Option<f64>,
     prev_lower_band: Option<f64>,
     direction: i8, // 1 for up, -1 for down
+    initial_direction: SuperTrendInitialDirection,
+    initialized_direction: bool,
 }
 
 impl SuperTrend {
     pub fn new(period: usize, multiplier: f64) -> Self {
+        Self::with_options(
+            period,
+            multiplier,
+            SuperTrendInitialDirection::Up,
+            SuperTrendAtrSmoothing::Ema,
+        )
+    }
+
+    pub fn with_options(
+        period: usize,
+        multiplier: f64,
+        initial_direction: SuperTrendInitialDirection,
+        atr_smoothing: SuperTrendAtrSmoothing,
+    ) -> Self {
+        let initial_dir_val = match initial_direction {
+            SuperTrendInitialDirection::Up => 1,
+            SuperTrendInitialDirection::Down => -1,
+            SuperTrendInitialDirection::FromClose => 1,
+        };
+        let atr = match atr_smoothing {
+            SuperTrendAtrSmoothing::Ema => AtrBackend::Ema(ATR::new(period)),
+            SuperTrendAtrSmoothing::Wilder => AtrBackend::Wilder(TaATR::new(period)),
+        };
         Self {
-            atr: ATR::new(period),
+            atr,
             multiplier,
             prev_close: None,
             prev_upper_band: None,
             prev_lower_band: None,
-            direction: 1,
+            direction: initial_dir_val,
+            initial_direction,
+            initialized_direction: false,
         }
     }
 }
@@ -61,8 +166,31 @@ impl Next<(f64, f64, f64)> for SuperTrend {
     type Output = (f64, i8);
 
     fn next(&mut self, (high, low, close): (f64, f64, f64)) -> Self::Output {
+        if high.is_nan() || low.is_nan() || close.is_nan() {
+            return (f64::NAN, self.direction);
+        }
+
         let atr = self.atr.next((high, low, close));
+        if atr.is_nan() {
+            return (f64::NAN, self.direction);
+        }
+
         let mid = (high + low) / 2.0;
+
+        if !self.initialized_direction {
+            self.direction = match self.initial_direction {
+                SuperTrendInitialDirection::Up => 1,
+                SuperTrendInitialDirection::Down => -1,
+                SuperTrendInitialDirection::FromClose => {
+                    if close >= mid {
+                        1
+                    } else {
+                        -1
+                    }
+                }
+            };
+            self.initialized_direction = true;
+        }
 
         let basic_upper = mid + self.multiplier * atr;
         let basic_lower = mid - self.multiplier * atr;
@@ -148,6 +276,65 @@ mod tests {
             approx::assert_relative_eq!(val, case.expected_st[i], epsilon = 1e-6);
             assert_eq!(dir, case.expected_dir[i]);
         }
+    }
+
+    #[test]
+    fn test_supertrend_nan_inputs_emit_nan() {
+        let mut st = SuperTrend::new(3, 2.0);
+        let c = [1.0, 2.0, 3.0, f64::NAN, 5.0, 6.0, 7.0];
+        let mut results = Vec::new();
+        for &val in &c {
+            results.push(st.next((val + 1.0, val - 1.0, val)));
+        }
+        // At index 3 (NaN), result must be NaN, NOT stale finite number!
+        assert!(
+            results[3].0.is_nan(),
+            "SuperTrend should emit NaN on NaN input, got {}",
+            results[3].0
+        );
+    }
+
+    #[test]
+    fn test_supertrend_wilder_down_startup_and_breakout() {
+        // Test IPO-base stock: listings starting in downtrend (Down) with Wilder ATR
+        let period = 3;
+        let mult = 2.0;
+        let mut st = SuperTrend::with_options(
+            period,
+            mult,
+            SuperTrendInitialDirection::Down,
+            SuperTrendAtrSmoothing::Wilder,
+        );
+
+        // Bars 0..period (indices 0, 1, 2): Wilder ATR needs period (3) true ranges.
+        // Bar 0 sets prev_close; bars 1, 2 collect 2 true ranges (< 3) -> emits NaN.
+        let r0 = st.next((10.0, 8.0, 9.0));
+        assert!(r0.0.is_nan());
+        let r1 = st.next((11.0, 9.0, 10.0));
+        assert!(r1.0.is_nan());
+        let r2 = st.next((11.0, 9.0, 10.0));
+        assert!(r2.0.is_nan());
+
+        // Bar 3: 3rd true range collected -> Wilder ATR emits SMA of the 3 true ranges.
+        // TRs:
+        // bar1: max(2, |11-9|, |9-9|) = 2.0
+        // bar2: max(2, |11-10|, |9-10|) = 2.0
+        // bar3: max(2, |10-10|, |8-10|) = 2.0
+        // ATR = (2 + 2 + 2)/3 = 2.0.
+        // Mid = (10 + 8)/2 = 9.0. basic_upper = 9 + 2*2 = 13.0.
+        // Close = 9.5 < 13.0 -> remains Down (-1), supertrend line = 13.0.
+        let r3 = st.next((10.0, 8.0, 9.5));
+        assert!(!r3.0.is_nan());
+        approx::assert_relative_eq!(r3.0, 13.0);
+        assert_eq!(r3.1, -1);
+
+        // Bar 4: Price breaks out above upper band (IPO-base breakout)!
+        // Close = 15.0 > 13.0 -> flips to Up (1)!
+        let r4 = st.next((16.0, 14.0, 15.0));
+        assert_eq!(
+            r4.1, 1,
+            "Should flip to uptrend upon breakout above upper band"
+        );
     }
 
     fn supertrend_batch(

@@ -34,9 +34,11 @@ fn sma(inputs: &[Series], kwargs: SmaKwargs) -> PolarsResult<Series> {
     let out: Float64Chunked = s_f64
         .into_iter()
         .map(|opt_v| match opt_v {
-            Some(v) if !v.is_nan() => Some(indicator.next(v)),
-            Some(_) => Some(f64::NAN),
-            None => None,
+            Some(v) => Some(indicator.next(v)),
+            None => {
+                indicator.next(f64::NAN);
+                None
+            }
         })
         .collect();
 
@@ -58,9 +60,11 @@ fn ema(inputs: &[Series], kwargs: EmaKwargs) -> PolarsResult<Series> {
     let out: Float64Chunked = s_f64
         .into_iter()
         .map(|opt_v| match opt_v {
-            Some(v) if !v.is_nan() => Some(indicator.next(v)),
-            Some(_) => Some(f64::NAN),
-            None => None,
+            Some(v) => Some(indicator.next(v)),
+            None => {
+                indicator.next(f64::NAN);
+                None
+            }
         })
         .collect();
 

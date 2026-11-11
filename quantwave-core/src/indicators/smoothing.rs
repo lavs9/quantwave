@@ -3,20 +3,36 @@ use crate::traits::Next;
 use crate::utils::RingBuffer as VecDeque;
 use serde::{Deserialize, Serialize};
 
+/// Policy governing indicator warm-up output before the full window length is seen.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum WarmupPolicy {
+    /// Emit partial-window / first-value seeded outputs from bar 0 (quantwave default).
+    #[default]
+    Partial,
+    /// Emit `f64::NAN` until the full period window is satisfied (TA-Lib convention).
+    Nan,
+}
+
 /// Simple Moving Average (SMA)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SMA {
     period: usize,
     window: VecDeque<f64>,
     sum: f64,
+    warmup: WarmupPolicy,
 }
 
 impl SMA {
     pub fn new(period: usize) -> Self {
+        Self::with_warmup(period, WarmupPolicy::Partial)
+    }
+
+    pub fn with_warmup(period: usize, warmup: WarmupPolicy) -> Self {
         Self {
             period,
             window: VecDeque::with_capacity(period),
             sum: 0.0,
+            warmup,
         }
     }
 }
@@ -44,15 +60,15 @@ impl Next<f64> for SMA {
         // under naive `sum -= oldest`: NaN propagates through every `+=`/`-=`
         // it touches, and subtracting the same NaN back out when it ages out
         // of the window never un-poisons it (see quantwave-1jqv Phase 0
-        // audit's `nan_passthrough` finding on plain `sma`). The
-        // mathematically correct SMA is undefined only while the bad sample
-        // is actually inside the window -- once it's aged out, the window no
-        // longer contains it and the true sum is finite again. Recompute
-        // directly from the window (same cost model WMA already pays every
-        // call in this file) whenever the running sum is contaminated, so the
-        // indicator self-heals exactly when the window does.
+        // audit's `nan_passthrough` finding on plain `sma`). Recompute
+        // directly from the window whenever contaminated, so the indicator
+        // self-heals exactly when the window does.
         if self.sum.is_nan() || self.sum.is_infinite() {
             self.sum = self.window.iter().sum();
+        }
+
+        if self.warmup == WarmupPolicy::Nan && self.window.len() < self.period {
+            return f64::NAN;
         }
 
         self.sum / self.window.len() as f64
@@ -62,17 +78,25 @@ impl Next<f64> for SMA {
 /// Exponential Moving Average (EMA)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EMA {
-    _period: usize,
+    period: usize,
     alpha: f64,
     current_ema: Option<f64>,
+    warmup: WarmupPolicy,
+    warmup_window: VecDeque<f64>,
 }
 
 impl EMA {
     pub fn new(period: usize) -> Self {
+        Self::with_warmup(period, WarmupPolicy::Partial)
+    }
+
+    pub fn with_warmup(period: usize, warmup: WarmupPolicy) -> Self {
         Self {
-            _period: period,
+            period,
             alpha: 2.0 / (period as f64 + 1.0),
             current_ema: None,
+            warmup,
+            warmup_window: VecDeque::with_capacity(period),
         }
     }
 }
@@ -87,6 +111,20 @@ impl Next<f64> for EMA {
     type Output = f64;
 
     fn next(&mut self, input: f64) -> Self::Output {
+        if input.is_nan() {
+            return f64::NAN;
+        }
+
+        if self.warmup == WarmupPolicy::Nan && self.current_ema.is_none() {
+            self.warmup_window.push_back(input);
+            if self.warmup_window.len() < self.period {
+                return f64::NAN;
+            }
+            let seed: f64 = self.warmup_window.iter().sum::<f64>() / self.period as f64;
+            self.current_ema = Some(seed);
+            return seed;
+        }
+
         match self.current_ema {
             Some(prev_ema) => {
                 let ema = self.alpha * input + (1.0 - self.alpha) * prev_ema;
@@ -197,6 +235,39 @@ mod tests {
     }
 
     #[test]
+    fn test_ema_recovers_after_nan() {
+        let mut ema = EMA::new(3); // alpha = 0.5
+        assert_eq!(ema.next(1.0), 1.0);
+        assert_eq!(ema.next(2.0), 1.5);
+        assert_eq!(ema.next(3.0), 2.25);
+        // NaN enters: must return NaN, but not permanently poison current_ema
+        assert!(ema.next(f64::NAN).is_nan());
+        // Next finite sample: must resume smoothing from the last valid EMA (2.25)
+        let resumed = ema.next(5.0); // alpha * 5.0 + (1 - alpha) * 2.25 = 2.5 + 1.125 = 3.625
+        approx::assert_relative_eq!(resumed, 3.625);
+    }
+
+    #[test]
+    fn test_sma_nan_warmup() {
+        let mut sma = SMA::with_warmup(3, WarmupPolicy::Nan);
+        assert!(sma.next(1.0).is_nan());
+        assert!(sma.next(2.0).is_nan());
+        approx::assert_relative_eq!(sma.next(3.0), 2.0);
+        approx::assert_relative_eq!(sma.next(4.0), 3.0);
+    }
+
+    #[test]
+    fn test_ema_nan_warmup() {
+        let mut ema = EMA::with_warmup(3, WarmupPolicy::Nan);
+        assert!(ema.next(1.0).is_nan());
+        assert!(ema.next(2.0).is_nan());
+        // Bar 3: seeded with SMA(1, 2, 3) = 2.0
+        approx::assert_relative_eq!(ema.next(3.0), 2.0);
+        // Bar 4: alpha = 0.5 -> 0.5 * 4.0 + 0.5 * 2.0 = 3.0
+        approx::assert_relative_eq!(ema.next(4.0), 3.0);
+    }
+
+    #[test]
     fn test_wma_basic() {
         let mut wma = WMA::new(3);
         assert_eq!(wma.next(1.0), 1.0);
@@ -212,11 +283,18 @@ pub const SMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     usage: "Use as the foundational smoothing module providing SMA, EMA, WMA, and SMMA implementations that power higher-level indicators across the library.",
     keywords: &["moving-average", "smoothing", "classic", "ema"],
     ehlers_summary: "The core smoothing algorithms — SMA, EMA, WMA — are the building blocks of nearly all technical indicators. EMA applies exponential decay weighting (alpha = 2/(n+1)), SMA applies uniform weighting over N bars, and WMA applies linearly increasing weights emphasizing more recent bars.",
-    params: &[ParamDef {
-        name: "period",
-        default: "14",
-        description: "Smoothing period",
-    }],
+    params: &[
+        ParamDef {
+            name: "period",
+            default: "14",
+            description: "Smoothing period",
+        },
+        ParamDef {
+            name: "warmup",
+            default: "partial",
+            description: "Warm-up behavior ('partial' or 'nan')",
+        },
+    ],
     formula_source: "https://www.investopedia.com/terms/s/sma.asp",
     formula_latex: r#"
 \[
@@ -233,11 +311,18 @@ pub const EMA_METADATA: IndicatorMetadata = IndicatorMetadata {
     usage: "Use as the foundational smoothing module providing SMA, EMA, WMA, and SMMA implementations that power higher-level indicators across the library.",
     keywords: &["moving-average", "smoothing", "classic", "ema"],
     ehlers_summary: "The core smoothing algorithms — SMA, EMA, WMA — are the building blocks of nearly all technical indicators. EMA applies exponential decay weighting (alpha = 2/(n+1)), SMA applies uniform weighting over N bars, and WMA applies linearly increasing weights emphasizing more recent bars.",
-    params: &[ParamDef {
-        name: "period",
-        default: "14",
-        description: "Smoothing period",
-    }],
+    params: &[
+        ParamDef {
+            name: "period",
+            default: "14",
+            description: "Smoothing period",
+        },
+        ParamDef {
+            name: "warmup",
+            default: "partial",
+            description: "Warm-up behavior ('partial' or 'nan')",
+        },
+    ],
     formula_source: "https://www.investopedia.com/terms/e/ema.asp",
     formula_latex: r#"
 \[

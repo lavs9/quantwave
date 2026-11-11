@@ -45,6 +45,9 @@ impl Next<(f64, f64, f64)> for TaATR {
         if period < 1 {
             return f64::NAN;
         }
+        if high.is_nan() || low.is_nan() || close.is_nan() {
+            return f64::NAN;
+        }
 
         if self.bars_seen == 0 {
             self.prev_close = Some(close);

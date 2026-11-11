@@ -13,21 +13,21 @@ struct SinglePeriodKwargs {
 
 #[polars_expr(output_type=Float64)]
 fn atr(inputs: &[Series], kwargs: SinglePeriodKwargs) -> PolarsResult<Series> {
-    let high = inputs[0].f64()?;
-    let low = inputs[1].f64()?;
-    let close = inputs[2].f64()?;
+    let close = inputs[0].f64()?;
+    let high = inputs[1].f64()?;
+    let low = inputs[2].f64()?;
     let mut indicator = TaATR::new(kwargs.timeperiod);
 
-    let out: Float64Chunked = high
+    let out: Float64Chunked = close
         .into_iter()
+        .zip(high.into_iter())
         .zip(low.into_iter())
-        .zip(close.into_iter())
-        .map(|((h, l), c)| match (h, l, c) {
-            (Some(hv), Some(lv), Some(cv)) if !hv.is_nan() && !lv.is_nan() && !cv.is_nan() => {
-                Some(indicator.next((hv, lv, cv)))
+        .map(|((c, h), l)| match (c, h, l) {
+            (Some(cv), Some(hv), Some(lv)) => Some(indicator.next((hv, lv, cv))),
+            _ => {
+                indicator.next((f64::NAN, f64::NAN, f64::NAN));
+                None
             }
-            (Some(_), Some(_), Some(_)) => Some(f64::NAN),
-            _ => None,
         })
         .collect();
 
@@ -36,21 +36,21 @@ fn atr(inputs: &[Series], kwargs: SinglePeriodKwargs) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=Float64)]
 fn natr(inputs: &[Series], kwargs: SinglePeriodKwargs) -> PolarsResult<Series> {
-    let high = inputs[0].f64()?;
-    let low = inputs[1].f64()?;
-    let close = inputs[2].f64()?;
+    let close = inputs[0].f64()?;
+    let high = inputs[1].f64()?;
+    let low = inputs[2].f64()?;
     let mut indicator = TaNATR::new(kwargs.timeperiod);
 
-    let out: Float64Chunked = high
+    let out: Float64Chunked = close
         .into_iter()
+        .zip(high.into_iter())
         .zip(low.into_iter())
-        .zip(close.into_iter())
-        .map(|((h, l), c)| match (h, l, c) {
-            (Some(hv), Some(lv), Some(cv)) if !hv.is_nan() && !lv.is_nan() && !cv.is_nan() => {
-                Some(indicator.next((hv, lv, cv)))
+        .map(|((c, h), l)| match (c, h, l) {
+            (Some(cv), Some(hv), Some(lv)) => Some(indicator.next((hv, lv, cv))),
+            _ => {
+                indicator.next((f64::NAN, f64::NAN, f64::NAN));
+                None
             }
-            (Some(_), Some(_), Some(_)) => Some(f64::NAN),
-            _ => None,
         })
         .collect();
 
@@ -59,21 +59,21 @@ fn natr(inputs: &[Series], kwargs: SinglePeriodKwargs) -> PolarsResult<Series> {
 
 #[polars_expr(output_type=Float64)]
 fn trange(inputs: &[Series]) -> PolarsResult<Series> {
-    let high = inputs[0].f64()?;
-    let low = inputs[1].f64()?;
-    let close = inputs[2].f64()?;
+    let close = inputs[0].f64()?;
+    let high = inputs[1].f64()?;
+    let low = inputs[2].f64()?;
     let mut indicator = TaTRANGE::new();
 
-    let out: Float64Chunked = high
+    let out: Float64Chunked = close
         .into_iter()
+        .zip(high.into_iter())
         .zip(low.into_iter())
-        .zip(close.into_iter())
-        .map(|((h, l), c)| match (h, l, c) {
-            (Some(hv), Some(lv), Some(cv)) if !hv.is_nan() && !lv.is_nan() && !cv.is_nan() => {
-                Some(indicator.next((hv, lv, cv)))
+        .map(|((c, h), l)| match (c, h, l) {
+            (Some(cv), Some(hv), Some(lv)) => Some(indicator.next((hv, lv, cv))),
+            _ => {
+                indicator.next((f64::NAN, f64::NAN, f64::NAN));
+                None
             }
-            (Some(_), Some(_), Some(_)) => Some(f64::NAN),
-            _ => None,
         })
         .collect();
 

@@ -439,15 +439,15 @@
   },
   "ttm_squeeze": {
     "outputs": [
-      "value",
-      "direction"
+      "histogram",
+      "is_squeezed"
     ],
     "data_inputs": [
       "high",
       "low",
       "close"
     ],
-    "_note": "PyO3 binding reuses the generic SuperTrendResult{value,direction} wrapper; direction is an int (0/1) cast from a bool, not the semantic is_squeezed flag name."
+    "_note": "Polars plugin returns struct(histogram, is_squeezed). PyO3 streaming binding wraps this into TtmSqueezeResult."
   },
   "ultimate_channel": {
     "data_inputs": [

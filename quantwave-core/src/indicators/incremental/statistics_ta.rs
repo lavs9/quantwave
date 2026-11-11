@@ -406,6 +406,19 @@ impl TaBETA {
         self.sy += y;
         self.sxx += x * x;
         self.sxy += x * y;
+        // If accumulators are contaminated by NaN, attempt self-heal from the ring buffer
+        // so that once the NaN ages out of the rolling window, beta recovers.
+        if self.sx.is_nan() || self.sy.is_nan() || self.sxx.is_nan() || self.sxy.is_nan() {
+            self.sx = self.rx.iter().copied().sum();
+            self.sy = self.ry.iter().copied().sum();
+            self.sxx = self.rx.iter().map(|&v| v * v).sum();
+            self.sxy = self
+                .rx
+                .iter()
+                .zip(self.ry.iter())
+                .map(|(&a, &b)| a * b)
+                .sum();
+        }
         if self.rx.len() < p {
             return None;
         }
@@ -430,7 +443,8 @@ impl Next<(f64, f64)> for TaBETA {
         };
         self.prev0 = Some(v0);
         self.prev1 = Some(v1);
-        if p0 == 0.0 || p1 == 0.0 {
+        if p0 == 0.0 || p1 == 0.0 || v0.is_nan() || v1.is_nan() || p0.is_nan() || p1.is_nan() {
+            self.push_return(f64::NAN, f64::NAN);
             return f64::NAN;
         }
         let rx = (v0 - p0) / p0;
@@ -520,6 +534,32 @@ mod tests {
         assert_bitwise_batch_streaming_parity(&data, || TaLINEARREG_INTERCEPT::new(14));
         assert_bitwise_batch_streaming_parity(&data, || TaLINEARREG_ANGLE::new(14));
         assert_bitwise_batch_streaming_parity(&data, || TaTSF::new(14));
+    }
+
+    #[test]
+    fn test_ta_beta_recovers_after_nan() {
+        let period = 5;
+        let mut beta = TaBETA::new(period);
+        // Feed valid series
+        for i in 1..=10 {
+            beta.next((i as f64 * 10.0, i as f64 * 15.0));
+        }
+        // Poison with a single NaN
+        let nan_out = beta.next((110.0, f64::NAN));
+        assert!(nan_out.is_nan());
+
+        // For the next `period` bars, output should be NaN
+        for i in 12..12 + period {
+            beta.next((i as f64 * 10.0, i as f64 * 15.0));
+        }
+
+        // Once the NaN has aged out of the rolling window, it must recover to finite
+        let recovered = beta.next((200.0, 300.0));
+        assert!(
+            !recovered.is_nan(),
+            "Beta must recover once NaN ages out of rolling window, got {recovered}"
+        );
+        approx::assert_relative_eq!(recovered, 1.0, epsilon = 1e-4);
     }
 
     proptest! {

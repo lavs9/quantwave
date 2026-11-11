@@ -64,14 +64,30 @@ from . import _lib  # noqa: F401
 # Core compiled extension
 from . import _quantwave  # noqa
 
-# Polars helpers submodule (optional; core streaming/metadata/DX work without it).
+# Check optional dependencies before importing optional submodules
 try:
-    from . import polars
-except Exception as _e:  # pragma: no cover
-    warnings.warn(
-        f"quantwave.polars submodule unavailable (polars not installed; "
-        f"use `pip install \"quantwave[polars]\"` for Polars layer): {_e}"
-    )
+    import polars as _pl_probe  # noqa: F401
+    _has_polars = True
+except (ImportError, ModuleNotFoundError):
+    _has_polars = False
+
+try:
+    import numpy as _np_probe  # noqa: F401
+    _has_numpy = True
+except (ImportError, ModuleNotFoundError):
+    _has_numpy = False
+
+# Polars helpers submodule (optional; core streaming/metadata/DX work without it).
+if _has_polars:
+    try:
+        from . import polars
+    except Exception as _e:  # pragma: no cover
+        warnings.warn(
+            f"quantwave.polars submodule unavailable: {_e}"
+        )
+        class _DummyNS: pass
+        polars = _DummyNS()
+else:
     class _DummyNS: pass
     polars = _DummyNS()
 
@@ -86,47 +102,50 @@ except Exception as _e:  # pragma: no cover
     )
 
 # LazyFrame `.bt` namespace — requires polars + _backtest.
-if _backtest_available:
+if _backtest_available and _has_polars:
     try:
         import polars as _pl  # noqa: F401
         from . import bt_polars  # noqa: F401
     except Exception as _e:  # pragma: no cover
         warnings.warn(
-            f"quantwave.bt_polars unavailable (requires polars; "
-            f"use `pip install \"quantwave[polars]\"`): {_e}"
+            f"quantwave.bt_polars unavailable: {_e}"
         )
 
 # Polars expression plugins — the pl.col().ta namespace is registered by importing
 # the in-package TaNamespace module; the plugin symbols live in the unified _lib
 # extension (formerly the separate quantwave_plugins package).
-try:
-    from . import _ta_namespace  # noqa: F401
-except ImportError:
-    pass
-except Exception as _e:  # pragma: no cover
-    warnings.warn(f"quantwave .ta namespace unavailable: {_e}")
+if _has_polars:
+    try:
+        from . import _ta_namespace  # noqa: F401
+    except ImportError:
+        pass
+    except Exception as _e:  # pragma: no cover
+        warnings.warn(f"quantwave .ta namespace unavailable: {_e}")
 
 # Backtest Python API (PyO3 + pyo3-polars; requires polars extra).
-try:
-    from . import backtest
-except Exception as _e:  # pragma: no cover
-    warnings.warn(
-        f"quantwave.backtest submodule unavailable (requires polars; "
-        f"use `pip install \"quantwave[polars]\"`): {_e}"
-    )
+if _has_polars:
+    try:
+        from . import backtest
+    except Exception as _e:  # pragma: no cover
+        warnings.warn(
+            f"quantwave.backtest submodule unavailable: {_e}"
+        )
+        class _DummyNS: pass
+        backtest = _DummyNS()
+else:
     class _DummyNS: pass
     backtest = _DummyNS()
 
 # Multi-timeframe helpers: resample/apply/broadcast for base-vs-higher-timeframe
 # pipelines (lookahead-safe join_asof broadcast). Built on Polars, so guarded
 # like the other Polars-layer submodules (core install has no polars).
-try:
-    from . import mtf  # noqa: F401
-except Exception as _e:  # pragma: no cover
-    warnings.warn(
-        f"quantwave.mtf unavailable (requires polars; "
-        f"use `pip install \"quantwave[polars]\"`): {_e}"
-    )
+if _has_polars:
+    try:
+        from . import mtf  # noqa: F401
+    except Exception as _e:  # pragma: no cover
+        warnings.warn(
+            f"quantwave.mtf unavailable: {_e}"
+        )
 
 # Popular namespaces (guarded: some may require full maturin build or follow-up on gqem/05q7)
 try:
@@ -143,51 +162,52 @@ except Exception as _e:  # pragma: no cover
 
 # Data layer: synthetic()/load_sample() build Polars frames, so this needs the
 # Polars layer and is guarded like the other polars-dependent submodules.
-try:
-    from . import datasets  # noqa: F401
-except Exception as _e:  # pragma: no cover
-    warnings.warn(
-        f"quantwave.datasets unavailable (requires polars; "
-        f"use `pip install \"quantwave[polars]\"`): {_e}"
-    )
+if _has_polars:
+    try:
+        from . import datasets  # noqa: F401
+    except Exception as _e:  # pragma: no cover
+        warnings.warn(
+            f"quantwave.datasets unavailable: {_e}"
+        )
 
 # Alternative bar construction (Renko, ...) — frame-in/frame-out helpers built
 # on the native _bars submodule; guarded like the other polars-dependent ones.
-try:
-    from . import bars  # noqa: F401
-except Exception as _e:  # pragma: no cover
-    warnings.warn(
-        f"quantwave.bars unavailable (requires polars; "
-        f"use `pip install \"quantwave[polars]\"`): {_e}"
-    )
+if _has_polars:
+    try:
+        from . import bars  # noqa: F401
+    except Exception as _e:  # pragma: no cover
+        warnings.warn(
+            f"quantwave.bars unavailable: {_e}"
+        )
 
 # Price-action pattern detection (harmonic) — frame-in/frame-out helpers built
 # on the native _patterns submodule; guarded like the other polars-dependent ones.
-try:
-    from . import patterns  # noqa: F401
-except Exception as _e:  # pragma: no cover
-    warnings.warn(
-        f"quantwave.patterns unavailable (requires polars; "
-        f"use `pip install \"quantwave[polars]\"`): {_e}"
-    )
+if _has_polars:
+    try:
+        from . import patterns  # noqa: F401
+    except Exception as _e:  # pragma: no cover
+        warnings.warn(
+            f"quantwave.patterns unavailable: {_e}"
+        )
 
 # Portfolio optimization (numpy) — guarded so `import quantwave` survives the
 # core install without numpy.
-try:
-    from . import portfolio  # noqa: F401
-except Exception as _e:  # pragma: no cover
-    warnings.warn(f"quantwave.portfolio unavailable (requires numpy): {_e}")
+if _has_numpy:
+    try:
+        from . import portfolio  # noqa: F401
+    except Exception as _e:  # pragma: no cover
+        warnings.warn(f"quantwave.portfolio unavailable (requires numpy): {_e}")
 
 # QuantStats interop (Polars returns + lazy pandas/quantstats) — guarded like
 # the other polars-dependent submodules.
-try:
-    from . import quantstats_interop  # noqa: F401
-    from .quantstats_interop import backtest_returns, to_quantstats  # noqa: F401
-except Exception as _e:  # pragma: no cover
-    warnings.warn(
-        f"quantwave.quantstats_interop unavailable (requires polars; "
-        f"use `pip install \"quantwave[polars]\"`): {_e}"
-    )
+if _has_polars:
+    try:
+        from . import quantstats_interop  # noqa: F401
+        from .quantstats_interop import backtest_returns, to_quantstats  # noqa: F401
+    except Exception as _e:  # pragma: no cover
+        warnings.warn(
+            f"quantwave.quantstats_interop unavailable: {_e}"
+        )
 
 # Public exception types (must survive partial native load).
 from ._errors import (
@@ -721,10 +741,192 @@ except Exception as _e:  # pragma: no cover
 # Bulk-compute feature matrix: registers the `df.ta.all()` / `lf.ta.all()`
 # DataFrame/LazyFrame namespaces (built on the abstract-API registry above)
 # and exposes the `qw.feature_matrix()` top-level alias.
-try:
-    from .bulk import feature_matrix as feature_matrix
-except Exception as _e:  # pragma: no cover
-    warnings.warn(f"quantwave.bulk (df.ta.all()) unavailable: {_e}")
+if _has_polars:
+    try:
+        from .bulk import feature_matrix as feature_matrix
+    except Exception as _e:  # pragma: no cover
+        warnings.warn(f"quantwave.bulk (df.ta.all()) unavailable: {_e}")
+
+
+_raw_atr = globals().get("atr")
+_raw_ta_atr = globals().get("ta_atr")
+_raw_atr_wilder = globals().get("atr_wilder")
+_raw_max = globals().get("ta_max") or globals().get("max")
+_raw_min = globals().get("ta_min") or globals().get("min")
+_raw_sma = globals().get("sma")
+_raw_ema = globals().get("ema")
+
+
+def sma(*args, **kwargs):
+    """Simple Moving Average (SMA).
+
+Accepts arguments in either order:
+  - sma(period, series, warmup="partial")
+  - sma(series, period, warmup="partial")
+"""
+    if len(args) >= 2:
+        if isinstance(args[0], (int, float)) and not hasattr(args[0], "__len__"):
+            return _raw_sma(*args, **kwargs)
+        if hasattr(args[0], "__len__") and isinstance(args[1], (int, float)) and not hasattr(args[1], "__len__"):
+            new_args = (args[1], args[0]) + args[2:]
+            return _raw_sma(*new_args, **kwargs)
+    if _raw_sma is not None:
+        return _raw_sma(*args, **kwargs)
+    raise RuntimeError("native sma function unavailable")
+
+
+def ema(*args, **kwargs):
+    """Exponential Moving Average (EMA).
+
+Accepts arguments in either order:
+  - ema(period, series, warmup="partial")
+  - ema(series, period, warmup="partial")
+"""
+    if len(args) >= 2:
+        if isinstance(args[0], (int, float)) and not hasattr(args[0], "__len__"):
+            return _raw_ema(*args, **kwargs)
+        if hasattr(args[0], "__len__") and isinstance(args[1], (int, float)) and not hasattr(args[1], "__len__"):
+            new_args = (args[1], args[0]) + args[2:]
+            return _raw_ema(*new_args, **kwargs)
+    if _raw_ema is not None:
+        return _raw_ema(*args, **kwargs)
+    raise RuntimeError("native ema function unavailable")
+
+
+def atr(*args, **kwargs):
+    """Average True Range (EMA-smoothed).
+
+Accepts arguments in either order:
+  - atr(period, high, low, close)
+  - atr(high, low, close, period=14)
+  - atr(high=..., low=..., close=..., period=...)
+"""
+    if len(args) == 4:
+        if isinstance(args[0], (int, float)) and not hasattr(args[0], "__len__"):
+            return _raw_atr(int(args[0]), args[1], args[2], args[3])
+        if isinstance(args[3], (int, float)) and not hasattr(args[3], "__len__"):
+            return _raw_atr(int(args[3]), args[0], args[1], args[2])
+    elif len(args) == 3:
+        period = kwargs.get("period", kwargs.get("timeperiod", 14))
+        return _raw_atr(int(period), args[0], args[1], args[2])
+    elif not args and kwargs:
+        period = kwargs.get("period", kwargs.get("timeperiod", 14))
+        return _raw_atr(int(period), kwargs["high"], kwargs["low"], kwargs["close"])
+    if _raw_atr is not None:
+        return _raw_atr(*args, **kwargs)
+    raise RuntimeError("native atr function unavailable")
+
+
+def ta_atr(*args, **kwargs):
+    """Average True Range (Wilder RMA smoothing, TA-Lib standard).
+
+Accepts arguments in either order:
+  - ta_atr(timeperiod, high, low, close)
+  - ta_atr(high, low, close, timeperiod=14)
+"""
+    if len(args) == 4:
+        if isinstance(args[0], (int, float)) and not hasattr(args[0], "__len__"):
+            return _raw_ta_atr(int(args[0]), args[1], args[2], args[3])
+        if isinstance(args[3], (int, float)) and not hasattr(args[3], "__len__"):
+            return _raw_ta_atr(int(args[3]), args[0], args[1], args[2])
+    elif len(args) == 3:
+        period = kwargs.get("timeperiod", kwargs.get("period", 14))
+        return _raw_ta_atr(int(period), args[0], args[1], args[2])
+    elif not args and kwargs:
+        period = kwargs.get("timeperiod", kwargs.get("period", 14))
+        return _raw_ta_atr(int(period), kwargs["high"], kwargs["low"], kwargs["close"])
+    if _raw_ta_atr is not None:
+        return _raw_ta_atr(*args, **kwargs)
+    raise RuntimeError("native ta_atr function unavailable")
+
+
+def atr_wilder(*args, **kwargs):
+    """Average True Range (Wilder RMA smoothing).
+
+Accepts arguments in either order:
+  - atr_wilder(timeperiod, high, low, close)
+  - atr_wilder(high, low, close, timeperiod=14)
+"""
+    return ta_atr(*args, **kwargs)
+
+
+def max(*args, **kwargs):
+    """Rolling Maximum (MAX) over a lookback window.
+
+Accepts arguments in either order:
+  - max(series, timeperiod=14)
+  - max(timeperiod, series)
+"""
+    if len(args) == 2:
+        if isinstance(args[0], (int, float)) and not hasattr(args[0], "__len__"):
+            return _raw_max(args[1], int(args[0]))
+        if isinstance(args[1], (int, float)) and not hasattr(args[1], "__len__"):
+            return _raw_max(args[0], int(args[1]))
+    elif len(args) == 1:
+        timeperiod = kwargs.get("timeperiod", kwargs.get("period", 14))
+        return _raw_max(args[0], int(timeperiod))
+    if _raw_max is not None:
+        return _raw_max(*args, **kwargs)
+    raise RuntimeError("native max function unavailable")
+
+
+def min(*args, **kwargs):
+    """Rolling Minimum (MIN) over a lookback window.
+
+Accepts arguments in either order:
+  - min(series, timeperiod=14)
+  - min(timeperiod, series)
+"""
+    if len(args) == 2:
+        if isinstance(args[0], (int, float)) and not hasattr(args[0], "__len__"):
+            return _raw_min(args[1], int(args[0]))
+        if isinstance(args[1], (int, float)) and not hasattr(args[1], "__len__"):
+            return _raw_min(args[0], int(args[1]))
+    elif len(args) == 1:
+        timeperiod = kwargs.get("timeperiod", kwargs.get("period", 14))
+        return _raw_min(args[0], int(timeperiod))
+    if _raw_min is not None:
+        return _raw_min(*args, **kwargs)
+    raise RuntimeError("native min function unavailable")
+
+
+def cross_sectional_rank(data, descending: bool = False, percentile: bool = True):
+    """Cross-sectional rank (percentile of values across a 1D sequence).
+
+Parameters:
+  data: 1D iterable of numerical scores/values.
+  descending: If False (default), lowest value gets lowest rank (0.0). If True,
+    highest value gets lowest rank.
+  percentile: If True (default), normalizes ranks to (0.0, 1.0] as ``rank / count``.
+    If False, returns raw ranks.
+"""
+    import numpy as np
+
+    arr = np.asarray(data, dtype=float)
+    n = len(arr)
+    if n == 0:
+        return np.array([], dtype=float)
+    sorter = np.argsort(arr)
+    ranks = np.empty(n, dtype=float)
+    if descending:
+        ranks[sorter] = np.arange(n, 0, -1, dtype=float)
+    else:
+        ranks[sorter] = np.arange(1, n + 1, dtype=float)
+    if percentile:
+        return ranks / float(n)
+    return ranks
+
+
+globals()["atr"] = atr
+globals()["ta_atr"] = ta_atr
+globals()["atr_wilder"] = atr_wilder
+globals()["max"] = max
+globals()["min"] = min
+globals()["ta_max"] = max
+globals()["ta_min"] = min
+globals()["cross_sectional_rank"] = cross_sectional_rank
+globals()["sma"] = sma
+globals()["ema"] = ema
 
 
 def __getattr__(name: str):
@@ -790,4 +992,7 @@ __all__ = [
     "options_india",  # legacy compat (will warn in future)
     "PerformanceMetrics",
     "BacktestStats",
+    "cross_sectional_rank",
+    "max",
+    "min",
 ]

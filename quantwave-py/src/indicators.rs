@@ -54,6 +54,7 @@ use quantwave_core::indicators::hma::HMA as CoreHMA;
 use quantwave_core::indicators::homodyne_discriminator::HomodyneDiscriminator as CoreHomodyneDiscriminator;
 use quantwave_core::indicators::hurst::HurstExponent as CoreHurstExponent;
 use quantwave_core::indicators::ichimoku::IchimokuCloud as CoreIchimoku;
+use quantwave_core::indicators::incremental::ta_atr::TaATR as CoreTaATR;
 use quantwave_core::indicators::instantaneous_trendline::InstantaneousTrendline as CoreInstantaneousTrendline;
 use quantwave_core::indicators::inverse_fisher::InverseFisherTransform as CoreInverseFisher;
 use quantwave_core::indicators::kalman::KalmanFilter as CoreKalmanFilter;
@@ -86,10 +87,14 @@ use quantwave_core::indicators::roofing_filter::RoofingFilter as CoreRoofingFilt
 use quantwave_core::indicators::rsih::RSIH as CoreRSIH;
 use quantwave_core::indicators::simple_predictor::SimplePredictor as CoreSimplePredictor;
 use quantwave_core::indicators::sine_wave::SineWave as CoreSineWave;
-use quantwave_core::indicators::smoothing::{EMA as CoreEMA, SMA as CoreSMA, WMA as CoreWMA};
+use quantwave_core::indicators::smoothing::{
+    EMA as CoreEMA, SMA as CoreSMA, WMA as CoreWMA, WarmupPolicy,
+};
 use quantwave_core::indicators::stc::SchaffTrendCycle as CoreSTC;
 use quantwave_core::indicators::super_smoother::SuperSmoother as CoreSuperSmoother;
-use quantwave_core::indicators::supertrend::SuperTrend as CoreSuperTrend;
+use quantwave_core::indicators::supertrend::{
+    SuperTrend as CoreSuperTrend, SuperTrendAtrSmoothing, SuperTrendInitialDirection,
+};
 use quantwave_core::indicators::swiss_army_knife::{
     SwissArmyKnife as CoreSwissArmyKnife, SwissArmyKnifeMode,
 };
@@ -105,7 +110,7 @@ use quantwave_core::indicators::ultimate_channel::UltimateChannel as CoreUltimat
 use quantwave_core::indicators::ultimate_smoother::UltimateSmoother as CoreUltimateSmoother;
 use quantwave_core::indicators::universal_oscillator::UniversalOscillator as CoreUniversalOscillator;
 use quantwave_core::indicators::usi::USI as CoreUSI;
-use quantwave_core::indicators::volatility::*;
+use quantwave_core::indicators::volatility::ATR as CoreATR;
 use quantwave_core::indicators::volume::{AD as CoreAD, ADOSC as CoreADOSC, OBV as CoreOBV};
 use quantwave_core::indicators::vortex::VortexIndicator as CoreVortex;
 use quantwave_core::indicators::voss_predictor::VossPredictor as CoreVossPredictor;
@@ -125,6 +130,7 @@ use quantwave_core::indicators::incremental::price_transform::{
     AVGPRICE as CoreAvgprice, MEDPRICE as CoreMedprice, TYPPRICE as CoreTypprice,
     WCLPRICE as CoreWclprice,
 };
+use quantwave_core::indicators::incremental::rolling::{MAX as CoreMax, MIN as CoreMin};
 use quantwave_core::indicators::incremental::simple::MFI as CoreMfi;
 use quantwave_core::indicators::incremental::statistics_ta::{
     TaBETA as CoreBeta, TaCORREL as CoreCorrel, TaLINEARREG as CoreLinreg, TaSTDDEV as CoreStddev,
@@ -179,6 +185,54 @@ use quantwave_core::regimes::hmm_forecast::{
 
 use paste::paste;
 use std::sync::Mutex;
+
+pub trait ValidateParam {
+    fn validate(&self, name: &str) -> PyResult<()>;
+}
+
+impl ValidateParam for i64 {
+    fn validate(&self, name: &str) -> PyResult<()> {
+        if *self < 1 {
+            return Err(PyValueError::new_err(format!(
+                "parameter '{name}' must be >= 1, got {self}"
+            )));
+        }
+        Ok(())
+    }
+}
+
+impl ValidateParam for u64 {
+    fn validate(&self, name: &str) -> PyResult<()> {
+        if *self < 1 {
+            return Err(PyValueError::new_err(format!(
+                "parameter '{name}' must be >= 1, got {self}"
+            )));
+        }
+        Ok(())
+    }
+}
+
+impl ValidateParam for usize {
+    fn validate(&self, name: &str) -> PyResult<()> {
+        if *self < 1 {
+            return Err(PyValueError::new_err(format!(
+                "parameter '{name}' must be >= 1, got {self}"
+            )));
+        }
+        Ok(())
+    }
+}
+
+impl ValidateParam for f64 {
+    fn validate(&self, name: &str) -> PyResult<()> {
+        if self.is_nan() {
+            return Err(PyValueError::new_err(format!(
+                "parameter '{name}' must not be NaN"
+            )));
+        }
+        Ok(())
+    }
+}
 
 #[inline]
 fn lock_inner<T>(mutex: &Mutex<T>) -> PyResult<std::sync::MutexGuard<'_, T>> {
@@ -523,20 +577,22 @@ impl From<SwissMode> for SwissArmyKnifeMode {
 macro_rules! export_1_in_1_out {
     ($name:ident, $core_type:ty, ($($param:ident: $param_type:ty),*)) => {
         paste! {
+            #[doc = concat!("Calculates ", stringify!($name), ".\n\nBoundary Conditions & Error Behavior:\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyfunction]
-            pub fn [<$name:lower>]($( $param: $param_type , )* series: Vec<f64>) -> Vec<f64> {
+            pub fn [<$name:lower>]($( $param: $param_type , )* series: Vec<f64>) -> PyResult<Vec<f64>> {
+                $( $param.validate(stringify!($param))?; )*
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
-                series.iter().map(|&x| indicator.next(x)).collect()
+                Ok(series.iter().map(|&x| indicator.next(x)).collect())
             }
-            #[doc = "Boundary Conditions & Error Behavior:
-- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
-- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
-- Negative Params: Negative period/length parameters will raise a ValueError."]
+            #[doc = concat!(stringify!($name), " streaming indicator.\n\nBoundary Conditions & Error Behavior:\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
-                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
+                #[new] pub fn new($( $param: $param_type ),*) -> PyResult<Self> {
+                    $( $param.validate(stringify!($param))?; )*
+                    Ok(Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) })
+                }
                 pub fn next(&self, input: f64) -> PyResult<f64> {
-                    let mut guard = self.inner.lock().map_err(|_| PyRuntimeError::new_err("mutex lock poisoned"))?;
+                    let mut guard = lock_inner(&self.inner)?;
                     Ok(guard.next(input))
                 }
             }
@@ -547,19 +603,21 @@ macro_rules! export_1_in_1_out {
 macro_rules! export_1_in_record_out {
     ($name:ident, $core_type:ty, $result_type:ty, ($($param:ident: $param_type:ty),*), $res_var:ident, $body:expr) => {
         paste! {
+            #[doc = concat!("Calculates ", stringify!($name), ".\n\nBoundary Conditions & Error Behavior:\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyfunction]
-            pub fn [<$name:lower>]($( $param: $param_type , )* series: Vec<f64>) -> Vec<$result_type> {
+            pub fn [<$name:lower>]($( $param: $param_type , )* series: Vec<f64>) -> PyResult<Vec<$result_type>> {
+                $( $param.validate(stringify!($param))?; )*
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
-                series.iter().map(|&x| { let $res_var = indicator.next(x); $body }).collect()
+                Ok(series.iter().map(|&x| { let $res_var = indicator.next(x); $body }).collect())
             }
-            #[doc = "Boundary Conditions & Error Behavior:
-- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
-- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
-- Negative Params: Negative period/length parameters will raise a ValueError."]
+            #[doc = concat!(stringify!($name), " streaming indicator.\n\nBoundary Conditions & Error Behavior:\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
-                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, input: f64) -> PyResult<$result_type> { let $res_var = lock_inner(&self.inner)?.next(input); Ok($body) }
+                #[new] pub fn new($( $param: $param_type ),*) -> PyResult<Self> {
+                    $( $param.validate(stringify!($param))?; )*
+                    Ok(Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) })
+                }
+                pub fn next(&self, input: f64) -> PyResult<$result_type> { let mut guard = lock_inner(&self.inner)?; let $res_var = guard.next(input); Ok($body) }
             }
         }
     }
@@ -568,19 +626,21 @@ macro_rules! export_1_in_record_out {
 macro_rules! export_1_in_vec_out {
     ($name:ident, $core_type:ty, ($($param:ident: $param_type:ty),*)) => {
         paste! {
+            #[doc = concat!("Calculates ", stringify!($name), ".\n\nBoundary Conditions & Error Behavior:\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyfunction]
-            pub fn [<$name:lower>]($( $param: $param_type , )* series: Vec<f64>) -> Vec<Vec<f64>> {
+            pub fn [<$name:lower>]($( $param: $param_type , )* series: Vec<f64>) -> PyResult<Vec<Vec<f64>>> {
+                $( $param.validate(stringify!($param))?; )*
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
-                series.iter().map(|&x| indicator.next(x)).collect()
+                Ok(series.iter().map(|&x| indicator.next(x)).collect())
             }
-            #[doc = "Boundary Conditions & Error Behavior:
-- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
-- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
-- Negative Params: Negative period/length parameters will raise a ValueError."]
+            #[doc = concat!(stringify!($name), " streaming indicator.\n\nBoundary Conditions & Error Behavior:\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
-                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, input: f64) -> PyResult<Vec<f64>> { Ok(lock_inner(&self.inner)?.next(input)) }
+                #[new] pub fn new($( $param: $param_type ),*) -> PyResult<Self> {
+                    $( $param.validate(stringify!($param))?; )*
+                    Ok(Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) })
+                }
+                pub fn next(&self, input: f64) -> PyResult<Vec<f64>> { let mut guard = lock_inner(&self.inner)?; Ok(guard.next(input)) }
             }
         }
     }
@@ -589,19 +649,27 @@ macro_rules! export_1_in_vec_out {
 macro_rules! export_ohlc_in_1_out {
     ($name:ident, $core_type:ty, ($($param:ident: $param_type:ty),*)) => {
         paste! {
+            #[doc = concat!("Calculates ", stringify!($name), ".\n\nBoundary Conditions & Error Behavior:\n- Input Lengths: high, low, and close must have identical lengths, otherwise ValueError is raised.\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyfunction]
-            pub fn [<$name:lower>]($( $param: $param_type , )* high: Vec<f64>, low: Vec<f64>, close: Vec<f64>) -> Vec<f64> {
+            pub fn [<$name:lower>]($( $param: $param_type , )* high: Vec<f64>, low: Vec<f64>, close: Vec<f64>) -> PyResult<Vec<f64>> {
+                $( $param.validate(stringify!($param))?; )*
+                if high.len() != low.len() || low.len() != close.len() {
+                    return Err(PyValueError::new_err(format!(
+                        "input series lengths must match: high={}, low={}, close={}",
+                        high.len(), low.len(), close.len()
+                    )));
+                }
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
-                high.iter().zip(low.iter()).zip(close.iter()).map(|((&h, &l), &c)| indicator.next((h, l, c))).collect()
+                Ok(high.iter().zip(low.iter()).zip(close.iter()).map(|((&h, &l), &c)| indicator.next((h, l, c))).collect())
             }
-            #[doc = "Boundary Conditions & Error Behavior:
-- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
-- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
-- Negative Params: Negative period/length parameters will raise a ValueError."]
+            #[doc = concat!(stringify!($name), " streaming indicator.\n\nBoundary Conditions & Error Behavior:\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
-                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<f64> { Ok(lock_inner(&self.inner)?.next((high, low, close))) }
+                #[new] pub fn new($( $param: $param_type ),*) -> PyResult<Self> {
+                    $( $param.validate(stringify!($param))?; )*
+                    Ok(Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) })
+                }
+                pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<f64> { let mut guard = lock_inner(&self.inner)?; Ok(guard.next((high, low, close))) }
             }
         }
     }
@@ -610,19 +678,27 @@ macro_rules! export_ohlc_in_1_out {
 macro_rules! export_ohlc_in_record_out {
     ($name:ident, $core_type:ty, $result_type:ty, ($($param:ident: $param_type:ty),*), $res_var:ident, $body:expr) => {
         paste! {
+            #[doc = concat!("Calculates ", stringify!($name), ".\n\nBoundary Conditions & Error Behavior:\n- Input Lengths: high, low, and close must have identical lengths, otherwise ValueError is raised.\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyfunction]
-            pub fn [<$name:lower>]($( $param: $param_type , )* high: Vec<f64>, low: Vec<f64>, close: Vec<f64>) -> Vec<$result_type> {
+            pub fn [<$name:lower>]($( $param: $param_type , )* high: Vec<f64>, low: Vec<f64>, close: Vec<f64>) -> PyResult<Vec<$result_type>> {
+                $( $param.validate(stringify!($param))?; )*
+                if high.len() != low.len() || low.len() != close.len() {
+                    return Err(PyValueError::new_err(format!(
+                        "input series lengths must match: high={}, low={}, close={}",
+                        high.len(), low.len(), close.len()
+                    )));
+                }
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
-                high.iter().zip(low.iter()).zip(close.iter()).map(|((&h, &l), &c)| { let $res_var = indicator.next((h, l, c)); $body }).collect()
+                Ok(high.iter().zip(low.iter()).zip(close.iter()).map(|((&h, &l), &c)| { let $res_var = indicator.next((h, l, c)); $body }).collect())
             }
-            #[doc = "Boundary Conditions & Error Behavior:
-- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
-- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
-- Negative Params: Negative period/length parameters will raise a ValueError."]
+            #[doc = concat!(stringify!($name), " streaming indicator.\n\nBoundary Conditions & Error Behavior:\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
-                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<$result_type> { let $res_var = lock_inner(&self.inner)?.next((high, low, close)); Ok($body) }
+                #[new] pub fn new($( $param: $param_type ),*) -> PyResult<Self> {
+                    $( $param.validate(stringify!($param))?; )*
+                    Ok(Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) })
+                }
+                pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<$result_type> { let mut guard = lock_inner(&self.inner)?; let $res_var = guard.next((high, low, close)); Ok($body) }
             }
         }
     }
@@ -631,19 +707,27 @@ macro_rules! export_ohlc_in_record_out {
 macro_rules! export_hl_in_1_out {
     ($name:ident, $core_type:ty, ($($param:ident: $param_type:ty),*)) => {
         paste! {
+            #[doc = concat!("Calculates ", stringify!($name), ".\n\nBoundary Conditions & Error Behavior:\n- Input Lengths: high and low must have identical lengths, otherwise ValueError is raised.\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyfunction]
-            pub fn [<$name:lower>]($( $param: $param_type , )* high: Vec<f64>, low: Vec<f64>) -> Vec<f64> {
+            pub fn [<$name:lower>]($( $param: $param_type , )* high: Vec<f64>, low: Vec<f64>) -> PyResult<Vec<f64>> {
+                $( $param.validate(stringify!($param))?; )*
+                if high.len() != low.len() {
+                    return Err(PyValueError::new_err(format!(
+                        "input series lengths must match: high={}, low={}",
+                        high.len(), low.len()
+                    )));
+                }
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
-                high.iter().zip(low.iter()).map(|(&h, &l)| indicator.next((h, l))).collect()
+                Ok(high.iter().zip(low.iter()).map(|(&h, &l)| indicator.next((h, l))).collect())
             }
-            #[doc = "Boundary Conditions & Error Behavior:
-- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
-- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
-- Negative Params: Negative period/length parameters will raise a ValueError."]
+            #[doc = concat!(stringify!($name), " streaming indicator.\n\nBoundary Conditions & Error Behavior:\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
-                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, high: f64, low: f64) -> PyResult<f64> { Ok(lock_inner(&self.inner)?.next((high, low))) }
+                #[new] pub fn new($( $param: $param_type ),*) -> PyResult<Self> {
+                    $( $param.validate(stringify!($param))?; )*
+                    Ok(Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) })
+                }
+                pub fn next(&self, high: f64, low: f64) -> PyResult<f64> { let mut guard = lock_inner(&self.inner)?; Ok(guard.next((high, low))) }
             }
         }
     }
@@ -652,19 +736,27 @@ macro_rules! export_hl_in_1_out {
 macro_rules! export_hl_in_record_out {
     ($name:ident, $core_type:ty, $result_type:ty, ($($param:ident: $param_type:ty),*), $res_var:ident, $body:expr) => {
         paste! {
+            #[doc = concat!("Calculates ", stringify!($name), ".\n\nBoundary Conditions & Error Behavior:\n- Input Lengths: high and low must have identical lengths, otherwise ValueError is raised.\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyfunction]
-            pub fn [<$name:lower>]($( $param: $param_type , )* high: Vec<f64>, low: Vec<f64>) -> Vec<$result_type> {
+            pub fn [<$name:lower>]($( $param: $param_type , )* high: Vec<f64>, low: Vec<f64>) -> PyResult<Vec<$result_type>> {
+                $( $param.validate(stringify!($param))?; )*
+                if high.len() != low.len() {
+                    return Err(PyValueError::new_err(format!(
+                        "input series lengths must match: high={}, low={}",
+                        high.len(), low.len()
+                    )));
+                }
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
-                high.iter().zip(low.iter()).map(|(&h, &l)| { let $res_var = indicator.next((h, l)); $body }).collect()
+                Ok(high.iter().zip(low.iter()).map(|(&h, &l)| { let $res_var = indicator.next((h, l)); $body }).collect())
             }
-            #[doc = "Boundary Conditions & Error Behavior:
-- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
-- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
-- Negative Params: Negative period/length parameters will raise a ValueError."]
+            #[doc = concat!(stringify!($name), " streaming indicator.\n\nBoundary Conditions & Error Behavior:\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
-                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, high: f64, low: f64) -> PyResult<$result_type> { let $res_var = lock_inner(&self.inner)?.next((high, low)); Ok($body) }
+                #[new] pub fn new($( $param: $param_type ),*) -> PyResult<Self> {
+                    $( $param.validate(stringify!($param))?; )*
+                    Ok(Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) })
+                }
+                pub fn next(&self, high: f64, low: f64) -> PyResult<$result_type> { let mut guard = lock_inner(&self.inner)?; let $res_var = guard.next((high, low)); Ok($body) }
             }
         }
     }
@@ -673,19 +765,27 @@ macro_rules! export_hl_in_record_out {
 macro_rules! export_co_in_1_out {
     ($name:ident, $core_type:ty, ($($param:ident: $param_type:ty),*)) => {
         paste! {
+            #[doc = concat!("Calculates ", stringify!($name), ".\n\nBoundary Conditions & Error Behavior:\n- Input Lengths: close and open must have identical lengths, otherwise ValueError is raised.\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyfunction]
-            pub fn [<$name:lower>]($( $param: $param_type , )* close: Vec<f64>, open: Vec<f64>) -> Vec<f64> {
+            pub fn [<$name:lower>]($( $param: $param_type , )* close: Vec<f64>, open: Vec<f64>) -> PyResult<Vec<f64>> {
+                $( $param.validate(stringify!($param))?; )*
+                if close.len() != open.len() {
+                    return Err(PyValueError::new_err(format!(
+                        "input series lengths must match: close={}, open={}",
+                        close.len(), open.len()
+                    )));
+                }
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
-                close.iter().zip(open.iter()).map(|(&c, &o)| indicator.next((c, o))).collect()
+                Ok(close.iter().zip(open.iter()).map(|(&c, &o)| indicator.next((c, o))).collect())
             }
-            #[doc = "Boundary Conditions & Error Behavior:
-- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
-- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
-- Negative Params: Negative period/length parameters will raise a ValueError."]
+            #[doc = concat!(stringify!($name), " streaming indicator.\n\nBoundary Conditions & Error Behavior:\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
-                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, close: f64, open: f64) -> PyResult<f64> { Ok(lock_inner(&self.inner)?.next((close, open))) }
+                #[new] pub fn new($( $param: $param_type ),*) -> PyResult<Self> {
+                    $( $param.validate(stringify!($param))?; )*
+                    Ok(Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) })
+                }
+                pub fn next(&self, close: f64, open: f64) -> PyResult<f64> { let mut guard = lock_inner(&self.inner)?; Ok(guard.next((close, open))) }
             }
         }
     }
@@ -694,19 +794,27 @@ macro_rules! export_co_in_1_out {
 macro_rules! export_co_in_record_out {
     ($name:ident, $core_type:ty, $result_type:ty, ($($param:ident: $param_type:ty),*), $res_var:ident, $body:expr) => {
         paste! {
+            #[doc = concat!("Calculates ", stringify!($name), ".\n\nBoundary Conditions & Error Behavior:\n- Input Lengths: close and open must have identical lengths, otherwise ValueError is raised.\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyfunction]
-            pub fn [<$name:lower>]($( $param: $param_type , )* close: Vec<f64>, open: Vec<f64>) -> Vec<$result_type> {
+            pub fn [<$name:lower>]($( $param: $param_type , )* close: Vec<f64>, open: Vec<f64>) -> PyResult<Vec<$result_type>> {
+                $( $param.validate(stringify!($param))?; )*
+                if close.len() != open.len() {
+                    return Err(PyValueError::new_err(format!(
+                        "input series lengths must match: close={}, open={}",
+                        close.len(), open.len()
+                    )));
+                }
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
-                close.iter().zip(open.iter()).map(|(&c, &o)| { let $res_var = indicator.next((c, o)); $body }).collect()
+                Ok(close.iter().zip(open.iter()).map(|(&c, &o)| { let $res_var = indicator.next((c, o)); $body }).collect())
             }
-            #[doc = "Boundary Conditions & Error Behavior:
-- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
-- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
-- Negative Params: Negative period/length parameters will raise a ValueError."]
+            #[doc = concat!(stringify!($name), " streaming indicator.\n\nBoundary Conditions & Error Behavior:\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
-                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, close: f64, open: f64) -> PyResult<$result_type> { let $res_var = lock_inner(&self.inner)?.next((close, open)); Ok($body) }
+                #[new] pub fn new($( $param: $param_type ),*) -> PyResult<Self> {
+                    $( $param.validate(stringify!($param))?; )*
+                    Ok(Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) })
+                }
+                pub fn next(&self, close: f64, open: f64) -> PyResult<$result_type> { let mut guard = lock_inner(&self.inner)?; let $res_var = guard.next((close, open)); Ok($body) }
             }
         }
     }
@@ -715,19 +823,27 @@ macro_rules! export_co_in_record_out {
 macro_rules! export_pv_in_1_out {
     ($name:ident, $core_type:ty, ($($param:ident: $param_type:ty),*)) => {
         paste! {
+            #[doc = concat!("Calculates ", stringify!($name), ".\n\nBoundary Conditions & Error Behavior:\n- Input Lengths: price and volume must have identical lengths, otherwise ValueError is raised.\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyfunction]
-            pub fn [<$name:lower>]($( $param: $param_type , )* price: Vec<f64>, volume: Vec<f64>) -> Vec<f64> {
+            pub fn [<$name:lower>]($( $param: $param_type , )* price: Vec<f64>, volume: Vec<f64>) -> PyResult<Vec<f64>> {
+                $( $param.validate(stringify!($param))?; )*
+                if price.len() != volume.len() {
+                    return Err(PyValueError::new_err(format!(
+                        "input series lengths must match: price={}, volume={}",
+                        price.len(), volume.len()
+                    )));
+                }
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
-                price.iter().zip(volume.iter()).map(|(&p, &v)| indicator.next((p, v))).collect()
+                Ok(price.iter().zip(volume.iter()).map(|(&p, &v)| indicator.next((p, v))).collect())
             }
-            #[doc = "Boundary Conditions & Error Behavior:
-- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
-- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
-- Negative Params: Negative period/length parameters will raise a ValueError."]
+            #[doc = concat!(stringify!($name), " streaming indicator.\n\nBoundary Conditions & Error Behavior:\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
-                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, price: f64, volume: f64) -> PyResult<f64> { Ok(lock_inner(&self.inner)?.next((price, volume))) }
+                #[new] pub fn new($( $param: $param_type ),*) -> PyResult<Self> {
+                    $( $param.validate(stringify!($param))?; )*
+                    Ok(Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) })
+                }
+                pub fn next(&self, price: f64, volume: f64) -> PyResult<f64> { let mut guard = lock_inner(&self.inner)?; Ok(guard.next((price, volume))) }
             }
         }
     }
@@ -736,19 +852,27 @@ macro_rules! export_pv_in_1_out {
 macro_rules! export_pv_in_record_out {
     ($name:ident, $core_type:ty, $result_type:ty, ($($param:ident: $param_type:ty),*), $res_var:ident, $body:expr) => {
         paste! {
+            #[doc = concat!("Calculates ", stringify!($name), ".\n\nBoundary Conditions & Error Behavior:\n- Input Lengths: price and volume must have identical lengths, otherwise ValueError is raised.\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyfunction]
-            pub fn [<$name:lower>]($( $param: $param_type , )* price: Vec<f64>, volume: Vec<f64>) -> Vec<$result_type> {
+            pub fn [<$name:lower>]($( $param: $param_type , )* price: Vec<f64>, volume: Vec<f64>) -> PyResult<Vec<$result_type>> {
+                $( $param.validate(stringify!($param))?; )*
+                if price.len() != volume.len() {
+                    return Err(PyValueError::new_err(format!(
+                        "input series lengths must match: price={}, volume={}",
+                        price.len(), volume.len()
+                    )));
+                }
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
-                price.iter().zip(volume.iter()).map(|(&p, &v)| { let $res_var = indicator.next((p, v)); $body }).collect()
+                Ok(price.iter().zip(volume.iter()).map(|(&p, &v)| { let $res_var = indicator.next((p, v)); $body }).collect())
             }
-            #[doc = "Boundary Conditions & Error Behavior:
-- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
-- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
-- Negative Params: Negative period/length parameters will raise a ValueError."]
+            #[doc = concat!(stringify!($name), " streaming indicator.\n\nBoundary Conditions & Error Behavior:\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
-                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, price: f64, volume: f64) -> PyResult<$result_type> { let $res_var = lock_inner(&self.inner)?.next((price, volume)); Ok($body) }
+                #[new] pub fn new($( $param: $param_type ),*) -> PyResult<Self> {
+                    $( $param.validate(stringify!($param))?; )*
+                    Ok(Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) })
+                }
+                pub fn next(&self, price: f64, volume: f64) -> PyResult<$result_type> { let mut guard = lock_inner(&self.inner)?; let $res_var = guard.next((price, volume)); Ok($body) }
             }
         }
     }
@@ -757,19 +881,27 @@ macro_rules! export_pv_in_record_out {
 macro_rules! export_ohlc4_in_1_out {
     ($name:ident, $core_type:ty, ($($param:ident: $param_type:ty),*)) => {
         paste! {
+            #[doc = concat!("Calculates ", stringify!($name), ".\n\nBoundary Conditions & Error Behavior:\n- Input Lengths: open, high, low, and close must have identical lengths, otherwise ValueError is raised.\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyfunction]
-            pub fn [<$name:lower>]($( $param: $param_type , )* open: Vec<f64>, high: Vec<f64>, low: Vec<f64>, close: Vec<f64>) -> Vec<f64> {
+            pub fn [<$name:lower>]($( $param: $param_type , )* open: Vec<f64>, high: Vec<f64>, low: Vec<f64>, close: Vec<f64>) -> PyResult<Vec<f64>> {
+                $( $param.validate(stringify!($param))?; )*
+                if open.len() != high.len() || high.len() != low.len() || low.len() != close.len() {
+                    return Err(PyValueError::new_err(format!(
+                        "input series lengths must match: open={}, high={}, low={}, close={}",
+                        open.len(), high.len(), low.len(), close.len()
+                    )));
+                }
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
-                open.iter().zip(high.iter()).zip(low.iter()).zip(close.iter()).map(|(((&o, &h), &l), &c)| indicator.next((o, h, l, c))).collect()
+                Ok(open.iter().zip(high.iter()).zip(low.iter()).zip(close.iter()).map(|(((&o, &h), &l), &c)| indicator.next((o, h, l, c))).collect())
             }
-            #[doc = "Boundary Conditions & Error Behavior:
-- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
-- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
-- Negative Params: Negative period/length parameters will raise a ValueError."]
+            #[doc = concat!(stringify!($name), " streaming indicator.\n\nBoundary Conditions & Error Behavior:\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
-                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, open: f64, high: f64, low: f64, close: f64) -> PyResult<f64> { Ok(lock_inner(&self.inner)?.next((open, high, low, close))) }
+                #[new] pub fn new($( $param: $param_type ),*) -> PyResult<Self> {
+                    $( $param.validate(stringify!($param))?; )*
+                    Ok(Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) })
+                }
+                pub fn next(&self, open: f64, high: f64, low: f64, close: f64) -> PyResult<f64> { let mut guard = lock_inner(&self.inner)?; Ok(guard.next((open, high, low, close))) }
             }
         }
     }
@@ -778,19 +910,27 @@ macro_rules! export_ohlc4_in_1_out {
 macro_rules! export_hlcv_in_1_out {
     ($name:ident, $core_type:ty, ($($param:ident: $param_type:ty),*)) => {
         paste! {
+            #[doc = concat!("Calculates ", stringify!($name), ".\n\nBoundary Conditions & Error Behavior:\n- Input Lengths: high, low, close, and volume must have identical lengths, otherwise ValueError is raised.\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyfunction]
-            pub fn [<$name:lower>]($( $param: $param_type , )* high: Vec<f64>, low: Vec<f64>, close: Vec<f64>, volume: Vec<f64>) -> Vec<f64> {
+            pub fn [<$name:lower>]($( $param: $param_type , )* high: Vec<f64>, low: Vec<f64>, close: Vec<f64>, volume: Vec<f64>) -> PyResult<Vec<f64>> {
+                $( $param.validate(stringify!($param))?; )*
+                if high.len() != low.len() || low.len() != close.len() || close.len() != volume.len() {
+                    return Err(PyValueError::new_err(format!(
+                        "input series lengths must match: high={}, low={}, close={}, volume={}",
+                        high.len(), low.len(), close.len(), volume.len()
+                    )));
+                }
                 let mut indicator = <$core_type>::new($( $param as _ ),*);
-                high.iter().zip(low.iter()).zip(close.iter()).zip(volume.iter()).map(|(((&h, &l), &c), &v)| indicator.next((h, l, c, v))).collect()
+                Ok(high.iter().zip(low.iter()).zip(close.iter()).zip(volume.iter()).map(|(((&h, &l), &c), &v)| indicator.next((h, l, c, v))).collect())
             }
-            #[doc = "Boundary Conditions & Error Behavior:
-- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.
-- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.
-- Negative Params: Negative period/length parameters will raise a ValueError."]
+            #[doc = concat!(stringify!($name), " streaming indicator.\n\nBoundary Conditions & Error Behavior:\n- Period > Length: If a period parameter exceeds the input length, outputs will be NaN until the warmup is satisfied.\n- NaN Inputs: NaN values in inputs propagate as NaN in the output for the duration of the rolling window.\n- Negative Params: Negative period/length parameters will raise a ValueError.")]
             #[pyclass] pub struct $name { inner: Mutex<$core_type> }
             #[pymethods] impl $name {
-                #[new] pub fn new($( $param: $param_type ),*) -> Self { Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) } }
-                pub fn next(&self, high: f64, low: f64, close: f64, volume: f64) -> PyResult<f64> { Ok(lock_inner(&self.inner)?.next((high, low, close, volume))) }
+                #[new] pub fn new($( $param: $param_type ),*) -> PyResult<Self> {
+                    $( $param.validate(stringify!($param))?; )*
+                    Ok(Self { inner: Mutex::new(<$core_type>::new($( $param as _ ),*)) })
+                }
+                pub fn next(&self, high: f64, low: f64, close: f64, volume: f64) -> PyResult<f64> { let mut guard = lock_inner(&self.inner)?; Ok(guard.next((high, low, close, volume))) }
             }
         }
     }
@@ -798,25 +938,391 @@ macro_rules! export_hlcv_in_1_out {
 
 // --- Indicators ---
 
-export_1_in_1_out!(Sma, CoreSMA, (period: u64));
-export_1_in_1_out!(Ema, CoreEMA, (period: u64));
-export_1_in_1_out!(Wma, CoreWMA, (period: u64));
-export_1_in_1_out!(Rsi, RSI, (period: u64));
-export_ohlc_in_record_out!(SuperTrend, CoreSuperTrend, SuperTrendResult, (period: u64, multiplier: f64), res, SuperTrendResult { value: res.0, direction: res.1 });
-export_1_in_record_out!(Macd, MACD, MacdResult, (fast: u64, slow: u64, signal: u64), res, MacdResult { macd: res.0, signal: res.1, histogram: res.2 });
-export_ohlc_in_1_out!(Atr, ATR, (period: u64));
-export_ohlc_in_1_out!(Adx, ADX, (period: u64));
-export_ohlc_in_1_out!(Cci, CCI, (period: u64));
+// --- Indicators ---
 
+fn parse_warmup(warmup: Option<&str>) -> PyResult<WarmupPolicy> {
+    match warmup {
+        None | Some("partial") | Some("PARTIAL") => Ok(WarmupPolicy::Partial),
+        Some("nan") | Some("NAN") => Ok(WarmupPolicy::Nan),
+        Some(other) => Err(PyValueError::new_err(format!(
+            "unknown warmup policy: '{other}' (expected 'partial' or 'nan')"
+        ))),
+    }
+}
+
+/// Simple Moving Average (SMA).
+///
+/// Parameters:
+///   period: Window length in bars (must be >= 1).
+///   series: Input price series.
+///   warmup: Warm-up behavior for the initial `period - 1` bars:
+///     - "partial" (default): Returns partial-window averages as values accumulate.
+///     - "nan": Returns NaN until a full window of `period` bars has accumulated.
+#[pyfunction]
+#[pyo3(signature = (period, series, warmup=None))]
+pub fn sma(period: i64, series: Vec<f64>, warmup: Option<&str>) -> PyResult<Vec<f64>> {
+    period.validate("period")?;
+    let policy = parse_warmup(warmup)?;
+    let mut indicator = CoreSMA::with_warmup(period as usize, policy);
+    Ok(series.iter().map(|&x| indicator.next(x)).collect())
+}
+
+#[doc = "Simple Moving Average (SMA) streaming indicator.\n\nParameters:\n  period: Window length in bars (must be >= 1).\n  warmup: 'partial' (default) or 'nan'."]
+#[pyclass]
+pub struct Sma {
+    inner: Mutex<CoreSMA>,
+}
+
+#[pymethods]
+impl Sma {
+    #[new]
+    #[pyo3(signature = (period, warmup=None))]
+    pub fn new(period: i64, warmup: Option<&str>) -> PyResult<Self> {
+        period.validate("period")?;
+        let policy = parse_warmup(warmup)?;
+        Ok(Self {
+            inner: Mutex::new(CoreSMA::with_warmup(period as usize, policy)),
+        })
+    }
+
+    pub fn next(&self, input: f64) -> PyResult<f64> {
+        let mut guard = lock_inner(&self.inner)?;
+        Ok(guard.next(input))
+    }
+}
+
+/// Exponential Moving Average (EMA).
+///
+/// Calculation convention & NaN recovery:
+/// - First value seeds the EMA directly (or SMA of first `period` bars when `warmup="nan"`).
+/// - An isolated NaN input yields NaN for that bar without poisoning the internal EMA state.
+///   Subsequent finite bars smoothly resume calculations.
+///
+/// Parameters:
+///   period: Smoothing period (must be >= 1).
+///   series: Input price series.
+///   warmup: Warm-up behavior:
+///     - "partial" (default): First value seeds EMA directly; outputs finite values from bar 0.
+///     - "nan": Outputs NaN for first `period - 1` bars, then seeds with SMA of first `period` bars.
+#[pyfunction]
+#[pyo3(signature = (period, series, warmup=None))]
+pub fn ema(period: i64, series: Vec<f64>, warmup: Option<&str>) -> PyResult<Vec<f64>> {
+    period.validate("period")?;
+    let policy = parse_warmup(warmup)?;
+    let mut indicator = CoreEMA::with_warmup(period as usize, policy);
+    Ok(series.iter().map(|&x| indicator.next(x)).collect())
+}
+
+#[doc = "Exponential Moving Average (EMA) streaming indicator.\n\nParameters:\n  period: Smoothing period (must be >= 1).\n  warmup: 'partial' (default) or 'nan'."]
+#[pyclass]
+pub struct Ema {
+    inner: Mutex<CoreEMA>,
+}
+
+#[pymethods]
+impl Ema {
+    #[new]
+    #[pyo3(signature = (period, warmup=None))]
+    pub fn new(period: i64, warmup: Option<&str>) -> PyResult<Self> {
+        period.validate("period")?;
+        let policy = parse_warmup(warmup)?;
+        Ok(Self {
+            inner: Mutex::new(CoreEMA::with_warmup(period as usize, policy)),
+        })
+    }
+
+    pub fn next(&self, input: f64) -> PyResult<f64> {
+        let mut guard = lock_inner(&self.inner)?;
+        Ok(guard.next(input))
+    }
+}
+
+fn parse_supertrend_options(
+    initial_direction: Option<&str>,
+    smoothing: Option<&str>,
+) -> PyResult<(SuperTrendInitialDirection, SuperTrendAtrSmoothing)> {
+    let init_dir = match initial_direction {
+        None | Some("up") | Some("UP") => SuperTrendInitialDirection::Up,
+        Some("down") | Some("DOWN") => SuperTrendInitialDirection::Down,
+        Some("from_close") | Some("FROM_CLOSE") | Some("fromclose") => {
+            SuperTrendInitialDirection::FromClose
+        }
+        Some(other) => {
+            return Err(PyValueError::new_err(format!(
+                "unknown initial_direction: '{other}' (expected 'up', 'down', or 'from_close')"
+            )));
+        }
+    };
+    let sm = match smoothing {
+        None | Some("ema") | Some("EMA") => SuperTrendAtrSmoothing::Ema,
+        Some("wilder") | Some("WILDER") | Some("rma") | Some("RMA") => {
+            SuperTrendAtrSmoothing::Wilder
+        }
+        Some(other) => {
+            return Err(PyValueError::new_err(format!(
+                "unknown smoothing: '{other}' (expected 'ema' or 'wilder')"
+            )));
+        }
+    };
+    Ok((init_dir, sm))
+}
+
+/// SuperTrend Trend-Following Indicator.
+///
+/// Parameters:
+///   period: ATR period (must be >= 1).
+///   multiplier: ATR multiplier (e.g. 3.0).
+///   high: High price series.
+///   low: Low price series.
+///   close: Close price series.
+///   initial_direction: Direction prior to first trend reversal:
+///     - "up" (default): Assumes uptrend (+1) from start (legacy quantwave behavior).
+///     - "down": Assumes downtrend (-1) from start; first breakout above band flips to +1.
+///     - "from_close": Sets direction based on close vs midpoint of first bar.
+///   smoothing: ATR smoothing algorithm:
+///     - "ema" (default): EMA smoothing of true range.
+///     - "wilder": Wilder's RMA smoothing with SMA seed (emits NaN during warm-up).
+#[pyfunction]
+#[pyo3(signature = (period, multiplier, high, low, close, initial_direction=None, smoothing=None))]
+pub fn supertrend(
+    period: i64,
+    multiplier: f64,
+    high: Vec<f64>,
+    low: Vec<f64>,
+    close: Vec<f64>,
+    initial_direction: Option<&str>,
+    smoothing: Option<&str>,
+) -> PyResult<Vec<SuperTrendResult>> {
+    period.validate("period")?;
+    multiplier.validate("multiplier")?;
+    if high.len() != low.len() || low.len() != close.len() {
+        return Err(PyValueError::new_err(format!(
+            "input series lengths must match: high={}, low={}, close={}",
+            high.len(),
+            low.len(),
+            close.len()
+        )));
+    }
+    let (init_dir, sm) = parse_supertrend_options(initial_direction, smoothing)?;
+    let mut indicator = CoreSuperTrend::with_options(period as usize, multiplier, init_dir, sm);
+    Ok(high
+        .iter()
+        .zip(low.iter())
+        .zip(close.iter())
+        .map(|((&h, &l), &c)| {
+            let res = indicator.next((h, l, c));
+            SuperTrendResult {
+                value: res.0,
+                direction: res.1,
+            }
+        })
+        .collect())
+}
+
+#[doc = "SuperTrend streaming indicator.\n\nParameters:\n  period: ATR period (must be >= 1).\n  multiplier: ATR multiplier (e.g. 3.0).\n  initial_direction: 'up' (default), 'down', or 'from_close'.\n  smoothing: 'ema' (default) or 'wilder'."]
+#[pyclass]
+pub struct SuperTrend {
+    inner: Mutex<CoreSuperTrend>,
+}
+
+#[pymethods]
+impl SuperTrend {
+    #[new]
+    #[pyo3(signature = (period, multiplier, initial_direction=None, smoothing=None))]
+    pub fn new(
+        period: i64,
+        multiplier: f64,
+        initial_direction: Option<&str>,
+        smoothing: Option<&str>,
+    ) -> PyResult<Self> {
+        period.validate("period")?;
+        multiplier.validate("multiplier")?;
+        let (init_dir, sm) = parse_supertrend_options(initial_direction, smoothing)?;
+        Ok(Self {
+            inner: Mutex::new(CoreSuperTrend::with_options(
+                period as usize,
+                multiplier,
+                init_dir,
+                sm,
+            )),
+        })
+    }
+
+    pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<SuperTrendResult> {
+        let mut guard = lock_inner(&self.inner)?;
+        let res = guard.next((high, low, close));
+        Ok(SuperTrendResult {
+            value: res.0,
+            direction: res.1,
+        })
+    }
+}
+
+/// Average True Range (ATR) with EMA smoothing.
+///
+/// NOTE: This function computes ATR using an Exponential Moving Average (EMA) of true range.
+/// For Wilder's RMA smoothing (the TA-Lib and Pine Script convention), use `atr_wilder` or `ta_atr`.
+///
+/// Parameters:
+///   period: Window period (must be >= 1).
+///   high: High price series.
+///   low: Low price series.
+///   close: Close price series.
+#[pyfunction]
+pub fn atr(period: i64, high: Vec<f64>, low: Vec<f64>, close: Vec<f64>) -> PyResult<Vec<f64>> {
+    period.validate("period")?;
+    if high.len() != low.len() || low.len() != close.len() {
+        return Err(PyValueError::new_err(format!(
+            "input series lengths must match: high={}, low={}, close={}",
+            high.len(),
+            low.len(),
+            close.len()
+        )));
+    }
+    let mut indicator = CoreATR::new(period as usize);
+    Ok(high
+        .iter()
+        .zip(low.iter())
+        .zip(close.iter())
+        .map(|((&h, &l), &c)| indicator.next((h, l, c)))
+        .collect())
+}
+
+#[doc = "Average True Range (ATR) with EMA smoothing.\n\nFor Wilder RMA smoothing, use AtrWilder or TaAtr."]
+#[pyclass]
+pub struct Atr {
+    inner: Mutex<CoreATR>,
+}
+
+#[pymethods]
+impl Atr {
+    #[new]
+    pub fn new(period: i64) -> PyResult<Self> {
+        period.validate("period")?;
+        Ok(Self {
+            inner: Mutex::new(CoreATR::new(period as usize)),
+        })
+    }
+
+    pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<f64> {
+        let mut guard = lock_inner(&self.inner)?;
+        Ok(guard.next((high, low, close)))
+    }
+}
+
+/// Average True Range (Wilder RMA smoothing, TA-Lib standard).
+///
+/// Parameters:
+///   timeperiod: Window period (must be >= 1).
+///   high: High price series.
+///   low: Low price series.
+///   close: Close price series.
+#[pyfunction]
+pub fn atr_wilder(
+    timeperiod: i64,
+    high: Vec<f64>,
+    low: Vec<f64>,
+    close: Vec<f64>,
+) -> PyResult<Vec<f64>> {
+    timeperiod.validate("timeperiod")?;
+    if high.len() != low.len() || low.len() != close.len() {
+        return Err(PyValueError::new_err(format!(
+            "input series lengths must match: high={}, low={}, close={}",
+            high.len(),
+            low.len(),
+            close.len()
+        )));
+    }
+    let mut indicator = CoreTaATR::new(timeperiod as usize);
+    Ok(high
+        .iter()
+        .zip(low.iter())
+        .zip(close.iter())
+        .map(|((&h, &l), &c)| indicator.next((h, l, c)))
+        .collect())
+}
+
+#[pyfunction]
+pub fn ta_atr(
+    timeperiod: i64,
+    high: Vec<f64>,
+    low: Vec<f64>,
+    close: Vec<f64>,
+) -> PyResult<Vec<f64>> {
+    atr_wilder(timeperiod, high, low, close)
+}
+
+#[doc = "Average True Range (Wilder RMA smoothing, TA-Lib standard)."]
+#[pyclass]
+pub struct AtrWilder {
+    inner: Mutex<CoreTaATR>,
+}
+
+#[pymethods]
+impl AtrWilder {
+    #[new]
+    pub fn new(timeperiod: i64) -> PyResult<Self> {
+        timeperiod.validate("timeperiod")?;
+        Ok(Self {
+            inner: Mutex::new(CoreTaATR::new(timeperiod as usize)),
+        })
+    }
+
+    pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<f64> {
+        let mut guard = lock_inner(&self.inner)?;
+        Ok(guard.next((high, low, close)))
+    }
+}
+
+#[doc = "Average True Range (Wilder RMA smoothing, TA-Lib standard). Alias for AtrWilder."]
+#[pyclass]
+pub struct TaAtr {
+    inner: Mutex<CoreTaATR>,
+}
+
+#[pymethods]
+impl TaAtr {
+    #[new]
+    pub fn new(timeperiod: i64) -> PyResult<Self> {
+        timeperiod.validate("timeperiod")?;
+        Ok(Self {
+            inner: Mutex::new(CoreTaATR::new(timeperiod as usize)),
+        })
+    }
+
+    pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<f64> {
+        let mut guard = lock_inner(&self.inner)?;
+        Ok(guard.next((high, low, close)))
+    }
+}
+
+export_1_in_1_out!(Wma, CoreWMA, (period: i64));
+export_1_in_1_out!(Rsi, RSI, (period: i64));
+export_1_in_record_out!(Macd, MACD, MacdResult, (fast: i64, slow: i64, signal: i64), res, MacdResult { macd: res.0, signal: res.1, histogram: res.2 });
+export_ohlc_in_1_out!(Adx, ADX, (period: i64));
+export_ohlc_in_1_out!(Cci, CCI, (period: i64));
+
+#[doc = "Calculates Stochastic Oscillator.\n\nBoundary Conditions & Error Behavior:\n- Input Lengths: high, low, and close must have identical lengths, otherwise ValueError is raised.\n- Negative Params: Negative period/length parameters will raise a ValueError."]
 #[pyfunction]
 pub fn stoch(
     high: Vec<f64>,
     low: Vec<f64>,
     close: Vec<f64>,
-    fastk: u64,
-    slowk: u64,
-    slowd: u64,
-) -> Vec<StochResult> {
+    fastk: i64,
+    slowk: i64,
+    slowd: i64,
+) -> PyResult<Vec<StochResult>> {
+    fastk.validate("fastk")?;
+    slowk.validate("slowk")?;
+    slowd.validate("slowd")?;
+    if high.len() != low.len() || low.len() != close.len() {
+        return Err(PyValueError::new_err(format!(
+            "input series lengths must match: high={}, low={}, close={}",
+            high.len(),
+            low.len(),
+            close.len()
+        )));
+    }
     let mut it = STOCH::new(
         fastk as usize,
         slowk as usize,
@@ -824,14 +1330,15 @@ pub fn stoch(
         slowd as usize,
         quantwave_core::MaType::Sma,
     );
-    high.iter()
+    Ok(high
+        .iter()
         .zip(low.iter())
         .zip(close.iter())
         .map(|((&h, &l), &c)| {
             let (k, d) = it.next((h, l, c));
             StochResult { k, d }
         })
-        .collect()
+        .collect())
 }
 #[pyclass]
 pub struct Stoch {
@@ -840,8 +1347,11 @@ pub struct Stoch {
 #[pymethods]
 impl Stoch {
     #[new]
-    pub fn new(fastk: u64, slowk: u64, slowd: u64) -> Self {
-        Self {
+    pub fn new(fastk: i64, slowk: i64, slowd: i64) -> PyResult<Self> {
+        fastk.validate("fastk")?;
+        slowk.validate("slowk")?;
+        slowd.validate("slowd")?;
+        Ok(Self {
             inner: Mutex::new(STOCH::new(
                 fastk as usize,
                 slowk as usize,
@@ -849,7 +1359,7 @@ impl Stoch {
                 slowd as usize,
                 quantwave_core::MaType::Sma,
             )),
-        }
+        })
     }
     pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<StochResult> {
         let (k, d) = lock_inner(&self.inner)?.next((high, low, close));
@@ -857,27 +1367,39 @@ impl Stoch {
     }
 }
 
-export_hl_in_record_out!(Aroon, AROON, AroonResult, (period: u64), res, AroonResult { up: res.0, down: res.1 });
+export_hl_in_record_out!(Aroon, AROON, AroonResult, (period: i64), res, AroonResult { up: res.0, down: res.1 });
 export_1_in_record_out!(Mama, MAMA, MamaResult, (fastlimit: f64, slowlimit: f64), res, MamaResult { mama: res.0, fama: res.1 });
-export_1_in_1_out!(Kama, KAMA, (period: u64));
-export_1_in_1_out!(T3, CoreT3, (period: u64, v_factor: f64));
+export_1_in_1_out!(Kama, KAMA, (period: i64));
+export_1_in_1_out!(T3, CoreT3, (period: i64, v_factor: f64));
 export_hl_in_1_out!(Sar, SAR, (acceleration: f64, maximum: f64));
-export_1_in_1_out!(Mom, MOM, (period: u64));
-export_1_in_1_out!(Roc, ROC, (period: u64));
-export_ohlc_in_1_out!(Willr, WILLR, (period: u64));
-export_1_in_1_out!(Dema, DEMA, (period: u64));
-export_1_in_1_out!(Tema, TEMA, (period: u64));
+export_1_in_1_out!(Mom, MOM, (period: i64));
+export_1_in_1_out!(Roc, ROC, (period: i64));
+export_ohlc_in_1_out!(Willr, WILLR, (period: i64));
+export_1_in_1_out!(Dema, DEMA, (period: i64));
+export_1_in_1_out!(Tema, TEMA, (period: i64));
 
+#[doc = "Calculates Ichimoku Cloud.\n\nBoundary Conditions & Error Behavior:\n- Input Lengths: high and low must have identical lengths, otherwise ValueError is raised.\n- Negative Params: Negative period/length parameters will raise a ValueError."]
 #[pyfunction]
 pub fn ichimoku(
     high: Vec<f64>,
     low: Vec<f64>,
-    tenkan: u64,
-    kijun: u64,
-    senkou_b: u64,
-) -> Vec<IchimokuResult> {
+    tenkan: i64,
+    kijun: i64,
+    senkou_b: i64,
+) -> PyResult<Vec<IchimokuResult>> {
+    tenkan.validate("tenkan")?;
+    kijun.validate("kijun")?;
+    senkou_b.validate("senkou_b")?;
+    if high.len() != low.len() {
+        return Err(PyValueError::new_err(format!(
+            "input series lengths must match: high={}, low={}",
+            high.len(),
+            low.len()
+        )));
+    }
     let mut it = CoreIchimoku::new(tenkan as usize, kijun as usize, senkou_b as usize);
-    high.iter()
+    Ok(high
+        .iter()
         .zip(low.iter())
         .map(|(&h, &l)| {
             let (t, k, sa, sb) = it.next((h, l));
@@ -888,7 +1410,7 @@ pub fn ichimoku(
                 senkou_b: sb,
             }
         })
-        .collect()
+        .collect())
 }
 #[pyclass]
 pub struct Ichimoku {
@@ -897,14 +1419,17 @@ pub struct Ichimoku {
 #[pymethods]
 impl Ichimoku {
     #[new]
-    pub fn new(tenkan: u64, kijun: u64, senkou_b: u64) -> Self {
-        Self {
+    pub fn new(tenkan: i64, kijun: i64, senkou_b: i64) -> PyResult<Self> {
+        tenkan.validate("tenkan")?;
+        kijun.validate("kijun")?;
+        senkou_b.validate("senkou_b")?;
+        Ok(Self {
             inner: Mutex::new(CoreIchimoku::new(
                 tenkan as usize,
                 kijun as usize,
                 senkou_b as usize,
             )),
-        }
+        })
     }
     pub fn next(&self, high: f64, low: f64) -> PyResult<IchimokuResult> {
         let (t, k, sa, sb) = lock_inner(&self.inner)?.next((high, low));
@@ -917,15 +1442,15 @@ impl Ichimoku {
     }
 }
 
-export_1_in_1_out!(Cg, CoreCG, (period: u64));
-export_1_in_record_out!(CyberCycle, CoreCyberCycle, CyberCycleResult, (length: u64), res, CyberCycleResult { value: res.0, trigger: res.1 });
+export_1_in_1_out!(Cg, CoreCG, (period: i64));
+export_1_in_record_out!(CyberCycle, CoreCyberCycle, CyberCycleResult, (length: i64), res, CyberCycleResult { value: res.0, trigger: res.1 });
 export_1_in_1_out!(Fisher, CoreFisher, ());
 export_1_in_1_out!(InverseFisher, CoreInverseFisher, ());
-export_1_in_1_out!(SuperSmoother, CoreSuperSmoother, (period: u64));
-export_1_in_1_out!(Bandpass, CoreBandpass, (period: u64, bandwidth: f64));
-export_1_in_1_out!(RoofingFilter, CoreRoofingFilter, (hp_period: u64, ss_period: u64));
-export_1_in_record_out!(ZeroLag, CoreZeroLag, ZeroLagResult, (length: u64, gain_limit: f64), res, ZeroLagResult { value: res.0, trigger: res.1 });
-export_ohlc_in_1_out!(ChoppinessIndex, CoreChoppinessIndex, (period: u64));
+export_1_in_1_out!(SuperSmoother, CoreSuperSmoother, (period: i64));
+export_1_in_1_out!(Bandpass, CoreBandpass, (period: i64, bandwidth: f64));
+export_1_in_1_out!(RoofingFilter, CoreRoofingFilter, (hp_period: i64, ss_period: i64));
+export_1_in_record_out!(ZeroLag, CoreZeroLag, ZeroLagResult, (length: i64, gain_limit: f64), res, ZeroLagResult { value: res.0, trigger: res.1 });
+export_ohlc_in_1_out!(ChoppinessIndex, CoreChoppinessIndex, (period: i64));
 export_1_in_1_out!(ClassicLaguerre, CoreClassicLaguerre, (gamma: f64));
 
 export_1_in_record_out!(
@@ -940,21 +1465,31 @@ export_1_in_record_out!(
         lips: res.2
     }
 );
-export_1_in_1_out!(Alma, CoreALMA, (period: u64, offset: f64, sigma: f64));
-export_ohlc_in_record_out!(AtrTs, CoreAtrTs, AtrTsResult, (period: u64, multiplier: f64), res, AtrTsResult { stop: res.0, direction: res.1 });
-export_1_in_1_out!(Butterworth2, CoreButterworth2, (period: u64));
-export_1_in_1_out!(Butterworth3, CoreButterworth3, (period: u64));
-export_1_in_record_out!(ChannelCycle, CoreChannelCycle, CyberCycleResult, (period: u64), res, CyberCycleResult { value: res.0, trigger: res.1 });
-export_1_in_1_out!(ContinuationIndex, CoreContinuationIndex, (gamma: f64, order: u64, length: u64));
-export_1_in_record_out!(CorrelationCycle, CoreCorrelationCycle, PhasorResult, (period: u64), res, PhasorResult { in_phase: res.0, quadrature: res.1 });
-export_1_in_1_out!(CorrelationTrend, CoreCorrelationTrend, (length: u64));
-export_1_in_1_out!(CyberneticOscillator, CoreCyberneticOscillator, (hp_length: u64, lp_length: u64, rms_len: u64));
-export_hl_in_1_out!(Dmh, CoreDMH, (length: u64));
+export_1_in_1_out!(Alma, CoreALMA, (period: i64, offset: f64, sigma: f64));
+export_ohlc_in_record_out!(AtrTs, CoreAtrTs, AtrTsResult, (period: i64, multiplier: f64), res, AtrTsResult { stop: res.0, direction: res.1 });
+export_1_in_1_out!(Butterworth2, CoreButterworth2, (period: i64));
+export_1_in_1_out!(Butterworth3, CoreButterworth3, (period: i64));
+export_1_in_record_out!(ChannelCycle, CoreChannelCycle, CyberCycleResult, (period: i64), res, CyberCycleResult { value: res.0, trigger: res.1 });
+export_1_in_1_out!(ContinuationIndex, CoreContinuationIndex, (gamma: f64, order: i64, length: i64));
+export_1_in_record_out!(CorrelationCycle, CoreCorrelationCycle, PhasorResult, (period: i64), res, PhasorResult { in_phase: res.0, quadrature: res.1 });
+export_1_in_1_out!(CorrelationTrend, CoreCorrelationTrend, (length: i64));
+export_1_in_1_out!(CyberneticOscillator, CoreCyberneticOscillator, (hp_length: i64, lp_length: i64, rms_len: i64));
+export_hl_in_1_out!(Dmh, CoreDMH, (length: i64));
 
+#[doc = "Calculates Donchian Channels.\n\nBoundary Conditions & Error Behavior:\n- Input Lengths: high and low must have identical lengths, otherwise ValueError is raised.\n- Negative Params: Negative period/length parameters will raise a ValueError."]
 #[pyfunction]
-pub fn donchian(high: Vec<f64>, low: Vec<f64>, period: u64) -> Vec<DonchianResult> {
+pub fn donchian(high: Vec<f64>, low: Vec<f64>, period: i64) -> PyResult<Vec<DonchianResult>> {
+    period.validate("period")?;
+    if high.len() != low.len() {
+        return Err(PyValueError::new_err(format!(
+            "input series lengths must match: high={}, low={}",
+            high.len(),
+            low.len()
+        )));
+    }
     let mut it = CoreDonchian::new(period as usize);
-    high.iter()
+    Ok(high
+        .iter()
         .zip(low.iter())
         .map(|(&h, &l)| {
             let (u, m, lo) = it.next((h, l));
@@ -964,7 +1499,7 @@ pub fn donchian(high: Vec<f64>, low: Vec<f64>, period: u64) -> Vec<DonchianResul
                 lower: lo,
             }
         })
-        .collect()
+        .collect())
 }
 #[pyclass]
 pub struct Donchian {
@@ -973,10 +1508,11 @@ pub struct Donchian {
 #[pymethods]
 impl Donchian {
     #[new]
-    pub fn new(period: u64) -> Self {
-        Self {
+    pub fn new(period: i64) -> PyResult<Self> {
+        period.validate("period")?;
+        Ok(Self {
             inner: Mutex::new(CoreDonchian::new(period as usize)),
-        }
+        })
     }
     pub fn next(&self, high: f64, low: f64) -> PyResult<DonchianResult> {
         let (u, m, lo) = lock_inner(&self.inner)?.next((high, low));
@@ -988,18 +1524,18 @@ impl Donchian {
     }
 }
 
-export_1_in_1_out!(Dsma, CoreDSMA, (period: u64));
-export_1_in_record_out!(Emd, CoreEMD, EmdResult, (period: u64, delta: f64, fraction: f64), res, EmdResult { trend: res.0, upper: res.1, lower: res.2 });
-export_co_in_1_out!(AmDetector, CoreAMDetector, (highest_len: u64, avg_len: u64));
-export_co_in_1_out!(FmDemodulator, CoreFMDemodulator, (period: u64));
-export_1_in_vec_out!(EhlersAutocorrelation, CoreEhlersAutocorrelation, (length: u64, num_lags: u64));
-export_1_in_1_out!(EhlersFilter, CoreEhlersFilter, (length: u64));
-export_pv_in_record_out!(EhlersLoops, CoreEhlersLoops, EhlersLoopsResult, (lp_period: u64, hp_period: u64), res, EhlersLoopsResult { price_rms: res.0, vol_rms: res.1 });
-export_1_in_1_out!(EhlersStochastic, CoreEhlersStochastic, (hp_period: u64, ss_period: u64, stoch_period: u64));
-export_1_in_1_out!(EhlersUltimateOscillator, CoreEhlersUltimateOscillator, (band_edge: u64, bandwidth: f64));
-export_1_in_1_out!(FisherHighPass, CoreFisherHighPass, (hp_len: u64, norm_len: u64));
-export_1_in_1_out!(FourierSeries, CoreFourierSeries, (fundamental: u64));
-export_1_in_1_out!(FourierDominantCycle, CoreFourierDominantCycle, (window_len: u64));
+export_1_in_1_out!(Dsma, CoreDSMA, (period: i64));
+export_1_in_record_out!(Emd, CoreEMD, EmdResult, (period: i64, delta: f64, fraction: f64), res, EmdResult { trend: res.0, upper: res.1, lower: res.2 });
+export_co_in_1_out!(AmDetector, CoreAMDetector, (highest_len: i64, avg_len: i64));
+export_co_in_1_out!(FmDemodulator, CoreFMDemodulator, (period: i64));
+export_1_in_vec_out!(EhlersAutocorrelation, CoreEhlersAutocorrelation, (length: i64, num_lags: i64));
+export_1_in_1_out!(EhlersFilter, CoreEhlersFilter, (length: i64));
+export_pv_in_record_out!(EhlersLoops, CoreEhlersLoops, EhlersLoopsResult, (lp_period: i64, hp_period: i64), res, EhlersLoopsResult { price_rms: res.0, vol_rms: res.1 });
+export_1_in_1_out!(EhlersStochastic, CoreEhlersStochastic, (hp_period: i64, ss_period: i64, stoch_period: i64));
+export_1_in_1_out!(EhlersUltimateOscillator, CoreEhlersUltimateOscillator, (band_edge: i64, bandwidth: f64));
+export_1_in_1_out!(FisherHighPass, CoreFisherHighPass, (hp_len: i64, norm_len: i64));
+export_1_in_1_out!(FourierSeries, CoreFourierSeries, (fundamental: i64));
+export_1_in_1_out!(FourierDominantCycle, CoreFourierDominantCycle, (window_len: i64));
 export_hl_in_record_out!(
     Fractals,
     CoreFractals,
@@ -1011,24 +1547,35 @@ export_hl_in_record_out!(
         bullish: res.1
     }
 );
-export_ohlc_in_1_out!(Frama, CoreFRAMA, (length: u64));
-export_1_in_1_out!(Gaussian, CoreGaussian, (period: u64, poles: u64));
-export_1_in_1_out!(GeneralizedLaguerre, CoreGeneralizedLaguerre, (length: u64, gamma: f64, order: u64));
-export_1_in_1_out!(GriffithsDominantCycle, CoreGriffithsDominantCycle, (lower_bound: u64, upper_bound: u64, length: u64));
-export_1_in_1_out!(GriffithsPredictor, CoreGriffithsPredictor, (lower_bound: u64, upper_bound: u64, length: u64, bars_fwd: u64));
-export_1_in_vec_out!(GriffithsSpectrum, CoreGriffithsSpectrum, (lower_bound: u64, upper_bound: u64, length: u64));
-export_1_in_1_out!(Hamming, CoreHamming, (period: u64, pedestal: f64));
-export_1_in_1_out!(Hann, CoreHann, (period: u64));
+export_ohlc_in_1_out!(Frama, CoreFRAMA, (length: i64));
+export_1_in_1_out!(Gaussian, CoreGaussian, (period: i64, poles: i64));
+export_1_in_1_out!(GeneralizedLaguerre, CoreGeneralizedLaguerre, (length: i64, gamma: f64, order: i64));
+export_1_in_1_out!(GriffithsDominantCycle, CoreGriffithsDominantCycle, (lower_bound: i64, upper_bound: i64, length: i64));
+export_1_in_1_out!(GriffithsPredictor, CoreGriffithsPredictor, (lower_bound: i64, upper_bound: i64, length: i64, bars_fwd: i64));
+export_1_in_vec_out!(GriffithsSpectrum, CoreGriffithsSpectrum, (lower_bound: i64, upper_bound: i64, length: i64));
+export_1_in_1_out!(Hamming, CoreHamming, (period: i64, pedestal: f64));
+export_1_in_1_out!(Hann, CoreHann, (period: i64));
 
+#[doc = "Calculates Heikin-Ashi candles.\n\nBoundary Conditions & Error Behavior:\n- Input Lengths: open, high, low, and close must have identical lengths, otherwise ValueError is raised."]
 #[pyfunction]
 pub fn heikin_ashi(
     open: Vec<f64>,
     high: Vec<f64>,
     low: Vec<f64>,
     close: Vec<f64>,
-) -> Vec<HeikinAshiResult> {
+) -> PyResult<Vec<HeikinAshiResult>> {
+    if open.len() != high.len() || high.len() != low.len() || low.len() != close.len() {
+        return Err(PyValueError::new_err(format!(
+            "input series lengths must match: open={}, high={}, low={}, close={}",
+            open.len(),
+            high.len(),
+            low.len(),
+            close.len()
+        )));
+    }
     let mut it = CoreHeikinAshi::new();
-    open.iter()
+    Ok(open
+        .iter()
         .zip(high.iter())
         .zip(low.iter())
         .zip(close.iter())
@@ -1041,7 +1588,7 @@ pub fn heikin_ashi(
                 close: hc,
             }
         })
-        .collect()
+        .collect())
 }
 #[pyclass]
 pub struct HeikinAshi {
@@ -1066,23 +1613,36 @@ impl HeikinAshi {
     }
 }
 
-export_1_in_1_out!(HighPass, CoreHighPass, (period: u64));
-export_1_in_1_out!(Hma, CoreHMA, (period: u64));
+export_1_in_1_out!(HighPass, CoreHighPass, (period: i64));
+export_1_in_1_out!(Hma, CoreHMA, (period: i64));
 export_1_in_1_out!(EhlersWma4, CoreEhlersWma4, ());
 export_1_in_1_out!(InstantaneousTrendline, CoreInstantaneousTrendline, ());
-export_1_in_record_out!(UndersampledDoubleMa, CoreUDMA, UdmaResult, (fast_len: u64, slow_len: u64, samp_per: u64), res, UdmaResult { fast: res.0, slow: res.1 });
+export_1_in_record_out!(UndersampledDoubleMa, CoreUDMA, UdmaResult, (fast_len: i64, slow_len: i64, samp_per: i64), res, UdmaResult { fast: res.0, slow: res.1 });
 
+#[doc = "Calculates Keltner Channels.\n\nBoundary Conditions & Error Behavior:\n- Input Lengths: high, low, and close must have identical lengths, otherwise ValueError is raised.\n- Negative Params: Negative period/length parameters will raise a ValueError."]
 #[pyfunction]
 pub fn keltner(
     high: Vec<f64>,
     low: Vec<f64>,
     close: Vec<f64>,
-    ema_period: u64,
-    atr_period: u64,
+    ema_period: i64,
+    atr_period: i64,
     multiplier: f64,
-) -> Vec<KeltnerResult> {
+) -> PyResult<Vec<KeltnerResult>> {
+    ema_period.validate("ema_period")?;
+    atr_period.validate("atr_period")?;
+    multiplier.validate("multiplier")?;
+    if high.len() != low.len() || low.len() != close.len() {
+        return Err(PyValueError::new_err(format!(
+            "input series lengths must match: high={}, low={}, close={}",
+            high.len(),
+            low.len(),
+            close.len()
+        )));
+    }
     let mut it = CoreKeltner::new(ema_period as usize, atr_period as usize, multiplier);
-    high.iter()
+    Ok(high
+        .iter()
         .zip(low.iter())
         .zip(close.iter())
         .map(|((&h, &l), &c)| {
@@ -1093,7 +1653,7 @@ pub fn keltner(
                 lower: lo,
             }
         })
-        .collect()
+        .collect())
 }
 #[pyclass]
 pub struct Keltner {
@@ -1102,14 +1662,17 @@ pub struct Keltner {
 #[pymethods]
 impl Keltner {
     #[new]
-    pub fn new(ema_period: u64, atr_period: u64, multiplier: f64) -> Self {
-        Self {
+    pub fn new(ema_period: i64, atr_period: i64, multiplier: f64) -> PyResult<Self> {
+        ema_period.validate("ema_period")?;
+        atr_period.validate("atr_period")?;
+        multiplier.validate("multiplier")?;
+        Ok(Self {
             inner: Mutex::new(CoreKeltner::new(
                 ema_period as usize,
                 atr_period as usize,
                 multiplier,
             )),
-        }
+        })
     }
     pub fn next(&self, high: f64, low: f64, close: f64) -> PyResult<KeltnerResult> {
         let (u, m, lo) = lock_inner(&self.inner)?.next((high, low, close));
@@ -1121,11 +1684,11 @@ impl Keltner {
     }
 }
 
-export_1_in_1_out!(LaguerreFilter, CoreLaguerreFilter, (length: u64, gamma: f64));
-export_1_in_1_out!(LaguerreOscillator, CoreLaguerreOscillator, (length: u64, gamma: f64, rms_period: u64));
+export_1_in_1_out!(LaguerreFilter, CoreLaguerreFilter, (length: i64, gamma: f64));
+export_1_in_1_out!(LaguerreOscillator, CoreLaguerreOscillator, (length: i64, gamma: f64, rms_period: i64));
 export_1_in_1_out!(LaguerreRsi, CoreLaguerreRSI, (gamma: f64));
-export_1_in_1_out!(NoiseElimination, CoreNoiseElimination, (period: u64));
-export_co_in_record_out!(PairsRotation, CorePairsRotation, PairsRotationResult, (hp_len: u64, lp_len: u64), res, PairsRotationResult { ratio: res.0, angle: res.1 });
+export_1_in_1_out!(NoiseElimination, CoreNoiseElimination, (period: i64));
+export_co_in_record_out!(PairsRotation, CorePairsRotation, PairsRotationResult, (hp_len: i64, lp_len: i64), res, PairsRotationResult { ratio: res.0, angle: res.1 });
 export_1_in_record_out!(
     Phasor,
     CorePhasor,
@@ -1137,7 +1700,7 @@ export_1_in_record_out!(
         quadrature: res.1
     }
 );
-export_co_in_1_out!(OcPriceRsi, CoreOcPriceRSI, (period: u64));
+export_co_in_1_out!(OcPriceRsi, CoreOcPriceRSI, (period: i64));
 
 #[pyfunction]
 pub fn pivot_points(high: Vec<f64>, low: Vec<f64>, close: Vec<f64>) -> Vec<PivotPointsResult> {
@@ -1181,10 +1744,10 @@ impl PivotPoints {
     }
 }
 
-export_1_in_1_out!(OneEuroFilter, CoreOneEuroFilter, (period_min: u64, beta: f64));
-export_1_in_record_out!(ProjectedMovingAverage, CoreProjectedMovingAverage, PmaResult, (period: u64), res, PmaResult { pma: res.0, predict: res.1 });
-export_1_in_record_out!(PrecisionTrend, CorePrecisionTrend, TrendRocResult, (length1: u64, length2: u64), res, TrendRocResult { trend: res.0, roc: res.1 });
-export_1_in_record_out!(ReversionIndex, CoreReversionIndex, TrendRocResult, (period: u64), res, TrendRocResult { trend: res.0, roc: res.1 });
+export_1_in_1_out!(OneEuroFilter, CoreOneEuroFilter, (period_min: i64, beta: f64));
+export_1_in_record_out!(ProjectedMovingAverage, CoreProjectedMovingAverage, PmaResult, (period: i64), res, PmaResult { pma: res.0, predict: res.1 });
+export_1_in_record_out!(PrecisionTrend, CorePrecisionTrend, TrendRocResult, (length1: i64, length2: i64), res, TrendRocResult { trend: res.0, roc: res.1 });
+export_1_in_record_out!(ReversionIndex, CoreReversionIndex, TrendRocResult, (period: i64), res, TrendRocResult { trend: res.0, roc: res.1 });
 export_1_in_record_out!(
     SineWave,
     CoreSineWave,
@@ -1248,7 +1811,7 @@ impl RobustnessEvaluator {
     }
 }
 
-export_ohlc_in_record_out!(TtmSqueeze, CoreTtmSqueeze, TtmSqueezeResult, (period: u64, mult_bb: f64, mult_kc: f64), res, TtmSqueezeResult { value: res.0, direction: if res.1 { 1 } else { 0 } });
+export_ohlc_in_record_out!(TtmSqueeze, CoreTtmSqueeze, TtmSqueezeResult, (period: i64, mult_bb: f64, mult_kc: f64), res, TtmSqueezeResult { value: res.0, direction: if res.1 { 1 } else { 0 } });
 
 #[pyfunction]
 pub fn ultimate_bands(series: Vec<f64>, length: u64, num_sds: f64) -> Vec<UltimateBandsResult> {
@@ -1336,8 +1899,8 @@ impl UltimateChannel {
     }
 }
 
-export_1_in_1_out!(UltimateSmoother, CoreUltimateSmoother, (period: u64));
-export_1_in_1_out!(Usi, CoreUSI, (length: u64));
+export_1_in_1_out!(UltimateSmoother, CoreUltimateSmoother, (period: i64));
+export_1_in_1_out!(Usi, CoreUSI, (length: i64));
 
 #[pyfunction]
 pub fn ad(high: Vec<f64>, low: Vec<f64>, close: Vec<f64>, volume: Vec<f64>) -> Vec<f64> {
@@ -1401,7 +1964,7 @@ impl Adosc {
 }
 
 export_pv_in_1_out!(Obv, CoreOBV, ());
-export_ohlc_in_record_out!(Vortex, CoreVortex, VortexResult, (period: u64), res, VortexResult { plus: res.0, minus: res.1 });
+export_ohlc_in_record_out!(Vortex, CoreVortex, VortexResult, (period: i64), res, VortexResult { plus: res.0, minus: res.1 });
 
 #[pyfunction]
 pub fn anchored_vwap(price: Vec<f64>, volume: Vec<f64>, anchor: Vec<bool>) -> Vec<f64> {
@@ -1430,13 +1993,13 @@ impl AnchoredVwap {
     }
 }
 
-export_ohlc_in_record_out!(WaveTrend, CoreWaveTrend, WaveTrendResult, (n1: u64, n2: u64, n3: u64), res, WaveTrendResult { wt1: res.0, wt2: res.1 });
-export_1_in_1_out!(SimplePredictor, CoreSimplePredictor, (hp_len: u64, lp_len: u64, q: f64));
-export_1_in_1_out!(Mad, CoreMAD, (short_period: u64, long_period: u64));
-export_1_in_1_out!(MesaStochastic, CoreMesaStochastic, (len: u64, hp: u64, ss: u64));
-export_1_in_1_out!(Rsih, CoreRSIH, (length: u64));
-export_1_in_record_out!(VossPredictor, CoreVossPredictor, VossPredictorResult, (period: u64, predict: u64), res, VossPredictorResult { filt: res.0, voss: res.1 });
-export_1_in_1_out!(SyntheticOscillator, CoreSyntheticOscillator, (lower_bound: u64, upper_bound: u64));
+export_ohlc_in_record_out!(WaveTrend, CoreWaveTrend, WaveTrendResult, (n1: i64, n2: i64, n3: i64), res, WaveTrendResult { wt1: res.0, wt2: res.1 });
+export_1_in_1_out!(SimplePredictor, CoreSimplePredictor, (hp_len: i64, lp_len: i64, q: f64));
+export_1_in_1_out!(Mad, CoreMAD, (short_period: i64, long_period: i64));
+export_1_in_1_out!(MesaStochastic, CoreMesaStochastic, (len: i64, hp: i64, ss: i64));
+export_1_in_1_out!(Rsih, CoreRSIH, (length: i64));
+export_1_in_record_out!(VossPredictor, CoreVossPredictor, VossPredictorResult, (period: i64, predict: i64), res, VossPredictorResult { filt: res.0, voss: res.1 });
+export_1_in_1_out!(SyntheticOscillator, CoreSyntheticOscillator, (lower_bound: i64, upper_bound: i64));
 
 #[pyfunction]
 pub fn cycletrendanalytics(
@@ -1480,11 +2043,11 @@ impl CycleTrendAnalytics {
     }
 }
 
-export_1_in_1_out!(Madh, CoreMADH, (short_length: u64, dominant_cycle: u64));
-export_1_in_1_out!(Stc, CoreSTC, (cycle_period: u64, fast_period: u64, slow_period: u64));
+export_1_in_1_out!(Madh, CoreMADH, (short_length: i64, dominant_cycle: i64));
+export_1_in_1_out!(Stc, CoreSTC, (cycle_period: i64, fast_period: i64, slow_period: i64));
 export_1_in_1_out!(HomodyneDiscriminator, CoreHomodyneDiscriminator, ());
-export_1_in_1_out!(UniversalOscillator, CoreUniversalOscillator, (band_edge: u64));
-export_1_in_1_out!(TriangleFilter, CoreTriangleFilter, (length: u64));
+export_1_in_1_out!(UniversalOscillator, CoreUniversalOscillator, (band_edge: i64));
+export_1_in_1_out!(TriangleFilter, CoreTriangleFilter, (length: i64));
 export_1_in_1_out!(HtDcPeriod, HT_DCPERIOD, ());
 export_1_in_record_out!(
     HtPhasor,
@@ -1510,16 +2073,16 @@ export_1_in_record_out!(
     }
 );
 export_1_in_1_out!(HtTrendMode, HT_TRENDMODE, ());
-export_1_in_1_out!(HurstExponent, CoreHurstExponent, (length: u64));
+export_1_in_1_out!(HurstExponent, CoreHurstExponent, (length: i64));
 export_1_in_1_out!(FracDiff, CoreFracDiff, (d: f64, threshold: f64));
 export_1_in_1_out!(KalmanFilter, CoreKalmanFilter, (gain: f64, noise: f64));
-export_1_in_1_out!(MarketState, CoreMarketState, (period: u64, threshold: f64));
-export_1_in_1_out!(RecursiveMedian, CoreRecursiveMedian, (length: u64));
-export_1_in_1_out!(RecursiveMedianOscillator, CoreRMO, (lp_period: u64, hp_period: u64));
-export_1_in_1_out!(Reflex, CoreReflex, (length: u64));
-export_1_in_1_out!(RocketRsi, CoreRocketRSI, (rsi_length: u64, smooth_length: u64));
-export_1_in_1_out!(Trendflex, CoreTrendflex, (length: u64));
-export_1_in_1_out!(TruncatedBandpass, CoreTruncatedBandpass, (period: u64, bandwidth: f64, length: u64));
+export_1_in_1_out!(MarketState, CoreMarketState, (period: i64, threshold: f64));
+export_1_in_1_out!(RecursiveMedian, CoreRecursiveMedian, (length: i64));
+export_1_in_1_out!(RecursiveMedianOscillator, CoreRMO, (lp_period: i64, hp_period: i64));
+export_1_in_1_out!(Reflex, CoreReflex, (length: i64));
+export_1_in_1_out!(RocketRsi, CoreRocketRSI, (rsi_length: i64, smooth_length: i64));
+export_1_in_1_out!(Trendflex, CoreTrendflex, (length: i64));
+export_1_in_1_out!(TruncatedBandpass, CoreTruncatedBandpass, (period: i64, bandwidth: f64, length: i64));
 
 #[pyfunction]
 pub fn volumeprofile(
@@ -2637,45 +3200,48 @@ pub fn zscore(period: u64, series: Vec<f64>) -> Vec<f64> {
 // quantwave-core; only the PyO3 binding (and thus `quantwave.streaming_class()`)
 // was missing. See docs/generated/streaming_gap_findings.md for the full audit.
 
-export_1_in_1_out!(Cmo, CoreCmo, (timeperiod: u64));
-export_1_in_1_out!(Trix, CoreTrix, (timeperiod: u64));
-export_1_in_1_out!(Trima, CoreTrima, (timeperiod: u64));
-export_1_in_1_out!(Stddev, CoreStddev, (timeperiod: u64, nbdev: f64));
-export_1_in_1_out!(Linreg, CoreLinreg, (timeperiod: u64));
-export_1_in_1_out!(Zlema, CoreZlema, (period: u64));
+export_1_in_1_out!(Cmo, CoreCmo, (timeperiod: i64));
+export_1_in_1_out!(Trix, CoreTrix, (timeperiod: i64));
+export_1_in_1_out!(Trima, CoreTrima, (timeperiod: i64));
+export_1_in_1_out!(Stddev, CoreStddev, (timeperiod: i64, nbdev: f64));
+export_1_in_1_out!(Linreg, CoreLinreg, (timeperiod: i64));
+export_1_in_1_out!(Zlema, CoreZlema, (period: i64));
 export_1_in_1_out!(ReverseEma, CoreReverseEma, (alpha: f64));
-export_1_in_1_out!(AutotuneFilter, CoreAutotuneFilter, (window: u64, bandwidth: f64));
-export_1_in_1_out!(Sdo, CoreSdo, (lookback_period: u64, period: u64, ema_pds: u64));
+export_1_in_1_out!(AutotuneFilter, CoreAutotuneFilter, (window: i64, bandwidth: f64));
+export_1_in_1_out!(Sdo, CoreSdo, (lookback_period: i64, period: i64, ema_pds: i64));
 export_1_in_1_out!(KinematicKalman, CoreKinematicKalman, (q_pos: f64, q_vel: f64, r: f64));
 
-export_ohlc_in_1_out!(Ultosc, CoreUltosc, (timeperiod1: u64, timeperiod2: u64, timeperiod3: u64));
-export_ohlc_in_1_out!(Natr, CoreNatr, (timeperiod: u64));
+export_ohlc_in_1_out!(Ultosc, CoreUltosc, (timeperiod1: i64, timeperiod2: i64, timeperiod3: i64));
+export_ohlc_in_1_out!(Natr, CoreNatr, (timeperiod: i64));
 export_ohlc_in_1_out!(TrueRange, CoreTrueRange, ());
 export_ohlc_in_1_out!(Typprice, CoreTypprice, ());
 export_ohlc_in_1_out!(Wclprice, CoreWclprice, ());
-export_ohlc_in_1_out!(AdaptiveEma, CoreAdaptiveEma, (period: u64, pds: u64));
-export_ohlc_in_1_out!(TradjEma, CoreTradjEma, (period: u64, pds: u64, mltp: f64));
-export_ohlc_in_1_out!(HarringtonAdx, CoreHarringtonAdx, (adx_length: u64, adx_smooth_length: u64));
+export_ohlc_in_1_out!(AdaptiveEma, CoreAdaptiveEma, (period: i64, pds: i64));
+export_ohlc_in_1_out!(TradjEma, CoreTradjEma, (period: i64, pds: i64, mltp: f64));
+export_ohlc_in_1_out!(HarringtonAdx, CoreHarringtonAdx, (adx_length: i64, adx_smooth_length: i64));
 
 export_hl_in_1_out!(Medprice, CoreMedprice, ());
 
 export_co_in_1_out!(Oc2, CoreOc2, ());
 
-export_hlcv_in_1_out!(Mfi, CoreMfi, (timeperiod: u64));
-export_hlcv_in_1_out!(Vpn, CoreVpn, (period: u64, smooth_period: u64));
+export_hlcv_in_1_out!(Mfi, CoreMfi, (timeperiod: i64));
+export_hlcv_in_1_out!(Vpn, CoreVpn, (period: i64, smooth_period: i64));
 
 export_ohlc4_in_1_out!(Avgprice, CoreAvgprice, ());
 
 // APO/PPO: `matype` mirrors the classic TA-Lib default (SMA) — the .ta batch
 // surface for apo/ppo does not expose an alternate MA type either.
+#[doc = "Calculates Absolute Price Oscillator (APO).\n\nBoundary Conditions & Error Behavior:\n- Negative Params: Negative period/length parameters will raise a ValueError."]
 #[pyfunction]
-pub fn apo(fastperiod: u64, slowperiod: u64, series: Vec<f64>) -> Vec<f64> {
+pub fn apo(fastperiod: i64, slowperiod: i64, series: Vec<f64>) -> PyResult<Vec<f64>> {
+    fastperiod.validate("fastperiod")?;
+    slowperiod.validate("slowperiod")?;
     let mut indicator = CoreApo::new(
         fastperiod as usize,
         slowperiod as usize,
         quantwave_core::MaType::Sma,
     );
-    series.iter().map(|&x| indicator.next(x)).collect()
+    Ok(series.iter().map(|&x| indicator.next(x)).collect())
 }
 #[pyclass]
 pub struct Apo {
@@ -2684,28 +3250,33 @@ pub struct Apo {
 #[pymethods]
 impl Apo {
     #[new]
-    pub fn new(fastperiod: u64, slowperiod: u64) -> Self {
-        Self {
+    pub fn new(fastperiod: i64, slowperiod: i64) -> PyResult<Self> {
+        fastperiod.validate("fastperiod")?;
+        slowperiod.validate("slowperiod")?;
+        Ok(Self {
             inner: Mutex::new(CoreApo::new(
                 fastperiod as usize,
                 slowperiod as usize,
                 quantwave_core::MaType::Sma,
             )),
-        }
+        })
     }
     pub fn next(&self, input: f64) -> PyResult<f64> {
         Ok(lock_inner(&self.inner)?.next(input))
     }
 }
 
+#[doc = "Calculates Percentage Price Oscillator (PPO).\n\nBoundary Conditions & Error Behavior:\n- Negative Params: Negative period/length parameters will raise a ValueError."]
 #[pyfunction]
-pub fn ppo(fastperiod: u64, slowperiod: u64, series: Vec<f64>) -> Vec<f64> {
+pub fn ppo(fastperiod: i64, slowperiod: i64, series: Vec<f64>) -> PyResult<Vec<f64>> {
+    fastperiod.validate("fastperiod")?;
+    slowperiod.validate("slowperiod")?;
     let mut indicator = CorePpo::new(
         fastperiod as usize,
         slowperiod as usize,
         quantwave_core::MaType::Sma,
     );
-    series.iter().map(|&x| indicator.next(x)).collect()
+    Ok(series.iter().map(|&x| indicator.next(x)).collect())
 }
 #[pyclass]
 pub struct Ppo {
@@ -2714,14 +3285,16 @@ pub struct Ppo {
 #[pymethods]
 impl Ppo {
     #[new]
-    pub fn new(fastperiod: u64, slowperiod: u64) -> Self {
-        Self {
+    pub fn new(fastperiod: i64, slowperiod: i64) -> PyResult<Self> {
+        fastperiod.validate("fastperiod")?;
+        slowperiod.validate("slowperiod")?;
+        Ok(Self {
             inner: Mutex::new(CorePpo::new(
                 fastperiod as usize,
                 slowperiod as usize,
                 quantwave_core::MaType::Sma,
             )),
-        }
+        })
     }
     pub fn next(&self, input: f64) -> PyResult<f64> {
         Ok(lock_inner(&self.inner)?.next(input))
@@ -2730,56 +3303,135 @@ impl Ppo {
 
 // CORREL/BETA: TA-Lib's real0/real1 — two arbitrary equal-length price series,
 // not high/low. Named to match the existing talib.CORREL/talib.BETA convention.
+#[doc = "Calculates Pearson correlation coefficient between two series.\n\nBoundary Conditions & Error Behavior:\n- Input Lengths: real0 and real1 must have identical lengths, otherwise ValueError is raised.\n- Negative Params: Negative period/length parameters will raise a ValueError."]
 #[pyfunction]
-pub fn correl(timeperiod: u64, real0: Vec<f64>, real1: Vec<f64>) -> Vec<f64> {
+pub fn correl(timeperiod: i64, real0: Vec<f64>, real1: Vec<f64>) -> PyResult<Vec<f64>> {
+    timeperiod.validate("timeperiod")?;
+    if real0.len() != real1.len() {
+        return Err(PyValueError::new_err(format!(
+            "input series lengths must match: real0={}, real1={}",
+            real0.len(),
+            real1.len()
+        )));
+    }
     let mut indicator = CoreCorrel::new(timeperiod as usize);
-    real0
+    Ok(real0
         .iter()
         .zip(real1.iter())
         .map(|(&x, &y)| indicator.next((x, y)))
-        .collect()
+        .collect())
 }
+
+#[doc = "Pearson correlation coefficient streaming indicator.\n\nBoundary Conditions & Error Behavior:\n- Negative Params: Negative period/length parameters will raise a ValueError."]
 #[pyclass]
 pub struct Correl {
     inner: Mutex<CoreCorrel>,
 }
+
 #[pymethods]
 impl Correl {
     #[new]
-    pub fn new(timeperiod: u64) -> Self {
-        Self {
+    pub fn new(timeperiod: i64) -> PyResult<Self> {
+        timeperiod.validate("timeperiod")?;
+        Ok(Self {
             inner: Mutex::new(CoreCorrel::new(timeperiod as usize)),
-        }
+        })
     }
+
     pub fn next(&self, real0: f64, real1: f64) -> PyResult<f64> {
         Ok(lock_inner(&self.inner)?.next((real0, real1)))
     }
 }
 
+/// Beta of a stock / asset against a market benchmark: Cov(stock, market) / Var(market).
+///
+/// Parameters:
+///   timeperiod: Rolling window length in bars (must be >= 1).
+///   market: Benchmark index/market series (X, denominator).
+///   stock: Stock/asset series (Y, numerator).
+///   real0: Alias for market (TA-Lib convention).
+///   real1: Alias for stock (TA-Lib convention).
 #[pyfunction]
-pub fn beta(timeperiod: u64, real0: Vec<f64>, real1: Vec<f64>) -> Vec<f64> {
+#[pyo3(signature = (timeperiod, market=None, stock=None, real0=None, real1=None))]
+pub fn beta(
+    timeperiod: i64,
+    market: Option<Vec<f64>>,
+    stock: Option<Vec<f64>>,
+    real0: Option<Vec<f64>>,
+    real1: Option<Vec<f64>>,
+) -> PyResult<Vec<f64>> {
+    timeperiod.validate("timeperiod")?;
+    let m = market
+        .or(real0)
+        .ok_or_else(|| PyValueError::new_err("missing required series: 'market' (or 'real0')"))?;
+    let s = stock
+        .or(real1)
+        .ok_or_else(|| PyValueError::new_err("missing required series: 'stock' (or 'real1')"))?;
+    if m.len() != s.len() {
+        return Err(PyValueError::new_err(format!(
+            "input series lengths must match: market={}, stock={}",
+            m.len(),
+            s.len()
+        )));
+    }
     let mut indicator = CoreBeta::new(timeperiod as usize);
-    real0
-        .iter()
-        .zip(real1.iter())
+    Ok(m.iter()
+        .zip(s.iter())
         .map(|(&x, &y)| indicator.next((x, y)))
-        .collect()
+        .collect())
 }
+
+#[doc = "Beta streaming indicator: Cov(stock, market) / Var(market).\n\nParameters:\n  timeperiod: Rolling window length (must be >= 1)."]
 #[pyclass]
 pub struct Beta {
     inner: Mutex<CoreBeta>,
 }
+
 #[pymethods]
 impl Beta {
     #[new]
-    pub fn new(timeperiod: u64) -> Self {
-        Self {
+    pub fn new(timeperiod: i64) -> PyResult<Self> {
+        timeperiod.validate("timeperiod")?;
+        Ok(Self {
             inner: Mutex::new(CoreBeta::new(timeperiod as usize)),
-        }
+        })
     }
-    pub fn next(&self, real0: f64, real1: f64) -> PyResult<f64> {
-        Ok(lock_inner(&self.inner)?.next((real0, real1)))
+
+    #[pyo3(signature = (market=None, stock=None, real0=None, real1=None))]
+    pub fn next(
+        &self,
+        market: Option<f64>,
+        stock: Option<f64>,
+        real0: Option<f64>,
+        real1: Option<f64>,
+    ) -> PyResult<f64> {
+        let m = market
+            .or(real0)
+            .ok_or_else(|| PyValueError::new_err("missing required argument: market (or real0)"))?;
+        let s = stock
+            .or(real1)
+            .ok_or_else(|| PyValueError::new_err("missing required argument: stock (or real1)"))?;
+        let mut guard = lock_inner(&self.inner)?;
+        Ok(guard.next((m, s)))
     }
+}
+
+#[doc = "Rolling Maximum (MAX) over lookback period.\n\nParameters:\n  series: Input price/data series.\n  timeperiod: Lookback window length in bars (must be >= 1)."]
+#[pyfunction]
+#[pyo3(signature = (series, timeperiod=14))]
+pub fn ta_max(series: Vec<f64>, timeperiod: i64) -> PyResult<Vec<f64>> {
+    timeperiod.validate("timeperiod")?;
+    let mut indicator = CoreMax::new(timeperiod as usize);
+    Ok(series.iter().map(|&x| indicator.next(x)).collect())
+}
+
+#[doc = "Rolling Minimum (MIN) over lookback period.\n\nParameters:\n  series: Input price/data series.\n  timeperiod: Lookback window length in bars (must be >= 1)."]
+#[pyfunction]
+#[pyo3(signature = (series, timeperiod=14))]
+pub fn ta_min(series: Vec<f64>, timeperiod: i64) -> PyResult<Vec<f64>> {
+    timeperiod.validate("timeperiod")?;
+    let mut indicator = CoreMin::new(timeperiod as usize);
+    Ok(series.iter().map(|&x| indicator.next(x)).collect())
 }
 
 // GapMomentum: Next<(open, close)> -> (gap_ratio, signal). Result field names
@@ -3047,6 +3699,10 @@ pub fn register(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(macd, m)?)?;
     m.add_class::<Atr>()?;
     m.add_function(wrap_pyfunction!(atr, m)?)?;
+    m.add_class::<AtrWilder>()?;
+    m.add_function(wrap_pyfunction!(atr_wilder, m)?)?;
+    m.add_class::<TaAtr>()?;
+    m.add_function(wrap_pyfunction!(ta_atr, m)?)?;
     m.add_class::<Adx>()?;
     m.add_function(wrap_pyfunction!(adx, m)?)?;
     m.add_class::<Cci>()?;
@@ -3438,6 +4094,8 @@ pub fn register(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(cdlupsidegap2crows, m)?)?;
     m.add_class::<CdlXSideGap3Methods>()?;
     m.add_function(wrap_pyfunction!(cdlxsidegap3methods, m)?)?;
+    m.add_function(wrap_pyfunction!(ta_max, m)?)?;
+    m.add_function(wrap_pyfunction!(ta_min, m)?)?;
 
     Ok(())
 }
