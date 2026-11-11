@@ -3,7 +3,7 @@
 # QuantWave
 
 <div class="qw-tagline">
-High-performance, Polars-native quantitative finance — <strong>225 native indicators</strong>, full Ehlers DSP suite, regime detection, backtest engine, and bit-identical streaming parity.
+High-performance, Polars-native quantitative finance — <strong>230 native indicators</strong>, full Ehlers DSP suite, regime detection, backtest engine, and bit-identical streaming parity.
 </div>
 
 [Get Started](getting-started/index.md){ .md-button .md-button--primary }
@@ -14,7 +14,7 @@ High-performance, Polars-native quantitative finance — <strong>225 native indi
 
 <div class="qw-stats" markdown="1">
 
-<div class="qw-stat"><strong>225</strong><span>Native indicators</span></div>
+<div class="qw-stat"><strong>230</strong><span>Native indicators</span></div>
 <div class="qw-stat"><strong>30+</strong><span>Ehlers DSP tools</span></div>
 <div class="qw-stat"><strong>1</strong><span>Mathematical truth (`Next&lt;T&gt;`)</span></div>
 <div class="qw-stat"><strong>0</strong><span>Batch vs streaming drift</span></div>
@@ -40,7 +40,7 @@ QuantWave is built as a Rust workspace with a single source of mathematical trut
 <div class="qw-card" markdown="1">
 
 ### Indicators
-225 Rust-native indicators with metadata, gold-standard tests, and full docs. Classic TA, Ehlers DSP, candlestick patterns, price action, and fractional differencing. All 225 are QuantWave's own Rust — no C TA-Lib, no third-party TA crate at runtime.
+230 Rust-native indicators with metadata, gold-standard tests, and full docs. Classic TA, Ehlers DSP, candlestick patterns, price action, and fractional differencing. All 225 are QuantWave's own Rust — no C TA-Lib, no third-party TA crate at runtime.
 
 [Browse catalog →](guides/indicators/native/)
 
@@ -128,7 +128,7 @@ Install: `pip install "quantwave[polars]"` or `cargo add quantwave`.
 
 QuantWave exists because most quant stacks force a tradeoff: **Python convenience** or **Rust speed** — rarely both inside Polars with guaranteed batch ↔ streaming parity.
 
-We built the **fastest, most complete Polars-native toolkit** in open source: 225 indicators, full Ehlers DSP, regime detection, options India helpers, and a research-grade backtest engine — one `Next<T>` implementation everywhere.
+We built the **fastest, most complete Polars-native toolkit** in open source: 230 indicators, full Ehlers DSP, regime detection, options India helpers, and a research-grade backtest engine — one `Next<T>` implementation everywhere.
 
 ## Start here
 

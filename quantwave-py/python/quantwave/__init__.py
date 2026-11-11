@@ -253,7 +253,7 @@ _OPTIONS_SYMBOLS = frozenset({
 })
 
 # --- Explicit ta namespace (codegen registry) ---
-from ._ta_registry_generated import SPECIAL_SYMBOLS, TA_REGISTRY
+from ._ta_registry_generated import SPECIAL_SYMBOLS, TA_REGISTRY, UNBOUND_SLUGS
 
 
 class ta:
@@ -299,13 +299,33 @@ class _PolarsOnlySurface:
         return f"<quantwave.ta.{self.slug} polars-only -> .ta.{self.polars_method}>"
 
 
+class _UnboundSurface:
+    """Metadata slug exposed on ``qw.ta``; implemented in Rust core without Python bindings yet."""
+
+    __slots__ = ("slug",)
+
+    def __init__(self, slug: str) -> None:
+        self.slug = slug
+
+    def __call__(self, *args, **kwargs):
+        raise NotImplementedError(
+            f"Indicator {self.slug!r} is implemented in Rust core (quantwave-core) "
+            f"and does not yet have Python bindings."
+        )
+
+    def __repr__(self) -> str:
+        return f"<quantwave.ta.{self.slug} core-only>"
+
+
 def _bind_ta(slug: str, obj) -> None:
     setattr(ta, slug, obj)
-    if not _is_internal_symbol(slug) and not isinstance(obj, _PolarsOnlySurface):
+    if not _is_internal_symbol(slug) and not isinstance(obj, (_PolarsOnlySurface, _UnboundSurface)):
         globals()[slug] = obj
 
 
 def _resolve_ta_binding(slug: str, entry: dict) -> object:
+    if slug in UNBOUND_SLUGS:
+        return _UnboundSurface(slug)
     native_batch = entry.get("native_batch")
     if native_batch:
         if not hasattr(_quantwave, native_batch):

@@ -507,6 +507,12 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
         "native_batch": "channelcycle",
         "native_streaming": "ChannelCycle",
     },
+    "choch": {
+        "slug": "choch",
+        "polars_method": None,
+        "native_batch": None,
+        "native_streaming": None,
+    },
     "choppiness_index": {
         "slug": "choppiness_index",
         "polars_method": None,
@@ -638,6 +644,12 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
         "polars_method": "extreme_reclaim",
         "native_batch": "extreme_reclaim",
         "native_streaming": "ExtremeReclaim",
+    },
+    "fair_value_gap": {
+        "slug": "fair_value_gap",
+        "polars_method": None,
+        "native_batch": None,
+        "native_streaming": None,
     },
     "fisher": {
         "slug": "fisher",
@@ -993,6 +1005,18 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
         "native_batch": "oneeurofilter",
         "native_streaming": "OneEuroFilter",
     },
+    "orb": {
+        "slug": "orb",
+        "polars_method": None,
+        "native_batch": None,
+        "native_streaming": None,
+    },
+    "order_block": {
+        "slug": "order_block",
+        "polars_method": None,
+        "native_batch": None,
+        "native_streaming": None,
+    },
     "pairs_rotation": {
         "slug": "pairs_rotation",
         "polars_method": None,
@@ -1112,6 +1136,12 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
         "polars_method": "sdo",
         "native_batch": "sdo",
         "native_streaming": "Sdo",
+    },
+    "session_vwap": {
+        "slug": "session_vwap",
+        "polars_method": None,
+        "native_batch": None,
+        "native_streaming": None,
     },
     "simple_predictor": {
         "slug": "simple_predictor",
@@ -1367,9 +1397,14 @@ TA_REGISTRY: dict[str, TaRegistryEntry] = {
     },
 }
 
-METADATA_SLUG_COUNT: int = 225
+METADATA_SLUG_COUNT: int = 230
 
 UNBOUND_SLUGS: tuple[str, ...] = (
+    "choch",
+    "fair_value_gap",
+    "orb",
+    "order_block",
+    "session_vwap",
 )
 
 SPECIAL_SYMBOLS: dict[str, str] = {

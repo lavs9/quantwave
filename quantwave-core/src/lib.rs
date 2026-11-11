@@ -1,7 +1,7 @@
 //! # quantwave-core
 //!
 //! Core technical-analysis engine for [QuantWave](https://lavs9.github.io/quantwave/):
-//! **225** native indicators, Ehlers DSP, price-action detectors, regime features,
+//! **230** native indicators, Ehlers DSP, price-action detectors, regime features,
 //! and the [`Next<Input>`](traits::Next) streaming trait that powers batch/streaming parity.
 //!
 //! ## Quick start (streaming)
@@ -86,6 +86,16 @@ pub use indicators::rodc::RODC;
 pub use indicators::rsmk::RSMK;
 pub use indicators::sdo::SDO;
 pub use indicators::series_norm::{PercentRank, Zscore};
+pub use indicators::session_levels::{
+    OpeningRangeBreakout, OrbBreakout, OrbInput, OrbPhase, OrbState, SessionVwap, SessionVwapBand,
+    SessionVwapInput, SessionVwapState,
+};
+pub use indicators::smc::{
+    Choch, ChochState, FairValueGap, FairValueGapZone, FvgDirection, FvgState, MitigationStatus,
+    OrderBlock, OrderBlockConfig, OrderBlockState, OrderBlockType, OrderBlockZone,
+    OrderBlockZoneMode, StructureBreakDirection, StructureBreakEvent, StructureBreakType,
+    StructureTrend, SwingType, choch_batch, fair_value_gap_batch, order_block_batch,
+};
 pub use indicators::smoothing::{EMA, SMA, WMA};
 pub use indicators::sr_monitor::{
     LevelSource, SR_INTERACTION_MONITOR_METADATA, SRInteraction, SRInteractionMonitor,
@@ -103,6 +113,9 @@ pub use indicators::ttm_squeeze::TTMSqueeze;
 pub use indicators::vfi::Vfi;
 pub use indicators::volatility::{ATR, TaATR, TaNATR, TaTRANGE, TrueRange};
 pub use indicators::volume::*;
+pub use indicators::volume_profile::{
+    BarData, PriceBin, ValueAreaMethod, VolumeAllocationMethod, VolumeProfile, VolumeProfileState,
+};
 pub use indicators::vortex::VortexIndicator;
 pub use indicators::vpn::VPNIndicator;
 pub use indicators::vwap::AnchoredVWAP;

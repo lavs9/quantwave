@@ -184,8 +184,13 @@ use crate::indicators::rsih::RSIH_METADATA;
 use crate::indicators::sdo::SDO_METADATA;
 use crate::indicators::series_norm::PERCENT_RANK_METADATA;
 use crate::indicators::series_norm::ZSCORE_METADATA;
+use crate::indicators::session_levels::ORB_METADATA;
+use crate::indicators::session_levels::SESSION_VWAP_METADATA;
 use crate::indicators::simple_predictor::SIMPLE_PREDICTOR_METADATA;
 use crate::indicators::sine_wave::SINE_WAVE_METADATA;
+use crate::indicators::smc::CHOCH_METADATA;
+use crate::indicators::smc::FAIR_VALUE_GAP_METADATA;
+use crate::indicators::smc::ORDER_BLOCK_METADATA;
 use crate::indicators::smoothing::EMA_METADATA;
 use crate::indicators::smoothing::SMA_METADATA;
 use crate::indicators::smoothing::WMA_METADATA;
@@ -733,6 +738,12 @@ pub static ALL_REGISTERED: &[RegisteredMetadata] = &[
         source_file: "channel_cycle",
     },
     RegisteredMetadata {
+        slug: "choch",
+        meta: &CHOCH_METADATA,
+        struct_name: "Choch",
+        source_file: "smc",
+    },
+    RegisteredMetadata {
         slug: "choppiness_index",
         meta: &CHOPPINESS_INDEX_METADATA,
         struct_name: "ChoppinessIndex",
@@ -863,6 +874,12 @@ pub static ALL_REGISTERED: &[RegisteredMetadata] = &[
         meta: &EXTREME_RECLAIM_METADATA,
         struct_name: "ExtremeReclaim",
         source_file: "market_structure",
+    },
+    RegisteredMetadata {
+        slug: "fair_value_gap",
+        meta: &FAIR_VALUE_GAP_METADATA,
+        struct_name: "FairValueGap",
+        source_file: "smc",
     },
     RegisteredMetadata {
         slug: "fisher_high_pass",
@@ -1219,6 +1236,18 @@ pub static ALL_REGISTERED: &[RegisteredMetadata] = &[
         source_file: "one_euro_filter",
     },
     RegisteredMetadata {
+        slug: "orb",
+        meta: &ORB_METADATA,
+        struct_name: "Orb",
+        source_file: "session_levels",
+    },
+    RegisteredMetadata {
+        slug: "order_block",
+        meta: &ORDER_BLOCK_METADATA,
+        struct_name: "OrderBlock",
+        source_file: "smc",
+    },
+    RegisteredMetadata {
         slug: "pairs_rotation",
         meta: &PAIRS_ROTATION_METADATA,
         struct_name: "PairsRotation",
@@ -1337,6 +1366,12 @@ pub static ALL_REGISTERED: &[RegisteredMetadata] = &[
         meta: &SDO_METADATA,
         struct_name: "Sdo",
         source_file: "sdo",
+    },
+    RegisteredMetadata {
+        slug: "session_vwap",
+        meta: &SESSION_VWAP_METADATA,
+        struct_name: "SessionVwap",
+        source_file: "session_levels",
     },
     RegisteredMetadata {
         slug: "simple_predictor",
@@ -1676,6 +1711,7 @@ pub static ALL_INDICATOR_METADATA: &[&IndicatorMetadata] = &[
     &CDLXSIDEGAP3METHODS_METADATA,
     &CG_METADATA,
     &CHANNEL_CYCLE_METADATA,
+    &CHOCH_METADATA,
     &CHOPPINESS_INDEX_METADATA,
     &CLASSIC_LAGUERRE_METADATA,
     &CMO_METADATA,
@@ -1698,6 +1734,7 @@ pub static ALL_INDICATOR_METADATA: &[&IndicatorMetadata] = &[
     &EMA_METADATA,
     &EMD_METADATA,
     &EXTREME_RECLAIM_METADATA,
+    &FAIR_VALUE_GAP_METADATA,
     &FISHER_HIGH_PASS_METADATA,
     &FISHER_METADATA,
     &FM_DEMODULATOR_METADATA,
@@ -1757,6 +1794,8 @@ pub static ALL_INDICATOR_METADATA: &[&IndicatorMetadata] = &[
     &OC2_METADATA,
     &OC_PRICE_RSI_METADATA,
     &ONE_EURO_FILTER_METADATA,
+    &ORB_METADATA,
+    &ORDER_BLOCK_METADATA,
     &PAIRS_ROTATION_METADATA,
     &PERCENT_RANK_METADATA,
     &PHASOR_METADATA,
@@ -1777,6 +1816,7 @@ pub static ALL_INDICATOR_METADATA: &[&IndicatorMetadata] = &[
     &RSI_METADATA,
     &SAR_METADATA,
     &SDO_METADATA,
+    &SESSION_VWAP_METADATA,
     &SIMPLE_PREDICTOR_METADATA,
     &SINE_WAVE_METADATA,
     &SMA_METADATA,
@@ -1821,4 +1861,4 @@ pub static ALL_INDICATOR_METADATA: &[&IndicatorMetadata] = &[
     &ZSCORE_METADATA,
 ];
 
-pub const METADATA_COUNT: usize = 225;
+pub const METADATA_COUNT: usize = 230;

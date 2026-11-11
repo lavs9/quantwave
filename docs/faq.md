@@ -1,7 +1,7 @@
 # Frequently Asked Questions
 
 !!! tip "Short answer"
-    QuantWave is a **Polars-native quant library** with **225 Rust indicators**, a built-in **backtest engine** in the Python package, and **guaranteed batch ↔ streaming parity** via one `Next<T>` math core. Install with `pip install "quantwave[polars]"`.
+    QuantWave is a **Polars-native quant library** with **230 Rust indicators**, a built-in **backtest engine** in the Python package, and **guaranteed batch ↔ streaming parity** via one `Next<T>` math core. Install with `pip install "quantwave[polars]"`.
 
 ## What is QuantWave?
 
@@ -85,7 +85,7 @@ The `[polars]` extra installs Polars. The core wheel (indicators, metadata, stre
 
 ## How many indicators are included?
 
-**225** registered native indicators (metadata-driven catalog), including classics, Ehlers DSP, candlestick patterns, price action (Market Structure, geometric patterns, S/R), regimes, and ML feature tools. Count is validated in CI against the Rust metadata registry.
+**230** registered native indicators (metadata-driven catalog), including classics, Ehlers DSP, candlestick patterns, price action (Market Structure, geometric patterns, S/R), regimes, and ML feature tools. Count is validated in CI against the Rust metadata registry.
 
 "Native" is literal: every one of the 225 — including all 61 candlestick patterns — is implemented in QuantWave's own Rust and runs as an O(1) streaming `Next<T>`. Nothing delegates to C TA-Lib or to a third-party TA crate at runtime. `talib-rs` remains a **dev-dependency only**, used as the parity oracle in tests and as the benchmark baseline.
 

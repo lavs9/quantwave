@@ -1,6 +1,6 @@
 {
-  "indicator_count": 225,
-  "parity_proptest_count": 219,
+  "indicator_count": 230,
+  "parity_proptest_count": 225,
   "exemption_count": 7,
   "gap_count": 0,
   "gaps": [],
@@ -662,6 +662,14 @@
       "status": "ok"
     },
     {
+      "slug": "choch",
+      "source_file": "smc",
+      "parity_proptest": "quantwave-core/src/indicators/smc.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
       "slug": "choppiness_index",
       "source_file": "choppiness_index",
       "parity_proptest": "quantwave-core/src/indicators/choppiness_index.rs",
@@ -833,6 +841,14 @@
       "slug": "extreme_reclaim",
       "source_file": "market_structure",
       "parity_proptest": "quantwave-core/src/indicators/market_structure.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "fair_value_gap",
+      "source_file": "smc",
+      "parity_proptest": "quantwave-core/src/indicators/smc.rs",
       "exempt": false,
       "gold_gap": null,
       "status": "ok"
@@ -1310,6 +1326,22 @@
       "status": "ok"
     },
     {
+      "slug": "orb",
+      "source_file": "session_levels",
+      "parity_proptest": "quantwave-core/src/indicators/session_levels.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "order_block",
+      "source_file": "smc",
+      "parity_proptest": "quantwave-core/src/indicators/smc.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
       "slug": "pairs_rotation",
       "source_file": "pairs_rotation",
       "parity_proptest": "quantwave-core/src/indicators/pairs_rotation.rs",
@@ -1465,6 +1497,14 @@
       "slug": "sdo",
       "source_file": "sdo",
       "parity_proptest": "quantwave-core/src/indicators/sdo.rs",
+      "exempt": false,
+      "gold_gap": null,
+      "status": "ok"
+    },
+    {
+      "slug": "session_vwap",
+      "source_file": "session_levels",
+      "parity_proptest": "quantwave-core/src/indicators/session_levels.rs",
       "exempt": false,
       "gold_gap": null,
       "status": "ok"
@@ -1712,7 +1752,7 @@
     {
       "slug": "volume_profile",
       "source_file": "volume_profile",
-      "parity_proptest": null,
+      "parity_proptest": "quantwave-core/src/indicators/volume_profile.rs",
       "exempt": true,
       "gold_gap": null,
       "status": "ok"

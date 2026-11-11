@@ -8,6 +8,9 @@ Cargo.lock
 
 # Dolt database files (added by bd init)
 .dolt/
+.beads/dolt/
+.beads/dolt-*
+.beads/.local_version
 *.db
 
 # MkDocs generated output

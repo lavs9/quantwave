@@ -1832,6 +1832,35 @@
     "boundary_kind": "scalar"
   },
   {
+    "slug": "choch",
+    "name": "choch",
+    "description": "Detects Market Structure Breaks (BOS) and Changes of Character (CHoCH) using swing highs and lows.",
+    "usage": "Identifies trend continuations (BOS) and trend reversals (CHoCH) in market structure for Smart Money Concepts (SMC) trading strategies.",
+    "category": "Price Action / SMC",
+    "keywords": [
+      "smc",
+      "market structure",
+      "choch",
+      "bos",
+      "swings",
+      "trend"
+    ],
+    "params": [
+      {
+        "name": "swing_strength",
+        "default": "5",
+        "description": "Number of bars required on each side to confirm a swing high or swing low."
+      }
+    ],
+    "formula_source": "https://www.tradingview.com/support/solutions/43000703076-market-structure/",
+    "formula_latex": "\\text{BOS} = \\text{Close} > \\text{SwingHigh}_{\\text{bull}} \\lor \\text{Close} < \\text{SwingLow}_{\\text{bear}}, \\quad \\text{CHoCH} = \\text{Close} < \\text{SwingLow}_{\\text{bull}} \\lor \\text{Close} > \\text{SwingHigh}_{\\text{bear}}",
+    "gold_standard_file": "choch.json",
+    "ehlers_summary": "",
+    "struct_name": "Choch",
+    "source_file": "smc",
+    "boundary_kind": "event"
+  },
+  {
     "slug": "choppiness_index",
     "name": "Choppiness Index",
     "description": "Determines if the market is trending (low values) or ranging/choppy (high values).",
@@ -2504,6 +2533,40 @@
     "ehlers_summary": "Not Ehlers. Pierce-and-reclaim from Build Alpha CustomIndicators.xml (Bergstrom): window 20, ATR 20, k = 0.5, penetration compared with >=.",
     "struct_name": "ExtremeReclaim",
     "source_file": "market_structure",
+    "boundary_kind": "event"
+  },
+  {
+    "slug": "fair_value_gap",
+    "name": "fair_value_gap",
+    "description": "Detects 3-bar Fair Value Gaps (price imbalances) and tracks their mitigation and fill levels.",
+    "usage": "Identifies liquidity imbalances where price moves impulsively, leaving untraded zones that act as magnets for price retests.",
+    "category": "Price Action / SMC",
+    "keywords": [
+      "smc",
+      "fvg",
+      "fair value gap",
+      "imbalance",
+      "liquidity",
+      "smart money"
+    ],
+    "params": [
+      {
+        "name": "min_gap_size",
+        "default": "0.0",
+        "description": "Minimum price distance required between outer bars to register a valid Fair Value Gap."
+      },
+      {
+        "name": "max_active_gaps",
+        "default": "20",
+        "description": "Maximum number of unmitigated or partially mitigated fair value gaps retained in memory."
+      }
+    ],
+    "formula_source": "https://www.tradingview.com/support/solutions/43000703078-fair-value-gaps/",
+    "formula_latex": "\\text{Bullish FVG} = \\text{Low}_t > \\text{High}_{t-2}, \\quad \\text{Bearish FVG} = \\text{High}_t < \\text{Low}_{t-2}",
+    "gold_standard_file": "fair_value_gap.json",
+    "ehlers_summary": "",
+    "struct_name": "FairValueGap",
+    "source_file": "smc",
     "boundary_kind": "event"
   },
   {
@@ -4278,6 +4341,65 @@
     "boundary_kind": "scalar"
   },
   {
+    "slug": "orb",
+    "name": "Opening Range Breakout",
+    "description": "Tracks the high and low over the opening range bars and detects directional breakouts with extension targets.",
+    "usage": "Identifies early-session market commitment and momentum expansion. When price breaks out of the established opening range, traders enter in the direction of the break targeting 0.5x and 1.0x range extensions.",
+    "category": "Price Action",
+    "keywords": [
+      "orb",
+      "opening-range",
+      "breakout",
+      "session",
+      "intraday",
+      "toby-crabel",
+      "trend"
+    ],
+    "params": [
+      {
+        "name": "range_bars",
+        "default": "15",
+        "description": "Number of opening bars defining the range window"
+      }
+    ],
+    "formula_source": "https://www.tradingview.com/support/solutions/43000696950-opening-range-breakout-orb/",
+    "formula_latex": "\n\\[\n\\text{Range High} = \\max_{i \\in [1, N]}(H_i), \\quad \\text{Range Low} = \\min_{i \\in [1, N]}(L_i) \\\\\n\\text{Range Size} = \\text{Range High} - \\text{Range Low} \\\\\n\\text{Target}_{1,\\text{bull}} = \\text{Range High} + 0.5 \\cdot \\text{Range Size}, \\quad \\text{Target}_{1,\\text{bear}} = \\text{Range Low} - 0.5 \\cdot \\text{Range Size} \\\\\n\\text{Target}_{2,\\text{bull}} = \\text{Range High} + 1.0 \\cdot \\text{Range Size}, \\quad \\text{Target}_{2,\\text{bear}} = \\text{Range Low} - 1.0 \\cdot \\text{Range Size}\n\\]\n",
+    "gold_standard_file": "orb.json",
+    "ehlers_summary": "Pioneered by Toby Crabel in 'Day Trading with Short Term Price Patterns' (1990), Opening Range Breakout establishes support and resistance during the initial minutes of trading. A decisive breakout beyond the opening boundary often signals directional conviction for the remainder of the trading day. — Toby Crabel / TradingView",
+    "struct_name": "Orb",
+    "source_file": "session_levels",
+    "boundary_kind": "event"
+  },
+  {
+    "slug": "order_block",
+    "name": "order_block",
+    "description": "Detects Bullish and Bearish Order Blocks (institutional entry zones) and tracks their mitigation.",
+    "usage": "Identifies institutional order blocks preceding energetic displacements and monitors subsequent mitigation/invalidation.",
+    "category": "Price Action / SMC",
+    "keywords": [
+      "smc",
+      "order block",
+      "ob",
+      "smart money",
+      "mitigation",
+      "institutional"
+    ],
+    "params": [
+      {
+        "name": "max_active_blocks",
+        "default": "20",
+        "description": "Maximum number of unmitigated or partially mitigated active order blocks retained in memory."
+      }
+    ],
+    "formula_source": "https://www.tradingview.com/support/solutions/43000703077-order-blocks/",
+    "formula_latex": "\\text{Bullish OB} = \\text{Candle}_{t-1} \\text{ (down)} \\land \\text{Close}_t > \\text{High}_{t-1}, \\quad \\text{Bearish OB} = \\text{Candle}_{t-1} \\text{ (up)} \\land \\text{Close}_t < \\text{Low}_{t-1}",
+    "gold_standard_file": "order_block.json",
+    "ehlers_summary": "",
+    "struct_name": "OrderBlock",
+    "source_file": "smc",
+    "boundary_kind": "event"
+  },
+  {
     "slug": "pairs_rotation",
     "name": "PairsRotation",
     "description": "Relative rotation of two securities using normalized roofing filters.",
@@ -4867,6 +4989,30 @@
     "ehlers_summary": "The Stochastic Distance Oscillator (SDO) by Vitali Apirine adapts the stochastic formula to measure the current price distance relative to its historical range. By smoothing this relative distance with an EMA, it provides a cleaner momentum signal that identifies potential trend reversals when crossing extreme thresholds.",
     "struct_name": "Sdo",
     "source_file": "sdo",
+    "boundary_kind": "scalar"
+  },
+  {
+    "slug": "session_vwap",
+    "name": "Session VWAP with Standard Deviation Bands",
+    "description": "Session-anchored Volume Weighted Average Price (VWAP) with three standard deviation volatility bands, resetting at session boundaries.",
+    "usage": "Use as an intraday fair value benchmark. The core VWAP serves as the primary institutional execution level, while Sigma 1, 2, and 3 standard deviation bands identify statistical mean reversion boundaries and dynamic support/resistance.",
+    "category": "Volume",
+    "keywords": [
+      "vwap",
+      "session",
+      "intraday",
+      "volume",
+      "bands",
+      "standard-deviation",
+      "mean-reversion"
+    ],
+    "params": [],
+    "formula_source": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/vwap-standard-deviation-bands",
+    "formula_latex": "\n\\[\nTP_t = \\frac{H_t + L_t + C_t}{3} \\\\\nVWAP_t = \\frac{\\sum_{i=1}^t TP_i \\cdot V_i}{\\sum_{i=1}^t V_i} \\\\\n\\sigma_t = \\sqrt{\\frac{\\sum_{i=1}^t V_i \\cdot (TP_i - VWAP_t)^2}{\\sum_{i=1}^t V_i}} \\\\\n\\text{Upper}_k = VWAP_t + k \\cdot \\sigma_t, \\quad \\text{Lower}_k = VWAP_t - k \\cdot \\sigma_t \\quad (k \\in \\{1, 2, 3\\})\n\\]\n",
+    "gold_standard_file": "session_vwap.json",
+    "ehlers_summary": "Volume Weighted Average Price calculates the cumulative typical price weighted by volume across a trading session. Incorporating standard deviation bands provides dynamic volatility envelopes that highlight statistical value containment and institutional liquidation extremes. — StockCharts / Investopedia",
+    "struct_name": "SessionVwap",
+    "source_file": "session_levels",
     "boundary_kind": "scalar"
   },
   {
@@ -5815,32 +5961,43 @@
   {
     "slug": "volume_profile",
     "name": "Volume Profile",
-    "description": "Calculates the price level with the highest traded volume (Point of Control) over a sliding window.",
-    "usage": "Use to identify significant support and resistance levels. The POC represents the price where most market activity occurred, often acting as a magnet for price or a strong barrier. Essential for volume spread analysis and auction market theory.",
+    "description": "Calculates price distribution of traded volume, Point of Control (POC), and Value Area High/Low (VAH/VAL) over a sliding window.",
+    "usage": "Identifies institutional high-volume acceptance nodes (POC) and unfair value boundaries (VAH/VAL) for mean-reversion, breakout targets, and dynamic support/resistance in Auction Market Theory.",
     "category": "Volume",
     "keywords": [
       "volume",
-      "profile",
+      "volume-profile",
       "poc",
-      "support-resistance",
-      "auction-market-theory"
+      "point-of-control",
+      "vah",
+      "val",
+      "value-area",
+      "auction-market-theory",
+      "steidlmayer",
+      "market-profile",
+      "support-resistance"
     ],
     "params": [
       {
         "name": "period",
         "default": "200",
-        "description": "Sliding window size"
+        "description": "Sliding window size in bars"
       },
       {
         "name": "bins",
         "default": "50",
-        "description": "Number of price bins in the histogram"
+        "description": "Number of discrete price bins in the histogram"
+      },
+      {
+        "name": "value_area_pct",
+        "default": "0.70",
+        "description": "Target fraction of total window volume contained in the Value Area [0.0, 1.0]"
       }
     ],
-    "formula_source": "https://www.tradingview.com/support/solutions/43000502040-volume-profile-visible-range-vpvr/",
-    "formula_latex": "\n\\[\nBinIdx = \\lfloor \\frac{Price - Price_{min}}{BinSize} \\rfloor\n\\]\n\\[\nPOC = Price_{min} + (Idx_{max\\_vol} + 0.5) \\times BinSize\n\\]\n",
+    "formula_source": "https://www.tradingview.com/support/solutions/43000703076-visible-range-volume-profile/",
+    "formula_latex": "\n\\begin{aligned}\n\\Delta P &= \\frac{P_{\\max} - P_{\\min}}{N_{\\text{bins}}} \\\\\n\\text{Bin}(P) &= \\min\\left(N_{\\text{bins}}-1, \\; \\left\\lfloor \\frac{P - P_{\\min}}{\\Delta P} \\right\\rfloor \\right) \\\\\n\\text{POC} &= P_{\\min} + \\left( \\arg\\max_{i} V_i + 0.5 \\right) \\cdot \\Delta P \\\\\n\\sum_{i=i_{\\text{VAL}}}^{i_{\\text{VAH}}} V_i &\\ge \\alpha \\cdot V_{\\text{total}}, \\quad \\text{where } \\alpha = 0.70 \\\\\n\\text{VAL} &= P_{\\min} + i_{\\text{VAL}} \\cdot \\Delta P \\\\\n\\text{VAH} &= P_{\\min} + (i_{\\text{VAH}} + 1) \\cdot \\Delta P\n\\end{aligned}\n",
     "gold_standard_file": "volume_profile.json",
-    "ehlers_summary": "Volume Profile is an advanced charting study that displays trading activity over a specified time period at specified price levels. The Point of Control (POC) is the single most important level in the profile, representing the price at which the most volume was traded. It serves as a key benchmark for identifying value areas and potential trend reversals.",
+    "ehlers_summary": "Volume Profile displays trading activity over a rolling window at specified price levels. Originating from J. Peter Steidlmayer's Market Profile (1984), the Point of Control (POC) marks the price of maximum liquidity and acceptance, while the Value Area encompasses 70% of total volume traded to delineate fair market value.",
     "struct_name": "VolumeProfile",
     "source_file": "volume_profile",
     "boundary_kind": "scalar"

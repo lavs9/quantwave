@@ -1,6 +1,6 @@
 # Indicator Suite
 
-QuantWave provides **225 native indicators** implemented in Rust — classic technical analysis, Ehlers DSP, candlestick patterns, price action, regimes, and ML features.
+QuantWave provides **230 native indicators** implemented in Rust — classic technical analysis, Ehlers DSP, candlestick patterns, price action, regimes, and ML features.
 
 Every indicator supports:
 

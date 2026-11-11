@@ -90,6 +90,7 @@ class ta:
     cdlxsidegap3methods: Any
     cg: Any
     channel_cycle: Any
+    choch: Any
     choppiness_index: Any
     classic_laguerre: Any
     cmo: Any
@@ -112,6 +113,7 @@ class ta:
     ema: Any
     emd: Any
     extreme_reclaim: Any
+    fair_value_gap: Any
     fisher: Any
     fisher_high_pass: Any
     fm_demodulator: Any
@@ -171,6 +173,8 @@ class ta:
     oc2: Any
     oc_price_rsi: Any
     one_euro_filter: Any
+    orb: Any
+    order_block: Any
     pairs_rotation: Any
     percent_rank: Any
     phasor: Any
@@ -191,6 +195,7 @@ class ta:
     rsih: Any
     sar: Any
     sdo: Any
+    session_vwap: Any
     simple_predictor: Any
     sine_wave: Any
     sma: Any

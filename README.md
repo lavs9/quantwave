@@ -8,13 +8,13 @@
 [![CI](https://github.com/lavs9/quantwave/actions/workflows/ci.yml/badge.svg)](https://github.com/lavs9/quantwave/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/lavs9/quantwave/blob/main/LICENSE)
 
-225 Native Indicators · Full Ehlers DSP suite · Regime Detection · Backtest engine · Property-tested streaming & batch parity
+230 Native Indicators · Full Ehlers DSP suite · Regime Detection · Backtest engine · Property-tested streaming & batch parity
 
 **Python** `pip install quantwave` (or `pip install "quantwave[polars]"` for the Polars integration layer) **Rust** `cargo add quantwave`
 
 [📖 Documentation](https://lavs9.github.io/quantwave/) • [📦 PyPI](https://pypi.org/project/quantwave/) • [⭐ GitHub](https://github.com/lavs9/quantwave) • [💬 Discussions](https://github.com/lavs9/quantwave/discussions) • [🤝 Contributing](CONTRIBUTING.md) • [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/lavs9/quantwave)
 
-**225 indicators • Polars-native • Streaming & batch parity • MIT licensed**
+**230 indicators • Polars-native • Streaming & batch parity • MIT licensed**
 
 ---
 
@@ -28,7 +28,7 @@ Most quantitative libraries force an uncomfortable compromise.
 
 **QuantWave removes the tradeoff.**
 
-It runs a **Rust core** behind zero-copy Polars expressions, while offering a first-class, productive experience in both Python and Rust. Every indicator is built on a single mathematical source of truth — the `Next<T>` trait — and batch (Polars) and real-time streaming outputs are **property-tested to agree**: 219 of 225 indicators have a streaming-vs-batch proptest, with tolerances ranging from exact match to `1e-5` (most are `1e-10` or exact), and 7 reviewed exemptions (6 indicators without a proptest, plus `wma`, which has one) are listed in [`quantwave-core/tests/parity_exemptions.toml`](quantwave-core/tests/parity_exemptions.toml). See [Validation](https://lavs9.github.io/quantwave/validation/).
+It runs a **Rust core** behind zero-copy Polars expressions, while offering a first-class, productive experience in both Python and Rust. Every indicator is built on a single mathematical source of truth — the `Next<T>` trait — and batch (Polars) and real-time streaming outputs are **property-tested to agree**: 225 of 230 indicators have a streaming-vs-batch proptest, with tolerances ranging from exact match to `1e-5` (most are `1e-10` or exact), and 7 reviewed exemptions (6 indicators without a proptest, plus `wma`, which has one) are listed in [`quantwave-core/tests/parity_exemptions.toml`](quantwave-core/tests/parity_exemptions.toml). See [Validation](https://lavs9.github.io/quantwave/validation/).
 
 ### How We Compare
 
@@ -42,7 +42,7 @@ It runs a **Rust core** behind zero-copy Polars expressions, while offering a fi
 
 QuantWave is no longer early-stage. It ships with production-ready depth across several domains:
 
-- **225 Native Indicators** with gold-standard validation and extensive Ehlers DSP coverage — all 225 are implemented in QuantWave's own Rust, including all 61 candlestick patterns. No C TA-Lib, and no third-party TA crate in the shipped dependency graph; `talib-rs` is a test-only parity oracle.
+- **230 Native Indicators** with gold-standard validation and extensive Ehlers DSP coverage — all 230 are implemented in QuantWave's own Rust, including all 61 candlestick patterns. No C TA-Lib, and no third-party TA crate in the shipped dependency graph; `talib-rs` is a test-only parity oracle.
 - **Full Regime Detection Suite** (HMM, GMM, PELT, clustering, conditioned risk metrics)
 - **Execution-Aware Backtest Engine** — first-class order types (market/limit/stop/stop-limit + bracket/OCO), risk overlays (vol-target, inverse-vol, position-limit), portfolio rebalance policies, walk-forward optimization (grid + Bayesian TPE), Monte Carlo, and benchmark-relative reporting (alpha/beta/Calmar/VaR/CVaR) — all via the `.bt` Polars namespace
 - **Complete Options India Stack** — Black-Scholes Greeks, IV solvers, chain analytics (Max Pain, PCR, GEX, OI Zones), and NSE utilities, all exposed as native Polars expressions
@@ -53,7 +53,7 @@ QuantWave is no longer early-stage. It ships with production-ready depth across 
 
 - **Performance** — Rust core with zero-copy Polars expressions
 - **Correctness** — Validated against gold-standard reference vectors
-- **Parity** — Streaming and batch outputs property-tested to agree (219/225 indicators; exemptions in `parity_exemptions.toml`)
+- **Parity** — Streaming and batch outputs property-tested to agree (225/230 indicators; exemptions in `parity_exemptions.toml`)
 - **Breadth** — Classic indicators + advanced Ehlers DSP + regime detection + Options India
 - **Developer Experience** — Clean Python API (`from quantwave import ta`) and idiomatic Rust
 
