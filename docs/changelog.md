@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-11-11
+
+### Added
+- **ATR Seed Convention & Warmup Options (GH-62, `quantwave-z8hp`).**
+  - Added `seed="talib" | "wilder1978" | "classic"` and `warmup="classic" | "nan" | "partial"` to `quantwave.atr`, `quantwave.Atr`, and Polars `pl.col().ta.atr`.
+  - Classic Wilder (1978) seed calculates `TR[0] = H - L`, `ATR[period-1] = mean(TR[0:period])`, emitting finite values from bar `period - 1` onwards.
+  - Default stays `seed="talib"` (seeds at bar `period` with `period` initial NaNs) for backward compatibility, with full documentation of convention in `quantwave.convention_notes("atr")`.
+- **Black-76 Futures/Forward Option Pricing Suite (GH-63, `quantwave-gvao`).**
+  - Added `black76_call_price`, `black76_put_price`, `black76_delta`, `black76_gamma`, `black76_vega`, and `black76_theta` to `quantwave.options` and Rust core.
+  - Added direct `forward=` argument to `quantwave.options.implied_vol` and Polars `pl.col().ta.implied_vol`, avoiding manual `s = F * exp(-r*T)` conversions.
+- **Vectorized `implied_vol` for Option Chains (GH-65, `quantwave-rtdo`).**
+  - `quantwave.options.implied_vol` now supports scalar, list, or numpy array inputs across market prices, strikes, spot, forward, and expiry times.
+  - Automatically broadcasts dimensions and returns matching numpy `ndarray` with `np.nan` on undefined or unsolvable quotes.
+- **Date-Aware `nse_lot_size` with Historical Revision Tracking (GH-66, `quantwave-q433`).**
+  - `quantwave.options.nse_lot_size` now defaults NIFTY lot size to 65 (effective Nov 26, 2025 onwards).
+  - Added optional `as_of=` parameter tracking historical NIFTY contract revisions (75 -> 50 -> 25 -> 75 -> 65) across regulatory eras.
+  - Documented `nse_risk_free_rate()` 91-day T-bill quarterly source and recommended explicit rates for historical backtesting.
+
+### Fixed
+- **`implied_vol` Edge Cases & Boundary Handling (GH-64, `quantwave-ne2p`).**
+  - Returns `None` (scalar) and `NaN` (vectorized / Polars) when `market_price <= 0.0` or `t <= 0.0`.
+  - Returns `None` / `NaN` when an option is quoted at or below undiscounted intrinsic value ($C \cdot e^{rT} \le F - K$), eliminating spurious finite IV extrapolations when time value is zero or negative.
+
 ## [0.10.1] - 2026-11-11
 
 ### Fixed

@@ -699,7 +699,10 @@ class options_india:
 # Build safely (no bare-name RHS that can NameError if a symbol wasn't populated).
 _option_legacy_names = [
     "bs_call_price", "bs_put_price", "bs_delta", "bs_gamma", "bs_theta",
-    "bs_vega", "bs_rho", "implied_vol", "max_pain", "strike_pcr",
+    "bs_vega", "bs_rho",
+    "black76_call_price", "black76_put_price", "black76_delta", "black76_gamma",
+    "black76_theta", "black76_vega",
+    "implied_vol", "max_pain", "strike_pcr",
     "chain_pcr", "oi_zones", "gex_per_strike", "gex_flip_strike", "gextotal",
     "atm_straddle", "synthetic_futures", "moneyness", "nse_lot_size",
     "nse_risk_free_rate",

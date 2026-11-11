@@ -2354,23 +2354,82 @@ pub fn bs_vega(s: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {
 pub fn bs_rho(s: f64, k: f64, r: f64, t: f64, sigma: f64, is_call: bool) -> f64 {
     options_india::bs_rho(s, k, r, t, sigma, options_india::OptionType::from(is_call))
 }
+
 #[pyfunction]
+pub fn black76_call_price(f: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {
+    options_india::black76_call_price(f, k, r, t, sigma)
+}
+
+#[pyfunction]
+pub fn black76_put_price(f: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {
+    options_india::black76_put_price(f, k, r, t, sigma)
+}
+
+#[pyfunction]
+pub fn black76_delta(f: f64, k: f64, r: f64, t: f64, sigma: f64, is_call: bool) -> f64 {
+    options_india::black76_delta(f, k, r, t, sigma, options_india::OptionType::from(is_call))
+}
+
+#[pyfunction]
+pub fn black76_gamma(f: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {
+    options_india::black76_gamma(f, k, r, t, sigma)
+}
+
+#[pyfunction]
+pub fn black76_vega(f: f64, k: f64, r: f64, t: f64, sigma: f64) -> f64 {
+    options_india::black76_vega(f, k, r, t, sigma)
+}
+
+#[pyfunction]
+pub fn black76_theta(f: f64, k: f64, r: f64, t: f64, sigma: f64, is_call: bool) -> f64 {
+    options_india::black76_theta(f, k, r, t, sigma, options_india::OptionType::from(is_call))
+}
+
+#[pyfunction]
+#[pyo3(signature = (market_price, s=None, k=None, r=None, t=None, is_call=None, forward=None))]
 pub fn implied_vol(
     market_price: f64,
-    s: f64,
-    k: f64,
-    r: f64,
-    t: f64,
-    is_call: bool,
+    s: Option<f64>,
+    k: Option<f64>,
+    r: Option<f64>,
+    t: Option<f64>,
+    is_call: Option<bool>,
+    forward: Option<f64>,
 ) -> Option<f64> {
-    if t <= 0.0 {
+    let t_val = t.unwrap_or(0.0);
+    if t_val <= 0.0 || market_price <= 0.0 {
         return None;
     }
-    let theta = if is_call { 1.0 } else { -1.0 };
-    let forward = s * (r * t).exp();
-    let undiscounted_price = market_price * (r * t).exp();
-    let iv = options_india::implied_black_volatility(undiscounted_price, forward, k, t, theta);
-    if iv >= f64::MAX || iv <= -f64::MAX {
+    let k_val = match k {
+        Some(k) if k > 0.0 => k,
+        _ => return None,
+    };
+    let r_val = r.unwrap_or(0.0);
+    let is_call_val = is_call.unwrap_or(true);
+
+    let f_val = match (forward, s) {
+        (Some(f), _) if f > 0.0 => f,
+        (_, Some(s_val)) if s_val > 0.0 => s_val * (r_val * t_val).exp(),
+        _ => return None,
+    };
+
+    let theta = if is_call_val { 1.0 } else { -1.0 };
+    let undiscounted_price = market_price * (r_val * t_val).exp();
+
+    // Check intrinsic bound under Black-76
+    let intrinsic = if is_call_val {
+        (f_val - k_val).max(0.0)
+    } else {
+        (k_val - f_val).max(0.0)
+    };
+    // If undiscounted price is <= intrinsic, time value is zero or negative -> IV undefined
+    if undiscounted_price <= intrinsic {
+        return None;
+    }
+
+    let iv =
+        options_india::implied_black_volatility(undiscounted_price, f_val, k_val, t_val, theta);
+    if iv >= f64::MAX || iv <= -f64::MAX || iv <= 0.0 || !iv.is_finite() {
         None
     } else {
         Some(iv)
@@ -2458,9 +2517,13 @@ pub fn moneyness(spot: f64, strike: f64) -> String {
     options_india::moneyness(spot, strike).to_string()
 }
 #[pyfunction]
-pub fn nse_lot_size(symbol: String) -> Option<u32> {
-    options_india::nse_lot_size(&symbol)
+#[pyo3(signature = (symbol, as_of=None))]
+pub fn nse_lot_size(symbol: String, as_of: Option<&str>) -> Option<u32> {
+    let date = as_of.and_then(|s| chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d").ok());
+    options_india::nse_lot_size_dated(&symbol, date)
 }
+/// Return the default NSE risk-free rate (0.065, derived from 91-day T-bill yield, updated quarterly).
+/// When backtesting across different macro regimes or historical eras, callers should pass an explicit rate.
 #[pyfunction]
 pub fn nse_risk_free_rate() -> f64 {
     options_india::NSE_RISK_FREE_RATE
@@ -3841,6 +3904,12 @@ pub fn register(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(bs_theta, m)?)?;
     m.add_function(wrap_pyfunction!(bs_vega, m)?)?;
     m.add_function(wrap_pyfunction!(bs_rho, m)?)?;
+    m.add_function(wrap_pyfunction!(black76_call_price, m)?)?;
+    m.add_function(wrap_pyfunction!(black76_put_price, m)?)?;
+    m.add_function(wrap_pyfunction!(black76_delta, m)?)?;
+    m.add_function(wrap_pyfunction!(black76_gamma, m)?)?;
+    m.add_function(wrap_pyfunction!(black76_theta, m)?)?;
+    m.add_function(wrap_pyfunction!(black76_vega, m)?)?;
     m.add_function(wrap_pyfunction!(implied_vol, m)?)?;
     m.add_function(wrap_pyfunction!(max_pain, m)?)?;
     m.add_function(wrap_pyfunction!(strike_pcr, m)?)?;

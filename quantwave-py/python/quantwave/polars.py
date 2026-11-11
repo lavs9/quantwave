@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import polars as pl
 from polars.plugins import register_plugin_function
@@ -23,7 +23,7 @@ from ._quantwave import (
 # NSE lot sizes mirror quantwave_core::options_india::india::nse_lot_size.
 # Kept in lockstep by test_polars_chain / test_chain_analytics parity assertions.
 _NSE_LOT_SIZES: dict[str, int] = {
-    "NIFTY": 50,
+    "NIFTY": 65,
     "BANKNIFTY": 15,
     "FINNIFTY": 40,
     "MIDCPNIFTY": 75,
@@ -111,22 +111,24 @@ class options:
     @staticmethod
     def implied_vol(
         price_col: str,
-        spot: float,
-        strike_col: str,
-        r_col_or_val: _ColOrVal,
-        t_col_or_val: _ColOrVal,
+        spot: Optional[float] = None,
+        strike_col: str = "strike",
+        r_col_or_val: _ColOrVal = 0.065,
+        t_col_or_val: _ColOrVal = "t",
         is_call: bool = True,
+        forward: Optional[float] = None,
     ) -> pl.Expr:
         """Implied Black volatility from market price (annualized decimal).
 
         Args:
             price_col: Column with option LTP (same units as spot).
-            spot: Underlying spot price.
+            spot: Underlying spot price (optional if forward is provided).
             strike_col: Strike column.
             r_col_or_val: Risk-free rate (annualized decimal, e.g. 0.065), as
                 a column name, Expr, or float.
             t_col_or_val: Time to expiry in years, as a column name, Expr, or float.
             is_call: True for call, False for put.
+            forward: Forward / futures price F (optional if spot is provided).
 
         Examples:
             >>> import polars as pl
@@ -140,7 +142,7 @@ class options:
         return _options_plugin(
             exprs,
             "options_implied_vol",
-            kwargs={"spot": spot, "is_call": is_call},
+            kwargs={"spot": spot, "forward": forward, "is_call": is_call},
         )
 
     @staticmethod

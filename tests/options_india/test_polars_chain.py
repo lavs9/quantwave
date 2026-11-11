@@ -59,7 +59,7 @@ def test_polars_chain_analytics():
     lots = pl.DataFrame({"symbol": ["NIFTY", "BANKNIFTY"]}).with_columns([
         opt_expr.nse_lot_size("symbol").alias("lot")
     ])
-    assert lots["lot"][0] == 50
+    assert lots["lot"][0] == 65
     assert lots["lot"][1] == 15
 
     # Test OI Zones (returns a struct with lists)

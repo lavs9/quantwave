@@ -16,6 +16,13 @@ struct SpotKwargs {
     spot: f64,
 }
 
+#[derive(Deserialize)]
+struct ImpliedVolKwargs {
+    spot: Option<f64>,
+    forward: Option<f64>,
+    is_call: bool,
+}
+
 fn map4(inputs: &[Series], f: impl Fn(f64, f64, f64, f64) -> f64) -> PolarsResult<Series> {
     let a = inputs[0].f64()?;
     let b = inputs[1].f64()?;
@@ -105,20 +112,33 @@ fn options_bs_put_price(inputs: &[Series], kwargs: SpotKwargs) -> PolarsResult<S
     })
 }
 
-/// inputs: market_price, strike, r, t — kwargs: spot, is_call
+/// inputs: market_price, strike, r, t — kwargs: spot, forward, is_call
 #[polars_expr(output_type = Float64)]
-fn options_implied_vol(inputs: &[Series], kwargs: SpotCallKwargs) -> PolarsResult<Series> {
+fn options_implied_vol(inputs: &[Series], kwargs: ImpliedVolKwargs) -> PolarsResult<Series> {
     let spot = kwargs.spot;
+    let forward = kwargs.forward;
     let is_call = kwargs.is_call;
     map4(inputs, |price, k, r, t| {
-        if t <= 0.0 {
+        if t <= 0.0 || price <= 0.0 || k <= 0.0 {
             return f64::NAN;
         }
+        let f_val = match (forward, spot) {
+            (Some(f), _) if f > 0.0 => f,
+            (_, Some(s)) if s > 0.0 => s * (r * t).exp(),
+            _ => return f64::NAN,
+        };
         let theta = if is_call { 1.0 } else { -1.0 };
-        let forward = spot * (r * t).exp();
         let undiscounted_price = price * (r * t).exp();
-        let iv = options_india::implied_black_volatility(undiscounted_price, forward, k, t, theta);
-        if iv >= f64::MAX || iv <= -f64::MAX {
+        let intrinsic = if is_call {
+            (f_val - k).max(0.0)
+        } else {
+            (k - f_val).max(0.0)
+        };
+        if undiscounted_price <= intrinsic {
+            return f64::NAN;
+        }
+        let iv = options_india::implied_black_volatility(undiscounted_price, f_val, k, t, theta);
+        if iv >= f64::MAX || iv <= -f64::MAX || iv <= 0.0 || !iv.is_finite() {
             f64::NAN
         } else {
             iv

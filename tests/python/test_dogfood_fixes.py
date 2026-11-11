@@ -508,4 +508,128 @@ def test_gh62_atr_seed_options_and_wilder1978_parity():
     assert not np.isnan(atr_ema_nan[13])
 
 
+# ============================================================================
+# GH-63: Black-76 Pricing & Forward-Price Input
+# ============================================================================
+
+def test_gh63_black76_pricing_parity_and_forward_iv():
+    F = 8000.0
+    K = 7500.0
+    r = 0.065
+    T = 30.0 / 365.0
+    sigma = 0.20
+
+    # Spot price s = F * exp(-r * T)
+    s = F * math.exp(-r * T)
+
+    # Parity between Black-76 and Black-Scholes
+    c_76 = qw.options.black76_call_price(F, K, r, T, sigma)
+    c_bs = qw.options.bs_call_price(s, K, r, T, sigma)
+    assert math.isclose(c_76, c_bs, rel_tol=1e-10)
+
+    p_76 = qw.options.black76_put_price(F, K, r, T, sigma)
+    p_bs = qw.options.bs_put_price(s, K, r, T, sigma)
+    assert math.isclose(p_76, p_bs, rel_tol=1e-10)
+
+    v_76 = qw.options.black76_vega(F, K, r, T, sigma)
+    v_bs = qw.options.bs_vega(s, K, r, T, sigma)
+    assert math.isclose(v_76, v_bs, rel_tol=1e-10)
+
+    # implied_vol with forward= input
+    iv_call = qw.options.implied_vol(c_76, forward=F, k=K, r=r, t=T, is_call=True)
+    assert iv_call is not None
+    assert math.isclose(iv_call, sigma, rel_tol=1e-5)
+
+    iv_put = qw.options.implied_vol(p_76, forward=F, k=K, r=r, t=T, is_call=False)
+    assert iv_put is not None
+    assert math.isclose(iv_put, sigma, rel_tol=1e-5)
+
+
+# ============================================================================
+# GH-64: implied_vol Edge Cases (None/NaN on zero price and intrinsic without time value)
+# ============================================================================
+
+def test_gh64_implied_vol_edge_cases():
+    # 1. Zero price returns None
+    assert qw.options.implied_vol(0.0, 7998.3, 7500.0, 0.065, 1.2 / 365.0, True) is None
+    assert qw.options.implied_vol(-5.0, 7998.3, 7500.0, 0.065, 1.2 / 365.0, True) is None
+
+    # 2. Time <= 0 returns None (scalar) and NaN (vectorized)
+    assert qw.options.implied_vol(10.0, 100.0, 100.0, 0.05, 0.0, True) is None
+    assert qw.options.implied_vol(10.0, 100.0, 100.0, 0.05, -0.1, True) is None
+    vec_t0 = qw.options.implied_vol([10.0, 10.0], 100.0, 100.0, 0.05, [0.0, -0.1], True)
+    assert np.all(np.isnan(vec_t0))
+
+    # 3. Deep ITM quoted below intrinsic (zero/negative time value) returns None
+    # From trade_backtest bug report: market_price 499.893 vs intrinsic 500.0094
+    iv_bad = qw.options.implied_vol(499.893, 7998.3, 7500.0, 0.065, 1.2 / 365.0, True)
+    assert iv_bad is None
+
+    # Deep ITM with valid positive time value DOES solve
+    iv_good = qw.options.implied_vol(505.0, 7998.3, 7500.0, 0.065, 1.2 / 365.0, True)
+    assert iv_good is not None
+    assert iv_good > 0.0
+
+    # 4. Deep OTM option solves accurately
+    price_otm = qw.options.bs_call_price(100.0, 180.0, 0.03, 0.1, 0.2)
+    iv_otm = qw.options.implied_vol(price_otm, 100.0, 180.0, 0.03, 0.1, True)
+    assert iv_otm is not None
+    assert math.isclose(iv_otm, 0.2, rel_tol=1e-5)
+
+
+# ============================================================================
+# GH-65: Vectorized implied_vol for Option Chains
+# ============================================================================
+
+def test_gh65_vectorized_implied_vol():
+    F = 8000.0
+    r = 0.065
+    T = 30.0 / 365.0
+    sigma = 0.18
+
+    strikes = [7500.0, 7800.0, 8000.0, 8200.0]
+    prices = [qw.options.black76_call_price(F, k, r, T, sigma) for k in strikes]
+
+    # Vectorized across list
+    ivs_list = qw.options.implied_vol(prices, forward=F, k=strikes, r=r, t=T, is_call=True)
+    assert isinstance(ivs_list, np.ndarray)
+    assert len(ivs_list) == len(strikes)
+    assert np.allclose(ivs_list, sigma, rtol=1e-5)
+
+    # Vectorized with numpy array and invalid/edge values returning NaN
+    prices_with_bad = np.array([0.0, prices[0], 499.893])
+    strikes_array = np.array([7500.0, strikes[0], 7500.0])
+    ivs_mixed = qw.options.implied_vol(
+        prices_with_bad,
+        s=7998.3,
+        k=strikes_array,
+        r=r,
+        t=1.2 / 365.0,
+        is_call=True,
+    )
+    assert np.isnan(ivs_mixed[0])  # zero price -> NaN
+    assert np.isnan(ivs_mixed[2])  # below intrinsic -> NaN
+
+
+# ============================================================================
+# GH-66: Date-Aware nse_lot_size & nse_risk_free_rate
+# ============================================================================
+
+def test_gh66_nse_lot_size_date_aware_and_rfr():
+    # 1. Current default for NIFTY is 65
+    assert qw.options.nse_lot_size("NIFTY") == 65
+
+    # 2. Historical revisions
+    assert qw.options.nse_lot_size("NIFTY", as_of="2020-01-01") == 75
+    assert qw.options.nse_lot_size("NIFTY", as_of="2023-01-01") == 50
+    assert qw.options.nse_lot_size("NIFTY", as_of="2024-06-01") == 25
+    assert qw.options.nse_lot_size("NIFTY", as_of="2025-05-01") == 75
+    assert qw.options.nse_lot_size("NIFTY", as_of="2026-01-01") == 65
+
+    # 3. Risk-free rate
+    assert qw.options.nse_risk_free_rate() == 0.065
+    assert "91-day T-bill" in qw.options.nse_risk_free_rate.__doc__
+
+
+
 

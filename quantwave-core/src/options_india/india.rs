@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate};
 
 /// NSE risk-free rate (91-day T-bill, updated quarterly).
 /// Current value as of May 2026.
@@ -21,17 +21,51 @@ pub fn t_years(expiry_date: NaiveDate, as_of: NaiveDate) -> f64 {
     days as f64 / 365.0
 }
 
-/// NSE standard lot sizes.
-/// Hardcoded current values (Revised: April 2026).
-pub fn nse_lot_size(symbol: &str) -> Option<u32> {
+/// NSE standard lot sizes, optionally date-aware.
+/// Supports historical revisions (NIFTY: 75 -> 50 -> 25 -> 75 -> 65 effective Nov 2025).
+/// When `as_of` is None, returns the current active contract lot size (65 for NIFTY).
+pub fn nse_lot_size_dated(symbol: &str, as_of: Option<NaiveDate>) -> Option<u32> {
     match symbol.to_uppercase().as_str() {
-        "NIFTY" => Some(50),
-        "BANKNIFTY" => Some(15),
+        "NIFTY" => {
+            if let Some(date) = as_of {
+                let d = (date.year(), date.month(), date.day());
+                if d < (2021, 7, 1) {
+                    Some(75)
+                } else if d < (2024, 4, 26) {
+                    Some(50)
+                } else if d < (2024, 11, 21) {
+                    Some(25)
+                } else if d < (2025, 11, 26) {
+                    Some(75)
+                } else {
+                    Some(65)
+                }
+            } else {
+                Some(65)
+            }
+        }
+        "BANKNIFTY" => {
+            if let Some(date) = as_of {
+                let d = (date.year(), date.month(), date.day());
+                if d < (2023, 7, 1) {
+                    Some(25)
+                } else {
+                    Some(15)
+                }
+            } else {
+                Some(15)
+            }
+        }
         "FINNIFTY" => Some(40),
         "MIDCPNIFTY" => Some(75),
         "SENSEX" => Some(10),
         _ => None,
     }
+}
+
+/// NSE standard lot sizes for current contract specifications.
+pub fn nse_lot_size(symbol: &str) -> Option<u32> {
+    nse_lot_size_dated(symbol, None)
 }
 
 /// Moneyness classification (from Call option perspective).
