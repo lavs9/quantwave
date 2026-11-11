@@ -1,6 +1,6 @@
 # Native Indicators
 
-QuantWave ships **225 production-grade native indicators** in Rust with bit-identical batch (Polars `.ta()`) and streaming (`Next<T>`) parity.
+QuantWave ships **230 production-grade native indicators** in Rust with bit-identical batch (Polars `.ta()`) and streaming (`Next<T>`) parity.
 
 Every page follows [Documentation Standards](../../../DOCUMENTATION_STANDARDS.md).
 
@@ -15,14 +15,15 @@ Every page follows [Documentation Standards](../../../DOCUMENTATION_STANDARDS.md
 
 ## Complete indicator catalog
 
-**225 indicators** across 14 categories. Click any name for formulas, parameters, usage examples, edge cases, and sources.
+**230 indicators** across 15 categories. Click any name for formulas, parameters, usage examples, edge cases, and sources.
 
-### Price Action (4)
+### Price Action (5)
 
 | Indicator | Slug |
 |-----------|------|
 | [Extreme Reclaim](extreme_reclaim.md) | `extreme_reclaim` |
 | [Market Structure (Swings + BOS)](market_structure.md) | `market_structure` |
+| [Opening Range Breakout](opening_range_breakout.md) | `orb` |
 | [Price Imbalance](price_imbalance.md) | `price_imbalance` |
 | [S/R Interaction Monitor (Part 67)](s_r_interaction_monitor_part_67.md) | `sr_interaction_monitor` |
 
@@ -251,10 +252,11 @@ Every page follows [Documentation Standards](../../../DOCUMENTATION_STANDARDS.md
 | [Adaptive Exponential Moving Average](adaptive_exponential_moving_average.md) | `adaptive_ema` |
 | [True Range Adjusted Exponential Moving Average](true_range_adjusted_exponential_moving_average.md) | `tradj_ema` |
 
-### Volume (2)
+### Volume (3)
 
 | Indicator | Slug |
 |-----------|------|
+| [Session VWAP with Standard Deviation Bands](session_vwap_with_standard_deviation_bands.md) | `session_vwap` |
 | [Volume Positive Negative](volume_positive_negative.md) | `vpn` |
 | [Volume Profile](volume_profile.md) | `volume_profile` |
 
@@ -311,3 +313,11 @@ Every page follows [Documentation Standards](../../../DOCUMENTATION_STANDARDS.md
 | [gaussian_hmm](gaussian_hmm.md) | `gaussian_hmm` |
 | [hmm_forecast](hmm_forecast.md) | `hmm_forecast` |
 | [lambda_hmm](lambda_hmm.md) | `lambda_hmm` |
+
+### Price Action / SMC (3)
+
+| Indicator | Slug |
+|-----------|------|
+| [choch](choch.md) | `choch` |
+| [fair_value_gap](fair_value_gap.md) | `fair_value_gap` |
+| [order_block](order_block.md) | `order_block` |

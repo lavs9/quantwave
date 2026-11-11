@@ -78,7 +78,7 @@ pub const CHOCH_METADATA: IndicatorMetadata = IndicatorMetadata {
         description: "Number of bars required on each side to confirm a swing high or swing low.",
     }],
     formula_source: "https://www.tradingview.com/support/solutions/43000703076-market-structure/",
-    formula_latex: r"\text{BOS} = \text{Close} > \text{SwingHigh}_{\text{bull}} \lor \text{Close} < \text{SwingLow}_{\text{bear}}, \quad \text{CHoCH} = \text{Close} < \text{SwingLow}_{\text{bull}} \lor \text{Close} > \text{SwingHigh}_{\text{bear}}",
+    formula_latex: r"\[ \text{BOS} = \text{Close} > \text{SwingHigh}_{\text{bull}} \lor \text{Close} < \text{SwingLow}_{\text{bear}}, \quad \text{CHoCH} = \text{Close} < \text{SwingLow}_{\text{bull}} \lor \text{Close} > \text{SwingHigh}_{\text{bear}} \]",
     gold_standard_file: "choch.json",
     category: "Price Action / SMC",
 };
@@ -102,7 +102,7 @@ pub const ORDER_BLOCK_METADATA: IndicatorMetadata = IndicatorMetadata {
         description: "Maximum number of unmitigated or partially mitigated active order blocks retained in memory.",
     }],
     formula_source: "https://www.tradingview.com/support/solutions/43000703077-order-blocks/",
-    formula_latex: r"\text{Bullish OB} = \text{Candle}_{t-1} \text{ (down)} \land \text{Close}_t > \text{High}_{t-1}, \quad \text{Bearish OB} = \text{Candle}_{t-1} \text{ (up)} \land \text{Close}_t < \text{Low}_{t-1}",
+    formula_latex: r"\[ \text{Bullish OB} = \text{Candle}_{t-1} \text{ (down)} \land \text{Close}_t > \text{High}_{t-1}, \quad \text{Bearish OB} = \text{Candle}_{t-1} \text{ (up)} \land \text{Close}_t < \text{Low}_{t-1} \]",
     gold_standard_file: "order_block.json",
     category: "Price Action / SMC",
 };
@@ -133,7 +133,7 @@ pub const FAIR_VALUE_GAP_METADATA: IndicatorMetadata = IndicatorMetadata {
         },
     ],
     formula_source: "https://www.tradingview.com/support/solutions/43000703078-fair-value-gaps/",
-    formula_latex: r"\text{Bullish FVG} = \text{Low}_t > \text{High}_{t-2}, \quad \text{Bearish FVG} = \text{High}_t < \text{Low}_{t-2}",
+    formula_latex: r"\[ \text{Bullish FVG} = \text{Low}_t > \text{High}_{t-2}, \quad \text{Bearish FVG} = \text{High}_t < \text{Low}_{t-2} \]",
     gold_standard_file: "fair_value_gap.json",
     category: "Price Action / SMC",
 };

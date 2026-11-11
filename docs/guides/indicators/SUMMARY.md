@@ -6,6 +6,7 @@
     - Price Action
         - [Extreme Reclaim](native/extreme_reclaim.md)
         - [Market Structure (Swings + BOS)](native/market_structure.md)
+        - [Opening Range Breakout](native/opening_range_breakout.md)
         - [Price Imbalance](native/price_imbalance.md)
         - [S/R Interaction Monitor (Part 67)](native/s_r_interaction_monitor_part_67.md)
     - Price Action / Patterns
@@ -214,6 +215,7 @@
         - [Adaptive Exponential Moving Average](native/adaptive_exponential_moving_average.md)
         - [True Range Adjusted Exponential Moving Average](native/true_range_adjusted_exponential_moving_average.md)
     - Volume
+        - [Session VWAP with Standard Deviation Bands](native/session_vwap_with_standard_deviation_bands.md)
         - [Volume Positive Negative](native/volume_positive_negative.md)
         - [Volume Profile](native/volume_profile.md)
     - Momentum
@@ -242,6 +244,10 @@
         - [gaussian_hmm](native/gaussian_hmm.md)
         - [hmm_forecast](native/hmm_forecast.md)
         - [lambda_hmm](native/lambda_hmm.md)
+    - Price Action / SMC
+        - [choch](native/choch.md)
+        - [fair_value_gap](native/fair_value_gap.md)
+        - [order_block](native/order_block.md)
 - [Regime Detection](regimes/index.md)
     - [ldhmm-Style HMM Workflow](regimes/ldhmm_workflow.md)
 - [Ehlers DSP Guide](ehlers/index.md)
