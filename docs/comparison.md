@@ -159,6 +159,7 @@ See [Plugin vs `.ta`](guides/plugin_vs_ta.md) and the [backtest capability matri
 
 | Library | Role | vs QuantWave |
 |---------|------|--------------|
+| **LuxAlgo (TradingView)** | Pine Script indicator suite (SMC, Order Blocks, Volume Profile, Signals) | Proprietary / closed Pine Script running inside TradingView (cloud-only, 5k–20k bar limits, monthly subscription). QuantWave provides open-source (MIT), bit-identical Polars & Rust implementations of equivalent market structure, SMC, Volume Profile, and session tools that process millions of bars in milliseconds. |
 | **vectorbt** | Vectorized portfolio backtest | Stronger if backtest-only is the product; AGPL license; bring your own indicators |
 | **polars-backtest** | Long-format sim on Polars | Simpler sim, no indicator breadth |
 | **Other Rust TA crates** | Fast scalar math | Rarely Polars-native; no guaranteed streaming parity or PA/regime depth |

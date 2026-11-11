@@ -4,6 +4,50 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-11
+
+### Added
+- **Tier 1 Smart Money Concepts (SMC/ICT) & Market Structure Suite (`quantwave-g3n6`).**
+  - `order_blocks` / `OrderBlock`: High-probability mitigation blocks identified via swing pivot structure and explosive displacement validation.
+  - `fair_value_gaps` / `FairValueGap`: Three-bar untraded liquidity imbalances (bullish and bearish FVGs) with progressive fill/mitigation tracking.
+  - `liquidity_sweeps` / `LiquiditySweep`: Pivot-high and pivot-low wick pierce-and-reclaim event detection for buy-side and sell-side liquidity.
+  - `bos_choch` / `MarketStructure`: State machine tracking swing high/low pivots, Break of Structure (BOS), and Change of Character (CHoCH) trend reversals.
+- **Tier 1 Time & Sessions Suite (`quantwave-6i55`).**
+  - `session_vwap` / `SessionVwap`: Intraday session Volume Weighted Average Price with dynamic standard deviation bands (±1σ, ±2σ, ±3σ) anchored to daily market sessions.
+  - `orb` / `OpeningRangeBreakout`: Toby Crabel-style Opening Range Breakout defining high/low bounds within the opening window and signaling range breakouts.
+- **Tier 1 Levels & Auction Theory Suite (`quantwave-9z0z`).**
+  - `volume_profile` / `VolumeProfile`: Rolling and session-anchored Volume Profile yielding Point of Control (POC), Value Area High (VAH), and Value Area Low (VAL).
+- **Cross-Sectional Universe Ranking (`quantwave-a93f` / GH-60).**
+  - Added `expr.ta.cross_sectional_rank(group_by=...)` on Polars expressions and top-level `quantwave.cross_sectional_rank(data, ...)` supporting ascending/descending ordering and percentile scaling across symbol universes.
+- **SuperTrend Startup Seeding & Direction Configuration (`quantwave-d4ci` / GH-59).**
+  - Configurable `initial_direction`: `"up"`, `"down"`, or `"from_close"`. Enables IPO-base setups to start in a downtrend (`-1`) so the initial breakout above upper resistance fires cleanly, resolving 17% of missing setups.
+  - Configurable `smoothing`: `"wilder"` (RMA seeded by SMA after `period` bars with NaN warmup) or `"ema"`.
+- **Moving Average Warmup Policies (`quantwave-v0ou` / GH-55).**
+  - Added `WarmupPolicy::Partial` and `WarmupPolicy::Nan` across `SMA`, `EMA`, and `ALMA`. Plain API and Polars plugins allow choosing between partial-window accumulations or `NaN`s during initial warmup bars.
+
+### Changed
+- **Parity on NaN Inputs Between Polars `.ta` and Plain API (`quantwave-a93f` / GH-60).**
+  - Removed skipping filter in Polars expression plugins that previously bypassed NaN bars, ensuring that Polars pipelines and streaming structs process NaNs identically for bit-for-bit parity.
+- **Polars ATR Column Output Naming (`quantwave-a93f` / GH-60).**
+  - Polars expression plugins for `atr`, `natr`, and `trange` now pass the receiver series as `args[0]`, naming output columns after the receiver column (`c` or `close`) instead of `h` (`high`).
+- **Flexible Argument Order in Plain Python API (`quantwave-a93f` / GH-60).**
+  - Plain Python wrappers for `atr`, `ta_atr`, `atr_wilder` accept both `(period, high, low, close)` and `(high, low, close, period)`.
+  - `sma`, `ema`, `max`, `min` accept both `(period, series)` and `(series, period)`.
+- **Strict Parameter Validation & Dimension Defense (`quantwave-trug` / GH-57).**
+  - Macro parameters validate `period >= 1`, converting zero and negative period inputs into `ValueError`s instead of PyO3 `OverflowError`s.
+  - Multi-input macros (`high, low, close`, etc.) validate matching array lengths and raise informative `ValueError`s on mismatches.
+
+### Fixed
+- **Self-Healing NaN Recovery Across Moving Windows (`quantwave-jhz8` / GH-56).**
+  - `EMA` and `TaBETA` no longer permanently corrupt accumulators when receiving a transient `NaN`; accumulators cleanly self-heal once the NaN bar ages out.
+  - `TaATR`, `TrueRange`, `RollingMax`, and `RollingMin` guard defensively against `NaN` inputs without poisoning state.
+- **Python Import Warnings Suppressed (`quantwave-letg` / GH-58).**
+  - Suppressed noisy `UserWarning`s upon importing `quantwave` in minimal environments without Polars or NumPy installed.
+- **API Introspection Heuristic (`quantwave-letg` / GH-58).**
+  - Fixed parameter introspection in `talib.py` / `abstract.py` to prevent optional string arguments (e.g. `initial_direction`) from being mistaken for positional column series.
+- **Export Alignment & Stubs.**
+  - Re-exported `ta_max`, `ta_min`, `cross_sectional_rank` at package root and synchronized `.pyi` stubs.
+
 ## [0.9.0] - 2026-11-10
 
 ### Changed
