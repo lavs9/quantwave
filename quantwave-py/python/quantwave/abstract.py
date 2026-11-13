@@ -57,9 +57,13 @@ class Function:
         sig = inspect.signature(getattr(_ta_ns(), self._method))
         out: Dict[str, Any] = {}
         for p in sig.parameters.values():
-            if p.name == "self" or (
-                p.default is inspect.Parameter.empty
-                and ("str" in str(p.annotation) or "Expr" in str(p.annotation))
+            if (
+                p.name == "self"
+                or p.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+                or (
+                    p.default is inspect.Parameter.empty
+                    and ("str" in str(p.annotation) or "Expr" in str(p.annotation))
+                )
             ):
                 continue
             if p.default is not inspect.Parameter.empty:

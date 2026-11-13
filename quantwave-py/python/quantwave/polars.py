@@ -608,7 +608,7 @@ class options:
             >>> from quantwave.polars import options
             >>> df = pl.DataFrame({"sym": ["NIFTY", "BANKNIFTY"]})
             >>> df.select(options.nse_lot_size("sym").alias("x"))["x"].to_list()
-            [50, 15]
+            [65, 15]
         """
         return (
             _as_expr(symbol_col)

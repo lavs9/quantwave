@@ -1981,7 +1981,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "quantwave-core",
  "quantwave-polars",
@@ -1989,7 +1989,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-backtest"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "approx",
  "chrono",
@@ -2005,7 +2005,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-core"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "approx",
  "chrono",
@@ -2024,7 +2024,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-polars"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "approx",
  "polars",
@@ -2036,7 +2036,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-py"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "chrono",
  "nalgebra",
@@ -2062,7 +2062,7 @@ dependencies = [
 
 [[package]]
 name = "quantwave-xtask"
-version = "0.10.2"
+version = "0.10.3"
 dependencies = [
  "anyhow",
 ]

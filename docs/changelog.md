@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.10.3] - 2026-11-13
+
+### Fixed
+- **Abstract API Parameter Introspection & `df.ta.all()` Compatibility.**
+  - Resolved crash in `df.ta.all()` where `TaNamespace.atr` had `None` parameter defaults for `seed` and `warmup`.
+  - Added default `seed="talib"` and forwarded optional `warmup` via `**kwargs` in `TaNamespace.atr`.
+  - Updated `quantwave.abstract.Function._param_defaults()` to ignore variable positional and keyword arguments.
+- **Conventions & Polars Options Doctests.**
+  - Updated `quantwave-core` conventions doctest to match multi-aspect notes for ATR (`smoothing` and `seed`).
+  - Updated Polars `options.nse_lot_size` doctest expectation to reflect current NIFTY lot size (65).
+
 ## [0.10.2] - 2026-11-11
 
 ### Added

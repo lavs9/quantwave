@@ -407,8 +407,8 @@ Boundary Conditions & Error Behavior:
         low: Union[str, pl.Expr],
         timeperiod: int = 14,
         smoothing: str = "wilder",
-        seed: Optional[str] = None,
-        warmup: Optional[str] = None,
+        seed: str = "talib",
+        **kwargs,
     ) -> pl.Expr:
         """Average True Range (ATR). Note: self must be close.
 
@@ -428,9 +428,8 @@ Boundary Conditions & Error Behavior:
 """
         if isinstance(high, str): high = pl.col(high)
         if isinstance(low, str): low = pl.col(low)
-        kw = {"timeperiod": timeperiod, "smoothing": smoothing}
-        if seed is not None:
-            kw["seed"] = seed
+        kw = {"timeperiod": timeperiod, "smoothing": smoothing, "seed": seed}
+        warmup = kwargs.get("warmup")
         if warmup is not None:
             kw["warmup"] = warmup
         return register_plugin_function(args=[self._expr, high, low], plugin_path=Path(__file__).parent, function_name="atr", is_elementwise=False, kwargs=kw)

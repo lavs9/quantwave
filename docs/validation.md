@@ -7,7 +7,7 @@ QuantWave's primary credibility claim is **correctness**: one mathematical imple
 ## Coverage snapshot
 
 <!-- VALIDATION:STATS:START -->
-**Last updated:** 2026-11-11T13:09:26Z (UTC)
+**Last updated:** 2026-11-13T11:50:43Z (UTC)
 
 | Metric | Count | Source |
 |--------|------:|--------|

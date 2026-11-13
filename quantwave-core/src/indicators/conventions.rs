@@ -143,8 +143,9 @@ pub const CONVENTION_NOTES: &[ConventionNote] = &[
 /// ```
 /// use quantwave_core::indicators::conventions::convention_notes;
 /// let notes = convention_notes("atr");
-/// assert_eq!(notes.len(), 1);
+/// assert_eq!(notes.len(), 2);
 /// assert_eq!(notes[0].aspect, "smoothing");
+/// assert_eq!(notes[1].aspect, "seed");
 /// ```
 pub fn convention_notes(slug: &str) -> Vec<&'static ConventionNote> {
     CONVENTION_NOTES.iter().filter(|n| n.slug == slug).collect()
