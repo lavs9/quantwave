@@ -1,0 +1,106 @@
+/* =========================================================
+   QuantWave Indicator Documentation — Badge Chip Styles
+   Appended to the Catppuccin theme for indicator pages
+   ========================================================= */
+
+/* Container for the category + keyword chips row */
+.indicator-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 1.2em;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--table-border-color, rgba(128,128,128,0.2));
+}
+
+/* Category badge — accent colored, slightly larger */
+.category-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: var(--sidebar-active, #1e66f5);
+    color: #fff;
+    white-space: nowrap;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+}
+
+/* Keyword tag chips — subtle, lower contrast */
+.kw-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 0.70rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    background: var(--quote-bg, rgba(100,116,139,0.15));
+    color: var(--fg, #4c4f69);
+    border: 1px solid var(--table-border-color, rgba(128,128,128,0.25));
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.kw-badge:hover {
+    background: var(--sidebar-active, #1e66f5);
+    color: #fff;
+    border-color: transparent;
+    cursor: default;
+}
+
+/* Dark theme overrides (Catppuccin Mocha) */
+.mocha .category-badge {
+    background: #89b4fa; /* Catppuccin Mocha blue */
+    color: #1e1e2e;
+}
+
+.mocha .kw-badge {
+    background: rgba(137,180,250,0.12);
+    color: #cdd6f4;
+    border-color: rgba(137,180,250,0.25);
+}
+
+.mocha .kw-badge:hover {
+    background: #89b4fa;
+    color: #1e1e2e;
+    border-color: transparent;
+}
+
+/* Latte (light) overrides */
+.latte .category-badge {
+    background: #1e66f5;
+    color: #eff1f5;
+}
+
+.latte .kw-badge {
+    background: rgba(30,102,245,0.08);
+    color: #4c4f69;
+    border-color: rgba(30,102,245,0.2);
+}
+
+.latte .kw-badge:hover {
+    background: #1e66f5;
+    color: #eff1f5;
+}
+
+/* Background blockquote — gives a subtle left accent to ehlers_summary */
+blockquote {
+    border-left: 4px solid var(--sidebar-active, #1e66f5);
+    background: var(--quote-bg, rgba(100,116,139,0.07));
+    padding: 0.75em 1.2em;
+    border-radius: 0 8px 8px 0;
+    margin: 0.5em 0 1.5em 0;
+    font-style: italic;
+    color: var(--fg, inherit);
+    line-height: 1.65;
+}
+
+.mocha blockquote {
+    border-left-color: #89b4fa;
+    background: rgba(137,180,250,0.08);
+}

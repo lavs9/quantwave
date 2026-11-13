@@ -1,0 +1,2345 @@
+{
+  "generated_at": "2026-09-13T09:28:11.035880+00:00",
+  "summary": {
+    "total_indicators_in_metadata": 221,
+    "total_indicators_tested": 126,
+    "total_could_not_instantiate": 95,
+    "total_clean": 35,
+    "total_with_at_least_one_finding": 90,
+    "total_that_raised_exceptions": 1
+  },
+  "findings": [
+    {
+      "indicator": "ad",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "adosc",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 9,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "adosc",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "adx",
+      "category": "Classic",
+      "scenario": "constant_price",
+      "output_field": "value",
+      "first_bad_index": 14,
+      "bars_bad_post_warmup": 236,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "adx",
+      "category": "Classic",
+      "scenario": "flat_then_spike",
+      "output_field": "value",
+      "first_bad_index": 14,
+      "bars_bad_post_warmup": 236,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "adx",
+      "category": "Classic",
+      "scenario": "all_zero",
+      "output_field": "value",
+      "first_bad_index": 14,
+      "bars_bad_post_warmup": 236,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "adx",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 14,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "adx",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 14,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "adx",
+      "category": "Classic",
+      "scenario": "zero_range_ohlc",
+      "output_field": "value",
+      "first_bad_index": 14,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "alligator",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "lips",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 7,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "alligator",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "jaw",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 20,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "alligator",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "teeth",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 12,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "alligator",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "lips",
+      "first_bad_index": 103,
+      "bars_bad_post_warmup": 147,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "alligator",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "jaw",
+      "first_bad_index": 108,
+      "bars_bad_post_warmup": 142,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "alligator",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "teeth",
+      "first_bad_index": 105,
+      "bars_bad_post_warmup": 145,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "alma",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 9,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "aroon",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "up",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 25,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "aroon",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "down",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 25,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "bandpass",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "butterworth2",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "butterworth3",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "cci",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "cg",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 10,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "channel_cycle",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "trigger",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "channel_cycle",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "classic_laguerre",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "continuation_index",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "cyber_cycle",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "trigger",
+      "first_bad_index": 101,
+      "bars_bad_post_warmup": 149,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "cyber_cycle",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "cybernetic_oscillator",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "cycle_trend_analytics",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "trend",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "cycle_trend_analytics",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "cycle",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "dema",
+      "category": "Classic",
+      "scenario": "constant_price",
+      "output_field": "value",
+      "first_bad_index": 30,
+      "bars_bad_post_warmup": 28,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "dema",
+      "category": "Classic",
+      "scenario": "flat_then_spike",
+      "output_field": "value",
+      "first_bad_index": 30,
+      "bars_bad_post_warmup": 28,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "dema",
+      "category": "Classic",
+      "scenario": "all_zero",
+      "output_field": "value",
+      "first_bad_index": 30,
+      "bars_bad_post_warmup": 28,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "dema",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 30,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "dema",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 30,
+      "bars_bad_post_warmup": 28,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "dsma",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "ehlers_filter",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 29,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ehlers_stochastic",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 18,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ema",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "emd",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "trend",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "fisher",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 1,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "fisher_high_pass",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "fm_demodulator",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "fourier_series_model",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "frac_diff",
+      "category": "ML Features",
+      "scenario": "constant_price",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 250,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "frac_diff",
+      "category": "ML Features",
+      "scenario": "flat_then_spike",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 250,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "frac_diff",
+      "category": "ML Features",
+      "scenario": "all_zero",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 250,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "frac_diff",
+      "category": "ML Features",
+      "scenario": "minimal_length",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 1,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "frac_diff",
+      "category": "ML Features",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 250,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "frama",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "gaussian_filter",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "generalized_laguerre",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "griffiths_predictor",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "hamming_filter",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 20,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "hann_filter",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 20,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "heikin_ashi",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "close",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 1,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "heikin_ashi",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "open",
+      "first_bad_index": 101,
+      "bars_bad_post_warmup": 149,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "high_pass",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "hma",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 16,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "homodyne_discriminator",
+      "category": "Rocket Science",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_dcperiod",
+      "category": "Ehlers DSP",
+      "scenario": "minimal_length",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 32,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_dcperiod",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_dcphase",
+      "category": "Ehlers DSP",
+      "scenario": "constant_price",
+      "output_field": "value",
+      "first_bad_index": 50,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_dcphase",
+      "category": "Ehlers DSP",
+      "scenario": "flat_then_spike",
+      "output_field": "value",
+      "first_bad_index": 50,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_dcphase",
+      "category": "Ehlers DSP",
+      "scenario": "all_zero",
+      "output_field": "value",
+      "first_bad_index": 50,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_dcphase",
+      "category": "Ehlers DSP",
+      "scenario": "minimal_length",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 50,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_dcphase",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 50,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_phasor",
+      "category": "Ehlers DSP",
+      "scenario": "minimal_length",
+      "output_field": "in_phase",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 32,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_phasor",
+      "category": "Ehlers DSP",
+      "scenario": "minimal_length",
+      "output_field": "quadrature",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 32,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_phasor",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "in_phase",
+      "first_bad_index": 103,
+      "bars_bad_post_warmup": 147,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_phasor",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "quadrature",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_sine",
+      "category": "Ehlers DSP",
+      "scenario": "constant_price",
+      "output_field": "sine",
+      "first_bad_index": 50,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_sine",
+      "category": "Ehlers DSP",
+      "scenario": "constant_price",
+      "output_field": "leadsine",
+      "first_bad_index": 50,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_sine",
+      "category": "Ehlers DSP",
+      "scenario": "flat_then_spike",
+      "output_field": "sine",
+      "first_bad_index": 50,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_sine",
+      "category": "Ehlers DSP",
+      "scenario": "flat_then_spike",
+      "output_field": "leadsine",
+      "first_bad_index": 50,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_sine",
+      "category": "Ehlers DSP",
+      "scenario": "all_zero",
+      "output_field": "sine",
+      "first_bad_index": 50,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_sine",
+      "category": "Ehlers DSP",
+      "scenario": "all_zero",
+      "output_field": "leadsine",
+      "first_bad_index": 50,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_sine",
+      "category": "Ehlers DSP",
+      "scenario": "minimal_length",
+      "output_field": "sine",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 50,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_sine",
+      "category": "Ehlers DSP",
+      "scenario": "minimal_length",
+      "output_field": "leadsine",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 50,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_sine",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "sine",
+      "first_bad_index": 50,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_sine",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "leadsine",
+      "first_bad_index": 50,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_trendmode",
+      "category": "Ehlers DSP",
+      "scenario": "constant_price",
+      "output_field": "value",
+      "first_bad_index": 50,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_trendmode",
+      "category": "Ehlers DSP",
+      "scenario": "flat_then_spike",
+      "output_field": "value",
+      "first_bad_index": 50,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_trendmode",
+      "category": "Ehlers DSP",
+      "scenario": "all_zero",
+      "output_field": "value",
+      "first_bad_index": 50,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_trendmode",
+      "category": "Ehlers DSP",
+      "scenario": "minimal_length",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 50,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "ht_trendmode",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 50,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "hurst_exponent",
+      "category": "ML Features",
+      "scenario": "minimal_length",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 99,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "hurst_exponent",
+      "category": "ML Features",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 100,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "inverse_fisher",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 1,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "kalman_filter",
+      "category": "ML Features",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "kama",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 10,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "kama",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "keltner",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "upper",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "keltner",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "middle",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "keltner",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "lower",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "laguerre_filter",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "laguerre_oscillator",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "laguerre_rsi",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "macd",
+      "category": "Classic",
+      "scenario": "constant_price",
+      "output_field": "macd",
+      "first_bad_index": 26,
+      "bars_bad_post_warmup": 7,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "macd",
+      "category": "Classic",
+      "scenario": "constant_price",
+      "output_field": "signal",
+      "first_bad_index": 26,
+      "bars_bad_post_warmup": 7,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "macd",
+      "category": "Classic",
+      "scenario": "constant_price",
+      "output_field": "histogram",
+      "first_bad_index": 26,
+      "bars_bad_post_warmup": 7,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "macd",
+      "category": "Classic",
+      "scenario": "flat_then_spike",
+      "output_field": "macd",
+      "first_bad_index": 26,
+      "bars_bad_post_warmup": 7,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "macd",
+      "category": "Classic",
+      "scenario": "flat_then_spike",
+      "output_field": "signal",
+      "first_bad_index": 26,
+      "bars_bad_post_warmup": 7,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "macd",
+      "category": "Classic",
+      "scenario": "flat_then_spike",
+      "output_field": "histogram",
+      "first_bad_index": 26,
+      "bars_bad_post_warmup": 7,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "macd",
+      "category": "Classic",
+      "scenario": "all_zero",
+      "output_field": "macd",
+      "first_bad_index": 26,
+      "bars_bad_post_warmup": 7,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "macd",
+      "category": "Classic",
+      "scenario": "all_zero",
+      "output_field": "signal",
+      "first_bad_index": 26,
+      "bars_bad_post_warmup": 7,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "macd",
+      "category": "Classic",
+      "scenario": "all_zero",
+      "output_field": "histogram",
+      "first_bad_index": 26,
+      "bars_bad_post_warmup": 7,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "macd",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "macd",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 26,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "macd",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "signal",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 26,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "macd",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "histogram",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 26,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "macd",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "macd",
+      "first_bad_index": 26,
+      "bars_bad_post_warmup": 7,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "macd",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "signal",
+      "first_bad_index": 26,
+      "bars_bad_post_warmup": 7,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "macd",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "histogram",
+      "first_bad_index": 26,
+      "bars_bad_post_warmup": 7,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "mad",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "mama",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": null,
+      "first_bad_index": 101,
+      "bars_bad_post_warmup": null,
+      "recovered_before_series_end": null,
+      "exception_message": "PanicException: min > max, or either was NaN. min = NaN, max = NaN"
+    },
+    {
+      "indicator": "mesa_stochastic",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "mom",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 10,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "mom",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 1,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "my_rsi",
+      "category": "Ehlers DSP",
+      "scenario": "minimal_length",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 14,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "my_rsi",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "oc_price_rsi",
+      "category": "Ehlers DSP",
+      "scenario": "minimal_length",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 14,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "oc_price_rsi",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "one_euro_filter",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "phasor",
+      "category": "Rocket Science",
+      "scenario": "nan_passthrough",
+      "output_field": "in_phase",
+      "first_bad_index": 103,
+      "bars_bad_post_warmup": 10,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "phasor",
+      "category": "Rocket Science",
+      "scenario": "nan_passthrough",
+      "output_field": "quadrature",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 16,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "pivot_points",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "r1",
+      "first_bad_index": 101,
+      "bars_bad_post_warmup": 1,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "pivot_points",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "s2",
+      "first_bad_index": 101,
+      "bars_bad_post_warmup": 1,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "pivot_points",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "s1",
+      "first_bad_index": 101,
+      "bars_bad_post_warmup": 1,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "pivot_points",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "p",
+      "first_bad_index": 101,
+      "bars_bad_post_warmup": 1,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "pivot_points",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "r2",
+      "first_bad_index": 101,
+      "bars_bad_post_warmup": 1,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "projected_moving_average",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "predict",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 22,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "projected_moving_average",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "pma",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 20,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "recursive_median",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 102,
+      "bars_bad_post_warmup": 148,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "recursive_median_oscillator",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 102,
+      "bars_bad_post_warmup": 148,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "reversion_index",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "roc",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "reversion_index",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "trend",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "roc",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 10,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "roc",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 1,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "roofing_filter",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "rsi",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 14,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "rsi",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "sar",
+      "category": "Classic",
+      "scenario": "constant_price",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 1,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "sar",
+      "category": "Classic",
+      "scenario": "flat_then_spike",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 1,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "sar",
+      "category": "Classic",
+      "scenario": "all_zero",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 1,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "sar",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 1,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "sar",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 1,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "sar",
+      "category": "Classic",
+      "scenario": "zero_range_ohlc",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 1,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "simple_predictor",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "sine_wave",
+      "category": "Rocket Science",
+      "scenario": "nan_passthrough",
+      "output_field": "in_phase",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 3,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "sine_wave",
+      "category": "Rocket Science",
+      "scenario": "nan_passthrough",
+      "output_field": "quadrature",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 3,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "sma",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "stc",
+      "category": "Modern",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "stoch",
+      "category": "Classic",
+      "scenario": "constant_price",
+      "output_field": "k",
+      "first_bad_index": 5,
+      "bars_bad_post_warmup": 3,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "stoch",
+      "category": "Classic",
+      "scenario": "constant_price",
+      "output_field": "d",
+      "first_bad_index": 5,
+      "bars_bad_post_warmup": 3,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "stoch",
+      "category": "Classic",
+      "scenario": "flat_then_spike",
+      "output_field": "k",
+      "first_bad_index": 5,
+      "bars_bad_post_warmup": 3,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "stoch",
+      "category": "Classic",
+      "scenario": "flat_then_spike",
+      "output_field": "d",
+      "first_bad_index": 5,
+      "bars_bad_post_warmup": 3,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "stoch",
+      "category": "Classic",
+      "scenario": "all_zero",
+      "output_field": "k",
+      "first_bad_index": 5,
+      "bars_bad_post_warmup": 3,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "stoch",
+      "category": "Classic",
+      "scenario": "all_zero",
+      "output_field": "d",
+      "first_bad_index": 5,
+      "bars_bad_post_warmup": 3,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "stoch",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "k",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 5,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "stoch",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "d",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 5,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "stoch",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "k",
+      "first_bad_index": 5,
+      "bars_bad_post_warmup": 3,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "stoch",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "d",
+      "first_bad_index": 5,
+      "bars_bad_post_warmup": 3,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "stoch",
+      "category": "Classic",
+      "scenario": "zero_range_ohlc",
+      "output_field": "k",
+      "first_bad_index": 5,
+      "bars_bad_post_warmup": 3,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "stoch",
+      "category": "Classic",
+      "scenario": "zero_range_ohlc",
+      "output_field": "d",
+      "first_bad_index": 5,
+      "bars_bad_post_warmup": 3,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "super_smoother",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "swiss_army_knife",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "t3",
+      "category": "Classic",
+      "scenario": "constant_price",
+      "output_field": "value",
+      "first_bad_index": 5,
+      "bars_bad_post_warmup": 19,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "t3",
+      "category": "Classic",
+      "scenario": "flat_then_spike",
+      "output_field": "value",
+      "first_bad_index": 5,
+      "bars_bad_post_warmup": 19,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "t3",
+      "category": "Classic",
+      "scenario": "all_zero",
+      "output_field": "value",
+      "first_bad_index": 5,
+      "bars_bad_post_warmup": 19,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "t3",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 5,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "t3",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 5,
+      "bars_bad_post_warmup": 19,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "tema",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "triangle_filter",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 20,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "truncated_bandpass",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 12,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "ttm_squeeze",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "ultimate_bands",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "upper",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "ultimate_bands",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "middle",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "ultimate_bands",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "lower",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "ultimate_channel",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "center",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "ultimate_channel",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "upper",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "ultimate_channel",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "lower",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "ultimate_smoother",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "universal_oscillator",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "voss_predictor",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "filt",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "voss_predictor",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "voss",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "vwap",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "wavetrend",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "wt1",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "wavetrend",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "wt2",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "willr",
+      "category": "Classic",
+      "scenario": "minimal_length",
+      "output_field": "value",
+      "first_bad_index": 0,
+      "bars_bad_post_warmup": 13,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "willr",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 1,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "wma",
+      "category": "Classic",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 14,
+      "recovered_before_series_end": true,
+      "exception_message": null
+    },
+    {
+      "indicator": "zero_lag",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "trigger",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    },
+    {
+      "indicator": "zero_lag",
+      "category": "Ehlers DSP",
+      "scenario": "nan_passthrough",
+      "output_field": "value",
+      "first_bad_index": 100,
+      "bars_bad_post_warmup": 150,
+      "recovered_before_series_end": false,
+      "exception_message": null
+    }
+  ],
+  "could_not_instantiate": [
+    {
+      "indicator": "adaptive_ema",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "apo",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "autotune_filter",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "avgprice",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "bbands",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "beta",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdl2crows",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdl3blackcrows",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdl3inside",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdl3linestrike",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdl3outside",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdl3starsinsouth",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdl3whitesoldiers",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlabandonedbaby",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdladvanceblock",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlbelthold",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlbreakaway",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlclosingmarubozu",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlconcealbabyswall",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlcounterattack",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdldarkcloudcover",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdldoji",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdldojistar",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdldragonflydoji",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlengulfing",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdleveningdojistar",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdleveningstar",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlgapsidesidewhite",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlgravestonedoji",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlhammer",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlhangingman",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlharami",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlharamicross",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlhighwave",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlhikkake",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlhikkakemod",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlhomingpigeon",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlidentical3crows",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlinneck",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlinvertedhammer",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlkicking",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlkickingbylength",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlladderbottom",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdllongleggeddoji",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdllongline",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlmarubozu",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlmatchinglow",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlmathold",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlmorningdojistar",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlmorningstar",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlonneck",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlpiercing",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlrickshawman",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlrisefall3methods",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlseparatinglines",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlshootingstar",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlshortline",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlspinningtop",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlstalledpattern",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlsticksandwich",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdltakuri",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdltasukigap",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlthrusting",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdltristar",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlunique3river",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlupsidegap2crows",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cdlxsidegap3methods",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "cmo",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "correl",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "gap_momentum",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "gaussian_hmm",
+      "reason": "GaussianHmmFilterPy has no __init__; requires .from_params(...) with pretrained HMM parameter arrays (transition/emission matrices) that have no sane synthetic default for a degenerate-input sweep."
+    },
+    {
+      "indicator": "geometric_patterns",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "harrington_adx",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "hmm_forecast",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "kinematic_kalman",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "lambda_hmm",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "linreg",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "medprice",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "mfi",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "natr",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "oc2",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "ppo",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "reverse_ema",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "sdo",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "sr_monitor",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "stddev",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "tradj_ema",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "trima",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "trix",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "true_range",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "typprice",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "ultosc",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "vpn",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "wclprice",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    },
+    {
+      "indicator": "zlema",
+      "reason": "no streaming implementation (quantwave.streaming_class returned None)"
+    }
+  ]
+}
