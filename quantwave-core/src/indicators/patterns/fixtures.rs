@@ -116,8 +116,8 @@ fixture!(
     /// Long white, then black opening above its high and closing past the midpoint.
     darkcloudcover,
     [
-        (97.0, 101.2, 96.8, 101.0),   // long white, body 4
-        (101.5, 101.7, 98.3, 98.5),   // opens > 101.2, closes < 101 - 2
+        (97.0, 101.2, 96.8, 101.0), // long white, body 4
+        (101.5, 101.7, 98.3, 98.5), // opens > 101.2, closes < 101 - 2
     ]
 );
 
@@ -195,10 +195,7 @@ fixture!(
 fixture!(
     /// Same bars as [`kicking`]; equal bodies make the later candle's colour win.
     kickingbylength,
-    [
-        (101.0, 101.0, 98.0, 98.0),
-        (102.0, 105.0, 102.0, 105.0),
-    ]
+    [(101.0, 101.0, 98.0, 98.0), (102.0, 105.0, 102.0, 105.0),]
 );
 
 fixture!(
@@ -310,8 +307,8 @@ fixture!(
     abandonedbaby,
     [
         (101.0, 101.2, 96.8, 97.0),
-        (96.0, 96.1, 95.9, 96.0),  // doji, high < prior low
-        (96.6, 99.2, 96.5, 99.0),  // low > doji high, close > 97 + 1.2
+        (96.0, 96.1, 95.9, 96.0), // doji, high < prior low
+        (96.6, 99.2, 96.5, 99.0), // low > doji high, close > 97 + 1.2
     ]
 );
 
@@ -595,10 +592,10 @@ fixture!(
     /// close back above the inside bar's high (the confirmation).
     hikkakemod,
     [
-        (100.0, 105.0, 95.0, 100.5), // outer bar
-        (102.0, 103.0, 97.0, 97.2),  // inside, closes near its low
-        (99.0, 102.0, 98.0, 101.0),  // inside again
-        (100.0, 101.0, 97.5, 99.0),  // lower high and lower low -> setup
+        (100.0, 105.0, 95.0, 100.5),  // outer bar
+        (102.0, 103.0, 97.0, 97.2),   // inside, closes near its low
+        (99.0, 102.0, 98.0, 101.0),   // inside again
+        (100.0, 101.0, 97.5, 99.0),   // lower high and lower low -> setup
         (102.0, 103.2, 101.8, 103.0), // close > setup reference high -> confirm
     ]
 );
