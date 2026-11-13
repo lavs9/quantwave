@@ -25,6 +25,7 @@ The project is structured as a Rust workspace to maximize modularity and perform
 - **Run Benchmarks**: `cargo bench`
 - **Check Linting**: `cargo clippy`
 - **Check Formatting**: `./scripts/rustfmt_check.sh` — ⚠️ **never `cargo fmt --all`**. `quantwave-core/src/options_india/iv_solver.rs` holds Horner-form polynomial approximations (~12 levels of nested parens on 500-char lines) that make rustfmt spin at 100% CPU indefinitely. rustfmt follows `mod` declarations, so `src/lib.rs` and `options_india/mod.rs` inherit the hang and the whole crate becomes unformattable via cargo. This script batches and skips those paths — full workspace in ~1.2s. Interrupted `cargo fmt` runs leave **orphaned rustfmt children** burning CPU; clean up with `pkill -f "bin/rustfmt"; pkill -f cargo-fmt`.
+- **Post-Build Cleanup**: Run `cargo clean && rm -rf dist && git worktree prune -v` post-build / post-CI. Local `target/` accumulates 60+ GiB of compilation files and `dist/` holds local wheels; always clear them after successful verification and release.
 
 ## 🧪 Development Conventions
 
@@ -179,7 +180,12 @@ For more details, see README.md and docs/QUICKSTART.md.
    git push
    git status  # MUST show "up to date with origin"
    ```
-6. **Clean up** - Clear stashes, prune remote branches
+6. **Clean up** - Clear stashes, prune remote branches, and delete post-build artifacts:
+   ```bash
+   cargo clean            # deletes local target/ compilation files (prevents 60+ GiB accumulation)
+   rm -rf dist/           # clears local wheel files
+   git worktree prune -v  # prunes stale worktree administrative references
+   ```
 7. **Verify** - All changes committed AND pushed
 8. **Hand off** - Provide context for next session
 
