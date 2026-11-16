@@ -1,0 +1,57 @@
+/* quantwave-wasm live playground (quantwave-stb8) */
+#qw-playground {
+  border: 1px solid var(--md-default-fg-color--lightest, rgba(128, 128, 128, 0.3));
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1.2rem 0;
+}
+#qw-playground .qw-status {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  margin-bottom: 0.6rem;
+}
+#qw-playground .qw-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  margin-bottom: 0.8rem;
+}
+#qw-playground .qw-control {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.78rem;
+  min-width: 150px;
+}
+#qw-playground .qw-control label {
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+#qw-playground .qw-control .qw-val {
+  font-variant-numeric: tabular-nums;
+  color: var(--md-accent-fg-color, #5c6bc0);
+}
+#qw-playground input[type="range"] {
+  width: 100%;
+  accent-color: var(--md-accent-fg-color, #5c6bc0);
+}
+#qw-playground canvas {
+  width: 100%;
+  display: block;
+  border-radius: 4px;
+}
+#qw-playground .qw-legend {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  opacity: 0.85;
+  margin-top: 0.4rem;
+  flex-wrap: wrap;
+}
+#qw-playground .qw-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  vertical-align: -1px;
+  margin-right: 0.3rem;
+}
