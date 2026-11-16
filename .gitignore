@@ -68,3 +68,7 @@ quantwave-py/python/quantwave/*.so
 
 # Agent worktrees (contain full checkouts + build artifacts)
 .claude/worktrees/
+
+# Internal research proposals & exploratory work — local only, never commit
+/research/
+
