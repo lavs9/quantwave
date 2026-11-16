@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-16
+
+### Added
+- **Machine Learning & Neural Indicators Subsystem (`quantwave-core/src/ml`, `quantwave-3g51`).**
+  - **Kolmogorov-Arnold Networks (KAN):**
+    - Pure safe-Rust Cox-de Boor B-spline basis generator (`BSplineBasis`) with guaranteed partition of unity ($\sum B_i = 1$) and boundary clamping.
+    - `KanLayer` parameterized by learnable 1D B-splines and residual SiLU base activations on edges.
+    - Deep sequential `KanNetwork` with zero-allocation ping-pong buffering.
+    - `KanIndicator` streaming indicator implementing `Next<&[f64]>` and `Next<f64>`.
+    - Symbolic rule extraction (`extract_symbolic_formula`, `extract_feature_importance`) for model interpretability and rule exporting.
+  - **Technical Indicator Networks (TIN):**
+    - `DifferentiableEma`: continuous lookback span $\tau \in \mathbb{R}^+$, exact recurrence analytical derivatives $\frac{\partial y_t}{\partial \alpha}$ and $\frac{\partial y_t}{\partial \tau}$, online parameter update via `update_span`, and `SmoothingAlgorithm` implementation.
+    - `DifferentiableRsi`: dual-EMA tracking for gain/loss, analytical span gradient, and continuous sigmoidal decision thresholds.
+    - `DifferentiableMacd`: multi-span differentiable MACD with analytical gradients for fast, slow, and signal spans.
+  - **Documentation:**
+    - Comprehensive guide added in `docs/guides/machine_learning.md` with theoretical foundations (KASPER 2026, Lu 2025/2026), individual indicator breakdowns, streaming usage examples, and two-stage hybrid pipeline architecture.
+
 ## [0.10.3] - 2026-11-13
 
 ### Fixed
