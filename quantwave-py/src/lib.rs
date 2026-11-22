@@ -16,6 +16,7 @@ use pyo3::prelude::*;
 mod backtest;
 mod bars;
 mod indicators;
+mod ml;
 mod patterns;
 pub mod plugins;
 mod portfolio;
@@ -53,6 +54,12 @@ fn _lib(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     portfolio::register(&portfolio_mod)?;
     sys_modules.set_item("quantwave._portfolio", &portfolio_mod)?;
     m.add_submodule(&portfolio_mod)?;
+
+    // Machine Learning (KAN + TIN) -> quantwave._ml
+    let ml_mod = PyModule::new(py, "_ml")?;
+    ml::register(&ml_mod)?;
+    sys_modules.set_item("quantwave._ml", &ml_mod)?;
+    m.add_submodule(&ml_mod)?;
 
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())

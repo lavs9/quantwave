@@ -190,6 +190,12 @@ if _has_polars:
             f"quantwave.patterns unavailable: {_e}"
         )
 
+# Machine learning (KAN, TIN, differentiable indicators)
+try:
+    from . import ml  # noqa: F401
+except Exception as _e:  # pragma: no cover
+    warnings.warn(f"quantwave.ml unavailable: {_e}")
+
 # Portfolio optimization (numpy) — guarded so `import quantwave` survives the
 # core install without numpy.
 if _has_numpy:
@@ -1104,6 +1110,7 @@ __all__ = [
     "results",
     "options",
     "talib",
+    "ml",
     "datasets",
     "options_india",  # legacy compat (will warn in future)
     "PerformanceMetrics",
