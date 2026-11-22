@@ -495,4 +495,5 @@ smoke test: `quantwave doctor || exit 1`.
 | Batch ↔ streaming deep dive | [Examples guide](../examples/batch-streaming.md) |
 | Plugin vs `.ta` | [When to use which](../guides/plugin_vs_ta.md) |
 | Backtest | [Quickstart](../guides/backtest/quickstart.md) · [Strategy notebook](../examples/notebooks/strategy_backtest.md) |
+| Neural & Differentiable TA | [KAN & TIN Machine Learning Guide](../guides/machine_learning.md) |
 | Full funnel | [Getting Started hub](../index.md) |

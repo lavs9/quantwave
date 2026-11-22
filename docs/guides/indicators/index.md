@@ -50,6 +50,13 @@ Start with the [Gallery](gallery.md) — ten curated indicators with real strate
 
 <div class="qw-card" markdown="1">
 
+### Neural & Differentiable TA
+[Neural & Differentiable TA guide](../machine_learning.md) — Kolmogorov-Arnold Networks (KAN) & Technical Indicator Networks (TIN) in Rust & Python (`quantwave.ml`).
+
+</div>
+
+<div class="qw-card" markdown="1">
+
 ### Full reference
 [Complete catalog](native/) — all 230 indicators by category with slug lookup tables.
 

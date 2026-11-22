@@ -191,6 +191,14 @@ for item in importance:
 # 6. Stream live ticks with zero runtime allocations
 indicator = KanIndicator(kan)
 live_signal = indicator.next([0.28, -0.35, 0.58])
+
+# 7. Model Serialization & Checkpointing
+# Save trained network weights and spline coefficients to JSON
+json_weights = kan.to_json()
+
+# Reload network in production or another service
+restored_kan = KanNetwork.from_json(json_weights)
+assert restored_kan.forward(features) == alpha
 ```
 
 ### TIN in Python: Continuous Differentiable Indicators
@@ -225,7 +233,7 @@ QuantWave provides native `torch.autograd.Function` and `nn.Module` wrappers (`L
 
 ```python
 import torch
-from quantwave.ml import LearnableEma
+from quantwave.ml import LearnableEma, LearnableRsi
 
 # Historical price tensor with gradient tracking
 prices = torch.tensor([100.0, 102.5, 101.8, 104.2, 103.9, 106.1], requires_grad=True)
@@ -243,5 +251,9 @@ for epoch in range(10):
     loss.backward()
     optimizer.step()
     print(f"Epoch {epoch}: Loss = {loss.item():.4f}, Span = {model.span.item():.2f}")
+
+# Trainable RSI with dynamic volatility adaptation
+rsi_model = LearnableRsi(initial_span=14.0, overbought=70.0, oversold=30.0)
+rsi_vals, soft_signals = rsi_model(prices)
 ```
 
