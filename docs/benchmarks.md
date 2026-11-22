@@ -3,10 +3,10 @@
 QuantWave publishes **only measured numbers** from the reproducible harness in `benchmarks/`. No hand-written throughput claims.
 
 <!-- bench:meta:start -->
-**Last harness run:** 2026-11-15T13:31:33.598697+00:00
+**Last harness run:** 2026-11-22T14:10:02.069296+00:00
 **Harness version:** 2
 **Dataset:** 1,000,000 rows, seed `1364656129`
-**Host CPU:** x86_64 · **RAM:** 15.6 GB · **OS:** Linux 7.0.0-1019-azure
+**Host CPU:** x86_64 · **RAM:** 15.6 GB · **OS:** Linux 7.0.0-1020-azure
 
 Regenerate: `python benchmarks/harness.py && python scripts/render_benchmarks.py`
 <!-- bench:meta:end -->
@@ -41,9 +41,9 @@ Measured on **1,000,000** synthetic OHLCV rows (+ symbol column where noted).
 
 | Indicator | Mode | Time (ms) |
 |-----------|------|-----------|
-| SMA (20) | streaming | 3.3341 |
+| SMA (20) | streaming | 3.4358 |
 | RSI (14) | streaming | 0.0000 |
-| SuperTrend (10,3) | streaming | 4.9104 |
+| SuperTrend (10,3) | streaming | 7.9364 |
 
 > Criterion HTML reports: `cargo bench -p quantwave-core --bench indicator_throughput` (100,000 rows per case).
 <!-- bench:throughput:end -->
@@ -57,12 +57,12 @@ Correctness pre-check on 1k rows passed before timing.
 
 | Library | Time (ms) |
 |---------|-----------|
-| QuantWave (.ta) | 4.6381 |
-| Polars rolling_mean | 5.9300 |
-| Pandas rolling | 7.0599 |
+| QuantWave (.ta) | 6.9682 |
+| Polars rolling_mean | 8.9885 |
+| Pandas rolling | 11.0085 |
 | TA-Lib | _not installed_ |
 
-**Library versions:** numpy 2.5.4, pandas 3.1.1, pandas_ta not_installed, polars 1.44.2, quantwave 0.10.3, talib not_installed
+**Library versions:** numpy 2.5.5, pandas 3.1.1, pandas_ta not_installed, polars 1.44.2, quantwave 0.11.0, talib not_installed
 <!-- bench:comparisons:end -->
 
 ## Streaming Latency
@@ -74,8 +74,8 @@ Source: `per_tick_instrumented` — real per-tick instrumentation, not batch ms 
 
 | Indicator | Mean (ns) | P99 (ns) |
 |-----------|-----------|----------|
-| SMA (20) | 23.5 | 31.0 |
-| RSI (14) | 21.5 | 30.0 |
+| SMA (20) | 32.3 | 34.0 |
+| RSI (14) | 22.0 | 23.0 |
 <!-- bench:latency:end -->
 
 ## Methodology
