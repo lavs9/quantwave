@@ -69,6 +69,67 @@ pub struct MarketStructureState {
     pub bar_index: usize,
 }
 
+impl MarketStructureState {
+    #[inline]
+    pub fn bias_u32(&self) -> u32 {
+        match self.bias {
+            Bias::Neutral => 0,
+            Bias::Bullish => 1,
+            Bias::Bearish => 2,
+        }
+    }
+
+    #[inline]
+    pub fn last_high_price(&self) -> f64 {
+        self.last_swing_high.map(|sp| sp.price).unwrap_or(f64::NAN)
+    }
+
+    #[inline]
+    pub fn last_high_bar(&self) -> usize {
+        self.last_swing_high.map(|sp| sp.bar).unwrap_or(0)
+    }
+
+    #[inline]
+    pub fn last_low_price(&self) -> f64 {
+        self.last_swing_low.map(|sp| sp.price).unwrap_or(f64::NAN)
+    }
+
+    #[inline]
+    pub fn last_low_bar(&self) -> usize {
+        self.last_swing_low.map(|sp| sp.bar).unwrap_or(0)
+    }
+
+    #[inline]
+    pub fn has_flip(&self) -> bool {
+        self.current_flip.is_some()
+    }
+
+    #[inline]
+    pub fn flip_bearish(&self) -> bool {
+        self.current_flip.map(|f| f.is_bearish).unwrap_or(false)
+    }
+
+    #[inline]
+    pub fn flip_price(&self) -> f64 {
+        self.current_flip.map(|f| f.price).unwrap_or(f64::NAN)
+    }
+
+    #[inline]
+    pub fn flip_bar(&self) -> usize {
+        self.current_flip.map(|f| f.bar).unwrap_or(0)
+    }
+
+    #[inline]
+    pub fn flip_strength(&self) -> u32 {
+        self.current_flip.map(|f| f.structure_strength).unwrap_or(0)
+    }
+
+    #[inline]
+    pub fn swing_depth(&self) -> usize {
+        self.swing_depth_used
+    }
+}
+
 /// Standardized rich Price Action event types (bmkn / cu03).
 ///
 /// This is the central "Rich PA Event Output System".
@@ -1016,6 +1077,31 @@ mod tests {
                 prop_assert_eq!(s.swing_depth_used, b.swing_depth_used);
                 // flip presence parity (exact bar/price may have boundary diffs in simple lag model)
                 prop_assert_eq!(s.current_flip.is_some(), b.current_flip.is_some());
+
+                // Parity across flat accessors matching Polars Struct fields:
+                prop_assert_eq!(s.bias_u32(), b.bias_u32());
+                prop_assert_eq!(s.has_flip(), b.has_flip());
+                prop_assert_eq!(s.flip_bearish(), b.flip_bearish());
+                prop_assert_eq!(s.flip_bar(), b.flip_bar());
+                prop_assert_eq!(s.flip_strength(), b.flip_strength());
+                prop_assert_eq!(s.swing_depth(), b.swing_depth());
+                prop_assert_eq!(s.last_high_bar(), b.last_high_bar());
+                prop_assert_eq!(s.last_low_bar(), b.last_low_bar());
+                if s.last_high_price().is_nan() {
+                    prop_assert!(b.last_high_price().is_nan());
+                } else {
+                    prop_assert_eq!(s.last_high_price(), b.last_high_price());
+                }
+                if s.last_low_price().is_nan() {
+                    prop_assert!(b.last_low_price().is_nan());
+                } else {
+                    prop_assert_eq!(s.last_low_price(), b.last_low_price());
+                }
+                if s.flip_price().is_nan() {
+                    prop_assert!(b.flip_price().is_nan());
+                } else {
+                    prop_assert_eq!(s.flip_price(), b.flip_price());
+                }
             }
         }
     }

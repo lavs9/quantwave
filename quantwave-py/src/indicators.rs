@@ -253,6 +253,17 @@ pub struct SuperTrendResult {
 pub struct TtmSqueezeResult {
     pub value: f64,
     pub direction: i8,
+    pub histogram: f64,
+    pub is_squeezed: bool,
+}
+#[pymethods]
+impl TtmSqueezeResult {
+    fn __repr__(&self) -> String {
+        format!(
+            "TtmSqueezeResult(histogram={}, is_squeezed={}, value={}, direction={})",
+            self.histogram, self.is_squeezed, self.value, self.direction
+        )
+    }
 }
 #[pyclass(get_all)]
 #[derive(Clone)]
@@ -350,6 +361,16 @@ pub struct SwingPointResult {
     pub price: f64,
     pub is_high: bool,
 }
+#[pymethods]
+impl SwingPointResult {
+    fn __repr__(&self) -> String {
+        format!(
+            "SwingPointResult(bar={}, price={}, is_high={})",
+            self.bar, self.price, self.is_high
+        )
+    }
+}
+
 #[pyclass(get_all)]
 #[derive(Clone)]
 pub struct FlipEventResult {
@@ -358,15 +379,167 @@ pub struct FlipEventResult {
     pub bar: u64,
     pub structure_strength: u32,
 }
+#[pymethods]
+impl FlipEventResult {
+    fn __repr__(&self) -> String {
+        format!(
+            "FlipEventResult(is_bearish={}, price={}, bar={}, structure_strength={})",
+            self.is_bearish, self.price, self.bar, self.structure_strength
+        )
+    }
+}
+
 #[pyclass(get_all)]
 #[derive(Clone)]
 pub struct MarketStructureStateResult {
+    // Top-level flat fields matching Polars .ta.market_structure() batch Struct (12 fields):
     pub bias: u32, // 0=Neutral, 1=Bullish, 2=Bearish
+    pub last_high_price: f64,
+    pub last_high_bar: u64,
+    pub last_low_price: f64,
+    pub last_low_bar: u64,
+    pub has_flip: bool,
+    pub flip_bearish: bool,
+    pub flip_price: f64,
+    pub flip_bar: u64,
+    pub flip_strength: u32,
+    pub swing_depth: u32,
+    pub bar_index: u64,
+
+    // Rich nested sub-objects (preserved for backward compatibility & rich PA inspection):
     pub last_swing_high: Option<SwingPointResult>,
     pub last_swing_low: Option<SwingPointResult>,
     pub current_flip: Option<FlipEventResult>,
     pub swing_depth_used: u32,
-    pub bar_index: u64,
+}
+
+impl MarketStructureStateResult {
+    pub fn from_core(
+        state: &quantwave_core::indicators::market_structure::MarketStructureState,
+    ) -> Self {
+        Self {
+            bias: state.bias_u32(),
+            last_high_price: state.last_high_price(),
+            last_high_bar: state.last_high_bar() as u64,
+            last_low_price: state.last_low_price(),
+            last_low_bar: state.last_low_bar() as u64,
+            has_flip: state.has_flip(),
+            flip_bearish: state.flip_bearish(),
+            flip_price: state.flip_price(),
+            flip_bar: state.flip_bar() as u64,
+            flip_strength: state.flip_strength(),
+            swing_depth: state.swing_depth() as u32,
+            bar_index: state.bar_index as u64,
+            last_swing_high: state.last_swing_high.map(|sp| SwingPointResult {
+                bar: sp.bar as u64,
+                price: sp.price,
+                is_high: sp.is_high,
+            }),
+            last_swing_low: state.last_swing_low.map(|sp| SwingPointResult {
+                bar: sp.bar as u64,
+                price: sp.price,
+                is_high: sp.is_high,
+            }),
+            current_flip: state.current_flip.map(|f| FlipEventResult {
+                is_bearish: f.is_bearish,
+                price: f.price,
+                bar: f.bar as u64,
+                structure_strength: f.structure_strength,
+            }),
+            swing_depth_used: state.swing_depth() as u32,
+        }
+    }
+}
+
+#[pymethods]
+impl MarketStructureStateResult {
+    pub fn as_dict<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, pyo3::types::PyDict>> {
+        let dict = pyo3::types::PyDict::new(py);
+        dict.set_item("bias", self.bias)?;
+        dict.set_item("last_high_price", self.last_high_price)?;
+        dict.set_item("last_high_bar", self.last_high_bar)?;
+        dict.set_item("last_low_price", self.last_low_price)?;
+        dict.set_item("last_low_bar", self.last_low_bar)?;
+        dict.set_item("has_flip", self.has_flip)?;
+        dict.set_item("flip_bearish", self.flip_bearish)?;
+        dict.set_item("flip_price", self.flip_price)?;
+        dict.set_item("flip_bar", self.flip_bar)?;
+        dict.set_item("flip_strength", self.flip_strength)?;
+        dict.set_item("swing_depth", self.swing_depth)?;
+        dict.set_item("bar_index", self.bar_index)?;
+        dict.set_item("last_swing_high", self.last_swing_high.clone())?;
+        dict.set_item("last_swing_low", self.last_swing_low.clone())?;
+        dict.set_item("current_flip", self.current_flip.clone())?;
+        dict.set_item("swing_depth_used", self.swing_depth_used)?;
+        Ok(dict)
+    }
+
+    pub fn to_dict<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, pyo3::types::PyDict>> {
+        self.as_dict(py)
+    }
+
+    pub fn __getitem__<'py>(&self, py: Python<'py>, key: &str) -> PyResult<Bound<'py, PyAny>> {
+        let dict = self.as_dict(py)?;
+        match dict.get_item(key)? {
+            Some(v) => Ok(v),
+            None => Err(pyo3::exceptions::PyKeyError::new_err(format!(
+                "Key '{}' not found in MarketStructureStateResult",
+                key
+            ))),
+        }
+    }
+
+    pub fn __contains__(&self, key: &str) -> bool {
+        matches!(
+            key,
+            "bias"
+                | "last_high_price"
+                | "last_high_bar"
+                | "last_low_price"
+                | "last_low_bar"
+                | "has_flip"
+                | "flip_bearish"
+                | "flip_price"
+                | "flip_bar"
+                | "flip_strength"
+                | "swing_depth"
+                | "bar_index"
+                | "last_swing_high"
+                | "last_swing_low"
+                | "current_flip"
+                | "swing_depth_used"
+        )
+    }
+
+    pub fn keys(&self) -> Vec<&'static str> {
+        vec![
+            "bias",
+            "last_high_price",
+            "last_high_bar",
+            "last_low_price",
+            "last_low_bar",
+            "has_flip",
+            "flip_bearish",
+            "flip_price",
+            "flip_bar",
+            "flip_strength",
+            "swing_depth",
+            "bar_index",
+        ]
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "MarketStructureStateResult(bias={}, has_flip={}, last_high_price={}, last_low_price={}, flip_price={}, swing_depth={}, bar_index={})",
+            self.bias,
+            self.has_flip,
+            self.last_high_price,
+            self.last_low_price,
+            self.flip_price,
+            self.swing_depth,
+            self.bar_index
+        )
+    }
 }
 #[pyclass(get_all)]
 #[derive(Clone)]
@@ -1991,7 +2164,19 @@ impl RobustnessEvaluator {
     }
 }
 
-export_ohlc_in_record_out!(TtmSqueeze, CoreTtmSqueeze, TtmSqueezeResult, (period: i64, mult_bb: f64, mult_kc: f64), res, TtmSqueezeResult { value: res.0, direction: if res.1 { 1 } else { 0 } });
+export_ohlc_in_record_out!(
+    TtmSqueeze,
+    CoreTtmSqueeze,
+    TtmSqueezeResult,
+    (period: i64, multiplier_bb: f64, multiplier_kc: f64),
+    res,
+    TtmSqueezeResult {
+        value: res.0,
+        direction: if res.1 { 1 } else { 0 },
+        histogram: res.0,
+        is_squeezed: res.1,
+    }
+);
 
 #[pyfunction]
 pub fn ultimate_bands(series: Vec<f64>, length: u64, num_sds: f64) -> Vec<UltimateBandsResult> {
@@ -3084,8 +3269,7 @@ pub fn regime_to_features(regime_id: u32) -> RegimeFeaturesResult {
 
 use quantwave_core::indicators::geometric_patterns::GeometricPatternScanner as CoreGeo;
 use quantwave_core::indicators::market_structure::{
-    Bias as CoreBias, ExtremeReclaim as CoreReclaim, MarketStructure as CoreMS,
-    PriceImbalance as CoreImbalance,
+    ExtremeReclaim as CoreReclaim, MarketStructure as CoreMS, PriceImbalance as CoreImbalance,
 };
 use quantwave_core::indicators::series_norm::{
     PercentRank as CorePercentRank, Zscore as CoreZscore,
@@ -3106,31 +3290,7 @@ impl MarketStructure {
     pub fn next(&self, high: f64, low: f64) -> PyResult<MarketStructureStateResult> {
         let mut guard = lock_inner(&self.inner)?;
         let state = guard.next((high, low));
-        Ok(MarketStructureStateResult {
-            bias: match state.bias {
-                CoreBias::Neutral => 0,
-                CoreBias::Bullish => 1,
-                CoreBias::Bearish => 2,
-            },
-            last_swing_high: state.last_swing_high.map(|sp| SwingPointResult {
-                bar: sp.bar as u64,
-                price: sp.price,
-                is_high: sp.is_high,
-            }),
-            last_swing_low: state.last_swing_low.map(|sp| SwingPointResult {
-                bar: sp.bar as u64,
-                price: sp.price,
-                is_high: sp.is_high,
-            }),
-            current_flip: state.current_flip.map(|f| FlipEventResult {
-                is_bearish: f.is_bearish,
-                price: f.price,
-                bar: f.bar as u64,
-                structure_strength: f.structure_strength,
-            }),
-            swing_depth_used: state.swing_depth_used as u32,
-            bar_index: state.bar_index as u64,
-        })
+        Ok(MarketStructureStateResult::from_core(&state))
     }
 }
 
@@ -3141,39 +3301,29 @@ pub struct GeometricPatternScanner {
 #[pymethods]
 impl GeometricPatternScanner {
     #[new]
-    pub fn new(swing_strength: u64) -> Self {
+    #[pyo3(signature = (swing_strength=3, min_pole_atr=None, max_retrace_percent=None))]
+    pub fn new(
+        swing_strength: Option<u64>,
+        min_pole_atr: Option<f64>,
+        max_retrace_percent: Option<f64>,
+    ) -> Self {
+        let strength = swing_strength.unwrap_or(3) as usize;
+        let mut config =
+            quantwave_core::indicators::geometric_patterns::GeometricPatternConfig::default();
+        if let Some(m) = min_pole_atr {
+            config.min_pole_atr = m;
+        }
+        if let Some(r) = max_retrace_percent {
+            config.max_retrace_percent = r;
+        }
         Self {
-            inner: Mutex::new(CoreGeo::new(swing_strength as usize)),
+            inner: Mutex::new(CoreGeo::with_config(strength, config)),
         }
     }
     pub fn next(&self, high: f64, low: f64) -> PyResult<GeometricNextResult> {
         let mut guard = lock_inner(&self.inner)?;
         let (state, flag, hs) = guard.next((high, low));
-        let ms_res = MarketStructureStateResult {
-            bias: match state.bias {
-                CoreBias::Neutral => 0,
-                CoreBias::Bullish => 1,
-                CoreBias::Bearish => 2,
-            },
-            last_swing_high: state.last_swing_high.map(|sp| SwingPointResult {
-                bar: sp.bar as u64,
-                price: sp.price,
-                is_high: sp.is_high,
-            }),
-            last_swing_low: state.last_swing_low.map(|sp| SwingPointResult {
-                bar: sp.bar as u64,
-                price: sp.price,
-                is_high: sp.is_high,
-            }),
-            current_flip: state.current_flip.map(|f| FlipEventResult {
-                is_bearish: f.is_bearish,
-                price: f.price,
-                bar: f.bar as u64,
-                structure_strength: f.structure_strength,
-            }),
-            swing_depth_used: state.swing_depth_used as u32,
-            bar_index: state.bar_index as u64,
-        };
+        let ms_res = MarketStructureStateResult::from_core(&state);
         let flag_res = flag.map(|f| FlagPatternResult {
             id: f.id,
             is_bull: f.is_bull,
@@ -3215,31 +3365,7 @@ pub fn market_structure_batch(
         .zip(lows)
         .map(|(h, l)| {
             let st = ms.next((h, l));
-            MarketStructureStateResult {
-                bias: match st.bias {
-                    CoreBias::Neutral => 0,
-                    CoreBias::Bullish => 1,
-                    CoreBias::Bearish => 2,
-                },
-                last_swing_high: st.last_swing_high.map(|sp| SwingPointResult {
-                    bar: sp.bar as u64,
-                    price: sp.price,
-                    is_high: sp.is_high,
-                }),
-                last_swing_low: st.last_swing_low.map(|sp| SwingPointResult {
-                    bar: sp.bar as u64,
-                    price: sp.price,
-                    is_high: sp.is_high,
-                }),
-                current_flip: st.current_flip.map(|f| FlipEventResult {
-                    is_bearish: f.is_bearish,
-                    price: f.price,
-                    bar: f.bar as u64,
-                    structure_strength: f.structure_strength,
-                }),
-                swing_depth_used: st.swing_depth_used as u32,
-                bar_index: st.bar_index as u64,
-            }
+            MarketStructureStateResult::from_core(&st)
         })
         .collect()
 }

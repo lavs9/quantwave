@@ -2,7 +2,6 @@ use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
 use serde::Deserialize;
 
-use quantwave_core::Bias;
 use quantwave_core::ExtremeReclaim;
 use quantwave_core::KeltnerChannels;
 use quantwave_core::MarketStructure;
@@ -243,49 +242,17 @@ fn market_structure(inputs: &[Series], kwargs: MarketStructureKwargs) -> PolarsR
 
         let state = ms.next((hh, ll));
 
-        let b = match state.bias {
-            Bias::Neutral => 0u32,
-            Bias::Bullish => 1,
-            Bias::Bearish => 2,
-        };
-        bias_vals.push(Some(b));
-
-        match &state.last_swing_high {
-            Some(sh) => {
-                lh_p.push(Some(sh.price));
-                lh_b.push(Some(sh.bar as u64));
-            }
-            None => {
-                lh_p.push(Some(f64::NAN));
-                lh_b.push(Some(0));
-            }
-        }
-        match &state.last_swing_low {
-            Some(sl) => {
-                ll_p.push(Some(sl.price));
-                ll_b.push(Some(sl.bar as u64));
-            }
-            None => {
-                ll_p.push(Some(f64::NAN));
-                ll_b.push(Some(0));
-            }
-        }
-
-        if let Some(f) = &state.current_flip {
-            has_f.push(Some(true));
-            f_bear.push(Some(f.is_bearish));
-            f_p.push(Some(f.price));
-            f_ba.push(Some(f.bar as u64));
-            f_str.push(Some(f.structure_strength));
-        } else {
-            has_f.push(Some(false));
-            f_bear.push(Some(false));
-            f_p.push(Some(f64::NAN));
-            f_ba.push(Some(0));
-            f_str.push(Some(0));
-        }
-
-        depths.push(Some(state.swing_depth_used as u32));
+        bias_vals.push(Some(state.bias_u32()));
+        lh_p.push(Some(state.last_high_price()));
+        lh_b.push(Some(state.last_high_bar() as u64));
+        ll_p.push(Some(state.last_low_price()));
+        ll_b.push(Some(state.last_low_bar() as u64));
+        has_f.push(Some(state.has_flip()));
+        f_bear.push(Some(state.flip_bearish()));
+        f_p.push(Some(state.flip_price()));
+        f_ba.push(Some(state.flip_bar() as u64));
+        f_str.push(Some(state.flip_strength()));
+        depths.push(Some(state.swing_depth() as u32));
         bars.push(Some(state.bar_index as u64));
     }
 
