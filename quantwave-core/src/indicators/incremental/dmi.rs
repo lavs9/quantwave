@@ -258,6 +258,10 @@ impl Next<(f64, f64, f64)> for ADX {
 }
 
 /// Average Directional Movement Index Rating (ADXR).
+///
+/// Convention (`quantwave-5zoj`): averages current ADX with ADX from `period - 1`
+/// bars back (`(ADX[i] + ADX[i + 1 - period]) / 2.0`), matching TA-Lib / Wilder
+/// smoothing parity rather than LuxAlgo's `period`-bar lag.
 #[derive(Debug, Clone)]
 #[allow(non_camel_case_types)]
 pub struct ADXR {
