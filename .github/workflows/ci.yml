@@ -31,6 +31,7 @@ jobs:
     outputs:
       rust: ${{ steps.filter.outputs.rust }}
       python_gold: ${{ steps.filter.outputs.python_gold }}
+      wasm: ${{ steps.filter.outputs.wasm }}
     steps:
       - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v4
@@ -48,6 +49,13 @@ jobs:
               - 'quantwave-py/**'
               - 'quantwave-core/src/options_india/**'
               - 'quantwave-core/tests/gold_standard/**'
+              - '.github/workflows/ci.yml'
+            wasm:
+              - 'quantwave-wasm/**'
+              - 'quantwave-core/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'scripts/test_wasm.sh'
               - '.github/workflows/ci.yml'
 
   sanity:
@@ -105,6 +113,29 @@ jobs:
           # nextest does not run doctests, so the documented examples -- including
           # the crate-level quick start -- were never compiled by CI.
           cargo test --doc -p quantwave-core -p quantwave-polars -p quantwave-backtest
+
+  wasm-gate:
+    name: WASM build, size budget & Node parity
+    needs: [changes]
+    if: needs.changes.outputs.wasm == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: jetli/wasm-pack-action@v0.4.0
+
+      - name: Build npm package, check size budget, and run Node parity tests
+        run: ./scripts/test_wasm.sh
 
   python-gold-parity:
     name: Python gold parity (${{ matrix.os }})
