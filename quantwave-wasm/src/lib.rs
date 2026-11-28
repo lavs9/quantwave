@@ -22,13 +22,78 @@
 
 use quantwave_core::SuperTrend as CoreSuperTrend;
 use quantwave_core::indicators::cyber_cycle::CyberCycle as CoreCyberCycle;
+use quantwave_core::indicators::ichimoku::IchimokuCloud as CoreIchimoku;
+use quantwave_core::indicators::incremental::bbands::BBANDS as CoreBbands;
+use quantwave_core::indicators::incremental::dmi::{ADX as CoreAdx, ADXR as CoreAdxr};
+use quantwave_core::indicators::incremental::macd::MACD as CoreMacd;
 use quantwave_core::indicators::incremental::rsi::RSI as CoreRsi;
+use quantwave_core::indicators::incremental::stoch::STOCH as CoreStoch;
+use quantwave_core::indicators::kalman::KalmanFilter as CoreKalman;
+use quantwave_core::indicators::roofing_filter::RoofingFilter as CoreRoofingFilter;
+use quantwave_core::indicators::super_smoother::SuperSmoother as CoreSuperSmoother;
+use quantwave_core::indicators::ttm_squeeze::TTMSqueeze as CoreTtmSqueeze;
+use quantwave_core::indicators::volatility::TaATR as CoreAtr;
 use quantwave_core::traits::Next;
 use quantwave_core::{
     EMA as CoreEma, HarmonicKind, HarmonicPattern, HarmonicPatternScanner as CoreHarmonic,
-    KagiBuilder as CoreKagi, RenkoBuilder as CoreRenko,
+    KagiBuilder as CoreKagi, MaType, MarketStructure as CoreMarketStructure,
+    RenkoBuilder as CoreRenko, SMA as CoreSma, WMA as CoreWma,
 };
 use wasm_bindgen::prelude::*;
+
+/// Generates a 1-input (`f64`), 1-output (`f64`) `#[wasm_bindgen]` wrapper
+/// with a `(period: usize)` constructor.
+macro_rules! wasm_1in_1out {
+    ($(#[$meta:meta])* $name:ident, $core:ty) => {
+        $(#[$meta])*
+        #[wasm_bindgen]
+        pub struct $name {
+            inner: $core,
+        }
+
+        #[wasm_bindgen]
+        impl $name {
+            #[wasm_bindgen(constructor)]
+            pub fn new(period: usize) -> $name {
+                $name {
+                    inner: <$core>::new(period),
+                }
+            }
+
+            /// Feed one price sample; returns the updated indicator value.
+            pub fn next(&mut self, value: f64) -> f64 {
+                self.inner.next(value)
+            }
+        }
+    };
+}
+
+/// Generates a 3-input `(high, low, close)`, 1-output (`f64`) `#[wasm_bindgen]`
+/// wrapper with a `(period: usize)` constructor.
+macro_rules! wasm_hlc_1out {
+    ($(#[$meta:meta])* $name:ident, $core:ty) => {
+        $(#[$meta])*
+        #[wasm_bindgen]
+        pub struct $name {
+            inner: $core,
+        }
+
+        #[wasm_bindgen]
+        impl $name {
+            #[wasm_bindgen(constructor)]
+            pub fn new(period: usize) -> $name {
+                $name {
+                    inner: <$core>::new(period),
+                }
+            }
+
+            /// Feed one `(high, low, close)` bar; returns the updated indicator value.
+            pub fn next(&mut self, high: f64, low: f64, close: f64) -> f64 {
+                self.inner.next((high, low, close))
+            }
+        }
+    };
+}
 
 /// Streaming SuperTrend, callable bar-by-bar from JS.
 #[wasm_bindgen]
@@ -54,46 +119,242 @@ impl SuperTrend {
     }
 }
 
-/// Streaming RSI, callable bar-by-bar from JS.
+wasm_1in_1out!(
+    /// Streaming RSI, callable bar-by-bar from JS.
+    Rsi,
+    CoreRsi
+);
+wasm_1in_1out!(
+    /// Streaming EMA, callable bar-by-bar from JS.
+    Ema,
+    CoreEma
+);
+wasm_1in_1out!(
+    /// Streaming SMA, callable bar-by-bar from JS.
+    Sma,
+    CoreSma
+);
+wasm_1in_1out!(
+    /// Streaming WMA, callable bar-by-bar from JS.
+    Wma,
+    CoreWma
+);
+wasm_1in_1out!(
+    /// Streaming Ehlers SuperSmoother filter, callable bar-by-bar from JS.
+    SuperSmoother,
+    CoreSuperSmoother
+);
+
+wasm_hlc_1out!(
+    /// Streaming TA-Lib Wilder ATR, callable bar-by-bar from JS.
+    Atr,
+    CoreAtr
+);
+wasm_hlc_1out!(
+    /// Streaming ADX, callable bar-by-bar from JS.
+    Adx,
+    CoreAdx
+);
+wasm_hlc_1out!(
+    /// Streaming ADXR (TA-Lib `period - 1` lag), callable bar-by-bar from JS.
+    Adxr,
+    CoreAdxr
+);
+
+/// Streaming MACD, callable bar-by-bar from JS.
 #[wasm_bindgen]
-pub struct Rsi {
-    inner: CoreRsi,
+pub struct Macd {
+    inner: CoreMacd,
 }
 
 #[wasm_bindgen]
-impl Rsi {
-    /// `period` Wilder smoothing lookback.
+impl Macd {
     #[wasm_bindgen(constructor)]
-    pub fn new(period: usize) -> Rsi {
-        Rsi {
-            inner: CoreRsi::new(period),
+    pub fn new(fast_period: usize, slow_period: usize, signal_period: usize) -> Macd {
+        Macd {
+            inner: CoreMacd::new(fast_period, slow_period, signal_period),
         }
     }
 
-    /// Feed one `close`; returns the current RSI value.
-    pub fn next(&mut self, close: f64) -> f64 {
-        self.inner.next(close)
+    /// Feed one price; returns `[macd, signal, histogram]`.
+    pub fn next(&mut self, value: f64) -> Vec<f64> {
+        let (macd, signal, hist) = self.inner.next(value);
+        vec![macd, signal, hist]
     }
 }
 
-/// Streaming EMA, callable bar-by-bar from JS.
+/// Streaming Bollinger Bands (SMA basis), callable bar-by-bar from JS.
 #[wasm_bindgen]
-pub struct Ema {
-    inner: CoreEma,
+pub struct Bbands {
+    inner: CoreBbands,
 }
 
 #[wasm_bindgen]
-impl Ema {
+impl Bbands {
     #[wasm_bindgen(constructor)]
-    pub fn new(period: usize) -> Ema {
-        Ema {
-            inner: CoreEma::new(period),
+    pub fn new(period: usize, nb_dev_up: f64, nb_dev_dn: f64) -> Bbands {
+        Bbands {
+            inner: CoreBbands::new(period, nb_dev_up, nb_dev_dn, MaType::Sma),
         }
     }
 
-    /// Feed one value; returns the current EMA.
+    /// Feed one price; returns `[upper, middle, lower]`.
+    pub fn next(&mut self, value: f64) -> Vec<f64> {
+        let (upper, middle, lower) = self.inner.next(value);
+        vec![upper, middle, lower]
+    }
+}
+
+/// Streaming Slow Stochastic (SMA smoothing), callable bar-by-bar from JS.
+#[wasm_bindgen]
+pub struct Stoch {
+    inner: CoreStoch,
+}
+
+#[wasm_bindgen]
+impl Stoch {
+    #[wasm_bindgen(constructor)]
+    pub fn new(fastk_period: usize, slowk_period: usize, slowd_period: usize) -> Stoch {
+        Stoch {
+            inner: CoreStoch::new(
+                fastk_period,
+                slowk_period,
+                MaType::Sma,
+                slowd_period,
+                MaType::Sma,
+            ),
+        }
+    }
+
+    /// Feed one `(high, low, close)` bar; returns `[slow_k, slow_d]`.
+    pub fn next(&mut self, high: f64, low: f64, close: f64) -> Vec<f64> {
+        let (k, d) = self.inner.next((high, low, close));
+        vec![k, d]
+    }
+}
+
+/// Streaming Ichimoku Cloud, callable bar-by-bar from JS.
+#[wasm_bindgen]
+pub struct Ichimoku {
+    inner: CoreIchimoku,
+}
+
+#[wasm_bindgen]
+impl Ichimoku {
+    #[wasm_bindgen(constructor)]
+    pub fn new(tenkan_period: usize, kijun_period: usize, senkou_b_period: usize) -> Ichimoku {
+        Ichimoku {
+            inner: CoreIchimoku::new(tenkan_period, kijun_period, senkou_b_period),
+        }
+    }
+
+    /// Feed one `(high, low)` bar; returns `[tenkan, kijun, senkou_a, senkou_b]`.
+    pub fn next(&mut self, high: f64, low: f64) -> Vec<f64> {
+        let (tenkan, kijun, senkou_a, senkou_b) = self.inner.next((high, low));
+        vec![tenkan, kijun, senkou_a, senkou_b]
+    }
+}
+
+/// Streaming Ehlers Roofing Filter, callable bar-by-bar from JS.
+#[wasm_bindgen]
+pub struct RoofingFilter {
+    inner: CoreRoofingFilter,
+}
+
+#[wasm_bindgen]
+impl RoofingFilter {
+    #[wasm_bindgen(constructor)]
+    pub fn new(hp_period: usize, ss_period: usize) -> RoofingFilter {
+        RoofingFilter {
+            inner: CoreRoofingFilter::new(hp_period, ss_period),
+        }
+    }
+
+    /// Feed one price; returns the filtered value.
     pub fn next(&mut self, value: f64) -> f64 {
         self.inner.next(value)
+    }
+}
+
+/// Streaming 1D Kalman Filter, callable bar-by-bar from JS.
+#[wasm_bindgen]
+pub struct KalmanFilter {
+    inner: CoreKalman,
+}
+
+#[wasm_bindgen]
+impl KalmanFilter {
+    #[wasm_bindgen(constructor)]
+    pub fn new(q: f64, r: f64) -> KalmanFilter {
+        KalmanFilter {
+            inner: CoreKalman::new(q, r),
+        }
+    }
+
+    /// Feed one price; returns the filtered estimate.
+    pub fn next(&mut self, value: f64) -> f64 {
+        self.inner.next(value)
+    }
+}
+
+/// Streaming TTM Squeeze, callable bar-by-bar from JS.
+#[wasm_bindgen]
+pub struct TtmSqueeze {
+    inner: CoreTtmSqueeze,
+}
+
+#[wasm_bindgen]
+impl TtmSqueeze {
+    #[wasm_bindgen(constructor)]
+    pub fn new(period: usize, multiplier_bb: f64, multiplier_kc: f64) -> TtmSqueeze {
+        TtmSqueeze {
+            inner: CoreTtmSqueeze::new(period, multiplier_bb, multiplier_kc),
+        }
+    }
+
+    /// Feed one `(high, low, close)` bar; returns `[histogram, is_squeezed]`
+    /// where `is_squeezed` is `1.0` when squeezed, else `0.0`.
+    pub fn next(&mut self, high: f64, low: f64, close: f64) -> Vec<f64> {
+        let (hist, sq) = self.inner.next((high, low, close));
+        vec![hist, if sq { 1.0 } else { 0.0 }]
+    }
+}
+
+/// Streaming Market Structure (Swings + BOS), callable bar-by-bar from JS.
+#[wasm_bindgen]
+pub struct MarketStructure {
+    inner: CoreMarketStructure,
+}
+
+#[wasm_bindgen]
+impl MarketStructure {
+    #[wasm_bindgen(constructor)]
+    pub fn new(swing_strength: usize) -> MarketStructure {
+        MarketStructure {
+            inner: CoreMarketStructure::new(swing_strength),
+        }
+    }
+
+    /// Feed one `(high, low)` bar; returns the 12-field flattened state vector:
+    /// `[bias, last_high_price, last_high_bar, last_low_price, last_low_bar,
+    ///   has_flip, flip_bearish, flip_price, flip_bar, flip_strength,
+    ///   swing_depth, bar_index]`.
+    pub fn next(&mut self, high: f64, low: f64) -> Vec<f64> {
+        let st = self.inner.next((high, low));
+        vec![
+            f64::from(st.bias_u32()),
+            st.last_high_price(),
+            st.last_high_bar() as f64,
+            st.last_low_price(),
+            st.last_low_bar() as f64,
+            if st.has_flip() { 1.0 } else { 0.0 },
+            if st.flip_bearish() { 1.0 } else { 0.0 },
+            st.flip_price(),
+            st.flip_bar() as f64,
+            f64::from(st.flip_strength()),
+            st.swing_depth() as f64,
+            st.bar_index as f64,
+        ]
     }
 }
 

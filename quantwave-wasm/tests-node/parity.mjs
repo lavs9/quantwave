@@ -25,16 +25,41 @@ const bars = [];
 for (let i = 0; i < flat.length; i += 3) bars.push([flat[i], flat[i + 1], flat[i + 2]]);
 
 const st = new qw.SuperTrend(10, 3.0), rsi = new qw.Rsi(14), ema = new qw.Ema(20);
+const sma = new qw.Sma(20), wma = new qw.Wma(20), ss = new qw.SuperSmoother(10);
+const atr = new qw.Atr(14), adx = new qw.Adx(14), adxr = new qw.Adxr(14);
+const macd = new qw.Macd(12, 26, 9), bbands = new qw.Bbands(20, 2.0, 2.0);
+const stoch = new qw.Stoch(14, 3, 3), ichimoku = new qw.Ichimoku(9, 26, 52);
+const rf = new qw.RoofingFilter(48, 10), kf = new qw.KalmanFilter(0.01, 0.1);
+const ttm = new qw.TtmSqueeze(20, 2.0, 1.5), ms = new qw.MarketStructure(3);
 const cc = new qw.CyberCycle(14), renko = new qw.Renko(1.5), kagi = new qw.Kagi(2.0);
 const harm = new qw.HarmonicScanner(2);
 const stride = qw.HarmonicScanner.stride();
-const out = { supertrend: [], rsi: [], ema: [], cyber_cycle: [], renko: [], kagi: [], harmonic_d_bar_price_score: [] };
+const out = {
+  supertrend: [], rsi: [], ema: [], sma: [], wma: [], super_smoother: [],
+  atr: [], adx: [], adxr: [], macd: [], bbands: [], stoch: [], ichimoku: [],
+  roofing_filter: [], kalman_filter: [], ttm_squeeze: [], market_structure: [],
+  cyber_cycle: [], renko: [], kagi: [], harmonic_d_bar_price_score: []
+};
 let harmonicCount = 0;
 const kinds = new Set();
 for (const [h, l, c] of bars) {
   out.supertrend.push(...st.next(h, l, c));
   out.rsi.push(rsi.next(c));
   out.ema.push(ema.next(c));
+  out.sma.push(sma.next(c));
+  out.wma.push(wma.next(c));
+  out.super_smoother.push(ss.next(c));
+  out.atr.push(atr.next(h, l, c));
+  out.adx.push(adx.next(h, l, c));
+  out.adxr.push(adxr.next(h, l, c));
+  out.macd.push(...macd.next(c));
+  out.bbands.push(...bbands.next(c));
+  out.stoch.push(...stoch.next(h, l, c));
+  out.ichimoku.push(...ichimoku.next(h, l));
+  out.roofing_filter.push(rf.next(c));
+  out.kalman_filter.push(kf.next(c));
+  out.ttm_squeeze.push(...ttm.next(h, l, c));
+  out.market_structure.push(...ms.next(h, l));
   out.cyber_cycle.push(...cc.next(c));
   out.renko.push(...renko.next(c));
   out.kagi.push(...kagi.next(c));
@@ -115,6 +140,61 @@ if (missing.length) failures++;
 const unknownOk = qw.harmonicKindName(NaN) === "unknown" && qw.harmonicKindName(-1) === "unknown" && qw.harmonicKindName(1.5) === "unknown";
 console.log(`${unknownOk ? "PASS" : "FAIL"} harmonicKindName(NaN/-1/1.5) === "unknown"`);
 if (!unknownOk) failures++;
+
+// ---- Gold-standard JSON fixtures (extending parity to quantwave-core/tests/gold_standard) ----
+const goldDir = path.join(here, "../../quantwave-core/tests/gold_standard");
+const approxEq = (a, b, tol = 1e-9) => (a === null || Number.isNaN(a)) ? Number.isNaN(b) : Math.abs(a - b) <= tol;
+
+{
+  const g = JSON.parse(readFileSync(path.join(goldDir, "sma_5.json"), "utf8"));
+  const s = new qw.Sma(3);
+  let ok = true;
+  for (let i = 0; i < g.input.length; i++) {
+    if (!approxEq(g.expected[i], s.next(g.input[i]))) ok = false;
+  }
+  s.free();
+  console.log(`${ok ? "PASS" : "FAIL"} gold_standard/sma_5.json`);
+  if (!ok) failures++;
+}
+
+{
+  const g = JSON.parse(readFileSync(path.join(goldDir, "supertrend_10_3.json"), "utf8"));
+  const s = new qw.SuperTrend(10, 3.0);
+  let ok = true;
+  for (let i = 0; i < g.close.length; i++) {
+    const [val, dir] = s.next(g.high[i], g.low[i], g.close[i]);
+    if (!approxEq(g.expected_st[i], val) || dir !== g.expected_dir[i]) ok = false;
+  }
+  s.free();
+  console.log(`${ok ? "PASS" : "FAIL"} gold_standard/supertrend_10_3.json`);
+  if (!ok) failures++;
+}
+
+{
+  const g = JSON.parse(readFileSync(path.join(goldDir, "ichimoku.json"), "utf8"));
+  const s = new qw.Ichimoku(9, 26, 52);
+  let ok = true;
+  for (let i = 0; i < g.high.length; i++) {
+    const [t, k, sa, sb] = s.next(g.high[i], g.low[i]);
+    if (!approxEq(g.expected_tenkan[i], t) || !approxEq(g.expected_kijun[i], k) || !approxEq(g.expected_senkou_a[i], sa) || !approxEq(g.expected_senkou_b[i], sb)) ok = false;
+  }
+  s.free();
+  console.log(`${ok ? "PASS" : "FAIL"} gold_standard/ichimoku.json`);
+  if (!ok) failures++;
+}
+
+{
+  const g = JSON.parse(readFileSync(path.join(goldDir, "ttm_squeeze_20_2_15.json"), "utf8"));
+  const s = new qw.TtmSqueeze(20, 2.0, 1.5);
+  let ok = true;
+  for (let i = 0; i < g.close.length; i++) {
+    const [hist, sq] = s.next(g.high[i], g.low[i], g.close[i]);
+    if (!approxEq(g.expected_histogram[i], hist) || (sq === 1) !== g.expected_squeezed[i]) ok = false;
+  }
+  s.free();
+  console.log(`${ok ? "PASS" : "FAIL"} gold_standard/ttm_squeeze_20_2_15.json`);
+  if (!ok) failures++;
+}
 
 if (failures) {
   console.error(`${failures} parity failure(s)`);

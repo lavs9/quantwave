@@ -3,9 +3,22 @@
 //! and asserts bit-identical output. f64s are emitted as hex bit patterns so
 //! NaN and every last ulp round-trip exactly.
 use quantwave_core::indicators::cyber_cycle::CyberCycle;
+use quantwave_core::indicators::ichimoku::IchimokuCloud;
+use quantwave_core::indicators::incremental::bbands::BBANDS;
+use quantwave_core::indicators::incremental::dmi::{ADX, ADXR};
+use quantwave_core::indicators::incremental::macd::MACD;
 use quantwave_core::indicators::incremental::rsi::RSI;
+use quantwave_core::indicators::incremental::stoch::STOCH;
+use quantwave_core::indicators::kalman::KalmanFilter;
+use quantwave_core::indicators::roofing_filter::RoofingFilter;
+use quantwave_core::indicators::super_smoother::SuperSmoother;
+use quantwave_core::indicators::ttm_squeeze::TTMSqueeze;
+use quantwave_core::indicators::volatility::TaATR;
 use quantwave_core::traits::Next;
-use quantwave_core::{EMA, HarmonicPatternScanner, KagiBuilder, RenkoBuilder, SuperTrend};
+use quantwave_core::{
+    EMA, HarmonicPatternScanner, KagiBuilder, MaType, MarketStructure, RenkoBuilder, SMA,
+    SuperTrend, WMA,
+};
 
 fn bits(v: &[f64]) -> String {
     let items: Vec<String> = v
@@ -115,11 +128,29 @@ fn main() {
     let mut st = SuperTrend::new(10, 3.0);
     let mut rsi = RSI::new(14);
     let mut ema = EMA::new(20);
+    let mut sma = SMA::new(20);
+    let mut wma = WMA::new(20);
+    let mut ss = SuperSmoother::new(10);
+    let mut atr = TaATR::new(14);
+    let mut adx = ADX::new(14);
+    let mut adxr = ADXR::new(14);
+    let mut macd = MACD::new(12, 26, 9);
+    let mut bbands = BBANDS::new(20, 2.0, 2.0, MaType::Sma);
+    let mut stoch = STOCH::new(14, 3, MaType::Sma, 3, MaType::Sma);
+    let mut ichimoku = IchimokuCloud::new(9, 26, 52);
+    let mut rf = RoofingFilter::new(48, 10);
+    let mut kf = KalmanFilter::new(0.01, 0.1);
+    let mut ttm = TTMSqueeze::new(20, 2.0, 1.5);
+    let mut ms = MarketStructure::new(3);
     let mut cc = CyberCycle::new(14);
     let mut renko = RenkoBuilder::new(1.5);
     let mut kagi = KagiBuilder::new(2.0);
     let mut harm = HarmonicPatternScanner::new(2);
     let (mut o_st, mut o_rsi, mut o_ema, mut o_cc) = (vec![], vec![], vec![], vec![]);
+    let (mut o_sma, mut o_wma, mut o_ss, mut o_atr) = (vec![], vec![], vec![], vec![]);
+    let (mut o_adx, mut o_adxr, mut o_macd, mut o_bbands) = (vec![], vec![], vec![], vec![]);
+    let (mut o_stoch, mut o_ichi, mut o_rf, mut o_kf) = (vec![], vec![], vec![], vec![]);
+    let (mut o_ttm, mut o_ms) = (vec![], vec![]);
     let (mut o_renko, mut o_kagi, mut o_harm) = (vec![], vec![], vec![]);
     let mut n_patterns = 0usize;
     for &(h, l, c) in &bars {
@@ -127,6 +158,39 @@ fn main() {
         o_st.extend([v, d as f64]);
         o_rsi.push(rsi.next(c));
         o_ema.push(ema.next(c));
+        o_sma.push(sma.next(c));
+        o_wma.push(wma.next(c));
+        o_ss.push(ss.next(c));
+        o_atr.push(atr.next((h, l, c)));
+        o_adx.push(adx.next((h, l, c)));
+        o_adxr.push(adxr.next((h, l, c)));
+        let (m, sig, hist) = macd.next(c);
+        o_macd.extend([m, sig, hist]);
+        let (u, mid, lo) = bbands.next(c);
+        o_bbands.extend([u, mid, lo]);
+        let (sk, sd) = stoch.next((h, l, c));
+        o_stoch.extend([sk, sd]);
+        let (t, k, sa, sb) = ichimoku.next((h, l));
+        o_ichi.extend([t, k, sa, sb]);
+        o_rf.push(rf.next(c));
+        o_kf.push(kf.next(c));
+        let (th, tsq) = ttm.next((h, l, c));
+        o_ttm.extend([th, if tsq { 1.0 } else { 0.0 }]);
+        let mst = ms.next((h, l));
+        o_ms.extend([
+            f64::from(mst.bias_u32()),
+            mst.last_high_price(),
+            mst.last_high_bar() as f64,
+            mst.last_low_price(),
+            mst.last_low_bar() as f64,
+            if mst.has_flip() { 1.0 } else { 0.0 },
+            if mst.flip_bearish() { 1.0 } else { 0.0 },
+            mst.flip_price(),
+            mst.flip_bar() as f64,
+            f64::from(mst.flip_strength()),
+            mst.swing_depth() as f64,
+            mst.bar_index as f64,
+        ]);
         let (a, b) = cc.next(c);
         o_cc.extend([a, b]);
         for b in renko.next(c) {
@@ -147,11 +211,25 @@ fn main() {
     }
     let flat: Vec<f64> = bars.iter().flat_map(|&(h, l, c)| [h, l, c]).collect();
     println!(
-        "{{\"bars\":{},\"supertrend\":{},\"rsi\":{},\"ema\":{},\"cyber_cycle\":{},\"renko\":{},\"kagi\":{},\"harmonic_d_bar_price_score\":{},\"harmonic_count\":{},\"harmonic_series\":{}}}",
+        "{{\"bars\":{},\"supertrend\":{},\"rsi\":{},\"ema\":{},\"sma\":{},\"wma\":{},\"super_smoother\":{},\"atr\":{},\"adx\":{},\"adxr\":{},\"macd\":{},\"bbands\":{},\"stoch\":{},\"ichimoku\":{},\"roofing_filter\":{},\"kalman_filter\":{},\"ttm_squeeze\":{},\"market_structure\":{},\"cyber_cycle\":{},\"renko\":{},\"kagi\":{},\"harmonic_d_bar_price_score\":{},\"harmonic_count\":{},\"harmonic_series\":{}}}",
         bits(&flat),
         bits(&o_st),
         bits(&o_rsi),
         bits(&o_ema),
+        bits(&o_sma),
+        bits(&o_wma),
+        bits(&o_ss),
+        bits(&o_atr),
+        bits(&o_adx),
+        bits(&o_adxr),
+        bits(&o_macd),
+        bits(&o_bbands),
+        bits(&o_stoch),
+        bits(&o_ichi),
+        bits(&o_rf),
+        bits(&o_kf),
+        bits(&o_ttm),
+        bits(&o_ms),
         bits(&o_cc),
         bits(&o_renko),
         bits(&o_kagi),
